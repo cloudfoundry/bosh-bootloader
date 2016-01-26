@@ -24,3 +24,11 @@ brew install go
 ```
 go get github.com/pivotal-cf-experimental/bosh-bootloader/...
 ```
+
+## Usage
+
+Currently the `bbl` command is a no-op, but you can invoke it with:
+
+```
+$ bbl
+```
