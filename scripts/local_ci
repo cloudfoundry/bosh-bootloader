@@ -1,0 +1,9 @@
+#!/bin/bash -eu
+
+ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+pushd "${ROOT_DIRECTORY}"
+  set -e
+  docker build --tag=cfinfrastructure/bosh-bootloader ./ci
+  docker run -v $PWD:/bosh-bootloader cfinfrastructure/bosh-bootloader /bosh-bootloader/ci/tasks/test/test
+popd
