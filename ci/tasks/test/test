@@ -1,0 +1,13 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+
+mkdir -p "${GOPATH}/src/github.com/pivotal-cf-experimental"
+
+pushd "${GOPATH}/src/github.com/pivotal-cf-experimental" > /dev/null
+  ln -s "${ROOT}/bosh-bootloader"
+
+  go run bosh-bootloader/bbl/main.go --version
+
+  go test -v ./bosh-bootloader/bbl
+popd > /dev/null

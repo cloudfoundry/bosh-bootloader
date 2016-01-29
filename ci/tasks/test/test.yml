@@ -1,0 +1,10 @@
+---
+platform: linux
+
+image: docker:///cfinfrastructure/bosh-bootloader
+
+inputs:
+- name: bosh-bootloader
+
+run:
+  path: bosh-bootloader/ci/tasks/test/test

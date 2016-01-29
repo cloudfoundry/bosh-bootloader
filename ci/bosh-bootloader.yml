@@ -1,0 +1,18 @@
+groups:
+- name: bosh-bootloader
+
+resources:
+- name: bosh-bootloader
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/pivotal-cf-experimental/bosh-bootloader.git
+
+jobs:
+- name: test-bosh-bootloader
+  public: true
+  plan:
+  - get: bosh-bootloader
+    trigger: true
+  - task: test
+    file: bosh-bootloader/ci/tasks/test/test.yml
