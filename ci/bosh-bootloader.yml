@@ -1,5 +1,7 @@
 groups:
 - name: bosh-bootloader
+  jobs:
+  - test-bosh-bootloader
 
 resources:
 - name: bosh-bootloader
