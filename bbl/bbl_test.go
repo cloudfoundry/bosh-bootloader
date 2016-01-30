@@ -11,8 +11,19 @@ import (
 const COMMAND_TIMEOUT = "1s"
 
 var _ = Describe("bbl", func() {
+	Describe("bbl -h", func() {
+		It("prints out the usage", func() {
+			command := exec.Command(pathToBBL, "-h")
+			output := bytes.NewBuffer([]byte{})
+			command.Stdout = output
+
+			Eventually(command.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+			Expect(output).To(ContainSubstring("Usage"))
+		})
+	})
+
 	Describe("bbl -v", func() {
-		It("print out the current version", func() {
+		It("prints out the current version", func() {
 			command := exec.Command(pathToBBL, "-v")
 			output := bytes.NewBuffer([]byte{})
 			command.Stdout = output

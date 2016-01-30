@@ -2,7 +2,6 @@
 
 ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-pushd "${ROOT_DIRECTORY}"
-  set -x
-  go test -v "./bbl"
-popd
+pushd "${ROOT_DIRECTORY}" > /dev/null
+  go test -v ./bbl
+popd > /dev/null
