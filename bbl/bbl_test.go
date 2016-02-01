@@ -3,9 +3,9 @@ package main_test
 import (
 	"os/exec"
 
-	"github.com/gomega/gexec"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("bbl", func() {
