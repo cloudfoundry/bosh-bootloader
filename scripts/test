@@ -3,5 +3,5 @@
 ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 pushd "${ROOT_DIRECTORY}" > /dev/null
-  go test -v ./bbl
+  go test -v ./bbl ./application
 popd > /dev/null

@@ -10,7 +10,7 @@ import (
 
 func TestBbl(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Bbl Suite")
+	RunSpecs(t, "bbl")
 }
 
 var (

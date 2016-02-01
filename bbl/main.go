@@ -4,27 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jessevdk/go-flags"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 )
 
 func main() {
-	var options struct {
-		Help    bool `short:"h" long:"help" description:"Show usage"`
-		Version bool `short:"v" long:"version" description:"Show version"`
-	}
+	app := application.New()
 
-	parser := flags.NewParser(&options, flags.PrintErrors|flags.PassDoubleDash)
-	_, err := parser.ParseArgs(os.Args)
+	err := app.Run(os.Args, os.Stdout)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err)
 		os.Exit(1)
-	}
-
-	if options.Help {
-		parser.WriteHelp(os.Stdout)
-		os.Exit(0)
-	}
-
-	if options.Version {
-		fmt.Println("bbl 0.0.1")
 	}
 }
