@@ -1,10 +1,11 @@
 package application
 
 import (
-	"fmt"
 	"io"
+	"os"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 )
 
 type App struct{}
@@ -14,24 +15,19 @@ func New() App {
 }
 
 func (a App) Run(args []string, stdout io.Writer) error {
-	var options struct {
-		Help    bool `short:"h" long:"help" description:"Show usage"`
-		Version bool `short:"v" long:"version" description:"Show version"`
+	var parser *flags.Parser
+
+	bblCommand := commands.NewBBLCommand(stdout)
+
+	bblCommand.Help = func() {
+		parser.WriteHelp(stdout)
+		os.Exit(0)
 	}
 
-	parser := flags.NewParser(&options, flags.PassDoubleDash)
+	parser = flags.NewParser(&bblCommand, flags.PassDoubleDash)
 	_, err := parser.ParseArgs(args)
 	if err != nil {
 		return err
-	}
-
-	if options.Help {
-		parser.WriteHelp(stdout)
-		return nil
-	}
-
-	if options.Version {
-		fmt.Fprintln(stdout, "bbl 0.0.1")
 	}
 
 	return nil
