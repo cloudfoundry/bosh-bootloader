@@ -10,17 +10,19 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Execute", func() {
-	It("prints a CloudFormation template", func() {
-		stdout := bytes.NewBuffer([]byte{})
-		command := commands.NewUnsupportedPrintConcourseAWSTemplateCommand(stdout)
+var _ = Describe("UnsupportedPrintConcourseAWSTemplateCommand", func() {
+	Describe("Execute", func() {
+		It("prints a CloudFormation template", func() {
+			stdout := bytes.NewBuffer([]byte{})
+			command := commands.NewUnsupportedPrintConcourseAWSTemplateCommand(stdout)
 
-		err := command.Execute([]string{})
-		Expect(err).NotTo(HaveOccurred())
+			err := command.Execute([]string{})
+			Expect(err).NotTo(HaveOccurred())
 
-		buf, err := ioutil.ReadFile("fixtures/cloudformation.json")
-		Expect(err).NotTo(HaveOccurred())
+			buf, err := ioutil.ReadFile("fixtures/cloudformation.json")
+			Expect(err).NotTo(HaveOccurred())
 
-		Expect(stdout.String()).To(MatchJSON(string(buf)))
+			Expect(stdout.String()).To(MatchJSON(string(buf)))
+		})
 	})
 })

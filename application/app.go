@@ -24,7 +24,7 @@ func (a App) Run(args []string, stdout io.Writer) error {
 		os.Exit(0)
 	}
 
-	parser = flags.NewParser(&bblCommand, flags.PassDoubleDash)
+	parser = flags.NewParser(bblCommand, flags.PassDoubleDash)
 	_, err := parser.ParseArgs(args)
 	if err != nil {
 		return err
