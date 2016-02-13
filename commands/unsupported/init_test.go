@@ -1,4 +1,4 @@
-package application_test
+package unsupported_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestApplication(t *testing.T) {
+func TestCommands(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "application")
+	RunSpecs(t, "commands/unsupported")
 }

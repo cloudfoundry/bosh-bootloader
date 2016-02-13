@@ -1,4 +1,4 @@
-package aws_test
+package cloudformation_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestAWS(t *testing.T) {
+func TestCloudformation(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "aws")
+	RunSpecs(t, "cloudformation")
 }

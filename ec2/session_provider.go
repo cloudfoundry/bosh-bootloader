@@ -1,4 +1,4 @@
-package aws
+package ec2
 
 import (
 	goaws "github.com/aws/aws-sdk-go/aws"
@@ -7,12 +7,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type Ec2ClientInterface interface {
-	ImportKeyPair(input *ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error)
-}
+type SessionProvider struct{}
 
-type Ec2 struct {
-	Client Ec2ClientInterface
+type Session interface {
+	ImportKeyPair(input *ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error)
 }
 
 type Config struct {
@@ -22,7 +20,11 @@ type Config struct {
 	EndpointOverride string
 }
 
-func NewEc2Client(config Config) Ec2 {
+func NewSessionProvider() SessionProvider {
+	return SessionProvider{}
+}
+
+func (s SessionProvider) Session(config Config) Session {
 	awsConfig := &goaws.Config{
 		Credentials: credentials.NewStaticCredentials(config.AccessKeyID, config.SecretAccessKey, ""),
 		Region:      goaws.String(config.Region),
@@ -32,21 +34,5 @@ func NewEc2Client(config Config) Ec2 {
 		awsConfig.WithEndpoint(config.EndpointOverride)
 	}
 
-	return Ec2{
-		Client: ec2.New(session.New(), awsConfig),
-	}
-}
-
-func (e Ec2) ImportPublicKey(name string, publicKey []byte) error {
-	params := &ec2.ImportKeyPairInput{
-		KeyName:           goaws.String(name),
-		PublicKeyMaterial: publicKey,
-	}
-
-	_, err := e.Client.ImportKeyPair(params)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ec2.New(session.New(awsConfig))
 }

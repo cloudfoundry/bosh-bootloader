@@ -1,4 +1,4 @@
-package commands
+package cloudformation
 
 type AMI struct {
 	AMI string `json:",omitempty"`
@@ -13,7 +13,7 @@ type Tag struct {
 	Value string `json:",omitempty"`
 }
 
-type CloudFormationTemplate struct {
+type Template struct {
 	AWSTemplateFormatVersion string                 `json:",omitempty"`
 	Description              string                 `json:",omitempty"`
 	Parameters               map[string]Parameter   `json:",omitempty"`

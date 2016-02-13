@@ -1,22 +1,12 @@
-package commands
+package cloudformation
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-)
+type TemplateBuilder struct{}
 
-type UnsupportedPrintConcourseAWSTemplateCommand struct {
-	stdout io.Writer
+func NewTemplateBuilder() TemplateBuilder {
+	return TemplateBuilder{}
 }
 
-func NewUnsupportedPrintConcourseAWSTemplateCommand(stdout io.Writer) UnsupportedPrintConcourseAWSTemplateCommand {
-	return UnsupportedPrintConcourseAWSTemplateCommand{
-		stdout: stdout,
-	}
-}
-
-func (u *UnsupportedPrintConcourseAWSTemplateCommand) Execute(args []string) error {
+func (t TemplateBuilder) Build() Template {
 	parameters := map[string]Parameter{
 		"KeyName": Parameter{
 			Type:        "AWS::EC2::KeyPair::KeyName",
@@ -460,19 +450,11 @@ func (u *UnsupportedPrintConcourseAWSTemplateCommand) Execute(args []string) err
 		},
 	}
 
-	template := CloudFormationTemplate{
+	return Template{
 		AWSTemplateFormatVersion: "2010-09-09",
 		Description:              "Infrastructure for a MicroBOSH deployment with an ELB.",
 		Parameters:               parameters,
 		Mappings:                 mappings,
 		Resources:                resources,
 	}
-
-	buf, err := json.Marshal(template)
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintf(u.stdout, string(buf))
-	return nil
 }

@@ -1,4 +1,4 @@
-package application_test
+package flags_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestApplication(t *testing.T) {
+func TestFlags(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "application")
+	RunSpecs(t, "flags")
 }

@@ -40,7 +40,7 @@ var _ = Describe("bbl", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 
-			buf, err := ioutil.ReadFile("../commands/fixtures/cloudformation.json")
+			buf, err := ioutil.ReadFile("../cloudformation/fixtures/cloudformation.json")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(session.Out.Contents()).To(MatchJSON(string(buf)))
 		})
@@ -48,7 +48,9 @@ var _ = Describe("bbl", func() {
 
 	Describe("bbl unsupported-create-bosh-aws-keypair", func() {
 		It("generates a RSA key and uploads it to AWS", func() {
+			var wasCalled bool
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				wasCalled = true
 				Expect(r.Method).To(Equal("POST"))
 
 				body, err := ioutil.ReadAll(r.Body)
@@ -69,6 +71,7 @@ var _ = Describe("bbl", func() {
 			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
+			Expect(wasCalled).To(BeTrue())
 		})
 	})
 
@@ -77,14 +80,16 @@ var _ = Describe("bbl", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(1))
-		Expect(session.Err.Contents()).To(ContainSubstring("unknown flag `some-unknown-flag'"))
+		Expect(session.Err.Contents()).To(ContainSubstring("flag provided but not defined: -some-unknown-flag"))
+		Expect(session.Out.Contents()).To(ContainSubstring("Usage"))
 	})
 
 	It("prints an error when an unknown command is provided", func() {
-		session, err := gexec.Start(exec.Command(pathToBBL, "some-unknown-flag"), GinkgoWriter, GinkgoWriter)
+		session, err := gexec.Start(exec.Command(pathToBBL, "some-unknown-command"), GinkgoWriter, GinkgoWriter)
 
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(1))
-		Expect(session.Err.Contents()).To(ContainSubstring("Unknown command `some-unknown-flag'"))
+		Expect(session.Err.Contents()).To(ContainSubstring("unknown command: some-unknown-command"))
+		Expect(session.Out.Contents()).To(ContainSubstring("Usage"))
 	})
 })

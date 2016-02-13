@@ -1,13 +1,13 @@
-package commands_test
+package ec2_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"testing"
 )
 
-func TestCommands(t *testing.T) {
+func TestEC2(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "commands")
+	RunSpecs(t, "ec2")
 }

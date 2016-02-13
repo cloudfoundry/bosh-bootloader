@@ -2,6 +2,14 @@
 
 ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-pushd "${ROOT_DIRECTORY}" > /dev/null
-  go test -v ./bbl ./application ./commands ./commands/aws
-popd > /dev/null
+function main() {
+	pushd "${ROOT_DIRECTORY}" > /dev/null
+	  if [[ -n "${@}" ]]; then
+		go test -v "${@}"
+	  else
+		find . \( -path ./vendor -o -path ./.git \) -prune -o -type d -print | xargs -n 1 go test -v
+	  fi
+	popd > /dev/null
+}
+
+main "${@:-""}"
