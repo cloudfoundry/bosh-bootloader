@@ -1,8 +1,8 @@
 package unsupported
 
 import (
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ec2"
 )
 
 type keypairGenerator interface {

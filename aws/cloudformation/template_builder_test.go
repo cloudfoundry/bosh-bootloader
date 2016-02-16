@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"golang.org/x/crypto/ssh"
 
 	. "github.com/onsi/ginkgo"

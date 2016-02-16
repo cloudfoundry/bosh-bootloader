@@ -4,7 +4,7 @@ import (
 	goaws "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

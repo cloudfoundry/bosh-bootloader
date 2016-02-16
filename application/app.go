@@ -22,15 +22,32 @@ func New(commands CommandSet, usage func()) App {
 }
 
 type config struct {
+	Command string
 	Help    bool
 	Version bool
 	commands.GlobalFlags
 }
 
 func (a App) Run(args []string) error {
+	cfg, err := a.configure(args)
+	if err != nil {
+		return err
+	}
+
+	err = a.execute(cfg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a App) configure(args []string) (config, error) {
 	globalFlags := flags.New("global")
 
-	var cfg config
+	cfg := config{
+		Command: "[EMPTY]",
+	}
 	globalFlags.Bool(&cfg.Help, "h", "help", false)
 	globalFlags.Bool(&cfg.Version, "v", "version", false)
 	globalFlags.String(&cfg.EndpointOverride, "endpoint-override", "")
@@ -41,31 +58,32 @@ func (a App) Run(args []string) error {
 	err := globalFlags.Parse(args)
 	if err != nil {
 		a.usage()
-		return err
+		return cfg, err
 	}
 
-	c := "[EMPTY]"
 	if len(globalFlags.Args()) > 0 {
-		c = globalFlags.Args()[0]
+		cfg.Command = globalFlags.Args()[0]
 	}
 
 	if cfg.Version {
-		c = "version"
+		cfg.Command = "version"
 	}
 
 	if cfg.Help {
-		c = "help"
+		cfg.Command = "help"
 	}
 
-	//^^^CONFIG^^^///vvvDOING SHITvvv//
+	return cfg, nil
+}
 
-	cmd, ok := a.commands[c]
+func (a App) execute(cfg config) error {
+	cmd, ok := a.commands[cfg.Command]
 	if !ok {
 		a.usage()
-		return fmt.Errorf("unknown command: %s", c)
+		return fmt.Errorf("unknown command: %s", cfg.Command)
 	}
 
-	err = cmd.Execute(cfg.GlobalFlags)
+	err := cmd.Execute(cfg.GlobalFlags)
 	if err != nil {
 		return err
 	}

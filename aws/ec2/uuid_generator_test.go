@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

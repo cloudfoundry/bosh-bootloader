@@ -3,7 +3,7 @@ package unsupported_test
 import (
 	"bytes"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 

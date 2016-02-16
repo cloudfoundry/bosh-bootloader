@@ -40,7 +40,7 @@ var _ = Describe("bbl", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 
-			buf, err := ioutil.ReadFile("../cloudformation/fixtures/cloudformation.json")
+			buf, err := ioutil.ReadFile("../aws/cloudformation/fixtures/cloudformation.json")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(session.Out.Contents()).To(MatchJSON(string(buf)))
 		})

@@ -7,10 +7,10 @@ import (
 	"os"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ec2"
 	"golang.org/x/crypto/ssh"
 )
 

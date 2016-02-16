@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 )
 
