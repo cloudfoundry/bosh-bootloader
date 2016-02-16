@@ -5,44 +5,26 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type FakeCommand struct {
-	ExecuteCall struct {
-		CallCount int
-		Receives  struct {
-			GlobalFlags commands.GlobalFlags
-		}
-		Returns struct {
-			Error error
-		}
-	}
-}
-
-func (c *FakeCommand) Execute(globalFlags commands.GlobalFlags) error {
-	c.ExecuteCall.CallCount++
-	c.ExecuteCall.Receives.GlobalFlags = globalFlags
-
-	return c.ExecuteCall.Returns.Error
-}
-
 var _ = Describe("App", func() {
 	var (
 		app        application.App
-		helpCmd    *FakeCommand
-		versionCmd *FakeCommand
-		someCmd    *FakeCommand
-		errorCmd   *FakeCommand
+		helpCmd    *fakes.Command
+		versionCmd *fakes.Command
+		someCmd    *fakes.Command
+		errorCmd   *fakes.Command
 	)
 
 	BeforeEach(func() {
-		helpCmd = &FakeCommand{}
-		versionCmd = &FakeCommand{}
-		someCmd = &FakeCommand{}
-		errorCmd = &FakeCommand{}
+		helpCmd = &fakes.Command{}
+		versionCmd = &fakes.Command{}
+		someCmd = &fakes.Command{}
+		errorCmd = &fakes.Command{}
 		app = application.New(application.CommandSet{
 			"help":    helpCmd,
 			"version": versionCmd,

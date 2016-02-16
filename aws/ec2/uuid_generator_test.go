@@ -5,22 +5,11 @@ import (
 	"errors"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-type FakeReader struct {
-	ReadCall struct {
-		Returns struct {
-			Error error
-		}
-	}
-}
-
-func (r *FakeReader) Read([]byte) (int, error) {
-	return 0, r.ReadCall.Returns.Error
-}
 
 var _ = Describe("UUIDGenerator", func() {
 	Describe("Generate", func() {
@@ -41,7 +30,7 @@ var _ = Describe("UUIDGenerator", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the reader fails", func() {
-				reader := &FakeReader{}
+				reader := &fakes.Reader{}
 				generator := ec2.NewUUIDGenerator(reader)
 				reader.ReadCall.Returns.Error = errors.New("reader failed")
 

@@ -3,88 +3,30 @@ package unsupported_test
 import (
 	"errors"
 
-	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type FakeKeypairGenerator struct {
-	GenerateCall struct {
-		CallCount int
-		Returns   struct {
-			Keypair ec2.Keypair
-			Error   error
-		}
-	}
-}
-
-func (g *FakeKeypairGenerator) Generate() (ec2.Keypair, error) {
-	g.GenerateCall.CallCount++
-
-	return g.GenerateCall.Returns.Keypair, g.GenerateCall.Returns.Error
-}
-
-type FakeKeypairUploader struct {
-	UploadCall struct {
-		Receives struct {
-			Session ec2.Session
-			Keypair ec2.Keypair
-		}
-		Returns struct {
-			Error error
-		}
-	}
-}
-
-func (u *FakeKeypairUploader) Upload(session ec2.Session, keypair ec2.Keypair) error {
-	u.UploadCall.Receives.Session = session
-	u.UploadCall.Receives.Keypair = keypair
-
-	return u.UploadCall.Returns.Error
-}
-
-type FakeSession struct{}
-
-func (s *FakeSession) ImportKeyPair(*awsec2.ImportKeyPairInput) (*awsec2.ImportKeyPairOutput, error) {
-	return nil, nil
-}
-
-type FakeSessionProvider struct {
-	SessionCall struct {
-		Receives struct {
-			Config ec2.Config
-		}
-		Returns struct {
-			Session ec2.Session
-		}
-	}
-}
-
-func (p *FakeSessionProvider) Session(config ec2.Config) ec2.Session {
-	p.SessionCall.Receives.Config = config
-
-	return p.SessionCall.Returns.Session
-}
-
 var _ = Describe("CreateBoshAWSKeypair", func() {
 	var (
 		command          unsupported.CreateBoshAWSKeypair
-		keypairGenerator *FakeKeypairGenerator
-		keypairUploader  *FakeKeypairUploader
-		session          *FakeSession
-		sessionProvider  *FakeSessionProvider
+		keypairGenerator *fakes.KeypairGenerator
+		keypairUploader  *fakes.KeypairUploader
+		session          *fakes.Session
+		sessionProvider  *fakes.SessionProvider
 	)
 
 	BeforeEach(func() {
-		keypairGenerator = &FakeKeypairGenerator{}
-		keypairUploader = &FakeKeypairUploader{}
-		session = &FakeSession{}
+		keypairGenerator = &fakes.KeypairGenerator{}
+		keypairUploader = &fakes.KeypairUploader{}
+		session = &fakes.Session{}
 
-		sessionProvider = &FakeSessionProvider{}
+		sessionProvider = &fakes.SessionProvider{}
 		sessionProvider.SessionCall.Returns.Session = session
 
 		command = unsupported.NewCreateBoshAWSKeypair(keypairGenerator, keypairUploader, sessionProvider)

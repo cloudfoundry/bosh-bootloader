@@ -6,34 +6,23 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type FakeTemplateBuilder struct {
-	BuildCall struct {
-		Returns struct {
-			Template cloudformation.Template
-		}
-	}
-}
-
-func (b FakeTemplateBuilder) Build() cloudformation.Template {
-	return b.BuildCall.Returns.Template
-}
-
 var _ = Describe("PrintConcourseAWSTemplate", func() {
 	Describe("Execute", func() {
 		var (
 			stdout  *bytes.Buffer
-			builder *FakeTemplateBuilder
+			builder *fakes.TemplateBuilder
 			command unsupported.PrintConcourseAWSTemplate
 		)
 
 		BeforeEach(func() {
 			stdout = bytes.NewBuffer([]byte{})
-			builder = &FakeTemplateBuilder{}
+			builder = &fakes.TemplateBuilder{}
 			command = unsupported.NewPrintConcourseAWSTemplate(stdout, builder)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
