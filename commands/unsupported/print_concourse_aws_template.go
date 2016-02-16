@@ -27,7 +27,7 @@ func NewPrintConcourseAWSTemplate(stdout io.Writer, builder templateBuilder) Pri
 
 func (c PrintConcourseAWSTemplate) Execute(globalFlags commands.GlobalFlags) error {
 	template := c.builder.Build()
-	buf, err := json.Marshal(template)
+	buf, err := json.MarshalIndent(template, "", "  ")
 	if err != nil {
 		return err
 	}
