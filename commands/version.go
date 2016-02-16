@@ -16,6 +16,6 @@ func NewVersion(stdout io.Writer) Version {
 }
 
 func (v Version) Execute(globalFlags GlobalFlags) error {
-	fmt.Fprint(v.stdout, VERSION)
+	fmt.Fprintln(v.stdout, VERSION)
 	return nil
 }

@@ -24,7 +24,7 @@ var _ = Describe("Version", func() {
 		It("prints out the version information", func() {
 			err := version.Execute(commands.GlobalFlags{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stdout.String()).To(Equal("bbl 0.0.1"))
+			Expect(stdout.String()).To(Equal("bbl 0.0.1\n"))
 		})
 	})
 })
