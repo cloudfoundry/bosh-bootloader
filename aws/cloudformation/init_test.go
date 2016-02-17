@@ -9,5 +9,5 @@ import (
 
 func TestCloudformation(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cloudformation")
+	RunSpecs(t, "aws/cloudformation")
 }

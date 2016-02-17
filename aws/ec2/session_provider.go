@@ -1,6 +1,8 @@
 package ec2
 
 import (
+	"errors"
+
 	goaws "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -24,7 +26,11 @@ func NewSessionProvider() SessionProvider {
 	return SessionProvider{}
 }
 
-func (s SessionProvider) Session(config Config) Session {
+func (s SessionProvider) Session(config Config) (Session, error) {
+	if config.AccessKeyID == "" || config.SecretAccessKey == "" || config.Region == "" {
+		return nil, errors.New("aws credentials must be provided")
+	}
+
 	awsConfig := &goaws.Config{
 		Credentials: credentials.NewStaticCredentials(config.AccessKeyID, config.SecretAccessKey, ""),
 		Region:      goaws.String(config.Region),
@@ -34,5 +40,5 @@ func (s SessionProvider) Session(config Config) Session {
 		awsConfig.WithEndpoint(config.EndpointOverride)
 	}
 
-	return ec2.New(session.New(awsConfig))
+	return ec2.New(session.New(awsConfig)), nil
 }

@@ -9,12 +9,13 @@ type SessionProvider struct {
 		}
 		Returns struct {
 			Session ec2.Session
+			Error   error
 		}
 	}
 }
 
-func (p *SessionProvider) Session(config ec2.Config) ec2.Session {
+func (p *SessionProvider) Session(config ec2.Config) (ec2.Session, error) {
 	p.SessionCall.Receives.Config = config
 
-	return p.SessionCall.Returns.Session
+	return p.SessionCall.Returns.Session, p.SessionCall.Returns.Error
 }

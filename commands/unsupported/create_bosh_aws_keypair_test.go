@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -93,120 +94,12 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				StateDir:           "/some/state/dir",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stateStore.MergeCall.Receives.Dir).To(Equal("/some/state/dir"))
-			Expect(stateStore.MergeCall.Receives.Map).To(Equal(map[string]interface{}{
-				"aws-access-key-id":     "some-aws-access-key-id",
-				"aws-secret-access-key": "some-aws-secret-access-key",
-				"aws-region":            "some-aws-region",
+			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
+			Expect(stateStore.SetCall.Receives.State).To(Equal(state.State{
+				AWSAccessKeyID:     "some-aws-access-key-id",
+				AWSSecretAccessKey: "some-aws-secret-access-key",
+				AWSRegion:          "some-aws-region",
 			}))
-		})
-
-		Context("when the aws access key id is not provided", func() {
-			It("uses the AWS credentials from the state store if none are provided", func() {
-				stateStore.GetStringCall.Returns.OK = true
-				stateStore.GetStringCall.Returns.Value = "some-aws-access-key-id"
-
-				err := command.Execute(commands.GlobalFlags{
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.GetStringCall.Receives.Dir).To(Equal("/some/state/dir"))
-				Expect(stateStore.GetStringCall.Receives.Key).To(Equal("aws-access-key-id"))
-				Expect(stateStore.MergeCall.Receives.Map).To(Equal(map[string]interface{}{
-					"aws-access-key-id":     "some-aws-access-key-id",
-					"aws-secret-access-key": "some-aws-secret-access-key",
-					"aws-region":            "some-aws-region",
-				}))
-			})
-
-			Context("when the state store fails", func() {
-				It("returns an error", func() {
-					stateStore.GetStringCall.Returns.Error = errors.New("get string failed")
-
-					err := command.Execute(commands.GlobalFlags{
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						AWSRegion:          "some-aws-region",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
-					})
-					Expect(err).To(MatchError("get string failed"))
-				})
-			})
-		})
-
-		Context("when the aws secret access key is not provided", func() {
-			It("uses the AWS credentials from the state store if none are provided", func() {
-				stateStore.GetStringCall.Returns.OK = true
-				stateStore.GetStringCall.Returns.Value = "some-aws-secret-access-key"
-
-				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:   "some-aws-access-key-id",
-					AWSRegion:        "some-aws-region",
-					EndpointOverride: "some-endpoint-override",
-					StateDir:         "/some/state/dir",
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.GetStringCall.Receives.Dir).To(Equal("/some/state/dir"))
-				Expect(stateStore.GetStringCall.Receives.Key).To(Equal("aws-secret-access-key"))
-				Expect(stateStore.MergeCall.Receives.Map).To(Equal(map[string]interface{}{
-					"aws-access-key-id":     "some-aws-access-key-id",
-					"aws-secret-access-key": "some-aws-secret-access-key",
-					"aws-region":            "some-aws-region",
-				}))
-			})
-
-			Context("when the state store fails", func() {
-				It("returns an error", func() {
-					stateStore.GetStringCall.Returns.Error = errors.New("get string failed")
-
-					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:   "some-aws-access-key-id",
-						AWSRegion:        "some-aws-region",
-						EndpointOverride: "some-endpoint-override",
-						StateDir:         "/some/state/dir",
-					})
-					Expect(err).To(MatchError("get string failed"))
-				})
-			})
-		})
-
-		Context("when the aws region is not provided", func() {
-			It("uses the AWS credentials from the state store if none are provided", func() {
-				stateStore.GetStringCall.Returns.OK = true
-				stateStore.GetStringCall.Returns.Value = "some-aws-region"
-
-				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.GetStringCall.Receives.Dir).To(Equal("/some/state/dir"))
-				Expect(stateStore.GetStringCall.Receives.Key).To(Equal("aws-region"))
-				Expect(stateStore.MergeCall.Receives.Map).To(Equal(map[string]interface{}{
-					"aws-access-key-id":     "some-aws-access-key-id",
-					"aws-secret-access-key": "some-aws-secret-access-key",
-					"aws-region":            "some-aws-region",
-				}))
-			})
-
-			Context("when the state store fails", func() {
-				It("returns an error", func() {
-					stateStore.GetStringCall.Returns.Error = errors.New("get string failed")
-
-					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:     "some-aws-access-key-id",
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
-					})
-					Expect(err).To(MatchError("get string failed"))
-				})
-			})
 		})
 
 		Context("failure cases", func() {
@@ -237,7 +130,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			})
 
 			It("returns an error when state store fails", func() {
-				stateStore.MergeCall.Returns.Error = errors.New("state store merge failed")
+				stateStore.SetCall.Returns.Error = errors.New("state store merge failed")
 
 				err := command.Execute(commands.GlobalFlags{
 					AWSAccessKeyID:     "some-aws-access-key-id",
@@ -249,34 +142,16 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				Expect(err).To(MatchError("state store merge failed"))
 			})
 
-			It("returns an error when the access key id is missing", func() {
+			It("returns an error when the session provided fails", func() {
+				sessionProvider.SessionCall.Returns.Error = errors.New("failed to create session")
+
 				err := command.Execute(commands.GlobalFlags{
 					AWSSecretAccessKey: "some-aws-secret-access-key",
 					AWSRegion:          "some-aws-region",
 					EndpointOverride:   "some-endpoint-override",
 					StateDir:           "/some/state/dir",
 				})
-				Expect(err).To(MatchError("aws credentials must be provided"))
-			})
-
-			It("returns an error when the secret access key is missing", func() {
-				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:   "some-aws-access-key-id",
-					AWSRegion:        "some-aws-region",
-					EndpointOverride: "some-endpoint-override",
-					StateDir:         "/some/state/dir",
-				})
-				Expect(err).To(MatchError("aws credentials must be provided"))
-			})
-
-			It("returns an error when the region is missing", func() {
-				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
-				})
-				Expect(err).To(MatchError("aws credentials must be provided"))
+				Expect(err).To(MatchError("failed to create session"))
 			})
 		})
 	})

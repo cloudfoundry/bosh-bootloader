@@ -9,5 +9,5 @@ import (
 
 func TestEC2(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ec2")
+	RunSpecs(t, "aws/ec2")
 }

@@ -79,9 +79,9 @@ var _ = Describe("bbl", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(contents).To(MatchJSON(`{
-					"aws-access-key-id": "some-access-key",
-					"aws-secret-access-key": "some-access-secret",
-					"aws-region": "some-region"
+					"AWSAccessKeyID": "some-access-key",
+					"AWSSecretAccessKey": "some-access-secret",
+					"AWSRegion": "some-region"
 				}`))
 			})
 		})

@@ -1,39 +1,38 @@
 package fakes
 
+import "github.com/pivotal-cf-experimental/bosh-bootloader/state"
+
 type StateStore struct {
-	MergeCall struct {
+	SetCall struct {
 		Receives struct {
-			Dir string
-			Map map[string]interface{}
+			Dir   string
+			State state.State
 		}
 		Returns struct {
 			Error error
 		}
 	}
 
-	GetStringCall struct {
+	GetCall struct {
 		Receives struct {
 			Dir string
-			Key string
 		}
 		Returns struct {
-			Value string
-			OK    bool
+			State state.State
 			Error error
 		}
 	}
 }
 
-func (s *StateStore) Merge(dir string, m map[string]interface{}) error {
-	s.MergeCall.Receives.Dir = dir
-	s.MergeCall.Receives.Map = m
+func (s *StateStore) Set(dir string, st state.State) error {
+	s.SetCall.Receives.Dir = dir
+	s.SetCall.Receives.State = st
 
-	return s.MergeCall.Returns.Error
+	return s.SetCall.Returns.Error
 }
 
-func (s *StateStore) GetString(dir, key string) (string, bool, error) {
-	s.GetStringCall.Receives.Dir = dir
-	s.GetStringCall.Receives.Key = key
+func (s *StateStore) Get(dir string) (state.State, error) {
+	s.GetCall.Receives.Dir = dir
 
-	return s.GetStringCall.Returns.Value, s.GetStringCall.Returns.OK, s.GetStringCall.Returns.Error
+	return s.GetCall.Returns.State, s.GetCall.Returns.Error
 }
