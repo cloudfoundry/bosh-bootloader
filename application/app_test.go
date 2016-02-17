@@ -88,6 +88,7 @@ var _ = Describe("App", func() {
 						"--aws-access-key-id", "some-aws-access-key-id",
 						"--aws-secret-access-key", "some-aws-secret-access-key",
 						"--aws-region", "some-aws-region",
+						"--state-dir", "/some/state/dir",
 						"some",
 					})).To(Succeed())
 					Expect(someCmd.ExecuteCall.CallCount).To(Equal(1))
@@ -96,6 +97,7 @@ var _ = Describe("App", func() {
 						AWSAccessKeyID:     "some-aws-access-key-id",
 						AWSSecretAccessKey: "some-aws-secret-access-key",
 						AWSRegion:          "some-aws-region",
+						StateDir:           "/some/state/dir",
 					}))
 				})
 			})

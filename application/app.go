@@ -54,6 +54,7 @@ func (a App) configure(args []string) (config, error) {
 	globalFlags.String(&cfg.AWSAccessKeyID, "aws-access-key-id", "")
 	globalFlags.String(&cfg.AWSSecretAccessKey, "aws-secret-access-key", "")
 	globalFlags.String(&cfg.AWSRegion, "aws-region", "")
+	globalFlags.String(&cfg.StateDir, "state-dir", "")
 
 	err := globalFlags.Parse(args)
 	if err != nil {
