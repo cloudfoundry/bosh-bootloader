@@ -9,26 +9,43 @@ import (
 
 var encode func(io.Writer, interface{}) error = encodeFile
 
+type KeyPair struct {
+	Name       string `json:"name"`
+	PrivateKey string `json:"privateKey"`
+	PublicKey  string `json:"publicKey"`
+}
+
+type AWS struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+}
+
 type State struct {
-	AWSAccessKeyID     string
-	AWSSecretAccessKey string
-	AWSRegion          string
+	Version int      `json:"version"`
+	AWS     AWS      `json:"aws"`
+	KeyPair *KeyPair `json:"keyPair,omitempty"`
 }
 
 type Store struct {
+	version int
 }
 
 func NewStore() Store {
-	return Store{}
+	return Store{
+		version: 1,
+	}
 }
 
-func (Store) Set(dir string, s State) error {
+func (s Store) Set(dir string, state State) error {
+	state.Version = s.version
+
 	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = encode(file, s)
+	err = encode(file, state)
 	if err != nil {
 		return err
 	}

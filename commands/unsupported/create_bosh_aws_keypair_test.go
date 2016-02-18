@@ -96,9 +96,11 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
 			Expect(stateStore.SetCall.Receives.State).To(Equal(state.State{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
+				AWS: state.AWS{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+				},
 			}))
 		})
 

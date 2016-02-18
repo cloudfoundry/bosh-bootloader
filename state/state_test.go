@@ -34,18 +34,33 @@ var _ = Describe("Store", func() {
 	Describe("Set", func() {
 		It("stores the aws credentials", func() {
 			err := store.Set(tempDir, state.State{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-region",
+				AWS: state.AWS{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-region",
+				},
+				KeyPair: &state.KeyPair{
+					Name:       "some-name",
+					PrivateKey: "some-private",
+					PublicKey:  "some-public",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
 			data, err := ioutil.ReadFile(filepath.Join(tempDir, "state.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(MatchJSON(`{
-				"AWSAccessKeyID": "some-aws-access-key-id",
-				"AWSSecretAccessKey": "some-aws-secret-access-key",
-				"AWSRegion": "some-region"
+				"version": 1,
+				"aws": {
+					"accessKeyId": "some-aws-access-key-id",
+					"secretAccessKey": "some-aws-secret-access-key",
+					"region": "some-region"
+				},
+				"keyPair": {
+					"name": "some-name",
+					"privateKey": "some-private",
+					"publicKey": "some-public"
+				}
 			}`))
 		})
 
@@ -72,9 +87,17 @@ var _ = Describe("Store", func() {
 	Describe("Get", func() {
 		It("gets the aws credentials", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
-				"AWSAccessKeyID": "some-aws-access-key-id",
-				"AWSSecretAccessKey": "some-aws-secret-access-key",
-				"AWSRegion": "some-aws-region"
+				"version": 1,
+				"aws": {
+					"accessKeyId": "some-aws-access-key-id",
+					"secretAccessKey": "some-aws-secret-access-key",
+					"region": "some-aws-region"
+				},
+				"keyPair": {
+					"name": "some-name",
+					"privateKey": "some-private-key",
+					"publicKey": "some-public-key"
+				}
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -82,9 +105,17 @@ var _ = Describe("Store", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(s).To(Equal(state.State{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
+				Version: 1,
+				AWS: state.AWS{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+				},
+				KeyPair: &state.KeyPair{
+					Name:       "some-name",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
 			}))
 		})
 

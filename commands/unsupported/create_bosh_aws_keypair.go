@@ -66,9 +66,11 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 	}
 
 	err = c.store.Set(globalFlags.StateDir, state.State{
-		AWSAccessKeyID:     config.AccessKeyID,
-		AWSSecretAccessKey: config.SecretAccessKey,
-		AWSRegion:          config.Region,
+		AWS: state.AWS{
+			AccessKeyID:     config.AccessKeyID,
+			SecretAccessKey: config.SecretAccessKey,
+			Region:          config.Region,
+		},
 	})
 	if err != nil {
 		return err
@@ -84,15 +86,15 @@ func getConfig(store stateStore, dir string, config ec2.Config) (ec2.Config, err
 	}
 
 	if config.AccessKeyID == "" {
-		config.AccessKeyID = state.AWSAccessKeyID
+		config.AccessKeyID = state.AWS.AccessKeyID
 	}
 
 	if config.SecretAccessKey == "" {
-		config.SecretAccessKey = state.AWSSecretAccessKey
+		config.SecretAccessKey = state.AWS.SecretAccessKey
 	}
 
 	if config.Region == "" {
-		config.Region = state.AWSRegion
+		config.Region = state.AWS.Region
 	}
 
 	return config, nil
