@@ -9,5 +9,5 @@ pushd "${GOPATH}/src/github.com/pivotal-cf-experimental" > /dev/null
 
   go run bosh-bootloader/bbl/main.go --version
 
-  ./bosh-bootloader/scripts/test
+  chpst -u bbluser:bbluser ./bosh-bootloader/scripts/test
 popd > /dev/null

@@ -1,11 +1,13 @@
 FROM ubuntu:14.04
 MAINTAINER https://github.com/pivotal-cf-experimental/bosh-bootloader
+USER root
 
 RUN \
       apt-get update && \
       apt-get -y install --fix-missing \
         git \
         wget \
+		runit \
       && \
       apt-get clean
 
@@ -32,8 +34,6 @@ RUN go get github.com/onsi/gomega/...
 
 RUN mkdir -p /home/bbluser && \
 	groupadd -r bbluser -g 433 && \
-	useradd -u 431 -r -g bbluser -d /home/bbluser -s /sbin/nologin -c "Docker image user" bbluser && \
+	useradd -u 431 -r -g bbluser -d /home/bbluser -s /usr/sbin/nologin -c "Docker image user" bbluser && \
 	chown -R bbluser:bbluser /go
 
-
-USER bbluser
