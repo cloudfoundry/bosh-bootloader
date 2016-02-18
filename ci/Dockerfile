@@ -29,3 +29,11 @@ ENV GO15VENDOREXPERIMENT 1
 # install test dependencies
 RUN go get github.com/onsi/ginkgo/...
 RUN go get github.com/onsi/gomega/...
+
+RUN mkdir -p /home/bbluser && \
+	groupadd -r bbluser -g 433 && \
+	useradd -u 431 -r -g bbluser -d /home/bbluser -s /sbin/nologin -c "Docker image user" bbluser && \
+	chown -R bbluser:bbluser /go
+
+
+USER bbluser
