@@ -40,6 +40,7 @@ Global Options:
   --aws-access-key-id     "AWS AccessKeyID value"
   --aws-secret-access-key "AWS SecretAccessKey value"
   --aws-region            "AWS Region"
+  --state-dir             "Directory that stores the state.json"
 
 Commands:
   help                                     "print usage"
