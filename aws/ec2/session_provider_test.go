@@ -44,7 +44,7 @@ var _ = Describe("SessionProvider", func() {
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
 				})
-				Expect(err).To(MatchError("aws credentials must be provided"))
+				Expect(err).To(MatchError("aws access key id must be provided"))
 			})
 		})
 
@@ -54,7 +54,7 @@ var _ = Describe("SessionProvider", func() {
 					AccessKeyID: "some-access-key-id",
 					Region:      "some-region",
 				})
-				Expect(err).To(MatchError("aws credentials must be provided"))
+				Expect(err).To(MatchError("aws secret access key must be provided"))
 			})
 		})
 
@@ -64,7 +64,7 @@ var _ = Describe("SessionProvider", func() {
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
 				})
-				Expect(err).To(MatchError("aws credentials must be provided"))
+				Expect(err).To(MatchError("aws region must be provided"))
 			})
 		})
 	})

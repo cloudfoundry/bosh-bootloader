@@ -26,9 +26,24 @@ go get github.com/pivotal-cf-experimental/bosh-bootloader/...
 ```
 
 ## Usage
-
-Currently the `bbl` command is a no-op, but you can invoke it with:
+The `bbl` command can be invoked on the command line and will display it's usage.
 
 ```
 $ bbl
+Usage:
+  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
+
+Global Options:
+  --help    [-h] "print usage"
+  --version [-v] "print version"
+
+  --aws-access-key-id     "AWS AccessKeyID value"
+  --aws-secret-access-key "AWS SecretAccessKey value"
+  --aws-region            "AWS Region"
+
+Commands:
+  help                                     "print usage"
+  version                                  "print version"
+  unsupported-print-concourse-aws-template "print a concourse aws template"
+  unsupported-create-bosh-aws-keypair      "create and upload a keypair to AWS"
 ```

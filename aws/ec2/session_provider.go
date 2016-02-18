@@ -27,8 +27,16 @@ func NewSessionProvider() SessionProvider {
 }
 
 func (s SessionProvider) Session(config Config) (Session, error) {
-	if config.AccessKeyID == "" || config.SecretAccessKey == "" || config.Region == "" {
-		return nil, errors.New("aws credentials must be provided")
+	if config.AccessKeyID == "" {
+		return nil, errors.New("aws access key id must be provided")
+	}
+
+	if config.SecretAccessKey == "" {
+		return nil, errors.New("aws secret access key must be provided")
+	}
+
+	if config.Region == "" {
+		return nil, errors.New("aws region must be provided")
 	}
 
 	awsConfig := &goaws.Config{

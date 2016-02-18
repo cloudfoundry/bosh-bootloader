@@ -99,7 +99,7 @@ var _ = Describe("bbl", func() {
 				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
-				Expect(session.Err.Contents()).To(ContainSubstring("aws credentials must be provided"))
+				Expect(session.Err.Contents()).To(ContainSubstring("aws access key id must be provided"))
 			})
 		})
 	})
