@@ -66,8 +66,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 
 		It("uploads the generated keypair", func() {
 			keypairGenerator.GenerateCall.Returns.Keypair = ec2.Keypair{
-				Name: "some-name",
-				Key:  []byte("some-key"),
+				Name:      "some-name",
+				PublicKey: []byte("some-key"),
 			}
 
 			err := command.Execute(commands.GlobalFlags{
@@ -80,8 +80,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypairUploader.UploadCall.Receives.Session).To(Equal(session))
 			Expect(keypairUploader.UploadCall.Receives.Keypair).To(Equal(ec2.Keypair{
-				Name: "some-name",
-				Key:  []byte("some-key"),
+				Name:      "some-name",
+				PublicKey: []byte("some-key"),
 			}))
 		})
 
@@ -95,12 +95,33 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
-			Expect(stateStore.SetCall.Receives.State).To(Equal(state.State{
-				AWS: state.AWS{
-					AccessKeyID:     "some-aws-access-key-id",
-					SecretAccessKey: "some-aws-secret-access-key",
-					Region:          "some-aws-region",
-				},
+			Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(state.AWS{
+				AccessKeyID:     "some-aws-access-key-id",
+				SecretAccessKey: "some-aws-secret-access-key",
+				Region:          "some-aws-region",
+			}))
+		})
+
+		It("stores the keypair and name", func() {
+			keypairGenerator.GenerateCall.Returns.Keypair = ec2.Keypair{
+				Name:       "some-name",
+				PublicKey:  []byte("some-public-key"),
+				PrivateKey: []byte("some-private-key"),
+			}
+
+			err := command.Execute(commands.GlobalFlags{
+				AWSAccessKeyID:     "some-aws-access-key-id",
+				AWSSecretAccessKey: "some-aws-secret-access-key",
+				AWSRegion:          "some-aws-region",
+				EndpointOverride:   "some-endpoint-override",
+				StateDir:           "/some/state/dir",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
+			Expect(*stateStore.SetCall.Receives.State.KeyPair).To(Equal(state.KeyPair{
+				Name:       "some-name",
+				PrivateKey: "some-private-key",
+				PublicKey:  "some-public-key",
 			}))
 		})
 

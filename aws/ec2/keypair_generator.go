@@ -2,6 +2,8 @@ package ec2
 
 import (
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 
@@ -20,8 +22,9 @@ type KeypairGenerator struct {
 }
 
 type Keypair struct {
-	Name string
-	Key  []byte
+	Name       string
+	PublicKey  []byte
+	PrivateKey []byte
 }
 
 func NewKeypairGenerator(random io.Reader, generateUUID uuidGenerator, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator) KeypairGenerator {
@@ -49,8 +52,16 @@ func (k KeypairGenerator) Generate() (Keypair, error) {
 		return Keypair{}, err
 	}
 
+	privateKey := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(rsakey),
+		},
+	)
+
 	return Keypair{
-		Name: fmt.Sprintf("keypair-%s", uuid),
-		Key:  ssh.MarshalAuthorizedKey(pub),
+		Name:       fmt.Sprintf("keypair-%s", uuid),
+		PublicKey:  ssh.MarshalAuthorizedKey(pub),
+		PrivateKey: privateKey,
 	}, nil
 }

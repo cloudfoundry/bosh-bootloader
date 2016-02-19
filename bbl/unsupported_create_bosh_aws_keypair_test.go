@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -61,31 +60,32 @@ var _ = Describe("bbl", func() {
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				}))
 
-				args := []string{
-					fmt.Sprintf("--endpoint-override=%s", server.URL),
-					"--aws-access-key-id", "some-access-key",
-					"--aws-secret-access-key", "some-access-secret",
-					"--aws-region", "some-region",
-					"--state-dir", tempDir,
-					"unsupported-create-bosh-aws-keypair",
-				}
-
-				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(0))
-
-				stateFilePath := filepath.Join(tempDir, "state.json")
-				contents, err := ioutil.ReadFile(stateFilePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(contents).To(MatchJSON(`{
-					"version": 1,
-					"aws": {
-						"accessKeyId": "some-access-key",
-						"secretAccessKey": "some-access-secret",
-						"region": "some-region"
+				By("supplying the aws credentials", func() {
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", server.URL),
+						"--aws-access-key-id", "some-access-key",
+						"--aws-secret-access-key", "some-access-secret",
+						"--aws-region", "some-region",
+						"--state-dir", tempDir,
+						"unsupported-create-bosh-aws-keypair",
 					}
-				}`))
+
+					session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+				})
+
+				By("reading the aws credentials from the state dir", func() {
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", server.URL),
+						"--state-dir", tempDir,
+						"unsupported-create-bosh-aws-keypair",
+					}
+
+					session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+				})
 			})
 		})
 

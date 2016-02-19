@@ -15,7 +15,7 @@ func NewKeypairUploader() KeypairUploader {
 func (k KeypairUploader) Upload(importer Session, keypair Keypair) error {
 	_, err := importer.ImportKeyPair(&ec2.ImportKeyPairInput{
 		KeyName:           goaws.String(keypair.Name),
-		PublicKeyMaterial: keypair.Key,
+		PublicKeyMaterial: keypair.PublicKey,
 	})
 	if err != nil {
 		return err

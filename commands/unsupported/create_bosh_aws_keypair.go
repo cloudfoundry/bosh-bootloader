@@ -71,6 +71,11 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 			SecretAccessKey: config.SecretAccessKey,
 			Region:          config.Region,
 		},
+		KeyPair: &state.KeyPair{
+			Name:       keypair.Name,
+			PublicKey:  string(keypair.PublicKey),
+			PrivateKey: string(keypair.PrivateKey),
+		},
 	})
 	if err != nil {
 		return err

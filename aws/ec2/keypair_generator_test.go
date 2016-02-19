@@ -3,6 +3,8 @@ package ec2_test
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"io"
 
@@ -20,16 +22,25 @@ var _ = Describe("KeypairGenerator", func() {
 		}
 
 		It("generates a valid keypair with a randomized name", func() {
-
 			generator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, ssh.NewPublicKey)
 
 			keypair, err := generator.Generate()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypair.Name).To(Equal("keypair-random-uuid"))
 
-			_, _, _, rest, err := ssh.ParseAuthorizedKey(keypair.Key)
+			p, rest := pem.Decode(keypair.PrivateKey)
+			Expect(rest).To(HaveLen(0))
+
+			privateKey, err := x509.ParsePKCS1PrivateKey(p.Bytes)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rest).To(BeEmpty())
+
+			err = privateKey.Validate()
+			Expect(err).NotTo(HaveOccurred())
+
+			pub, err := ssh.NewPublicKey(privateKey.Public())
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(ssh.MarshalAuthorizedKey(pub)).To(Equal(keypair.PublicKey))
 		})
 
 		Context("failure cases", func() {

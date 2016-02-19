@@ -26,8 +26,8 @@ var _ = Describe("KeypairUploader", func() {
 	Describe("Upload", func() {
 		It("uploads the keypair to AWS", func() {
 			err := uploader.Upload(ec2Client, ec2.Keypair{
-				Name: "some-keypair",
-				Key:  []byte("some-key"),
+				Name:      "some-keypair",
+				PublicKey: []byte("some-key"),
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ec2Client.ImportKeyPairCall.Receives.Input).To(Equal(&awsec2.ImportKeyPairInput{
