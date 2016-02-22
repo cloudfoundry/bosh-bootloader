@@ -1,12 +1,14 @@
 package main_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -73,6 +75,23 @@ var _ = Describe("bbl", func() {
 					session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0))
+				})
+
+				By("clearing out the keypair information", func() {
+					buf, err := ioutil.ReadFile(filepath.Join(tempDir, "state.json"))
+					Expect(err).NotTo(HaveOccurred())
+
+					var state map[string]interface{}
+					err = json.Unmarshal(buf, &state)
+					Expect(err).NotTo(HaveOccurred())
+
+					delete(state, "keyPair")
+
+					buf, err = json.Marshal(state)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = ioutil.WriteFile(filepath.Join(tempDir, "state.json"), buf, os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				By("reading the aws credentials from the state dir", func() {

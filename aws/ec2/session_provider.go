@@ -13,6 +13,7 @@ type SessionProvider struct{}
 
 type Session interface {
 	ImportKeyPair(input *ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error)
+	DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.DescribeKeyPairsOutput, error)
 }
 
 type Config struct {

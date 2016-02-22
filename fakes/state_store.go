@@ -4,7 +4,8 @@ import "github.com/pivotal-cf-experimental/bosh-bootloader/state"
 
 type StateStore struct {
 	SetCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			Dir   string
 			State state.State
 		}
@@ -25,6 +26,7 @@ type StateStore struct {
 }
 
 func (s *StateStore) Set(dir string, st state.State) error {
+	s.SetCall.CallCount++
 	s.SetCall.Receives.Dir = dir
 	s.SetCall.Receives.State = st
 
