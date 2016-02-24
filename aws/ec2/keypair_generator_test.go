@@ -70,7 +70,7 @@ var _ = Describe("KeypairGenerator", func() {
 
 			Context("uuid could not be generated", func() {
 				It("returns an error", func() {
-					uuidGenerator = func() (string, error) {
+					uuidGenerator := func() (string, error) {
 						return "", errors.New("uuid generation failed")
 					}
 					generator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, ssh.NewPublicKey)

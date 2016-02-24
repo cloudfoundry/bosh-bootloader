@@ -35,11 +35,6 @@
       "Description": "CIDR block for the Internal subnet.",
       "Type": "String",
       "Default": "10.0.16.0/20"
-    },
-    "LoadBalancerCertName": {
-      "Description": "Name of the SSL cert to use for the ELB.",
-      "Type": "String",
-      "Default": ""
     }
   },
 
@@ -393,27 +388,6 @@
             "LoadBalancerPort": "2222",
             "InstanceProtocol": "tcp",
             "InstancePort": "2222"
-          },
-          {
-            "Protocol" : "ssl",
-            "LoadBalancerPort" : "443",
-            "InstanceProtocol": "tcp",
-            "InstancePort" : "8080",
-            "SSLCertificateId" : {
-              "Fn::Join":[
-                "",
-                [
-                  "arn:aws:iam::",
-                  {
-                    "Ref":"AWS::AccountId"
-                  },
-                  ":server-certificate/",
-                  {
-                    "Ref":"LoadBalancerCertName"
-                  }
-                ]
-              ]
-            }
           }
         ]
       }

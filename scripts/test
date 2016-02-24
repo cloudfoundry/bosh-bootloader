@@ -1,31 +1,12 @@
 #!/bin/bash -eu
 
-ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-GREEN="\033[0;32m"
-RED="\033[0;31m"
-NONE="\033[0m"
-
 function main() {
-	local exit_code
-	exit_code="0"
+	local root_dir
+	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-	pushd "${ROOT_DIRECTORY}" > /dev/null
-	  if [[ -n "${@}" ]]; then
-		  go test -v "${@}"
-	  else
-		set +e
-      	find . \( -path ./vendor -o -path ./.git \) -prune -o -name "*.go" -print0 | xargs -0 -n1 dirname | sort --unique | xargs go test -v
-		exit_code="${?}"
-		set -e
-	  fi
+	pushd "${root_dir}" > /dev/null
+		ginkgo -r -p -race -randomizeAllSpecs -randomizeSuites ${@}
 	popd > /dev/null
-
-	if [[ "${exit_code}" != "0" ]]; then
-		echo -e "\n${RED}FAILED!${NONE}"
-		exit 1
-	fi
-
-	echo -e "\n${GREEN}SUCCESS!${NONE}"
 }
 
 main "${@:-""}"

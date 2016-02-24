@@ -52,11 +52,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags) erro
 		return errors.New("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command.")
 	}
 
-	template.Parameters["KeyName"] = cloudformation.Parameter{
-		Type:        "AWS::EC2::KeyPair::KeyName",
-		Default:     state.KeyPair.Name,
-		Description: "SSH Keypair to use for instances",
-	}
+	template.SetKeyPairName(state.KeyPair.Name)
 
 	session, err := p.provider.Session(config)
 	if err != nil {

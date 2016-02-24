@@ -39,10 +39,6 @@ func (t TemplateBuilder) Build() Template {
 			Type:        "String",
 			Default:     "10.0.16.0/20",
 		},
-		"LoadBalancerCertName": Parameter{
-			Description: "Name of the SSL cert to use for the ELB.",
-			Type:        "String",
-		},
 	}
 
 	mappings := map[string]interface{}{
@@ -421,23 +417,6 @@ func (t TemplateBuilder) Build() Template {
 						LoadBalancerPort: "2222",
 						InstanceProtocol: "tcp",
 						InstancePort:     "2222",
-					},
-					{
-						Protocol:         "ssl",
-						LoadBalancerPort: "443",
-						InstanceProtocol: "tcp",
-						InstancePort:     "8080",
-						SSLCertificateId: map[string]interface{}{
-							"Fn::Join": []interface{}{
-								"",
-								[]interface{}{
-									"arn:aws:iam::",
-									Ref{"AWS::AccountId"},
-									":server-certificate/",
-									Ref{"LoadBalancerCertName"},
-								},
-							},
-						},
 					},
 				},
 			},

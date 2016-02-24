@@ -55,10 +55,6 @@ var _ = Describe("TemplateBuilder", func() {
 						Type:        "String",
 						Default:     "10.0.16.0/20",
 					},
-					"LoadBalancerCertName": {
-						Description: "Name of the SSL cert to use for the ELB.",
-						Type:        "String",
-					},
 				},
 				Mappings: map[string]interface{}{
 					"AWSNATAMI": map[string]cloudformation.AMI{
@@ -435,23 +431,6 @@ var _ = Describe("TemplateBuilder", func() {
 									LoadBalancerPort: "2222",
 									InstanceProtocol: "tcp",
 									InstancePort:     "2222",
-								},
-								{
-									Protocol:         "ssl",
-									LoadBalancerPort: "443",
-									InstanceProtocol: "tcp",
-									InstancePort:     "8080",
-									SSLCertificateId: map[string]interface{}{
-										"Fn::Join": []interface{}{
-											"",
-											[]interface{}{
-												"arn:aws:iam::",
-												cloudformation.Ref{"AWS::AccountId"},
-												":server-certificate/",
-												cloudformation.Ref{"LoadBalancerCertName"},
-											},
-										},
-									},
 								},
 							},
 						},
