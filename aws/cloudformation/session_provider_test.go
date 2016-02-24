@@ -1,21 +1,21 @@
-package ec2_test
+package cloudformation_test
 
 import (
 	goaws "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("SessionProvider", func() {
-	var provider ec2.SessionProvider
+	var provider cloudformation.SessionProvider
 
 	BeforeEach(func() {
-		provider = ec2.NewSessionProvider()
+		provider = cloudformation.NewSessionProvider()
 	})
 
 	Describe("Session", func() {
@@ -28,10 +28,10 @@ var _ = Describe("SessionProvider", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			_, ok := session.(ec2.Session)
+			_, ok := session.(cloudformation.Session)
 			Expect(ok).To(BeTrue())
 
-			client, ok := session.(*awsec2.EC2)
+			client, ok := session.(*awscloudformation.CloudFormation)
 			Expect(ok).To(BeTrue())
 
 			Expect(client.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))

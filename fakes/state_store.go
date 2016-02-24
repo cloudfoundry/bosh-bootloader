@@ -15,7 +15,8 @@ type StateStore struct {
 	}
 
 	GetCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			Dir string
 		}
 		Returns struct {
@@ -35,6 +36,7 @@ func (s *StateStore) Set(dir string, st state.State) error {
 
 func (s *StateStore) Get(dir string) (state.State, error) {
 	s.GetCall.Receives.Dir = dir
+	s.GetCall.CallCount++
 
 	return s.GetCall.Returns.State, s.GetCall.Returns.Error
 }

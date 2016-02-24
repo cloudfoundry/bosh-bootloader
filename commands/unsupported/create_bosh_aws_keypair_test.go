@@ -3,6 +3,7 @@ package unsupported_test
 import (
 	"errors"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
@@ -50,8 +51,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 		keypairRetriever *fakes.KeypairRetriever
 		keypairUploader  *fakes.KeypairUploader
 		stateStore       *fakes.StateStore
-		session          *fakes.Session
-		sessionProvider  *fakes.SessionProvider
+		session          *fakes.EC2Session
+		sessionProvider  *fakes.EC2SessionProvider
 	)
 
 	BeforeEach(func() {
@@ -60,8 +61,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 		keypairRetriever = &fakes.KeypairRetriever{}
 		stateStore = &fakes.StateStore{}
 
-		session = &fakes.Session{}
-		sessionProvider = &fakes.SessionProvider{}
+		session = &fakes.EC2Session{}
+		sessionProvider = &fakes.EC2SessionProvider{}
 		sessionProvider.SessionCall.Returns.Session = session
 
 		command = unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider, stateStore)
@@ -88,7 +89,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				EndpointOverride:   "some-endpoint-override",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(sessionProvider.SessionCall.Receives.Config).To(Equal(ec2.Config{
+			Expect(sessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
 				AccessKeyID:      "some-aws-access-key-id",
 				SecretAccessKey:  "some-aws-secret-access-key",
 				Region:           "some-aws-region",

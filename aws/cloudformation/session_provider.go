@@ -1,16 +1,15 @@
-package ec2
+package cloudformation
 
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 )
 
 type SessionProvider struct{}
 
 type Session interface {
-	ImportKeyPair(input *ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error)
-	DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.DescribeKeyPairsOutput, error)
+	CreateStack(input *awscloudformation.CreateStackInput) (*awscloudformation.CreateStackOutput, error)
 }
 
 func NewSessionProvider() SessionProvider {
@@ -21,6 +20,5 @@ func (s SessionProvider) Session(config aws.Config) (Session, error) {
 	if err := config.ValidateCredentials(); err != nil {
 		return nil, err
 	}
-
-	return ec2.New(session.New(config.SessionConfig())), nil
+	return awscloudformation.New(session.New(config.SessionConfig())), nil
 }

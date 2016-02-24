@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
@@ -31,7 +32,7 @@ type stateStore interface {
 }
 
 type sessionProvider interface {
-	Session(ec2.Config) (ec2.Session, error)
+	Session(aws.Config) (ec2.Session, error)
 }
 
 type CreateBoshAWSKeypair struct {
@@ -59,7 +60,7 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 		return err
 	}
 
-	config, err := getConfig(c.store, globalFlags.StateDir, ec2.Config{
+	config, err := getConfig(c.store, globalFlags.StateDir, aws.Config{
 		AccessKeyID:      globalFlags.AWSAccessKeyID,
 		SecretAccessKey:  globalFlags.AWSSecretAccessKey,
 		Region:           globalFlags.AWSRegion,
@@ -137,7 +138,7 @@ func verifyFingerprint(awsFingerprint string, privateKeyPem []byte) (bool, error
 	return true, nil
 }
 
-func (c CreateBoshAWSKeypair) generateAndUploadKeypair(session ec2.Session, config ec2.Config, stateDir string) error {
+func (c CreateBoshAWSKeypair) generateAndUploadKeypair(session ec2.Session, config aws.Config, stateDir string) error {
 	keypair, err := c.generator.Generate()
 	if err != nil {
 		return err
@@ -168,7 +169,7 @@ func (c CreateBoshAWSKeypair) generateAndUploadKeypair(session ec2.Session, conf
 	return nil
 }
 
-func getConfig(store stateStore, dir string, config ec2.Config) (ec2.Config, error) {
+func getConfig(store stateStore, dir string, config aws.Config) (aws.Config, error) {
 	state, err := store.Get(dir)
 	if err != nil {
 		return config, err

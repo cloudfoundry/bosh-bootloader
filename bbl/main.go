@@ -24,12 +24,15 @@ func main() {
 	keypairUploader := ec2.NewKeypairUploader()
 	keypairRetriever := ec2.NewKeypairRetriever()
 	stateStore := state.NewStore()
+	creator := cloudformation.NewStackCreator()
+	cloudformationSessionProvider := cloudformation.NewSessionProvider()
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
 		"unsupported-print-concourse-aws-template": unsupported.NewPrintConcourseAWSTemplate(os.Stdout, templateBuilder),
 		"unsupported-create-bosh-aws-keypair":      unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider, stateStore),
+		"unsupported-provision-aws-for-concourse":  unsupported.NewProvisionAWSForConcourse(stateStore, templateBuilder, creator, cloudformationSessionProvider),
 	}, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])
