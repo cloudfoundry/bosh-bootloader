@@ -33,7 +33,7 @@ func main() {
 		"unsupported-print-concourse-aws-template": unsupported.NewPrintConcourseAWSTemplate(os.Stdout, templateBuilder),
 		"unsupported-create-bosh-aws-keypair":      unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider, stateStore),
 		"unsupported-provision-aws-for-concourse":  unsupported.NewProvisionAWSForConcourse(stateStore, templateBuilder, creator, cloudformationSessionProvider),
-	}, commands.NewUsage(os.Stdout).Print)
+	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])
 	if err != nil {

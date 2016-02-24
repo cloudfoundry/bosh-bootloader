@@ -6,7 +6,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
 )
 
 type cloudformationSessionProvider interface {
@@ -39,13 +38,6 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags) erro
 		return err
 	}
 
-	config := getAWSConfig(state, aws.Config{
-		AccessKeyID:      globalFlags.AWSAccessKeyID,
-		SecretAccessKey:  globalFlags.AWSSecretAccessKey,
-		Region:           globalFlags.AWSRegion,
-		EndpointOverride: globalFlags.EndpointOverride,
-	})
-
 	template := p.builder.Build()
 
 	if state.KeyPair == nil {
@@ -54,7 +46,12 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags) erro
 
 	template.SetKeyPairName(state.KeyPair.Name)
 
-	session, err := p.provider.Session(config)
+	session, err := p.provider.Session(aws.Config{
+		AccessKeyID:      state.AWS.AccessKeyID,
+		SecretAccessKey:  state.AWS.SecretAccessKey,
+		Region:           state.AWS.Region,
+		EndpointOverride: globalFlags.EndpointOverride,
+	})
 	if err != nil {
 		return err
 	}
@@ -64,20 +61,4 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags) erro
 	}
 
 	return nil
-}
-
-func getAWSConfig(state state.State, config aws.Config) aws.Config {
-	if config.AccessKeyID == "" {
-		config.AccessKeyID = state.AWS.AccessKeyID
-	}
-
-	if config.SecretAccessKey == "" {
-		config.SecretAccessKey = state.AWS.SecretAccessKey
-	}
-
-	if config.Region == "" {
-		config.Region = state.AWS.Region
-	}
-
-	return config
 }

@@ -69,13 +69,18 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 	})
 
 	Describe("Execute", func() {
+		BeforeEach(func() {
+			stateStore.GetCall.Returns.State.AWS = state.AWS{
+				AccessKeyID:     "some-aws-access-key-id",
+				SecretAccessKey: "some-aws-secret-access-key",
+				Region:          "some-aws-region",
+			}
+		})
+
 		It("generates a new keypair", func() {
 			err := command.Execute(commands.GlobalFlags{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
-				EndpointOverride:   "some-endpoint-override",
-				StateDir:           "/some/state/dir",
+				EndpointOverride: "some-endpoint-override",
+				StateDir:         "/some/state/dir",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypairGenerator.GenerateCall.CallCount).To(Equal(1))
@@ -83,10 +88,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 
 		It("initializes a new session with the correct config", func() {
 			err := command.Execute(commands.GlobalFlags{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
-				EndpointOverride:   "some-endpoint-override",
+				EndpointOverride: "some-endpoint-override",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(sessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
@@ -104,34 +106,14 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			}
 
 			err := command.Execute(commands.GlobalFlags{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
-				EndpointOverride:   "some-endpoint-override",
-				StateDir:           "/some/state/dir",
+				EndpointOverride: "some-endpoint-override",
+				StateDir:         "/some/state/dir",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypairUploader.UploadCall.Receives.Session).To(Equal(session))
 			Expect(keypairUploader.UploadCall.Receives.Keypair).To(Equal(ec2.Keypair{
 				Name:      "some-name",
 				PublicKey: []byte("some-key"),
-			}))
-		})
-
-		It("stores the AWS credentials", func() {
-			err := command.Execute(commands.GlobalFlags{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
-				EndpointOverride:   "some-endpoint-override",
-				StateDir:           "/some/state/dir",
-			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
-			Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(state.AWS{
-				AccessKeyID:     "some-aws-access-key-id",
-				SecretAccessKey: "some-aws-secret-access-key",
-				Region:          "some-aws-region",
 			}))
 		})
 
@@ -143,11 +125,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			}
 
 			err := command.Execute(commands.GlobalFlags{
-				AWSAccessKeyID:     "some-aws-access-key-id",
-				AWSSecretAccessKey: "some-aws-secret-access-key",
-				AWSRegion:          "some-aws-region",
-				EndpointOverride:   "some-endpoint-override",
-				StateDir:           "/some/state/dir",
+				EndpointOverride: "some-endpoint-override",
+				StateDir:         "/some/state/dir",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
@@ -173,11 +152,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				}
 
 				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
+					EndpointOverride: "some-endpoint-override",
+					StateDir:         "/some/state/dir",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -200,11 +176,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				keypairRetriever.RetrieveCall.Returns.Error = ec2.KeyPairNotFound
 
 				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
+					EndpointOverride: "some-endpoint-override",
+					StateDir:         "/some/state/dir",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -242,11 +215,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					}
 
 					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:     "some-aws-access-key-id",
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						AWSRegion:          "some-aws-region",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
+						EndpointOverride: "some-endpoint-override",
+						StateDir:         "/some/state/dir",
 					})
 
 					Expect(err).To(MatchError("the local keypair fingerprint does not match the " +
@@ -262,11 +232,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					stateStore.GetCall.Returns.Error = errors.New("something bad happened")
 
 					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:     "some-aws-access-key-id",
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						AWSRegion:          "some-aws-region",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
+						EndpointOverride: "some-endpoint-override",
+						StateDir:         "/some/state/dir",
 					})
 					Expect(err).To(MatchError("something bad happened"))
 				})
@@ -281,11 +248,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					keypairRetriever.RetrieveCall.Returns.Error = errors.New("something bad happened")
 
 					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:     "some-aws-access-key-id",
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						AWSRegion:          "some-aws-region",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
+						EndpointOverride: "some-endpoint-override",
+						StateDir:         "/some/state/dir",
 					})
 					Expect(err).To(MatchError("something bad happened"))
 				})
@@ -303,11 +267,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					}
 
 					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:     "some-aws-access-key-id",
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						AWSRegion:          "some-aws-region",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
+						EndpointOverride: "some-endpoint-override",
+						StateDir:         "/some/state/dir",
 					})
 					Expect(err).To(MatchError("the local keypair does not contain a valid PEM encoded private key, please open an " +
 						"issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance."))
@@ -334,11 +295,8 @@ CwIDAQAB
 					}
 
 					err := command.Execute(commands.GlobalFlags{
-						AWSAccessKeyID:     "some-aws-access-key-id",
-						AWSSecretAccessKey: "some-aws-secret-access-key",
-						AWSRegion:          "some-aws-region",
-						EndpointOverride:   "some-endpoint-override",
-						StateDir:           "/some/state/dir",
+						EndpointOverride: "some-endpoint-override",
+						StateDir:         "/some/state/dir",
 					})
 					Expect(err).To(MatchError("the local keypair does not contain a valid rsa private key, please open an issue " +
 						"at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance."))
@@ -351,11 +309,8 @@ CwIDAQAB
 				keypairGenerator.GenerateCall.Returns.Error = errors.New("generate keys failed")
 
 				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
+					EndpointOverride: "some-endpoint-override",
+					StateDir:         "/some/state/dir",
 				})
 				Expect(err).To(MatchError("generate keys failed"))
 			})
@@ -364,36 +319,28 @@ CwIDAQAB
 				keypairUploader.UploadCall.Returns.Error = errors.New("upload keys failed")
 
 				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
+					EndpointOverride: "some-endpoint-override",
+					StateDir:         "/some/state/dir",
 				})
 				Expect(err).To(MatchError("upload keys failed"))
 			})
 
 			It("returns an error when state store fails", func() {
-				stateStore.SetCall.Returns.Error = errors.New("state store merge failed")
+				stateStore.SetCall.Returns.Error = errors.New("state store set failed")
 
 				err := command.Execute(commands.GlobalFlags{
-					AWSAccessKeyID:     "some-aws-access-key-id",
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
+					EndpointOverride: "some-endpoint-override",
+					StateDir:         "/some/state/dir",
 				})
-				Expect(err).To(MatchError("state store merge failed"))
+				Expect(err).To(MatchError("state store set failed"))
 			})
 
 			It("returns an error when the session provided fails", func() {
 				sessionProvider.SessionCall.Returns.Error = errors.New("failed to create session")
 
 				err := command.Execute(commands.GlobalFlags{
-					AWSSecretAccessKey: "some-aws-secret-access-key",
-					AWSRegion:          "some-aws-region",
-					EndpointOverride:   "some-endpoint-override",
-					StateDir:           "/some/state/dir",
+					EndpointOverride: "some-endpoint-override",
+					StateDir:         "/some/state/dir",
 				})
 				Expect(err).To(MatchError("failed to create session"))
 			})

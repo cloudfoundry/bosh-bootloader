@@ -55,23 +55,16 @@ func NewCreateBoshAWSKeypair(retriever keypairRetriever, generator keypairGenera
 
 func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 	s, err := c.store.Get(globalFlags.StateDir)
-
 	if err != nil {
 		return err
 	}
 
-	config, err := getConfig(c.store, globalFlags.StateDir, aws.Config{
-		AccessKeyID:      globalFlags.AWSAccessKeyID,
-		SecretAccessKey:  globalFlags.AWSSecretAccessKey,
-		Region:           globalFlags.AWSRegion,
+	session, err := c.provider.Session(aws.Config{
+		AccessKeyID:      s.AWS.AccessKeyID,
+		SecretAccessKey:  s.AWS.SecretAccessKey,
+		Region:           s.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
-
-	if err != nil {
-		return err
-	}
-
-	session, err := c.provider.Session(config)
 	if err != nil {
 		return err
 	}
@@ -101,7 +94,18 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 		}
 	}
 
-	if err := c.generateAndUploadKeypair(session, config, globalFlags.StateDir); err != nil {
+	keypair, err := c.generateAndUploadKeypair(session)
+	if err != nil {
+		return err
+	}
+
+	s.KeyPair = &state.KeyPair{
+		Name:       keypair.Name,
+		PrivateKey: string(keypair.PrivateKey),
+		PublicKey:  string(keypair.PublicKey),
+	}
+
+	if err = c.store.Set(globalFlags.StateDir, s); err != nil {
 		return err
 	}
 
@@ -138,54 +142,16 @@ func verifyFingerprint(awsFingerprint string, privateKeyPem []byte) (bool, error
 	return true, nil
 }
 
-func (c CreateBoshAWSKeypair) generateAndUploadKeypair(session ec2.Session, config aws.Config, stateDir string) error {
+func (c CreateBoshAWSKeypair) generateAndUploadKeypair(session ec2.Session) (ec2.Keypair, error) {
 	keypair, err := c.generator.Generate()
 	if err != nil {
-		return err
+		return ec2.Keypair{}, err
 	}
 
 	err = c.uploader.Upload(session, keypair)
 	if err != nil {
-		return err
+		return ec2.Keypair{}, err
 	}
 
-	err = c.store.Set(stateDir, state.State{
-		AWS: state.AWS{
-			AccessKeyID:     config.AccessKeyID,
-			SecretAccessKey: config.SecretAccessKey,
-			Region:          config.Region,
-		},
-		KeyPair: &state.KeyPair{
-			Name:       keypair.Name,
-			PublicKey:  string(keypair.PublicKey),
-			PrivateKey: string(keypair.PrivateKey),
-		},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func getConfig(store stateStore, dir string, config aws.Config) (aws.Config, error) {
-	state, err := store.Get(dir)
-	if err != nil {
-		return config, err
-	}
-
-	if config.AccessKeyID == "" {
-		config.AccessKeyID = state.AWS.AccessKeyID
-	}
-
-	if config.SecretAccessKey == "" {
-		config.SecretAccessKey = state.AWS.SecretAccessKey
-	}
-
-	if config.Region == "" {
-		config.Region = state.AWS.Region
-	}
-
-	return config, nil
+	return keypair, nil
 }
