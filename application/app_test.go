@@ -117,7 +117,25 @@ var _ = Describe("App", func() {
 							Name: "some-keypair",
 						},
 					}))
+				})
 
+				Context("when the state has not changed", func() {
+					It("does not store the state again", func() {
+						stateStore.GetCall.Returns.State = state.State{
+							KeyPair: &state.KeyPair{
+								Name: "some-keypair",
+							},
+						}
+
+						Expect(app.Run([]string{
+							"--endpoint-override", "some-endpoint-override",
+							"--state-dir", "/some/state/dir",
+							"some",
+						})).To(Succeed())
+
+						Expect(stateStore.GetCall.Receives.Dir).To(Equal("/some/state/dir"))
+						Expect(stateStore.SetCall.CallCount).To(Equal(0))
+					})
 				})
 
 				It("executes the command with those flags", func() {
@@ -154,6 +172,7 @@ var _ = Describe("App", func() {
 			It("returns an error when the store can not be written to", func() {
 				stateStore.SetCall.Returns.Error = errors.New("could not write to the store")
 				err := app.Run([]string{
+					"--aws-region", "some-aws-region",
 					"--state-dir", "/some/state/dir",
 				})
 

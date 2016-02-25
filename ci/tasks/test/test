@@ -6,8 +6,5 @@ mkdir -p "${GOPATH}/src/github.com/pivotal-cf-experimental"
 
 pushd "${GOPATH}/src/github.com/pivotal-cf-experimental" > /dev/null
   ln -s "${ROOT}/bosh-bootloader"
-
-  go run bosh-bootloader/bbl/main.go --version
-
   chpst -u bbluser:bbluser ./bosh-bootloader/scripts/test
 popd > /dev/null

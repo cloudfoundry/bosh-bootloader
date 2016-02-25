@@ -96,6 +96,8 @@ func (a App) storeGlobalConfig(globals commands.GlobalFlags) error {
 		return err
 	}
 
+	oldState := s
+
 	if globals.AWSAccessKeyID != "" {
 		s.AWS.AccessKeyID = globals.AWSAccessKeyID
 	}
@@ -106,6 +108,10 @@ func (a App) storeGlobalConfig(globals commands.GlobalFlags) error {
 
 	if globals.AWSRegion != "" {
 		s.AWS.Region = globals.AWSRegion
+	}
+
+	if oldState == s {
+		return nil
 	}
 
 	err = a.store.Set(globals.StateDir, s)
