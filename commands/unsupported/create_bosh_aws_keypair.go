@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -81,7 +80,7 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags, state st
 		}
 
 		if !fingerprintMatches {
-			return state, errors.New("the local keypair fingerprint does not match the keypair fingerprint on AWS, please open an issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance.")
+			return state, NewIssue("the local keypair fingerprint does not match the keypair fingerprint on AWS")
 		}
 
 		return state, nil
@@ -104,12 +103,12 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags, state st
 func verifyFingerprint(awsFingerprint string, privateKeyPem []byte) (bool, error) {
 	pem, _ := pem.Decode(privateKeyPem)
 	if pem == nil {
-		return false, errors.New("the local keypair does not contain a valid PEM encoded private key, please open an issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance.")
+		return false, NewIssue("the local keypair does not contain a valid PEM encoded private key")
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(pem.Bytes)
 	if err != nil {
-		return false, errors.New("the local keypair does not contain a valid rsa private key, please open an issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance.")
+		return false, NewIssue("the local keypair does not contain a valid rsa private key")
 	}
 
 	pkeyBytes, err := x509.MarshalPKIXPublicKey(privateKey.Public())
