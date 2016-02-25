@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 var _ = Describe("bbl", func() {
@@ -21,8 +21,8 @@ var _ = Describe("bbl", func() {
 		It("creates and applies a cloudformation template", func() {
 			tempDir, err := ioutil.TempDir("", "")
 
-			state := state.State{
-				KeyPair: &state.KeyPair{
+			state := storage.State{
+				KeyPair: &storage.KeyPair{
 					Name: "some-keypair-name",
 				},
 			}

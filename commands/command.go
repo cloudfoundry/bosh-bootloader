@@ -1,7 +1,7 @@
 package commands
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/state"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 type Command interface {
-	Execute(GlobalFlags, state.State) (state.State, error)
+	Execute(GlobalFlags, storage.State) (storage.State, error)
 }

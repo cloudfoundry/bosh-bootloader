@@ -1,4 +1,4 @@
-package state
+package storage
 
 import (
 	"encoding/json"
@@ -54,21 +54,21 @@ func (s Store) Set(dir string, state State) error {
 }
 
 func (Store) Get(dir string) (State, error) {
-	s := State{}
+	state := State{}
 	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return s, nil
+			return state, nil
 		}
-		return s, err
+		return state, err
 	}
 
-	err = json.NewDecoder(file).Decode(&s)
+	err = json.NewDecoder(file).Decode(&state)
 	if err != nil {
-		return s, err
+		return state, err
 	}
 
-	return s, nil
+	return state, nil
 }
 
 func encodeFile(w io.Writer, v interface{}) error {

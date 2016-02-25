@@ -1,4 +1,4 @@
-package state_test
+package storage_test
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,12 +15,12 @@ import (
 
 var _ = Describe("Store", func() {
 	var (
-		store   state.Store
+		store   storage.Store
 		tempDir string
 	)
 
 	BeforeEach(func() {
-		store = state.NewStore()
+		store = storage.NewStore()
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
@@ -28,18 +28,18 @@ var _ = Describe("Store", func() {
 	})
 
 	AfterEach(func() {
-		state.ResetEncode()
+		storage.ResetEncode()
 	})
 
 	Describe("Set", func() {
 		It("stores the aws credentials", func() {
-			err := store.Set(tempDir, state.State{
-				AWS: state.AWS{
+			err := store.Set(tempDir, storage.State{
+				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-region",
 				},
-				KeyPair: &state.KeyPair{
+				KeyPair: &storage.KeyPair{
 					Name:       "some-name",
 					PrivateKey: "some-private",
 					PublicKey:  "some-public",
@@ -69,16 +69,16 @@ var _ = Describe("Store", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = store.Set(tempDir, state.State{})
+				err = store.Set(tempDir, storage.State{})
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 
 			It("fails to write the state.json file", func() {
-				state.SetEncode(func(io.Writer, interface{}) error {
+				storage.SetEncode(func(io.Writer, interface{}) error {
 					return errors.New("failed to encode")
 				})
 
-				err := store.Set(tempDir, state.State{})
+				err := store.Set(tempDir, storage.State{})
 				Expect(err).To(MatchError("failed to encode"))
 			})
 		})
@@ -101,17 +101,17 @@ var _ = Describe("Store", func() {
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-			s, err := store.Get(tempDir)
+			state, err := store.Get(tempDir)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(s).To(Equal(state.State{
+			Expect(state).To(Equal(storage.State{
 				Version: 1,
-				AWS: state.AWS{
+				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-aws-region",
 				},
-				KeyPair: &state.KeyPair{
+				KeyPair: &storage.KeyPair{
 					Name:       "some-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
@@ -121,10 +121,10 @@ var _ = Describe("Store", func() {
 
 		Context("when the state.json file doesn't exist", func() {
 			It("returns an empty state object", func() {
-				s, err := store.Get(tempDir)
+				state, err := store.Get(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(s).To(Equal(state.State{}))
+				Expect(state).To(Equal(storage.State{}))
 			})
 		})
 

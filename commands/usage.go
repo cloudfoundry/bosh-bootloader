@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 const USAGE = `
@@ -37,9 +37,9 @@ func NewUsage(stdout io.Writer) Usage {
 	return Usage{stdout}
 }
 
-func (u Usage) Execute(globalFlags GlobalFlags, s state.State) (state.State, error) {
+func (u Usage) Execute(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	u.Print()
-	return s, nil
+	return state, nil
 }
 
 func (u Usage) Print() {

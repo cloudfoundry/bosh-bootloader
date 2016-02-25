@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,7 +24,7 @@ var _ = Describe("Usage", func() {
 
 	Describe("Execute", func() {
 		It("prints out the usage information", func() {
-			_, err := usage.Execute(commands.GlobalFlags{}, state.State{})
+			_, err := usage.Execute(commands.GlobalFlags{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout.String()).To(Equal(strings.TrimSpace(`
 Usage:
@@ -49,11 +49,11 @@ Commands:
 		})
 
 		It("returns the given state unmodified", func() {
-			s, err := usage.Execute(commands.GlobalFlags{}, state.State{
+			state, err := usage.Execute(commands.GlobalFlags{}, storage.State{
 				Version: 2,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(s).To(Equal(state.State{
+			Expect(state).To(Equal(storage.State{
 				Version: 2,
 			}))
 		})

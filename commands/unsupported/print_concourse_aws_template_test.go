@@ -7,7 +7,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,7 +53,7 @@ var _ = Describe("PrintConcourseAWSTemplate", func() {
 		})
 
 		It("prints a CloudFormation template", func() {
-			_, err := command.Execute(commands.GlobalFlags{}, state.State{})
+			_, err := command.Execute(commands.GlobalFlags{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stdout.String()).To(MatchJSON(`{
@@ -83,11 +83,11 @@ var _ = Describe("PrintConcourseAWSTemplate", func() {
 		})
 
 		It("returns the given state unmodified", func() {
-			s, err := command.Execute(commands.GlobalFlags{}, state.State{
+			state, err := command.Execute(commands.GlobalFlags{}, storage.State{
 				Version: 10,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(s).To(Equal(state.State{
+			Expect(state).To(Equal(storage.State{
 				Version: 10,
 			}))
 		})
@@ -105,7 +105,7 @@ var _ = Describe("PrintConcourseAWSTemplate", func() {
 						},
 					}
 
-					_, err := command.Execute(commands.GlobalFlags{}, state.State{})
+					_, err := command.Execute(commands.GlobalFlags{}, storage.State{})
 					Expect(err).To(MatchError(ContainSubstring("unsupported type: func() string")))
 				})
 			})

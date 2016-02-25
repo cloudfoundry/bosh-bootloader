@@ -8,7 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -22,7 +22,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			creator         *fakes.StackCreator
 			session         *fakes.CloudFormationSession
 			sessionProvider *fakes.CloudFormationSessionProvider
-			incomingState   state.State
+			incomingState   storage.State
 		)
 
 		BeforeEach(func() {
@@ -44,13 +44,13 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				Resources:                map[string]cloudformation.Resource{},
 			}
 
-			incomingState = state.State{
-				AWS: state.AWS{
+			incomingState = storage.State{
+				AWS: storage.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
 					AccessKeyID:     "some-access-key-id",
 				},
-				KeyPair: &state.KeyPair{
+				KeyPair: &storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
@@ -88,7 +88,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 		Context("when there is no keypair", func() {
 			It("returns an error when a keypair does not exist", func() {
-				_, err := command.Execute(commands.GlobalFlags{}, state.State{})
+				_, err := command.Execute(commands.GlobalFlags{}, storage.State{})
 				Expect(err).To(MatchError("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command."))
 			})
 		})

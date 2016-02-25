@@ -8,7 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -67,11 +67,11 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 	})
 
 	Describe("Execute", func() {
-		var incomingState state.State
+		var incomingState storage.State
 
 		BeforeEach(func() {
-			incomingState = state.State{
-				AWS: state.AWS{
+			incomingState = storage.State{
+				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-aws-region",
@@ -126,19 +126,19 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				PrivateKey: []byte("some-private-key"),
 			}
 
-			s, err := command.Execute(commands.GlobalFlags{
+			state, err := command.Execute(commands.GlobalFlags{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "/some/state/dir",
 			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(s).To(Equal(state.State{
-				AWS: state.AWS{
+			Expect(state).To(Equal(storage.State{
+				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-aws-region",
 				},
-				KeyPair: &state.KeyPair{
+				KeyPair: &storage.KeyPair{
 					Name:       "some-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
@@ -148,8 +148,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 
 		Context("idempotently generates a keypair", func() {
 			It("uses the keypair in the store if it matches the keypair in AWS", func() {
-				incomingState = state.State{
-					KeyPair: &state.KeyPair{
+				incomingState = storage.State{
+					KeyPair: &storage.KeyPair{
 						Name:       "some-name",
 						PrivateKey: privateKey,
 					},
@@ -174,8 +174,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			})
 
 			It("uploads the keypair in the store if the keypair does not exist on AWS", func() {
-				incomingState = state.State{
-					KeyPair: &state.KeyPair{
+				incomingState = storage.State{
+					KeyPair: &storage.KeyPair{
 						Name:      "some-name",
 						PublicKey: "some-public-key",
 					},
@@ -209,8 +209,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 						PublicKey: []byte("some-new-public-key"),
 					}
 
-					incomingState = state.State{
-						KeyPair: &state.KeyPair{
+					incomingState = storage.State{
+						KeyPair: &storage.KeyPair{
 							Name:       "some-name",
 							PrivateKey: privateKey,
 						},
@@ -235,8 +235,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				})
 
 				It("returns an error when the keypair can not be retrieved", func() {
-					incomingState = state.State{
-						KeyPair: &state.KeyPair{
+					incomingState = storage.State{
+						KeyPair: &storage.KeyPair{
 							Name:       "some-name",
 							PrivateKey: privateKey,
 						},
@@ -251,8 +251,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				})
 
 				It("returns an error when the private key is not in PEM format", func() {
-					incomingState = state.State{
-						KeyPair: &state.KeyPair{
+					incomingState = storage.State{
+						KeyPair: &storage.KeyPair{
 							Name:       "some-name",
 							PrivateKey: "some-private-key",
 						},
@@ -272,8 +272,8 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				})
 
 				It("returns an error when the private key is not a valid rsa private key", func() {
-					incomingState = state.State{
-						KeyPair: &state.KeyPair{
+					incomingState = storage.State{
+						KeyPair: &storage.KeyPair{
 							Name: "some-name",
 							PrivateKey: `-----BEGIN RSA PRIVATE KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvXMDyDguAnAQqQF0mAff

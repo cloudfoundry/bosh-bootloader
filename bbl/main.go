@@ -11,7 +11,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -23,7 +23,7 @@ func main() {
 	keypairGenerator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator.Generate, rsa.GenerateKey, ssh.NewPublicKey)
 	keypairUploader := ec2.NewKeypairUploader()
 	keypairRetriever := ec2.NewKeypairRetriever()
-	stateStore := state.NewStore()
+	stateStore := storage.NewStore()
 	creator := cloudformation.NewStackCreator()
 	cloudformationSessionProvider := cloudformation.NewSessionProvider()
 

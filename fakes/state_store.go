@@ -1,13 +1,13 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/state"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 type StateStore struct {
 	SetCall struct {
 		CallCount int
 		Receives  struct {
 			Dir   string
-			State state.State
+			State storage.State
 		}
 		Returns struct {
 			Error error
@@ -20,21 +20,21 @@ type StateStore struct {
 			Dir string
 		}
 		Returns struct {
-			State state.State
+			State storage.State
 			Error error
 		}
 	}
 }
 
-func (s *StateStore) Set(dir string, st state.State) error {
+func (s *StateStore) Set(dir string, state storage.State) error {
 	s.SetCall.CallCount++
 	s.SetCall.Receives.Dir = dir
-	s.SetCall.Receives.State = st
+	s.SetCall.Receives.State = state
 
 	return s.SetCall.Returns.Error
 }
 
-func (s *StateStore) Get(dir string) (state.State, error) {
+func (s *StateStore) Get(dir string) (storage.State, error) {
 	s.GetCall.Receives.Dir = dir
 	s.GetCall.CallCount++
 

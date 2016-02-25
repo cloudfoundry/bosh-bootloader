@@ -6,7 +6,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 type cloudformationSessionProvider interface {
@@ -31,28 +31,28 @@ func NewProvisionAWSForConcourse(builder templateBuilder, creator cloudformation
 	}
 }
 
-func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s state.State) (state.State, error) {
+func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
 	template := p.builder.Build()
 
-	if s.KeyPair == nil {
-		return s, errors.New("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command.")
+	if state.KeyPair == nil {
+		return state, errors.New("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command.")
 	}
 
-	template.SetKeyPairName(s.KeyPair.Name)
+	template.SetKeyPairName(state.KeyPair.Name)
 
 	session, err := p.provider.Session(aws.Config{
-		AccessKeyID:      s.AWS.AccessKeyID,
-		SecretAccessKey:  s.AWS.SecretAccessKey,
-		Region:           s.AWS.Region,
+		AccessKeyID:      state.AWS.AccessKeyID,
+		SecretAccessKey:  state.AWS.SecretAccessKey,
+		Region:           state.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
 	if err != nil {
-		return s, err
+		return state, err
 	}
 
 	if err := p.creator.Create(session, "concourse", template); err != nil {
-		return s, err
+		return state, err
 	}
 
-	return s, nil
+	return state, nil
 }

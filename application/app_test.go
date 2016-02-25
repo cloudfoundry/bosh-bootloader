@@ -6,7 +6,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,14 +14,14 @@ import (
 
 type setNewKeyPairName struct{}
 
-func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, s state.State) (state.State, error) {
-	s.KeyPair = &state.KeyPair{
+func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, state storage.State) (storage.State, error) {
+	state.KeyPair = &storage.KeyPair{
 		Name:       "some-new-keypair-name",
-		PublicKey:  s.KeyPair.PublicKey,
-		PrivateKey: s.KeyPair.PrivateKey,
+		PublicKey:  state.KeyPair.PublicKey,
+		PrivateKey: state.KeyPair.PrivateKey,
 	}
 
-	return s, nil
+	return state, nil
 }
 
 var _ = Describe("App", func() {
@@ -52,7 +52,7 @@ var _ = Describe("App", func() {
 			"set-new-keypair-name": setNewKeyPairName{},
 		},
 			stateStore,
-			func() { helpCmd.Execute(commands.GlobalFlags{}, state.State{}) })
+			func() { helpCmd.Execute(commands.GlobalFlags{}, storage.State{}) })
 	})
 
 	Describe("Run", func() {
@@ -104,8 +104,8 @@ var _ = Describe("App", func() {
 			})
 
 			It("save state when the command has modified the state", func() {
-				stateStore.GetCall.Returns.State = state.State{
-					KeyPair: &state.KeyPair{
+				stateStore.GetCall.Returns.State = storage.State{
+					KeyPair: &storage.KeyPair{
 						Name:       "some-keypair-name",
 						PrivateKey: "some-private-key",
 					},
@@ -120,7 +120,7 @@ var _ = Describe("App", func() {
 					"set-new-keypair-name",
 				})).To(Succeed())
 
-				Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(&state.KeyPair{
+				Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(&storage.KeyPair{
 					Name:       "some-new-keypair-name",
 					PrivateKey: "some-private-key",
 				}))
@@ -128,8 +128,8 @@ var _ = Describe("App", func() {
 
 			Context("when global flags are provided", func() {
 				It("stores the flags in the state store", func() {
-					stateStore.GetCall.Returns.State = state.State{
-						KeyPair: &state.KeyPair{
+					stateStore.GetCall.Returns.State = storage.State{
+						KeyPair: &storage.KeyPair{
 							Name: "some-keypair-name",
 						},
 					}
@@ -146,13 +146,13 @@ var _ = Describe("App", func() {
 					Expect(stateStore.GetCall.Receives.Dir).To(Equal("/some/state/dir"))
 
 					Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
-					Expect(stateStore.SetCall.Receives.State).To(Equal(state.State{
-						AWS: state.AWS{
+					Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+						AWS: storage.AWS{
 							Region:          "some-aws-region",
 							SecretAccessKey: "some-aws-secret-access-key",
 							AccessKeyID:     "some-aws-access-key-id",
 						},
-						KeyPair: &state.KeyPair{
+						KeyPair: &storage.KeyPair{
 							Name: "some-keypair-name",
 						},
 					}))
@@ -160,8 +160,8 @@ var _ = Describe("App", func() {
 
 				Context("when the state has not changed", func() {
 					It("does not store the state again", func() {
-						stateStore.GetCall.Returns.State = state.State{
-							KeyPair: &state.KeyPair{
+						stateStore.GetCall.Returns.State = storage.State{
+							KeyPair: &storage.KeyPair{
 								Name: "some-new-keypair-name",
 							},
 						}
