@@ -26,11 +26,6 @@ type keypairUploader interface {
 	Upload(ec2.Session, ec2.Keypair) error
 }
 
-type stateStore interface {
-	Set(directory string, s state.State) error
-	Get(director string) (state.State, error)
-}
-
 type sessionProvider interface {
 	Session(aws.Config) (ec2.Session, error)
 }
@@ -40,25 +35,18 @@ type CreateBoshAWSKeypair struct {
 	generator keypairGenerator
 	uploader  keypairUploader
 	provider  sessionProvider
-	store     stateStore
 }
 
-func NewCreateBoshAWSKeypair(retriever keypairRetriever, generator keypairGenerator, uploader keypairUploader, provider sessionProvider, store stateStore) CreateBoshAWSKeypair {
+func NewCreateBoshAWSKeypair(retriever keypairRetriever, generator keypairGenerator, uploader keypairUploader, provider sessionProvider) CreateBoshAWSKeypair {
 	return CreateBoshAWSKeypair{
 		retriever: retriever,
 		generator: generator,
 		uploader:  uploader,
 		provider:  provider,
-		store:     store,
 	}
 }
 
-func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
-	s, err := c.store.Get(globalFlags.StateDir)
-	if err != nil {
-		return err
-	}
-
+func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags, s state.State) (state.State, error) {
 	session, err := c.provider.Session(aws.Config{
 		AccessKeyID:      s.AWS.AccessKeyID,
 		SecretAccessKey:  s.AWS.SecretAccessKey,
@@ -66,37 +54,42 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
 	if err != nil {
-		return err
+		return s, err
 	}
 
 	if s.KeyPair != nil {
 		keyInfo, err := c.retriever.Retrieve(session, s.KeyPair.Name)
 		if err != nil {
 			if err != ec2.KeyPairNotFound {
-				return err
+				return s, err
 			}
 
-			return c.uploader.Upload(session, ec2.Keypair{
+			err := c.uploader.Upload(session, ec2.Keypair{
 				Name:      s.KeyPair.Name,
 				PublicKey: []byte(s.KeyPair.PublicKey),
 			})
+			if err != nil {
+				return s, err
+			}
+
+			return s, nil
 		}
 
 		fingerprintMatches, err := verifyFingerprint(keyInfo.Fingerprint, []byte(s.KeyPair.PrivateKey))
 		if err != nil {
-			return err
+			return s, err
 		}
 
-		if fingerprintMatches {
-			return nil
-		} else {
-			return errors.New("the local keypair fingerprint does not match the keypair fingerprint on AWS, please open an issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance.")
+		if !fingerprintMatches {
+			return s, errors.New("the local keypair fingerprint does not match the keypair fingerprint on AWS, please open an issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance.")
 		}
+
+		return s, nil
 	}
 
 	keypair, err := c.generateAndUploadKeypair(session)
 	if err != nil {
-		return err
+		return s, err
 	}
 
 	s.KeyPair = &state.KeyPair{
@@ -105,11 +98,7 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags) error {
 		PublicKey:  string(keypair.PublicKey),
 	}
 
-	if err = c.store.Set(globalFlags.StateDir, s); err != nil {
-		return err
-	}
-
-	return nil
+	return s, nil
 }
 
 func verifyFingerprint(awsFingerprint string, privateKeyPem []byte) (bool, error) {

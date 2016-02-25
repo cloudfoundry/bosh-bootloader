@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
 )
 
 const USAGE = `
@@ -35,9 +37,9 @@ func NewUsage(stdout io.Writer) Usage {
 	return Usage{stdout}
 }
 
-func (u Usage) Execute(globalFlags GlobalFlags) error {
+func (u Usage) Execute(globalFlags GlobalFlags, s state.State) (state.State, error) {
 	u.Print()
-	return nil
+	return s, nil
 }
 
 func (u Usage) Print() {

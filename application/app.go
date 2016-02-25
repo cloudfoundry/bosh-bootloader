@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -42,14 +43,21 @@ func (a App) Run(args []string) error {
 		return err
 	}
 
-	err = a.storeGlobalConfig(cfg.GlobalFlags)
+	s, err := a.store.Get(cfg.GlobalFlags.StateDir)
 	if err != nil {
 		return err
 	}
 
-	err = a.execute(cfg)
+	newState, err := a.execute(cfg, a.applyGlobalConfig(cfg.GlobalFlags, s))
 	if err != nil {
 		return err
+	}
+
+	if !reflect.DeepEqual(newState, s) {
+		err = a.store.Set(cfg.GlobalFlags.StateDir, newState)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -90,14 +98,7 @@ func (a App) configure(args []string) (config, error) {
 	return cfg, nil
 }
 
-func (a App) storeGlobalConfig(globals commands.GlobalFlags) error {
-	s, err := a.store.Get(globals.StateDir)
-	if err != nil {
-		return err
-	}
-
-	oldState := s
-
+func (a App) applyGlobalConfig(globals commands.GlobalFlags, s state.State) state.State {
 	if globals.AWSAccessKeyID != "" {
 		s.AWS.AccessKeyID = globals.AWSAccessKeyID
 	}
@@ -110,29 +111,20 @@ func (a App) storeGlobalConfig(globals commands.GlobalFlags) error {
 		s.AWS.Region = globals.AWSRegion
 	}
 
-	if oldState == s {
-		return nil
-	}
-
-	err = a.store.Set(globals.StateDir, s)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s
 }
 
-func (a App) execute(cfg config) error {
+func (a App) execute(cfg config, s state.State) (state.State, error) {
 	cmd, ok := a.commands[cfg.Command]
 	if !ok {
 		a.usage()
-		return fmt.Errorf("unknown command: %s", cfg.Command)
+		return s, fmt.Errorf("unknown command: %s", cfg.Command)
 	}
 
-	err := cmd.Execute(cfg.GlobalFlags)
+	s, err := cmd.Execute(cfg.GlobalFlags, s)
 	if err != nil {
-		return err
+		return s, err
 	}
 
-	return nil
+	return s, nil
 }

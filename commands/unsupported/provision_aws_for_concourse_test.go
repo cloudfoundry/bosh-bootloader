@@ -19,14 +19,13 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 		var (
 			command         unsupported.ProvisionAWSForConcourse
 			builder         *fakes.TemplateBuilder
-			stateStore      *fakes.StateStore
 			creator         *fakes.StackCreator
 			session         *fakes.CloudFormationSession
 			sessionProvider *fakes.CloudFormationSessionProvider
+			incomingState   state.State
 		)
 
 		BeforeEach(func() {
-			stateStore = &fakes.StateStore{}
 			builder = &fakes.TemplateBuilder{}
 
 			session = &fakes.CloudFormationSession{}
@@ -35,7 +34,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 			creator = &fakes.StackCreator{}
 
-			command = unsupported.NewProvisionAWSForConcourse(stateStore, builder, creator, sessionProvider)
+			command = unsupported.NewProvisionAWSForConcourse(builder, creator, sessionProvider)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -45,7 +44,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				Resources:                map[string]cloudformation.Resource{},
 			}
 
-			stateStore.GetCall.Returns.State = state.State{
+			incomingState = state.State{
 				AWS: state.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
@@ -61,10 +60,9 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 		})
 
 		It("creates a stack with the keypair given in the state dir", func() {
-			err := command.Execute(commands.GlobalFlags{})
+			_, err := command.Execute(commands.GlobalFlags{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stateStore.GetCall.CallCount).To(Equal(1))
 			Expect(creator.CreateCall.Receives.Session).To(Equal(session))
 
 			buf, err := json.MarshalIndent(creator.CreateCall.Receives.Template, "", "  ")
@@ -82,36 +80,31 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			}`))
 
 		})
-		Context("when there is no keypair", func() {
-			BeforeEach(func() {
-				stateStore.GetCall.Returns.State = state.State{}
-			})
 
+		It("returns the given state unmodified", func() {
+			_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("when there is no keypair", func() {
 			It("returns an error when a keypair does not exist", func() {
-				err := command.Execute(commands.GlobalFlags{})
+				_, err := command.Execute(commands.GlobalFlags{}, state.State{})
 				Expect(err).To(MatchError("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command."))
 			})
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the store can not be read from", func() {
-				stateStore.GetCall.Returns.Error = errors.New("error reading from store")
-
-				err := command.Execute(commands.GlobalFlags{})
-				Expect(err).To(MatchError("error reading from store"))
-			})
-
 			It("returns an error when the session can not be created", func() {
 				sessionProvider.SessionCall.Returns.Error = errors.New("error creating session")
 
-				err := command.Execute(commands.GlobalFlags{})
+				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
 				Expect(err).To(MatchError("error creating session"))
 			})
 
 			It("returns an error when the stack can not be created", func() {
 				creator.CreateCall.Returns.Error = errors.New("error creating stack")
 
-				err := command.Execute(commands.GlobalFlags{})
+				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
 				Expect(err).To(MatchError("error creating stack"))
 			})
 		})

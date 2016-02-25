@@ -6,6 +6,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
 )
 
 type cloudformationSessionProvider interface {
@@ -17,48 +18,41 @@ type cloudformationCreator interface {
 }
 
 type ProvisionAWSForConcourse struct {
-	stateStore stateStore
-	builder    templateBuilder
-	creator    cloudformationCreator
-	provider   cloudformationSessionProvider
+	builder  templateBuilder
+	creator  cloudformationCreator
+	provider cloudformationSessionProvider
 }
 
-func NewProvisionAWSForConcourse(stateStore stateStore, builder templateBuilder, creator cloudformationCreator, provider cloudformationSessionProvider) ProvisionAWSForConcourse {
+func NewProvisionAWSForConcourse(builder templateBuilder, creator cloudformationCreator, provider cloudformationSessionProvider) ProvisionAWSForConcourse {
 	return ProvisionAWSForConcourse{
-		stateStore: stateStore,
-		builder:    builder,
-		creator:    creator,
-		provider:   provider,
+		builder:  builder,
+		creator:  creator,
+		provider: provider,
 	}
 }
 
-func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags) error {
-	state, err := p.stateStore.Get(globalFlags.StateDir)
-	if err != nil {
-		return err
-	}
-
+func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s state.State) (state.State, error) {
 	template := p.builder.Build()
 
-	if state.KeyPair == nil {
-		return errors.New("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command.")
+	if s.KeyPair == nil {
+		return s, errors.New("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command.")
 	}
 
-	template.SetKeyPairName(state.KeyPair.Name)
+	template.SetKeyPairName(s.KeyPair.Name)
 
 	session, err := p.provider.Session(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
+		AccessKeyID:      s.AWS.AccessKeyID,
+		SecretAccessKey:  s.AWS.SecretAccessKey,
+		Region:           s.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
 	if err != nil {
-		return err
+		return s, err
 	}
 
 	if err := p.creator.Create(session, "concourse", template); err != nil {
-		return err
+		return s, err
 	}
 
-	return nil
+	return s, nil
 }

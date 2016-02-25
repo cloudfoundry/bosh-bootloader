@@ -7,6 +7,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
 )
 
 type templateBuilder interface {
@@ -25,13 +26,13 @@ func NewPrintConcourseAWSTemplate(stdout io.Writer, builder templateBuilder) Pri
 	}
 }
 
-func (c PrintConcourseAWSTemplate) Execute(globalFlags commands.GlobalFlags) error {
+func (c PrintConcourseAWSTemplate) Execute(globalFlags commands.GlobalFlags, s state.State) (state.State, error) {
 	template := c.builder.Build()
 	buf, err := json.MarshalIndent(template, "", "  ")
 	if err != nil {
-		return err
+		return state.State{}, err
 	}
 
 	fmt.Fprintf(c.stdout, string(buf))
-	return nil
+	return s, nil
 }

@@ -12,6 +12,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type setNewKeyPairName struct{}
+
+func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, s state.State) (state.State, error) {
+	s.KeyPair = &state.KeyPair{
+		Name:       "some-new-keypair-name",
+		PublicKey:  s.KeyPair.PublicKey,
+		PrivateKey: s.KeyPair.PrivateKey,
+	}
+
+	return s, nil
+}
+
 var _ = Describe("App", func() {
 	var (
 		app        application.App
@@ -25,18 +37,22 @@ var _ = Describe("App", func() {
 	BeforeEach(func() {
 		helpCmd = &fakes.Command{}
 		versionCmd = &fakes.Command{}
-		someCmd = &fakes.Command{}
 		errorCmd = &fakes.Command{}
+
+		someCmd = &fakes.Command{}
+		someCmd.ExecuteCall.PassState = true
+
 		stateStore = &fakes.StateStore{}
 
 		app = application.New(application.CommandSet{
-			"help":    helpCmd,
-			"version": versionCmd,
-			"some":    someCmd,
-			"error":   errorCmd,
+			"help":                 helpCmd,
+			"version":              versionCmd,
+			"some":                 someCmd,
+			"error":                errorCmd,
+			"set-new-keypair-name": setNewKeyPairName{},
 		},
 			stateStore,
-			func() { helpCmd.Execute(commands.GlobalFlags{}) })
+			func() { helpCmd.Execute(commands.GlobalFlags{}, state.State{}) })
 	})
 
 	Describe("Run", func() {
@@ -87,11 +103,34 @@ var _ = Describe("App", func() {
 				Expect(someCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
 			})
 
+			It("save state when the command has modified the state", func() {
+				stateStore.GetCall.Returns.State = state.State{
+					KeyPair: &state.KeyPair{
+						Name:       "some-keypair-name",
+						PrivateKey: "some-private-key",
+					},
+				}
+
+				Expect(app.Run([]string{
+					"--endpoint-override", "some-endpoint-override",
+					"--aws-access-key-id", "some-aws-access-key-id",
+					"--aws-secret-access-key", "some-aws-secret-access-key",
+					"--aws-region", "some-aws-region",
+					"--state-dir", "/some/state/dir",
+					"set-new-keypair-name",
+				})).To(Succeed())
+
+				Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(&state.KeyPair{
+					Name:       "some-new-keypair-name",
+					PrivateKey: "some-private-key",
+				}))
+			})
+
 			Context("when global flags are provided", func() {
 				It("stores the flags in the state store", func() {
 					stateStore.GetCall.Returns.State = state.State{
 						KeyPair: &state.KeyPair{
-							Name: "some-keypair",
+							Name: "some-keypair-name",
 						},
 					}
 
@@ -114,7 +153,7 @@ var _ = Describe("App", func() {
 							AccessKeyID:     "some-aws-access-key-id",
 						},
 						KeyPair: &state.KeyPair{
-							Name: "some-keypair",
+							Name: "some-keypair-name",
 						},
 					}))
 				})
@@ -123,14 +162,14 @@ var _ = Describe("App", func() {
 					It("does not store the state again", func() {
 						stateStore.GetCall.Returns.State = state.State{
 							KeyPair: &state.KeyPair{
-								Name: "some-keypair",
+								Name: "some-new-keypair-name",
 							},
 						}
 
 						Expect(app.Run([]string{
 							"--endpoint-override", "some-endpoint-override",
 							"--state-dir", "/some/state/dir",
-							"some",
+							"set-new-keypair-name",
 						})).To(Succeed())
 
 						Expect(stateStore.GetCall.Receives.Dir).To(Equal("/some/state/dir"))
@@ -174,6 +213,7 @@ var _ = Describe("App", func() {
 				err := app.Run([]string{
 					"--aws-region", "some-aws-region",
 					"--state-dir", "/some/state/dir",
+					"some",
 				})
 
 				Expect(err).To(MatchError("could not write to the store"))

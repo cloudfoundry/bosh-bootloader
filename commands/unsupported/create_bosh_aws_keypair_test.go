@@ -50,7 +50,6 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 		keypairGenerator *fakes.KeypairGenerator
 		keypairRetriever *fakes.KeypairRetriever
 		keypairUploader  *fakes.KeypairUploader
-		stateStore       *fakes.StateStore
 		session          *fakes.EC2Session
 		sessionProvider  *fakes.EC2SessionProvider
 	)
@@ -59,37 +58,40 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 		keypairGenerator = &fakes.KeypairGenerator{}
 		keypairUploader = &fakes.KeypairUploader{}
 		keypairRetriever = &fakes.KeypairRetriever{}
-		stateStore = &fakes.StateStore{}
 
 		session = &fakes.EC2Session{}
 		sessionProvider = &fakes.EC2SessionProvider{}
 		sessionProvider.SessionCall.Returns.Session = session
 
-		command = unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider, stateStore)
+		command = unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider)
 	})
 
 	Describe("Execute", func() {
+		var incomingState state.State
+
 		BeforeEach(func() {
-			stateStore.GetCall.Returns.State.AWS = state.AWS{
-				AccessKeyID:     "some-aws-access-key-id",
-				SecretAccessKey: "some-aws-secret-access-key",
-				Region:          "some-aws-region",
+			incomingState = state.State{
+				AWS: state.AWS{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+				},
 			}
 		})
 
 		It("generates a new keypair", func() {
-			err := command.Execute(commands.GlobalFlags{
+			_, err := command.Execute(commands.GlobalFlags{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "/some/state/dir",
-			})
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypairGenerator.GenerateCall.CallCount).To(Equal(1))
 		})
 
 		It("initializes a new session with the correct config", func() {
-			err := command.Execute(commands.GlobalFlags{
+			_, err := command.Execute(commands.GlobalFlags{
 				EndpointOverride: "some-endpoint-override",
-			})
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(sessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
 				AccessKeyID:      "some-aws-access-key-id",
@@ -105,10 +107,10 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				PublicKey: []byte("some-key"),
 			}
 
-			err := command.Execute(commands.GlobalFlags{
+			_, err := command.Execute(commands.GlobalFlags{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "/some/state/dir",
-			})
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypairUploader.UploadCall.Receives.Session).To(Equal(session))
 			Expect(keypairUploader.UploadCall.Receives.Keypair).To(Equal(ec2.Keypair{
@@ -117,29 +119,36 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			}))
 		})
 
-		It("stores the keypair and name", func() {
+		It("returns a state with keypair and name", func() {
 			keypairGenerator.GenerateCall.Returns.Keypair = ec2.Keypair{
 				Name:       "some-name",
 				PublicKey:  []byte("some-public-key"),
 				PrivateKey: []byte("some-private-key"),
 			}
 
-			err := command.Execute(commands.GlobalFlags{
+			s, err := command.Execute(commands.GlobalFlags{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "/some/state/dir",
-			})
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stateStore.SetCall.Receives.Dir).To(Equal("/some/state/dir"))
-			Expect(*stateStore.SetCall.Receives.State.KeyPair).To(Equal(state.KeyPair{
-				Name:       "some-name",
-				PrivateKey: "some-private-key",
-				PublicKey:  "some-public-key",
+
+			Expect(s).To(Equal(state.State{
+				AWS: state.AWS{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+				},
+				KeyPair: &state.KeyPair{
+					Name:       "some-name",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
 			}))
 		})
 
 		Context("idempotently generates a keypair", func() {
 			It("uses the keypair in the store if it matches the keypair in AWS", func() {
-				stateStore.GetCall.Returns.State = state.State{
+				incomingState = state.State{
 					KeyPair: &state.KeyPair{
 						Name:       "some-name",
 						PrivateKey: privateKey,
@@ -151,14 +160,13 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					Fingerprint: "5d:f1:5a:6b:22:87:27:a5:e3:33:5e:d2:c9:7f:2e:08",
 				}
 
-				err := command.Execute(commands.GlobalFlags{
+				_, err := command.Execute(commands.GlobalFlags{
 					EndpointOverride: "some-endpoint-override",
 					StateDir:         "/some/state/dir",
-				})
+				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keypairGenerator.GenerateCall.CallCount).To(Equal(0))
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 
 				Expect(keypairRetriever.RetrieveCall.CallCount).To(Equal(1))
 				Expect(keypairRetriever.RetrieveCall.Recieves.Session).To(Equal(session))
@@ -166,7 +174,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			})
 
 			It("uploads the keypair in the store if the keypair does not exist on AWS", func() {
-				stateStore.GetCall.Returns.State = state.State{
+				incomingState = state.State{
 					KeyPair: &state.KeyPair{
 						Name:      "some-name",
 						PublicKey: "some-public-key",
@@ -175,10 +183,10 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 
 				keypairRetriever.RetrieveCall.Returns.Error = ec2.KeyPairNotFound
 
-				err := command.Execute(commands.GlobalFlags{
+				_, err := command.Execute(commands.GlobalFlags{
 					EndpointOverride: "some-endpoint-override",
 					StateDir:         "/some/state/dir",
-				})
+				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keypairRetriever.RetrieveCall.CallCount).To(Equal(1))
@@ -186,7 +194,6 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				Expect(keypairRetriever.RetrieveCall.Recieves.Name).To(Equal("some-name"))
 
 				Expect(keypairGenerator.GenerateCall.CallCount).To(Equal(0))
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 
 				Expect(keypairUploader.UploadCall.Receives.Session).To(Equal(session))
 				Expect(keypairUploader.UploadCall.Receives.Keypair).To(Equal(ec2.Keypair{
@@ -202,7 +209,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 						PublicKey: []byte("some-new-public-key"),
 					}
 
-					stateStore.GetCall.Returns.State = state.State{
+					incomingState = state.State{
 						KeyPair: &state.KeyPair{
 							Name:       "some-name",
 							PrivateKey: privateKey,
@@ -214,32 +221,21 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 						Fingerprint: "some-fingerprint",
 					}
 
-					err := command.Execute(commands.GlobalFlags{
+					_, err := command.Execute(commands.GlobalFlags{
 						EndpointOverride: "some-endpoint-override",
 						StateDir:         "/some/state/dir",
-					})
+					}, incomingState)
 
 					Expect(err).To(MatchError("the local keypair fingerprint does not match the " +
 						"keypair fingerprint on AWS, please open an issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new " +
 						"if you require assistance."))
 
 					Expect(keypairGenerator.GenerateCall.CallCount).To(Equal(0))
-					Expect(stateStore.SetCall.CallCount).To(Equal(0))
 					Expect(keypairUploader.UploadCall.CallCount).To(Equal(0))
 				})
 
-				It("returns an error when the store can not be read from", func() {
-					stateStore.GetCall.Returns.Error = errors.New("something bad happened")
-
-					err := command.Execute(commands.GlobalFlags{
-						EndpointOverride: "some-endpoint-override",
-						StateDir:         "/some/state/dir",
-					})
-					Expect(err).To(MatchError("something bad happened"))
-				})
-
 				It("returns an error when the keypair can not be retrieved", func() {
-					stateStore.GetCall.Returns.State = state.State{
+					incomingState = state.State{
 						KeyPair: &state.KeyPair{
 							Name:       "some-name",
 							PrivateKey: privateKey,
@@ -247,35 +243,36 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					}
 					keypairRetriever.RetrieveCall.Returns.Error = errors.New("something bad happened")
 
-					err := command.Execute(commands.GlobalFlags{
+					_, err := command.Execute(commands.GlobalFlags{
 						EndpointOverride: "some-endpoint-override",
 						StateDir:         "/some/state/dir",
-					})
+					}, incomingState)
 					Expect(err).To(MatchError("something bad happened"))
 				})
 
 				It("returns an error when the private key is not in PEM format", func() {
-					stateStore.GetCall.Returns.State = state.State{
+					incomingState = state.State{
 						KeyPair: &state.KeyPair{
 							Name:       "some-name",
 							PrivateKey: "some-private-key",
 						},
 					}
+
 					keypairRetriever.RetrieveCall.Returns.KeyPairInfo = ec2.KeyPairInfo{
 						Name:        "some-name",
 						Fingerprint: "some-fingerprint",
 					}
 
-					err := command.Execute(commands.GlobalFlags{
+					_, err := command.Execute(commands.GlobalFlags{
 						EndpointOverride: "some-endpoint-override",
 						StateDir:         "/some/state/dir",
-					})
+					}, incomingState)
 					Expect(err).To(MatchError("the local keypair does not contain a valid PEM encoded private key, please open an " +
 						"issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance."))
 				})
 
 				It("returns an error when the private key is not a valid rsa private key", func() {
-					stateStore.GetCall.Returns.State = state.State{
+					incomingState = state.State{
 						KeyPair: &state.KeyPair{
 							Name: "some-name",
 							PrivateKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -294,10 +291,10 @@ CwIDAQAB
 						Fingerprint: "some-fingerprint",
 					}
 
-					err := command.Execute(commands.GlobalFlags{
+					_, err := command.Execute(commands.GlobalFlags{
 						EndpointOverride: "some-endpoint-override",
 						StateDir:         "/some/state/dir",
-					})
+					}, incomingState)
 					Expect(err).To(MatchError("the local keypair does not contain a valid rsa private key, please open an issue " +
 						"at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you require assistance."))
 				})
@@ -308,40 +305,30 @@ CwIDAQAB
 			It("returns an error when key generation fails", func() {
 				keypairGenerator.GenerateCall.Returns.Error = errors.New("generate keys failed")
 
-				err := command.Execute(commands.GlobalFlags{
+				_, err := command.Execute(commands.GlobalFlags{
 					EndpointOverride: "some-endpoint-override",
 					StateDir:         "/some/state/dir",
-				})
+				}, incomingState)
 				Expect(err).To(MatchError("generate keys failed"))
 			})
 
 			It("returns an error when key upload fails", func() {
 				keypairUploader.UploadCall.Returns.Error = errors.New("upload keys failed")
 
-				err := command.Execute(commands.GlobalFlags{
+				_, err := command.Execute(commands.GlobalFlags{
 					EndpointOverride: "some-endpoint-override",
 					StateDir:         "/some/state/dir",
-				})
+				}, incomingState)
 				Expect(err).To(MatchError("upload keys failed"))
-			})
-
-			It("returns an error when state store fails", func() {
-				stateStore.SetCall.Returns.Error = errors.New("state store set failed")
-
-				err := command.Execute(commands.GlobalFlags{
-					EndpointOverride: "some-endpoint-override",
-					StateDir:         "/some/state/dir",
-				})
-				Expect(err).To(MatchError("state store set failed"))
 			})
 
 			It("returns an error when the session provided fails", func() {
 				sessionProvider.SessionCall.Returns.Error = errors.New("failed to create session")
 
-				err := command.Execute(commands.GlobalFlags{
+				_, err := command.Execute(commands.GlobalFlags{
 					EndpointOverride: "some-endpoint-override",
 					StateDir:         "/some/state/dir",
-				})
+				}, incomingState)
 				Expect(err).To(MatchError("failed to create session"))
 			})
 		})

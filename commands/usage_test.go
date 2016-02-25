@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/state"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,7 +24,7 @@ var _ = Describe("Usage", func() {
 
 	Describe("Execute", func() {
 		It("prints out the usage information", func() {
-			err := usage.Execute(commands.GlobalFlags{})
+			_, err := usage.Execute(commands.GlobalFlags{}, state.State{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout.String()).To(Equal(strings.TrimSpace(`
 Usage:
@@ -45,6 +46,16 @@ Commands:
   unsupported-create-bosh-aws-keypair      "create and upload a keypair to AWS"
   unsupported-provision-aws-for-concourse  "create a new concourse stack on AWS"
 `)))
+		})
+
+		It("returns the given state unmodified", func() {
+			s, err := usage.Execute(commands.GlobalFlags{}, state.State{
+				Version: 2,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(s).To(Equal(state.State{
+				Version: 2,
+			}))
 		})
 	})
 })
