@@ -14,19 +14,19 @@ type cloudformationSessionProvider interface {
 }
 
 type cloudformationCreator interface {
-	Create(cloudFormationClient cloudformation.Session, stackName string, template cloudformation.Template) error
+	CreateOrUpdate(cloudFormationClient cloudformation.Session, stackName string, template cloudformation.Template) error
 }
 
 type ProvisionAWSForConcourse struct {
 	builder  templateBuilder
-	creator  cloudformationCreator
+	manager  cloudformationCreator
 	provider cloudformationSessionProvider
 }
 
-func NewProvisionAWSForConcourse(builder templateBuilder, creator cloudformationCreator, provider cloudformationSessionProvider) ProvisionAWSForConcourse {
+func NewProvisionAWSForConcourse(builder templateBuilder, manager cloudformationCreator, provider cloudformationSessionProvider) ProvisionAWSForConcourse {
 	return ProvisionAWSForConcourse{
 		builder:  builder,
-		creator:  creator,
+		manager:  manager,
 		provider: provider,
 	}
 }
@@ -50,7 +50,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		return state, err
 	}
 
-	if err := p.creator.Create(session, "concourse", template); err != nil {
+	if err := p.manager.CreateOrUpdate(session, "concourse", template); err != nil {
 		return state, err
 	}
 

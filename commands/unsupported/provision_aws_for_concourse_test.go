@@ -19,7 +19,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 		var (
 			command         unsupported.ProvisionAWSForConcourse
 			builder         *fakes.TemplateBuilder
-			creator         *fakes.StackCreator
+			manager         *fakes.StackManager
 			session         *fakes.CloudFormationSession
 			sessionProvider *fakes.CloudFormationSessionProvider
 			incomingState   storage.State
@@ -32,9 +32,9 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			sessionProvider = &fakes.CloudFormationSessionProvider{}
 			sessionProvider.SessionCall.Returns.Session = session
 
-			creator = &fakes.StackCreator{}
+			manager = &fakes.StackManager{}
 
-			command = unsupported.NewProvisionAWSForConcourse(builder, creator, sessionProvider)
+			command = unsupported.NewProvisionAWSForConcourse(builder, manager, sessionProvider)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -59,15 +59,15 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 		})
 
-		It("creates a stack with the keypair given in the state dir", func() {
+		It("creates/updates the stack with the given name", func() {
 			_, err := command.Execute(commands.GlobalFlags{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(creator.CreateCall.Receives.Session).To(Equal(session))
+			Expect(manager.CreateOrUpdateCall.Receives.Session).To(Equal(session))
 
-			buf, err := json.MarshalIndent(creator.CreateCall.Receives.Template, "", "  ")
+			buf, err := json.Marshal(manager.CreateOrUpdateCall.Receives.Template)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(buf)).To(MatchJSON(`{
+			Expect(buf).To(MatchJSON(`{
 				"AWSTemplateFormatVersion": "some-template-version",
 				"Description": "some-description",
 				"Parameters": {
@@ -102,7 +102,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			})
 
 			It("returns an error when the stack can not be created", func() {
-				creator.CreateCall.Returns.Error = errors.New("error creating stack")
+				manager.CreateOrUpdateCall.Returns.Error = errors.New("error creating stack")
 
 				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
 				Expect(err).To(MatchError("error creating stack"))

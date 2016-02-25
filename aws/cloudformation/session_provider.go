@@ -10,6 +10,8 @@ type SessionProvider struct{}
 
 type Session interface {
 	CreateStack(input *awscloudformation.CreateStackInput) (*awscloudformation.CreateStackOutput, error)
+	UpdateStack(input *awscloudformation.UpdateStackInput) (*awscloudformation.UpdateStackOutput, error)
+	DescribeStacks(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error)
 }
 
 func NewSessionProvider() SessionProvider {
