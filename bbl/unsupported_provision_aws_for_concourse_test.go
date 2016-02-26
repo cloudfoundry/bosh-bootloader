@@ -36,13 +36,18 @@ var _ = Describe("bbl", func() {
 
 				responses := []string{}
 
+				var callCount int
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					callCount++
 					Expect(r.Method).To(Equal("POST"))
 
 					body, err := ioutil.ReadAll(r.Body)
 					Expect(err).NotTo(HaveOccurred())
 
 					responses = append(responses, string(body))
+					if callCount > 1 && strings.Contains(string(body), "Action=DescribeStack") {
+						w.Write([]byte(describeResponse))
+					}
 				}))
 
 				args := []string{

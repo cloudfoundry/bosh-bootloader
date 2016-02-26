@@ -3,6 +3,7 @@ package cloudformation
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -70,7 +71,6 @@ func (s StackManager) Describe(client Session, name string) (Stack, error) {
 	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
-
 	if err != nil {
 		switch err.(type) {
 		case awserr.RequestFailure:
@@ -112,4 +112,38 @@ func (s StackManager) CreateOrUpdate(client Session, name string, template Templ
 	default:
 		return err
 	}
+}
+
+func (s StackManager) WaitForCompletion(client Session, name string, sleepInterval time.Duration) error {
+	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
+		StackName: aws.String(name),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	status := "UNKNOWN"
+	for _, s := range output.Stacks {
+		if s.StackName != nil && *s.StackName == name {
+			if s.StackStatus != nil {
+				status = *s.StackStatus
+			}
+
+			break
+		}
+	}
+
+	switch status {
+	case cloudformation.StackStatusCreateComplete,
+		cloudformation.StackStatusCreateFailed,
+		cloudformation.StackStatusUpdateComplete,
+		cloudformation.StackStatusUpdateRollbackComplete,
+		cloudformation.StackStatusUpdateRollbackFailed:
+		return nil
+	default:
+		time.Sleep(sleepInterval)
+		return s.WaitForCompletion(client, name, sleepInterval)
+	}
+
+	return nil
 }

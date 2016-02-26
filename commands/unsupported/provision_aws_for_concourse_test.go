@@ -3,6 +3,7 @@ package unsupported_test
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
@@ -64,6 +65,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(manager.CreateOrUpdateCall.Receives.Session).To(Equal(session))
+			Expect(manager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
 
 			buf, err := json.Marshal(manager.CreateOrUpdateCall.Receives.Template)
 			Expect(err).NotTo(HaveOccurred())
@@ -79,6 +81,9 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				}
 			}`))
 
+			Expect(manager.WaitForCompletionCall.Receives.Session).To(Equal(session))
+			Expect(manager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))
+			Expect(manager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(2 * time.Second))
 		})
 
 		It("returns the given state unmodified", func() {
@@ -106,6 +111,13 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
 				Expect(err).To(MatchError("error creating stack"))
+			})
+
+			It("returns an error when waiting for completion errors", func() {
+				manager.WaitForCompletionCall.Returns.Error = errors.New("error waiting on stack")
+
+				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+				Expect(err).To(MatchError("error waiting on stack"))
 			})
 		})
 	})

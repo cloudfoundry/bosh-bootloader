@@ -3,6 +3,7 @@ package cloudformation_test
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -11,6 +12,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -36,7 +38,7 @@ var _ = Describe("StackManager", func() {
 			err = manager.Create(cloudformationClient, "some-stack-name", template)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudformationClient.CreateStackCall.Receives.CreateStackInput).To(Equal(&awscloudformation.CreateStackInput{
+			Expect(cloudformationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
@@ -66,7 +68,7 @@ var _ = Describe("StackManager", func() {
 			err = manager.Update(cloudformationClient, "some-stack-name", template)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudformationClient.UpdateStackCall.Receives.UpdateStackInput).To(Equal(&awscloudformation.UpdateStackInput{
+			Expect(cloudformationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
@@ -239,7 +241,7 @@ var _ = Describe("StackManager", func() {
 				StackName: aws.String("some-stack-name"),
 			}))
 
-			Expect(cloudformationClient.CreateStackCall.Receives.CreateStackInput).To(Equal(&awscloudformation.CreateStackInput{
+			Expect(cloudformationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
@@ -266,7 +268,7 @@ var _ = Describe("StackManager", func() {
 				StackName: aws.String("some-stack-name"),
 			}))
 
-			Expect(cloudformationClient.UpdateStackCall.Receives.UpdateStackInput).To(Equal(&awscloudformation.UpdateStackInput{
+			Expect(cloudformationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
@@ -294,7 +296,7 @@ var _ = Describe("StackManager", func() {
 				StackName: aws.String("some-stack-name"),
 			}))
 
-			Expect(cloudformationClient.UpdateStackCall.Receives.UpdateStackInput).To(Equal(&awscloudformation.UpdateStackInput{
+			Expect(cloudformationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
@@ -331,5 +333,48 @@ var _ = Describe("StackManager", func() {
 				Expect(err).To(MatchError("error updating stack"))
 			})
 		})
+	})
+
+	Describe("WaitForCompletion", func() {
+		DescribeTable("waiting for a done state", func(startState, endState string, callCount int) {
+			cloudformationClient.DescribeStacksCall.Stub = func(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error) {
+				status := startState
+				if cloudformationClient.DescribeStacksCall.CallCount > 2 {
+					status = endState
+				}
+
+				return &awscloudformation.DescribeStacksOutput{
+					Stacks: []*awscloudformation.Stack{
+						{
+							StackName:   aws.String("some-stack-name"),
+							StackStatus: aws.String(status),
+						},
+					},
+				}, nil
+			}
+
+			err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cloudformationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
+				StackName: aws.String("some-stack-name"),
+			}))
+			Expect(cloudformationClient.DescribeStacksCall.CallCount).To(Equal(callCount))
+		},
+
+			Entry("create succeeded",
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateComplete, 3),
+
+			Entry("create failed",
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateFailed, 3),
+
+			Entry("update succeeded",
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateComplete, 3),
+
+			Entry("update failed, rollback succeeded",
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackComplete, 3),
+
+			Entry("update failed, rollback failed",
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackFailed, 3))
 	})
 })

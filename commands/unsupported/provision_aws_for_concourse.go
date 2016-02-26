@@ -2,6 +2,7 @@ package unsupported
 
 import (
 	"errors"
+	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
@@ -15,6 +16,7 @@ type cloudformationSessionProvider interface {
 
 type cloudformationCreator interface {
 	CreateOrUpdate(cloudFormationClient cloudformation.Session, stackName string, template cloudformation.Template) error
+	WaitForCompletion(cloudFormationClient cloudformation.Session, stackName string, sleepInterval time.Duration) error
 }
 
 type ProvisionAWSForConcourse struct {
@@ -51,6 +53,10 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 	}
 
 	if err := p.manager.CreateOrUpdate(session, "concourse", template); err != nil {
+		return state, err
+	}
+
+	if err := p.manager.WaitForCompletion(session, "concourse", 2*time.Second); err != nil {
 		return state, err
 	}
 
