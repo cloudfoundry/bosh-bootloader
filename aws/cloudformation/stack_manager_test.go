@@ -377,4 +377,15 @@ var _ = Describe("StackManager", func() {
 			Entry("update failed, rollback failed",
 				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackFailed, 3))
 	})
+
+	Context("failures cases", func() {
+		Context("when the describe stacks call fails", func() {
+			It("returns an error", func() {
+				cloudformationClient.DescribeStacksCall.Returns.Error = errors.New("failed to describe stack")
+
+				err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond)
+				Expect(err).To(MatchError("failed to describe stack"))
+			})
+		})
+	})
 })

@@ -14,30 +14,30 @@ import (
 )
 
 type keypairRetriever interface {
-	Retrieve(session ec2.Session, name string) (ec2.KeyPairInfo, error)
+	Retrieve(session ec2.Session, name string) (ec2.KeyPairInfo, bool, error)
 }
 
 type keypairGenerator interface {
-	Generate() (ec2.Keypair, error)
+	Generate() (ec2.KeyPair, error)
 }
 
 type keypairUploader interface {
-	Upload(ec2.Session, ec2.Keypair) error
+	Upload(ec2.Session, ec2.KeyPair) error
 }
 
 type sessionProvider interface {
 	Session(aws.Config) (ec2.Session, error)
 }
 
-type CreateBoshAWSKeypair struct {
+type CreateBoshAWSKeyPair struct {
 	retriever keypairRetriever
 	generator keypairGenerator
 	uploader  keypairUploader
 	provider  sessionProvider
 }
 
-func NewCreateBoshAWSKeypair(retriever keypairRetriever, generator keypairGenerator, uploader keypairUploader, provider sessionProvider) CreateBoshAWSKeypair {
-	return CreateBoshAWSKeypair{
+func NewCreateBoshAWSKeyPair(retriever keypairRetriever, generator keypairGenerator, uploader keypairUploader, provider sessionProvider) CreateBoshAWSKeyPair {
+	return CreateBoshAWSKeyPair{
 		retriever: retriever,
 		generator: generator,
 		uploader:  uploader,
@@ -45,7 +45,7 @@ func NewCreateBoshAWSKeypair(retriever keypairRetriever, generator keypairGenera
 	}
 }
 
-func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
+func (c CreateBoshAWSKeyPair) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
 	session, err := c.provider.Session(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
@@ -57,13 +57,12 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags, state st
 	}
 
 	if state.KeyPair != nil {
-		keyInfo, err := c.retriever.Retrieve(session, state.KeyPair.Name)
+		keyInfo, hasRemoteKeyPair, err := c.retriever.Retrieve(session, state.KeyPair.Name)
 		if err != nil {
-			if err != ec2.KeyPairNotFound {
-				return state, err
-			}
-
-			err := c.uploader.Upload(session, ec2.Keypair{
+			return state, err
+		}
+		if !hasRemoteKeyPair {
+			err := c.uploader.Upload(session, ec2.KeyPair{
 				Name:      state.KeyPair.Name,
 				PublicKey: []byte(state.KeyPair.PublicKey),
 			})
@@ -86,7 +85,7 @@ func (c CreateBoshAWSKeypair) Execute(globalFlags commands.GlobalFlags, state st
 		return state, nil
 	}
 
-	keypair, err := c.generateAndUploadKeypair(session)
+	keypair, err := c.generateAndUploadKeyPair(session)
 	if err != nil {
 		return state, err
 	}
@@ -130,15 +129,15 @@ func verifyFingerprint(awsFingerprint string, privateKeyPem []byte) (bool, error
 	return true, nil
 }
 
-func (c CreateBoshAWSKeypair) generateAndUploadKeypair(session ec2.Session) (ec2.Keypair, error) {
+func (c CreateBoshAWSKeyPair) generateAndUploadKeyPair(session ec2.Session) (ec2.KeyPair, error) {
 	keypair, err := c.generator.Generate()
 	if err != nil {
-		return ec2.Keypair{}, err
+		return ec2.KeyPair{}, err
 	}
 
 	err = c.uploader.Upload(session, keypair)
 	if err != nil {
-		return ec2.Keypair{}, err
+		return ec2.KeyPair{}, err
 	}
 
 	return keypair, nil

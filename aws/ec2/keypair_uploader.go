@@ -5,15 +5,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type KeypairUploader struct {
+type KeyPairUploader struct {
 }
 
-func NewKeypairUploader() KeypairUploader {
-	return KeypairUploader{}
+func NewKeyPairUploader() KeyPairUploader {
+	return KeyPairUploader{}
 }
 
-func (k KeypairUploader) Upload(importer Session, keypair Keypair) error {
-	_, err := importer.ImportKeyPair(&ec2.ImportKeyPairInput{
+func (k KeyPairUploader) Upload(client Session, keypair KeyPair) error {
+	_, err := client.ImportKeyPair(&ec2.ImportKeyPairInput{
 		KeyName:           goaws.String(keypair.Name),
 		PublicKeyMaterial: keypair.PublicKey,
 	})

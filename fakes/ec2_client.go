@@ -14,6 +14,7 @@ type EC2Client struct {
 			Error error
 		}
 	}
+
 	DescribeKeyPairsCall struct {
 		Receives struct {
 			Input *awsec2.DescribeKeyPairsInput

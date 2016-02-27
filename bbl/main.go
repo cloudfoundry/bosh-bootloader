@@ -20,9 +20,9 @@ func main() {
 	sessionProvider := ec2.NewSessionProvider()
 
 	templateBuilder := cloudformation.NewTemplateBuilder()
-	keypairGenerator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator.Generate, rsa.GenerateKey, ssh.NewPublicKey)
-	keypairUploader := ec2.NewKeypairUploader()
-	keypairRetriever := ec2.NewKeypairRetriever()
+	keypairGenerator := ec2.NewKeyPairGenerator(rand.Reader, uuidGenerator.Generate, rsa.GenerateKey, ssh.NewPublicKey)
+	keypairUploader := ec2.NewKeyPairUploader()
+	keypairRetriever := ec2.NewKeyPairRetriever()
 	stateStore := storage.NewStore()
 	stackManager := cloudformation.NewStackManager()
 	cloudformationSessionProvider := cloudformation.NewSessionProvider()
@@ -31,7 +31,7 @@ func main() {
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
 		"unsupported-print-concourse-aws-template": unsupported.NewPrintConcourseAWSTemplate(os.Stdout, templateBuilder),
-		"unsupported-create-bosh-aws-keypair":      unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider),
+		"unsupported-create-bosh-aws-keypair":      unsupported.NewCreateBoshAWSKeyPair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider),
 		"unsupported-provision-aws-for-concourse":  unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, cloudformationSessionProvider),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 

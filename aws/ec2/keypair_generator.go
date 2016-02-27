@@ -14,21 +14,16 @@ type uuidGenerator func() (string, error)
 type rsaKeyGenerator func(io.Reader, int) (*rsa.PrivateKey, error)
 type sshPublicKeyGenerator func(interface{}) (ssh.PublicKey, error)
 
-type KeypairGenerator struct {
+type KeyPairGenerator struct {
 	generateUUID         uuidGenerator
 	random               io.Reader
 	generateRSAKey       rsaKeyGenerator
 	generateSSHPublicKey sshPublicKeyGenerator
 }
 
-type Keypair struct {
-	Name       string
-	PublicKey  []byte
-	PrivateKey []byte
-}
 
-func NewKeypairGenerator(random io.Reader, generateUUID uuidGenerator, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator) KeypairGenerator {
-	return KeypairGenerator{
+func NewKeyPairGenerator(random io.Reader, generateUUID uuidGenerator, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator) KeyPairGenerator {
+	return KeyPairGenerator{
 		random:               random,
 		generateUUID:         generateUUID,
 		generateRSAKey:       generateRSAKey,
@@ -36,20 +31,20 @@ func NewKeypairGenerator(random io.Reader, generateUUID uuidGenerator, generateR
 	}
 }
 
-func (k KeypairGenerator) Generate() (Keypair, error) {
+func (k KeyPairGenerator) Generate() (KeyPair, error) {
 	rsakey, err := k.generateRSAKey(k.random, 2048)
 	if err != nil {
-		return Keypair{}, err
+		return KeyPair{}, err
 	}
 
 	pub, err := k.generateSSHPublicKey(rsakey.Public())
 	if err != nil {
-		return Keypair{}, err
+		return KeyPair{}, err
 	}
 
 	uuid, err := k.generateUUID()
 	if err != nil {
-		return Keypair{}, err
+		return KeyPair{}, err
 	}
 
 	privateKey := pem.EncodeToMemory(
@@ -59,7 +54,7 @@ func (k KeypairGenerator) Generate() (Keypair, error) {
 		},
 	)
 
-	return Keypair{
+	return KeyPair{
 		Name:       fmt.Sprintf("keypair-%s", uuid),
 		PublicKey:  ssh.MarshalAuthorizedKey(pub),
 		PrivateKey: privateKey,

@@ -8,21 +8,19 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type KeypairRetriever struct {
+type KeyPairRetriever struct {
 }
 
-func NewKeypairRetriever() KeypairRetriever {
-	return KeypairRetriever{}
+func NewKeyPairRetriever() KeyPairRetriever {
+	return KeyPairRetriever{}
 }
 
 type KeyPairInfo struct {
-	Fingerprint string
 	Name        string
+	Fingerprint string
 }
 
-var KeyPairNotFound error = errors.New("keypair not found")
-
-func (KeypairRetriever) Retrieve(session Session, name string) (KeyPairInfo, error) {
+func (KeyPairRetriever) Retrieve(session Session, name string) (KeyPairInfo, bool, error) {
 	params := &ec2.DescribeKeyPairsInput{
 		KeyNames: []*string{
 			aws.String(name),
@@ -32,13 +30,13 @@ func (KeypairRetriever) Retrieve(session Session, name string) (KeyPairInfo, err
 	resp, err := session.DescribeKeyPairs(params)
 	if err != nil {
 		if strings.Contains(err.Error(), "InvalidKeyPair.NotFound") {
-			return KeyPairInfo{}, KeyPairNotFound
+			return KeyPairInfo{}, false, nil
 		}
-		return KeyPairInfo{}, err
+		return KeyPairInfo{}, false, err
 	}
 
 	if len(resp.KeyPairs) < 1 {
-		return KeyPairInfo{}, errors.New("insufficient keypairs have been retrieved")
+		return KeyPairInfo{}, false, errors.New("insufficient keypairs have been retrieved")
 	}
 
 	keypair := resp.KeyPairs[0]
@@ -46,5 +44,5 @@ func (KeypairRetriever) Retrieve(session Session, name string) (KeyPairInfo, err
 	return KeyPairInfo{
 		Fingerprint: *keypair.KeyFingerprint,
 		Name:        *keypair.KeyName,
-	}, nil
+	}, true, nil
 }

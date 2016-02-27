@@ -15,14 +15,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("KeypairGenerator", func() {
+var _ = Describe("KeyPairGenerator", func() {
 	Describe("Generate", func() {
 		uuidGenerator := func() (string, error) {
 			return "random-uuid", nil
 		}
 
 		It("generates a valid keypair with a randomized name", func() {
-			generator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, ssh.NewPublicKey)
+			generator := ec2.NewKeyPairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, ssh.NewPublicKey)
 
 			keypair, err := generator.Generate()
 			Expect(err).NotTo(HaveOccurred())
@@ -49,7 +49,7 @@ var _ = Describe("KeypairGenerator", func() {
 					rsaKeyGenerator := func(io.Reader, int) (*rsa.PrivateKey, error) {
 						return nil, errors.New("rsa key generation failed")
 					}
-					generator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator, rsaKeyGenerator, ssh.NewPublicKey)
+					generator := ec2.NewKeyPairGenerator(rand.Reader, uuidGenerator, rsaKeyGenerator, ssh.NewPublicKey)
 
 					_, err := generator.Generate()
 					Expect(err).To(MatchError("rsa key generation failed"))
@@ -61,7 +61,7 @@ var _ = Describe("KeypairGenerator", func() {
 					sshPublicKeyGenerator := func(interface{}) (ssh.PublicKey, error) {
 						return nil, errors.New("ssh key generation failed")
 					}
-					generator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, sshPublicKeyGenerator)
+					generator := ec2.NewKeyPairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, sshPublicKeyGenerator)
 
 					_, err := generator.Generate()
 					Expect(err).To(MatchError("ssh key generation failed"))
@@ -73,7 +73,7 @@ var _ = Describe("KeypairGenerator", func() {
 					uuidGenerator := func() (string, error) {
 						return "", errors.New("uuid generation failed")
 					}
-					generator := ec2.NewKeypairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, ssh.NewPublicKey)
+					generator := ec2.NewKeyPairGenerator(rand.Reader, uuidGenerator, rsa.GenerateKey, ssh.NewPublicKey)
 
 					_, err := generator.Generate()
 					Expect(err).To(MatchError("uuid generation failed"))

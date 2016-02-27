@@ -5,7 +5,7 @@
 
   "Parameters": {
     "KeyName": {
-      "Description": "SSH Keypair to use for instances",
+      "Description": "SSH KeyPair to use for instances",
       "Type": "AWS::EC2::KeyPair::KeyName",
       "Default": "bosh"
     },

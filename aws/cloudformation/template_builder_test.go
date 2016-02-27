@@ -27,7 +27,7 @@ var _ = Describe("TemplateBuilder", func() {
 					"KeyName": {
 						Type:        "AWS::EC2::KeyPair::KeyName",
 						Default:     "bosh",
-						Description: "SSH Keypair to use for instances",
+						Description: "SSH KeyPair to use for instances",
 					},
 					"BOSHInboundCIDR": {
 						Description: "CIDR to permit access to BOSH (e.g. 205.103.216.37/32 for your specific IP)",

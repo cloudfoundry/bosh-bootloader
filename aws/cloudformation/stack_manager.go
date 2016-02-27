@@ -119,7 +119,7 @@ func (s StackManager) WaitForCompletion(client Session, name string, sleepInterv
 		StackName: aws.String(name),
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	status := "UNKNOWN"

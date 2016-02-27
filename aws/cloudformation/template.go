@@ -25,7 +25,7 @@ func (t Template) SetKeyPairName(name string) {
 	t.Parameters["KeyName"] = Parameter{
 		Type:        "AWS::EC2::KeyPair::KeyName",
 		Default:     name,
-		Description: "SSH Keypair to use for instances",
+		Description: "SSH KeyPair to use for instances",
 	}
 }
 

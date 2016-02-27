@@ -44,26 +44,26 @@ O0flBWBP4MtvJjixn7G49dynF6PTYJPZBEjcL1R91qkaPYEAOcl4
 -----END RSA PRIVATE KEY-----`
 )
 
-var _ = Describe("CreateBoshAWSKeypair", func() {
+var _ = Describe("CreateBoshAWSKeyPair", func() {
 	var (
-		command          unsupported.CreateBoshAWSKeypair
-		keypairGenerator *fakes.KeypairGenerator
-		keypairRetriever *fakes.KeypairRetriever
-		keypairUploader  *fakes.KeypairUploader
+		command          unsupported.CreateBoshAWSKeyPair
+		keypairGenerator *fakes.KeyPairGenerator
+		keypairRetriever *fakes.KeyPairRetriever
+		keypairUploader  *fakes.KeyPairUploader
 		session          *fakes.EC2Session
 		sessionProvider  *fakes.EC2SessionProvider
 	)
 
 	BeforeEach(func() {
-		keypairGenerator = &fakes.KeypairGenerator{}
-		keypairUploader = &fakes.KeypairUploader{}
-		keypairRetriever = &fakes.KeypairRetriever{}
+		keypairGenerator = &fakes.KeyPairGenerator{}
+		keypairUploader = &fakes.KeyPairUploader{}
+		keypairRetriever = &fakes.KeyPairRetriever{}
 
 		session = &fakes.EC2Session{}
 		sessionProvider = &fakes.EC2SessionProvider{}
 		sessionProvider.SessionCall.Returns.Session = session
 
-		command = unsupported.NewCreateBoshAWSKeypair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider)
+		command = unsupported.NewCreateBoshAWSKeyPair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider)
 	})
 
 	Describe("Execute", func() {
@@ -102,7 +102,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 		})
 
 		It("uploads the generated keypair", func() {
-			keypairGenerator.GenerateCall.Returns.Keypair = ec2.Keypair{
+			keypairGenerator.GenerateCall.Returns.KeyPair = ec2.KeyPair{
 				Name:      "some-name",
 				PublicKey: []byte("some-key"),
 			}
@@ -113,14 +113,14 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keypairUploader.UploadCall.Receives.Session).To(Equal(session))
-			Expect(keypairUploader.UploadCall.Receives.Keypair).To(Equal(ec2.Keypair{
+			Expect(keypairUploader.UploadCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:      "some-name",
 				PublicKey: []byte("some-key"),
 			}))
 		})
 
 		It("returns a state with keypair and name", func() {
-			keypairGenerator.GenerateCall.Returns.Keypair = ec2.Keypair{
+			keypairGenerator.GenerateCall.Returns.KeyPair = ec2.KeyPair{
 				Name:       "some-name",
 				PublicKey:  []byte("some-public-key"),
 				PrivateKey: []byte("some-private-key"),
@@ -181,7 +181,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 					},
 				}
 
-				keypairRetriever.RetrieveCall.Returns.Error = ec2.KeyPairNotFound
+				keypairRetriever.RetrieveCall.Returns.Present = false
 
 				_, err := command.Execute(commands.GlobalFlags{
 					EndpointOverride: "some-endpoint-override",
@@ -196,7 +196,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 				Expect(keypairGenerator.GenerateCall.CallCount).To(Equal(0))
 
 				Expect(keypairUploader.UploadCall.Receives.Session).To(Equal(session))
-				Expect(keypairUploader.UploadCall.Receives.Keypair).To(Equal(ec2.Keypair{
+				Expect(keypairUploader.UploadCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 					Name:      "some-name",
 					PublicKey: []byte("some-public-key"),
 				}))
@@ -204,7 +204,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 
 			Context("failure cases", func() {
 				It("returns an error when the fingerprints don't match", func() {
-					keypairGenerator.GenerateCall.Returns.Keypair = ec2.Keypair{
+					keypairGenerator.GenerateCall.Returns.KeyPair = ec2.KeyPair{
 						Name:      "some-new-key-name",
 						PublicKey: []byte("some-new-public-key"),
 					}
@@ -216,6 +216,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 						},
 					}
 
+					keypairRetriever.RetrieveCall.Returns.Present = true
 					keypairRetriever.RetrieveCall.Returns.KeyPairInfo = ec2.KeyPairInfo{
 						Name:        "some-name",
 						Fingerprint: "some-fingerprint",
@@ -258,6 +259,7 @@ var _ = Describe("CreateBoshAWSKeypair", func() {
 						},
 					}
 
+					keypairRetriever.RetrieveCall.Returns.Present = true
 					keypairRetriever.RetrieveCall.Returns.KeyPairInfo = ec2.KeyPairInfo{
 						Name:        "some-name",
 						Fingerprint: "some-fingerprint",
@@ -286,6 +288,7 @@ CwIDAQAB
 -----END RSA PRIVATE KEY-----`,
 						},
 					}
+					keypairRetriever.RetrieveCall.Returns.Present = true
 					keypairRetriever.RetrieveCall.Returns.KeyPairInfo = ec2.KeyPairInfo{
 						Name:        "some-name",
 						Fingerprint: "some-fingerprint",

@@ -76,7 +76,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 					"KeyName": {
 						"Type":        "AWS::EC2::KeyPair::KeyName",
 						"Default":     "some-keypair-name",
-						"Description": "SSH Keypair to use for instances"
+						"Description": "SSH KeyPair to use for instances"
 					}
 				}
 			}`))

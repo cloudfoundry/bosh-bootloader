@@ -12,15 +12,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("KeypairRetriever", func() {
+var _ = Describe("KeyPairRetriever", func() {
 	var (
 		ec2Client *fakes.EC2Client
-		retriever ec2.KeypairRetriever
+		retriever ec2.KeyPairRetriever
 	)
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		retriever = ec2.NewKeypairRetriever()
+		retriever = ec2.NewKeyPairRetriever()
 	})
 
 	Describe("Retrieve", func() {
@@ -34,8 +34,9 @@ var _ = Describe("KeypairRetriever", func() {
 				},
 			}
 
-			keypair, err := retriever.Retrieve(ec2Client, "some-key-name")
+			keypair, present, err := retriever.Retrieve(ec2Client, "some-key-name")
 			Expect(err).NotTo(HaveOccurred())
+			Expect(present).To(BeTrue())
 
 			Expect(ec2Client.DescribeKeyPairsCall.Receives.Input).To(Equal(&awsec2.DescribeKeyPairsInput{
 				KeyNames: []*string{
@@ -49,18 +50,19 @@ var _ = Describe("KeypairRetriever", func() {
 			}))
 		})
 
+		It("returns a KeyPairNotFound error when the keypair does not exist", func() {
+			ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("InvalidKeyPair.NotFound")
+
+			_, present, err := retriever.Retrieve(ec2Client, "some-key-name")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(present).To(BeFalse())
+		})
+
 		Context("failure cases", func() {
-			It("returns a KeyPairNotFound error when the keypair does not exist", func() {
-				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("InvalidKeyPair.NotFound")
-
-				_, err := retriever.Retrieve(ec2Client, "some-key-name")
-				Expect(err).To(MatchError(ec2.KeyPairNotFound))
-			})
-
 			It("returns an error when AWS communication fails", func() {
 				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("something bad happened")
 
-				_, err := retriever.Retrieve(ec2Client, "some-key-name")
+				_, _, err := retriever.Retrieve(ec2Client, "some-key-name")
 				Expect(err).To(MatchError("something bad happened"))
 			})
 
@@ -69,7 +71,7 @@ var _ = Describe("KeypairRetriever", func() {
 					KeyPairs: []*awsec2.KeyPairInfo{},
 				}
 
-				_, err := retriever.Retrieve(ec2Client, "some-key-name")
+				_, _, err := retriever.Retrieve(ec2Client, "some-key-name")
 				Expect(err).To(MatchError("insufficient keypairs have been retrieved"))
 			})
 		})

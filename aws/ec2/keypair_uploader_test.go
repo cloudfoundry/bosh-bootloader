@@ -12,20 +12,20 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("KeypairUploader", func() {
+var _ = Describe("KeyPairUploader", func() {
 	var (
 		ec2Client *fakes.EC2Client
-		uploader  ec2.KeypairUploader
+		uploader  ec2.KeyPairUploader
 	)
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		uploader = ec2.NewKeypairUploader()
+		uploader = ec2.NewKeyPairUploader()
 	})
 
 	Describe("Upload", func() {
 		It("uploads the keypair to AWS", func() {
-			err := uploader.Upload(ec2Client, ec2.Keypair{
+			err := uploader.Upload(ec2Client, ec2.KeyPair{
 				Name:      "some-keypair",
 				PublicKey: []byte("some-key"),
 			})
@@ -41,7 +41,7 @@ var _ = Describe("KeypairUploader", func() {
 				It("returns an error", func() {
 					ec2Client.ImportKeyPairCall.Returns.Error = errors.New("failed to import keypair")
 
-					err := uploader.Upload(ec2Client, ec2.Keypair{})
+					err := uploader.Upload(ec2Client, ec2.KeyPair{})
 					Expect(err).To(MatchError(errors.New("failed to import keypair")))
 				})
 			})
