@@ -23,5 +23,5 @@ func (s ClientProvider) Client(config aws.Config) (Client, error) {
 		return nil, err
 	}
 
-	return ec2.New(session.New(config.SessionConfig())), nil
+	return ec2.New(session.New(config.ClientConfig())), nil
 }

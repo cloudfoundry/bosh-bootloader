@@ -22,5 +22,5 @@ func (s ClientProvider) Client(config aws.Config) (Client, error) {
 	if err := config.ValidateCredentials(); err != nil {
 		return nil, err
 	}
-	return awscloudformation.New(session.New(config.SessionConfig())), nil
+	return awscloudformation.New(session.New(config.ClientConfig())), nil
 }

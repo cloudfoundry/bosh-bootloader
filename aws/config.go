@@ -30,7 +30,7 @@ func (c Config) ValidateCredentials() error {
 	return nil
 }
 
-func (c Config) SessionConfig() *goaws.Config {
+func (c Config) ClientConfig() *goaws.Config {
 	awsConfig := &goaws.Config{
 		Credentials: credentials.NewStaticCredentials(c.AccessKeyID, c.SecretAccessKey, ""),
 		Region:      goaws.String(c.Region),

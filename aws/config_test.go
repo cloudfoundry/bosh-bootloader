@@ -51,8 +51,8 @@ var _ = Describe("Config", func() {
 		})
 	})
 
-	Context("SessionConfig", func() {
-		It("returns an AWS config which is consumable by AWS session functions", func() {
+	Context("ClientConfig", func() {
+		It("returns an AWS config which is consumable by AWS client functions", func() {
 			config := aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  " some-secret-access-key",
@@ -66,7 +66,7 @@ var _ = Describe("Config", func() {
 				Endpoint:    goaws.String(config.EndpointOverride),
 			}
 
-			Expect(config.SessionConfig()).To(Equal(awsConfig))
+			Expect(config.ClientConfig()).To(Equal(awsConfig))
 		})
 	})
 })
