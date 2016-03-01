@@ -6,11 +6,11 @@ func NewTemplateBuilder() TemplateBuilder {
 	return TemplateBuilder{}
 }
 
-func (t TemplateBuilder) Build() Template {
+func (t TemplateBuilder) Build(keyPairName string) Template {
 	parameters := map[string]Parameter{
 		"KeyName": Parameter{
 			Type:        "AWS::EC2::KeyPair::KeyName",
-			Default:     "bosh",
+			Default:     keyPairName,
 			Description: "SSH KeyPair to use for instances",
 		},
 		"BOSHInboundCIDR": Parameter{

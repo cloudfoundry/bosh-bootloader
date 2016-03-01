@@ -31,7 +31,7 @@ var _ = Describe("StackManager", func() {
 
 	Describe("Create", func() {
 		It("creates a stack given a name and cloudformation template", func() {
-			template := templateBuilder.Build()
+			template := templateBuilder.Build("keypair-name")
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -48,7 +48,7 @@ var _ = Describe("StackManager", func() {
 			It("returns an error when the stack cannot be created", func() {
 				cloudformationClient.CreateStackCall.Returns.Error = errors.New("something bad happened")
 
-				err := manager.Create(cloudformationClient, "some-stack-name", templateBuilder.Build())
+				err := manager.Create(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
 				Expect(err).To(MatchError("something bad happened"))
 			})
 		})
@@ -58,7 +58,7 @@ var _ = Describe("StackManager", func() {
 		var template cloudformation.Template
 
 		BeforeEach(func() {
-			template = templateBuilder.Build()
+			template = templateBuilder.Build("keypair-name")
 		})
 
 		It("updates a stack with the given name", func() {
@@ -86,7 +86,7 @@ var _ = Describe("StackManager", func() {
 			It("returns an error when the stack cannot be updated", func() {
 				cloudformationClient.UpdateStackCall.Returns.Error = errors.New("something bad happened")
 
-				err := manager.Update(cloudformationClient, "some-stack-name", templateBuilder.Build())
+				err := manager.Update(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
 				Expect(err).To(MatchError("something bad happened"))
 			})
 
@@ -230,7 +230,7 @@ var _ = Describe("StackManager", func() {
 		It("creates a stack if the stack does not exist", func() {
 			cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
 
-			template := templateBuilder.Build()
+			template := templateBuilder.Build("keypair-name")
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -257,7 +257,7 @@ var _ = Describe("StackManager", func() {
 				},
 			}
 
-			template := templateBuilder.Build()
+			template := templateBuilder.Build("keypair-name")
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -285,7 +285,7 @@ var _ = Describe("StackManager", func() {
 				},
 			}
 
-			template := templateBuilder.Build()
+			template := templateBuilder.Build("keypair-name")
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -306,7 +306,7 @@ var _ = Describe("StackManager", func() {
 			It("returns an error when the stack cannot be described", func() {
 				cloudformationClient.DescribeStacksCall.Returns.Error = errors.New("error describing stack")
 
-				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build())
+				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
 				Expect(err).To(MatchError("error describing stack"))
 			})
 
@@ -314,7 +314,7 @@ var _ = Describe("StackManager", func() {
 				cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
 				cloudformationClient.CreateStackCall.Returns.Error = errors.New("error creating stack")
 
-				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build())
+				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
 				Expect(err).To(MatchError("error creating stack"))
 			})
 
@@ -329,7 +329,7 @@ var _ = Describe("StackManager", func() {
 				}
 				cloudformationClient.UpdateStackCall.Returns.Error = errors.New("error updating stack")
 
-				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build())
+				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
 				Expect(err).To(MatchError("error updating stack"))
 			})
 		})

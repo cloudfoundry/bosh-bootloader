@@ -7,7 +7,7 @@
     "KeyName": {
       "Description": "SSH KeyPair to use for instances",
       "Type": "AWS::EC2::KeyPair::KeyName",
-      "Default": "bosh"
+      "Default": "keypair-name"
     },
 
     "BOSHInboundCIDR": {

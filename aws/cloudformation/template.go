@@ -21,14 +21,6 @@ type Template struct {
 	Resources                map[string]Resource    `json:",omitempty"`
 }
 
-func (t Template) SetKeyPairName(name string) {
-	t.Parameters["KeyName"] = Parameter{
-		Type:        "AWS::EC2::KeyPair::KeyName",
-		Default:     name,
-		Description: "SSH KeyPair to use for instances",
-	}
-}
-
 type Parameter struct {
 	Type        string
 	Default     string

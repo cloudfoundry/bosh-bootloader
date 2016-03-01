@@ -1,7 +1,6 @@
 package unsupported_test
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -51,9 +50,15 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
-				Parameters:               map[string]cloudformation.Parameter{},
-				Mappings:                 map[string]interface{}{},
-				Resources:                map[string]cloudformation.Resource{},
+				Parameters: map[string]cloudformation.Parameter{
+					"KeyName": {
+						Type:        "AWS::EC2::KeyPair::KeyName",
+						Default:     "some-keypair-name",
+						Description: "SSH KeyPair to use for instances",
+					},
+				},
+				Mappings:  map[string]interface{}{},
+				Resources: map[string]cloudformation.Resource{},
 			}
 
 			globalFlags = commands.GlobalFlags{
@@ -90,22 +95,22 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				Region:           "some-aws-region",
 				EndpointOverride: "some-endpoint",
 			}))
+			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Session).To(Equal(cloudFormationSession))
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
-
-			buf, err := json.Marshal(stackManager.CreateOrUpdateCall.Receives.Template)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(buf).To(MatchJSON(`{
-				"AWSTemplateFormatVersion": "some-template-version",
-				"Description": "some-description",
-				"Parameters": {
+			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(cloudformation.Template{
+				AWSTemplateFormatVersion: "some-template-version",
+				Description:              "some-description",
+				Parameters: map[string]cloudformation.Parameter{
 					"KeyName": {
-						"Type":        "AWS::EC2::KeyPair::KeyName",
-						"Default":     "some-keypair-name",
-						"Description": "SSH KeyPair to use for instances"
-					}
-				}
-			}`))
+						Type:        "AWS::EC2::KeyPair::KeyName",
+						Default:     "some-keypair-name",
+						Description: "SSH KeyPair to use for instances",
+					},
+				},
+				Mappings:  map[string]interface{}{},
+				Resources: map[string]cloudformation.Resource{},
+			}))
 
 			Expect(stackManager.WaitForCompletionCall.Receives.Session).To(Equal(cloudFormationSession))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))

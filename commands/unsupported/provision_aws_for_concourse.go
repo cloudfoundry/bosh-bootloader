@@ -19,7 +19,7 @@ type ec2SessionProvider interface {
 }
 
 type templateBuilder interface {
-	Build() cloudformation.Template
+	Build(keypairName string) cloudformation.Template
 }
 
 type stackManager interface {
@@ -81,8 +81,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		PrivateKey: string(keyPair.PrivateKey),
 	}
 
-	template := p.builder.Build()
-	template.SetKeyPairName(state.KeyPair.Name)
+	template := p.builder.Build(state.KeyPair.Name)
 
 	cloudFormationSession, err := p.cloudformationSessionProvider.Session(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,

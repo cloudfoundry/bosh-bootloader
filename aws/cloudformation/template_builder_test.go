@@ -19,14 +19,14 @@ var _ = Describe("TemplateBuilder", func() {
 
 	Describe("Build", func() {
 		It("builds a cloudformation template", func() {
-			template := builder.Build()
+			template := builder.Build("keypair-name")
 			Expect(template).To(Equal(cloudformation.Template{
 				AWSTemplateFormatVersion: "2010-09-09",
 				Description:              "Infrastructure for a MicroBOSH deployment with an ELB.",
 				Parameters: map[string]cloudformation.Parameter{
 					"KeyName": {
 						Type:        "AWS::EC2::KeyPair::KeyName",
-						Default:     "bosh",
+						Default:     "keypair-name",
 						Description: "SSH KeyPair to use for instances",
 					},
 					"BOSHInboundCIDR": {
@@ -448,7 +448,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 	Describe("template marshaling", func() {
 		It("can be marshaled to JSON", func() {
-			template := builder.Build()
+			template := builder.Build("keypair-name")
 
 			buf, err := ioutil.ReadFile("fixtures/cloudformation.json")
 			Expect(err).NotTo(HaveOccurred())
