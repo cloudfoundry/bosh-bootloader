@@ -5,7 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -18,24 +20,33 @@ import (
 var _ = Describe("ProvisionAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command         unsupported.ProvisionAWSForConcourse
-			builder         *fakes.TemplateBuilder
-			manager         *fakes.StackManager
-			session         *fakes.CloudFormationSession
-			sessionProvider *fakes.CloudFormationSessionProvider
-			incomingState   storage.State
+			command                       unsupported.ProvisionAWSForConcourse
+			builder                       *fakes.TemplateBuilder
+			stackManager                  *fakes.StackManager
+			keyPairManager                *fakes.KeyPairManager
+			cloudFormationSession         *fakes.CloudFormationClient
+			cloudFormationSessionProvider *fakes.CloudFormationSessionProvider
+			ec2Session                    *fakes.EC2Client
+			ec2SessionProvider            *fakes.EC2SessionProvider
+			incomingState                 storage.State
+			globalFlags                   commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
 			builder = &fakes.TemplateBuilder{}
 
-			session = &fakes.CloudFormationSession{}
-			sessionProvider = &fakes.CloudFormationSessionProvider{}
-			sessionProvider.SessionCall.Returns.Session = session
+			cloudFormationSession = &fakes.CloudFormationClient{}
+			cloudFormationSessionProvider = &fakes.CloudFormationSessionProvider{}
+			cloudFormationSessionProvider.SessionCall.Returns.Session = cloudFormationSession
 
-			manager = &fakes.StackManager{}
+			ec2Session = &fakes.EC2Client{}
+			ec2SessionProvider = &fakes.EC2SessionProvider{}
+			ec2SessionProvider.SessionCall.Returns.Session = ec2Session
 
-			command = unsupported.NewProvisionAWSForConcourse(builder, manager, sessionProvider)
+			stackManager = &fakes.StackManager{}
+			keyPairManager = &fakes.KeyPairManager{}
+
+			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, cloudFormationSessionProvider, ec2SessionProvider)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -43,6 +54,10 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				Parameters:               map[string]cloudformation.Parameter{},
 				Mappings:                 map[string]interface{}{},
 				Resources:                map[string]cloudformation.Resource{},
+			}
+
+			globalFlags = commands.GlobalFlags{
+				EndpointOverride: "some-endpoint",
 			}
 
 			incomingState = storage.State{
@@ -58,16 +73,27 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				},
 			}
 
+			keyPairManager.SyncCall.Returns.KeyPair = ec2.KeyPair{
+				Name:       "some-keypair-name",
+				PrivateKey: []byte("some-private-key"),
+				PublicKey:  []byte("some-public-key"),
+			}
 		})
 
 		It("creates/updates the stack with the given name", func() {
-			_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(manager.CreateOrUpdateCall.Receives.Session).To(Equal(session))
-			Expect(manager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
+			Expect(cloudFormationSessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				Region:           "some-aws-region",
+				EndpointOverride: "some-endpoint",
+			}))
+			Expect(stackManager.CreateOrUpdateCall.Receives.Session).To(Equal(cloudFormationSession))
+			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
 
-			buf, err := json.Marshal(manager.CreateOrUpdateCall.Receives.Template)
+			buf, err := json.Marshal(stackManager.CreateOrUpdateCall.Receives.Template)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(buf).To(MatchJSON(`{
 				"AWSTemplateFormatVersion": "some-template-version",
@@ -81,42 +107,91 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				}
 			}`))
 
-			Expect(manager.WaitForCompletionCall.Receives.Session).To(Equal(session))
-			Expect(manager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))
-			Expect(manager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(2 * time.Second))
+			Expect(stackManager.WaitForCompletionCall.Receives.Session).To(Equal(cloudFormationSession))
+			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))
+			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(2 * time.Second))
+		})
+
+		It("syncs the keypair", func() {
+			state, err := command.Execute(globalFlags, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(ec2SessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				Region:           "some-aws-region",
+				EndpointOverride: "some-endpoint",
+			}))
+			Expect(keyPairManager.SyncCall.Receives.EC2Session).To(Equal(ec2Session))
+			Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
+				Name:       "some-keypair-name",
+				PrivateKey: []byte("some-private-key"),
+				PublicKey:  []byte("some-public-key"),
+			}))
+
+			Expect(state.KeyPair).To(Equal(&storage.KeyPair{
+				Name:       "some-keypair-name",
+				PublicKey:  "some-public-key",
+				PrivateKey: "some-private-key",
+			}))
 		})
 
 		It("returns the given state unmodified", func() {
-			_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when there is no keypair", func() {
-			It("returns an error when a keypair does not exist", func() {
-				_, err := command.Execute(commands.GlobalFlags{}, storage.State{})
-				Expect(err).To(MatchError("no keypair is present, you can generate a keypair by running the unsupported-create-bosh-aws-keypair command."))
+			BeforeEach(func() {
+				incomingState.KeyPair = nil
+			})
+
+			It("syncs with an empty keypair", func() {
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(keyPairManager.SyncCall.Receives.EC2Session).To(Equal(ec2Session))
+				Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
+					Name:       "",
+					PrivateKey: []byte(""),
+					PublicKey:  []byte(""),
+				}))
 			})
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the session can not be created", func() {
-				sessionProvider.SessionCall.Returns.Error = errors.New("error creating session")
+			It("returns an error when the cloudformation session can not be created", func() {
+				cloudFormationSessionProvider.SessionCall.Returns.Error = errors.New("error creating session")
 
-				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error creating session"))
 			})
 
-			It("returns an error when the stack can not be created", func() {
-				manager.CreateOrUpdateCall.Returns.Error = errors.New("error creating stack")
+			It("returns an error when the ec2 session can not be created", func() {
+				ec2SessionProvider.SessionCall.Returns.Error = errors.New("error creating session")
 
-				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("error creating session"))
+			})
+
+			It("returns an error when the key pair fails to sync", func() {
+				keyPairManager.SyncCall.Returns.Error = errors.New("error syncing key pair")
+
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("error syncing key pair"))
+			})
+
+			It("returns an error when the stack can not be created", func() {
+				stackManager.CreateOrUpdateCall.Returns.Error = errors.New("error creating stack")
+
+				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error creating stack"))
 			})
 
 			It("returns an error when waiting for completion errors", func() {
-				manager.WaitForCompletionCall.Returns.Error = errors.New("error waiting on stack")
+				stackManager.WaitForCompletionCall.Returns.Error = errors.New("error waiting on stack")
 
-				_, err := command.Execute(commands.GlobalFlags{}, incomingState)
+				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error waiting on stack"))
 			})
 		})

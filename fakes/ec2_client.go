@@ -24,6 +24,16 @@ type EC2Client struct {
 			Error                  error
 		}
 	}
+
+	CreateKeyPairCall struct {
+		Receives struct {
+			Input *awsec2.CreateKeyPairInput
+		}
+		Returns struct {
+			Output *awsec2.CreateKeyPairOutput
+			Error  error
+		}
+	}
 }
 
 func (c *EC2Client) ImportKeyPair(input *ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error) {
@@ -36,4 +46,10 @@ func (c *EC2Client) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.Des
 	c.DescribeKeyPairsCall.Receives.Input = input
 
 	return c.DescribeKeyPairsCall.Returns.DescribeKeyPairsOutput, c.DescribeKeyPairsCall.Returns.Error
+}
+
+func (c *EC2Client) CreateKeyPair(input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPairOutput, error) {
+	c.CreateKeyPairCall.Receives.Input = input
+
+	return c.CreateKeyPairCall.Returns.Output, c.CreateKeyPairCall.Returns.Error
 }

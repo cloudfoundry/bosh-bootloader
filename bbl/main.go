@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"crypto/rsa"
 	"fmt"
 	"os"
 
@@ -12,17 +11,16 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
-	"golang.org/x/crypto/ssh"
 )
 
 func main() {
 	uuidGenerator := ec2.NewUUIDGenerator(rand.Reader)
-	sessionProvider := ec2.NewSessionProvider()
+	ec2SessionProvider := ec2.NewSessionProvider()
 
 	templateBuilder := cloudformation.NewTemplateBuilder()
-	keypairGenerator := ec2.NewKeyPairGenerator(rand.Reader, uuidGenerator.Generate, rsa.GenerateKey, ssh.NewPublicKey)
-	keypairUploader := ec2.NewKeyPairUploader()
+	keypairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
 	keypairRetriever := ec2.NewKeyPairRetriever()
+	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairRetriever)
 	stateStore := storage.NewStore()
 	stackManager := cloudformation.NewStackManager()
 	cloudformationSessionProvider := cloudformation.NewSessionProvider()
@@ -30,9 +28,7 @@ func main() {
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-print-concourse-aws-template": unsupported.NewPrintConcourseAWSTemplate(os.Stdout, templateBuilder),
-		"unsupported-create-bosh-aws-keypair":      unsupported.NewCreateBoshAWSKeyPair(keypairRetriever, keypairGenerator, keypairUploader, sessionProvider),
-		"unsupported-provision-aws-for-concourse":  unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, cloudformationSessionProvider),
+		"unsupported-provision-aws-for-concourse": unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, keypairManager, cloudformationSessionProvider, ec2SessionProvider),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])

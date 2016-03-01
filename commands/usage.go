@@ -24,8 +24,6 @@ Global Options:
 Commands:
   help                                     "print usage"
   version                                  "print version"
-  unsupported-print-concourse-aws-template "print a concourse aws template"
-  unsupported-create-bosh-aws-keypair      "create and upload a keypair to AWS"
   unsupported-provision-aws-for-concourse  "create a new concourse stack on AWS"
 `
 
