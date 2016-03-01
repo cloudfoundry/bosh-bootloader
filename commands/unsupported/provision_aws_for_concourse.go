@@ -10,12 +10,9 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-type cloudformationClientProvider interface {
-	Client(aws.Config) (cloudformation.Client, error)
-}
-
-type ec2ClientProvider interface {
-	Client(aws.Config) (ec2.Client, error)
+type awsClientProvider interface {
+	CloudFormationClient(aws.Config) (cloudformation.Client, error)
+	EC2Client(aws.Config) (ec2.Client, error)
 }
 
 type templateBuilder interface {
@@ -32,20 +29,18 @@ type keyPairManager interface {
 }
 
 type ProvisionAWSForConcourse struct {
-	builder                      templateBuilder
-	stackManager                 stackManager
-	keyPairManager               keyPairManager
-	cloudformationClientProvider cloudformationClientProvider
-	ec2ClientProvider            ec2ClientProvider
+	builder           templateBuilder
+	stackManager      stackManager
+	keyPairManager    keyPairManager
+	awsClientProvider awsClientProvider
 }
 
-func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, cloudformationClientProvider cloudformationClientProvider, ec2ClientProvider ec2ClientProvider) ProvisionAWSForConcourse {
+func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, awsClientProvider awsClientProvider) ProvisionAWSForConcourse {
 	return ProvisionAWSForConcourse{
-		builder:                      builder,
-		stackManager:                 stackManager,
-		keyPairManager:               keyPairManager,
-		cloudformationClientProvider: cloudformationClientProvider,
-		ec2ClientProvider:            ec2ClientProvider,
+		builder:           builder,
+		stackManager:      stackManager,
+		keyPairManager:    keyPairManager,
+		awsClientProvider: awsClientProvider,
 	}
 }
 
@@ -60,7 +55,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		PrivateKey: []byte(state.KeyPair.PrivateKey),
 	}
 
-	ec2Client, err := p.ec2ClientProvider.Client(aws.Config{
+	ec2Client, err := p.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -83,7 +78,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 
 	template := p.builder.Build(state.KeyPair.Name)
 
-	cloudFormationClient, err := p.cloudformationClientProvider.Client(aws.Config{
+	cloudFormationClient, err := p.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,

@@ -19,33 +19,31 @@ import (
 var _ = Describe("ProvisionAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command                      unsupported.ProvisionAWSForConcourse
-			builder                      *fakes.TemplateBuilder
-			stackManager                 *fakes.StackManager
-			keyPairManager               *fakes.KeyPairManager
-			cloudFormationClient         *fakes.CloudFormationClient
-			cloudFormationClientProvider *fakes.CloudFormationClientProvider
-			ec2Client                    *fakes.EC2Client
-			ec2ClientProvider            *fakes.EC2ClientProvider
-			incomingState                storage.State
-			globalFlags                  commands.GlobalFlags
+			command              unsupported.ProvisionAWSForConcourse
+			builder              *fakes.TemplateBuilder
+			stackManager         *fakes.StackManager
+			keyPairManager       *fakes.KeyPairManager
+			cloudFormationClient *fakes.CloudFormationClient
+			clientProvider       *fakes.ClientProvider
+			ec2Client            *fakes.EC2Client
+			incomingState        storage.State
+			globalFlags          commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
 			builder = &fakes.TemplateBuilder{}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
-			cloudFormationClientProvider = &fakes.CloudFormationClientProvider{}
-			cloudFormationClientProvider.ClientCall.Returns.Client = cloudFormationClient
-
 			ec2Client = &fakes.EC2Client{}
-			ec2ClientProvider = &fakes.EC2ClientProvider{}
-			ec2ClientProvider.ClientCall.Returns.Client = ec2Client
+
+			clientProvider = &fakes.ClientProvider{}
+			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
+			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
 			stackManager = &fakes.StackManager{}
 			keyPairManager = &fakes.KeyPairManager{}
 
-			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, cloudFormationClientProvider, ec2ClientProvider)
+			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, clientProvider)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -89,7 +87,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudFormationClientProvider.ClientCall.Receives.Config).To(Equal(aws.Config{
+			Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-aws-region",
@@ -121,7 +119,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			state, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(ec2ClientProvider.ClientCall.Receives.Config).To(Equal(aws.Config{
+			Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-aws-region",
@@ -166,14 +164,14 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the cloudformation client can not be created", func() {
-				cloudFormationClientProvider.ClientCall.Returns.Error = errors.New("error creating client")
+				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("error creating client")
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error creating client"))
 			})
 
 			It("returns an error when the ec2 client can not be created", func() {
-				ec2ClientProvider.ClientCall.Returns.Error = errors.New("error creating client")
+				clientProvider.EC2ClientCall.Returns.Error = errors.New("error creating client")
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error creating client"))
