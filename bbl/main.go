@@ -15,7 +15,7 @@ import (
 
 func main() {
 	uuidGenerator := ec2.NewUUIDGenerator(rand.Reader)
-	ec2SessionProvider := ec2.NewSessionProvider()
+	ec2ClientProvider := ec2.NewClientProvider()
 
 	templateBuilder := cloudformation.NewTemplateBuilder()
 	keypairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
@@ -28,7 +28,7 @@ func main() {
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-provision-aws-for-concourse": unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, keypairManager, cloudformationClientProvider, ec2SessionProvider),
+		"unsupported-provision-aws-for-concourse": unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, keypairManager, cloudformationClientProvider, ec2ClientProvider),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])

@@ -20,14 +20,14 @@ type KeyPairInfo struct {
 	Fingerprint string
 }
 
-func (KeyPairRetriever) Retrieve(session Session, name string) (KeyPairInfo, bool, error) {
+func (KeyPairRetriever) Retrieve(client Client, name string) (KeyPairInfo, bool, error) {
 	params := &ec2.DescribeKeyPairsInput{
 		KeyNames: []*string{
 			aws.String(name),
 		},
 	}
 
-	resp, err := session.DescribeKeyPairs(params)
+	resp, err := client.DescribeKeyPairs(params)
 	if err != nil {
 		if strings.Contains(err.Error(), "InvalidKeyPair.NotFound") {
 			return KeyPairInfo{}, false, nil

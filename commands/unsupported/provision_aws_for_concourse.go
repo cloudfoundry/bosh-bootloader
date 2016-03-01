@@ -14,8 +14,8 @@ type cloudformationClientProvider interface {
 	Client(aws.Config) (cloudformation.Client, error)
 }
 
-type ec2SessionProvider interface {
-	Session(aws.Config) (ec2.Session, error)
+type ec2ClientProvider interface {
+	Client(aws.Config) (ec2.Client, error)
 }
 
 type templateBuilder interface {
@@ -28,7 +28,7 @@ type stackManager interface {
 }
 
 type keyPairManager interface {
-	Sync(ec2Session ec2.Session, keypair ec2.KeyPair) (ec2.KeyPair, error)
+	Sync(ec2Client ec2.Client, keypair ec2.KeyPair) (ec2.KeyPair, error)
 }
 
 type ProvisionAWSForConcourse struct {
@@ -36,16 +36,16 @@ type ProvisionAWSForConcourse struct {
 	stackManager                 stackManager
 	keyPairManager               keyPairManager
 	cloudformationClientProvider cloudformationClientProvider
-	ec2SessionProvider           ec2SessionProvider
+	ec2ClientProvider            ec2ClientProvider
 }
 
-func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, cloudformationClientProvider cloudformationClientProvider, ec2SessionProvider ec2SessionProvider) ProvisionAWSForConcourse {
+func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, cloudformationClientProvider cloudformationClientProvider, ec2ClientProvider ec2ClientProvider) ProvisionAWSForConcourse {
 	return ProvisionAWSForConcourse{
 		builder:                      builder,
 		stackManager:                 stackManager,
 		keyPairManager:               keyPairManager,
 		cloudformationClientProvider: cloudformationClientProvider,
-		ec2SessionProvider:           ec2SessionProvider,
+		ec2ClientProvider:            ec2ClientProvider,
 	}
 }
 
@@ -60,7 +60,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		PrivateKey: []byte(state.KeyPair.PrivateKey),
 	}
 
-	ec2Session, err := p.ec2SessionProvider.Session(aws.Config{
+	ec2Client, err := p.ec2ClientProvider.Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -70,7 +70,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		return state, err
 	}
 
-	keyPair, err = p.keyPairManager.Sync(ec2Session, keyPair)
+	keyPair, err = p.keyPairManager.Sync(ec2Client, keyPair)
 	if err != nil {
 		return state, err
 	}

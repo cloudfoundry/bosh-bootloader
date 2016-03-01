@@ -48,7 +48,7 @@ var _ = Describe("KeyPairManager", func() {
 					PrivateKey: []byte("private"),
 				}))
 
-				Expect(creator.CreateCall.Receives.Session).To(Equal(ec2Client))
+				Expect(creator.CreateCall.Receives.Client).To(Equal(ec2Client))
 				Expect(retriever.RetrieveCall.CallCount).To(Equal(1))
 			})
 
@@ -81,7 +81,7 @@ var _ = Describe("KeyPairManager", func() {
 					PublicKey:  []byte("public"),
 					PrivateKey: []byte("private"),
 				}
-				retriever.RetrieveCall.Stub = func(_ ec2.Session, name string) (ec2.KeyPairInfo, bool, error) {
+				retriever.RetrieveCall.Stub = func(_ ec2.Client, name string) (ec2.KeyPairInfo, bool, error) {
 					if retriever.RetrieveCall.CallCount == 1 {
 						return ec2.KeyPairInfo{}, false, nil
 					}
@@ -108,7 +108,7 @@ var _ = Describe("KeyPairManager", func() {
 					PrivateKey: []byte("private"),
 				}))
 
-				Expect(creator.CreateCall.Receives.Session).To(Equal(ec2Client))
+				Expect(creator.CreateCall.Receives.Client).To(Equal(ec2Client))
 				Expect(retriever.RetrieveCall.CallCount).To(Equal(1))
 			})
 

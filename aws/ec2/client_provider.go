@@ -6,19 +6,19 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 )
 
-type SessionProvider struct{}
+type ClientProvider struct{}
 
-type Session interface {
+type Client interface {
 	ImportKeyPair(*ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error)
 	DescribeKeyPairs(*ec2.DescribeKeyPairsInput) (*ec2.DescribeKeyPairsOutput, error)
 	CreateKeyPair(*ec2.CreateKeyPairInput) (*ec2.CreateKeyPairOutput, error)
 }
 
-func NewSessionProvider() SessionProvider {
-	return SessionProvider{}
+func NewClientProvider() ClientProvider {
+	return ClientProvider{}
 }
 
-func (s SessionProvider) Session(config aws.Config) (Session, error) {
+func (s ClientProvider) Client(config aws.Config) (Client, error) {
 	if err := config.ValidateCredentials(); err != nil {
 		return nil, err
 	}

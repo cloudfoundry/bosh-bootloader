@@ -9,12 +9,12 @@ type KeyPairCreator struct {
 			Error   error
 		}
 		Receives struct {
-			Session ec2.Session
+			Client ec2.Client
 		}
 	}
 }
 
-func (k *KeyPairCreator) Create(session ec2.Session) (ec2.KeyPair, error) {
-	k.CreateCall.Receives.Session = session
+func (k *KeyPairCreator) Create(client ec2.Client) (ec2.KeyPair, error) {
+	k.CreateCall.Receives.Client = client
 	return k.CreateCall.Returns.KeyPair, k.CreateCall.Returns.Error
 }

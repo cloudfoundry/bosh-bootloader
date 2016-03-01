@@ -25,8 +25,8 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			keyPairManager               *fakes.KeyPairManager
 			cloudFormationClient         *fakes.CloudFormationClient
 			cloudFormationClientProvider *fakes.CloudFormationClientProvider
-			ec2Session                   *fakes.EC2Client
-			ec2SessionProvider           *fakes.EC2SessionProvider
+			ec2Client                    *fakes.EC2Client
+			ec2ClientProvider            *fakes.EC2ClientProvider
 			incomingState                storage.State
 			globalFlags                  commands.GlobalFlags
 		)
@@ -38,14 +38,14 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			cloudFormationClientProvider = &fakes.CloudFormationClientProvider{}
 			cloudFormationClientProvider.ClientCall.Returns.Client = cloudFormationClient
 
-			ec2Session = &fakes.EC2Client{}
-			ec2SessionProvider = &fakes.EC2SessionProvider{}
-			ec2SessionProvider.SessionCall.Returns.Session = ec2Session
+			ec2Client = &fakes.EC2Client{}
+			ec2ClientProvider = &fakes.EC2ClientProvider{}
+			ec2ClientProvider.ClientCall.Returns.Client = ec2Client
 
 			stackManager = &fakes.StackManager{}
 			keyPairManager = &fakes.KeyPairManager{}
 
-			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, cloudFormationClientProvider, ec2SessionProvider)
+			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, cloudFormationClientProvider, ec2ClientProvider)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -121,13 +121,13 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			state, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(ec2SessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
+			Expect(ec2ClientProvider.ClientCall.Receives.Config).To(Equal(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-aws-region",
 				EndpointOverride: "some-endpoint",
 			}))
-			Expect(keyPairManager.SyncCall.Receives.EC2Session).To(Equal(ec2Session))
+			Expect(keyPairManager.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
 			Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
 				PrivateKey: []byte("some-private-key"),
@@ -155,7 +155,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(keyPairManager.SyncCall.Receives.EC2Session).To(Equal(ec2Session))
+				Expect(keyPairManager.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
 				Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 					Name:       "",
 					PrivateKey: []byte(""),
@@ -165,18 +165,18 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the cloudformation session can not be created", func() {
-				cloudFormationClientProvider.ClientCall.Returns.Error = errors.New("error creating session")
+			It("returns an error when the cloudformation client can not be created", func() {
+				cloudFormationClientProvider.ClientCall.Returns.Error = errors.New("error creating client")
 
 				_, err := command.Execute(globalFlags, incomingState)
-				Expect(err).To(MatchError("error creating session"))
+				Expect(err).To(MatchError("error creating client"))
 			})
 
-			It("returns an error when the ec2 session can not be created", func() {
-				ec2SessionProvider.SessionCall.Returns.Error = errors.New("error creating session")
+			It("returns an error when the ec2 client can not be created", func() {
+				ec2ClientProvider.ClientCall.Returns.Error = errors.New("error creating client")
 
 				_, err := command.Execute(globalFlags, incomingState)
-				Expect(err).To(MatchError("error creating session"))
+				Expect(err).To(MatchError("error creating client"))
 			})
 
 			It("returns an error when the key pair fails to sync", func() {

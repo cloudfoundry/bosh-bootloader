@@ -18,7 +18,7 @@ func NewKeyPairCreator(guidGenerator guidGenerator) KeyPairCreator {
 	}
 }
 
-func (c KeyPairCreator) Create(client Session) (KeyPair, error) {
+func (c KeyPairCreator) Create(client Client) (KeyPair, error) {
 	guid, err := c.generateGUID()
 	if err != nil {
 		return KeyPair{}, err

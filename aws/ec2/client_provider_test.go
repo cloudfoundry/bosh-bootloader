@@ -11,16 +11,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SessionProvider", func() {
-	var provider ec2.SessionProvider
+var _ = Describe("ClientProvider", func() {
+	var provider ec2.ClientProvider
 
 	BeforeEach(func() {
-		provider = ec2.NewSessionProvider()
+		provider = ec2.NewClientProvider()
 	})
 
-	Describe("Session", func() {
-		It("returns a Session with the provided configuration", func() {
-			session, err := provider.Session(aws.Config{
+	Describe("Client", func() {
+		It("returns a Client with the provided configuration", func() {
+			client, err := provider.Client(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-region",
@@ -28,20 +28,20 @@ var _ = Describe("SessionProvider", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			_, ok := session.(ec2.Session)
+			_, ok := client.(ec2.Client)
 			Expect(ok).To(BeTrue())
 
-			client, ok := session.(*awsec2.EC2)
+			ec2Client, ok := client.(*awsec2.EC2)
 			Expect(ok).To(BeTrue())
 
-			Expect(client.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
-			Expect(client.Config.Region).To(Equal(goaws.String("some-region")))
-			Expect(client.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
+			Expect(ec2Client.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
+			Expect(ec2Client.Config.Region).To(Equal(goaws.String("some-region")))
+			Expect(ec2Client.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when the credentials are not provided", func() {
-				_, err := provider.Session(aws.Config{})
+				_, err := provider.Client(aws.Config{})
 				Expect(err).To(MatchError("aws access key id must be provided"))
 			})
 		})
