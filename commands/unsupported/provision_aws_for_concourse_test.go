@@ -19,24 +19,24 @@ import (
 var _ = Describe("ProvisionAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command                       unsupported.ProvisionAWSForConcourse
-			builder                       *fakes.TemplateBuilder
-			stackManager                  *fakes.StackManager
-			keyPairManager                *fakes.KeyPairManager
-			cloudFormationSession         *fakes.CloudFormationClient
-			cloudFormationSessionProvider *fakes.CloudFormationSessionProvider
-			ec2Session                    *fakes.EC2Client
-			ec2SessionProvider            *fakes.EC2SessionProvider
-			incomingState                 storage.State
-			globalFlags                   commands.GlobalFlags
+			command                      unsupported.ProvisionAWSForConcourse
+			builder                      *fakes.TemplateBuilder
+			stackManager                 *fakes.StackManager
+			keyPairManager               *fakes.KeyPairManager
+			cloudFormationClient         *fakes.CloudFormationClient
+			cloudFormationClientProvider *fakes.CloudFormationClientProvider
+			ec2Session                   *fakes.EC2Client
+			ec2SessionProvider           *fakes.EC2SessionProvider
+			incomingState                storage.State
+			globalFlags                  commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
 			builder = &fakes.TemplateBuilder{}
 
-			cloudFormationSession = &fakes.CloudFormationClient{}
-			cloudFormationSessionProvider = &fakes.CloudFormationSessionProvider{}
-			cloudFormationSessionProvider.SessionCall.Returns.Session = cloudFormationSession
+			cloudFormationClient = &fakes.CloudFormationClient{}
+			cloudFormationClientProvider = &fakes.CloudFormationClientProvider{}
+			cloudFormationClientProvider.ClientCall.Returns.Client = cloudFormationClient
 
 			ec2Session = &fakes.EC2Client{}
 			ec2SessionProvider = &fakes.EC2SessionProvider{}
@@ -45,7 +45,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			stackManager = &fakes.StackManager{}
 			keyPairManager = &fakes.KeyPairManager{}
 
-			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, cloudFormationSessionProvider, ec2SessionProvider)
+			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, cloudFormationClientProvider, ec2SessionProvider)
 
 			builder.BuildCall.Returns.Template = cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -89,14 +89,14 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudFormationSessionProvider.SessionCall.Receives.Config).To(Equal(aws.Config{
+			Expect(cloudFormationClientProvider.ClientCall.Receives.Config).To(Equal(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-aws-region",
 				EndpointOverride: "some-endpoint",
 			}))
 			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
-			Expect(stackManager.CreateOrUpdateCall.Receives.Session).To(Equal(cloudFormationSession))
+			Expect(stackManager.CreateOrUpdateCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(cloudformation.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -112,7 +112,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 				Resources: map[string]cloudformation.Resource{},
 			}))
 
-			Expect(stackManager.WaitForCompletionCall.Receives.Session).To(Equal(cloudFormationSession))
+			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))
 			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(2 * time.Second))
 		})
@@ -166,7 +166,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the cloudformation session can not be created", func() {
-				cloudFormationSessionProvider.SessionCall.Returns.Error = errors.New("error creating session")
+				cloudFormationClientProvider.ClientCall.Returns.Error = errors.New("error creating session")
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error creating session"))

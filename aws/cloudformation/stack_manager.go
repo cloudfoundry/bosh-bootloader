@@ -18,7 +18,7 @@ func NewStackManager() StackManager {
 	return StackManager{}
 }
 
-func (s StackManager) Create(client Session, name string, template Template) error {
+func (s StackManager) Create(client Client, name string, template Template) error {
 	templateJson, err := json.Marshal(&template)
 	if err != nil {
 		return err
@@ -37,7 +37,7 @@ func (s StackManager) Create(client Session, name string, template Template) err
 	return nil
 }
 
-func (s StackManager) Update(client Session, name string, template Template) error {
+func (s StackManager) Update(client Client, name string, template Template) error {
 	templateJson, err := json.Marshal(&template)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (s StackManager) Update(client Session, name string, template Template) err
 	return nil
 }
 
-func (s StackManager) Describe(client Session, name string) (Stack, error) {
+func (s StackManager) Describe(client Client, name string) (Stack, error) {
 	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
@@ -102,7 +102,7 @@ func (s StackManager) Describe(client Session, name string) (Stack, error) {
 	return Stack{}, StackNotFound
 }
 
-func (s StackManager) CreateOrUpdate(client Session, name string, template Template) error {
+func (s StackManager) CreateOrUpdate(client Client, name string, template Template) error {
 	_, err := s.Describe(client, name)
 	switch err {
 	case StackNotFound:
@@ -114,7 +114,7 @@ func (s StackManager) CreateOrUpdate(client Session, name string, template Templ
 	}
 }
 
-func (s StackManager) WaitForCompletion(client Session, name string, sleepInterval time.Duration) error {
+func (s StackManager) WaitForCompletion(client Client, name string, sleepInterval time.Duration) error {
 	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})

@@ -10,8 +10,8 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-type cloudformationSessionProvider interface {
-	Session(aws.Config) (cloudformation.Session, error)
+type cloudformationClientProvider interface {
+	Client(aws.Config) (cloudformation.Client, error)
 }
 
 type ec2SessionProvider interface {
@@ -23,8 +23,8 @@ type templateBuilder interface {
 }
 
 type stackManager interface {
-	CreateOrUpdate(cloudFormationClient cloudformation.Session, stackName string, template cloudformation.Template) error
-	WaitForCompletion(cloudFormationClient cloudformation.Session, stackName string, sleepInterval time.Duration) error
+	CreateOrUpdate(cloudFormationClient cloudformation.Client, stackName string, template cloudformation.Template) error
+	WaitForCompletion(cloudFormationClient cloudformation.Client, stackName string, sleepInterval time.Duration) error
 }
 
 type keyPairManager interface {
@@ -32,20 +32,20 @@ type keyPairManager interface {
 }
 
 type ProvisionAWSForConcourse struct {
-	builder                       templateBuilder
-	stackManager                  stackManager
-	keyPairManager                keyPairManager
-	cloudformationSessionProvider cloudformationSessionProvider
-	ec2SessionProvider            ec2SessionProvider
+	builder                      templateBuilder
+	stackManager                 stackManager
+	keyPairManager               keyPairManager
+	cloudformationClientProvider cloudformationClientProvider
+	ec2SessionProvider           ec2SessionProvider
 }
 
-func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, cloudformationSessionProvider cloudformationSessionProvider, ec2SessionProvider ec2SessionProvider) ProvisionAWSForConcourse {
+func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, cloudformationClientProvider cloudformationClientProvider, ec2SessionProvider ec2SessionProvider) ProvisionAWSForConcourse {
 	return ProvisionAWSForConcourse{
-		builder:                       builder,
-		stackManager:                  stackManager,
-		keyPairManager:                keyPairManager,
-		cloudformationSessionProvider: cloudformationSessionProvider,
-		ec2SessionProvider:            ec2SessionProvider,
+		builder:                      builder,
+		stackManager:                 stackManager,
+		keyPairManager:               keyPairManager,
+		cloudformationClientProvider: cloudformationClientProvider,
+		ec2SessionProvider:           ec2SessionProvider,
 	}
 }
 
@@ -83,7 +83,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 
 	template := p.builder.Build(state.KeyPair.Name)
 
-	cloudFormationSession, err := p.cloudformationSessionProvider.Session(aws.Config{
+	cloudFormationClient, err := p.cloudformationClientProvider.Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -93,11 +93,11 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		return state, err
 	}
 
-	if err := p.stackManager.CreateOrUpdate(cloudFormationSession, "concourse", template); err != nil {
+	if err := p.stackManager.CreateOrUpdate(cloudFormationClient, "concourse", template); err != nil {
 		return state, err
 	}
 
-	if err := p.stackManager.WaitForCompletion(cloudFormationSession, "concourse", 2*time.Second); err != nil {
+	if err := p.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 2*time.Second); err != nil {
 		return state, err
 	}
 

@@ -11,16 +11,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SessionProvider", func() {
-	var provider cloudformation.SessionProvider
+var _ = Describe("ClientProvider", func() {
+	var provider cloudformation.ClientProvider
 
 	BeforeEach(func() {
-		provider = cloudformation.NewSessionProvider()
+		provider = cloudformation.NewClientProvider()
 	})
 
-	Describe("Session", func() {
-		It("returns a Session with the provided configuration", func() {
-			session, err := provider.Session(aws.Config{
+	Describe("Client", func() {
+		It("returns a Client with the provided configuration", func() {
+			client, err := provider.Client(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-region",
@@ -28,20 +28,20 @@ var _ = Describe("SessionProvider", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			_, ok := session.(cloudformation.Session)
+			_, ok := client.(cloudformation.Client)
 			Expect(ok).To(BeTrue())
 
-			client, ok := session.(*awscloudformation.CloudFormation)
+			cloudformationClient, ok := client.(*awscloudformation.CloudFormation)
 			Expect(ok).To(BeTrue())
 
-			Expect(client.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
-			Expect(client.Config.Region).To(Equal(goaws.String("some-region")))
-			Expect(client.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
+			Expect(cloudformationClient.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
+			Expect(cloudformationClient.Config.Region).To(Equal(goaws.String("some-region")))
+			Expect(cloudformationClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when the credentials are not provided", func() {
-				_, err := provider.Session(aws.Config{})
+				_, err := provider.Client(aws.Config{})
 				Expect(err).To(MatchError("aws access key id must be provided"))
 			})
 		})

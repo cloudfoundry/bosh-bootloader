@@ -6,19 +6,19 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 )
 
-type SessionProvider struct{}
+type ClientProvider struct{}
 
-type Session interface {
+type Client interface {
 	CreateStack(input *awscloudformation.CreateStackInput) (*awscloudformation.CreateStackOutput, error)
 	UpdateStack(input *awscloudformation.UpdateStackInput) (*awscloudformation.UpdateStackOutput, error)
 	DescribeStacks(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error)
 }
 
-func NewSessionProvider() SessionProvider {
-	return SessionProvider{}
+func NewClientProvider() ClientProvider {
+	return ClientProvider{}
 }
 
-func (s SessionProvider) Session(config aws.Config) (Session, error) {
+func (s ClientProvider) Client(config aws.Config) (Client, error) {
 	if err := config.ValidateCredentials(); err != nil {
 		return nil, err
 	}

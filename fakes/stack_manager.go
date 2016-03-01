@@ -11,7 +11,7 @@ type StackManager struct {
 		Receives struct {
 			StackName string
 			Template  cloudformation.Template
-			Session   cloudformation.Session
+			Client    cloudformation.Client
 		}
 		Returns struct {
 			Error error
@@ -20,7 +20,7 @@ type StackManager struct {
 
 	WaitForCompletionCall struct {
 		Receives struct {
-			Session       cloudformation.Session
+			Client        cloudformation.Client
 			StackName     string
 			SleepInterval time.Duration
 		}
@@ -30,16 +30,16 @@ type StackManager struct {
 	}
 }
 
-func (m *StackManager) CreateOrUpdate(session cloudformation.Session, stackName string, template cloudformation.Template) error {
-	m.CreateOrUpdateCall.Receives.Session = session
+func (m *StackManager) CreateOrUpdate(client cloudformation.Client, stackName string, template cloudformation.Template) error {
+	m.CreateOrUpdateCall.Receives.Client = client
 	m.CreateOrUpdateCall.Receives.StackName = stackName
 	m.CreateOrUpdateCall.Receives.Template = template
 
 	return m.CreateOrUpdateCall.Returns.Error
 }
 
-func (m *StackManager) WaitForCompletion(session cloudformation.Session, stackName string, sleepInterval time.Duration) error {
-	m.WaitForCompletionCall.Receives.Session = session
+func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName string, sleepInterval time.Duration) error {
+	m.WaitForCompletionCall.Receives.Client = client
 	m.WaitForCompletionCall.Receives.StackName = stackName
 	m.WaitForCompletionCall.Receives.SleepInterval = sleepInterval
 

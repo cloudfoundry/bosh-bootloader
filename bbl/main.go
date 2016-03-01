@@ -23,12 +23,12 @@ func main() {
 	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairRetriever)
 	stateStore := storage.NewStore()
 	stackManager := cloudformation.NewStackManager()
-	cloudformationSessionProvider := cloudformation.NewSessionProvider()
+	cloudformationClientProvider := cloudformation.NewClientProvider()
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-provision-aws-for-concourse": unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, keypairManager, cloudformationSessionProvider, ec2SessionProvider),
+		"unsupported-provision-aws-for-concourse": unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, keypairManager, cloudformationClientProvider, ec2SessionProvider),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])
