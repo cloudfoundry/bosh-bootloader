@@ -1,6 +1,6 @@
 [submodule "vendor/github.com/aws/aws-sdk-go"]
 	path = vendor/github.com/aws/aws-sdk-go
-	url = git://github.com/aws/aws-sdk-go
+	url = https://github.com/aws/aws-sdk-go.git
 [submodule "vendor/golang.org/x/crypto"]
 	path = vendor/golang.org/x/crypto
-	url = git://github.com/golang/crypto
+	url = https://github.com/golang/crypto.git
