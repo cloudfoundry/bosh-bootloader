@@ -92,7 +92,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		return state, err
 	}
 
-	if err := p.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 2*time.Second); err != nil {
+	if err := p.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 15*time.Second); err != nil {
 		return state, err
 	}
 

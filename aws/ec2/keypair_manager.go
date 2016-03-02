@@ -3,6 +3,7 @@ package ec2
 type KeyPairManager struct {
 	creator   keypairCreator
 	retriever keypairRetriever
+	logger    logger
 }
 
 type keypairCreator interface {
@@ -13,10 +14,15 @@ type keypairRetriever interface {
 	Retrieve(client Client, keypairName string) (KeyPairInfo, bool, error)
 }
 
-func NewKeyPairManager(creator keypairCreator, retriever keypairRetriever) KeyPairManager {
+type logger interface {
+	Step(message string)
+}
+
+func NewKeyPairManager(creator keypairCreator, retriever keypairRetriever, logger logger) KeyPairManager {
 	return KeyPairManager{
 		creator:   creator,
 		retriever: retriever,
+		logger:    logger,
 	}
 }
 
@@ -28,10 +34,14 @@ func (m KeyPairManager) Sync(ec2Client Client, keypair KeyPair) (KeyPair, error)
 	}
 
 	if !hasLocalKeyPair || !hasRemoteKeyPair {
+		m.logger.Step("creating keypair")
+
 		keypair, err = m.creator.Create(ec2Client)
 		if err != nil {
 			return KeyPair{}, err
 		}
+	} else {
+		m.logger.Step("using existing keypair")
 	}
 
 	return keypair, nil

@@ -19,85 +19,14 @@ import (
 var _ = Describe("StackManager", func() {
 	var (
 		cloudformationClient *fakes.CloudFormationClient
+		logger               *fakes.Logger
 		manager              cloudformation.StackManager
-		templateBuilder      cloudformation.TemplateBuilder
 	)
 
 	BeforeEach(func() {
 		cloudformationClient = &fakes.CloudFormationClient{}
-		manager = cloudformation.NewStackManager()
-		templateBuilder = cloudformation.NewTemplateBuilder()
-	})
-
-	Describe("Create", func() {
-		It("creates a stack given a name and cloudformation template", func() {
-			template := templateBuilder.Build("keypair-name")
-			templateJson, err := json.Marshal(&template)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = manager.Create(cloudformationClient, "some-stack-name", template)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cloudformationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
-				StackName:    aws.String("some-stack-name"),
-				TemplateBody: aws.String(string(templateJson)),
-			}))
-		})
-
-		Context("error cases", func() {
-			It("returns an error when the stack cannot be created", func() {
-				cloudformationClient.CreateStackCall.Returns.Error = errors.New("something bad happened")
-
-				err := manager.Create(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
-				Expect(err).To(MatchError("something bad happened"))
-			})
-		})
-	})
-
-	Describe("Update", func() {
-		var template cloudformation.Template
-
-		BeforeEach(func() {
-			template = templateBuilder.Build("keypair-name")
-		})
-
-		It("updates a stack with the given name", func() {
-			templateJson, err := json.Marshal(&template)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = manager.Update(cloudformationClient, "some-stack-name", template)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cloudformationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
-				StackName:    aws.String("some-stack-name"),
-				TemplateBody: aws.String(string(templateJson)),
-			}))
-		})
-
-		Context("when the stack does not need to be updated", func() {
-			It("does not return an error", func() {
-				cloudformationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
-				err := manager.Update(cloudformationClient, "some-stack-name", template)
-				Expect(err).NotTo(HaveOccurred())
-			})
-		})
-
-		Context("error cases", func() {
-			It("returns an error when the stack cannot be updated", func() {
-				cloudformationClient.UpdateStackCall.Returns.Error = errors.New("something bad happened")
-
-				err := manager.Update(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
-				Expect(err).To(MatchError("something bad happened"))
-			})
-
-			Context("when there is a response error", func() {
-				It("returns an error when the response code is not a 400", func() {
-					cloudformationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("something bad happened")), 500, "0")
-					err := manager.Update(cloudformationClient, "some-stack-name", template)
-					Expect(err).To(MatchError(ContainSubstring("something bad happened")))
-				})
-			})
-		})
+		logger = &fakes.Logger{}
+		manager = cloudformation.NewStackManager(logger)
 	})
 
 	Describe("Describe", func() {
@@ -230,7 +159,10 @@ var _ = Describe("StackManager", func() {
 		It("creates a stack if the stack does not exist", func() {
 			cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
 
-			template := templateBuilder.Build("keypair-name")
+			template := cloudformation.Template{
+				Description: "testing template",
+			}
+
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -245,6 +177,8 @@ var _ = Describe("StackManager", func() {
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
+
+			Expect(logger.StepCall.Receives.Message).To(Equal("creating cloudformation stack"))
 		})
 
 		It("updates the stack if the stack exists", func() {
@@ -257,7 +191,10 @@ var _ = Describe("StackManager", func() {
 				},
 			}
 
-			template := templateBuilder.Build("keypair-name")
+			template := cloudformation.Template{
+				Description: "testing template",
+			}
+
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -272,6 +209,8 @@ var _ = Describe("StackManager", func() {
 				StackName:    aws.String("some-stack-name"),
 				TemplateBody: aws.String(string(templateJson)),
 			}))
+
+			Expect(logger.StepCall.Receives.Message).To(Equal("updating cloudformation stack"))
 		})
 
 		It("does not return an error when no updates are to be performed", func() {
@@ -285,7 +224,10 @@ var _ = Describe("StackManager", func() {
 				},
 			}
 
-			template := templateBuilder.Build("keypair-name")
+			template := cloudformation.Template{
+				Description: "testing template",
+			}
+
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -306,7 +248,11 @@ var _ = Describe("StackManager", func() {
 			It("returns an error when the stack cannot be described", func() {
 				cloudformationClient.DescribeStacksCall.Returns.Error = errors.New("error describing stack")
 
-				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
+				template := cloudformation.Template{
+					Description: "testing template",
+				}
+
+				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", template)
 				Expect(err).To(MatchError("error describing stack"))
 			})
 
@@ -314,7 +260,11 @@ var _ = Describe("StackManager", func() {
 				cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
 				cloudformationClient.CreateStackCall.Returns.Error = errors.New("error creating stack")
 
-				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
+				template := cloudformation.Template{
+					Description: "testing template",
+				}
+
+				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", template)
 				Expect(err).To(MatchError("error creating stack"))
 			})
 
@@ -329,7 +279,11 @@ var _ = Describe("StackManager", func() {
 				}
 				cloudformationClient.UpdateStackCall.Returns.Error = errors.New("error updating stack")
 
-				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", templateBuilder.Build("keypair-name"))
+				template := cloudformation.Template{
+					Description: "testing template",
+				}
+
+				err := manager.CreateOrUpdate(cloudformationClient, "some-stack-name", template)
 				Expect(err).To(MatchError("error updating stack"))
 			})
 		})
@@ -360,6 +314,8 @@ var _ = Describe("StackManager", func() {
 				StackName: aws.String("some-stack-name"),
 			}))
 			Expect(cloudformationClient.DescribeStacksCall.CallCount).To(Equal(callCount))
+			Expect(logger.DotCall.CallCount).To(Equal(callCount - 1))
+			Expect(logger.StepCall.Receives.Message).To(Equal("finished applying cloudformation template"))
 		},
 
 			Entry("create succeeded",

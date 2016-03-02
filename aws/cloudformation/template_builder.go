@@ -1,12 +1,23 @@
 package cloudformation
 
-type TemplateBuilder struct{}
+type logger interface {
+	Step(message string)
+	Dot()
+}
 
-func NewTemplateBuilder() TemplateBuilder {
-	return TemplateBuilder{}
+type TemplateBuilder struct {
+	logger logger
+}
+
+func NewTemplateBuilder(logger logger) TemplateBuilder {
+	return TemplateBuilder{
+		logger: logger,
+	}
 }
 
 func (t TemplateBuilder) Build(keyPairName string) Template {
+	t.logger.Step("generating cloudformation template")
+
 	parameters := map[string]Parameter{
 		"KeyName": Parameter{
 			Type:        "AWS::EC2::KeyPair::KeyName",

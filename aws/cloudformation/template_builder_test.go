@@ -5,21 +5,27 @@ import (
 	"io/ioutil"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TemplateBuilder", func() {
-	var builder cloudformation.TemplateBuilder
+	var (
+		builder cloudformation.TemplateBuilder
+		logger  *fakes.Logger
+	)
 
 	BeforeEach(func() {
-		builder = cloudformation.NewTemplateBuilder()
+		logger = &fakes.Logger{}
+		builder = cloudformation.NewTemplateBuilder(logger)
 	})
 
 	Describe("Build", func() {
 		It("builds a cloudformation template", func() {
 			template := builder.Build("keypair-name")
+
 			Expect(template).To(Equal(cloudformation.Template{
 				AWSTemplateFormatVersion: "2010-09-09",
 				Description:              "Infrastructure for a MicroBOSH deployment with an ELB.",
@@ -443,6 +449,12 @@ var _ = Describe("TemplateBuilder", func() {
 					},
 				},
 			}))
+		})
+
+		It("logs that the cloudformation template is being generated", func() {
+			builder.Build("keypair-name")
+
+			Expect(logger.StepCall.Receives.Message).To(Equal("generating cloudformation template"))
 		})
 	})
 

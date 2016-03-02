@@ -51,7 +51,8 @@ func (b *Backend) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.Descr
 	var keyPairInfos []*ec2.KeyPairInfo
 	for _, keyPair := range keyPairs {
 		keyPairInfos = append(keyPairInfos, &ec2.KeyPairInfo{
-			KeyName: aws.String(keyPair.Name),
+			KeyName:        aws.String(keyPair.Name),
+			KeyFingerprint: aws.String("some-fingerprint"),
 		})
 	}
 

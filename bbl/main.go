@@ -16,13 +16,14 @@ import (
 
 func main() {
 	uuidGenerator := ec2.NewUUIDGenerator(rand.Reader)
+	logger := application.NewLogger(os.Stdout)
 
-	templateBuilder := cloudformation.NewTemplateBuilder()
+	templateBuilder := cloudformation.NewTemplateBuilder(logger)
 	keypairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
 	keypairRetriever := ec2.NewKeyPairRetriever()
-	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairRetriever)
+	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairRetriever, logger)
 	stateStore := storage.NewStore()
-	stackManager := cloudformation.NewStackManager()
+	stackManager := cloudformation.NewStackManager(logger)
 	awsClientProvider := aws.NewClientProvider()
 
 	app := application.New(application.CommandSet{

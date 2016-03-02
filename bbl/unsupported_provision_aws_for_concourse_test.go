@@ -62,10 +62,25 @@ var _ = Describe("bbl", func() {
 				keyPairs := fakeAWS.KeyPairs.All()
 				Expect(keyPairs).To(HaveLen(1))
 				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+
+				stdout := session.Out.Contents()
+				Expect(stdout).To(ContainSubstring("step: creating keypair"))
+				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+				Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
+				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 			})
 		})
 
-		Context("when the cloudformation stack already exists", func() {
+		Context("when the keypair and cloudformation stack already exist", func() {
+			BeforeEach(func() {
+				fakeAWS.Stacks.Set(awsbackend.Stack{
+					Name: "concourse",
+				})
+				fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
+					Name: "some-keypair-name",
+				})
+			})
+
 			It("updates the stack with the cloudformation template", func() {
 				tempDir, err := ioutil.TempDir("", "")
 
@@ -107,10 +122,6 @@ ohmMhda49PmtPpDlTAMihjbjvLAM7IU/S7+FVIINjTBV+YVnjS2y
 
 				ioutil.WriteFile(filepath.Join(tempDir, "state.json"), buf, os.ModePerm)
 
-				fakeAWS.Stacks.Set(awsbackend.Stack{
-					Name: "concourse",
-				})
-
 				args := []string{
 					fmt.Sprintf("--endpoint-override=%s", server.URL),
 					"--aws-access-key-id", "some-access-key",
@@ -129,6 +140,12 @@ ohmMhda49PmtPpDlTAMihjbjvLAM7IU/S7+FVIINjTBV+YVnjS2y
 					Name:       "concourse",
 					WasUpdated: true,
 				}))
+
+				stdout := session.Out.Contents()
+				Expect(stdout).To(ContainSubstring("step: using existing keypair"))
+				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+				Expect(stdout).To(ContainSubstring("step: updating cloudformation stack"))
+				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 			})
 		})
 	})

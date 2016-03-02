@@ -112,7 +112,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))
-			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(2 * time.Second))
+			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
 		})
 
 		It("syncs the keypair", func() {

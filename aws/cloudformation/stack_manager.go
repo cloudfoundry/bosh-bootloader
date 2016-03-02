@@ -12,59 +12,26 @@ import (
 
 var StackNotFound error = errors.New("stack not found")
 
-type StackManager struct{}
-
-func NewStackManager() StackManager {
-	return StackManager{}
+type StackManager struct {
+	logger logger
 }
 
-func (s StackManager) Create(client Client, name string, template Template) error {
-	templateJson, err := json.Marshal(&template)
-	if err != nil {
-		return err
+func NewStackManager(logger logger) StackManager {
+	return StackManager{
+		logger: logger,
 	}
-
-	params := &cloudformation.CreateStackInput{
-		StackName:    aws.String(name),
-		TemplateBody: aws.String(string(templateJson)),
-	}
-
-	_, err = client.CreateStack(params)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
-func (s StackManager) Update(client Client, name string, template Template) error {
-	templateJson, err := json.Marshal(&template)
-	if err != nil {
+func (s StackManager) CreateOrUpdate(client Client, name string, template Template) error {
+	_, err := s.Describe(client, name)
+	switch err {
+	case StackNotFound:
+		return s.create(client, name, template)
+	case nil:
+		return s.update(client, name, template)
+	default:
 		return err
 	}
-
-	params := &cloudformation.UpdateStackInput{
-		StackName:    aws.String(name),
-		TemplateBody: aws.String(string(templateJson)),
-	}
-
-	_, err = client.UpdateStack(params)
-	if err != nil {
-		if err != nil {
-			switch err.(type) {
-			case awserr.RequestFailure:
-				if err.(awserr.RequestFailure).StatusCode() == 400 {
-					return nil
-				}
-
-				return err
-			default:
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func (s StackManager) Describe(client Client, name string) (Stack, error) {
@@ -102,18 +69,6 @@ func (s StackManager) Describe(client Client, name string) (Stack, error) {
 	return Stack{}, StackNotFound
 }
 
-func (s StackManager) CreateOrUpdate(client Client, name string, template Template) error {
-	_, err := s.Describe(client, name)
-	switch err {
-	case StackNotFound:
-		return s.Create(client, name, template)
-	case nil:
-		return s.Update(client, name, template)
-	default:
-		return err
-	}
-}
-
 func (s StackManager) WaitForCompletion(client Client, name string, sleepInterval time.Duration) error {
 	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
@@ -139,10 +94,65 @@ func (s StackManager) WaitForCompletion(client Client, name string, sleepInterva
 		cloudformation.StackStatusUpdateComplete,
 		cloudformation.StackStatusUpdateRollbackComplete,
 		cloudformation.StackStatusUpdateRollbackFailed:
+		s.logger.Step("finished applying cloudformation template")
 		return nil
 	default:
+		s.logger.Dot()
 		time.Sleep(sleepInterval)
 		return s.WaitForCompletion(client, name, sleepInterval)
+	}
+
+	return nil
+}
+
+func (s StackManager) create(client Client, name string, template Template) error {
+	s.logger.Step("creating cloudformation stack")
+
+	templateJson, err := json.Marshal(&template)
+	if err != nil {
+		return err
+	}
+
+	params := &cloudformation.CreateStackInput{
+		StackName:    aws.String(name),
+		TemplateBody: aws.String(string(templateJson)),
+	}
+
+	_, err = client.CreateStack(params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s StackManager) update(client Client, name string, template Template) error {
+	s.logger.Step("updating cloudformation stack")
+
+	templateJson, err := json.Marshal(&template)
+	if err != nil {
+		return err
+	}
+
+	params := &cloudformation.UpdateStackInput{
+		StackName:    aws.String(name),
+		TemplateBody: aws.String(string(templateJson)),
+	}
+
+	_, err = client.UpdateStack(params)
+	if err != nil {
+		if err != nil {
+			switch err.(type) {
+			case awserr.RequestFailure:
+				if err.(awserr.RequestFailure).StatusCode() == 400 {
+					return nil
+				}
+
+				return err
+			default:
+				return err
+			}
+		}
 	}
 
 	return nil
