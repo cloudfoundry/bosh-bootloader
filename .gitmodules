@@ -4,3 +4,6 @@
 [submodule "vendor/golang.org/x/crypto"]
 	path = vendor/golang.org/x/crypto
 	url = https://github.com/golang/crypto.git
+[submodule "vendor/github.com/rosenhouse/awsfaker"]
+	path = vendor/github.com/rosenhouse/awsfaker
+	url = https://github.com/rosenhouse/awsfaker.git
