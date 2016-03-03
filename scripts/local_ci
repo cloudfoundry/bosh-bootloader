@@ -4,6 +4,6 @@ ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 pushd "${ROOT_DIRECTORY}"
   set -e
-  docker build --tag=cfinfrastructure/bosh-bootloader ./ci
-  docker run -v $PWD:/bosh-bootloader cfinfrastructure/bosh-bootloader /bosh-bootloader/ci/tasks/test/test
+  docker build --tag=cfinfrastructure/bosh-bootloader ${DOCKERFILE:-"${GOPATH}/src/github.com/cloudfoundry/mega-ci/dockerfiles/bosh-bootloader"}
+  docker run -v $PWD:/bosh-bootloader -v ${MEGA_CI:-"${GOPATH}/src/github.com/cloudfoundry/mega-ci"}:/mega-ci cfinfrastructure/bosh-bootloader ${TEST_TASK:-"/mega-ci/scripts/ci/bosh-bootloader/test"}
 popd
