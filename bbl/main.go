@@ -20,8 +20,8 @@ func main() {
 
 	templateBuilder := cloudformation.NewTemplateBuilder(logger)
 	keypairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
-	keypairRetriever := ec2.NewKeyPairRetriever()
-	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairRetriever, logger)
+	keypairChecker := ec2.NewKeyPairChecker()
+	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairChecker, logger)
 	stateStore := storage.NewStore()
 	stackManager := cloudformation.NewStackManager(logger)
 	awsClientProvider := aws.NewClientProvider()

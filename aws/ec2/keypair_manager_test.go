@@ -15,7 +15,7 @@ var _ = Describe("KeyPairManager", func() {
 		var (
 			stateKeyPair ec2.KeyPair
 			creator      *fakes.KeyPairCreator
-			retriever    *fakes.KeyPairRetriever
+			checker      *fakes.KeyPairChecker
 			ec2Client    *fakes.EC2Client
 			logger       *fakes.Logger
 			manager      ec2.KeyPairManager
@@ -23,16 +23,16 @@ var _ = Describe("KeyPairManager", func() {
 
 		BeforeEach(func() {
 			creator = &fakes.KeyPairCreator{}
-			retriever = &fakes.KeyPairRetriever{}
+			checker = &fakes.KeyPairChecker{}
 			ec2Client = &fakes.EC2Client{}
 			logger = &fakes.Logger{}
-			manager = ec2.NewKeyPairManager(creator, retriever, logger)
+			manager = ec2.NewKeyPairManager(creator, checker, logger)
 		})
 
 		Context("no keypair in state file", func() {
 			BeforeEach(func() {
 				stateKeyPair = ec2.KeyPair{}
-				retriever.RetrieveCall.Returns.Present = false
+				checker.HasKeyPairCall.Returns.Present = false
 			})
 
 			It("creates a keypair", func() {
@@ -51,7 +51,7 @@ var _ = Describe("KeyPairManager", func() {
 				}))
 
 				Expect(creator.CreateCall.Receives.Client).To(Equal(ec2Client))
-				Expect(retriever.RetrieveCall.CallCount).To(Equal(1))
+				Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
 				Expect(logger.StepCall.Receives.Message).To(Equal("creating keypair"))
 			})
 
@@ -67,8 +67,8 @@ var _ = Describe("KeyPairManager", func() {
 
 				Context("when remote keypair retrieve fails", func() {
 					It("returns an error", func() {
-						retriever.RetrieveCall.Stub = nil
-						retriever.RetrieveCall.Returns.Error = errors.New("keypair retrieve failed")
+						checker.HasKeyPairCall.Stub = nil
+						checker.HasKeyPairCall.Returns.Error = errors.New("keypair retrieve failed")
 
 						_, err := manager.Sync(ec2Client, stateKeyPair)
 						Expect(err).To(MatchError("keypair retrieve failed"))
@@ -84,15 +84,12 @@ var _ = Describe("KeyPairManager", func() {
 					PublicKey:  []byte("public"),
 					PrivateKey: []byte("private"),
 				}
-				retriever.RetrieveCall.Stub = func(_ ec2.Client, name string) (ec2.KeyPairInfo, bool, error) {
-					if retriever.RetrieveCall.CallCount == 1 {
-						return ec2.KeyPairInfo{}, false, nil
+				checker.HasKeyPairCall.Stub = func(_ ec2.Client, name string) (bool, error) {
+					if checker.HasKeyPairCall.CallCount == 1 {
+						return false, nil
 					}
 
-					return ec2.KeyPairInfo{
-						Name:        name,
-						Fingerprint: "fingerprint",
-					}, true, nil
+					return true, nil
 				}
 			})
 
@@ -112,7 +109,7 @@ var _ = Describe("KeyPairManager", func() {
 				}))
 
 				Expect(creator.CreateCall.Receives.Client).To(Equal(ec2Client))
-				Expect(retriever.RetrieveCall.CallCount).To(Equal(1))
+				Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
 			})
 
 			Context("failure cases", func() {
@@ -127,8 +124,8 @@ var _ = Describe("KeyPairManager", func() {
 
 				Context("remote keypair retrieve fails", func() {
 					It("returns an error", func() {
-						retriever.RetrieveCall.Stub = nil
-						retriever.RetrieveCall.Returns.Error = errors.New("keypair retrieve failed")
+						checker.HasKeyPairCall.Stub = nil
+						checker.HasKeyPairCall.Returns.Error = errors.New("keypair retrieve failed")
 
 						_, err := manager.Sync(ec2Client, ec2.KeyPair{})
 						Expect(err).To(MatchError("keypair retrieve failed"))
@@ -144,7 +141,7 @@ var _ = Describe("KeyPairManager", func() {
 					PublicKey:  []byte("public"),
 					PrivateKey: []byte("private"),
 				}
-				retriever.RetrieveCall.Returns.Present = true
+				checker.HasKeyPairCall.Returns.Present = true
 			})
 
 			It("logs that the existing keypair will be used", func() {

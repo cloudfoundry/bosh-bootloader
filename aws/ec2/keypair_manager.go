@@ -1,34 +1,34 @@
 package ec2
 
 type KeyPairManager struct {
-	creator   keypairCreator
-	retriever keypairRetriever
-	logger    logger
+	creator keypairCreator
+	checker keypairChecker
+	logger  logger
 }
 
 type keypairCreator interface {
 	Create(Client) (KeyPair, error)
 }
 
-type keypairRetriever interface {
-	Retrieve(client Client, keypairName string) (KeyPairInfo, bool, error)
+type keypairChecker interface {
+	HasKeyPair(client Client, keypairName string) (bool, error)
 }
 
 type logger interface {
 	Step(message string)
 }
 
-func NewKeyPairManager(creator keypairCreator, retriever keypairRetriever, logger logger) KeyPairManager {
+func NewKeyPairManager(creator keypairCreator, checker keypairChecker, logger logger) KeyPairManager {
 	return KeyPairManager{
-		creator:   creator,
-		retriever: retriever,
-		logger:    logger,
+		creator: creator,
+		checker: checker,
+		logger:  logger,
 	}
 }
 
 func (m KeyPairManager) Sync(ec2Client Client, keypair KeyPair) (KeyPair, error) {
 	hasLocalKeyPair := !keypair.IsEmpty()
-	_, hasRemoteKeyPair, err := m.retriever.Retrieve(ec2Client, keypair.Name)
+	hasRemoteKeyPair, err := m.checker.HasKeyPair(ec2Client, keypair.Name)
 	if err != nil {
 		return KeyPair{}, err
 	}
