@@ -175,6 +175,7 @@ var _ = Describe("StackManager", func() {
 
 			Expect(cloudformationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
 				StackName:    aws.String("some-stack-name"),
+				Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 				TemplateBody: aws.String(string(templateJson)),
 			}))
 
@@ -323,6 +324,12 @@ var _ = Describe("StackManager", func() {
 
 			Entry("create failed",
 				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateFailed, 3),
+
+			Entry("rollback complete",
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackComplete, 3),
+
+			Entry("rollback failed",
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackFailed, 3),
 
 			Entry("update succeeded",
 				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateComplete, 3),

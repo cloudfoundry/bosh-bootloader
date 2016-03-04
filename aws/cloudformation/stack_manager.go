@@ -91,6 +91,8 @@ func (s StackManager) WaitForCompletion(client Client, name string, sleepInterva
 	switch status {
 	case cloudformation.StackStatusCreateComplete,
 		cloudformation.StackStatusCreateFailed,
+		cloudformation.StackStatusRollbackComplete,
+		cloudformation.StackStatusRollbackFailed,
 		cloudformation.StackStatusUpdateComplete,
 		cloudformation.StackStatusUpdateRollbackComplete,
 		cloudformation.StackStatusUpdateRollbackFailed:
@@ -115,6 +117,7 @@ func (s StackManager) create(client Client, name string, template Template) erro
 
 	params := &cloudformation.CreateStackInput{
 		StackName:    aws.String(name),
+		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
 	}
 

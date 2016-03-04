@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"github.com/rosenhouse/awsfaker"
@@ -55,8 +56,81 @@ var _ = Describe("bbl", func() {
 
 				stack, ok := fakeAWS.Stacks.Get("concourse")
 				Expect(ok).To(BeTrue())
-				Expect(stack).To(Equal(awsbackend.Stack{
-					Name: "concourse",
+				Expect(stack.Name).To(Equal("concourse"))
+
+				var template struct {
+					Outputs struct {
+						BOSHUserAccessKey struct {
+							Value struct {
+								Ref string
+							}
+						}
+						BOSHUserSecretAccessKey struct {
+							Value struct {
+								FnGetAtt []string `json:"Fn::GetAtt"`
+							}
+						}
+					}
+					Resources struct {
+						BOSHUserAccessKey struct {
+							Properties struct {
+								UserName struct {
+									Ref string
+								}
+							}
+							Type string
+						}
+						BOSHUser struct {
+							Properties cloudformation.IAMUser
+							Type       string
+						}
+					}
+				}
+
+				err = json.Unmarshal([]byte(stack.Template), &template)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
+
+				policy := template.Resources.BOSHUser.Properties.Policies[0]
+				Expect(policy.PolicyDocument.Statement).To(ConsistOf([]cloudformation.IAMStatement{
+					{
+						Action: []string{
+							"ec2:AssociateAddress",
+							"ec2:AttachVolume",
+							"ec2:CreateVolume",
+							"ec2:DeleteSnapshot",
+							"ec2:DeleteVolume",
+							"ec2:DescribeAddresses",
+							"ec2:DescribeImages",
+							"ec2:DescribeInstances",
+							"ec2:DescribeRegions",
+							"ec2:DescribeSecurityGroups",
+							"ec2:DescribeSnapshots",
+							"ec2:DescribeSubnets",
+							"ec2:DescribeVolumes",
+							"ec2:DetachVolume",
+							"ec2:CreateSnapshot",
+							"ec2:CreateTags",
+							"ec2:RunInstances",
+							"ec2:TerminateInstances",
+						},
+						Effect:   "Allow",
+						Resource: "*",
+					},
+					{
+						Action:   []string{"elasticloadbalancing:*"},
+						Effect:   "Allow",
+						Resource: "*",
+					},
+				}))
+
+				Expect(template.Resources.BOSHUserAccessKey.Properties.UserName.Ref).To(Equal("BOSHUser"))
+
+				Expect(template.Outputs.BOSHUserAccessKey.Value.Ref).To(Equal("BOSHUserAccessKey"))
+				Expect(template.Outputs.BOSHUserSecretAccessKey.Value.FnGetAtt).To(Equal([]string{
+					"BOSHUserAccessKey",
+					"SecretAccessKey",
 				}))
 
 				keyPairs := fakeAWS.KeyPairs.All()

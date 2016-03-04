@@ -63,7 +63,8 @@ func (b *Backend) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.Descr
 
 func (b *Backend) CreateStack(input *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {
 	stack := Stack{
-		Name: *input.StackName,
+		Name:     *input.StackName,
+		Template: *input.TemplateBody,
 	}
 	b.Stacks.Set(stack)
 

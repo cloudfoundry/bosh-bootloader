@@ -4,6 +4,7 @@ import "sync"
 
 type Stack struct {
 	Name       string
+	Template   string
 	WasUpdated bool
 }
 

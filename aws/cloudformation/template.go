@@ -13,12 +13,59 @@ type Tag struct {
 	Value string `json:",omitempty"`
 }
 
+type FnGetAtt struct {
+	FnGetAtt []string `json:"Fn::GetAtt"`
+}
+
 type Template struct {
 	AWSTemplateFormatVersion string                 `json:",omitempty"`
 	Description              string                 `json:",omitempty"`
 	Parameters               map[string]Parameter   `json:",omitempty"`
 	Mappings                 map[string]interface{} `json:",omitempty"`
 	Resources                map[string]Resource    `json:",omitempty"`
+	Outputs                  map[string]Output      `json:",omitempty"`
+}
+
+func (t Template) Merge(templates ...Template) Template {
+	if t.Parameters == nil {
+		t.Parameters = map[string]Parameter{}
+	}
+
+	if t.Mappings == nil {
+		t.Mappings = map[string]interface{}{}
+	}
+
+	if t.Resources == nil {
+		t.Resources = map[string]Resource{}
+	}
+
+	if t.Outputs == nil {
+		t.Outputs = map[string]Output{}
+	}
+
+	for _, template := range templates {
+		for name, parameter := range template.Parameters {
+			t.Parameters[name] = parameter
+		}
+
+		for name, mapping := range template.Mappings {
+			t.Mappings[name] = mapping
+		}
+
+		for name, resource := range template.Resources {
+			t.Resources[name] = resource
+		}
+
+		for name, output := range template.Outputs {
+			t.Outputs[name] = output
+		}
+	}
+
+	return t
+}
+
+type Output struct {
+	Value interface{}
 }
 
 type Parameter struct {
@@ -88,6 +135,30 @@ type Subnet struct {
 
 type RouteTable struct {
 	VpcId interface{} `json:",omitempty"`
+}
+
+type IAMUser struct {
+	Policies []IAMPolicy
+}
+
+type IAMPolicy struct {
+	PolicyName     string
+	PolicyDocument IAMPolicyDocument
+}
+
+type IAMPolicyDocument struct {
+	Version   string
+	Statement []IAMStatement
+}
+
+type IAMStatement struct {
+	Action   []string
+	Effect   string
+	Resource string
+}
+
+type IAMAccessKey struct {
+	UserName Ref
 }
 
 type VPC struct {
