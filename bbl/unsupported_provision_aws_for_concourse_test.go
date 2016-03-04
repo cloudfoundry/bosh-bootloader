@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"github.com/rosenhouse/awsfaker"
@@ -81,7 +81,7 @@ var _ = Describe("bbl", func() {
 							Type string
 						}
 						BOSHUser struct {
-							Properties cloudformation.IAMUser
+							Properties templates.IAMUser
 							Type       string
 						}
 					}
@@ -93,7 +93,7 @@ var _ = Describe("bbl", func() {
 				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
 
 				policy := template.Resources.BOSHUser.Properties.Policies[0]
-				Expect(policy.PolicyDocument.Statement).To(ConsistOf([]cloudformation.IAMStatement{
+				Expect(policy.PolicyDocument.Statement).To(ConsistOf([]templates.IAMStatement{
 					{
 						Action: []string{
 							"ec2:AssociateAddress",

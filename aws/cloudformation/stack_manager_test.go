@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -159,7 +160,7 @@ var _ = Describe("StackManager", func() {
 		It("creates a stack if the stack does not exist", func() {
 			cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
 
-			template := cloudformation.Template{
+			template := templates.Template{
 				Description: "testing template",
 			}
 
@@ -192,7 +193,7 @@ var _ = Describe("StackManager", func() {
 				},
 			}
 
-			template := cloudformation.Template{
+			template := templates.Template{
 				Description: "testing template",
 			}
 
@@ -225,7 +226,7 @@ var _ = Describe("StackManager", func() {
 				},
 			}
 
-			template := cloudformation.Template{
+			template := templates.Template{
 				Description: "testing template",
 			}
 
@@ -249,7 +250,7 @@ var _ = Describe("StackManager", func() {
 			It("returns an error when the stack cannot be described", func() {
 				cloudformationClient.DescribeStacksCall.Returns.Error = errors.New("error describing stack")
 
-				template := cloudformation.Template{
+				template := templates.Template{
 					Description: "testing template",
 				}
 
@@ -261,7 +262,7 @@ var _ = Describe("StackManager", func() {
 				cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
 				cloudformationClient.CreateStackCall.Returns.Error = errors.New("error creating stack")
 
-				template := cloudformation.Template{
+				template := templates.Template{
 					Description: "testing template",
 				}
 
@@ -280,7 +281,7 @@ var _ = Describe("StackManager", func() {
 				}
 				cloudformationClient.UpdateStackCall.Returns.Error = errors.New("error updating stack")
 
-				template := cloudformation.Template{
+				template := templates.Template{
 					Description: "testing template",
 				}
 

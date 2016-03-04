@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
@@ -45,10 +45,10 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 
 			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, clientProvider)
 
-			builder.BuildCall.Returns.Template = cloudformation.Template{
+			builder.BuildCall.Returns.Template = templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
-				Parameters: map[string]cloudformation.Parameter{
+				Parameters: map[string]templates.Parameter{
 					"KeyName": {
 						Type:        "AWS::EC2::KeyPair::KeyName",
 						Default:     "some-keypair-name",
@@ -56,7 +56,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 					},
 				},
 				Mappings:  map[string]interface{}{},
-				Resources: map[string]cloudformation.Resource{},
+				Resources: map[string]templates.Resource{},
 			}
 
 			globalFlags = commands.GlobalFlags{
@@ -96,10 +96,10 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
-			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(cloudformation.Template{
+			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
-				Parameters: map[string]cloudformation.Parameter{
+				Parameters: map[string]templates.Parameter{
 					"KeyName": {
 						Type:        "AWS::EC2::KeyPair::KeyName",
 						Default:     "some-keypair-name",
@@ -107,7 +107,7 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 					},
 				},
 				Mappings:  map[string]interface{}{},
-				Resources: map[string]cloudformation.Resource{},
+				Resources: map[string]templates.Resource{},
 			}))
 
 			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))

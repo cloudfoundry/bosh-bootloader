@@ -8,9 +8,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 )
 
 var StackNotFound error = errors.New("stack not found")
+
+type logger interface {
+	Step(message string)
+	Dot()
+}
 
 type StackManager struct {
 	logger logger
@@ -22,7 +28,7 @@ func NewStackManager(logger logger) StackManager {
 	}
 }
 
-func (s StackManager) CreateOrUpdate(client Client, name string, template Template) error {
+func (s StackManager) CreateOrUpdate(client Client, name string, template templates.Template) error {
 	_, err := s.Describe(client, name)
 	switch err {
 	case StackNotFound:
@@ -107,7 +113,7 @@ func (s StackManager) WaitForCompletion(client Client, name string, sleepInterva
 	return nil
 }
 
-func (s StackManager) create(client Client, name string, template Template) error {
+func (s StackManager) create(client Client, name string, template templates.Template) error {
 	s.logger.Step("creating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -129,7 +135,7 @@ func (s StackManager) create(client Client, name string, template Template) erro
 	return nil
 }
 
-func (s StackManager) update(client Client, name string, template Template) error {
+func (s StackManager) update(client Client, name string, template templates.Template) error {
 	s.logger.Step("updating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)

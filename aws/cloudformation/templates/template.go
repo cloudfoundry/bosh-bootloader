@@ -1,4 +1,4 @@
-package cloudformation
+package templates
 
 type AMI struct {
 	AMI string `json:",omitempty"`

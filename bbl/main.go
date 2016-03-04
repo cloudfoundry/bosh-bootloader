@@ -8,6 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
@@ -18,7 +19,7 @@ func main() {
 	uuidGenerator := ec2.NewUUIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 
-	templateBuilder := cloudformation.NewTemplateBuilder(logger)
+	templateBuilder := templates.NewTemplateBuilder(logger)
 	keypairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
 	keypairChecker := ec2.NewKeyPairChecker()
 	keypairManager := ec2.NewKeyPairManager(keypairCreator, keypairChecker, logger)

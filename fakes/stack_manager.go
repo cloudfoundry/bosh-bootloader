@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 )
 
 type StackManager struct {
 	CreateOrUpdateCall struct {
 		Receives struct {
 			StackName string
-			Template  cloudformation.Template
+			Template  templates.Template
 			Client    cloudformation.Client
 		}
 		Returns struct {
@@ -30,7 +31,7 @@ type StackManager struct {
 	}
 }
 
-func (m *StackManager) CreateOrUpdate(client cloudformation.Client, stackName string, template cloudformation.Template) error {
+func (m *StackManager) CreateOrUpdate(client cloudformation.Client, stackName string, template templates.Template) error {
 	m.CreateOrUpdateCall.Receives.Client = client
 	m.CreateOrUpdateCall.Receives.StackName = stackName
 	m.CreateOrUpdateCall.Receives.Template = template

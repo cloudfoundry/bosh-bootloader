@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 
 type TemplateBuilder struct {
 	BuildCall struct {
@@ -8,12 +8,12 @@ type TemplateBuilder struct {
 			KeyPairName string
 		}
 		Returns struct {
-			Template cloudformation.Template
+			Template templates.Template
 		}
 	}
 }
 
-func (b *TemplateBuilder) Build(keyPairName string) cloudformation.Template {
+func (b *TemplateBuilder) Build(keyPairName string) templates.Template {
 	b.BuildCall.Receives.KeyPairName = keyPairName
 
 	return b.BuildCall.Returns.Template

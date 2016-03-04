@@ -5,6 +5,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -16,11 +17,11 @@ type awsClientProvider interface {
 }
 
 type templateBuilder interface {
-	Build(keypairName string) cloudformation.Template
+	Build(keypairName string) templates.Template
 }
 
 type stackManager interface {
-	CreateOrUpdate(cloudFormationClient cloudformation.Client, stackName string, template cloudformation.Template) error
+	CreateOrUpdate(cloudFormationClient cloudformation.Client, stackName string, template templates.Template) error
 	WaitForCompletion(cloudFormationClient cloudformation.Client, stackName string, sleepInterval time.Duration) error
 }
 
