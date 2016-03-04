@@ -16,15 +16,15 @@ type Config struct {
 
 func (c Config) ValidateCredentials() error {
 	if c.AccessKeyID == "" {
-		return errors.New("aws access key id must be provided")
+		return errors.New("--aws-access-key-id must be provided")
 	}
 
 	if c.SecretAccessKey == "" {
-		return errors.New("aws secret access key must be provided")
+		return errors.New("--aws-secret-access-key must be provided")
 	}
 
 	if c.Region == "" {
-		return errors.New("aws region must be provided")
+		return errors.New("--aws-region must be provided")
 	}
 
 	return nil

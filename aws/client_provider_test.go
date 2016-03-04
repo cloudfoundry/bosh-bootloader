@@ -44,7 +44,7 @@ var _ = Describe("ClientProvider", func() {
 		Context("failure cases", func() {
 			It("returns an error when the credentials are not provided", func() {
 				_, err := provider.CloudFormationClient(aws.Config{})
-				Expect(err).To(MatchError("aws access key id must be provided"))
+				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
 			})
 		})
 	})
@@ -73,7 +73,7 @@ var _ = Describe("ClientProvider", func() {
 		Context("failure cases", func() {
 			It("returns an error when the credentials are not provided", func() {
 				_, err := provider.EC2Client(aws.Config{})
-				Expect(err).To(MatchError("aws access key id must be provided"))
+				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
 			})
 		})
 	})

@@ -28,7 +28,7 @@ var _ = Describe("Config", func() {
 					Region:          "some-region",
 				}
 
-				Expect(config.ValidateCredentials()).To(MatchError("aws access key id must be provided"))
+				Expect(config.ValidateCredentials()).To(MatchError("--aws-access-key-id must be provided"))
 			})
 
 			It("returns an error when the secret access key is missing", func() {
@@ -37,7 +37,7 @@ var _ = Describe("Config", func() {
 					Region:      "some-region",
 				}
 
-				Expect(config.ValidateCredentials()).To(MatchError("aws secret access key must be provided"))
+				Expect(config.ValidateCredentials()).To(MatchError("--aws-secret-access-key must be provided"))
 			})
 
 			It("returns an error when the region is missing", func() {
@@ -46,7 +46,7 @@ var _ = Describe("Config", func() {
 					SecretAccessKey: "some-secret-access-key",
 				}
 
-				Expect(config.ValidateCredentials()).To(MatchError("aws region must be provided"))
+				Expect(config.ValidateCredentials()).To(MatchError("--aws-region must be provided"))
 			})
 		})
 	})
