@@ -7,3 +7,9 @@
 [submodule "vendor/github.com/rosenhouse/awsfaker"]
 	path = vendor/github.com/rosenhouse/awsfaker
 	url = https://github.com/rosenhouse/awsfaker.git
+[submodule "vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
+	path = vendor/github.com/pivotal-cf-experimental/gomegamatchers
+	url = https://github.com/pivotal-cf-experimental/gomegamatchers
+[submodule "vendor/github.com/cloudfoundry-incubator/candiedyaml"]
+	path = vendor/github.com/cloudfoundry-incubator/candiedyaml
+	url = https://github.com/cloudfoundry-incubator/candiedyaml.git
