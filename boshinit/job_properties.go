@@ -3,7 +3,7 @@ package boshinit
 type JobProperties struct {
 	NATS      NATSJobProperties      `yaml:"nats"`
 	Redis     RedisJobProperties     `yaml:"redis"`
-	Postgres  PostgresJobProperties  `yaml:"postgres"`
+	Postgres  PostgresProperties     `yaml:"postgres"`
 	Registry  RegistryJobProperties  `yaml:"registry"`
 	Blobstore BlobstoreJobProperties `yaml:"blobstore"`
 	Director  DirectorJobProperties  `yaml:"director"`
@@ -25,23 +25,14 @@ type RedisJobProperties struct {
 	Password      string `yaml:"password"`
 }
 
-type PostgresJobProperties struct {
-	ListenAddress string `yaml:"listen_address"`
-	Host          string `yaml:"host"`
-	User          string `yaml:"user"`
-	Password      string `yaml:"password"`
-	Database      string `yaml:"database"`
-	Adapter       string `yaml:"adapter"`
-}
-
 type RegistryJobProperties struct {
-	Address  string         `yaml:"address"`
-	Host     string         `yaml:"host"`
-	Username string         `yaml:"username"`
-	Password string         `yaml:"password"`
-	Port     int            `yaml:"port"`
-	DB       DBProperties   `yaml:"db"`
-	HTTP     HTTPProperties `yaml:"http"`
+	Address  string             `yaml:"address"`
+	Host     string             `yaml:"host"`
+	Username string             `yaml:"username"`
+	Password string             `yaml:"password"`
+	Port     int                `yaml:"port"`
+	DB       PostgresProperties `yaml:"db"`
+	HTTP     HTTPProperties     `yaml:"http"`
 }
 
 type BlobstoreJobProperties struct {
@@ -57,7 +48,7 @@ type DirectorJobProperties struct {
 	Name           string                   `yaml:"name"`
 	CPIJob         string                   `yaml:"cpi_job"`
 	MaxThreads     int                      `yaml:"max_threads"`
-	DB             DBProperties             `yaml:"db"`
+	DB             PostgresProperties       `yaml:"db"`
 	UserManagement UserManagementProperties `yaml:"user_management"`
 }
 
@@ -78,15 +69,6 @@ type UserProperties struct {
 type UserManagementProperties struct {
 	Provider string          `yaml:"provider"`
 	Local    LocalProperties `yaml:"local"`
-}
-
-type DBProperties struct {
-	ListenAddress string `yaml:"listen_address"`
-	Host          string `yaml:"host"`
-	User          string `yaml:"user"`
-	Password      string `yaml:"password"`
-	Database      string `yaml:"database"`
-	Adapter       string `yaml:"adapter"`
 }
 
 type HTTPProperties struct {

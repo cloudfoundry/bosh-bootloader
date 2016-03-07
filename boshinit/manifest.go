@@ -124,3 +124,12 @@ type AWSProperties struct {
 type AgentProperties struct {
 	MBus string `yaml:"mbus"`
 }
+
+type PostgresProperties struct {
+	ListenAddress string `yaml:"listen_address"`
+	Host          string `yaml:"host"`
+	User          string `yaml:"user"`
+	Password      string `yaml:"password"`
+	Database      string `yaml:"database"`
+	Adapter       string `yaml:"adapter"`
+}

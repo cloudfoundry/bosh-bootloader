@@ -8,6 +8,7 @@ func NewJobsManifestBuilder() JobsManifestBuilder {
 
 func (r JobsManifestBuilder) Build() []Job {
 	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder()
+	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
 	return []Job{
 		{
@@ -42,14 +43,14 @@ func (r JobsManifestBuilder) Build() []Job {
 			Properties: JobProperties{
 				NATS:      jobPropertiesManifestBuilder.NATS(),
 				Redis:     jobPropertiesManifestBuilder.Redis(),
-				Postgres:  jobPropertiesManifestBuilder.Postgres(),
+				Postgres:  sharedPropertiesManifestBuilder.Postgres(),
 				Registry:  jobPropertiesManifestBuilder.Registry(),
 				Blobstore: jobPropertiesManifestBuilder.Blobstore(),
 				Director:  jobPropertiesManifestBuilder.Director(),
 				HM:        jobPropertiesManifestBuilder.HM(),
-				AWS:       jobPropertiesManifestBuilder.AWS(),
+				AWS:       sharedPropertiesManifestBuilder.AWS(),
 				Agent:     jobPropertiesManifestBuilder.Agent(),
-				NTP:       jobPropertiesManifestBuilder.NTP(),
+				NTP:       sharedPropertiesManifestBuilder.NTP(),
 			},
 		},
 	}

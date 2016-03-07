@@ -22,32 +22,15 @@ func (JobPropertiesManifestBuilder) Redis() RedisJobProperties {
 	}
 }
 
-func (JobPropertiesManifestBuilder) Postgres() PostgresJobProperties {
-	return PostgresJobProperties{
-		ListenAddress: "127.0.0.1",
-		Host:          "127.0.0.1",
-		User:          "postgres",
-		Password:      "postgres-password",
-		Database:      "bosh",
-		Adapter:       "postgres",
-	}
-}
-
 func (JobPropertiesManifestBuilder) Registry() RegistryJobProperties {
+	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 	return RegistryJobProperties{
 		Address:  "10.0.0.6",
 		Host:     "10.0.0.6",
 		Username: "admin",
 		Password: "admin",
 		Port:     25777,
-		DB: DBProperties{
-			ListenAddress: "127.0.0.1",
-			Host:          "127.0.0.1",
-			User:          "postgres",
-			Password:      "postgres-password",
-			Database:      "bosh",
-			Adapter:       "postgres",
-		},
+		DB:       sharedPropertiesManifestBuilder.Postgres(),
 		HTTP: HTTPProperties{
 			User:     "admin",
 			Password: "admin",
@@ -72,20 +55,14 @@ func (JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 	}
 }
 
-func (JobPropertiesManifestBuilder) Director() DirectorJobProperties {
+func (j JobPropertiesManifestBuilder) Director() DirectorJobProperties {
+	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 	return DirectorJobProperties{
 		Address:    "127.0.0.1",
 		Name:       "my-bosh",
 		CPIJob:     "aws_cpi",
 		MaxThreads: 10,
-		DB: DBProperties{
-			ListenAddress: "127.0.0.1",
-			Host:          "127.0.0.1",
-			User:          "postgres",
-			Password:      "postgres-password",
-			Database:      "bosh",
-			Adapter:       "postgres",
-		},
+		DB:         sharedPropertiesManifestBuilder.Postgres(),
 		UserManagement: UserManagementProperties{
 			Provider: "local",
 			Local: LocalProperties{
@@ -114,22 +91,8 @@ func (JobPropertiesManifestBuilder) HM() HMJobProperties {
 	}
 }
 
-func (JobPropertiesManifestBuilder) AWS() AWSProperties {
-	return AWSProperties{
-		AccessKeyId:           "ACCESS-KEY-ID",
-		SecretAccessKey:       "SECRET-ACCESS-KEY",
-		DefaultKeyName:        "bosh",
-		DefaultSecurityGroups: []string{"bosh"},
-		Region:                "REGION",
-	}
-}
-
 func (JobPropertiesManifestBuilder) Agent() AgentProperties {
 	return AgentProperties{
 		MBus: "nats://nats:nats-password@10.0.0.6:4222",
 	}
-}
-
-func (JobPropertiesManifestBuilder) NTP() []string {
-	return []string{"0.pool.ntp.org", "1.pool.ntp.org"}
 }

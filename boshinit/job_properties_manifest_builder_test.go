@@ -37,20 +37,6 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		})
 	})
 
-	Describe("Postgres", func() {
-		It("returns job properties for Postgres", func() {
-			postgres := jobPropertiesManifestBuilder.Postgres()
-			Expect(postgres).To(Equal(boshinit.PostgresJobProperties{
-				ListenAddress: "127.0.0.1",
-				Host:          "127.0.0.1",
-				User:          "postgres",
-				Password:      "postgres-password",
-				Database:      "bosh",
-				Adapter:       "postgres",
-			}))
-		})
-	})
-
 	Describe("Registry", func() {
 		It("returns job properties for Registry", func() {
 			registry := jobPropertiesManifestBuilder.Registry()
@@ -60,7 +46,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				Username: "admin",
 				Password: "admin",
 				Port:     25777,
-				DB: boshinit.DBProperties{
+				DB: boshinit.PostgresProperties{
 					ListenAddress: "127.0.0.1",
 					Host:          "127.0.0.1",
 					User:          "postgres",
@@ -104,7 +90,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				Name:       "my-bosh",
 				CPIJob:     "aws_cpi",
 				MaxThreads: 10,
-				DB: boshinit.DBProperties{
+				DB: boshinit.PostgresProperties{
 					ListenAddress: "127.0.0.1",
 					Host:          "127.0.0.1",
 					User:          "postgres",
@@ -144,34 +130,12 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		})
 	})
 
-	Describe("AWS", func() {
-		It("returns job properties for AWS", func() {
-			aws := jobPropertiesManifestBuilder.AWS()
-			Expect(aws).To(Equal(boshinit.AWSProperties{
-				AccessKeyId:           "ACCESS-KEY-ID",
-				SecretAccessKey:       "SECRET-ACCESS-KEY",
-				DefaultKeyName:        "bosh",
-				DefaultSecurityGroups: []string{"bosh"},
-				Region:                "REGION",
-			}))
-		})
-	})
-
 	Describe("Agent", func() {
 		It("returns job properties for Agent", func() {
 			agent := jobPropertiesManifestBuilder.Agent()
 			Expect(agent).To(Equal(boshinit.AgentProperties{
 				MBus: "nats://nats:nats-password@10.0.0.6:4222",
 			}))
-		})
-	})
-
-	Describe("NTP", func() {
-		It("returns job properties for NTP", func() {
-			agent := jobPropertiesManifestBuilder.NTP()
-			Expect(agent).To(ConsistOf(
-				[]string{"0.pool.ntp.org", "1.pool.ntp.org"},
-			))
 		})
 	})
 })
