@@ -147,7 +147,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("AWS", func() {
 		It("returns job properties for AWS", func() {
 			aws := jobPropertiesManifestBuilder.AWS()
-			Expect(aws).To(Equal(boshinit.AWSJobProperties{
+			Expect(aws).To(Equal(boshinit.AWSProperties{
 				AccessKeyId:           "ACCESS-KEY-ID",
 				SecretAccessKey:       "SECRET-ACCESS-KEY",
 				DefaultKeyName:        "bosh",
@@ -160,7 +160,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Agent", func() {
 		It("returns job properties for Agent", func() {
 			agent := jobPropertiesManifestBuilder.Agent()
-			Expect(agent).To(Equal(boshinit.AgentJobProperties{
+			Expect(agent).To(Equal(boshinit.AgentProperties{
 				MBus: "nats://nats:nats-password@10.0.0.6:4222",
 			}))
 		})

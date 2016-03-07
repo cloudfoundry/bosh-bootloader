@@ -135,24 +135,24 @@ jobs:
 
     ntp: [0.pool.ntp.org, 1.pool.ntp.org]
 
-#cloud_provider:
-  #template: {name: aws_cpi, release: bosh-aws-cpi}
+cloud_provider:
+  template: {name: aws_cpi, release: bosh-aws-cpi}
 
-  #ssh_tunnel:
-    #host: ELASTIC-IP # <--- Replace with your Elastic IP address
-    #port: 22
-    #user: vcap
-    #private_key: ./bosh.pem # Path relative to this manifest file
+  ssh_tunnel:
+    host: ELASTIC-IP # <--- Replace with your Elastic IP address
+    port: 22
+    user: vcap
+    private_key: ./bosh.pem # Path relative to this manifest file
 
-  #mbus: "https://mbus:mbus-password@ELASTIC-IP:6868" # <--- Replace with Elastic IP
+  mbus: "https://mbus:mbus-password@ELASTIC-IP:6868" # <--- Replace with Elastic IP
 
-  #properties:
-    #aws:
-      #access_key_id: ACCESS-KEY-ID # <--- Replace with AWS Access Key ID
-      #secret_access_key: SECRET-ACCESS-KEY # <--- Replace with AWS Secret Key
-      #default_key_name: bosh
-      #default_security_groups: [bosh]
-      #region: REGION  # <--- Replace with Region
-    #agent: {mbus: "https://mbus:mbus-password@0.0.0.0:6868"}
-    #blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
-    #ntp: [0.pool.ntp.org, 1.pool.ntp.org]
+  properties:
+    aws:
+      access_key_id: ACCESS-KEY-ID # <--- Replace with AWS Access Key ID
+      secret_access_key: SECRET-ACCESS-KEY # <--- Replace with AWS Secret Key
+      default_key_name: bosh
+      default_security_groups: [bosh]
+      region: REGION  # <--- Replace with Region
+    agent: {mbus: "https://mbus:mbus-password@0.0.0.0:6868"}
+    blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
+    ntp: [0.pool.ntp.org, 1.pool.ntp.org]

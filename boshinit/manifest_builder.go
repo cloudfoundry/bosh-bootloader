@@ -12,6 +12,7 @@ func (m ManifestBuilder) Build() Manifest {
 	diskPoolsManifestBuilder := NewDiskPoolsManifestBuilder()
 	networksManifestBuilder := NewNetworksManifestBuilder()
 	jobsManifestBuilder := NewJobsManifestBuilder()
+	cloudProviderManifestBuilder := NewCloudProviderManifestBuilder()
 
 	return Manifest{
 		Name:          "bosh",
@@ -20,5 +21,6 @@ func (m ManifestBuilder) Build() Manifest {
 		DiskPools:     diskPoolsManifestBuilder.Build(),
 		Networks:      networksManifestBuilder.Build(),
 		Jobs:          jobsManifestBuilder.Build(),
+		CloudProvider: cloudProviderManifestBuilder.Build(),
 	}
 }

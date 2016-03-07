@@ -29,6 +29,7 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.DiskPools[0].Name).To(Equal("disks"))
 			Expect(manifest.Networks[0].Name).To(Equal("private"))
 			Expect(manifest.Jobs[0].Name).To(Equal("bosh"))
+			Expect(manifest.CloudProvider.Template.Name).To(Equal("aws_cpi"))
 		})
 	})
 

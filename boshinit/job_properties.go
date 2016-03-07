@@ -8,8 +8,8 @@ type JobProperties struct {
 	Blobstore BlobstoreJobProperties `yaml:"blobstore"`
 	Director  DirectorJobProperties  `yaml:"director"`
 	HM        HMJobProperties        `yaml:"hm"`
-	AWS       AWSJobProperties       `yaml:"aws"`
-	Agent     AgentJobProperties     `yaml:"agent"`
+	AWS       AWSProperties          `yaml:"aws"`
+	Agent     AgentProperties        `yaml:"agent"`
 	NTP       []string               `yaml:"ntp"`
 }
 
@@ -59,18 +59,6 @@ type DirectorJobProperties struct {
 	MaxThreads     int                      `yaml:"max_threads"`
 	DB             DBProperties             `yaml:"db"`
 	UserManagement UserManagementProperties `yaml:"user_management"`
-}
-
-type AWSJobProperties struct {
-	AccessKeyId           string   `yaml:"access_key_id"`
-	SecretAccessKey       string   `yaml:"secret_access_key"`
-	DefaultKeyName        string   `yaml:"default_key_name"`
-	DefaultSecurityGroups []string `yaml:"default_security_groups"`
-	Region                string   `yaml:"region"`
-}
-
-type AgentJobProperties struct {
-	MBus string `yaml:"mbus"`
 }
 
 type HMJobProperties struct {

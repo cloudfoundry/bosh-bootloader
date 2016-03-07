@@ -7,6 +7,7 @@ type Manifest struct {
 	DiskPools     []DiskPool     `yaml:"disk_pools"`
 	Networks      []Network      `yaml:"networks"`
 	Jobs          []Job          `yaml:"jobs"`
+	CloudProvider CloudProvider  `yaml:"cloud_provider"`
 }
 
 type Release struct {
@@ -84,4 +85,42 @@ type JobNetwork struct {
 	Name      string   `yaml:"name"`
 	StaticIPs []string `yaml:"static_ips"`
 	Default   []string `yaml:"default,omitempty"`
+}
+
+type CloudProvider struct {
+	Template   Template                `yaml:"template"`
+	SSHTunnel  SSHTunnel               `yaml:"ssh_tunnel"`
+	MBus       string                  `yaml:"mbus"`
+	Properties CloudProviderProperties `yaml:"properties"`
+}
+
+type SSHTunnel struct {
+	Host       string `yaml:"host"`
+	Port       int    `yaml:"port"`
+	User       string `yaml:"user"`
+	PrivateKey string `yaml:"private_key"`
+}
+
+type CloudProviderProperties struct {
+	AWS       AWSProperties       `yaml:"aws"`
+	Agent     AgentProperties     `yaml:"agent"`
+	Blobstore BlobstoreProperties `yaml:"blobstore"`
+	NTP       []string            `yaml:"ntp"`
+}
+
+type BlobstoreProperties struct {
+	Provider string `yaml:"provider"`
+	Path     string `yaml:"path"`
+}
+
+type AWSProperties struct {
+	AccessKeyId           string   `yaml:"access_key_id"`
+	SecretAccessKey       string   `yaml:"secret_access_key"`
+	DefaultKeyName        string   `yaml:"default_key_name"`
+	DefaultSecurityGroups []string `yaml:"default_security_groups"`
+	Region                string   `yaml:"region"`
+}
+
+type AgentProperties struct {
+	MBus string `yaml:"mbus"`
 }

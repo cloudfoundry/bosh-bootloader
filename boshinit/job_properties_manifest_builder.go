@@ -114,8 +114,8 @@ func (JobPropertiesManifestBuilder) HM() HMJobProperties {
 	}
 }
 
-func (JobPropertiesManifestBuilder) AWS() AWSJobProperties {
-	return AWSJobProperties{
+func (JobPropertiesManifestBuilder) AWS() AWSProperties {
+	return AWSProperties{
 		AccessKeyId:           "ACCESS-KEY-ID",
 		SecretAccessKey:       "SECRET-ACCESS-KEY",
 		DefaultKeyName:        "bosh",
@@ -124,8 +124,8 @@ func (JobPropertiesManifestBuilder) AWS() AWSJobProperties {
 	}
 }
 
-func (JobPropertiesManifestBuilder) Agent() AgentJobProperties {
-	return AgentJobProperties{
+func (JobPropertiesManifestBuilder) Agent() AgentProperties {
+	return AgentProperties{
 		MBus: "nats://nats:nats-password@10.0.0.6:4222",
 	}
 }
