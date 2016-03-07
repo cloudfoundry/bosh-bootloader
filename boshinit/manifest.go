@@ -66,13 +66,13 @@ type NetworksCloudProperties struct {
 }
 
 type Job struct {
-	Name               string                 `yaml:"name"`
-	Instances          int                    `yaml:"instances"`
-	ResourcePool       string                 `yaml:"resource_pool"`
-	PersistentDiskPool string                 `yaml:"persistent_disk_pool"`
-	Templates          []Template             `yaml:"templates"`
-	Networks           []JobNetwork           `yaml:"networks"`
-	Properties         map[string]interface{} `yaml:"properties"`
+	Name               string        `yaml:"name"`
+	Instances          int           `yaml:"instances"`
+	ResourcePool       string        `yaml:"resource_pool"`
+	PersistentDiskPool string        `yaml:"persistent_disk_pool"`
+	Templates          []Template    `yaml:"templates"`
+	Networks           []JobNetwork  `yaml:"networks"`
+	Properties         JobProperties `yaml:"properties"`
 }
 
 type Template struct {

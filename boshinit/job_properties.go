@@ -1,13 +1,16 @@
 package boshinit
 
 type JobProperties struct {
-	Address       string `yaml:"address,omitempty"`
-	ListenAddress string `yaml:"listen_address,omitempty"`
-	Host          string `yaml:"host,omitempty"`
-	User          string `yaml:"user,omitempty"`
-	Password      string `yaml:"password,omitempty"`
-	Database      string `yaml:"database,omitempty"`
-	Adapter       string `yaml:"adapter,omitempty"`
+	NATS      NATSJobProperties      `yaml:"nats"`
+	Redis     RedisJobProperties     `yaml:"redis"`
+	Postgres  PostgresJobProperties  `yaml:"postgres"`
+	Registry  RegistryJobProperties  `yaml:"registry"`
+	Blobstore BlobstoreJobProperties `yaml:"blobstore"`
+	Director  DirectorJobProperties  `yaml:"director"`
+	HM        HMJobProperties        `yaml:"hm"`
+	AWS       AWSJobProperties       `yaml:"aws"`
+	Agent     AgentJobProperties     `yaml:"agent"`
+	NTP       []string               `yaml:"ntp"`
 }
 
 type NATSJobProperties struct {

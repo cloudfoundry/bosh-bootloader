@@ -16,149 +16,46 @@ var _ = Describe("JobsManifestBuilder", func() {
 	Describe("Build", func() {
 		It("returns all jobs for manifest", func() {
 			jobs := jobsManifestBuilder.Build()
+			job := jobs[0]
 
 			Expect(jobs).To(HaveLen(1))
-			Expect(jobs).To(ConsistOf([]boshinit.Job{
+			Expect(job.Name).To(Equal("bosh"))
+			Expect(job.Instances).To(Equal(1))
+			Expect(job.ResourcePool).To(Equal("vms"))
+			Expect(job.PersistentDiskPool).To(Equal("disks"))
+
+			Expect(job.Templates).To(ConsistOf([]boshinit.Template{
+				{Name: "nats", Release: "bosh"},
+				{Name: "redis", Release: "bosh"},
+				{Name: "postgres", Release: "bosh"},
+				{Name: "blobstore", Release: "bosh"},
+				{Name: "director", Release: "bosh"},
+				{Name: "health_monitor", Release: "bosh"},
+				{Name: "registry", Release: "bosh"},
+				{Name: "aws_cpi", Release: "bosh-aws-cpi"},
+			}))
+
+			Expect(job.Networks).To(ConsistOf([]boshinit.JobNetwork{
 				{
-					Name:               "bosh",
-					Instances:          1,
-					ResourcePool:       "vms",
-					PersistentDiskPool: "disks",
-
-					Templates: []boshinit.Template{
-						{Name: "nats", Release: "bosh"},
-						{Name: "redis", Release: "bosh"},
-						{Name: "postgres", Release: "bosh"},
-						{Name: "blobstore", Release: "bosh"},
-						{Name: "director", Release: "bosh"},
-						{Name: "health_monitor", Release: "bosh"},
-						{Name: "registry", Release: "bosh"},
-						{Name: "aws_cpi", Release: "bosh-aws-cpi"},
-					},
-
-					Networks: []boshinit.JobNetwork{
-						{
-							Name:      "private",
-							StaticIPs: []string{"10.0.0.6"},
-							Default:   []string{"dns", "gateway"},
-						},
-						{
-							Name:      "public",
-							StaticIPs: []string{"ELASTIC-IP"},
-						},
-					},
-
-					Properties: map[string]interface{}{
-						"nats": boshinit.NATSJobProperties{
-							Address:  "127.0.0.1",
-							User:     "nats",
-							Password: "nats-password",
-						},
-
-						"redis": boshinit.RedisJobProperties{
-							ListenAddress: "127.0.0.1",
-							Address:       "127.0.0.1",
-							Password:      "redis-password",
-						},
-
-						"postgres": boshinit.PostgresJobProperties{
-							ListenAddress: "127.0.0.1",
-							Host:          "127.0.0.1",
-							User:          "postgres",
-							Password:      "postgres-password",
-							Database:      "bosh",
-							Adapter:       "postgres",
-						},
-
-						"registry": boshinit.RegistryJobProperties{
-							Address:  "10.0.0.6",
-							Host:     "10.0.0.6",
-							Username: "admin",
-							Password: "admin",
-							Port:     25777,
-							DB: boshinit.DBProperties{
-								ListenAddress: "127.0.0.1",
-								Host:          "127.0.0.1",
-								User:          "postgres",
-								Password:      "postgres-password",
-								Database:      "bosh",
-								Adapter:       "postgres",
-							},
-							HTTP: boshinit.HTTPProperties{
-								User:     "admin",
-								Password: "admin",
-								Port:     25777,
-							},
-						},
-
-						"blobstore": boshinit.BlobstoreJobProperties{
-							Address:  "10.0.0.6",
-							Port:     25250,
-							Provider: "dav",
-							Director: boshinit.Credentials{
-								User:     "director",
-								Password: "director-password",
-							},
-							Agent: boshinit.Credentials{
-								User:     "agent",
-								Password: "agent-password",
-							},
-						},
-
-						"director": boshinit.DirectorJobProperties{
-							Address:    "127.0.0.1",
-							Name:       "my-bosh",
-							CPIJob:     "aws_cpi",
-							MaxThreads: 10,
-							DB: boshinit.DBProperties{
-								ListenAddress: "127.0.0.1",
-								Host:          "127.0.0.1",
-								User:          "postgres",
-								Password:      "postgres-password",
-								Database:      "bosh",
-								Adapter:       "postgres",
-							},
-							UserManagement: boshinit.UserManagementProperties{
-								Provider: "local",
-								Local: boshinit.LocalProperties{
-									Users: []boshinit.UserProperties{
-										{
-											Name:     "admin",
-											Password: "admin",
-										},
-										{
-											Name:     "hm",
-											Password: "hm-password",
-										},
-									},
-								},
-							},
-						},
-
-						"hm": boshinit.HMJobProperties{
-							DirectorAccount: boshinit.Credentials{
-								User:     "hm",
-								Password: "hm-password",
-							},
-							ResurrectorEnabled: true,
-						},
-
-						"aws": boshinit.AWSJobProperties{
-							AccessKeyId:           "ACCESS-KEY-ID",
-							SecretAccessKey:       "SECRET-ACCESS-KEY",
-							DefaultKeyName:        "bosh",
-							DefaultSecurityGroups: []string{"bosh"},
-							Region:                "REGION",
-						},
-
-						"agent": boshinit.AgentJobProperties{
-							MBus: "nats://nats:nats-password@10.0.0.6:4222",
-						},
-
-						"ntp": []string{"0.pool.ntp.org", "1.pool.ntp.org"},
-					},
+					Name:      "private",
+					StaticIPs: []string{"10.0.0.6"},
+					Default:   []string{"dns", "gateway"},
+				},
+				{
+					Name:      "public",
+					StaticIPs: []string{"ELASTIC-IP"},
 				},
 			}))
+			Expect(job.Properties.NATS.User).To(Equal("nats"))
+			Expect(job.Properties.Redis.Address).To(Equal("127.0.0.1"))
+			Expect(job.Properties.Postgres.User).To(Equal("postgres"))
+			Expect(job.Properties.Registry.Username).To(Equal("admin"))
+			Expect(job.Properties.Blobstore.Provider).To(Equal("dav"))
+			Expect(job.Properties.Director.Name).To(Equal("my-bosh"))
+			Expect(job.Properties.HM.ResurrectorEnabled).To(Equal(true))
+			Expect(job.Properties.AWS.DefaultKeyName).To(Equal("bosh"))
+			Expect(job.Properties.Agent.MBus).To(Equal("nats://nats:nats-password@10.0.0.6:4222"))
+			Expect(job.Properties.NTP[0]).To(Equal("0.pool.ntp.org"))
 		})
 	})
 })
