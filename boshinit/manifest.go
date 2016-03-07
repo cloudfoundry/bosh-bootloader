@@ -66,13 +66,13 @@ type NetworksCloudProperties struct {
 }
 
 type Job struct {
-	Name               string                   `yaml:"name"`
-	Instances          int                      `yaml:"instances"`
-	ResourcePool       string                   `yaml:"resource_pool"`
-	PersistentDiskPool string                   `yaml:"persistent_disk_pool"`
-	Templates          []Template               `yaml:"templates"`
-	Networks           []JobNetwork             `yaml:"networks"`
-	Properties         map[string]JobProperties `yaml:"properties"`
+	Name               string                 `yaml:"name"`
+	Instances          int                    `yaml:"instances"`
+	ResourcePool       string                 `yaml:"resource_pool"`
+	PersistentDiskPool string                 `yaml:"persistent_disk_pool"`
+	Templates          []Template             `yaml:"templates"`
+	Networks           []JobNetwork           `yaml:"networks"`
+	Properties         map[string]interface{} `yaml:"properties"`
 }
 
 type Template struct {
@@ -84,14 +84,4 @@ type JobNetwork struct {
 	Name      string   `yaml:"name"`
 	StaticIPs []string `yaml:"static_ips"`
 	Default   []string `yaml:"default,omitempty"`
-}
-
-type JobProperties struct {
-	Address       string `yaml:"address,omitempty"`
-	ListenAddress string `yaml:"listen_address,omitempty"`
-	Host          string `yaml:"host,omitempty"`
-	User          string `yaml:"user,omitempty"`
-	Password      string `yaml:"password,omitempty"`
-	Database      string `yaml:"database,omitempty"`
-	Adapter       string `yaml:"adapter,omitempty"`
 }
