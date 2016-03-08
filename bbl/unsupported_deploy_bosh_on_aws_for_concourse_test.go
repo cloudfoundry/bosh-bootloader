@@ -60,54 +60,45 @@ var _ = Describe("bbl", func() {
 
 	Describe("unsupported-deploy-bosh-on-aws-for-concourse", func() {
 		Context("when the cloudformation stack does not exist", func() {
-			It("creates and applies a cloudformation template", func() {
-				tempDir, err := ioutil.TempDir("", "")
+			var (
+				session *gexec.Session
+				stack   awsbackend.Stack
+			)
 
-				state := storage.State{}
-
-				buf, err := json.Marshal(state)
+			BeforeEach(func() {
+				tempDirectory, err := ioutil.TempDir("", "")
 				Expect(err).NotTo(HaveOccurred())
 
-				ioutil.WriteFile(filepath.Join(tempDir, "state.json"), buf, os.ModePerm)
+				writeEmptyStateJson(tempDirectory)
 
 				args := []string{
 					fmt.Sprintf("--endpoint-override=%s", server.URL),
 					"--aws-access-key-id", "some-access-key",
 					"--aws-secret-access-key", "some-access-secret",
 					"--aws-region", "some-region",
-					"--state-dir", tempDir,
+					"--state-dir", tempDirectory,
 					"unsupported-deploy-bosh-on-aws-for-concourse",
 				}
-				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+				session, err = gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 
-				stack, ok := fakeAWS.Stacks.Get("concourse")
+				var ok bool
+				stack, ok = fakeAWS.Stacks.Get("concourse")
 				Expect(ok).To(BeTrue())
+			})
+
+			It("creates a stack and a keypair", func() {
 				Expect(stack.Name).To(Equal("concourse"))
 
+				keyPairs := fakeAWS.KeyPairs.All()
+				Expect(keyPairs).To(HaveLen(1))
+				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+			})
+
+			It("creates an IAM user", func() {
 				var template struct {
-					Outputs struct {
-						BOSHUserAccessKey struct {
-							Value struct {
-								Ref string
-							}
-						}
-						BOSHUserSecretAccessKey struct {
-							Value struct {
-								FnGetAtt []string `json:"Fn::GetAtt"`
-							}
-						}
-					}
 					Resources struct {
-						BOSHUserAccessKey struct {
-							Properties struct {
-								UserName struct {
-									Ref string
-								}
-							}
-							Type string
-						}
 						BOSHUser struct {
 							Properties templates.IAMUser
 							Type       string
@@ -115,56 +106,13 @@ var _ = Describe("bbl", func() {
 					}
 				}
 
-				err = json.Unmarshal([]byte(stack.Template), &template)
+				err := json.Unmarshal([]byte(stack.Template), &template)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
+			})
 
-				policy := template.Resources.BOSHUser.Properties.Policies[0]
-				Expect(policy.PolicyDocument.Statement).To(ConsistOf([]templates.IAMStatement{
-					{
-						Action: []string{
-							"ec2:AssociateAddress",
-							"ec2:AttachVolume",
-							"ec2:CreateVolume",
-							"ec2:DeleteSnapshot",
-							"ec2:DeleteVolume",
-							"ec2:DescribeAddresses",
-							"ec2:DescribeImages",
-							"ec2:DescribeInstances",
-							"ec2:DescribeRegions",
-							"ec2:DescribeSecurityGroups",
-							"ec2:DescribeSnapshots",
-							"ec2:DescribeSubnets",
-							"ec2:DescribeVolumes",
-							"ec2:DetachVolume",
-							"ec2:CreateSnapshot",
-							"ec2:CreateTags",
-							"ec2:RunInstances",
-							"ec2:TerminateInstances",
-						},
-						Effect:   "Allow",
-						Resource: "*",
-					},
-					{
-						Action:   []string{"elasticloadbalancing:*"},
-						Effect:   "Allow",
-						Resource: "*",
-					},
-				}))
-
-				Expect(template.Resources.BOSHUserAccessKey.Properties.UserName.Ref).To(Equal("BOSHUser"))
-
-				Expect(template.Outputs.BOSHUserAccessKey.Value.Ref).To(Equal("BOSHUserAccessKey"))
-				Expect(template.Outputs.BOSHUserSecretAccessKey.Value.FnGetAtt).To(Equal([]string{
-					"BOSHUserAccessKey",
-					"SecretAccessKey",
-				}))
-
-				keyPairs := fakeAWS.KeyPairs.All()
-				Expect(keyPairs).To(HaveLen(1))
-				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
-
+			It("logs the steps and bosh-init manifest", func() {
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: creating keypair"))
 				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
@@ -175,6 +123,7 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("bosh-init manifest:"))
 				Expect(stdout).To(ContainSubstring("name: bosh"))
 			})
+
 		})
 
 		Context("when the keypair and cloudformation stack already exist", func() {
@@ -230,3 +179,12 @@ var _ = Describe("bbl", func() {
 		})
 	})
 })
+
+func writeEmptyStateJson(tempDirectory string) {
+	state := storage.State{}
+
+	buf, err := json.Marshal(state)
+	Expect(err).NotTo(HaveOccurred())
+
+	ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+}
