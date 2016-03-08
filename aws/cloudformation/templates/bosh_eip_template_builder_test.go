@@ -15,15 +15,20 @@ var _ = Describe("BOSHEIPTemplateBuilder", func() {
 	})
 
 	Describe("BOSHEIP", func() {
-		It("returns a template containing the micro elastic ip", func() {
-			micro_eip := builder.BOSHEIP()
+		It("returns a template containing the bosh elastic ip", func() {
+			eip := builder.BOSHEIP()
 
-			Expect(micro_eip.Resources).To(HaveLen(1))
-			Expect(micro_eip.Resources).To(HaveKeyWithValue("BOSHEIP", templates.Resource{
+			Expect(eip.Resources).To(HaveLen(1))
+			Expect(eip.Resources).To(HaveKeyWithValue("BOSHEIP", templates.Resource{
 				Type: "AWS::EC2::EIP",
 				Properties: templates.EIP{
 					Domain: "vpc",
 				},
+			}))
+
+			Expect(eip.Outputs).To(HaveLen(1))
+			Expect(eip.Outputs).To(HaveKeyWithValue("BOSHEIP", templates.Output{
+				Value: templates.Ref{"BOSHEIP"},
 			}))
 		})
 	})

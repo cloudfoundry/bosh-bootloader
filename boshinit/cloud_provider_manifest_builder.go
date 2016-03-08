@@ -1,12 +1,14 @@
 package boshinit
 
+import "fmt"
+
 type CloudProviderManifestBuilder struct{}
 
 func NewCloudProviderManifestBuilder() CloudProviderManifestBuilder {
 	return CloudProviderManifestBuilder{}
 }
 
-func (c CloudProviderManifestBuilder) Build() CloudProvider {
+func (c CloudProviderManifestBuilder) Build(elasticIP string) CloudProvider {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
 	return CloudProvider{
@@ -16,13 +18,13 @@ func (c CloudProviderManifestBuilder) Build() CloudProvider {
 		},
 
 		SSHTunnel: SSHTunnel{
-			Host:       "ELASTIC-IP",
+			Host:       elasticIP,
 			Port:       22,
 			User:       "vcap",
 			PrivateKey: "./bosh.pem",
 		},
 
-		MBus: "https://mbus:mbus-password@ELASTIC-IP:6868",
+		MBus: fmt.Sprintf("https://mbus:mbus-password@%s:6868", elasticIP),
 
 		Properties: CloudProviderProperties{
 			AWS: sharedPropertiesManifestBuilder.AWS(),

@@ -7,6 +7,7 @@ type ManifestBuilder struct {
 type ManifestProperties struct {
 	SubnetID         string
 	AvailabilityZone string
+	ElasticIP        string
 }
 
 type logger interface {
@@ -35,7 +36,7 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
 		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties.AvailabilityZone),
 		DiskPools:     diskPoolsManifestBuilder.Build(),
 		Networks:      networksManifestBuilder.Build(manifestProperties.SubnetID),
-		Jobs:          jobsManifestBuilder.Build(),
-		CloudProvider: cloudProviderManifestBuilder.Build(),
+		Jobs:          jobsManifestBuilder.Build(manifestProperties.ElasticIP),
+		CloudProvider: cloudProviderManifestBuilder.Build(manifestProperties.ElasticIP),
 	}
 }

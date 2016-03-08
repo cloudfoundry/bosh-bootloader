@@ -58,7 +58,7 @@ jobs:
     static_ips: [10.0.0.6]
     default: [dns, gateway]
   - name: public
-    static_ips: [ELASTIC-IP] # <--- Replace with Elastic IP
+    static_ips: [some-elastic-ip]
 
   properties:
     nats:
@@ -139,12 +139,12 @@ cloud_provider:
   template: {name: aws_cpi, release: bosh-aws-cpi}
 
   ssh_tunnel:
-    host: ELASTIC-IP # <--- Replace with your Elastic IP address
+    host: some-elastic-ip
     port: 22
     user: vcap
-    private_key: ./bosh.pem # Path relative to this manifest file
+    private_key: ./bosh.pem
 
-  mbus: "https://mbus:mbus-password@ELASTIC-IP:6868" # <--- Replace with Elastic IP
+  mbus: "https://mbus:mbus-password@some-elastic-ip:6868"
 
   properties:
     aws:

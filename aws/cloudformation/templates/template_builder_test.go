@@ -26,7 +26,7 @@ var _ = Describe("TemplateBuilder", func() {
 		It("builds a cloudformation template", func() {
 			template := builder.Build("keypair-name")
 			Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
-			Expect(template.Description).To(Equal("Infrastructure for a MicroBOSH deployment with an ELB."))
+			Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with an ELB."))
 
 			Expect(template.Parameters).To(HaveKey("SSHKeyPairName"))
 			Expect(template.Resources).To(HaveKey("BOSHUser"))

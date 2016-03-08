@@ -155,6 +155,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Outputs: map[string]string{
 					"BOSHSubnet":   "subnet-12345",
 					"BOSHSubnetAZ": "some-az",
+					"BOSHEIP":      "some-elastic-ip",
 				},
 			}
 
@@ -165,6 +166,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(stdout.String()).To(ContainSubstring("name: bosh"))
 			Expect(stdout.String()).To(ContainSubstring("subnet: subnet-12345"))
 			Expect(stdout.String()).To(ContainSubstring("availability_zone: some-az"))
+			Expect(stdout.String()).To(ContainSubstring("static_ips:\n    - some-elastic-ip"))
+			Expect(stdout.String()).To(ContainSubstring("host: some-elastic-ip"))
+			Expect(stdout.String()).To(ContainSubstring("mbus: https://mbus:mbus-password@some-elastic-ip:6868"))
 		})
 
 		Context("when there is no keypair", func() {

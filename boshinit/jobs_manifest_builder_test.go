@@ -15,7 +15,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all jobs for manifest", func() {
-			jobs := jobsManifestBuilder.Build()
+			jobs := jobsManifestBuilder.Build("some-elastic-ip")
 			job := jobs[0]
 
 			Expect(jobs).To(HaveLen(1))
@@ -43,7 +43,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 				},
 				{
 					Name:      "public",
-					StaticIPs: []string{"ELASTIC-IP"},
+					StaticIPs: []string{"some-elastic-ip"},
 				},
 			}))
 			Expect(job.Properties.NATS.User).To(Equal("nats"))

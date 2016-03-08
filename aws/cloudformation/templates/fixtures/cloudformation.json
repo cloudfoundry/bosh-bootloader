@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Infrastructure for a MicroBOSH deployment with an ELB.",
+    "Description": "Infrastructure for a BOSH deployment with an ELB.",
     "Mappings": {
         "AWSNATAMI": {
             "ap-northeast-1": {"AMI": "ami-f885ae96"},
@@ -23,7 +23,8 @@
 		"BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
 		"BOSHSubnetAZ": {
 			"Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
-		}
+		},
+		"BOSHEIP": {"Value": {"Ref": "BOSHEIP"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {

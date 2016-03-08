@@ -15,7 +15,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all cloud provider fields for manifest", func() {
-			cloudProvider := cloudProviderManifestBuilder.Build()
+			cloudProvider := cloudProviderManifestBuilder.Build("some-elastic-ip")
 
 			Expect(cloudProvider).To(Equal(boshinit.CloudProvider{
 				Template: boshinit.Template{
@@ -24,13 +24,13 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				},
 
 				SSHTunnel: boshinit.SSHTunnel{
-					Host:       "ELASTIC-IP",
+					Host:       "some-elastic-ip",
 					Port:       22,
 					User:       "vcap",
 					PrivateKey: "./bosh.pem",
 				},
 
-				MBus: "https://mbus:mbus-password@ELASTIC-IP:6868",
+				MBus: "https://mbus:mbus-password@some-elastic-ip:6868",
 
 				Properties: boshinit.CloudProviderProperties{
 					AWS: boshinit.AWSProperties{

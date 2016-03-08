@@ -16,5 +16,8 @@ func (t BOSHEIPTemplateBuilder) BOSHEIP() Template {
 				},
 			},
 		},
+		Outputs: map[string]Output{
+			"BOSHEIP": Output{Value: Ref{"BOSHEIP"}},
+		},
 	}
 }

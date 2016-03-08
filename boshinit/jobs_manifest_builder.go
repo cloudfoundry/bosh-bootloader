@@ -6,7 +6,7 @@ func NewJobsManifestBuilder() JobsManifestBuilder {
 	return JobsManifestBuilder{}
 }
 
-func (r JobsManifestBuilder) Build() []Job {
+func (r JobsManifestBuilder) Build(elasticIP string) []Job {
 	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder()
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
@@ -36,7 +36,7 @@ func (r JobsManifestBuilder) Build() []Job {
 				},
 				{
 					Name:      "public",
-					StaticIPs: []string{"ELASTIC-IP"},
+					StaticIPs: []string{elasticIP},
 				},
 			},
 

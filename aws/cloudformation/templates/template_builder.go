@@ -29,7 +29,7 @@ func (t TemplateBuilder) Build(keyPairName string) Template {
 
 	return Template{
 		AWSTemplateFormatVersion: "2010-09-09",
-		Description:              "Infrastructure for a MicroBOSH deployment with an ELB.",
+		Description:              "Infrastructure for a BOSH deployment with an ELB.",
 	}.Merge(
 		sshKeyPairTemplateBuilder.SSHKeyPairName(keyPairName),
 		boshIAMTemplateBuilder.BOSHIAMUser(),

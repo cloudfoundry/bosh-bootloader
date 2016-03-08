@@ -24,6 +24,7 @@ var _ = Describe("ManifestBuilder", func() {
 		manifestProperties = boshinit.ManifestProperties{
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
+			ElasticIP:        "some-elastic-ip",
 		}
 	})
 
@@ -36,9 +37,9 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.ResourcePools[0].CloudProperties.AvailabilityZone).To(Equal("some-az"))
 			Expect(manifest.DiskPools[0].Name).To(Equal("disks"))
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
-			Expect(manifest.Jobs[0].Name).To(Equal("bosh"))
-			Expect(manifest.CloudProvider.Template.Name).To(Equal("aws_cpi"))
-
+			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("some-elastic-ip"))
+			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("some-elastic-ip"))
+			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@some-elastic-ip:6868"))
 		})
 
 		It("logs that the bosh-init manifest is being generated", func() {
