@@ -20,7 +20,10 @@
         "BOSHUserSecretAccessKey": {
             "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
         },
-		"BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}}
+		"BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
+		"BOSHSubnetAZ": {
+			"Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
+		}
     },
     "Parameters": {
         "BOSHInboundCIDR": {

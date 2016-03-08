@@ -15,7 +15,7 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 
 	Describe("ResourcePools", func() {
 		It("returns all resource pools for manifest", func() {
-			resourcePools := resourcePoolsManifestBuilder.Build()
+			resourcePools := resourcePoolsManifestBuilder.Build("some-az")
 
 			Expect(resourcePools).To(HaveLen(1))
 			Expect(resourcePools).To(ConsistOf([]boshinit.ResourcePool{
@@ -32,7 +32,7 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 							Size: 25000,
 							Type: "gp2",
 						},
-						AvailabilityZone: "AVAILABILITY-ZONE",
+						AvailabilityZone: "some-az",
 					},
 				},
 			}))

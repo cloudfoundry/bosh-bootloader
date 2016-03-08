@@ -142,7 +142,8 @@ func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClie
 	}
 
 	manifestProperties := boshinit.ManifestProperties{
-		SubnetID: stack.Outputs["BOSHSubnet"],
+		SubnetID:         stack.Outputs["BOSHSubnet"],
+		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
 	}
 
 	manifest := d.boshInitManifestBuilder.Build(manifestProperties)

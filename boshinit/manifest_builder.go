@@ -5,7 +5,8 @@ type ManifestBuilder struct {
 }
 
 type ManifestProperties struct {
-	SubnetID string
+	SubnetID         string
+	AvailabilityZone string
 }
 
 type logger interface {
@@ -31,7 +32,7 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
 	return Manifest{
 		Name:          "bosh",
 		Releases:      releaseManifestBuilder.Build(),
-		ResourcePools: resourcePoolsManifestBuilder.Build(),
+		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties.AvailabilityZone),
 		DiskPools:     diskPoolsManifestBuilder.Build(),
 		Networks:      networksManifestBuilder.Build(manifestProperties.SubnetID),
 		Jobs:          jobsManifestBuilder.Build(),

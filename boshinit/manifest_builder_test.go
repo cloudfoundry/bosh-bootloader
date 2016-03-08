@@ -22,7 +22,8 @@ var _ = Describe("ManifestBuilder", func() {
 		logger = &fakes.Logger{}
 		manifestBuilder = boshinit.NewManifestBuilder(logger)
 		manifestProperties = boshinit.ManifestProperties{
-			SubnetID: "subnet-12345",
+			SubnetID:         "subnet-12345",
+			AvailabilityZone: "some-az",
 		}
 	})
 
@@ -32,7 +33,7 @@ var _ = Describe("ManifestBuilder", func() {
 
 			Expect(manifest.Name).To(Equal("bosh"))
 			Expect(manifest.Releases[0].Name).To(Equal("bosh"))
-			Expect(manifest.ResourcePools[0].Name).To(Equal("vms"))
+			Expect(manifest.ResourcePools[0].CloudProperties.AvailabilityZone).To(Equal("some-az"))
 			Expect(manifest.DiskPools[0].Name).To(Equal("disks"))
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
 			Expect(manifest.Jobs[0].Name).To(Equal("bosh"))

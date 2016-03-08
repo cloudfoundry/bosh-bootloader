@@ -57,6 +57,14 @@ func (s SubnetTemplateBuilder) BOSHSubnet() Template {
 			"BOSHSubnet": Output{
 				Value: Ref{"BOSHSubnet"},
 			},
+			"BOSHSubnetAZ": Output{
+				Value: FnGetAtt{
+					[]string{
+						"BOSHSubnet",
+						"AvailabilityZone",
+					},
+				},
+			},
 		},
 	}
 }

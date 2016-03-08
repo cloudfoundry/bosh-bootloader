@@ -153,7 +153,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		It("prints out the bosh-init manifest", func() {
 			stackManager.DescribeCall.Returns.Output = cloudformation.Stack{
 				Outputs: map[string]string{
-					"BOSHSubnet": "subnet-12345",
+					"BOSHSubnet":   "subnet-12345",
+					"BOSHSubnetAZ": "some-az",
 				},
 			}
 
@@ -163,6 +164,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(stdout.String()).To(ContainSubstring("bosh-init manifest:"))
 			Expect(stdout.String()).To(ContainSubstring("name: bosh"))
 			Expect(stdout.String()).To(ContainSubstring("subnet: subnet-12345"))
+			Expect(stdout.String()).To(ContainSubstring("availability_zone: some-az"))
 		})
 
 		Context("when there is no keypair", func() {

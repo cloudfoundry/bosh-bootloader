@@ -18,7 +18,7 @@ resource_pools:
   cloud_properties:
     instance_type: m3.xlarge
     ephemeral_disk: {size: 25_000, type: gp2}
-    availability_zone: AVAILABILITY-ZONE # <--- Replace with Availability Zone
+    availability_zone: some-az
 
 disk_pools:
 - name: disks
