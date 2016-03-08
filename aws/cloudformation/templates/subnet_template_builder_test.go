@@ -63,6 +63,11 @@ var _ = Describe("SubnetTemplateBuilder", func() {
 				Type:        "String",
 				Default:     "10.0.0.0/24",
 			}))
+
+			Expect(subnet.Outputs).To(HaveLen(1))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("BOSHSubnet", templates.Output{
+				Value: templates.Ref{"BOSHSubnet"},
+			}))
 		})
 	})
 

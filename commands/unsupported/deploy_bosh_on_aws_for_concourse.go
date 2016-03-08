@@ -26,6 +26,7 @@ type templateBuilder interface {
 type stackManager interface {
 	CreateOrUpdate(cloudFormationClient cloudformation.Client, stackName string, template templates.Template) error
 	WaitForCompletion(cloudFormationClient cloudformation.Client, stackName string, sleepInterval time.Duration) error
+	Describe(cloudFormationClient cloudformation.Client, name string) (cloudformation.Stack, error)
 }
 
 type keyPairManager interface {
@@ -33,7 +34,7 @@ type keyPairManager interface {
 }
 
 type boshInitManifestBuilder interface {
-	Build() boshinit.Manifest
+	Build(boshinit.ManifestProperties) boshinit.Manifest
 }
 
 type DeployBOSHOnAWSForConcourse struct {
@@ -57,17 +58,27 @@ func NewDeployBOSHOnAWSForConcourse(templateBuilder templateBuilder, stackManage
 }
 
 func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
-	state, err := d.synchronizeKeyPairs(state, globalFlags.EndpointOverride)
+	cloudFormationClient, err := d.awsClientProvider.CloudFormationClient(aws.Config{
+		AccessKeyID:      state.AWS.AccessKeyID,
+		SecretAccessKey:  state.AWS.SecretAccessKey,
+		Region:           state.AWS.Region,
+		EndpointOverride: globalFlags.EndpointOverride,
+	})
 	if err != nil {
 		return state, err
 	}
 
-	err = d.createInfrastructure(state, globalFlags.EndpointOverride)
+	state, err = d.synchronizeKeyPairs(state, globalFlags.EndpointOverride)
 	if err != nil {
 		return state, err
 	}
 
-	err = d.generateBoshInitManifest()
+	err = d.createInfrastructure(state.KeyPair.Name, cloudFormationClient)
+	if err != nil {
+		return state, err
+	}
+
+	err = d.generateBoshInitManifest(cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
@@ -110,19 +121,8 @@ func (d DeployBOSHOnAWSForConcourse) synchronizeKeyPairs(state storage.State, en
 	return state, nil
 }
 
-func (d DeployBOSHOnAWSForConcourse) createInfrastructure(state storage.State, endpointOverride string) error {
-	template := d.templateBuilder.Build(state.KeyPair.Name)
-
-	cloudFormationClient, err := d.awsClientProvider.CloudFormationClient(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: endpointOverride,
-	})
-
-	if err != nil {
-		return err
-	}
+func (d DeployBOSHOnAWSForConcourse) createInfrastructure(keyPairName string, cloudFormationClient cloudformation.Client) error {
+	template := d.templateBuilder.Build(keyPairName)
 
 	if err := d.stackManager.CreateOrUpdate(cloudFormationClient, "concourse", template); err != nil {
 		return err
@@ -135,8 +135,17 @@ func (d DeployBOSHOnAWSForConcourse) createInfrastructure(state storage.State, e
 	return nil
 }
 
-func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest() error {
-	manifest := d.boshInitManifestBuilder.Build()
+func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClient cloudformation.Client) error {
+	stack, err := d.stackManager.Describe(cloudFormationClient, "concourse")
+	if err != nil {
+		return err
+	}
+
+	manifestProperties := boshinit.ManifestProperties{
+		SubnetID: stack.Outputs["BOSHSubnet"],
+	}
+
+	manifest := d.boshInitManifestBuilder.Build(manifestProperties)
 	yaml, err := candiedyaml.Marshal(manifest)
 	if err != nil {
 		return err

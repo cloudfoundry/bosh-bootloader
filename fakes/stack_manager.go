@@ -8,6 +8,13 @@ import (
 )
 
 type StackManager struct {
+	DescribeCall struct {
+		Returns struct {
+			Output cloudformation.Stack
+			Error  error
+		}
+	}
+
 	CreateOrUpdateCall struct {
 		Receives struct {
 			StackName string
@@ -45,4 +52,8 @@ func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName
 	m.WaitForCompletionCall.Receives.SleepInterval = sleepInterval
 
 	return m.WaitForCompletionCall.Returns.Error
+}
+
+func (s *StackManager) Describe(client cloudformation.Client, name string) (cloudformation.Stack, error) {
+	return s.DescribeCall.Returns.Output, s.DescribeCall.Returns.Error
 }

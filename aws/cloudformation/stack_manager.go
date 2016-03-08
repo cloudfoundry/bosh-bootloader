@@ -65,10 +65,26 @@ func (s StackManager) Describe(client Client, name string) (Stack, error) {
 				status = *s.StackStatus
 			}
 
-			return Stack{
-				Name:   *s.StackName,
-				Status: status,
-			}, nil
+			stack := Stack{
+				Name:    *s.StackName,
+				Status:  status,
+				Outputs: map[string]string{},
+			}
+
+			for _, output := range s.Outputs {
+				if output.OutputKey == nil {
+					return Stack{}, errors.New("failed to parse outputs")
+				}
+
+				value := ""
+				if output.OutputValue != nil {
+					value = *output.OutputValue
+				}
+
+				stack.Outputs[*output.OutputKey] = value
+			}
+
+			return stack, nil
 		}
 	}
 

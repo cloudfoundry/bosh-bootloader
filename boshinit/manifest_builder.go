@@ -4,6 +4,10 @@ type ManifestBuilder struct {
 	logger logger
 }
 
+type ManifestProperties struct {
+	SubnetID string
+}
+
 type logger interface {
 	Step(message string)
 }
@@ -14,7 +18,7 @@ func NewManifestBuilder(logger logger) ManifestBuilder {
 	}
 }
 
-func (m ManifestBuilder) Build() Manifest {
+func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
 	m.logger.Step("generating bosh-init manifest")
 
 	releaseManifestBuilder := NewReleaseManifestBuilder()
@@ -29,7 +33,7 @@ func (m ManifestBuilder) Build() Manifest {
 		Releases:      releaseManifestBuilder.Build(),
 		ResourcePools: resourcePoolsManifestBuilder.Build(),
 		DiskPools:     diskPoolsManifestBuilder.Build(),
-		Networks:      networksManifestBuilder.Build(),
+		Networks:      networksManifestBuilder.Build(manifestProperties.SubnetID),
 		Jobs:          jobsManifestBuilder.Build(),
 		CloudProvider: cloudProviderManifestBuilder.Build(),
 	}

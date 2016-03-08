@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
@@ -21,17 +22,16 @@ import (
 var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command                 unsupported.DeployBOSHOnAWSForConcourse
-			stdout                  *bytes.Buffer
-			builder                 *fakes.TemplateBuilder
-			stackManager            *fakes.StackManager
-			keyPairManager          *fakes.KeyPairManager
-			cloudFormationClient    *fakes.CloudFormationClient
-			clientProvider          *fakes.ClientProvider
-			ec2Client               *fakes.EC2Client
-			boshInitManifestBuilder *fakes.BoshInitManifestBuilder
-			incomingState           storage.State
-			globalFlags             commands.GlobalFlags
+			command              unsupported.DeployBOSHOnAWSForConcourse
+			stdout               *bytes.Buffer
+			builder              *fakes.TemplateBuilder
+			stackManager         *fakes.StackManager
+			keyPairManager       *fakes.KeyPairManager
+			cloudFormationClient *fakes.CloudFormationClient
+			clientProvider       *fakes.ClientProvider
+			ec2Client            *fakes.EC2Client
+			incomingState        storage.State
+			globalFlags          commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
@@ -48,9 +48,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			stackManager = &fakes.StackManager{}
 			keyPairManager = &fakes.KeyPairManager{}
 
-			boshInitManifestBuilder = &fakes.BoshInitManifestBuilder{}
-
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshInitManifestBuilder, stdout)
+			logger := &fakes.Logger{}
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshinit.NewManifestBuilder(logger), stdout)
 
 			builder.BuildCall.Returns.Template = templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -152,13 +151,18 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		It("prints out the bosh-init manifest", func() {
-			boshInitManifestBuilder.BuildCall.Returns.Manifest = boshinit.Manifest{
-				Name: "bosh",
+			stackManager.DescribeCall.Returns.Output = cloudformation.Stack{
+				Outputs: map[string]string{
+					"BOSHSubnet": "subnet-12345",
+				},
 			}
+
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(stdout.String()).To(ContainSubstring("bosh-init manifest:"))
 			Expect(stdout.String()).To(ContainSubstring("name: bosh"))
+			Expect(stdout.String()).To(ContainSubstring("subnet: subnet-12345"))
 		})
 
 		Context("when there is no keypair", func() {
@@ -213,6 +217,13 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error waiting on stack"))
+			})
+
+			It("returns an error when describe stacks returns an error", func() {
+				stackManager.DescribeCall.Returns.Error = errors.New("error describing stack")
+
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("error describing stack"))
 			})
 		})
 	})

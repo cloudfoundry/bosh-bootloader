@@ -53,6 +53,11 @@ func (s SubnetTemplateBuilder) BOSHSubnet() Template {
 				},
 			},
 		},
+		Outputs: map[string]Output{
+			"BOSHSubnet": Output{
+				Value: Ref{"BOSHSubnet"},
+			},
+		},
 	}
 }
 

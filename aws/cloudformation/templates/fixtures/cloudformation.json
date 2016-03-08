@@ -19,7 +19,8 @@
         "BOSHUserAccessKey": {"Value": {"Ref": "BOSHUserAccessKey"}},
         "BOSHUserSecretAccessKey": {
             "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
-        }
+        },
+		"BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {

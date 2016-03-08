@@ -36,6 +36,10 @@ var _ = Describe("StackManager", func() {
 				Stacks: []*awscloudformation.Stack{{
 					StackName:   aws.String("some-stack-name"),
 					StackStatus: aws.String(awscloudformation.StackStatusUpdateComplete),
+					Outputs: []*awscloudformation.Output{{
+						OutputKey:   aws.String("some-output-key"),
+						OutputValue: aws.String("some-output-value"),
+					}},
 				}},
 			}
 			stack, err := manager.Describe(cloudformationClient, "some-stack-name")
@@ -47,6 +51,9 @@ var _ = Describe("StackManager", func() {
 			Expect(stack).To(Equal(cloudformation.Stack{
 				Name:   "some-stack-name",
 				Status: "UPDATE_COMPLETE",
+				Outputs: map[string]string{
+					"some-output-key": "some-output-value",
+				},
 			}))
 		})
 
@@ -56,6 +63,53 @@ var _ = Describe("StackManager", func() {
 					cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("something bad happened")), 500, "0")
 					_, err := manager.Describe(cloudformationClient, "some-stack-name")
 					Expect(err).To(MatchError(ContainSubstring("something bad happened")))
+				})
+			})
+
+			Context("when stack output key or value is nil", func() {
+				It("returns an error when the key in nil", func() {
+					cloudformationClient.DescribeStacksCall.Returns.Output = &awscloudformation.DescribeStacksOutput{
+						Stacks: []*awscloudformation.Stack{
+							{
+								StackName:   aws.String("some-stack-name"),
+								StackStatus: aws.String(awscloudformation.StackStatusUpdateComplete),
+								Outputs: []*awscloudformation.Output{{
+									OutputKey:   nil,
+									OutputValue: aws.String("some-value"),
+								}},
+							},
+						},
+					}
+
+					_, err := manager.Describe(cloudformationClient, "some-stack-name")
+					Expect(err).To(MatchError("failed to parse outputs"))
+				})
+
+				It("assigns an empty string value when the value is nil", func() {
+					cloudformationClient.DescribeStacksCall.Returns.Output = &awscloudformation.DescribeStacksOutput{
+						Stacks: []*awscloudformation.Stack{
+							{
+								StackName:   aws.String("some-stack-name"),
+								StackStatus: aws.String(awscloudformation.StackStatusUpdateComplete),
+								Outputs: []*awscloudformation.Output{
+									{
+										OutputKey:   aws.String("first-key"),
+										OutputValue: nil,
+									},
+									{
+										OutputKey:   aws.String("second-key"),
+										OutputValue: aws.String("second-value"),
+									},
+								},
+							},
+						},
+					}
+
+					stack, err := manager.Describe(cloudformationClient, "some-stack-name")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(stack.Outputs["first-key"]).To(Equal(""))
+					Expect(stack.Outputs["second-key"]).To(Equal("second-value"))
 				})
 			})
 
@@ -96,8 +150,9 @@ var _ = Describe("StackManager", func() {
 						StackName: aws.String("some-stack-name"),
 					}))
 					Expect(stack).To(Equal(cloudformation.Stack{
-						Name:   "some-stack-name",
-						Status: "CREATE_COMPLETE",
+						Name:    "some-stack-name",
+						Status:  "CREATE_COMPLETE",
+						Outputs: map[string]string{},
 					}))
 				})
 			})
@@ -122,8 +177,9 @@ var _ = Describe("StackManager", func() {
 						StackName: aws.String("some-stack-name"),
 					}))
 					Expect(stack).To(Equal(cloudformation.Stack{
-						Name:   "some-stack-name",
-						Status: "CREATE_COMPLETE",
+						Name:    "some-stack-name",
+						Status:  "CREATE_COMPLETE",
+						Outputs: map[string]string{},
 					}))
 				})
 			})
@@ -148,8 +204,9 @@ var _ = Describe("StackManager", func() {
 						StackName: aws.String("some-stack-name"),
 					}))
 					Expect(stack).To(Equal(cloudformation.Stack{
-						Name:   "some-stack-name",
-						Status: "UNKNOWN",
+						Name:    "some-stack-name",
+						Status:  "UNKNOWN",
+						Outputs: map[string]string{},
 					}))
 				})
 			})

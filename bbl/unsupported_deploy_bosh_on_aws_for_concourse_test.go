@@ -49,46 +49,35 @@ ohmMhda49PmtPpDlTAMihjbjvLAM7IU/S7+FVIINjTBV+YVnjS2y
 
 var _ = Describe("bbl", func() {
 	var (
-		fakeAWS *awsbackend.Backend
-		server  *httptest.Server
+		fakeAWS       *awsbackend.Backend
+		server        *httptest.Server
+		tempDirectory string
 	)
 
 	BeforeEach(func() {
 		fakeAWS = awsbackend.New()
 		server = httptest.NewServer(awsfaker.New(fakeAWS))
+
+		var err error
+		tempDirectory, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("unsupported-deploy-bosh-on-aws-for-concourse", func() {
 		Context("when the cloudformation stack does not exist", func() {
-			var (
-				session *gexec.Session
-				stack   awsbackend.Stack
-			)
+			var stack awsbackend.Stack
 
 			BeforeEach(func() {
-				tempDirectory, err := ioutil.TempDir("", "")
-				Expect(err).NotTo(HaveOccurred())
-
 				writeEmptyStateJson(tempDirectory)
+			})
 
-				args := []string{
-					fmt.Sprintf("--endpoint-override=%s", server.URL),
-					"--aws-access-key-id", "some-access-key",
-					"--aws-secret-access-key", "some-access-secret",
-					"--aws-region", "some-region",
-					"--state-dir", tempDirectory,
-					"unsupported-deploy-bosh-on-aws-for-concourse",
-				}
-				session, err = gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(0))
+			It("creates a stack and a keypair", func() {
+				deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
 
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get("concourse")
 				Expect(ok).To(BeTrue())
-			})
 
-			It("creates a stack and a keypair", func() {
 				Expect(stack.Name).To(Equal("concourse"))
 
 				keyPairs := fakeAWS.KeyPairs.All()
@@ -97,6 +86,12 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("creates an IAM user", func() {
+				deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+
+				var ok bool
+				stack, ok = fakeAWS.Stacks.Get("concourse")
+				Expect(ok).To(BeTrue())
+
 				var template struct {
 					Resources struct {
 						BOSHUser struct {
@@ -113,6 +108,8 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("logs the steps and bosh-init manifest", func() {
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: creating keypair"))
 				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
@@ -137,8 +134,6 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("updates the stack with the cloudformation template", func() {
-				tempDir, err := ioutil.TempDir("", "")
-
 				state := storage.State{
 					KeyPair: &storage.KeyPair{
 						Name:       "some-keypair-name",
@@ -149,19 +144,9 @@ var _ = Describe("bbl", func() {
 				buf, err := json.Marshal(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				ioutil.WriteFile(filepath.Join(tempDir, "state.json"), buf, os.ModePerm)
+				ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
 
-				args := []string{
-					fmt.Sprintf("--endpoint-override=%s", server.URL),
-					"--aws-access-key-id", "some-access-key",
-					"--aws-secret-access-key", "some-access-secret",
-					"--aws-region", "some-region",
-					"--state-dir", tempDir,
-					"unsupported-deploy-bosh-on-aws-for-concourse",
-				}
-				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(0))
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
 
 				stack, ok := fakeAWS.Stacks.Get("concourse")
 				Expect(ok).To(BeTrue())
@@ -187,4 +172,21 @@ func writeEmptyStateJson(tempDirectory string) {
 	Expect(err).NotTo(HaveOccurred())
 
 	ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+}
+
+func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string) *gexec.Session {
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", serverURL),
+		"--aws-access-key-id", "some-access-key",
+		"--aws-secret-access-key", "some-access-secret",
+		"--aws-region", "some-region",
+		"--state-dir", tempDirectory,
+		"unsupported-deploy-bosh-on-aws-for-concourse",
+	}
+
+	session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session).Should(gexec.Exit(0))
+
+	return session
 }

@@ -32,7 +32,7 @@ networks:
   - range: 10.0.0.0/24
     gateway: 10.0.0.1
     dns: [10.0.0.2]
-    cloud_properties: {subnet: SUBNET-ID} # <--- Replace with Subnet ID
+    cloud_properties: {subnet: subnet-12345}
 - name: public
   type: vip
 
