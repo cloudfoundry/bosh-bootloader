@@ -10,6 +10,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -26,11 +27,12 @@ func main() {
 	stateStore := storage.NewStore()
 	stackManager := cloudformation.NewStackManager(logger)
 	awsClientProvider := aws.NewClientProvider()
+	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger)
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-provision-aws-for-concourse": unsupported.NewProvisionAWSForConcourse(templateBuilder, stackManager, keypairManager, awsClientProvider),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(templateBuilder, stackManager, keypairManager, awsClientProvider, boshInitManifestBuilder, os.Stdout),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])

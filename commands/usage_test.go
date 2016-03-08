@@ -40,9 +40,9 @@ Global Options:
   --state-dir             "Directory that stores the state.json"
 
 Commands:
-  help                                     "print usage"
-  version                                  "print version"
-  unsupported-provision-aws-for-concourse  "create a new concourse stack on AWS"
+  help                                          "print usage"
+  version                                       "print version"
+  unsupported-deploy-bosh-on-aws-for-concourse  "create a new concourse stack on AWS and print out the bosh-init manifest"
 `)))
 		})
 

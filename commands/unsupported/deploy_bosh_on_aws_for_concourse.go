@@ -1,12 +1,15 @@
 package unsupported
 
 import (
+	"io"
 	"time"
 
+	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
@@ -29,23 +32,31 @@ type keyPairManager interface {
 	Sync(ec2Client ec2.Client, keypair ec2.KeyPair) (ec2.KeyPair, error)
 }
 
-type ProvisionAWSForConcourse struct {
-	builder           templateBuilder
-	stackManager      stackManager
-	keyPairManager    keyPairManager
-	awsClientProvider awsClientProvider
+type boshInitManifestBuilder interface {
+	Build() boshinit.Manifest
 }
 
-func NewProvisionAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, awsClientProvider awsClientProvider) ProvisionAWSForConcourse {
-	return ProvisionAWSForConcourse{
-		builder:           builder,
-		stackManager:      stackManager,
-		keyPairManager:    keyPairManager,
-		awsClientProvider: awsClientProvider,
+type DeployBOSHOnAWSForConcourse struct {
+	builder                 templateBuilder
+	stackManager            stackManager
+	keyPairManager          keyPairManager
+	awsClientProvider       awsClientProvider
+	boshInitManifestBuilder boshInitManifestBuilder
+	stdout                  io.Writer
+}
+
+func NewDeployBOSHOnAWSForConcourse(builder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, awsClientProvider awsClientProvider, boshInitManifestBuilder boshInitManifestBuilder, stdout io.Writer) DeployBOSHOnAWSForConcourse {
+	return DeployBOSHOnAWSForConcourse{
+		builder:                 builder,
+		stackManager:            stackManager,
+		keyPairManager:          keyPairManager,
+		awsClientProvider:       awsClientProvider,
+		boshInitManifestBuilder: boshInitManifestBuilder,
+		stdout:                  stdout,
 	}
 }
 
-func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
+func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
 	if state.KeyPair == nil {
 		state.KeyPair = &storage.KeyPair{}
 	}
@@ -56,7 +67,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		PrivateKey: []byte(state.KeyPair.PrivateKey),
 	}
 
-	ec2Client, err := p.awsClientProvider.EC2Client(aws.Config{
+	ec2Client, err := d.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -66,7 +77,7 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		return state, err
 	}
 
-	keyPair, err = p.keyPairManager.Sync(ec2Client, keyPair)
+	keyPair, err = d.keyPairManager.Sync(ec2Client, keyPair)
 	if err != nil {
 		return state, err
 	}
@@ -77,9 +88,9 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		PrivateKey: string(keyPair.PrivateKey),
 	}
 
-	template := p.builder.Build(state.KeyPair.Name)
+	template := d.builder.Build(state.KeyPair.Name)
 
-	cloudFormationClient, err := p.awsClientProvider.CloudFormationClient(aws.Config{
+	cloudFormationClient, err := d.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -89,13 +100,21 @@ func (p ProvisionAWSForConcourse) Execute(globalFlags commands.GlobalFlags, stat
 		return state, err
 	}
 
-	if err := p.stackManager.CreateOrUpdate(cloudFormationClient, "concourse", template); err != nil {
+	if err := d.stackManager.CreateOrUpdate(cloudFormationClient, "concourse", template); err != nil {
 		return state, err
 	}
 
-	if err := p.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 15*time.Second); err != nil {
+	if err := d.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 15*time.Second); err != nil {
 		return state, err
 	}
+
+	manifest := d.boshInitManifestBuilder.Build()
+	yaml, err := candiedyaml.Marshal(manifest)
+	if err != nil {
+		return state, err
+	}
+	d.stdout.Write([]byte("\nbosh-init manifest:\n\n"))
+	d.stdout.Write(yaml)
 
 	return state, nil
 }

@@ -1,12 +1,14 @@
 package unsupported_test
 
 import (
+	"bytes"
 	"errors"
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -16,21 +18,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ProvisionAWSForConcourse", func() {
+var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command              unsupported.ProvisionAWSForConcourse
-			builder              *fakes.TemplateBuilder
-			stackManager         *fakes.StackManager
-			keyPairManager       *fakes.KeyPairManager
-			cloudFormationClient *fakes.CloudFormationClient
-			clientProvider       *fakes.ClientProvider
-			ec2Client            *fakes.EC2Client
-			incomingState        storage.State
-			globalFlags          commands.GlobalFlags
+			command                 unsupported.DeployBOSHOnAWSForConcourse
+			stdout                  *bytes.Buffer
+			builder                 *fakes.TemplateBuilder
+			stackManager            *fakes.StackManager
+			keyPairManager          *fakes.KeyPairManager
+			cloudFormationClient    *fakes.CloudFormationClient
+			clientProvider          *fakes.ClientProvider
+			ec2Client               *fakes.EC2Client
+			boshInitManifestBuilder *fakes.BoshInitManifestBuilder
+			incomingState           storage.State
+			globalFlags             commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
+			stdout = bytes.NewBuffer([]byte{})
 			builder = &fakes.TemplateBuilder{}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
@@ -43,7 +48,9 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 			stackManager = &fakes.StackManager{}
 			keyPairManager = &fakes.KeyPairManager{}
 
-			command = unsupported.NewProvisionAWSForConcourse(builder, stackManager, keyPairManager, clientProvider)
+			boshInitManifestBuilder = &fakes.BoshInitManifestBuilder{}
+
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshInitManifestBuilder, stdout)
 
 			builder.BuildCall.Returns.Template = templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -142,6 +149,16 @@ var _ = Describe("ProvisionAWSForConcourse", func() {
 		It("returns the given state unmodified", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("prints out the bosh-init manifest", func() {
+			boshInitManifestBuilder.BuildCall.Returns.Manifest = boshinit.Manifest{
+				Name: "bosh",
+			}
+			_, err := command.Execute(globalFlags, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stdout.String()).To(ContainSubstring("bosh-init manifest:"))
+			Expect(stdout.String()).To(ContainSubstring("name: bosh"))
 		})
 
 		Context("when there is no keypair", func() {

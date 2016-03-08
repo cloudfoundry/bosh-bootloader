@@ -7,16 +7,19 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("ManifestBuilder", func() {
 	var (
+		logger          *fakes.Logger
 		manifestBuilder boshinit.ManifestBuilder
 	)
 
 	BeforeEach(func() {
-		manifestBuilder = boshinit.NewManifestBuilder()
+		logger = &fakes.Logger{}
+		manifestBuilder = boshinit.NewManifestBuilder(logger)
 	})
 
 	Describe("Build", func() {
@@ -30,6 +33,12 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.Networks[0].Name).To(Equal("private"))
 			Expect(manifest.Jobs[0].Name).To(Equal("bosh"))
 			Expect(manifest.CloudProvider.Template.Name).To(Equal("aws_cpi"))
+
+		})
+
+		It("logs that the bosh-init manifest is being generated", func() {
+			manifestBuilder.Build()
+			Expect(logger.StepCall.Receives.Message).To(Equal("generating bosh-init manifest"))
 		})
 	})
 
