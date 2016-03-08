@@ -39,7 +39,7 @@ var _ = Describe("TemplateBuilder", func() {
 			Expect(template.Resources).To(HaveKey("BOSHSecurityGroup"))
 			Expect(template.Resources).To(HaveKey("WebSecurityGroup"))
 			Expect(template.Resources).To(HaveKey("WebELBLoadBalancer"))
-			Expect(template.Resources).To(HaveKey("MicroEIP"))
+			Expect(template.Resources).To(HaveKey("BOSHEIP"))
 		})
 
 		It("logs that the cloudformation template is being generated", func() {

@@ -24,7 +24,7 @@ func (t TemplateBuilder) Build(keyPairName string) Template {
 	subnetTemplateBuilder := NewSubnetTemplateBuilder()
 	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	webELBTemplateBuilder := NewWebELBTemplateBuilder()
-	microEIPTemplateBuilder := NewMicroEIPTemplateBuilder()
+	boshEIPTemplateBuilder := NewBOSHEIPTemplateBuilder()
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
 
 	return Template{
@@ -42,6 +42,6 @@ func (t TemplateBuilder) Build(keyPairName string) Template {
 		securityGroupTemplateBuilder.BOSHSecurityGroup(),
 		securityGroupTemplateBuilder.WebSecurityGroup(),
 		webELBTemplateBuilder.WebELBLoadBalancer(),
-		microEIPTemplateBuilder.MicroEIP(),
+		boshEIPTemplateBuilder.BOSHEIP(),
 	)
 }

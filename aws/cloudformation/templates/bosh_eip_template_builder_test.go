@@ -7,19 +7,19 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("MicroEIPTemplateBuilder", func() {
-	var builder templates.MicroEIPTemplateBuilder
+var _ = Describe("BOSHEIPTemplateBuilder", func() {
+	var builder templates.BOSHEIPTemplateBuilder
 
 	BeforeEach(func() {
-		builder = templates.NewMicroEIPTemplateBuilder()
+		builder = templates.NewBOSHEIPTemplateBuilder()
 	})
 
-	Describe("MicroEIP", func() {
+	Describe("BOSHEIP", func() {
 		It("returns a template containing the micro elastic ip", func() {
-			micro_eip := builder.MicroEIP()
+			micro_eip := builder.BOSHEIP()
 
 			Expect(micro_eip.Resources).To(HaveLen(1))
-			Expect(micro_eip.Resources).To(HaveKeyWithValue("MicroEIP", templates.Resource{
+			Expect(micro_eip.Resources).To(HaveKeyWithValue("BOSHEIP", templates.Resource{
 				Type: "AWS::EC2::EIP",
 				Properties: templates.EIP{
 					Domain: "vpc",
