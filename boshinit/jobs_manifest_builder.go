@@ -6,7 +6,7 @@ func NewJobsManifestBuilder() JobsManifestBuilder {
 	return JobsManifestBuilder{}
 }
 
-func (r JobsManifestBuilder) Build(elasticIP string) []Job {
+func (r JobsManifestBuilder) Build(manifestProperties ManifestProperties) []Job {
 	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder()
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
@@ -36,7 +36,7 @@ func (r JobsManifestBuilder) Build(elasticIP string) []Job {
 				},
 				{
 					Name:      "public",
-					StaticIPs: []string{elasticIP},
+					StaticIPs: []string{manifestProperties.ElasticIP},
 				},
 			},
 
@@ -48,7 +48,7 @@ func (r JobsManifestBuilder) Build(elasticIP string) []Job {
 				Blobstore: jobPropertiesManifestBuilder.Blobstore(),
 				Director:  jobPropertiesManifestBuilder.Director(),
 				HM:        jobPropertiesManifestBuilder.HM(),
-				AWS:       sharedPropertiesManifestBuilder.AWS(),
+				AWS:       sharedPropertiesManifestBuilder.AWS(manifestProperties),
 				Agent:     jobPropertiesManifestBuilder.Agent(),
 				NTP:       sharedPropertiesManifestBuilder.NTP(),
 			},

@@ -15,7 +15,13 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all cloud provider fields for manifest", func() {
-			cloudProvider := cloudProviderManifestBuilder.Build("some-elastic-ip")
+			cloudProvider := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
+				ElasticIP:       "some-elastic-ip",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				DefaultKeyName:  "some-key-name",
+				Region:          "some-region",
+			})
 
 			Expect(cloudProvider).To(Equal(boshinit.CloudProvider{
 				Template: boshinit.Template{
@@ -34,11 +40,11 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 				Properties: boshinit.CloudProviderProperties{
 					AWS: boshinit.AWSProperties{
-						AccessKeyId:           "ACCESS-KEY-ID",
-						SecretAccessKey:       "SECRET-ACCESS-KEY",
-						DefaultKeyName:        "bosh",
+						AccessKeyId:           "some-access-key-id",
+						SecretAccessKey:       "some-secret-access-key",
+						DefaultKeyName:        "some-key-name",
 						DefaultSecurityGroups: []string{"bosh"},
-						Region:                "REGION",
+						Region:                "some-region",
 					},
 
 					Agent: boshinit.AgentProperties{

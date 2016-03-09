@@ -6,7 +6,7 @@ func NewNetworksManifestBuilder() NetworksManifestBuilder {
 	return NetworksManifestBuilder{}
 }
 
-func (r NetworksManifestBuilder) Build(subnetID string) []Network {
+func (r NetworksManifestBuilder) Build(manifestProperties ManifestProperties) []Network {
 	return []Network{
 		{
 			Name: "private",
@@ -17,7 +17,7 @@ func (r NetworksManifestBuilder) Build(subnetID string) []Network {
 					Gateway: "10.0.0.1",
 					DNS:     []string{"10.0.0.2"},
 					CloudProperties: NetworksCloudProperties{
-						Subnet: subnetID,
+						Subnet: manifestProperties.SubnetID,
 					},
 				},
 			},

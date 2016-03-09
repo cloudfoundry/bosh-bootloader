@@ -25,6 +25,10 @@ var _ = Describe("ManifestBuilder", func() {
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
 			ElasticIP:        "some-elastic-ip",
+			AccessKeyID:      "some-access-key-id",
+			SecretAccessKey:  "some-secret-access-key",
+			DefaultKeyName:   "some-key-name",
+			Region:           "some-region",
 		}
 	})
 
@@ -32,12 +36,22 @@ var _ = Describe("ManifestBuilder", func() {
 		It("builds the bosh-init manifest", func() {
 			manifest := manifestBuilder.Build(manifestProperties)
 
+			expectedAWSProperties := boshinit.AWSProperties{
+				AccessKeyId:           "some-access-key-id",
+				SecretAccessKey:       "some-secret-access-key",
+				DefaultKeyName:        "some-key-name",
+				DefaultSecurityGroups: []string{"bosh"},
+				Region:                "some-region",
+			}
+
 			Expect(manifest.Name).To(Equal("bosh"))
 			Expect(manifest.Releases[0].Name).To(Equal("bosh"))
 			Expect(manifest.ResourcePools[0].CloudProperties.AvailabilityZone).To(Equal("some-az"))
 			Expect(manifest.DiskPools[0].Name).To(Equal("disks"))
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
 			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("some-elastic-ip"))
+			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
+			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("some-elastic-ip"))
 			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@some-elastic-ip:6868"))
 		})

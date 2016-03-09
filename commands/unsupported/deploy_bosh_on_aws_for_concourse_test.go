@@ -153,9 +153,11 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		It("prints out the bosh-init manifest", func() {
 			stackManager.DescribeCall.Returns.Output = cloudformation.Stack{
 				Outputs: map[string]string{
-					"BOSHSubnet":   "subnet-12345",
-					"BOSHSubnetAZ": "some-az",
-					"BOSHEIP":      "some-elastic-ip",
+					"BOSHSubnet":              "subnet-12345",
+					"BOSHSubnetAZ":            "some-az",
+					"BOSHEIP":                 "some-elastic-ip",
+					"BOSHUserAccessKey":       "some-access-key-id",
+					"BOSHUserSecretAccessKey": "some-secret-access-key",
 				},
 			}
 
@@ -169,6 +171,10 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(stdout.String()).To(ContainSubstring("static_ips:\n    - some-elastic-ip"))
 			Expect(stdout.String()).To(ContainSubstring("host: some-elastic-ip"))
 			Expect(stdout.String()).To(ContainSubstring("mbus: https://mbus:mbus-password@some-elastic-ip:6868"))
+			Expect(stdout.String()).To(ContainSubstring("access_key_id: some-access-key-id"))
+			Expect(stdout.String()).To(ContainSubstring("secret_access_key: some-secret-access-key"))
+			Expect(stdout.String()).To(ContainSubstring("region: some-aws-region"))
+			Expect(stdout.String()).To(ContainSubstring("default_key_name: some-keypair-name"))
 		})
 
 		Context("when there is no keypair", func() {

@@ -29,13 +29,20 @@ var _ = Describe("SharedPropertiesManifestBuilder", func() {
 
 	Describe("AWS", func() {
 		It("returns job properties for AWS", func() {
-			aws := sharedPropertiesManifestBuilder.AWS()
+			aws := sharedPropertiesManifestBuilder.AWS(boshinit.ManifestProperties{
+				ElasticIP:       "some-elastic-ip",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				DefaultKeyName:  "some-key-name",
+				Region:          "some-region",
+			})
+
 			Expect(aws).To(Equal(boshinit.AWSProperties{
-				AccessKeyId:           "ACCESS-KEY-ID",
-				SecretAccessKey:       "SECRET-ACCESS-KEY",
-				DefaultKeyName:        "bosh",
+				AccessKeyId:           "some-access-key-id",
+				SecretAccessKey:       "some-secret-access-key",
+				DefaultKeyName:        "some-key-name",
 				DefaultSecurityGroups: []string{"bosh"},
-				Region:                "REGION",
+				Region:                "some-region",
 			}))
 		})
 	})

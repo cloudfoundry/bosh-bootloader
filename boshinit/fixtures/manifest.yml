@@ -125,11 +125,11 @@ jobs:
       resurrector_enabled: true
 
     aws:
-      access_key_id: ACCESS-KEY-ID # <--- Replace with AWS Access Key ID
-      secret_access_key: SECRET-ACCESS-KEY # <--- Replace with AWS Secret Key
-      default_key_name: bosh
+      access_key_id: some-access-key-id
+      secret_access_key: some-secret-access-key
+      default_key_name: some-key-name
       default_security_groups: [bosh]
-      region: REGION  # <--- Replace with Region
+      region: some-region
 
     agent: {mbus: "nats://nats:nats-password@10.0.0.6:4222"}
 
@@ -148,11 +148,11 @@ cloud_provider:
 
   properties:
     aws:
-      access_key_id: ACCESS-KEY-ID # <--- Replace with AWS Access Key ID
-      secret_access_key: SECRET-ACCESS-KEY # <--- Replace with AWS Secret Key
-      default_key_name: bosh
+      access_key_id: some-access-key-id
+      secret_access_key: some-secret-access-key
+      default_key_name: some-key-name
       default_security_groups: [bosh]
-      region: REGION  # <--- Replace with Region
+      region: some-region
     agent: {mbus: "https://mbus:mbus-password@0.0.0.0:6868"}
     blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
     ntp: [0.pool.ntp.org, 1.pool.ntp.org]

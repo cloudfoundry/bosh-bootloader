@@ -15,7 +15,14 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all jobs for manifest", func() {
-			jobs := jobsManifestBuilder.Build("some-elastic-ip")
+			jobs := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+				ElasticIP:       "some-elastic-ip",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				DefaultKeyName:  "some-key-name",
+				Region:          "some-region",
+			})
+
 			job := jobs[0]
 
 			Expect(jobs).To(HaveLen(1))
@@ -46,6 +53,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 					StaticIPs: []string{"some-elastic-ip"},
 				},
 			}))
+
 			Expect(job.Properties.NATS.User).To(Equal("nats"))
 			Expect(job.Properties.Redis.Address).To(Equal("127.0.0.1"))
 			Expect(job.Properties.Postgres.User).To(Equal("postgres"))
@@ -53,7 +61,10 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.Blobstore.Provider).To(Equal("dav"))
 			Expect(job.Properties.Director.Name).To(Equal("my-bosh"))
 			Expect(job.Properties.HM.ResurrectorEnabled).To(Equal(true))
-			Expect(job.Properties.AWS.DefaultKeyName).To(Equal("bosh"))
+			Expect(job.Properties.AWS.AccessKeyId).To(Equal("some-access-key-id"))
+			Expect(job.Properties.AWS.SecretAccessKey).To(Equal("some-secret-access-key"))
+			Expect(job.Properties.AWS.Region).To(Equal("some-region"))
+			Expect(job.Properties.AWS.DefaultKeyName).To(Equal("some-key-name"))
 			Expect(job.Properties.Agent.MBus).To(Equal("nats://nats:nats-password@10.0.0.6:4222"))
 			Expect(job.Properties.NTP[0]).To(Equal("0.pool.ntp.org"))
 		})

@@ -78,7 +78,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	err = d.generateBoshInitManifest(cloudFormationClient)
+	err = d.generateBoshInitManifest(cloudFormationClient, state.AWS.Region, state.KeyPair.Name)
 	if err != nil {
 		return state, err
 	}
@@ -135,7 +135,7 @@ func (d DeployBOSHOnAWSForConcourse) createInfrastructure(keyPairName string, cl
 	return nil
 }
 
-func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClient cloudformation.Client) error {
+func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClient cloudformation.Client, region string, keyPairName string) error {
 	stack, err := d.stackManager.Describe(cloudFormationClient, "concourse")
 	if err != nil {
 		return err
@@ -145,6 +145,10 @@ func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClie
 		SubnetID:         stack.Outputs["BOSHSubnet"],
 		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
 		ElasticIP:        stack.Outputs["BOSHEIP"],
+		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
+		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
+		Region:           region,
+		DefaultKeyName:   keyPairName,
 	}
 
 	manifest := d.boshInitManifestBuilder.Build(manifestProperties)

@@ -8,6 +8,10 @@ type ManifestProperties struct {
 	SubnetID         string
 	AvailabilityZone string
 	ElasticIP        string
+	AccessKeyID      string
+	SecretAccessKey  string
+	DefaultKeyName   string
+	Region           string
 }
 
 type logger interface {
@@ -33,10 +37,10 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
 	return Manifest{
 		Name:          "bosh",
 		Releases:      releaseManifestBuilder.Build(),
-		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties.AvailabilityZone),
+		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties),
 		DiskPools:     diskPoolsManifestBuilder.Build(),
-		Networks:      networksManifestBuilder.Build(manifestProperties.SubnetID),
-		Jobs:          jobsManifestBuilder.Build(manifestProperties.ElasticIP),
-		CloudProvider: cloudProviderManifestBuilder.Build(manifestProperties.ElasticIP),
+		Networks:      networksManifestBuilder.Build(manifestProperties),
+		Jobs:          jobsManifestBuilder.Build(manifestProperties),
+		CloudProvider: cloudProviderManifestBuilder.Build(manifestProperties),
 	}
 }

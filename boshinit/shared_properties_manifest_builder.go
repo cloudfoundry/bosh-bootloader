@@ -17,13 +17,13 @@ func (SharedPropertiesManifestBuilder) Postgres() PostgresProperties {
 	}
 }
 
-func (SharedPropertiesManifestBuilder) AWS() AWSProperties {
+func (SharedPropertiesManifestBuilder) AWS(manifestProperties ManifestProperties) AWSProperties {
 	return AWSProperties{
-		AccessKeyId:           "ACCESS-KEY-ID",
-		SecretAccessKey:       "SECRET-ACCESS-KEY",
-		DefaultKeyName:        "bosh",
+		AccessKeyId:           manifestProperties.AccessKeyID,
+		SecretAccessKey:       manifestProperties.SecretAccessKey,
+		DefaultKeyName:        manifestProperties.DefaultKeyName,
 		DefaultSecurityGroups: []string{"bosh"},
-		Region:                "REGION",
+		Region:                manifestProperties.Region,
 	}
 }
 

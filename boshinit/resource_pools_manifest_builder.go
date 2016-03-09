@@ -6,7 +6,7 @@ func NewResourcePoolsManifestBuilder() ResourcePoolsManifestBuilder {
 	return ResourcePoolsManifestBuilder{}
 }
 
-func (r ResourcePoolsManifestBuilder) Build(availabilityZone string) []ResourcePool {
+func (r ResourcePoolsManifestBuilder) Build(manifestProperties ManifestProperties) []ResourcePool {
 	return []ResourcePool{
 		{
 			Name:    "vms",
@@ -21,7 +21,7 @@ func (r ResourcePoolsManifestBuilder) Build(availabilityZone string) []ResourceP
 					Size: 25000,
 					Type: "gp2",
 				},
-				AvailabilityZone: availabilityZone,
+				AvailabilityZone: manifestProperties.AvailabilityZone,
 			},
 		},
 	}

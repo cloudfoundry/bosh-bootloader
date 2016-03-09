@@ -8,7 +8,7 @@ func NewCloudProviderManifestBuilder() CloudProviderManifestBuilder {
 	return CloudProviderManifestBuilder{}
 }
 
-func (c CloudProviderManifestBuilder) Build(elasticIP string) CloudProvider {
+func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestProperties) CloudProvider {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
 	return CloudProvider{
@@ -18,16 +18,16 @@ func (c CloudProviderManifestBuilder) Build(elasticIP string) CloudProvider {
 		},
 
 		SSHTunnel: SSHTunnel{
-			Host:       elasticIP,
+			Host:       manifestProperties.ElasticIP,
 			Port:       22,
 			User:       "vcap",
 			PrivateKey: "./bosh.pem",
 		},
 
-		MBus: fmt.Sprintf("https://mbus:mbus-password@%s:6868", elasticIP),
+		MBus: fmt.Sprintf("https://mbus:mbus-password@%s:6868", manifestProperties.ElasticIP),
 
 		Properties: CloudProviderProperties{
-			AWS: sharedPropertiesManifestBuilder.AWS(),
+			AWS: sharedPropertiesManifestBuilder.AWS(manifestProperties),
 
 			Agent: AgentProperties{
 				MBus: "https://mbus:mbus-password@0.0.0.0:6868",

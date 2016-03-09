@@ -15,7 +15,7 @@ var _ = Describe("NetworksManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all networks for manifest", func() {
-			networks := networksManifestBuilder.Build("subnet-12345")
+			networks := networksManifestBuilder.Build(boshinit.ManifestProperties{SubnetID: "subnet-12345"})
 
 			Expect(networks).To(HaveLen(2))
 			Expect(networks).To(ConsistOf([]boshinit.Network{
