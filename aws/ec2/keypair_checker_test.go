@@ -50,10 +50,18 @@ var _ = Describe("KeyPairChecker", func() {
 		})
 
 		Context("when the keypair does not exist on AWS", func() {
-			It("returns false", func() {
+			It("returns false when the keypair name can not be found", func() {
 				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("InvalidKeyPair.NotFound")
 
 				present, err := checker.HasKeyPair(ec2Client, "some-key-name")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(present).To(BeFalse())
+			})
+
+			It("returns false when the keypair name is empty", func() {
+				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("InvalidParameterValue: Invalid value '' for keyPairNames. It should not be blank")
+
+				present, err := checker.HasKeyPair(ec2Client, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(present).To(BeFalse())
 			})

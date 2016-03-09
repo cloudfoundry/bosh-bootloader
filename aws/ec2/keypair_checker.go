@@ -20,6 +20,10 @@ type KeyPairInfo struct {
 }
 
 func (KeyPairChecker) HasKeyPair(client Client, name string) (bool, error) {
+	if name == "" {
+		return false, nil
+	}
+
 	params := &ec2.DescribeKeyPairsInput{
 		KeyNames: []*string{
 			aws.String(name),
