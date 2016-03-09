@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
 
 var _ = Describe("JobPropertiesManifestBuilder", func() {
@@ -84,7 +85,12 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 
 	Describe("Director", func() {
 		It("returns job properties for Director", func() {
-			director := jobPropertiesManifestBuilder.Director()
+			director := jobPropertiesManifestBuilder.Director(boshinit.ManifestProperties{
+				SSLKeyPair: ssl.KeyPair{
+					Certificate: []byte("some-ssl-cert"),
+					PrivateKey:  []byte("some-ssl-key"),
+				},
+			})
 			Expect(director).To(Equal(boshinit.DirectorJobProperties{
 				Address:    "127.0.0.1",
 				Name:       "my-bosh",
@@ -112,6 +118,10 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 							},
 						},
 					},
+				},
+				SSL: boshinit.SSLProperties{
+					Cert: "some-ssl-cert",
+					Key:  "some-ssl-key",
 				},
 			}))
 		})

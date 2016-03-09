@@ -2,8 +2,11 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
@@ -13,6 +16,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -27,7 +31,8 @@ func main() {
 	stateStore := storage.NewStore()
 	stackManager := cloudformation.NewStackManager(logger)
 	awsClientProvider := aws.NewClientProvider()
-	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger)
+	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
+	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),

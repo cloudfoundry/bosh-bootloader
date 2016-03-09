@@ -119,6 +119,9 @@ jobs:
           users:
           - {name: admin, password: admin}
           - {name: hm, password: hm-password}
+      ssl:
+        cert: some-cert
+        key: some-key
 
     hm:
       director_account: {user: hm, password: hm-password}

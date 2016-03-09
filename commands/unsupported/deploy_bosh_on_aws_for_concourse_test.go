@@ -13,6 +13,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -30,6 +31,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			cloudFormationClient *fakes.CloudFormationClient
 			clientProvider       *fakes.ClientProvider
 			ec2Client            *fakes.EC2Client
+			logger               *fakes.Logger
+			sslKeyPairGenerator  *fakes.SSLKeyPairGenerator
 			incomingState        storage.State
 			globalFlags          commands.GlobalFlags
 		)
@@ -48,8 +51,11 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			stackManager = &fakes.StackManager{}
 			keyPairManager = &fakes.KeyPairManager{}
 
-			logger := &fakes.Logger{}
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshinit.NewManifestBuilder(logger), stdout)
+			logger = &fakes.Logger{}
+
+			sslKeyPairGenerator = &fakes.SSLKeyPairGenerator{}
+
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshinit.NewManifestBuilder(logger, sslKeyPairGenerator), stdout)
 
 			builder.BuildCall.Returns.Template = templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -151,6 +157,11 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		It("prints out the bosh-init manifest", func() {
+			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
+				Certificate: []byte("some-cert"),
+				PrivateKey:  []byte("some-key"),
+			}
+
 			stackManager.DescribeCall.Returns.Output = cloudformation.Stack{
 				Outputs: map[string]string{
 					"BOSHSubnet":              "subnet-12345",
@@ -164,6 +175,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("some-elastic-ip"))
+
 			Expect(stdout.String()).To(ContainSubstring("bosh-init manifest:"))
 			Expect(stdout.String()).To(ContainSubstring("name: bosh"))
 			Expect(stdout.String()).To(ContainSubstring("subnet: subnet-12345"))
@@ -175,6 +188,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(stdout.String()).To(ContainSubstring("secret_access_key: some-secret-access-key"))
 			Expect(stdout.String()).To(ContainSubstring("region: some-aws-region"))
 			Expect(stdout.String()).To(ContainSubstring("default_key_name: some-keypair-name"))
+			Expect(stdout.String()).To(ContainSubstring("cert: some-cert"))
+			Expect(stdout.String()).To(ContainSubstring("key: some-key"))
 		})
 
 		Context("when there is no keypair", func() {
@@ -236,6 +251,15 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error describing stack"))
+			})
+
+			It("returns an error when the bosh-init manifest cannot be built", func() {
+				boshInitManifestBuilder := &fakes.BOSHInitManifestBuilder{}
+				boshInitManifestBuilder.BuildCall.Returns.Error = errors.New("cannot build manifest")
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshInitManifestBuilder, stdout)
+
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("cannot build manifest"))
 			})
 		})
 	})

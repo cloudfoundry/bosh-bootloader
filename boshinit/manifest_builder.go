@@ -1,7 +1,10 @@
 package boshinit
 
+import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+
 type ManifestBuilder struct {
-	logger logger
+	logger              logger
+	sslKeyPairGenerator sslKeyPairGenerator
 }
 
 type ManifestProperties struct {
@@ -12,19 +15,25 @@ type ManifestProperties struct {
 	SecretAccessKey  string
 	DefaultKeyName   string
 	Region           string
+	SSLKeyPair       ssl.KeyPair
 }
 
 type logger interface {
 	Step(message string)
 }
 
-func NewManifestBuilder(logger logger) ManifestBuilder {
+type sslKeyPairGenerator interface {
+	Generate(string) (ssl.KeyPair, error)
+}
+
+func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator) ManifestBuilder {
 	return ManifestBuilder{
-		logger: logger,
+		logger:              logger,
+		sslKeyPairGenerator: sslKeyPairGenerator,
 	}
 }
 
-func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
+func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest, error) {
 	m.logger.Step("generating bosh-init manifest")
 
 	releaseManifestBuilder := NewReleaseManifestBuilder()
@@ -34,6 +43,13 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
 	jobsManifestBuilder := NewJobsManifestBuilder()
 	cloudProviderManifestBuilder := NewCloudProviderManifestBuilder()
 
+	keyPair, err := m.sslKeyPairGenerator.Generate(manifestProperties.ElasticIP)
+	if err != nil {
+		return Manifest{}, err
+	}
+
+	manifestProperties.SSLKeyPair = keyPair
+
 	return Manifest{
 		Name:          "bosh",
 		Releases:      releaseManifestBuilder.Build(),
@@ -42,5 +58,5 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) Manifest {
 		Networks:      networksManifestBuilder.Build(manifestProperties),
 		Jobs:          jobsManifestBuilder.Build(manifestProperties),
 		CloudProvider: cloudProviderManifestBuilder.Build(manifestProperties),
-	}
+	}, nil
 }

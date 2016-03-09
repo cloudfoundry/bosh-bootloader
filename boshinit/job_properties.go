@@ -50,6 +50,7 @@ type DirectorJobProperties struct {
 	MaxThreads     int                      `yaml:"max_threads"`
 	DB             PostgresProperties       `yaml:"db"`
 	UserManagement UserManagementProperties `yaml:"user_management"`
+	SSL            SSLProperties            `yaml:"ssl"`
 }
 
 type HMJobProperties struct {
@@ -69,6 +70,11 @@ type UserProperties struct {
 type UserManagementProperties struct {
 	Provider string          `yaml:"provider"`
 	Local    LocalProperties `yaml:"local"`
+}
+
+type SSLProperties struct {
+	Cert string `yaml:"cert"`
+	Key  string `yaml:"key"`
 }
 
 type HTTPProperties struct {

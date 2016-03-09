@@ -1,6 +1,7 @@
 package boshinit_test
 
 import (
+	"errors"
 	"io/ioutil"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
@@ -8,19 +9,23 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("ManifestBuilder", func() {
 	var (
-		logger             *fakes.Logger
-		manifestBuilder    boshinit.ManifestBuilder
-		manifestProperties boshinit.ManifestProperties
+		logger              *fakes.Logger
+		sslKeyPairGenerator *fakes.SSLKeyPairGenerator
+		manifestBuilder     boshinit.ManifestBuilder
+		manifestProperties  boshinit.ManifestProperties
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
-		manifestBuilder = boshinit.NewManifestBuilder(logger)
+		sslKeyPairGenerator = &fakes.SSLKeyPairGenerator{}
+
+		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
 		manifestProperties = boshinit.ManifestProperties{
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
@@ -34,7 +39,13 @@ var _ = Describe("ManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("builds the bosh-init manifest", func() {
-			manifest := manifestBuilder.Build(manifestProperties)
+			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
+				Certificate: []byte("some-cert"),
+				PrivateKey:  []byte("some-key"),
+			}
+
+			manifest, err := manifestBuilder.Build(manifestProperties)
+			Expect(err).NotTo(HaveOccurred())
 
 			expectedAWSProperties := boshinit.AWSProperties{
 				AccessKeyId:           "some-access-key-id",
@@ -51,20 +62,43 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
 			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("some-elastic-ip"))
 			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
+			Expect(manifest.Jobs[0].Properties.Director.SSL).To(Equal(boshinit.SSLProperties{
+				Cert: "some-cert",
+				Key:  "some-key",
+			}))
 			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("some-elastic-ip"))
 			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@some-elastic-ip:6868"))
+
+			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("some-elastic-ip"))
 		})
 
 		It("logs that the bosh-init manifest is being generated", func() {
-			manifestBuilder.Build(manifestProperties)
+			_, err := manifestBuilder.Build(manifestProperties)
+			Expect(err).NotTo(HaveOccurred())
+
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating bosh-init manifest"))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the ssl key pair cannot be generated", func() {
+				sslKeyPairGenerator.GenerateCall.Returns.Error = errors.New("failed to generate key pair")
+
+				_, err := manifestBuilder.Build(manifestProperties)
+				Expect(err).To(MatchError("failed to generate key pair"))
+			})
 		})
 	})
 
 	Describe("template marshaling", func() {
 		It("can be marshaled to YML", func() {
-			manifest := manifestBuilder.Build(manifestProperties)
+			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
+				Certificate: []byte("some-cert"),
+				PrivateKey:  []byte("some-key"),
+			}
+
+			manifest, err := manifestBuilder.Build(manifestProperties)
+			Expect(err).NotTo(HaveOccurred())
 
 			buf, err := ioutil.ReadFile("fixtures/manifest.yml")
 			Expect(err).NotTo(HaveOccurred())

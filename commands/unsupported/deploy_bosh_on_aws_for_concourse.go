@@ -34,7 +34,7 @@ type keyPairManager interface {
 }
 
 type boshInitManifestBuilder interface {
-	Build(boshinit.ManifestProperties) boshinit.Manifest
+	Build(boshinit.ManifestProperties) (boshinit.Manifest, error)
 }
 
 type DeployBOSHOnAWSForConcourse struct {
@@ -151,7 +151,11 @@ func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClie
 		DefaultKeyName:   keyPairName,
 	}
 
-	manifest := d.boshInitManifestBuilder.Build(manifestProperties)
+	manifest, err := d.boshInitManifestBuilder.Build(manifestProperties)
+	if err != nil {
+		return err
+	}
+
 	yaml, err := candiedyaml.Marshal(manifest)
 	if err != nil {
 		return err

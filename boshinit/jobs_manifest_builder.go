@@ -46,7 +46,7 @@ func (r JobsManifestBuilder) Build(manifestProperties ManifestProperties) []Job 
 				Postgres:  sharedPropertiesManifestBuilder.Postgres(),
 				Registry:  jobPropertiesManifestBuilder.Registry(),
 				Blobstore: jobPropertiesManifestBuilder.Blobstore(),
-				Director:  jobPropertiesManifestBuilder.Director(),
+				Director:  jobPropertiesManifestBuilder.Director(manifestProperties),
 				HM:        jobPropertiesManifestBuilder.HM(),
 				AWS:       sharedPropertiesManifestBuilder.AWS(manifestProperties),
 				Agent:     jobPropertiesManifestBuilder.Agent(),

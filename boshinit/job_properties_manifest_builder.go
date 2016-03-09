@@ -55,7 +55,7 @@ func (JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 	}
 }
 
-func (j JobPropertiesManifestBuilder) Director() DirectorJobProperties {
+func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProperties) DirectorJobProperties {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 	return DirectorJobProperties{
 		Address:    "127.0.0.1",
@@ -77,6 +77,10 @@ func (j JobPropertiesManifestBuilder) Director() DirectorJobProperties {
 					},
 				},
 			},
+		},
+		SSL: SSLProperties{
+			Cert: string(manifestProperties.SSLKeyPair.Certificate),
+			Key:  string(manifestProperties.SSLKeyPair.PrivateKey),
 		},
 	}
 }
