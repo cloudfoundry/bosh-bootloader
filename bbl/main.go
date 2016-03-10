@@ -24,13 +24,14 @@ func main() {
 	uuidGenerator := ec2.NewUUIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 
-	templateBuilder := templates.NewTemplateBuilder(logger)
 	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
 	keyPairChecker := ec2.NewKeyPairChecker()
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := unsupported.NewKeyPairSynchronizer(keyPairManager)
 	stateStore := storage.NewStore()
+	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(logger)
+	infrastructureCreator := unsupported.NewInfrastructureCreator(templateBuilder, stackManager)
 	awsClientProvider := aws.NewClientProvider()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
@@ -38,7 +39,7 @@ func main() {
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(templateBuilder, stackManager, keyPairSynchronizer, awsClientProvider, boshInitManifestBuilder, os.Stdout),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(stackManager, infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshInitManifestBuilder, os.Stdout),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])

@@ -3,11 +3,9 @@ package unsupported_test
 import (
 	"bytes"
 	"errors"
-	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
@@ -24,8 +22,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		var (
 			command                 unsupported.DeployBOSHOnAWSForConcourse
 			stdout                  *bytes.Buffer
-			builder                 *fakes.TemplateBuilder
 			stackManager            *fakes.StackManager
+			infrastructureCreator   *fakes.InfrastructureCreator
 			keyPairSynchronizer     *fakes.KeyPairSynchronizer
 			cloudFormationClient    *fakes.CloudFormationClient
 			clientProvider          *fakes.ClientProvider
@@ -38,7 +36,6 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 		BeforeEach(func() {
 			stdout = bytes.NewBuffer([]byte{})
-			builder = &fakes.TemplateBuilder{}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
 			ec2Client = &fakes.EC2Client{}
@@ -47,6 +44,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
+			infrastructureCreator = &fakes.InfrastructureCreator{}
 			stackManager = &fakes.StackManager{}
 
 			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
@@ -68,21 +66,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				}},
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairSynchronizer, clientProvider, boshInitManifestBuilder, stdout)
-
-			builder.BuildCall.Returns.Template = templates.Template{
-				AWSTemplateFormatVersion: "some-template-version",
-				Description:              "some-description",
-				Parameters: map[string]templates.Parameter{
-					"KeyName": {
-						Type:        "AWS::EC2::KeyPair::KeyName",
-						Default:     "some-keypair-name",
-						Description: "SSH KeyPair to use for instances",
-					},
-				},
-				Mappings:  map[string]interface{}{},
-				Resources: map[string]templates.Resource{},
-			}
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(stackManager, infrastructureCreator, keyPairSynchronizer, clientProvider, boshInitManifestBuilder, stdout)
 
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
@@ -112,38 +96,6 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}
 		})
 
-		It("creates/updates the stack with the given name", func() {
-			_, err := command.Execute(globalFlags, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-aws-region",
-				EndpointOverride: "some-endpoint",
-			}))
-			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
-			Expect(stackManager.CreateOrUpdateCall.Receives.Client).To(Equal(cloudFormationClient))
-			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
-			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(templates.Template{
-				AWSTemplateFormatVersion: "some-template-version",
-				Description:              "some-description",
-				Parameters: map[string]templates.Parameter{
-					"KeyName": {
-						Type:        "AWS::EC2::KeyPair::KeyName",
-						Default:     "some-keypair-name",
-						Description: "SSH KeyPair to use for instances",
-					},
-				},
-				Mappings:  map[string]interface{}{},
-				Resources: map[string]templates.Resource{},
-			}))
-
-			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
-			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("concourse"))
-			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
-		})
-
 		It("syncs the keypair", func() {
 			state, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
@@ -166,6 +118,20 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				PublicKey:  "some-public-key",
 				PrivateKey: "some-private-key",
 			}))
+		})
+
+		It("creates/updates the stack with the given name", func() {
+			_, err := command.Execute(globalFlags, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				Region:           "some-aws-region",
+				EndpointOverride: "some-endpoint",
+			}))
+			Expect(infrastructureCreator.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
+			Expect(infrastructureCreator.CreateCall.Returns.Error).To(BeNil())
 		})
 
 		It("prints out the bosh-init manifest", func() {
@@ -307,18 +273,11 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Expect(err).To(MatchError("error syncing key pair"))
 			})
 
-			It("returns an error when the stack can not be created", func() {
-				stackManager.CreateOrUpdateCall.Returns.Error = errors.New("error creating stack")
+			It("returns an error when infrastructure cannot be created", func() {
+				infrastructureCreator.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
 				_, err := command.Execute(globalFlags, incomingState)
-				Expect(err).To(MatchError("error creating stack"))
-			})
-
-			It("returns an error when waiting for completion errors", func() {
-				stackManager.WaitForCompletionCall.Returns.Error = errors.New("error waiting on stack")
-
-				_, err := command.Execute(globalFlags, incomingState)
-				Expect(err).To(MatchError("error waiting on stack"))
+				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
 			It("returns an error when describe stacks returns an error", func() {
@@ -331,7 +290,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("returns an error when the bosh-init manifest cannot be built", func() {
 				boshInitManifestBuilder := &fakes.BOSHInitManifestBuilder{}
 				boshInitManifestBuilder.BuildCall.Returns.Error = errors.New("cannot build manifest")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairSynchronizer, clientProvider, boshInitManifestBuilder, stdout)
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(stackManager, infrastructureCreator, keyPairSynchronizer, clientProvider, boshInitManifestBuilder, stdout)
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot build manifest"))

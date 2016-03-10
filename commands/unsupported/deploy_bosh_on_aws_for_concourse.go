@@ -15,19 +15,19 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-type awsClientProvider interface {
-	CloudFormationClient(aws.Config) (cloudformation.Client, error)
-	EC2Client(aws.Config) (ec2.Client, error)
-}
-
-type templateBuilder interface {
-	Build(keypairName string) templates.Template
+type infrastructureCreator interface {
+	Create(keyPairName string, client cloudformation.Client) error
 }
 
 type stackManager interface {
 	CreateOrUpdate(cloudFormationClient cloudformation.Client, stackName string, template templates.Template) error
 	WaitForCompletion(cloudFormationClient cloudformation.Client, stackName string, sleepInterval time.Duration) error
 	Describe(cloudFormationClient cloudformation.Client, name string) (cloudformation.Stack, error)
+}
+
+type awsClientProvider interface {
+	CloudFormationClient(aws.Config) (cloudformation.Client, error)
+	EC2Client(aws.Config) (ec2.Client, error)
 }
 
 type keyPairSynchronizer interface {
@@ -39,18 +39,18 @@ type boshInitManifestBuilder interface {
 }
 
 type DeployBOSHOnAWSForConcourse struct {
-	templateBuilder         templateBuilder
 	stackManager            stackManager
+	infrastructureCreator   infrastructureCreator
 	keyPairSynchronizer     keyPairSynchronizer
 	awsClientProvider       awsClientProvider
 	boshInitManifestBuilder boshInitManifestBuilder
 	stdout                  io.Writer
 }
 
-func NewDeployBOSHOnAWSForConcourse(templateBuilder templateBuilder, stackManager stackManager, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshInitManifestBuilder boshInitManifestBuilder, stdout io.Writer) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(stackManager stackManager, infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshInitManifestBuilder boshInitManifestBuilder, stdout io.Writer) DeployBOSHOnAWSForConcourse {
 	return DeployBOSHOnAWSForConcourse{
-		templateBuilder:         templateBuilder,
 		stackManager:            stackManager,
+		infrastructureCreator:   infrastructureCreator,
 		keyPairSynchronizer:     keyPairSynchronizer,
 		awsClientProvider:       awsClientProvider,
 		boshInitManifestBuilder: boshInitManifestBuilder,
@@ -96,7 +96,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	state.KeyPair.PublicKey = keyPair.PublicKey
 	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
-	err = d.createInfrastructure(state.KeyPair.Name, cloudFormationClient)
+	err = d.infrastructureCreator.Create(state.KeyPair.Name, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
@@ -120,20 +120,6 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	}
 
 	return state, nil
-}
-
-func (d DeployBOSHOnAWSForConcourse) createInfrastructure(keyPairName string, cloudFormationClient cloudformation.Client) error {
-	template := d.templateBuilder.Build(keyPairName)
-
-	if err := d.stackManager.CreateOrUpdate(cloudFormationClient, "concourse", template); err != nil {
-		return err
-	}
-
-	if err := d.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 15*time.Second); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClient cloudformation.Client, region string, keyPairName string, keyPair ssl.KeyPair) (ssl.KeyPair, error) {
