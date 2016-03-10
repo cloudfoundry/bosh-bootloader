@@ -32,7 +32,7 @@ var _ = Describe("Store", func() {
 	})
 
 	Describe("Set", func() {
-		It("stores the aws credentials", func() {
+		It("stores the state into a file", func() {
 			err := store.Set(tempDir, storage.State{
 				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
@@ -43,6 +43,10 @@ var _ = Describe("Store", func() {
 					Name:       "some-name",
 					PrivateKey: "some-private",
 					PublicKey:  "some-public",
+				},
+				BOSH: &storage.BOSH{
+					DirectorSSLCertificate: "some-bosh-ssl-certificate",
+					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -60,6 +64,10 @@ var _ = Describe("Store", func() {
 					"name": "some-name",
 					"privateKey": "some-private",
 					"publicKey": "some-public"
+				},
+				"bosh":{
+					"directorSSLCertificate": "some-bosh-ssl-certificate",
+					"directorSSLPrivateKey": "some-bosh-ssl-private-key"
 				}
 			}`))
 		})
@@ -97,6 +105,10 @@ var _ = Describe("Store", func() {
 					"name": "some-name",
 					"privateKey": "some-private-key",
 					"publicKey": "some-public-key"
+				},
+				"bosh": {
+					"directorSSLCertificate": "some-bosh-ssl-certificate",
+					"directorSSLPrivateKey": "some-bosh-ssl-private-key"
 				}
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
@@ -115,6 +127,10 @@ var _ = Describe("Store", func() {
 					Name:       "some-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
+				},
+				BOSH: &storage.BOSH{
+					DirectorSSLCertificate: "some-bosh-ssl-certificate",
+					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
 				},
 			}))
 		})

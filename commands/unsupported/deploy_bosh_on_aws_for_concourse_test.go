@@ -23,18 +23,18 @@ import (
 var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command              unsupported.DeployBOSHOnAWSForConcourse
-			stdout               *bytes.Buffer
-			builder              *fakes.TemplateBuilder
-			stackManager         *fakes.StackManager
-			keyPairManager       *fakes.KeyPairManager
-			cloudFormationClient *fakes.CloudFormationClient
-			clientProvider       *fakes.ClientProvider
-			ec2Client            *fakes.EC2Client
-			logger               *fakes.Logger
-			sslKeyPairGenerator  *fakes.SSLKeyPairGenerator
-			incomingState        storage.State
-			globalFlags          commands.GlobalFlags
+			command                 unsupported.DeployBOSHOnAWSForConcourse
+			stdout                  *bytes.Buffer
+			builder                 *fakes.TemplateBuilder
+			stackManager            *fakes.StackManager
+			keyPairManager          *fakes.KeyPairManager
+			cloudFormationClient    *fakes.CloudFormationClient
+			clientProvider          *fakes.ClientProvider
+			ec2Client               *fakes.EC2Client
+			logger                  *fakes.Logger
+			boshInitManifestBuilder *fakes.BOSHInitManifestBuilder
+			incomingState           storage.State
+			globalFlags             commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
@@ -53,9 +53,22 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 			logger = &fakes.Logger{}
 
-			sslKeyPairGenerator = &fakes.SSLKeyPairGenerator{}
+			boshInitManifestBuilder = &fakes.BOSHInitManifestBuilder{}
+			boshInitManifestBuilder.BuildCall.Returns.Manifest = boshinit.Manifest{
+				Name: "bosh",
+				Jobs: []boshinit.Job{{
+					Properties: boshinit.JobProperties{
+						Director: boshinit.DirectorJobProperties{
+							SSL: boshinit.SSLProperties{
+								Cert: "some-certificate",
+								Key:  "some-private-key",
+							},
+						},
+					},
+				}},
+			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshinit.NewManifestBuilder(logger, sslKeyPairGenerator), stdout)
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshInitManifestBuilder, stdout)
 
 			builder.BuildCall.Returns.Template = templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -85,6 +98,10 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
+				},
+				BOSH: &storage.BOSH{
+					DirectorSSLCertificate: "some-certificate",
+					DirectorSSLPrivateKey:  "some-private-key",
 				},
 			}
 
@@ -151,17 +168,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}))
 		})
 
-		It("returns the given state unmodified", func() {
-			_, err := command.Execute(globalFlags, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("prints out the bosh-init manifest", func() {
-			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
-				Certificate: []byte("some-cert"),
-				PrivateKey:  []byte("some-key"),
-			}
-
 			stackManager.DescribeCall.Returns.Output = cloudformation.Stack{
 				Outputs: map[string]string{
 					"BOSHSubnet":              "subnet-12345",
@@ -175,21 +182,21 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("some-elastic-ip"))
-
+			Expect(boshInitManifestBuilder.BuildCall.Receives.Properties).To(Equal(boshinit.ManifestProperties{
+				SubnetID:         "subnet-12345",
+				AvailabilityZone: "some-az",
+				ElasticIP:        "some-elastic-ip",
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				DefaultKeyName:   "some-keypair-name",
+				Region:           "some-aws-region",
+				SSLKeyPair: ssl.KeyPair{
+					Certificate: []byte("some-certificate"),
+					PrivateKey:  []byte("some-private-key"),
+				},
+			}))
 			Expect(stdout.String()).To(ContainSubstring("bosh-init manifest:"))
-			Expect(stdout.String()).To(ContainSubstring("name: bosh"))
-			Expect(stdout.String()).To(ContainSubstring("subnet: subnet-12345"))
-			Expect(stdout.String()).To(ContainSubstring("availability_zone: some-az"))
-			Expect(stdout.String()).To(ContainSubstring("static_ips:\n    - some-elastic-ip"))
-			Expect(stdout.String()).To(ContainSubstring("host: some-elastic-ip"))
-			Expect(stdout.String()).To(ContainSubstring("mbus: https://mbus:mbus-password@some-elastic-ip:6868"))
-			Expect(stdout.String()).To(ContainSubstring("access_key_id: some-access-key-id"))
-			Expect(stdout.String()).To(ContainSubstring("secret_access_key: some-secret-access-key"))
-			Expect(stdout.String()).To(ContainSubstring("region: some-aws-region"))
-			Expect(stdout.String()).To(ContainSubstring("default_key_name: some-keypair-name"))
-			Expect(stdout.String()).To(ContainSubstring("cert: some-cert"))
-			Expect(stdout.String()).To(ContainSubstring("key: some-key"))
+			Expect(stdout.String()).To(ContainSubstring(`name: bosh`))
 		})
 
 		Context("when there is no keypair", func() {
@@ -207,6 +214,76 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					PrivateKey: []byte(""),
 					PublicKey:  []byte(""),
 				}))
+			})
+		})
+
+		Context("state manipulation", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					KeyPair: &storage.KeyPair{
+						Name:       "some-keypair-name",
+						PrivateKey: "some-private-key",
+						PublicKey:  "some-public-key",
+					},
+					BOSH: &storage.BOSH{
+						DirectorSSLCertificate: "some-certificate",
+						DirectorSSLPrivateKey:  "some-private-key",
+					},
+				}
+
+				keyPairManager.SyncCall.Returns.KeyPair = ec2.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: []byte("some-private-key"),
+					PublicKey:  []byte("some-public-key"),
+				}
+			})
+
+			Context("aws keypair", func() {
+				Context("when the keypair exists", func() {
+					It("returns the given state unmodified", func() {
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state).To(Equal(incomingState))
+					})
+				})
+
+				Context("when the keypair doesn't exist", func() {
+					It("returns the state with a new key pair", func() {
+						incomingState.KeyPair = nil
+
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.KeyPair).To(Equal(&storage.KeyPair{
+							Name:       "some-keypair-name",
+							PrivateKey: "some-private-key",
+							PublicKey:  "some-public-key",
+						}))
+					})
+				})
+			})
+
+			Context("ssl keypair", func() {
+				Context("when the bosh director ssl keypair exists", func() {
+					It("returns the given state unmodified", func() {
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state).To(Equal(incomingState))
+					})
+				})
+
+				Context("when the bosh director ssl keypair doesn't exist", func() {
+					It("returns the state with a new key pair", func() {
+						incomingState.BOSH = nil
+
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.BOSH).To(Equal(&storage.BOSH{
+							DirectorSSLCertificate: "some-certificate",
+							DirectorSSLPrivateKey:  "some-private-key",
+						}))
+					})
+				})
 			})
 		})
 

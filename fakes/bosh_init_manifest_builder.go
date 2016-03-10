@@ -14,7 +14,7 @@ type BOSHInitManifestBuilder struct {
 	}
 }
 
-func (b BOSHInitManifestBuilder) Build(properties boshinit.ManifestProperties) (boshinit.Manifest, error) {
+func (b *BOSHInitManifestBuilder) Build(properties boshinit.ManifestProperties) (boshinit.Manifest, error) {
 	b.BuildCall.Receives.Properties = properties
 
 	return b.BuildCall.Returns.Manifest, b.BuildCall.Returns.Error

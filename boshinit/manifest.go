@@ -1,5 +1,7 @@
 package boshinit
 
+import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+
 type Manifest struct {
 	Name          string         `yaml:"name"`
 	Releases      []Release      `yaml:"releases"`
@@ -8,6 +10,17 @@ type Manifest struct {
 	Networks      []Network      `yaml:"networks"`
 	Jobs          []Job          `yaml:"jobs"`
 	CloudProvider CloudProvider  `yaml:"cloud_provider"`
+}
+
+func (m Manifest) DirectorSSLKeyPair() ssl.KeyPair {
+	if len(m.Jobs) < 1 {
+		return ssl.KeyPair{}
+	}
+
+	return ssl.KeyPair{
+		Certificate: []byte(m.Jobs[0].Properties.Director.SSL.Cert),
+		PrivateKey:  []byte(m.Jobs[0].Properties.Director.SSL.Key),
+	}
 }
 
 type Release struct {

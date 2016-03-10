@@ -71,6 +71,18 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@some-elastic-ip:6868"))
 
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("some-elastic-ip"))
+			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
+		})
+
+		It("does not generate an ssl keypair if it exists", func() {
+			manifestProperties.SSLKeyPair = ssl.KeyPair{
+				Certificate: []byte("some-cert"),
+				PrivateKey:  []byte("some-key"),
+			}
+
+			_, err := manifestBuilder.Build(manifestProperties)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(0))
 		})
 
 		It("logs that the bosh-init manifest is being generated", func() {

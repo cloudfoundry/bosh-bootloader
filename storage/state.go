@@ -21,10 +21,16 @@ type AWS struct {
 	Region          string `json:"region"`
 }
 
+type BOSH struct {
+	DirectorSSLCertificate string `json:"directorSSLCertificate"`
+	DirectorSSLPrivateKey  string `json:"directorSSLPrivateKey"`
+}
+
 type State struct {
 	Version int      `json:"version"`
 	AWS     AWS      `json:"aws"`
 	KeyPair *KeyPair `json:"keyPair,omitempty"`
+	BOSH    *BOSH    `json:"bosh,omitempty"`
 }
 
 type Store struct {
