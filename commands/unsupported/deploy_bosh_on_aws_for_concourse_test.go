@@ -8,7 +8,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
@@ -27,7 +26,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			stdout                  *bytes.Buffer
 			builder                 *fakes.TemplateBuilder
 			stackManager            *fakes.StackManager
-			keyPairManager          *fakes.KeyPairManager
+			keyPairSynchronizer     *fakes.KeyPairSynchronizer
 			cloudFormationClient    *fakes.CloudFormationClient
 			clientProvider          *fakes.ClientProvider
 			ec2Client               *fakes.EC2Client
@@ -49,7 +48,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
 			stackManager = &fakes.StackManager{}
-			keyPairManager = &fakes.KeyPairManager{}
+
+			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
 
 			logger = &fakes.Logger{}
 
@@ -68,7 +68,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				}},
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshInitManifestBuilder, stdout)
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairSynchronizer, clientProvider, boshInitManifestBuilder, stdout)
 
 			builder.BuildCall.Returns.Template = templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
@@ -105,10 +105,10 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				},
 			}
 
-			keyPairManager.SyncCall.Returns.KeyPair = ec2.KeyPair{
+			keyPairSynchronizer.SyncCall.Returns.KeyPair = unsupported.KeyPair{
 				Name:       "some-keypair-name",
-				PrivateKey: []byte("some-private-key"),
-				PublicKey:  []byte("some-public-key"),
+				PrivateKey: "some-private-key",
+				PublicKey:  "some-public-key",
 			}
 		})
 
@@ -154,11 +154,11 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Region:           "some-aws-region",
 				EndpointOverride: "some-endpoint",
 			}))
-			Expect(keyPairManager.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
-			Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
+			Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
+			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(unsupported.KeyPair{
 				Name:       "some-keypair-name",
-				PrivateKey: []byte("some-private-key"),
-				PublicKey:  []byte("some-public-key"),
+				PrivateKey: "some-private-key",
+				PublicKey:  "some-public-key",
 			}))
 
 			Expect(state.KeyPair).To(Equal(&storage.KeyPair{
@@ -210,12 +210,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(keyPairManager.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
-				Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
-					Name:       "",
-					PrivateKey: []byte(""),
-					PublicKey:  []byte(""),
-				}))
+				Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
+				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(unsupported.KeyPair{}))
 			})
 		})
 
@@ -233,10 +229,10 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					},
 				}
 
-				keyPairManager.SyncCall.Returns.KeyPair = ec2.KeyPair{
+				keyPairSynchronizer.SyncCall.Returns.KeyPair = unsupported.KeyPair{
 					Name:       "some-keypair-name",
-					PrivateKey: []byte("some-private-key"),
-					PublicKey:  []byte("some-public-key"),
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
 				}
 			})
 
@@ -305,7 +301,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			})
 
 			It("returns an error when the key pair fails to sync", func() {
-				keyPairManager.SyncCall.Returns.Error = errors.New("error syncing key pair")
+				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("error syncing key pair"))
@@ -335,7 +331,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("returns an error when the bosh-init manifest cannot be built", func() {
 				boshInitManifestBuilder := &fakes.BOSHInitManifestBuilder{}
 				boshInitManifestBuilder.BuildCall.Returns.Error = errors.New("cannot build manifest")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairManager, clientProvider, boshInitManifestBuilder, stdout)
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(builder, stackManager, keyPairSynchronizer, clientProvider, boshInitManifestBuilder, stdout)
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot build manifest"))

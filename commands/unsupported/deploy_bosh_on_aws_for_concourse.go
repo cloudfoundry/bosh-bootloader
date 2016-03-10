@@ -30,8 +30,8 @@ type stackManager interface {
 	Describe(cloudFormationClient cloudformation.Client, name string) (cloudformation.Stack, error)
 }
 
-type keyPairManager interface {
-	Sync(ec2Client ec2.Client, keypair ec2.KeyPair) (ec2.KeyPair, error)
+type keyPairSynchronizer interface {
+	Sync(keypair KeyPair, ec2Client ec2.Client) (KeyPair, error)
 }
 
 type boshInitManifestBuilder interface {
@@ -41,17 +41,17 @@ type boshInitManifestBuilder interface {
 type DeployBOSHOnAWSForConcourse struct {
 	templateBuilder         templateBuilder
 	stackManager            stackManager
-	keyPairManager          keyPairManager
+	keyPairSynchronizer     keyPairSynchronizer
 	awsClientProvider       awsClientProvider
 	boshInitManifestBuilder boshInitManifestBuilder
 	stdout                  io.Writer
 }
 
-func NewDeployBOSHOnAWSForConcourse(templateBuilder templateBuilder, stackManager stackManager, keyPairManager keyPairManager, awsClientProvider awsClientProvider, boshInitManifestBuilder boshInitManifestBuilder, stdout io.Writer) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(templateBuilder templateBuilder, stackManager stackManager, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshInitManifestBuilder boshInitManifestBuilder, stdout io.Writer) DeployBOSHOnAWSForConcourse {
 	return DeployBOSHOnAWSForConcourse{
 		templateBuilder:         templateBuilder,
 		stackManager:            stackManager,
-		keyPairManager:          keyPairManager,
+		keyPairSynchronizer:     keyPairSynchronizer,
 		awsClientProvider:       awsClientProvider,
 		boshInitManifestBuilder: boshInitManifestBuilder,
 		stdout:                  stdout,
@@ -69,10 +69,32 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	state, err = d.synchronizeKeyPairs(state, globalFlags.EndpointOverride)
+	ec2Client, err := d.awsClientProvider.EC2Client(aws.Config{
+		AccessKeyID:      state.AWS.AccessKeyID,
+		SecretAccessKey:  state.AWS.SecretAccessKey,
+		Region:           state.AWS.Region,
+		EndpointOverride: globalFlags.EndpointOverride,
+	})
 	if err != nil {
 		return state, err
 	}
+
+	if state.KeyPair == nil {
+		state.KeyPair = &storage.KeyPair{}
+	}
+
+	keyPair, err := d.keyPairSynchronizer.Sync(KeyPair{
+		Name:       state.KeyPair.Name,
+		PublicKey:  state.KeyPair.PublicKey,
+		PrivateKey: state.KeyPair.PrivateKey,
+	}, ec2Client)
+	if err != nil {
+		return state, err
+	}
+
+	state.KeyPair.Name = keyPair.Name
+	state.KeyPair.PublicKey = keyPair.PublicKey
+	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
 	err = d.createInfrastructure(state.KeyPair.Name, cloudFormationClient)
 	if err != nil {
@@ -95,41 +117,6 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			DirectorSSLCertificate: string(directorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(directorSSLKeyPair.PrivateKey),
 		}
-	}
-
-	return state, nil
-}
-
-func (d DeployBOSHOnAWSForConcourse) synchronizeKeyPairs(state storage.State, endpointOverride string) (storage.State, error) {
-	if state.KeyPair == nil {
-		state.KeyPair = &storage.KeyPair{}
-	}
-
-	keyPair := ec2.KeyPair{
-		Name:       state.KeyPair.Name,
-		PublicKey:  []byte(state.KeyPair.PublicKey),
-		PrivateKey: []byte(state.KeyPair.PrivateKey),
-	}
-
-	ec2Client, err := d.awsClientProvider.EC2Client(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: endpointOverride,
-	})
-	if err != nil {
-		return state, err
-	}
-
-	keyPair, err = d.keyPairManager.Sync(ec2Client, keyPair)
-	if err != nil {
-		return state, err
-	}
-
-	state.KeyPair = &storage.KeyPair{
-		Name:       keyPair.Name,
-		PublicKey:  string(keyPair.PublicKey),
-		PrivateKey: string(keyPair.PrivateKey),
 	}
 
 	return state, nil
