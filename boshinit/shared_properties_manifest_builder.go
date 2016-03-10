@@ -22,7 +22,7 @@ func (SharedPropertiesManifestBuilder) AWS(manifestProperties ManifestProperties
 		AccessKeyId:           manifestProperties.AccessKeyID,
 		SecretAccessKey:       manifestProperties.SecretAccessKey,
 		DefaultKeyName:        manifestProperties.DefaultKeyName,
-		DefaultSecurityGroups: []string{"bosh"},
+		DefaultSecurityGroups: []string{manifestProperties.SecurityGroup},
 		Region:                manifestProperties.Region,
 	}
 }

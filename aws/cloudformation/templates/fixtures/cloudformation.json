@@ -24,7 +24,8 @@
 		"BOSHSubnetAZ": {
 			"Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
 		},
-		"BOSHEIP": {"Value": {"Ref": "BOSHEIP"}}
+		"BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
+		"BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {

@@ -15,10 +15,10 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 
 	Describe("Internal Security Group", func() {
 		It("returns a template containing all the fields for internal security group", func() {
-			security_group := builder.InternalSecurityGroup()
+			securityGroup := builder.InternalSecurityGroup()
 
-			Expect(security_group.Resources).To(HaveLen(5))
-			Expect(security_group.Resources).To(HaveKeyWithValue("InternalSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveLen(5))
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
@@ -47,7 +47,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(security_group.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromBOSH", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromBOSH", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
@@ -58,7 +58,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(security_group.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromBOSH", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromBOSH", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
@@ -69,7 +69,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(security_group.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromSelf", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromSelf", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
@@ -80,7 +80,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(security_group.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromSelf", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromSelf", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
@@ -95,17 +95,22 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 
 	Describe("BOSH Security Group", func() {
 		It("returns a template containing the bosh security group", func() {
-			security_group := builder.BOSHSecurityGroup()
+			securityGroup := builder.BOSHSecurityGroup()
 
-			Expect(security_group.Parameters).To(HaveLen(1))
-			Expect(security_group.Parameters).To(HaveKeyWithValue("BOSHInboundCIDR", templates.Parameter{
+			Expect(securityGroup.Parameters).To(HaveLen(1))
+			Expect(securityGroup.Parameters).To(HaveKeyWithValue("BOSHInboundCIDR", templates.Parameter{
 				Description: "CIDR to permit access to BOSH (e.g. 205.103.216.37/32 for your specific IP)",
 				Type:        "String",
 				Default:     "0.0.0.0/0",
 			}))
 
-			Expect(security_group.Resources).To(HaveLen(1))
-			Expect(security_group.Resources).To(HaveKeyWithValue("BOSHSecurityGroup", templates.Resource{
+			Expect(securityGroup.Outputs).To(HaveLen(1))
+			Expect(securityGroup.Outputs).To(HaveKeyWithValue("BOSHSecurityGroup", templates.Output{
+				Value: templates.Ref{"BOSHSecurityGroup"},
+			}))
+
+			Expect(securityGroup.Resources).To(HaveLen(1))
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("BOSHSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
@@ -151,10 +156,10 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 
 	Describe("Web Security Group", func() {
 		It("returns a template containing the web security group", func() {
-			security_group := builder.WebSecurityGroup()
+			securityGroup := builder.WebSecurityGroup()
 
-			Expect(security_group.Resources).To(HaveLen(1))
-			Expect(security_group.Resources).To(HaveKeyWithValue("WebSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveLen(1))
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("WebSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},

@@ -15,6 +15,7 @@ type ManifestProperties struct {
 	SecretAccessKey  string
 	DefaultKeyName   string
 	Region           string
+	SecurityGroup    string
 	SSLKeyPair       ssl.KeyPair
 }
 

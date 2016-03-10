@@ -161,6 +161,7 @@ func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClie
 		ElasticIP:        stack.Outputs["BOSHEIP"],
 		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
 		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
+		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
 		Region:           region,
 		DefaultKeyName:   keyPairName,
 		SSLKeyPair:       keyPair,

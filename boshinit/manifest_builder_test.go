@@ -34,6 +34,7 @@ var _ = Describe("ManifestBuilder", func() {
 			SecretAccessKey:  "some-secret-access-key",
 			DefaultKeyName:   "some-key-name",
 			Region:           "some-region",
+			SecurityGroup:    "some-security-group",
 		}
 	})
 
@@ -51,7 +52,7 @@ var _ = Describe("ManifestBuilder", func() {
 				AccessKeyId:           "some-access-key-id",
 				SecretAccessKey:       "some-secret-access-key",
 				DefaultKeyName:        "some-key-name",
-				DefaultSecurityGroups: []string{"bosh"},
+				DefaultSecurityGroups: []string{"some-security-group"},
 				Region:                "some-region",
 			}
 

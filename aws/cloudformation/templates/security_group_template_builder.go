@@ -133,6 +133,9 @@ func (t SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 				},
 			},
 		},
+		Outputs: map[string]Output{
+			"BOSHSecurityGroup": Output{Value: Ref{"BOSHSecurityGroup"}},
+		},
 	}
 }
 

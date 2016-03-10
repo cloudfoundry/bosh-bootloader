@@ -35,13 +35,14 @@ var _ = Describe("SharedPropertiesManifestBuilder", func() {
 				SecretAccessKey: "some-secret-access-key",
 				DefaultKeyName:  "some-key-name",
 				Region:          "some-region",
+				SecurityGroup:   "some-security-group",
 			})
 
 			Expect(aws).To(Equal(boshinit.AWSProperties{
 				AccessKeyId:           "some-access-key-id",
 				SecretAccessKey:       "some-secret-access-key",
 				DefaultKeyName:        "some-key-name",
-				DefaultSecurityGroups: []string{"bosh"},
+				DefaultSecurityGroups: []string{"some-security-group"},
 				Region:                "some-region",
 			}))
 		})

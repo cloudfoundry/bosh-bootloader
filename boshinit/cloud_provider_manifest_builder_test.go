@@ -21,6 +21,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				SecretAccessKey: "some-secret-access-key",
 				DefaultKeyName:  "some-key-name",
 				Region:          "some-region",
+				SecurityGroup:   "some-security-group",
 			})
 
 			Expect(cloudProvider).To(Equal(boshinit.CloudProvider{
@@ -43,7 +44,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 						AccessKeyId:           "some-access-key-id",
 						SecretAccessKey:       "some-secret-access-key",
 						DefaultKeyName:        "some-key-name",
-						DefaultSecurityGroups: []string{"bosh"},
+						DefaultSecurityGroups: []string{"some-security-group"},
 						Region:                "some-region",
 					},
 

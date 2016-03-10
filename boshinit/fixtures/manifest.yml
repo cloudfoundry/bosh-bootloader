@@ -131,7 +131,7 @@ jobs:
       access_key_id: some-access-key-id
       secret_access_key: some-secret-access-key
       default_key_name: some-key-name
-      default_security_groups: [bosh]
+      default_security_groups: [some-security-group]
       region: some-region
 
     agent: {mbus: "nats://nats:nats-password@10.0.0.6:4222"}
@@ -154,7 +154,7 @@ cloud_provider:
       access_key_id: some-access-key-id
       secret_access_key: some-secret-access-key
       default_key_name: some-key-name
-      default_security_groups: [bosh]
+      default_security_groups: [some-security-group]
       region: some-region
     agent: {mbus: "https://mbus:mbus-password@0.0.0.0:6868"}
     blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}

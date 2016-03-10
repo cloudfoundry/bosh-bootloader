@@ -176,6 +176,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					"BOSHEIP":                 "some-elastic-ip",
 					"BOSHUserAccessKey":       "some-access-key-id",
 					"BOSHUserSecretAccessKey": "some-secret-access-key",
+					"BOSHSecurityGroup":       "some-security-group",
 				},
 			}
 
@@ -190,6 +191,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				SecretAccessKey:  "some-secret-access-key",
 				DefaultKeyName:   "some-keypair-name",
 				Region:           "some-aws-region",
+				SecurityGroup:    "some-security-group",
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),
