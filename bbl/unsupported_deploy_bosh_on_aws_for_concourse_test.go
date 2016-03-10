@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
@@ -186,7 +187,7 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string) *gexec.
 
 	session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
-	Eventually(session).Should(gexec.Exit(0))
+	Eventually(session, 10*time.Second).Should(gexec.Exit(0))
 
 	return session
 }
