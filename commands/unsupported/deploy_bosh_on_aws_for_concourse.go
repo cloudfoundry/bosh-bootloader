@@ -1,15 +1,12 @@
 package unsupported
 
 import (
-	"io"
 	"time"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -34,27 +31,23 @@ type keyPairSynchronizer interface {
 	Sync(keypair KeyPair, ec2Client ec2.Client) (KeyPair, error)
 }
 
-type boshInitManifestBuilder interface {
-	Build(boshinit.ManifestProperties) (boshinit.Manifest, error)
+type boshDeployer interface {
+	Deploy(client cloudformation.Client, region, keyPairName string, directorSSLKeyPair ssl.KeyPair) (ssl.KeyPair, error)
 }
 
 type DeployBOSHOnAWSForConcourse struct {
-	stackManager            stackManager
-	infrastructureCreator   infrastructureCreator
-	keyPairSynchronizer     keyPairSynchronizer
-	awsClientProvider       awsClientProvider
-	boshInitManifestBuilder boshInitManifestBuilder
-	stdout                  io.Writer
+	infrastructureCreator infrastructureCreator
+	keyPairSynchronizer   keyPairSynchronizer
+	awsClientProvider     awsClientProvider
+	boshDeployer          boshDeployer
 }
 
-func NewDeployBOSHOnAWSForConcourse(stackManager stackManager, infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshInitManifestBuilder boshInitManifestBuilder, stdout io.Writer) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer) DeployBOSHOnAWSForConcourse {
 	return DeployBOSHOnAWSForConcourse{
-		stackManager:            stackManager,
-		infrastructureCreator:   infrastructureCreator,
-		keyPairSynchronizer:     keyPairSynchronizer,
-		awsClientProvider:       awsClientProvider,
-		boshInitManifestBuilder: boshInitManifestBuilder,
-		stdout:                  stdout,
+		infrastructureCreator: infrastructureCreator,
+		keyPairSynchronizer:   keyPairSynchronizer,
+		awsClientProvider:     awsClientProvider,
+		boshDeployer:          boshDeployer,
 	}
 }
 
@@ -107,7 +100,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		directorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
 	}
 
-	directorSSLKeyPair, err = d.generateBoshInitManifest(cloudFormationClient, state.AWS.Region, state.KeyPair.Name, directorSSLKeyPair)
+	directorSSLKeyPair, err = d.boshDeployer.Deploy(cloudFormationClient, state.AWS.Region, state.KeyPair.Name, directorSSLKeyPair)
 	if err != nil {
 		return state, err
 	}
@@ -120,38 +113,4 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	}
 
 	return state, nil
-}
-
-func (d DeployBOSHOnAWSForConcourse) generateBoshInitManifest(cloudFormationClient cloudformation.Client, region string, keyPairName string, keyPair ssl.KeyPair) (ssl.KeyPair, error) {
-	stack, err := d.stackManager.Describe(cloudFormationClient, "concourse")
-	if err != nil {
-		return ssl.KeyPair{}, err
-	}
-
-	manifestProperties := boshinit.ManifestProperties{
-		SubnetID:         stack.Outputs["BOSHSubnet"],
-		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
-		ElasticIP:        stack.Outputs["BOSHEIP"],
-		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
-		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
-		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
-		Region:           region,
-		DefaultKeyName:   keyPairName,
-		SSLKeyPair:       keyPair,
-	}
-
-	manifest, err := d.boshInitManifestBuilder.Build(manifestProperties)
-	if err != nil {
-		return ssl.KeyPair{}, err
-	}
-
-	yaml, err := candiedyaml.Marshal(manifest)
-	if err != nil {
-		return ssl.KeyPair{}, err
-	}
-
-	d.stdout.Write([]byte("\nbosh-init manifest:\n\n"))
-	d.stdout.Write(yaml)
-
-	return manifest.DirectorSSLKeyPair(), nil
 }

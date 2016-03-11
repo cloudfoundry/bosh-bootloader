@@ -10,6 +10,12 @@ type Logger struct {
 	DotCall struct {
 		CallCount int
 	}
+
+	PrintlnCall struct {
+		Receives struct {
+			Message string
+		}
+	}
 }
 
 func (l *Logger) Step(message string) {
@@ -18,4 +24,8 @@ func (l *Logger) Step(message string) {
 
 func (l *Logger) Dot() {
 	l.DotCall.CallCount++
+}
+
+func (l *Logger) Println(message string) {
+	l.PrintlnCall.Receives.Message = message
 }

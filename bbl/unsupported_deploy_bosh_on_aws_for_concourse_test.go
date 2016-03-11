@@ -118,7 +118,6 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: generating bosh-init manifest"))
 
-				Expect(stdout).To(ContainSubstring("bosh-init manifest:"))
 				Expect(stdout).To(ContainSubstring("name: bosh"))
 			})
 

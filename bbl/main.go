@@ -35,11 +35,12 @@ func main() {
 	awsClientProvider := aws.NewClientProvider()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
+	boshDeployer := unsupported.NewBOSHDeployer(stackManager, boshInitManifestBuilder)
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(stackManager, infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshInitManifestBuilder, os.Stdout),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err := app.Run(os.Args[1:])

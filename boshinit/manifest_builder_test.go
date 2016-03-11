@@ -93,6 +93,13 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating bosh-init manifest"))
 		})
 
+		It("prints out the manifest", func() {
+			_, err := manifestBuilder.Build(manifestProperties)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.PrintlnCall.Receives.Message).To(ContainSubstring("name: bosh"))
+		})
+
 		Context("failure cases", func() {
 			It("returns an error when the ssl key pair cannot be generated", func() {
 				sslKeyPairGenerator.GenerateCall.Returns.Error = errors.New("failed to generate key pair")

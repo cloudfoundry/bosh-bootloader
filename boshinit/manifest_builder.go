@@ -1,6 +1,9 @@
 package boshinit
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+import (
+	"github.com/cloudfoundry-incubator/candiedyaml"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+)
 
 type ManifestBuilder struct {
 	logger              logger
@@ -21,10 +24,11 @@ type ManifestProperties struct {
 
 type logger interface {
 	Step(message string)
+	Println(message string)
 }
 
 type sslKeyPairGenerator interface {
-	Generate(string) (ssl.KeyPair, error)
+	Generate(commonName string) (ssl.KeyPair, error)
 }
 
 func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator) ManifestBuilder {
@@ -53,7 +57,7 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 		manifestProperties.SSLKeyPair = keyPair
 	}
 
-	return Manifest{
+	manifest := Manifest{
 		Name:          "bosh",
 		Releases:      releaseManifestBuilder.Build(),
 		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties),
@@ -61,5 +65,14 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 		Networks:      networksManifestBuilder.Build(manifestProperties),
 		Jobs:          jobsManifestBuilder.Build(manifestProperties),
 		CloudProvider: cloudProviderManifestBuilder.Build(manifestProperties),
-	}, nil
+	}
+
+	yaml, err := candiedyaml.Marshal(manifest)
+	if err != nil {
+		return Manifest{}, err
+	}
+
+	m.logger.Println(string(yaml))
+
+	return manifest, nil
 }
