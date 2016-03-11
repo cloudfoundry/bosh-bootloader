@@ -41,18 +41,11 @@ var _ = Describe("BoshDeployer", func() {
 					"BOSHSecurityGroup":       "some-security-group",
 				},
 			}
-			manifestBuilder.BuildCall.Returns.Manifest = boshinit.Manifest{
-				Name: "bosh",
-				Jobs: []boshinit.Job{{
-					Properties: boshinit.JobProperties{
-						Director: boshinit.DirectorJobProperties{
-							SSL: boshinit.SSLProperties{
-								Cert: "some-certificate",
-								Key:  "some-private-key",
-							},
-						},
-					},
-				}},
+			manifestBuilder.BuildCall.Returns.Properties = boshinit.ManifestProperties{
+				SSLKeyPair: ssl.KeyPair{
+					Certificate: []byte("updated-certificate"),
+					PrivateKey:  []byte("updated-private-key"),
+				},
 			}
 
 			keyPair, err := boshDeployer.Deploy(cloudFormationClient, "some-aws-region", "some-keypair-name",
@@ -79,8 +72,8 @@ var _ = Describe("BoshDeployer", func() {
 				},
 			}))
 			Expect(keyPair).To(Equal(ssl.KeyPair{
-				Certificate: []byte("some-certificate"),
-				PrivateKey:  []byte("some-private-key"),
+				Certificate: []byte("updated-certificate"),
+				PrivateKey:  []byte("updated-private-key"),
 			}))
 		})
 

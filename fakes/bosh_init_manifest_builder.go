@@ -8,14 +8,15 @@ type BOSHInitManifestBuilder struct {
 			Properties boshinit.ManifestProperties
 		}
 		Returns struct {
-			Manifest boshinit.Manifest
-			Error    error
+			Manifest   boshinit.Manifest
+			Properties boshinit.ManifestProperties
+			Error      error
 		}
 	}
 }
 
-func (b *BOSHInitManifestBuilder) Build(properties boshinit.ManifestProperties) (boshinit.Manifest, error) {
+func (b *BOSHInitManifestBuilder) Build(properties boshinit.ManifestProperties) (boshinit.Manifest, boshinit.ManifestProperties, error) {
 	b.BuildCall.Receives.Properties = properties
 
-	return b.BuildCall.Returns.Manifest, b.BuildCall.Returns.Error
+	return b.BuildCall.Returns.Manifest, b.BuildCall.Returns.Properties, b.BuildCall.Returns.Error
 }

@@ -38,7 +38,7 @@ func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator) 
 	}
 }
 
-func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest, error) {
+func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest, ManifestProperties, error) {
 	m.logger.Step("generating bosh-init manifest")
 
 	releaseManifestBuilder := NewReleaseManifestBuilder()
@@ -51,7 +51,7 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 	if manifestProperties.SSLKeyPair.IsEmpty() {
 		keyPair, err := m.sslKeyPairGenerator.Generate(manifestProperties.ElasticIP)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, ManifestProperties{}, err
 		}
 
 		manifestProperties.SSLKeyPair = keyPair
@@ -69,10 +69,10 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 
 	yaml, err := candiedyaml.Marshal(manifest)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, ManifestProperties{}, err
 	}
 
 	m.logger.Println(string(yaml))
 
-	return manifest, nil
+	return manifest, manifestProperties, nil
 }

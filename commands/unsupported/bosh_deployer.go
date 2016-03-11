@@ -12,7 +12,7 @@ type BOSHDeployer struct {
 }
 
 type boshInitManifestBuilder interface {
-	Build(boshinit.ManifestProperties) (boshinit.Manifest, error)
+	Build(boshinit.ManifestProperties) (boshinit.Manifest, boshinit.ManifestProperties, error)
 }
 
 func NewBOSHDeployer(stackManager stackManager, manifestBuilder boshInitManifestBuilder) BOSHDeployer {
@@ -40,10 +40,10 @@ func (b BOSHDeployer) Deploy(cloudformationClient cloudformation.Client, region 
 		SSLKeyPair:       sslKeyPair,
 	}
 
-	manifest, err := b.manifestBuilder.Build(manifestProperties)
+	_, manifestProperties, err = b.manifestBuilder.Build(manifestProperties)
 	if err != nil {
 		return ssl.KeyPair{}, err
 	}
 
-	return manifest.DirectorSSLKeyPair(), nil
+	return manifestProperties.SSLKeyPair, nil
 }
