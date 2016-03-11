@@ -7,7 +7,6 @@ import (
 )
 
 type BOSHDeployer struct {
-	stackManager    stackManager
 	manifestBuilder boshInitManifestBuilder
 }
 
@@ -15,20 +14,14 @@ type boshInitManifestBuilder interface {
 	Build(boshinit.ManifestProperties) (boshinit.Manifest, boshinit.ManifestProperties, error)
 }
 
-func NewBOSHDeployer(stackManager stackManager, manifestBuilder boshInitManifestBuilder) BOSHDeployer {
+func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder) BOSHDeployer {
 	return BOSHDeployer{
-		stackManager:    stackManager,
 		manifestBuilder: manifestBuilder,
 	}
 }
 
-func (b BOSHDeployer) Deploy(cloudformationClient cloudformation.Client, region string, keyPairName string, sslKeyPair ssl.KeyPair) (ssl.KeyPair, error) {
-	stack, err := b.stackManager.Describe(cloudformationClient, STACKNAME)
-	if err != nil {
-		return ssl.KeyPair{}, err
-	}
-
-	manifestProperties := boshinit.ManifestProperties{
+func (b BOSHDeployer) Deploy(stack cloudformation.Stack, cloudformationClient cloudformation.Client, region string, keyPairName string, sslKeyPair ssl.KeyPair) (ssl.KeyPair, error) {
+	_, manifestProperties, err := b.manifestBuilder.Build(boshinit.ManifestProperties{
 		SubnetID:         stack.Outputs["BOSHSubnet"],
 		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
 		ElasticIP:        stack.Outputs["BOSHEIP"],
@@ -38,9 +31,7 @@ func (b BOSHDeployer) Deploy(cloudformationClient cloudformation.Client, region 
 		Region:           region,
 		DefaultKeyName:   keyPairName,
 		SSLKeyPair:       sslKeyPair,
-	}
-
-	_, manifestProperties, err = b.manifestBuilder.Build(manifestProperties)
+	})
 	if err != nil {
 		return ssl.KeyPair{}, err
 	}

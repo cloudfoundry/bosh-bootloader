@@ -8,6 +8,7 @@ import (
 type BOSHDeployer struct {
 	DeployCall struct {
 		Receives struct {
+			Stack                cloudformation.Stack
 			CloudformationClient cloudformation.Client
 			AWSRegion            string
 			KeyPairName          string
@@ -20,7 +21,8 @@ type BOSHDeployer struct {
 	}
 }
 
-func (d *BOSHDeployer) Deploy(client cloudformation.Client, region, keyPairName string, directorSSLKeyPair ssl.KeyPair) (ssl.KeyPair, error) {
+func (d *BOSHDeployer) Deploy(stack cloudformation.Stack, client cloudformation.Client, region, keyPairName string, directorSSLKeyPair ssl.KeyPair) (ssl.KeyPair, error) {
+	d.DeployCall.Receives.Stack = stack
 	d.DeployCall.Receives.CloudformationClient = client
 	d.DeployCall.Receives.AWSRegion = region
 	d.DeployCall.Receives.KeyPairName = keyPairName

@@ -15,7 +15,6 @@ import (
 
 var _ = Describe("BoshDeployer", func() {
 	var (
-		stackManager         *fakes.StackManager
 		manifestBuilder      *fakes.BOSHInitManifestBuilder
 		cloudFormationClient *fakes.CloudFormationClient
 
@@ -23,15 +22,14 @@ var _ = Describe("BoshDeployer", func() {
 	)
 
 	BeforeEach(func() {
-		stackManager = &fakes.StackManager{}
 		manifestBuilder = &fakes.BOSHInitManifestBuilder{}
 
-		boshDeployer = unsupported.NewBOSHDeployer(stackManager, manifestBuilder)
+		boshDeployer = unsupported.NewBOSHDeployer(manifestBuilder)
 	})
 
 	Describe("Deploy", func() {
 		It("deploys bosh and returns a key pair", func() {
-			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+			stack := cloudformation.Stack{
 				Outputs: map[string]string{
 					"BOSHSubnet":              "subnet-12345",
 					"BOSHSubnetAZ":            "some-az",
@@ -48,15 +46,13 @@ var _ = Describe("BoshDeployer", func() {
 				},
 			}
 
-			keyPair, err := boshDeployer.Deploy(cloudFormationClient, "some-aws-region", "some-keypair-name",
+			keyPair, err := boshDeployer.Deploy(stack, cloudFormationClient, "some-aws-region", "some-keypair-name",
 				ssl.KeyPair{
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),
 				})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
-			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("concourse"))
 			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(boshinit.ManifestProperties{
 				SubnetID:         "subnet-12345",
 				AvailabilityZone: "some-az",
@@ -78,20 +74,11 @@ var _ = Describe("BoshDeployer", func() {
 		})
 
 		Context("failure cases", func() {
-			Context("when the stack cannot be described", func() {
-				It("returns an error", func() {
-					stackManager.DescribeCall.Returns.Error = errors.New("failed to describe stack")
-
-					_, err := boshDeployer.Deploy(cloudFormationClient, "some-aws-region", "some-keypair-name", ssl.KeyPair{})
-					Expect(err).To(MatchError("failed to describe stack"))
-				})
-			})
-
 			Context("when the manifest cannot be built", func() {
 				It("returns an error", func() {
 					manifestBuilder.BuildCall.Returns.Error = errors.New("failed to build manifest")
 
-					_, err := boshDeployer.Deploy(cloudFormationClient, "some-aws-region", "some-keypair-name", ssl.KeyPair{})
+					_, err := boshDeployer.Deploy(cloudformation.Stack{}, cloudFormationClient, "some-aws-region", "some-keypair-name", ssl.KeyPair{})
 					Expect(err).To(MatchError("failed to build manifest"))
 				})
 			})

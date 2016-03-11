@@ -11,6 +11,12 @@ type templateBuilder interface {
 	Build(keypairName string) templates.Template
 }
 
+type stackManager interface {
+	CreateOrUpdate(cloudFormationClient cloudformation.Client, stackName string, template templates.Template) error
+	WaitForCompletion(cloudFormationClient cloudformation.Client, stackName string, sleepInterval time.Duration) error
+	Describe(cloudFormationClient cloudformation.Client, name string) (cloudformation.Stack, error)
+}
+
 type InfrastructureCreator struct {
 	templateBuilder templateBuilder
 	stackManager    stackManager
@@ -23,16 +29,16 @@ func NewInfrastructureCreator(builder templateBuilder, stackManager stackManager
 	}
 }
 
-func (c InfrastructureCreator) Create(keyPairName string, cloudFormationClient cloudformation.Client) error {
+func (c InfrastructureCreator) Create(keyPairName string, cloudFormationClient cloudformation.Client) (cloudformation.Stack, error) {
 	template := c.templateBuilder.Build(keyPairName)
 
 	if err := c.stackManager.CreateOrUpdate(cloudFormationClient, STACKNAME, template); err != nil {
-		return err
+		return cloudformation.Stack{}, err
 	}
 
 	if err := c.stackManager.WaitForCompletion(cloudFormationClient, STACKNAME, 15*time.Second); err != nil {
-		return err
+		return cloudformation.Stack{}, err
 	}
 
-	return nil
+	return c.stackManager.Describe(cloudFormationClient, STACKNAME)
 }

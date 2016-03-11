@@ -35,7 +35,7 @@ func main() {
 	awsClientProvider := aws.NewClientProvider()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
-	boshDeployer := unsupported.NewBOSHDeployer(stackManager, boshInitManifestBuilder)
+	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder)
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),

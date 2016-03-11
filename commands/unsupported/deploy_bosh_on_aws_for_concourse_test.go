@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -29,9 +30,23 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		)
 
 		BeforeEach(func() {
-			boshDeployer = &fakes.BOSHDeployer{}
-			infrastructureCreator = &fakes.InfrastructureCreator{}
 			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
+			keyPairSynchronizer.SyncCall.Returns.KeyPair = unsupported.KeyPair{
+				Name:       "some-keypair-name",
+				PrivateKey: "some-private-key",
+				PublicKey:  "some-public-key",
+			}
+
+			infrastructureCreator = &fakes.InfrastructureCreator{}
+			infrastructureCreator.CreateCall.Returns.Stack = cloudformation.Stack{
+				Name: "concourse",
+			}
+
+			boshDeployer = &fakes.BOSHDeployer{}
+			boshDeployer.DeployCall.Returns.DirectorSSLKeyPair = ssl.KeyPair{
+				Certificate: []byte("updated-certificate"),
+				PrivateKey:  []byte("updated-private-key"),
+			}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
 			ec2Client = &fakes.EC2Client{}
@@ -59,17 +74,6 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					DirectorSSLCertificate: "some-certificate",
 					DirectorSSLPrivateKey:  "some-private-key",
 				},
-			}
-
-			keyPairSynchronizer.SyncCall.Returns.KeyPair = unsupported.KeyPair{
-				Name:       "some-keypair-name",
-				PrivateKey: "some-private-key",
-				PublicKey:  "some-public-key",
-			}
-
-			boshDeployer.DeployCall.Returns.DirectorSSLKeyPair = ssl.KeyPair{
-				Certificate: []byte("updated-certificate"),
-				PrivateKey:  []byte("updated-private-key"),
 			}
 
 			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer)
@@ -118,6 +122,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.CloudformationClient).To(Equal(cloudFormationClient))
+			Expect(boshDeployer.DeployCall.Receives.Stack).To(Equal(cloudformation.Stack{
+				Name: "concourse",
+			}))
 			Expect(boshDeployer.DeployCall.Receives.AWSRegion).To(Equal("some-aws-region"))
 			Expect(boshDeployer.DeployCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(boshDeployer.DeployCall.Receives.DirectorSSLKeyPair).To(Equal(ssl.KeyPair{

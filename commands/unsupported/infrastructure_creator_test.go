@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -21,7 +22,6 @@ var _ = Describe("InfrastructureCreator", func() {
 	)
 
 	BeforeEach(func() {
-		stackManager = &fakes.StackManager{}
 		cloudFormationClient = &fakes.CloudFormationClient{}
 
 		builder = &fakes.TemplateBuilder{}
@@ -30,13 +30,27 @@ var _ = Describe("InfrastructureCreator", func() {
 			Description:              "some-description",
 		}
 
+		stackManager = &fakes.StackManager{}
+		stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+			Name: "concourse",
+			Outputs: map[string]string{
+				"BOSHSubnet": "some-subnet-id",
+			},
+		}
+
 		creator = unsupported.NewInfrastructureCreator(builder, stackManager)
 	})
 
-	It("creates the underlying infrastructure", func() {
-		err := creator.Create("some-key-pair-name", cloudFormationClient)
+	It("creates the underlying infrastructure and returns the stack", func() {
+		stack, err := creator.Create("some-key-pair-name", cloudFormationClient)
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(stack).To(Equal(cloudformation.Stack{
+			Name: "concourse",
+			Outputs: map[string]string{
+				"BOSHSubnet": "some-subnet-id",
+			},
+		}))
 		Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-key-pair-name"))
 
 		Expect(stackManager.CreateOrUpdateCall.Receives.Client).To(Equal(cloudFormationClient))
@@ -54,14 +68,23 @@ var _ = Describe("InfrastructureCreator", func() {
 	Context("failure cases", func() {
 		It("returns an error when stack can't be created or updated", func() {
 			stackManager.CreateOrUpdateCall.Returns.Error = errors.New("stack create or update failed")
-			err := creator.Create("some-key-pair-name", cloudFormationClient)
+
+			_, err := creator.Create("some-key-pair-name", cloudFormationClient)
 			Expect(err).To(MatchError("stack create or update failed"))
 		})
 
 		It("returns an error when waiting for stack completion fails", func() {
 			stackManager.WaitForCompletionCall.Returns.Error = errors.New("stack wait for completion failed")
-			err := creator.Create("some-key-pair-name", cloudFormationClient)
+
+			_, err := creator.Create("some-key-pair-name", cloudFormationClient)
 			Expect(err).To(MatchError("stack wait for completion failed"))
+		})
+
+		It("returns an error when describing the stack fails", func() {
+			stackManager.DescribeCall.Returns.Error = errors.New("stack describe failed")
+
+			_, err := creator.Create("some-key-pair-name", cloudFormationClient)
+			Expect(err).To(MatchError("stack describe failed"))
 		})
 	})
 })

@@ -9,13 +9,14 @@ type InfrastructureCreator struct {
 			CloudFormationClient cloudformation.Client
 		}
 		Returns struct {
+			Stack cloudformation.Stack
 			Error error
 		}
 	}
 }
 
-func (c *InfrastructureCreator) Create(keyPairName string, client cloudformation.Client) error {
+func (c *InfrastructureCreator) Create(keyPairName string, client cloudformation.Client) (cloudformation.Stack, error) {
 	c.CreateCall.Receives.KeyPairName = keyPairName
 	c.CreateCall.Receives.CloudFormationClient = client
-	return c.CreateCall.Returns.Error
+	return c.CreateCall.Returns.Stack, c.CreateCall.Returns.Error
 }
