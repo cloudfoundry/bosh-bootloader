@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 )
 
+const OS_READ_WRITE_MODE = os.FileMode(0644)
+
 var encode func(io.Writer, interface{}) error = encodeFile
 
 type KeyPair struct {
@@ -46,7 +48,7 @@ func NewStore() Store {
 func (s Store) Set(dir string, state State) error {
 	state.Version = s.version
 
-	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDWR|os.O_CREATE, os.ModePerm)
+	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDWR|os.O_CREATE, OS_READ_WRITE_MODE)
 	if err != nil {
 		return err
 	}
@@ -61,7 +63,7 @@ func (s Store) Set(dir string, state State) error {
 
 func (Store) Get(dir string) (State, error) {
 	state := State{}
-	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDONLY, os.ModePerm)
+	file, err := os.Open(filepath.Join(dir, "state.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return state, nil

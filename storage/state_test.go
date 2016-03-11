@@ -70,6 +70,10 @@ var _ = Describe("Store", func() {
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key"
 				}
 			}`))
+
+			fileInfo, err := os.Stat(filepath.Join(tempDir, "state.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fileInfo.Mode()).To(Equal(os.FileMode(0644)))
 		})
 
 		Context("failure cases", func() {
