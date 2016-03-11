@@ -12,6 +12,8 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const STACKNAME = "concourse"
+
 type infrastructureCreator interface {
 	Create(keyPairName string, client cloudformation.Client) error
 }

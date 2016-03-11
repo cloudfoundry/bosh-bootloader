@@ -23,7 +23,7 @@ func NewBOSHDeployer(stackManager stackManager, manifestBuilder boshInitManifest
 }
 
 func (b BOSHDeployer) Deploy(cloudformationClient cloudformation.Client, region string, keyPairName string, sslKeyPair ssl.KeyPair) (ssl.KeyPair, error) {
-	stack, err := b.stackManager.Describe(cloudformationClient, "concourse")
+	stack, err := b.stackManager.Describe(cloudformationClient, STACKNAME)
 	if err != nil {
 		return ssl.KeyPair{}, err
 	}

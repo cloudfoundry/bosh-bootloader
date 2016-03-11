@@ -26,11 +26,11 @@ func NewInfrastructureCreator(builder templateBuilder, stackManager stackManager
 func (c InfrastructureCreator) Create(keyPairName string, cloudFormationClient cloudformation.Client) error {
 	template := c.templateBuilder.Build(keyPairName)
 
-	if err := c.stackManager.CreateOrUpdate(cloudFormationClient, "concourse", template); err != nil {
+	if err := c.stackManager.CreateOrUpdate(cloudFormationClient, STACKNAME, template); err != nil {
 		return err
 	}
 
-	if err := c.stackManager.WaitForCompletion(cloudFormationClient, "concourse", 15*time.Second); err != nil {
+	if err := c.stackManager.WaitForCompletion(cloudFormationClient, STACKNAME, 15*time.Second); err != nil {
 		return err
 	}
 
