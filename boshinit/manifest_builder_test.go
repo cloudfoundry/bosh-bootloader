@@ -30,7 +30,7 @@ var _ = Describe("ManifestBuilder", func() {
 		manifestProperties = boshinit.ManifestProperties{
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
-			ElasticIP:        "some-elastic-ip",
+			ElasticIP:        "52.0.112.12",
 			AccessKeyID:      "some-access-key-id",
 			SecretAccessKey:  "some-secret-access-key",
 			DefaultKeyName:   "some-key-name",
@@ -42,8 +42,8 @@ var _ = Describe("ManifestBuilder", func() {
 	Describe("Build", func() {
 		It("builds the bosh-init manifest and updates the manifest properties", func() {
 			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
-				Certificate: []byte("some-cert"),
-				PrivateKey:  []byte("some-key"),
+				Certificate: []byte(certificate),
+				PrivateKey:  []byte(privateKey),
 			}
 
 			manifest, manifestProperties, err := manifestBuilder.Build(manifestProperties)
@@ -62,32 +62,32 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.ResourcePools[0].CloudProperties.AvailabilityZone).To(Equal("some-az"))
 			Expect(manifest.DiskPools[0].Name).To(Equal("disks"))
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
-			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("some-elastic-ip"))
+			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("52.0.112.12"))
 			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.Jobs[0].Properties.Director.SSL).To(Equal(boshinit.SSLProperties{
-				Cert: "some-cert",
-				Key:  "some-key",
+				Cert: certificate,
+				Key:  privateKey,
 			}))
 			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
-			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("some-elastic-ip"))
-			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@some-elastic-ip:6868"))
+			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("52.0.112.12"))
+			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@52.0.112.12:6868"))
 
-			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("some-elastic-ip"))
+			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
 
 			Expect(manifestProperties).To(Equal(
 				boshinit.ManifestProperties{
 					SubnetID:         "subnet-12345",
 					AvailabilityZone: "some-az",
-					ElasticIP:        "some-elastic-ip",
+					ElasticIP:        "52.0.112.12",
 					AccessKeyID:      "some-access-key-id",
 					SecretAccessKey:  "some-secret-access-key",
 					DefaultKeyName:   "some-key-name",
 					Region:           "some-region",
 					SecurityGroup:    "some-security-group",
 					SSLKeyPair: ssl.KeyPair{
-						Certificate: []byte("some-cert"),
-						PrivateKey:  []byte("some-key"),
+						Certificate: []byte(certificate),
+						PrivateKey:  []byte(privateKey),
 					},
 				},
 			))
@@ -95,8 +95,8 @@ var _ = Describe("ManifestBuilder", func() {
 
 		It("does not generate an ssl keypair if it exists", func() {
 			manifestProperties.SSLKeyPair = ssl.KeyPair{
-				Certificate: []byte("some-cert"),
-				PrivateKey:  []byte("some-key"),
+				Certificate: []byte(certificate),
+				PrivateKey:  []byte(privateKey),
 			}
 
 			_, _, err := manifestBuilder.Build(manifestProperties)
@@ -131,8 +131,8 @@ var _ = Describe("ManifestBuilder", func() {
 	Describe("template marshaling", func() {
 		It("can be marshaled to YML", func() {
 			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
-				Certificate: []byte("some-cert"),
-				PrivateKey:  []byte("some-key"),
+				Certificate: []byte(certificate),
+				PrivateKey:  []byte(privateKey),
 			}
 
 			manifest, _, err := manifestBuilder.Build(manifestProperties)

@@ -48,7 +48,7 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 	jobsManifestBuilder := NewJobsManifestBuilder()
 	cloudProviderManifestBuilder := NewCloudProviderManifestBuilder()
 
-	if manifestProperties.SSLKeyPair.IsEmpty() {
+	if !manifestProperties.SSLKeyPair.IsValidForIP(manifestProperties.ElasticIP) {
 		keyPair, err := m.sslKeyPairGenerator.Generate(manifestProperties.ElasticIP)
 		if err != nil {
 			return Manifest{}, ManifestProperties{}, err
