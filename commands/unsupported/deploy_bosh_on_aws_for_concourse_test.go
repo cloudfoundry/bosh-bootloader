@@ -5,6 +5,8 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -47,6 +49,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Certificate: []byte("updated-certificate"),
 				PrivateKey:  []byte("updated-private-key"),
 			}
+			boshDeployer.DeployCall.Returns.BOSHInitState = boshinit.State{
+				"updated-key": "updated-value",
+			}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
 			ec2Client = &fakes.EC2Client{}
@@ -73,6 +78,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				BOSH: &storage.BOSH{
 					DirectorSSLCertificate: "some-certificate",
 					DirectorSSLPrivateKey:  "some-private-key",
+					State: map[string]interface{}{
+						"key": "value",
+					},
 				},
 			}
 
@@ -121,15 +129,23 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshDeployer.DeployCall.Receives.CloudformationClient).To(Equal(cloudFormationClient))
-			Expect(boshDeployer.DeployCall.Receives.Stack).To(Equal(cloudformation.Stack{
-				Name: "concourse",
-			}))
-			Expect(boshDeployer.DeployCall.Receives.AWSRegion).To(Equal("some-aws-region"))
-			Expect(boshDeployer.DeployCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
-			Expect(boshDeployer.DeployCall.Receives.DirectorSSLKeyPair).To(Equal(ssl.KeyPair{
-				Certificate: []byte("some-certificate"),
-				PrivateKey:  []byte("some-private-key"),
+			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(unsupported.BOSHDeployInput{
+				State: boshinit.State{
+					"key": "value",
+				},
+				Stack: cloudformation.Stack{
+					Name: "concourse",
+				},
+				AWSRegion: "some-aws-region",
+				SSLKeyPair: ssl.KeyPair{
+					Certificate: []byte("some-certificate"),
+					PrivateKey:  []byte("some-private-key"),
+				},
+				EC2KeyPair: ec2.KeyPair{
+					Name:       "some-keypair-name",
+					PublicKey:  []byte("some-public-key"),
+					PrivateKey: []byte("some-private-key"),
+				},
 			}))
 		})
 
@@ -158,6 +174,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					BOSH: &storage.BOSH{
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
+						State: map[string]interface{}{
+							"key": "value",
+						},
 					},
 				}
 
@@ -193,7 +212,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				})
 			})
 
-			Context("ssl keypair", func() {
+			Context("bosh", func() {
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
 						state, err := command.Execute(globalFlags, incomingState)
@@ -211,6 +230,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						Expect(state.BOSH).To(Equal(&storage.BOSH{
 							DirectorSSLCertificate: "updated-certificate",
 							DirectorSSLPrivateKey:  "updated-private-key",
+							State: map[string]interface{}{
+								"updated-key": "updated-value",
+							},
 						}))
 					})
 				})

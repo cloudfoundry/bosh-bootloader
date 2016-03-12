@@ -104,6 +104,12 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 			{
 				StackName:   aws.String(stack.Name),
 				StackStatus: aws.String("CREATE_COMPLETE"),
+				Outputs: []*cloudformation.Output{
+					{
+						OutputKey:   aws.String("BOSHEIP"),
+						OutputValue: aws.String("192.168.1.1"),
+					},
+				},
 			},
 		},
 	}, nil

@@ -1,32 +1,26 @@
 package fakes
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
 
 type BOSHDeployer struct {
 	DeployCall struct {
 		Receives struct {
-			Stack                cloudformation.Stack
-			CloudformationClient cloudformation.Client
-			AWSRegion            string
-			KeyPairName          string
-			DirectorSSLKeyPair   ssl.KeyPair
+			Input unsupported.BOSHDeployInput
 		}
 		Returns struct {
+			BOSHInitState      boshinit.State
 			DirectorSSLKeyPair ssl.KeyPair
 			Error              error
 		}
 	}
 }
 
-func (d *BOSHDeployer) Deploy(stack cloudformation.Stack, client cloudformation.Client, region, keyPairName string, directorSSLKeyPair ssl.KeyPair) (ssl.KeyPair, error) {
-	d.DeployCall.Receives.Stack = stack
-	d.DeployCall.Receives.CloudformationClient = client
-	d.DeployCall.Receives.AWSRegion = region
-	d.DeployCall.Receives.KeyPairName = keyPairName
-	d.DeployCall.Receives.DirectorSSLKeyPair = directorSSLKeyPair
+func (d *BOSHDeployer) Deploy(input unsupported.BOSHDeployInput) (boshinit.State, ssl.KeyPair, error) {
+	d.DeployCall.Receives.Input = input
 
-	return d.DeployCall.Returns.DirectorSSLKeyPair, d.DeployCall.Returns.Error
+	return d.DeployCall.Returns.BOSHInitState, d.DeployCall.Returns.DirectorSSLKeyPair, d.DeployCall.Returns.Error
 }

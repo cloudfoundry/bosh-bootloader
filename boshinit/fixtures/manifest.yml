@@ -117,7 +117,7 @@ jobs:
         provider: local
         local:
           users:
-          - {name: admin, password: admin}
+          - {name: bosh-username, password: bosh-password}
           - {name: hm, password: hm-password}
       ssl:
         key: |-

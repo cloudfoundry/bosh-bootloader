@@ -4,6 +4,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -25,7 +26,7 @@ type infrastructureCreator interface {
 }
 
 type boshDeployer interface {
-	Deploy(stack cloudformation.Stack, client cloudformation.Client, region, keyPairName string, directorSSLKeyPair ssl.KeyPair) (ssl.KeyPair, error)
+	Deploy(BOSHDeployInput) (boshinit.State, ssl.KeyPair, error)
 }
 
 type DeployBOSHOnAWSForConcourse struct {
@@ -88,12 +89,26 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	}
 
 	directorSSLKeyPair := ssl.KeyPair{}
+	boshInitState := boshinit.State{}
 	if state.BOSH != nil {
 		directorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
 		directorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
+		if state.BOSH.State != nil {
+			boshInitState = state.BOSH.State
+		}
 	}
 
-	directorSSLKeyPair, err = d.boshDeployer.Deploy(stack, cloudFormationClient, state.AWS.Region, state.KeyPair.Name, directorSSLKeyPair)
+	boshInitState, directorSSLKeyPair, err = d.boshDeployer.Deploy(BOSHDeployInput{
+		State:      boshInitState,
+		Stack:      stack,
+		AWSRegion:  state.AWS.Region,
+		SSLKeyPair: directorSSLKeyPair,
+		EC2KeyPair: ec2.KeyPair{
+			Name:       state.KeyPair.Name,
+			PrivateKey: []byte(state.KeyPair.PrivateKey),
+			PublicKey:  []byte(state.KeyPair.PublicKey),
+		},
+	})
 	if err != nil {
 		return state, err
 	}
@@ -102,6 +117,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		state.BOSH = &storage.BOSH{
 			DirectorSSLCertificate: string(directorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(directorSSLKeyPair.PrivateKey),
+			State: boshInitState,
 		}
 	}
 

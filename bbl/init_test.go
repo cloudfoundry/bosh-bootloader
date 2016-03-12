@@ -1,6 +1,10 @@
 package main_test
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -14,7 +18,9 @@ func TestBbl(t *testing.T) {
 }
 
 var (
-	pathToBBL string
+	pathToBBL          string
+	pathToBOSHInit     string
+	pathToFakeBOSHInit string
 )
 
 var _ = BeforeSuite(func() {
@@ -22,6 +28,15 @@ var _ = BeforeSuite(func() {
 
 	pathToBBL, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl")
 	Expect(err).NotTo(HaveOccurred())
+
+	pathToFakeBOSHInit, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit")
+	Expect(err).NotTo(HaveOccurred())
+
+	pathToBOSHInit = filepath.Join(filepath.Dir(pathToFakeBOSHInit), "bosh-init")
+	err = os.Rename(pathToFakeBOSHInit, pathToBOSHInit)
+	Expect(err).NotTo(HaveOccurred())
+
+	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
 })
 
 var _ = AfterSuite(func() {

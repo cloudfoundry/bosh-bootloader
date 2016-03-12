@@ -47,6 +47,9 @@ var _ = Describe("Store", func() {
 				BOSH: &storage.BOSH{
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
+					State: map[string]interface{}{
+						"key": "value",
+					},
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -67,7 +70,10 @@ var _ = Describe("Store", func() {
 				},
 				"bosh":{
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
-					"directorSSLPrivateKey": "some-bosh-ssl-private-key"
+					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
+					"state": {
+						"key": "value"
+					}
 				}
 			}`))
 

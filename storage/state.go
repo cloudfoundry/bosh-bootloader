@@ -24,8 +24,9 @@ type AWS struct {
 }
 
 type BOSH struct {
-	DirectorSSLCertificate string `json:"directorSSLCertificate"`
-	DirectorSSLPrivateKey  string `json:"directorSSLPrivateKey"`
+	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
+	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
+	State                  map[string]interface{} `json:"state"`
 }
 
 type State struct {

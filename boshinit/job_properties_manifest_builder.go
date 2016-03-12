@@ -68,8 +68,8 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 			Local: LocalProperties{
 				Users: []UserProperties{
 					{
-						Name:     "admin",
-						Password: "admin",
+						Name:     manifestProperties.DirectorUsername,
+						Password: manifestProperties.DirectorPassword,
 					},
 					{
 						Name:     "hm",

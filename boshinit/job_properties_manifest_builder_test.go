@@ -86,6 +86,8 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Director", func() {
 		It("returns job properties for Director", func() {
 			director := jobPropertiesManifestBuilder.Director(boshinit.ManifestProperties{
+				DirectorUsername: "bosh-username",
+				DirectorPassword: "bosh-password",
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-ssl-cert"),
 					PrivateKey:  []byte("some-ssl-key"),
@@ -109,8 +111,8 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 					Local: boshinit.LocalProperties{
 						Users: []boshinit.UserProperties{
 							{
-								Name:     "admin",
-								Password: "admin",
+								Name:     "bosh-username",
+								Password: "bosh-password",
 							},
 							{
 								Name:     "hm",

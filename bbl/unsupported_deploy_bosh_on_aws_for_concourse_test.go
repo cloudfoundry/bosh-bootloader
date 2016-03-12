@@ -117,10 +117,27 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: generating bosh-init manifest"))
-
-				Expect(stdout).To(ContainSubstring("name: bosh"))
+				Expect(stdout).To(ContainSubstring("step: deploying bosh director"))
+				Expect(stdout).To(ContainSubstring("Director Address:  https://192.168.1.1:25555"))
+				Expect(stdout).To(ContainSubstring("Director Username: admin"))
+				Expect(stdout).To(ContainSubstring("Director Password: admin"))
 			})
 
+			It("invokes bosh-init", func() {
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+			})
+
+			It("can invoke bosh-init idempotently", func() {
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+
+				session = deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
+				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value"}`))
+			})
 		})
 
 		Context("when the keypair and cloudformation stack already exist", func() {

@@ -5,7 +5,9 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
@@ -34,8 +36,22 @@ func main() {
 	infrastructureCreator := unsupported.NewInfrastructureCreator(templateBuilder, stackManager)
 	awsClientProvider := aws.NewClientProvider()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
+
+	tempDir, err := ioutil.TempDir("", "bosh-init")
+	if err != nil {
+		fail(err)
+	}
+
+	boshInitPath, err := exec.LookPath("bosh-init")
+	if err != nil {
+		fail(err)
+	}
+
+	boshInitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
+	boshInitDeployCommand := boshInitCommandBuilder.DeployCommand()
 	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
-	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder)
+	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
+	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
@@ -43,9 +59,13 @@ func main() {
 		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
-	err := app.Run(os.Args[1:])
+	err = app.Run(os.Args[1:])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "\n\n%s\n", err)
-		os.Exit(1)
+		fail(err)
 	}
+}
+
+func fail(err error) {
+	fmt.Fprintf(os.Stderr, "\n\n%s\n", err)
+	os.Exit(1)
 }

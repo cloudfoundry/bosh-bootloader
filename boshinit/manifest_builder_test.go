@@ -28,6 +28,8 @@ var _ = Describe("ManifestBuilder", func() {
 
 		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
 		manifestProperties = boshinit.ManifestProperties{
+			DirectorUsername: "bosh-username",
+			DirectorPassword: "bosh-password",
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
 			ElasticIP:        "52.0.112.12",
@@ -77,6 +79,8 @@ var _ = Describe("ManifestBuilder", func() {
 
 			Expect(manifestProperties).To(Equal(
 				boshinit.ManifestProperties{
+					DirectorUsername: "bosh-username",
+					DirectorPassword: "bosh-password",
 					SubnetID:         "subnet-12345",
 					AvailabilityZone: "some-az",
 					ElasticIP:        "52.0.112.12",
@@ -109,13 +113,6 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating bosh-init manifest"))
-		})
-
-		It("prints out the manifest", func() {
-			_, _, err := manifestBuilder.Build(manifestProperties)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logger.PrintlnCall.Receives.Message).To(ContainSubstring("name: bosh"))
 		})
 
 		Context("failure cases", func() {
