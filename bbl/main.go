@@ -18,12 +18,13 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/helpers"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 func main() {
-	uuidGenerator := ec2.NewUUIDGenerator(rand.Reader)
+	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 
 	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)

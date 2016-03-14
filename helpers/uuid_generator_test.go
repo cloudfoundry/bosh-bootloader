@@ -1,11 +1,11 @@
-package ec2_test
+package helpers_test
 
 import (
 	"crypto/rand"
 	"errors"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,7 +14,7 @@ import (
 var _ = Describe("UUIDGenerator", func() {
 	Describe("Generate", func() {
 		It("generates random UUID values", func() {
-			generator := ec2.NewUUIDGenerator(rand.Reader)
+			generator := helpers.NewUUIDGenerator(rand.Reader)
 			uuid, err := generator.Generate()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(uuid).To(MatchRegexp(`\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
@@ -31,7 +31,7 @@ var _ = Describe("UUIDGenerator", func() {
 		Context("failure cases", func() {
 			It("returns an error when the reader fails", func() {
 				reader := &fakes.Reader{}
-				generator := ec2.NewUUIDGenerator(reader)
+				generator := helpers.NewUUIDGenerator(reader)
 				reader.ReadCall.Returns.Error = errors.New("reader failed")
 
 				_, err := generator.Generate()
