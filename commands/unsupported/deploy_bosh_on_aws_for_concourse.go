@@ -26,7 +26,7 @@ type infrastructureCreator interface {
 }
 
 type boshDeployer interface {
-	Deploy(BOSHDeployInput) (boshinit.State, ssl.KeyPair, error)
+	Deploy(BOSHDeployInput) (BOSHDeployOutput, error)
 }
 
 type DeployBOSHOnAWSForConcourse struct {
@@ -88,21 +88,23 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	directorSSLKeyPair := ssl.KeyPair{}
-	boshInitState := boshinit.State{}
+	boshOutput := BOSHDeployOutput{
+		DirectorSSLKeyPair: ssl.KeyPair{},
+		BOSHInitState:      boshinit.State{},
+	}
 	if state.BOSH != nil {
-		directorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
-		directorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
+		boshOutput.DirectorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
+		boshOutput.DirectorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
 		if state.BOSH.State != nil {
-			boshInitState = state.BOSH.State
+			boshOutput.BOSHInitState = state.BOSH.State
 		}
 	}
 
-	boshInitState, directorSSLKeyPair, err = d.boshDeployer.Deploy(BOSHDeployInput{
-		State:      boshInitState,
+	boshOutput, err = d.boshDeployer.Deploy(BOSHDeployInput{
+		State:      boshOutput.BOSHInitState,
 		Stack:      stack,
 		AWSRegion:  state.AWS.Region,
-		SSLKeyPair: directorSSLKeyPair,
+		SSLKeyPair: boshOutput.DirectorSSLKeyPair,
 		EC2KeyPair: ec2.KeyPair{
 			Name:       state.KeyPair.Name,
 			PrivateKey: []byte(state.KeyPair.PrivateKey),
@@ -115,9 +117,10 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 
 	if state.BOSH == nil {
 		state.BOSH = &storage.BOSH{
-			DirectorSSLCertificate: string(directorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(directorSSLKeyPair.PrivateKey),
-			State: boshInitState,
+			DirectorSSLCertificate: string(boshOutput.DirectorSSLKeyPair.Certificate),
+			DirectorSSLPrivateKey:  string(boshOutput.DirectorSSLKeyPair.PrivateKey),
+			Credentials:            &boshOutput.Credentials,
+			State:                  boshOutput.BOSHInitState,
 		}
 	}
 

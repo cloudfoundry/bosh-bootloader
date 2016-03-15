@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 )
 
 const OS_READ_WRITE_MODE = os.FileMode(0644)
@@ -24,9 +26,10 @@ type AWS struct {
 }
 
 type BOSH struct {
-	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
-	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
-	State                  map[string]interface{} `json:"state"`
+	DirectorSSLCertificate string                        `json:"directorSSLCertificate"`
+	DirectorSSLPrivateKey  string                        `json:"directorSSLPrivateKey"`
+	Credentials            *boshinit.InternalCredentials `json:"credentials"`
+	State                  map[string]interface{}        `json:"state"`
 }
 
 type State struct {

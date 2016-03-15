@@ -45,12 +45,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}
 
 			boshDeployer = &fakes.BOSHDeployer{}
-			boshDeployer.DeployCall.Returns.DirectorSSLKeyPair = ssl.KeyPair{
-				Certificate: []byte("updated-certificate"),
-				PrivateKey:  []byte("updated-private-key"),
-			}
-			boshDeployer.DeployCall.Returns.BOSHInitState = boshinit.State{
-				"updated-key": "updated-value",
+			boshDeployer.DeployCall.Returns.Output = unsupported.BOSHDeployOutput{
+				DirectorSSLKeyPair: ssl.KeyPair{
+					Certificate: []byte("updated-certificate"),
+					PrivateKey:  []byte("updated-private-key"),
+				},
+				BOSHInitState: boshinit.State{
+					"updated-key": "updated-value",
+				},
 			}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
@@ -227,13 +229,72 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 						state, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.BOSH).To(Equal(&storage.BOSH{
-							DirectorSSLCertificate: "updated-certificate",
-							DirectorSSLPrivateKey:  "updated-private-key",
-							State: map[string]interface{}{
-								"updated-key": "updated-value",
-							},
+						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("updated-certificate"))
+						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("updated-private-key"))
+						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+							"updated-key": "updated-value",
 						}))
+					})
+				})
+
+				Context("when the bosh credentials don't exist", func() {
+					It("returns the state with random credentials", func() {
+						incomingState.BOSH = nil
+						boshDeployer.DeployCall.Returns.Output = unsupported.BOSHDeployOutput{
+							Credentials: boshinit.InternalCredentials{
+								MBusPassword:              "some-mbus-password",
+								NatsPassword:              "some-nats-password",
+								RedisPassword:             "some-redis-password",
+								PostgresPassword:          "some-postgres-password",
+								RegistryPassword:          "some-registry-password",
+								BlobstoreDirectorPassword: "some-blobstore-director-password",
+								BlobstoreAgentPassword:    "some-blobstore-agent-password",
+								HMPassword:                "some-hm-password",
+							},
+						}
+
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.BOSH.Credentials).To(Equal(&boshinit.InternalCredentials{
+							MBusPassword:              "some-mbus-password",
+							NatsPassword:              "some-nats-password",
+							RedisPassword:             "some-redis-password",
+							PostgresPassword:          "some-postgres-password",
+							RegistryPassword:          "some-registry-password",
+							BlobstoreDirectorPassword: "some-blobstore-director-password",
+							BlobstoreAgentPassword:    "some-blobstore-agent-password",
+							HMPassword:                "some-hm-password",
+						}))
+					})
+
+					Context("when the bosh credentials exist in the state.json", func() {
+						It("returns the state with the same credentials", func() {
+							incomingState.BOSH = &storage.BOSH{
+								Credentials: &boshinit.InternalCredentials{
+									MBusPassword:              "some-mbus-password",
+									NatsPassword:              "some-nats-password",
+									RedisPassword:             "some-redis-password",
+									PostgresPassword:          "some-postgres-password",
+									RegistryPassword:          "some-registry-password",
+									BlobstoreDirectorPassword: "some-blobstore-director-password",
+									BlobstoreAgentPassword:    "some-blobstore-agent-password",
+									HMPassword:                "some-hm-password",
+								},
+							}
+
+							state, err := command.Execute(globalFlags, incomingState)
+							Expect(err).NotTo(HaveOccurred())
+							Expect(state.BOSH.Credentials).To(Equal(&boshinit.InternalCredentials{
+								MBusPassword:              "some-mbus-password",
+								NatsPassword:              "some-nats-password",
+								RedisPassword:             "some-redis-password",
+								PostgresPassword:          "some-postgres-password",
+								RegistryPassword:          "some-registry-password",
+								BlobstoreDirectorPassword: "some-blobstore-director-password",
+								BlobstoreAgentPassword:    "some-blobstore-agent-password",
+								HMPassword:                "some-hm-password",
+							}))
+						})
 					})
 				})
 			})

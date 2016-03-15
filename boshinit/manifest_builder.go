@@ -22,6 +22,18 @@ type ManifestProperties struct {
 	Region           string
 	SecurityGroup    string
 	SSLKeyPair       ssl.KeyPair
+	Credentials      InternalCredentials
+}
+
+type InternalCredentials struct {
+	MBusPassword              string `json:"mbusPassword"`
+	NatsPassword              string `json:"natsPassword"`
+	RedisPassword             string `json:"redisPassword"`
+	PostgresPassword          string `json:"postgresPassword"`
+	RegistryPassword          string `json:"registryPassword"`
+	BlobstoreDirectorPassword string `json:"blobstoreDirectorPassword"`
+	BlobstoreAgentPassword    string `json:"blobstoreAgentPassword"`
+	HMPassword                string `json:"hmPassword"`
 }
 
 type logger interface {
@@ -37,11 +49,11 @@ type UUIDGenerator interface {
 }
 
 type cloudProviderManifestBuilder interface {
-	Build(ManifestProperties) (CloudProvider, error)
+	Build(ManifestProperties) (CloudProvider, ManifestProperties, error)
 }
 
 type jobsManifestBuilder interface {
-	Build(ManifestProperties) ([]Job, error)
+	Build(ManifestProperties) ([]Job, ManifestProperties, error)
 }
 
 func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator, uuidGenerator UUIDGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {
@@ -71,12 +83,12 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 		manifestProperties.SSLKeyPair = keyPair
 	}
 
-	cloudProvider, err := m.cloudProviderManifestBuilder.Build(manifestProperties)
+	cloudProvider, manifestProperties, err := m.cloudProviderManifestBuilder.Build(manifestProperties)
 	if err != nil {
 		return Manifest{}, ManifestProperties{}, err
 	}
 
-	jobs, err := m.jobsManifestBuilder.Build(manifestProperties)
+	jobs, manifestProperties, err := m.jobsManifestBuilder.Build(manifestProperties)
 	if err != nil {
 		return Manifest{}, ManifestProperties{}, err
 	}

@@ -10,6 +10,6 @@ type JobsManifestBuilder struct {
 	}
 }
 
-func (j JobsManifestBuilder) Build(manifestProperties boshinit.ManifestProperties) ([]boshinit.Job, error) {
-	return nil, j.BuildCall.Returns.Error
+func (j JobsManifestBuilder) Build(manifestProperties boshinit.ManifestProperties) ([]boshinit.Job, boshinit.ManifestProperties, error) {
+	return nil, manifestProperties, j.BuildCall.Returns.Error
 }

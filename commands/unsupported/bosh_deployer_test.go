@@ -23,6 +23,7 @@ var _ = Describe("BoshDeployer", func() {
 		stack           cloudformation.Stack
 		sslKeyPair      ssl.KeyPair
 		ec2KeyPair      ec2.KeyPair
+		credentials     boshinit.InternalCredentials
 	)
 
 	BeforeEach(func() {
@@ -50,6 +51,16 @@ var _ = Describe("BoshDeployer", func() {
 			PrivateKey: []byte("some-private-key"),
 			PublicKey:  []byte("some-public-key"),
 		}
+		credentials = boshinit.InternalCredentials{
+			MBusPassword:              "some-mbus-password",
+			NatsPassword:              "some-nats-password",
+			RedisPassword:             "some-redis-password",
+			PostgresPassword:          "some-postgres-password",
+			RegistryPassword:          "some-registry-password",
+			BlobstoreDirectorPassword: "some-blobstore-director-password",
+			BlobstoreAgentPassword:    "some-blobstore-agent-password",
+			HMPassword:                "some-hm-password",
+		}
 
 		manifestBuilder.BuildCall.Returns.Properties = boshinit.ManifestProperties{
 			DirectorUsername: "admin",
@@ -59,6 +70,7 @@ var _ = Describe("BoshDeployer", func() {
 				Certificate: []byte("updated-certificate"),
 				PrivateKey:  []byte("updated-private-key"),
 			},
+			Credentials: credentials,
 		}
 		manifestBuilder.BuildCall.Returns.Manifest = boshinit.Manifest{
 			Name: "bosh",
@@ -70,15 +82,16 @@ var _ = Describe("BoshDeployer", func() {
 	})
 
 	Describe("Deploy", func() {
-		It("deploys bosh and returns a key pair, and bosh-init state", func() {
-			boshInitState, keyPair, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
+		It("deploys bosh and returns a bosh output", func() {
+			boshOutput, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
 				State: boshinit.State{
 					"key": "value",
 				},
-				Stack:      stack,
-				AWSRegion:  "some-aws-region",
-				SSLKeyPair: sslKeyPair,
-				EC2KeyPair: ec2KeyPair,
+				Stack:       stack,
+				AWSRegion:   "some-aws-region",
+				SSLKeyPair:  sslKeyPair,
+				EC2KeyPair:  ec2KeyPair,
+				Credentials: credentials,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -97,13 +110,33 @@ var _ = Describe("BoshDeployer", func() {
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),
 				},
+				Credentials: boshinit.InternalCredentials{
+					MBusPassword:              "some-mbus-password",
+					NatsPassword:              "some-nats-password",
+					RedisPassword:             "some-redis-password",
+					PostgresPassword:          "some-postgres-password",
+					RegistryPassword:          "some-registry-password",
+					BlobstoreDirectorPassword: "some-blobstore-director-password",
+					BlobstoreAgentPassword:    "some-blobstore-agent-password",
+					HMPassword:                "some-hm-password",
+				},
 			}))
-			Expect(keyPair).To(Equal(ssl.KeyPair{
+			Expect(boshOutput.DirectorSSLKeyPair).To(Equal(ssl.KeyPair{
 				Certificate: []byte("updated-certificate"),
 				PrivateKey:  []byte("updated-private-key"),
 			}))
-			Expect(boshInitState).To(Equal(boshinit.State{
+			Expect(boshOutput.BOSHInitState).To(Equal(boshinit.State{
 				"key": "value",
+			}))
+			Expect(boshOutput.Credentials).To(Equal(boshinit.InternalCredentials{
+				MBusPassword:              "some-mbus-password",
+				NatsPassword:              "some-nats-password",
+				RedisPassword:             "some-redis-password",
+				PostgresPassword:          "some-postgres-password",
+				RegistryPassword:          "some-registry-password",
+				BlobstoreDirectorPassword: "some-blobstore-director-password",
+				BlobstoreAgentPassword:    "some-blobstore-agent-password",
+				HMPassword:                "some-hm-password",
 			}))
 
 			Expect(boshInitRunner.DeployCall.Receives.Manifest).To(ContainSubstring("name: bosh"))
@@ -119,7 +152,7 @@ var _ = Describe("BoshDeployer", func() {
 				lines = append(lines, line)
 			}
 
-			_, _, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
+			_, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
 				Stack:      stack,
 				AWSRegion:  "some-aws-region",
 				SSLKeyPair: sslKeyPair,
@@ -137,7 +170,7 @@ var _ = Describe("BoshDeployer", func() {
 				It("returns an error", func() {
 					manifestBuilder.BuildCall.Returns.Error = errors.New("failed to build manifest")
 
-					_, _, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{})
+					_, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{})
 					Expect(err).To(MatchError("failed to build manifest"))
 				})
 			})
@@ -146,7 +179,7 @@ var _ = Describe("BoshDeployer", func() {
 				It("returns an error", func() {
 					boshInitRunner.DeployCall.Returns.Error = errors.New("failed to deploy")
 
-					_, _, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{})
+					_, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{})
 					Expect(err).To(MatchError("failed to deploy"))
 				})
 			})

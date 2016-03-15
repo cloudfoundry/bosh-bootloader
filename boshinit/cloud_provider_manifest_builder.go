@@ -13,11 +13,18 @@ func NewCloudProviderManifestBuilder(uuidGenerator UUIDGenerator) CloudProviderM
 	}
 }
 
-func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestProperties) (CloudProvider, error) {
+func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestProperties) (CloudProvider, ManifestProperties, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
-	password, err := c.uuidGenerator.Generate()
-	if err != nil {
-		return CloudProvider{}, err
+
+	password := manifestProperties.Credentials.MBusPassword
+	if password == "" {
+		var err error
+		password, err = c.uuidGenerator.Generate()
+		if err != nil {
+			return CloudProvider{}, ManifestProperties{}, err
+		}
+
+		manifestProperties.Credentials.MBusPassword = password
 	}
 
 	return CloudProvider{
@@ -49,5 +56,5 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 
 			NTP: sharedPropertiesManifestBuilder.NTP(),
 		},
-	}, nil
+	}, manifestProperties, nil
 }

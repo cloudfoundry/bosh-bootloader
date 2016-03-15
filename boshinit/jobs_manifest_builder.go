@@ -10,52 +10,22 @@ func NewJobsManifestBuilder(uuidGenerator UUIDGenerator) JobsManifestBuilder {
 	}
 }
 
-func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job, error) {
+func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job, ManifestProperties, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
-	natsPassword, err := j.uuidGenerator.Generate()
+	manifestProperties, err := j.generateInternalPasswords(manifestProperties)
 	if err != nil {
-		return nil, err
-	}
-
-	redisPassword, err := j.uuidGenerator.Generate()
-	if err != nil {
-		return nil, err
-	}
-
-	postgresPassword, err := j.uuidGenerator.Generate()
-	if err != nil {
-		return nil, err
-	}
-
-	registryPassword, err := j.uuidGenerator.Generate()
-	if err != nil {
-		return nil, err
-	}
-
-	blobstoreDirectorPassword, err := j.uuidGenerator.Generate()
-	if err != nil {
-		return nil, err
-	}
-
-	blobstoreAgentPassword, err := j.uuidGenerator.Generate()
-	if err != nil {
-		return nil, err
-	}
-
-	hmPassword, err := j.uuidGenerator.Generate()
-	if err != nil {
-		return nil, err
+		return nil, ManifestProperties{}, err
 	}
 
 	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder(
-		natsPassword,
-		redisPassword,
-		postgresPassword,
-		registryPassword,
-		blobstoreDirectorPassword,
-		blobstoreAgentPassword,
-		hmPassword,
+		manifestProperties.Credentials.NatsPassword,
+		manifestProperties.Credentials.RedisPassword,
+		manifestProperties.Credentials.PostgresPassword,
+		manifestProperties.Credentials.RegistryPassword,
+		manifestProperties.Credentials.BlobstoreDirectorPassword,
+		manifestProperties.Credentials.BlobstoreAgentPassword,
+		manifestProperties.Credentials.HMPassword,
 	)
 
 	return []Job{
@@ -101,5 +71,60 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 				NTP:       sharedPropertiesManifestBuilder.NTP(),
 			},
 		},
-	}, nil
+	}, manifestProperties, nil
+}
+
+func (j JobsManifestBuilder) generateInternalPasswords(manifestProperties ManifestProperties) (ManifestProperties, error) {
+	var err error
+
+	if manifestProperties.Credentials.NatsPassword == "" {
+		manifestProperties.Credentials.NatsPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	if manifestProperties.Credentials.RedisPassword == "" {
+		manifestProperties.Credentials.RedisPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	if manifestProperties.Credentials.PostgresPassword == "" {
+		manifestProperties.Credentials.PostgresPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	if manifestProperties.Credentials.RegistryPassword == "" {
+		manifestProperties.Credentials.RegistryPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	if manifestProperties.Credentials.BlobstoreDirectorPassword == "" {
+		manifestProperties.Credentials.BlobstoreDirectorPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	if manifestProperties.Credentials.BlobstoreAgentPassword == "" {
+		manifestProperties.Credentials.BlobstoreAgentPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	if manifestProperties.Credentials.HMPassword == "" {
+		manifestProperties.Credentials.HMPassword, err = j.uuidGenerator.Generate()
+		if err != nil {
+			return ManifestProperties{}, err
+		}
+	}
+
+	return manifestProperties, nil
 }

@@ -28,7 +28,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 		})
 
 		It("returns all cloud provider fields for manifest", func() {
-			cloudProvider, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
+			cloudProvider, _, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -37,7 +37,6 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				SecurityGroup:   "some-security-group",
 			})
 			Expect(err).NotTo(HaveOccurred())
-
 			Expect(cloudProvider).To(Equal(boshinit.CloudProvider{
 				Template: boshinit.Template{
 					Name:    "aws_cpi",
@@ -76,21 +75,41 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 			}))
 		})
 
+		It("returns manifest properties with new credentials", func() {
+			_, manifestProperties, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(manifestProperties.Credentials.MBusPassword).To(Equal("fake-randomly-generated-password"))
+		})
+
+		It("returns manifest and manifest properties with existing credentials", func() {
+			cloudProvider, manifestProperties, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
+				ElasticIP:       "some-elastic-ip",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				DefaultKeyName:  "some-key-name",
+				Region:          "some-region",
+				SecurityGroup:   "some-security-group",
+				Credentials: boshinit.InternalCredentials{
+					MBusPassword: "some-persisted-mbus-password",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cloudProvider.MBus).To(Equal("https://mbus:some-persisted-mbus-password@some-elastic-ip:6868"))
+			Expect(cloudProvider.Properties.Agent.MBus).To(Equal("https://mbus:some-persisted-mbus-password@0.0.0.0:6868"))
+			Expect(manifestProperties.Credentials.MBusPassword).To(Equal("some-persisted-mbus-password"))
+		})
+
 		Context("when uuidGenerator cannot generated a uuid", func() {
 			BeforeEach(func() {
 				uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{{Error: fmt.Errorf("foo")}}
 			})
 
 			It("forwards the error", func() {
-				_, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
+				_, _, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("foo"))
-			})
-		})
-
-		Context("when bbl is run a second time", func() {
-			It("doesn't regenerate the message bus password", func() {
-
 			})
 		})
 	})

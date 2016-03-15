@@ -1,10 +1,6 @@
 package fakes
 
-import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
-)
+import "github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 
 type BOSHDeployer struct {
 	DeployCall struct {
@@ -12,15 +8,14 @@ type BOSHDeployer struct {
 			Input unsupported.BOSHDeployInput
 		}
 		Returns struct {
-			BOSHInitState      boshinit.State
-			DirectorSSLKeyPair ssl.KeyPair
-			Error              error
+			Output unsupported.BOSHDeployOutput
+			Error  error
 		}
 	}
 }
 
-func (d *BOSHDeployer) Deploy(input unsupported.BOSHDeployInput) (boshinit.State, ssl.KeyPair, error) {
+func (d *BOSHDeployer) Deploy(input unsupported.BOSHDeployInput) (unsupported.BOSHDeployOutput, error) {
 	d.DeployCall.Receives.Input = input
 
-	return d.DeployCall.Returns.BOSHInitState, d.DeployCall.Returns.DirectorSSLKeyPair, d.DeployCall.Returns.Error
+	return d.DeployCall.Returns.Output, d.DeployCall.Returns.Error
 }

@@ -17,11 +17,18 @@ type BOSHDeployer struct {
 }
 
 type BOSHDeployInput struct {
-	State      boshinit.State
-	Stack      cloudformation.Stack
-	AWSRegion  string
-	SSLKeyPair ssl.KeyPair
-	EC2KeyPair ec2.KeyPair
+	State       boshinit.State
+	Stack       cloudformation.Stack
+	AWSRegion   string
+	SSLKeyPair  ssl.KeyPair
+	EC2KeyPair  ec2.KeyPair
+	Credentials boshinit.InternalCredentials
+}
+
+type BOSHDeployOutput struct {
+	Credentials        boshinit.InternalCredentials
+	BOSHInitState      boshinit.State
+	DirectorSSLKeyPair ssl.KeyPair
 }
 
 type boshInitManifestBuilder interface {
@@ -44,7 +51,7 @@ func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder, runner boshInitRun
 	}
 }
 
-func (b BOSHDeployer) Deploy(input BOSHDeployInput) (boshinit.State, ssl.KeyPair, error) {
+func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
 	manifest, manifestProperties, err := b.manifestBuilder.Build(boshinit.ManifestProperties{
 		DirectorUsername: "admin",
 		DirectorPassword: "admin",
@@ -57,24 +64,29 @@ func (b BOSHDeployer) Deploy(input BOSHDeployInput) (boshinit.State, ssl.KeyPair
 		Region:           input.AWSRegion,
 		DefaultKeyName:   input.EC2KeyPair.Name,
 		SSLKeyPair:       input.SSLKeyPair,
+		Credentials:      input.Credentials,
 	})
 	if err != nil {
-		return boshinit.State{}, ssl.KeyPair{}, err
+		return BOSHDeployOutput{}, err
 	}
 
 	yaml, err := candiedyaml.Marshal(manifest)
 	if err != nil {
-		return boshinit.State{}, ssl.KeyPair{}, err
+		return BOSHDeployOutput{}, err
 	}
 
 	state, err := b.runner.Deploy(yaml, input.EC2KeyPair.PrivateKey, input.State)
 	if err != nil {
-		return boshinit.State{}, ssl.KeyPair{}, err
+		return BOSHDeployOutput{}, err
 	}
 
 	b.logger.Println(fmt.Sprintf("Director Address:  https://%s:25555", manifestProperties.ElasticIP))
 	b.logger.Println("Director Username: " + manifestProperties.DirectorUsername)
 	b.logger.Println("Director Password: " + manifestProperties.DirectorPassword)
 
-	return state, manifestProperties.SSLKeyPair, nil
+	return BOSHDeployOutput{
+		BOSHInitState:      state,
+		DirectorSSLKeyPair: manifestProperties.SSLKeyPair,
+		Credentials:        manifestProperties.Credentials,
+	}, nil
 }

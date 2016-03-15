@@ -10,6 +10,6 @@ type CloudProviderManifestBuilder struct {
 	}
 }
 
-func (c CloudProviderManifestBuilder) Build(manifestProperties boshinit.ManifestProperties) (boshinit.CloudProvider, error) {
-	return boshinit.CloudProvider{}, c.BuildCall.Returns.Error
+func (c CloudProviderManifestBuilder) Build(manifestProperties boshinit.ManifestProperties) (boshinit.CloudProvider, boshinit.ManifestProperties, error) {
+	return boshinit.CloudProvider{}, manifestProperties, c.BuildCall.Returns.Error
 }

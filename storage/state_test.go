@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -50,6 +51,16 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
+					Credentials: &boshinit.InternalCredentials{
+						MBusPassword:              "some-mbus-password",
+						NatsPassword:              "some-nats-password",
+						RedisPassword:             "some-redis-password",
+						PostgresPassword:          "some-postgres-password",
+						RegistryPassword:          "some-registry-password",
+						BlobstoreDirectorPassword: "some-blobstore-director-password",
+						BlobstoreAgentPassword:    "some-blobstore-agent-password",
+						HMPassword:                "some-hm-password",
+					},
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -71,6 +82,16 @@ var _ = Describe("Store", func() {
 				"bosh":{
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
+					"credentials": {
+						"mbusPassword": "some-mbus-password",
+						"natsPassword": "some-nats-password",
+						"redisPassword": "some-redis-password",
+						"postgresPassword": "some-postgres-password",
+						"registryPassword": "some-registry-password",
+						"blobstoreDirectorPassword": "some-blobstore-director-password",
+						"blobstoreAgentPassword": "some-blobstore-agent-password",
+						"hmPassword": "some-hm-password"
+					},
 					"state": {
 						"key": "value"
 					}
