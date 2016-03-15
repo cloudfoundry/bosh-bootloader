@@ -43,8 +43,7 @@ Global Options:
   --state-dir             "Directory that stores the state.json"
 
 Commands:
-  help                                     "print usage"
-  version                                  "print version"
-  unsupported-print-concourse-aws-template "print a concourse aws template"
-  unsupported-create-bosh-aws-keypair      "create and upload a keypair to AWS"
+  help                                          "print usage"
+  version                                       "print version"
+  unsupported-deploy-bosh-on-aws-for-concourse  "create a new concourse stack on AWS and deploy bosh-init manifest"
 ```

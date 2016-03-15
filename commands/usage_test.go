@@ -42,7 +42,7 @@ Global Options:
 Commands:
   help                                          "print usage"
   version                                       "print version"
-  unsupported-deploy-bosh-on-aws-for-concourse  "create a new concourse stack on AWS and print out the bosh-init manifest"
+  unsupported-deploy-bosh-on-aws-for-concourse  "create a new concourse stack on AWS and deploy bosh-init manifest"
 `)))
 		})
 
