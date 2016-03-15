@@ -27,7 +27,7 @@ func main() {
 	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 
-	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator.Generate)
+	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator)
 	keyPairChecker := ec2.NewKeyPairChecker()
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := unsupported.NewKeyPairSynchronizer(keyPairManager)
@@ -50,7 +50,9 @@ func main() {
 
 	boshInitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
 	boshInitDeployCommand := boshInitCommandBuilder.DeployCommand()
-	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
+	cloudProviderManifestBuilder := boshinit.NewCloudProviderManifestBuilder(uuidGenerator)
+	jobsManifestBuilder := boshinit.NewJobsManifestBuilder(uuidGenerator)
+	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
 	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 

@@ -1,20 +1,10 @@
 package boshinit
 
-type SharedPropertiesManifestBuilder struct{}
-
-func NewSharedPropertiesManifestBuilder() SharedPropertiesManifestBuilder {
-	return SharedPropertiesManifestBuilder{}
+type SharedPropertiesManifestBuilder struct {
 }
 
-func (SharedPropertiesManifestBuilder) Postgres() PostgresProperties {
-	return PostgresProperties{
-		ListenAddress: "127.0.0.1",
-		Host:          "127.0.0.1",
-		User:          "postgres",
-		Password:      "postgres-password",
-		Database:      "bosh",
-		Adapter:       "postgres",
-	}
+func NewSharedPropertiesManifestBuilder() *SharedPropertiesManifestBuilder {
+	return &SharedPropertiesManifestBuilder{}
 }
 
 func (SharedPropertiesManifestBuilder) AWS(manifestProperties ManifestProperties) AWSProperties {

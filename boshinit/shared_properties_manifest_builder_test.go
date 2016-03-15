@@ -7,24 +7,10 @@ import (
 )
 
 var _ = Describe("SharedPropertiesManifestBuilder", func() {
-	var sharedPropertiesManifestBuilder boshinit.SharedPropertiesManifestBuilder
+	var sharedPropertiesManifestBuilder *boshinit.SharedPropertiesManifestBuilder
 
 	BeforeEach(func() {
 		sharedPropertiesManifestBuilder = boshinit.NewSharedPropertiesManifestBuilder()
-	})
-
-	Describe("Postgres", func() {
-		It("returns job properties for Postgres", func() {
-			postgres := sharedPropertiesManifestBuilder.Postgres()
-			Expect(postgres).To(Equal(boshinit.PostgresProperties{
-				ListenAddress: "127.0.0.1",
-				Host:          "127.0.0.1",
-				User:          "postgres",
-				Password:      "postgres-password",
-				Database:      "bosh",
-				Adapter:       "postgres",
-			}))
-		})
 	})
 
 	Describe("AWS", func() {

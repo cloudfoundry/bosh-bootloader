@@ -2,14 +2,23 @@ package boshinit
 
 import "fmt"
 
-type CloudProviderManifestBuilder struct{}
-
-func NewCloudProviderManifestBuilder() CloudProviderManifestBuilder {
-	return CloudProviderManifestBuilder{}
+type CloudProviderManifestBuilder struct {
+	uuidGenerator                   UUIDGenerator
+	sharedPropertiesManifestBuilder SharedPropertiesManifestBuilder
 }
 
-func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestProperties) CloudProvider {
+func NewCloudProviderManifestBuilder(uuidGenerator UUIDGenerator) CloudProviderManifestBuilder {
+	return CloudProviderManifestBuilder{
+		uuidGenerator: uuidGenerator,
+	}
+}
+
+func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestProperties) (CloudProvider, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
+	password, err := c.uuidGenerator.Generate()
+	if err != nil {
+		return CloudProvider{}, err
+	}
 
 	return CloudProvider{
 		Template: Template{
@@ -24,13 +33,13 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 			PrivateKey: "./bosh.pem",
 		},
 
-		MBus: fmt.Sprintf("https://mbus:mbus-password@%s:6868", manifestProperties.ElasticIP),
+		MBus: fmt.Sprintf("https://mbus:%s@%s:6868", password, manifestProperties.ElasticIP),
 
 		Properties: CloudProviderProperties{
 			AWS: sharedPropertiesManifestBuilder.AWS(manifestProperties),
 
 			Agent: AgentProperties{
-				MBus: "https://mbus:mbus-password@0.0.0.0:6868",
+				MBus: fmt.Sprintf("https://mbus:%s@0.0.0.0:6868", password),
 			},
 
 			Blobstore: BlobstoreProperties{
@@ -40,5 +49,5 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 
 			NTP: sharedPropertiesManifestBuilder.NTP(),
 		},
-	}
+	}, nil
 }

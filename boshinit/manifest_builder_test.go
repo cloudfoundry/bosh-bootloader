@@ -2,6 +2,7 @@ package boshinit_test
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
@@ -16,17 +17,23 @@ import (
 
 var _ = Describe("ManifestBuilder", func() {
 	var (
-		logger              *fakes.Logger
-		sslKeyPairGenerator *fakes.SSLKeyPairGenerator
-		manifestBuilder     boshinit.ManifestBuilder
-		manifestProperties  boshinit.ManifestProperties
+		logger                       *fakes.Logger
+		sslKeyPairGenerator          *fakes.SSLKeyPairGenerator
+		uuidGenerator                *fakes.UUIDGenerator
+		manifestBuilder              boshinit.ManifestBuilder
+		manifestProperties           boshinit.ManifestProperties
+		cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
+		jobsManifestBuilder          boshinit.JobsManifestBuilder
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		sslKeyPairGenerator = &fakes.SSLKeyPairGenerator{}
+		uuidGenerator = &fakes.UUIDGenerator{}
+		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(uuidGenerator)
+		jobsManifestBuilder = boshinit.NewJobsManifestBuilder(uuidGenerator)
 
-		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator)
+		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 		manifestProperties = boshinit.ManifestProperties{
 			DirectorUsername: "bosh-username",
 			DirectorPassword: "bosh-password",
@@ -38,6 +45,17 @@ var _ = Describe("ManifestBuilder", func() {
 			DefaultKeyName:   "some-key-name",
 			Region:           "some-region",
 			SecurityGroup:    "some-security-group",
+		}
+
+		uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{
+			{String: "randomly-generated-mbus-password"},
+			{String: "randomly-generated-nats-password"},
+			{String: "randomly-generated-redis-password"},
+			{String: "randomly-generated-postgres-password"},
+			{String: "randomly-generated-registry-password"},
+			{String: "randomly-generated-blobstore-director-password"},
+			{String: "randomly-generated-blobstore-agent-password"},
+			{String: "randomly-generated-hm-password"},
 		}
 	})
 
@@ -72,7 +90,7 @@ var _ = Describe("ManifestBuilder", func() {
 			}))
 			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("52.0.112.12"))
-			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-password@52.0.112.12:6868"))
+			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:randomly-generated-mbus-password@52.0.112.12:6868"))
 
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
@@ -121,6 +139,54 @@ var _ = Describe("ManifestBuilder", func() {
 
 				_, _, err := manifestBuilder.Build(manifestProperties)
 				Expect(err).To(MatchError("failed to generate key pair"))
+			})
+
+			Context("failing cloud provider manifest builder", func() {
+				BeforeEach(func() {
+					fakeCloudProviderManifestBuilder := &fakes.CloudProviderManifestBuilder{}
+					fakeCloudProviderManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
+					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
+					manifestProperties = boshinit.ManifestProperties{
+						DirectorUsername: "bosh-username",
+						DirectorPassword: "bosh-password",
+						SubnetID:         "subnet-12345",
+						AvailabilityZone: "some-az",
+						ElasticIP:        "52.0.112.12",
+						AccessKeyID:      "some-access-key-id",
+						SecretAccessKey:  "some-secret-access-key",
+						DefaultKeyName:   "some-key-name",
+						Region:           "some-region",
+						SecurityGroup:    "some-security-group",
+					}
+				})
+				It("returns an error when it cannot build the cloud provider manifest", func() {
+					_, _, err := manifestBuilder.Build(manifestProperties)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("failing jobs manifest builder", func() {
+				BeforeEach(func() {
+					fakeJobsManifestBuilder := &fakes.JobsManifestBuilder{}
+					fakeJobsManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
+					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
+					manifestProperties = boshinit.ManifestProperties{
+						DirectorUsername: "bosh-username",
+						DirectorPassword: "bosh-password",
+						SubnetID:         "subnet-12345",
+						AvailabilityZone: "some-az",
+						ElasticIP:        "52.0.112.12",
+						AccessKeyID:      "some-access-key-id",
+						SecretAccessKey:  "some-secret-access-key",
+						DefaultKeyName:   "some-key-name",
+						Region:           "some-region",
+						SecurityGroup:    "some-security-group",
+					}
+				})
+				It("returns an error when it cannot build the job manifest", func() {
+					_, _, err := manifestBuilder.Build(manifestProperties)
+					Expect(err).To(HaveOccurred())
+				})
 			})
 		})
 	})

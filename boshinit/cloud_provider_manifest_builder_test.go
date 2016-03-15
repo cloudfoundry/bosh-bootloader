@@ -1,21 +1,34 @@
 package boshinit_test
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 )
 
 var _ = Describe("CloudProviderManifestBuilder", func() {
-	var cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
+	var (
+		cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
+		uuidGenerator                *fakes.UUIDGenerator
+	)
 
 	BeforeEach(func() {
-		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder()
+		uuidGenerator = &fakes.UUIDGenerator{}
+		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(uuidGenerator)
 	})
 
 	Describe("Build", func() {
+		BeforeEach(func() {
+			uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{
+				{String: "fake-randomly-generated-password"},
+			}
+		})
+
 		It("returns all cloud provider fields for manifest", func() {
-			cloudProvider := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
+			cloudProvider, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -23,6 +36,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				Region:          "some-region",
 				SecurityGroup:   "some-security-group",
 			})
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudProvider).To(Equal(boshinit.CloudProvider{
 				Template: boshinit.Template{
@@ -37,7 +51,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 					PrivateKey: "./bosh.pem",
 				},
 
-				MBus: "https://mbus:mbus-password@some-elastic-ip:6868",
+				MBus: "https://mbus:fake-randomly-generated-password@some-elastic-ip:6868",
 
 				Properties: boshinit.CloudProviderProperties{
 					AWS: boshinit.AWSProperties{
@@ -49,7 +63,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 					},
 
 					Agent: boshinit.AgentProperties{
-						MBus: "https://mbus:mbus-password@0.0.0.0:6868",
+						MBus: "https://mbus:fake-randomly-generated-password@0.0.0.0:6868",
 					},
 
 					Blobstore: boshinit.BlobstoreProperties{
@@ -60,6 +74,24 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 					NTP: []string{"0.pool.ntp.org", "1.pool.ntp.org"},
 				},
 			}))
+		})
+
+		Context("when uuidGenerator cannot generated a uuid", func() {
+			BeforeEach(func() {
+				uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{{Error: fmt.Errorf("foo")}}
+			})
+
+			It("forwards the error", func() {
+				_, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("foo"))
+			})
+		})
+
+		Context("when bbl is run a second time", func() {
+			It("doesn't regenerate the message bus password", func() {
+
+			})
 		})
 	})
 })

@@ -1,68 +1,95 @@
 package boshinit
 
-type JobPropertiesManifestBuilder struct{}
+import "fmt"
 
-func NewJobPropertiesManifestBuilder() JobPropertiesManifestBuilder {
-	return JobPropertiesManifestBuilder{}
+type JobPropertiesManifestBuilder struct {
+	natsPassword              string
+	redisPassword             string
+	postgresPassword          string
+	registryPassword          string
+	blobstoreDirectorPassword string
+	blobstoreAgentPassword    string
+	hmPassword                string
 }
 
-func (JobPropertiesManifestBuilder) NATS() NATSJobProperties {
+func NewJobPropertiesManifestBuilder(natsPassword, redisPassword, postgresPassword, registryPassword, blobstoreDirectorPassword, blobstoreAgentPassword, hmPassword string) JobPropertiesManifestBuilder {
+	return JobPropertiesManifestBuilder{
+		natsPassword:              natsPassword,
+		redisPassword:             redisPassword,
+		postgresPassword:          postgresPassword,
+		registryPassword:          registryPassword,
+		blobstoreDirectorPassword: blobstoreDirectorPassword,
+		blobstoreAgentPassword:    blobstoreAgentPassword,
+		hmPassword:                hmPassword,
+	}
+}
+
+func (j JobPropertiesManifestBuilder) NATS() NATSJobProperties {
 	return NATSJobProperties{
 		Address:  "127.0.0.1",
 		User:     "nats",
-		Password: "nats-password",
+		Password: j.natsPassword,
 	}
 }
 
-func (JobPropertiesManifestBuilder) Redis() RedisJobProperties {
+func (j JobPropertiesManifestBuilder) Redis() RedisJobProperties {
 	return RedisJobProperties{
 		ListenAddress: "127.0.0.1",
 		Address:       "127.0.0.1",
-		Password:      "redis-password",
+		Password:      j.redisPassword,
 	}
 }
 
-func (JobPropertiesManifestBuilder) Registry() RegistryJobProperties {
-	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
+func (j JobPropertiesManifestBuilder) Postgres() PostgresProperties {
+	return PostgresProperties{
+		ListenAddress: "127.0.0.1",
+		Host:          "127.0.0.1",
+		User:          "postgres",
+		Password:      j.postgresPassword,
+		Database:      "bosh",
+		Adapter:       "postgres",
+	}
+}
+
+func (j JobPropertiesManifestBuilder) Registry() RegistryJobProperties {
 	return RegistryJobProperties{
 		Address:  "10.0.0.6",
 		Host:     "10.0.0.6",
 		Username: "admin",
-		Password: "admin",
+		Password: j.registryPassword,
 		Port:     25777,
-		DB:       sharedPropertiesManifestBuilder.Postgres(),
+		DB:       j.Postgres(),
 		HTTP: HTTPProperties{
 			User:     "admin",
-			Password: "admin",
+			Password: j.registryPassword,
 			Port:     25777,
 		},
 	}
 }
 
-func (JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
+func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 	return BlobstoreJobProperties{
 		Address:  "10.0.0.6",
 		Port:     25250,
 		Provider: "dav",
 		Director: Credentials{
 			User:     "director",
-			Password: "director-password",
+			Password: j.blobstoreDirectorPassword,
 		},
 		Agent: Credentials{
 			User:     "agent",
-			Password: "agent-password",
+			Password: j.blobstoreAgentPassword,
 		},
 	}
 }
 
 func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProperties) DirectorJobProperties {
-	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 	return DirectorJobProperties{
 		Address:    "127.0.0.1",
 		Name:       "my-bosh",
 		CPIJob:     "aws_cpi",
 		MaxThreads: 10,
-		DB:         sharedPropertiesManifestBuilder.Postgres(),
+		DB:         j.Postgres(),
 		UserManagement: UserManagementProperties{
 			Provider: "local",
 			Local: LocalProperties{
@@ -73,7 +100,7 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 					},
 					{
 						Name:     "hm",
-						Password: "hm-password",
+						Password: j.hmPassword,
 					},
 				},
 			},
@@ -85,18 +112,18 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 	}
 }
 
-func (JobPropertiesManifestBuilder) HM() HMJobProperties {
+func (j JobPropertiesManifestBuilder) HM() HMJobProperties {
 	return HMJobProperties{
 		DirectorAccount: Credentials{
 			User:     "hm",
-			Password: "hm-password",
+			Password: j.hmPassword,
 		},
 		ResurrectorEnabled: true,
 	}
 }
 
-func (JobPropertiesManifestBuilder) Agent() AgentProperties {
+func (j JobPropertiesManifestBuilder) Agent() AgentProperties {
 	return AgentProperties{
-		MBus: "nats://nats:nats-password@10.0.0.6:4222",
+		MBus: fmt.Sprintf("nats://nats:%s@10.0.0.6:4222", j.natsPassword),
 	}
 }

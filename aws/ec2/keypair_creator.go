@@ -6,20 +6,22 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type guidGenerator func() (string, error)
+type guidGenerator interface {
+	Generate() (string, error)
+}
 
 type KeyPairCreator struct {
-	generateGUID guidGenerator
+	guidGenerator guidGenerator
 }
 
 func NewKeyPairCreator(guidGenerator guidGenerator) KeyPairCreator {
 	return KeyPairCreator{
-		generateGUID: guidGenerator,
+		guidGenerator: guidGenerator,
 	}
 }
 
 func (c KeyPairCreator) Create(client Client) (KeyPair, error) {
-	guid, err := c.generateGUID()
+	guid, err := c.guidGenerator.Generate()
 	if err != nil {
 		return KeyPair{}, err
 	}

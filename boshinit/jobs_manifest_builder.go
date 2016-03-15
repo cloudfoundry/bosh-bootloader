@@ -1,14 +1,62 @@
 package boshinit
 
-type JobsManifestBuilder struct{}
-
-func NewJobsManifestBuilder() JobsManifestBuilder {
-	return JobsManifestBuilder{}
+type JobsManifestBuilder struct {
+	uuidGenerator UUIDGenerator
 }
 
-func (r JobsManifestBuilder) Build(manifestProperties ManifestProperties) []Job {
-	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder()
+func NewJobsManifestBuilder(uuidGenerator UUIDGenerator) JobsManifestBuilder {
+	return JobsManifestBuilder{
+		uuidGenerator: uuidGenerator,
+	}
+}
+
+func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
+
+	natsPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	redisPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	postgresPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	registryPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	blobstoreDirectorPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	blobstoreAgentPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	hmPassword, err := j.uuidGenerator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder(
+		natsPassword,
+		redisPassword,
+		postgresPassword,
+		registryPassword,
+		blobstoreDirectorPassword,
+		blobstoreAgentPassword,
+		hmPassword,
+	)
 
 	return []Job{
 		{
@@ -43,7 +91,7 @@ func (r JobsManifestBuilder) Build(manifestProperties ManifestProperties) []Job 
 			Properties: JobProperties{
 				NATS:      jobPropertiesManifestBuilder.NATS(),
 				Redis:     jobPropertiesManifestBuilder.Redis(),
-				Postgres:  sharedPropertiesManifestBuilder.Postgres(),
+				Postgres:  jobPropertiesManifestBuilder.Postgres(),
 				Registry:  jobPropertiesManifestBuilder.Registry(),
 				Blobstore: jobPropertiesManifestBuilder.Blobstore(),
 				Director:  jobPropertiesManifestBuilder.Director(manifestProperties),
@@ -53,5 +101,5 @@ func (r JobsManifestBuilder) Build(manifestProperties ManifestProperties) []Job 
 				NTP:       sharedPropertiesManifestBuilder.NTP(),
 			},
 		},
-	}
+	}, nil
 }
