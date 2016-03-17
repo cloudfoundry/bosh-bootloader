@@ -27,6 +27,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			cloudFormationClient  *fakes.CloudFormationClient
 			ec2Client             *fakes.EC2Client
 			clientProvider        *fakes.ClientProvider
+			passwordGenerator     *fakes.PasswordGenerator
 			incomingState         storage.State
 			globalFlags           commands.GlobalFlags
 		)
@@ -62,6 +63,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
+			passwordGenerator = &fakes.PasswordGenerator{}
+			passwordGenerator.GenerateCall.Returns.Password = "some-generated-director-password"
+
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
 			}
@@ -86,7 +90,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				},
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer)
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, passwordGenerator)
 		})
 
 		It("syncs the keypair", func() {
@@ -132,6 +136,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(unsupported.BOSHDeployInput{
+				DirectorUsername: "admin",
+				DirectorPassword: "some-generated-director-password",
 				State: boshinit.State{
 					"key": "value",
 				},
@@ -174,6 +180,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						PublicKey:  "some-public-key",
 					},
 					BOSH: &storage.BOSH{
+						DirectorPassword:       "some-director-password",
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
 						State: map[string]interface{}{
@@ -234,6 +241,28 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
 							"updated-key": "updated-value",
 						}))
+					})
+				})
+
+				Context("when there are no director credentials", func() {
+					It("deploys with randomized director credentials", func() {
+						incomingState.BOSH = nil
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("admin"))
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorPassword).To(Equal("some-generated-director-password"))
+						Expect(state.BOSH.DirectorPassword).To(Equal("some-generated-director-password"))
+					})
+				})
+
+				Context("when there are director credentials", func() {
+					It("uses the old credentials", func() {
+						_, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("admin"))
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorPassword).To(Equal("some-director-password"))
 					})
 				})
 
@@ -332,10 +361,16 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer)
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, passwordGenerator)
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot deploy bosh"))
+			})
+
+			It("returns an error when it cannot generate a password for the bosh director", func() {
+				passwordGenerator.GenerateCall.Returns.Error = errors.New("cannot generate password")
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("cannot generate password"))
 			})
 		})
 	})

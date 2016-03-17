@@ -84,6 +84,8 @@ var _ = Describe("BoshDeployer", func() {
 	Describe("Deploy", func() {
 		It("deploys bosh and returns a bosh output", func() {
 			boshOutput, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
+				DirectorUsername: "some-director",
+				DirectorPassword: "some-password",
 				State: boshinit.State{
 					"key": "value",
 				},
@@ -96,8 +98,8 @@ var _ = Describe("BoshDeployer", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(boshinit.ManifestProperties{
-				DirectorUsername: "admin",
-				DirectorPassword: "admin",
+				DirectorUsername: "some-director",
+				DirectorPassword: "some-password",
 				SubnetID:         "subnet-12345",
 				AvailabilityZone: "some-az",
 				ElasticIP:        "some-elastic-ip",

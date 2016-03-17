@@ -17,12 +17,14 @@ type BOSHDeployer struct {
 }
 
 type BOSHDeployInput struct {
-	State       boshinit.State
-	Stack       cloudformation.Stack
-	AWSRegion   string
-	SSLKeyPair  ssl.KeyPair
-	EC2KeyPair  ec2.KeyPair
-	Credentials boshinit.InternalCredentials
+	DirectorUsername string
+	DirectorPassword string
+	State            boshinit.State
+	Stack            cloudformation.Stack
+	AWSRegion        string
+	SSLKeyPair       ssl.KeyPair
+	EC2KeyPair       ec2.KeyPair
+	Credentials      boshinit.InternalCredentials
 }
 
 type BOSHDeployOutput struct {
@@ -53,8 +55,8 @@ func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder, runner boshInitRun
 
 func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
 	manifest, manifestProperties, err := b.manifestBuilder.Build(boshinit.ManifestProperties{
-		DirectorUsername: "admin",
-		DirectorPassword: "admin",
+		DirectorUsername: input.DirectorUsername,
+		DirectorPassword: input.DirectorPassword,
 		SubnetID:         input.Stack.Outputs["BOSHSubnet"],
 		AvailabilityZone: input.Stack.Outputs["BOSHSubnetAZ"],
 		ElasticIP:        input.Stack.Outputs["BOSHEIP"],

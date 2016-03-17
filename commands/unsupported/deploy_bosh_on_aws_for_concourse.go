@@ -29,19 +29,25 @@ type boshDeployer interface {
 	Deploy(BOSHDeployInput) (BOSHDeployOutput, error)
 }
 
+type passwordGenerator interface {
+	Generate() (string, error)
+}
+
 type DeployBOSHOnAWSForConcourse struct {
 	infrastructureCreator infrastructureCreator
 	keyPairSynchronizer   keyPairSynchronizer
 	awsClientProvider     awsClientProvider
 	boshDeployer          boshDeployer
+	passwordGenerator     passwordGenerator
 }
 
-func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer, passwordGenerator passwordGenerator) DeployBOSHOnAWSForConcourse {
 	return DeployBOSHOnAWSForConcourse{
 		infrastructureCreator: infrastructureCreator,
 		keyPairSynchronizer:   keyPairSynchronizer,
 		awsClientProvider:     awsClientProvider,
 		boshDeployer:          boshDeployer,
+		passwordGenerator:     passwordGenerator,
 	}
 }
 
@@ -92,19 +98,30 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		DirectorSSLKeyPair: ssl.KeyPair{},
 		BOSHInitState:      boshinit.State{},
 	}
+	var directorPassword string
 	if state.BOSH != nil {
 		boshOutput.DirectorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
 		boshOutput.DirectorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
 		if state.BOSH.State != nil {
 			boshOutput.BOSHInitState = state.BOSH.State
 		}
+		directorPassword = state.BOSH.DirectorPassword
+	}
+
+	if directorPassword == "" {
+		directorPassword, err = d.passwordGenerator.Generate()
+		if err != nil {
+			return state, err
+		}
 	}
 
 	boshOutput, err = d.boshDeployer.Deploy(BOSHDeployInput{
-		State:      boshOutput.BOSHInitState,
-		Stack:      stack,
-		AWSRegion:  state.AWS.Region,
-		SSLKeyPair: boshOutput.DirectorSSLKeyPair,
+		DirectorUsername: "admin",
+		DirectorPassword: directorPassword,
+		State:            boshOutput.BOSHInitState,
+		Stack:            stack,
+		AWSRegion:        state.AWS.Region,
+		SSLKeyPair:       boshOutput.DirectorSSLKeyPair,
 		EC2KeyPair: ec2.KeyPair{
 			Name:       state.KeyPair.Name,
 			PrivateKey: []byte(state.KeyPair.PrivateKey),
@@ -117,6 +134,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 
 	if state.BOSH == nil {
 		state.BOSH = &storage.BOSH{
+			DirectorPassword:       directorPassword,
 			DirectorSSLCertificate: string(boshOutput.DirectorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(boshOutput.DirectorSSLKeyPair.PrivateKey),
 			Credentials:            &boshOutput.Credentials,

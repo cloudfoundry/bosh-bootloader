@@ -46,6 +46,7 @@ var _ = Describe("Store", func() {
 					PublicKey:  "some-public",
 				},
 				BOSH: &storage.BOSH{
+					DirectorPassword:       "some-director-password",
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
 					State: map[string]interface{}{
@@ -80,6 +81,7 @@ var _ = Describe("Store", func() {
 					"publicKey": "some-public"
 				},
 				"bosh":{
+					"directorPassword": "some-director-password",
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
 					"credentials": {

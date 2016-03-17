@@ -119,8 +119,14 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("step: generating bosh-init manifest"))
 				Expect(stdout).To(ContainSubstring("step: deploying bosh director"))
 				Expect(stdout).To(ContainSubstring("Director Address:  https://192.168.1.1:25555"))
-				Expect(stdout).To(ContainSubstring("Director Username: admin"))
-				Expect(stdout).To(ContainSubstring("Director Password: admin"))
+			})
+
+			It("prints out randomized bosh director credentials", func() {
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+
+				stdout := session.Out.Contents()
+				Expect(stdout).To(MatchRegexp("Director Username: admin"))
+				Expect(stdout).To(MatchRegexp(`Director Password: \w{15}`))
 			})
 
 			It("invokes bosh-init", func() {
