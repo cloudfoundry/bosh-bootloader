@@ -2,6 +2,8 @@ package boshinit
 
 import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
+const PASSWORD_LENGTH = 15
+
 type Manifest struct {
 	Name          string         `yaml:"name"`
 	Releases      []Release      `yaml:"releases"`

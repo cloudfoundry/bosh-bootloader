@@ -1,8 +1,6 @@
 package unsupported
 
 import (
-	"fmt"
-
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
@@ -36,7 +34,7 @@ type boshDeployer interface {
 }
 
 type stringGenerator interface {
-	Generate(int) (string, error)
+	Generate(string, int) (string, error)
 }
 
 type DeployBOSHOnAWSForConcourse struct {
@@ -119,19 +117,17 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	}
 
 	if directorUsername == "" {
-		directorUsername, err = d.stringGenerator.Generate(USERNAME_LENGTH)
+		directorUsername, err = d.stringGenerator.Generate(USERNAME_PREFIX, USERNAME_LENGTH)
 		if err != nil {
 			return state, err
 		}
-		directorUsername = fmt.Sprintf("%s%s", USERNAME_PREFIX, directorUsername)
 	}
 
 	if directorPassword == "" {
-		directorPassword, err = d.stringGenerator.Generate(PASSWORD_LENGTH)
+		directorPassword, err = d.stringGenerator.Generate(PASSWORD_PREFIX, PASSWORD_LENGTH)
 		if err != nil {
 			return state, err
 		}
-		directorPassword = fmt.Sprintf("%s%s", PASSWORD_PREFIX, directorPassword)
 	}
 
 	boshOutput, err = d.boshDeployer.Deploy(BOSHDeployInput{

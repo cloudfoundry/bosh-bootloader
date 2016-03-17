@@ -51,9 +51,9 @@ func main() {
 
 	boshInitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
 	boshInitDeployCommand := boshInitCommandBuilder.DeployCommand()
-	cloudProviderManifestBuilder := boshinit.NewCloudProviderManifestBuilder(uuidGenerator)
-	jobsManifestBuilder := boshinit.NewJobsManifestBuilder(uuidGenerator)
-	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+	cloudProviderManifestBuilder := boshinit.NewCloudProviderManifestBuilder(stringGenerator)
+	jobsManifestBuilder := boshinit.NewJobsManifestBuilder(stringGenerator)
+	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
 	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 

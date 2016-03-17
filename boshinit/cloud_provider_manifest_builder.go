@@ -2,14 +2,16 @@ package boshinit
 
 import "fmt"
 
+const MBUS_PASSWORD_PREFIX = "mbus-"
+
 type CloudProviderManifestBuilder struct {
-	uuidGenerator                   UUIDGenerator
+	stringGenerator                 stringGenerator
 	sharedPropertiesManifestBuilder SharedPropertiesManifestBuilder
 }
 
-func NewCloudProviderManifestBuilder(uuidGenerator UUIDGenerator) CloudProviderManifestBuilder {
+func NewCloudProviderManifestBuilder(stringGenerator stringGenerator) CloudProviderManifestBuilder {
 	return CloudProviderManifestBuilder{
-		uuidGenerator: uuidGenerator,
+		stringGenerator: stringGenerator,
 	}
 }
 
@@ -19,7 +21,7 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 	password := manifestProperties.Credentials.MBusPassword
 	if password == "" {
 		var err error
-		password, err = c.uuidGenerator.Generate()
+		password, err = c.stringGenerator.Generate(MBUS_PASSWORD_PREFIX, PASSWORD_LENGTH)
 		if err != nil {
 			return CloudProvider{}, ManifestProperties{}, err
 		}

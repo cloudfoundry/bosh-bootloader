@@ -2,6 +2,7 @@ package unsupported_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
@@ -64,7 +65,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
 			stringGenerator = &fakes.StringGenerator{}
-			stringGenerator.GenerateCall.Returns.String = "some-random-string"
+			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+				return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
+			}
 
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
@@ -379,6 +382,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			})
 
 			It("returns an error when it cannot generate a string for the bosh director credentials", func() {
+				stringGenerator.GenerateCall.Stub = nil
 				stringGenerator.GenerateCall.Returns.Error = errors.New("cannot generate string")
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot generate string"))

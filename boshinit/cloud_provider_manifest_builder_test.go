@@ -12,19 +12,17 @@ import (
 var _ = Describe("CloudProviderManifestBuilder", func() {
 	var (
 		cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
-		uuidGenerator                *fakes.UUIDGenerator
+		stringGenerator              *fakes.StringGenerator
 	)
 
 	BeforeEach(func() {
-		uuidGenerator = &fakes.UUIDGenerator{}
-		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(uuidGenerator)
+		stringGenerator = &fakes.StringGenerator{}
+		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(stringGenerator)
 	})
 
 	Describe("Build", func() {
 		BeforeEach(func() {
-			uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{
-				{String: "fake-randomly-generated-password"},
-			}
+			stringGenerator.GenerateCall.Returns.String = "fake-randomly-generated-password"
 		})
 
 		It("returns all cloud provider fields for manifest", func() {
@@ -101,9 +99,9 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 			Expect(manifestProperties.Credentials.MBusPassword).To(Equal("some-persisted-mbus-password"))
 		})
 
-		Context("when uuidGenerator cannot generated a uuid", func() {
+		Context("when string generator cannot generated a string", func() {
 			BeforeEach(func() {
-				uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{{Error: fmt.Errorf("foo")}}
+				stringGenerator.GenerateCall.Returns.Error = fmt.Errorf("foo")
 			})
 
 			It("forwards the error", func() {

@@ -19,7 +19,7 @@ var _ = Describe("ManifestBuilder", func() {
 	var (
 		logger                       *fakes.Logger
 		sslKeyPairGenerator          *fakes.SSLKeyPairGenerator
-		uuidGenerator                *fakes.UUIDGenerator
+		stringGenerator              *fakes.StringGenerator
 		manifestBuilder              boshinit.ManifestBuilder
 		manifestProperties           boshinit.ManifestProperties
 		cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
@@ -29,11 +29,11 @@ var _ = Describe("ManifestBuilder", func() {
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		sslKeyPairGenerator = &fakes.SSLKeyPairGenerator{}
-		uuidGenerator = &fakes.UUIDGenerator{}
-		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(uuidGenerator)
-		jobsManifestBuilder = boshinit.NewJobsManifestBuilder(uuidGenerator)
+		stringGenerator = &fakes.StringGenerator{}
+		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(stringGenerator)
+		jobsManifestBuilder = boshinit.NewJobsManifestBuilder(stringGenerator)
 
-		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 		manifestProperties = boshinit.ManifestProperties{
 			DirectorUsername: "bosh-username",
 			DirectorPassword: "bosh-password",
@@ -47,15 +47,8 @@ var _ = Describe("ManifestBuilder", func() {
 			SecurityGroup:    "some-security-group",
 		}
 
-		uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{
-			{String: "randomly-generated-mbus-password"},
-			{String: "randomly-generated-nats-password"},
-			{String: "randomly-generated-redis-password"},
-			{String: "randomly-generated-postgres-password"},
-			{String: "randomly-generated-registry-password"},
-			{String: "randomly-generated-blobstore-director-password"},
-			{String: "randomly-generated-blobstore-agent-password"},
-			{String: "randomly-generated-hm-password"},
+		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+			return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
 		}
 	})
 
@@ -90,7 +83,7 @@ var _ = Describe("ManifestBuilder", func() {
 			}))
 			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("52.0.112.12"))
-			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:randomly-generated-mbus-password@52.0.112.12:6868"))
+			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-some-random-string@52.0.112.12:6868"))
 
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
@@ -112,14 +105,14 @@ var _ = Describe("ManifestBuilder", func() {
 						PrivateKey:  []byte(privateKey),
 					},
 					Credentials: boshinit.InternalCredentials{
-						MBusPassword:              "randomly-generated-mbus-password",
-						NatsPassword:              "randomly-generated-nats-password",
-						RedisPassword:             "randomly-generated-redis-password",
-						PostgresPassword:          "randomly-generated-postgres-password",
-						RegistryPassword:          "randomly-generated-registry-password",
-						BlobstoreDirectorPassword: "randomly-generated-blobstore-director-password",
-						BlobstoreAgentPassword:    "randomly-generated-blobstore-agent-password",
-						HMPassword:                "randomly-generated-hm-password",
+						MBusPassword:              "mbus-some-random-string",
+						NatsPassword:              "nats-some-random-string",
+						RedisPassword:             "redis-some-random-string",
+						PostgresPassword:          "postgres-some-random-string",
+						RegistryPassword:          "registry-some-random-string",
+						BlobstoreDirectorPassword: "blobstore-director-some-random-string",
+						BlobstoreAgentPassword:    "blobstore-agent-some-random-string",
+						HMPassword:                "hm-some-random-string",
 					},
 				},
 			))
@@ -146,43 +139,43 @@ var _ = Describe("ManifestBuilder", func() {
 		It("stores the randomly generated passwords into manifest properties", func() {
 			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(uuidGenerator.GenerateCall.CallCount).To(Equal(8))
+			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(8))
 			Expect(manifestProperties.Credentials).To(Equal(boshinit.InternalCredentials{
-				MBusPassword:              "randomly-generated-mbus-password",
-				NatsPassword:              "randomly-generated-nats-password",
-				RedisPassword:             "randomly-generated-redis-password",
-				PostgresPassword:          "randomly-generated-postgres-password",
-				RegistryPassword:          "randomly-generated-registry-password",
-				BlobstoreDirectorPassword: "randomly-generated-blobstore-director-password",
-				BlobstoreAgentPassword:    "randomly-generated-blobstore-agent-password",
-				HMPassword:                "randomly-generated-hm-password",
+				MBusPassword:              "mbus-some-random-string",
+				NatsPassword:              "nats-some-random-string",
+				RedisPassword:             "redis-some-random-string",
+				PostgresPassword:          "postgres-some-random-string",
+				RegistryPassword:          "registry-some-random-string",
+				BlobstoreDirectorPassword: "blobstore-director-some-random-string",
+				BlobstoreAgentPassword:    "blobstore-agent-some-random-string",
+				HMPassword:                "hm-some-random-string",
 			}))
 		})
 
 		It("does not regenerate new random passwords if they already exist", func() {
 			manifestProperties.Credentials = boshinit.InternalCredentials{
-				MBusPassword:              "randomly-generated-mbus-password",
-				NatsPassword:              "randomly-generated-nats-password",
-				RedisPassword:             "randomly-generated-redis-password",
-				PostgresPassword:          "randomly-generated-postgres-password",
-				RegistryPassword:          "randomly-generated-registry-password",
-				BlobstoreDirectorPassword: "randomly-generated-blobstore-director-password",
-				BlobstoreAgentPassword:    "randomly-generated-blobstore-agent-password",
-				HMPassword:                "randomly-generated-hm-password",
+				MBusPassword:              "mbus-some-persisted-string",
+				NatsPassword:              "nats-some-persisted-string",
+				RedisPassword:             "redis-some-persisted-string",
+				PostgresPassword:          "postgres-some-persisted-string",
+				RegistryPassword:          "registry-some-persisted-string",
+				BlobstoreDirectorPassword: "blobstore-director-some-persisted-string",
+				BlobstoreAgentPassword:    "blobstore-agent-some-persisted-string",
+				HMPassword:                "hm-some-persisted-string",
 			}
 
 			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(uuidGenerator.GenerateCall.CallCount).To(Equal(0))
+			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(0))
 			Expect(manifestProperties.Credentials).To(Equal(boshinit.InternalCredentials{
-				MBusPassword:              "randomly-generated-mbus-password",
-				NatsPassword:              "randomly-generated-nats-password",
-				RedisPassword:             "randomly-generated-redis-password",
-				PostgresPassword:          "randomly-generated-postgres-password",
-				RegistryPassword:          "randomly-generated-registry-password",
-				BlobstoreDirectorPassword: "randomly-generated-blobstore-director-password",
-				BlobstoreAgentPassword:    "randomly-generated-blobstore-agent-password",
-				HMPassword:                "randomly-generated-hm-password",
+				MBusPassword:              "mbus-some-persisted-string",
+				NatsPassword:              "nats-some-persisted-string",
+				RedisPassword:             "redis-some-persisted-string",
+				PostgresPassword:          "postgres-some-persisted-string",
+				RegistryPassword:          "registry-some-persisted-string",
+				BlobstoreDirectorPassword: "blobstore-director-some-persisted-string",
+				BlobstoreAgentPassword:    "blobstore-agent-some-persisted-string",
+				HMPassword:                "hm-some-persisted-string",
 			}))
 		})
 
@@ -198,7 +191,7 @@ var _ = Describe("ManifestBuilder", func() {
 				BeforeEach(func() {
 					fakeCloudProviderManifestBuilder := &fakes.CloudProviderManifestBuilder{}
 					fakeCloudProviderManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
-					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
+					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
 					manifestProperties = boshinit.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",
@@ -222,7 +215,7 @@ var _ = Describe("ManifestBuilder", func() {
 				BeforeEach(func() {
 					fakeJobsManifestBuilder := &fakes.JobsManifestBuilder{}
 					fakeJobsManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
-					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, uuidGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
+					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
 					manifestProperties = boshinit.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",

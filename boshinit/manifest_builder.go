@@ -5,7 +5,7 @@ import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 type ManifestBuilder struct {
 	logger                       logger
 	sslKeyPairGenerator          sslKeyPairGenerator
-	uuidGenerator                UUIDGenerator
+	stringGenerator              stringGenerator
 	cloudProviderManifestBuilder cloudProviderManifestBuilder
 	jobsManifestBuilder          jobsManifestBuilder
 }
@@ -44,8 +44,8 @@ type sslKeyPairGenerator interface {
 	Generate(commonName string) (ssl.KeyPair, error)
 }
 
-type UUIDGenerator interface {
-	Generate() (string, error)
+type stringGenerator interface {
+	Generate(string, int) (string, error)
 }
 
 type cloudProviderManifestBuilder interface {
@@ -56,11 +56,11 @@ type jobsManifestBuilder interface {
 	Build(ManifestProperties) ([]Job, ManifestProperties, error)
 }
 
-func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator, uuidGenerator UUIDGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {
+func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator, stringGenerator stringGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {
 	return ManifestBuilder{
 		logger:                       logger,
 		sslKeyPairGenerator:          sslKeyPairGenerator,
-		uuidGenerator:                uuidGenerator,
+		stringGenerator:              stringGenerator,
 		cloudProviderManifestBuilder: cloudProviderManifestBuilder,
 		jobsManifestBuilder:          jobsManifestBuilder,
 	}

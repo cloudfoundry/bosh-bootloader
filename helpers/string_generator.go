@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"crypto/rand"
+	"fmt"
 	"io"
 	"math/big"
 )
@@ -16,7 +17,7 @@ func NewStringGenerator(reader io.Reader) StringGenerator {
 	}
 }
 
-func (s StringGenerator) Generate(length int) (string, error) {
+func (s StringGenerator) Generate(prefix string, length int) (string, error) {
 	var alphaNumericRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	randomString := make([]rune, length)
 	for i := range randomString {
@@ -26,5 +27,5 @@ func (s StringGenerator) Generate(length int) (string, error) {
 		}
 		randomString[i] = alphaNumericRunes[charIndex.Int64()]
 	}
-	return string(randomString), nil
+	return fmt.Sprintf("%s%s", prefix, string(randomString)), nil
 }

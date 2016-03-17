@@ -1,12 +1,12 @@
 package boshinit
 
 type JobsManifestBuilder struct {
-	uuidGenerator UUIDGenerator
+	stringGenerator stringGenerator
 }
 
-func NewJobsManifestBuilder(uuidGenerator UUIDGenerator) JobsManifestBuilder {
+func NewJobsManifestBuilder(stringGenerator stringGenerator) JobsManifestBuilder {
 	return JobsManifestBuilder{
-		uuidGenerator: uuidGenerator,
+		stringGenerator: stringGenerator,
 	}
 }
 
@@ -75,54 +75,22 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 }
 
 func (j JobsManifestBuilder) generateInternalPasswords(manifestProperties ManifestProperties) (ManifestProperties, error) {
-	var err error
+	var passwords = map[string]*string{}
+	passwords["nats-"] = &manifestProperties.Credentials.NatsPassword
+	passwords["redis-"] = &manifestProperties.Credentials.RedisPassword
+	passwords["postgres-"] = &manifestProperties.Credentials.PostgresPassword
+	passwords["registry-"] = &manifestProperties.Credentials.RegistryPassword
+	passwords["blobstore-director-"] = &manifestProperties.Credentials.BlobstoreDirectorPassword
+	passwords["blobstore-agent-"] = &manifestProperties.Credentials.BlobstoreAgentPassword
+	passwords["hm-"] = &manifestProperties.Credentials.HMPassword
 
-	if manifestProperties.Credentials.NatsPassword == "" {
-		manifestProperties.Credentials.NatsPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
-		}
-	}
-
-	if manifestProperties.Credentials.RedisPassword == "" {
-		manifestProperties.Credentials.RedisPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
-		}
-	}
-
-	if manifestProperties.Credentials.PostgresPassword == "" {
-		manifestProperties.Credentials.PostgresPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
-		}
-	}
-
-	if manifestProperties.Credentials.RegistryPassword == "" {
-		manifestProperties.Credentials.RegistryPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
-		}
-	}
-
-	if manifestProperties.Credentials.BlobstoreDirectorPassword == "" {
-		manifestProperties.Credentials.BlobstoreDirectorPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
-		}
-	}
-
-	if manifestProperties.Credentials.BlobstoreAgentPassword == "" {
-		manifestProperties.Credentials.BlobstoreAgentPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
-		}
-	}
-
-	if manifestProperties.Credentials.HMPassword == "" {
-		manifestProperties.Credentials.HMPassword, err = j.uuidGenerator.Generate()
-		if err != nil {
-			return ManifestProperties{}, err
+	for key, value := range passwords {
+		if *value == "" {
+			generatedString, err := j.stringGenerator.Generate(key, PASSWORD_LENGTH)
+			if err != nil {
+				return manifestProperties, err
+			}
+			*value = generatedString
 		}
 	}
 
