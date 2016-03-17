@@ -97,15 +97,18 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	boshOutput := BOSHDeployOutput{
 		DirectorSSLKeyPair: ssl.KeyPair{},
 		BOSHInitState:      boshinit.State{},
+		Credentials:        boshinit.InternalCredentials{},
 	}
 	var directorPassword string
 	if state.BOSH != nil {
 		boshOutput.DirectorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
 		boshOutput.DirectorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
+		boshOutput.Credentials = state.BOSH.Credentials
 		if state.BOSH.State != nil {
 			boshOutput.BOSHInitState = state.BOSH.State
 		}
 		directorPassword = state.BOSH.DirectorPassword
+
 	}
 
 	if directorPassword == "" {
@@ -127,6 +130,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			PrivateKey: []byte(state.KeyPair.PrivateKey),
 			PublicKey:  []byte(state.KeyPair.PublicKey),
 		},
+		Credentials: boshOutput.Credentials,
 	})
 	if err != nil {
 		return state, err
@@ -137,7 +141,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			DirectorPassword:       directorPassword,
 			DirectorSSLCertificate: string(boshOutput.DirectorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(boshOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            &boshOutput.Credentials,
+			Credentials:            boshOutput.Credentials,
 			State:                  boshOutput.BOSHInitState,
 		}
 	}

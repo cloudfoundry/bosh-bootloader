@@ -284,7 +284,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 						state, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.BOSH.Credentials).To(Equal(&boshinit.InternalCredentials{
+						Expect(state.BOSH.Credentials).To(Equal(boshinit.InternalCredentials{
 							MBusPassword:              "some-mbus-password",
 							NatsPassword:              "some-nats-password",
 							RedisPassword:             "some-redis-password",
@@ -297,9 +297,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					})
 
 					Context("when the bosh credentials exist in the state.json", func() {
-						It("returns the state with the same credentials", func() {
+						It("deploys with those credentials and returns the state with the same credentials", func() {
 							incomingState.BOSH = &storage.BOSH{
-								Credentials: &boshinit.InternalCredentials{
+								Credentials: boshinit.InternalCredentials{
 									MBusPassword:              "some-mbus-password",
 									NatsPassword:              "some-nats-password",
 									RedisPassword:             "some-redis-password",
@@ -313,7 +313,17 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 							state, err := command.Execute(globalFlags, incomingState)
 							Expect(err).NotTo(HaveOccurred())
-							Expect(state.BOSH.Credentials).To(Equal(&boshinit.InternalCredentials{
+							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(boshinit.InternalCredentials{
+								MBusPassword:              "some-mbus-password",
+								NatsPassword:              "some-nats-password",
+								RedisPassword:             "some-redis-password",
+								PostgresPassword:          "some-postgres-password",
+								RegistryPassword:          "some-registry-password",
+								BlobstoreDirectorPassword: "some-blobstore-director-password",
+								BlobstoreAgentPassword:    "some-blobstore-agent-password",
+								HMPassword:                "some-hm-password",
+							}))
+							Expect(state.BOSH.Credentials).To(Equal(boshinit.InternalCredentials{
 								MBusPassword:              "some-mbus-password",
 								NatsPassword:              "some-nats-password",
 								RedisPassword:             "some-redis-password",

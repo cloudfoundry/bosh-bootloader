@@ -142,7 +142,8 @@ var _ = Describe("bbl", func() {
 
 				session = deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
-				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value"}`))
+				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value","md5checksum":`))
+				Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
 			})
 		})
 

@@ -26,11 +26,11 @@ type AWS struct {
 }
 
 type BOSH struct {
-	DirectorPassword       string                        `json:"directorPassword"`
-	DirectorSSLCertificate string                        `json:"directorSSLCertificate"`
-	DirectorSSLPrivateKey  string                        `json:"directorSSLPrivateKey"`
-	Credentials            *boshinit.InternalCredentials `json:"credentials"`
-	State                  map[string]interface{}        `json:"state"`
+	DirectorPassword       string                       `json:"directorPassword"`
+	DirectorSSLCertificate string                       `json:"directorSSLCertificate"`
+	DirectorSSLPrivateKey  string                       `json:"directorSSLPrivateKey"`
+	Credentials            boshinit.InternalCredentials `json:"credentials"`
+	State                  map[string]interface{}       `json:"state"`
 }
 
 type State struct {

@@ -52,7 +52,7 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
-					Credentials: &boshinit.InternalCredentials{
+					Credentials: boshinit.InternalCredentials{
 						MBusPassword:              "some-mbus-password",
 						NatsPassword:              "some-nats-password",
 						RedisPassword:             "some-redis-password",
