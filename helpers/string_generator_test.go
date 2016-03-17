@@ -11,30 +11,30 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("PasswordGenerator", func() {
+var _ = Describe("StringGenerator", func() {
 	Describe("Generate", func() {
-		It("generates random 15 alphanumeric values", func() {
-			generator := helpers.NewPasswordGenerator(rand.Reader)
-			password, err := generator.Generate()
+		It("generates random alphanumeric values of a given length", func() {
+			generator := helpers.NewStringGenerator(rand.Reader)
+			randomString, err := generator.Generate(15)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(password).To(MatchRegexp(`\w{15}`))
+			Expect(randomString).To(MatchRegexp(`\w{15}`))
 
-			var passwords []string
+			var randomStrings []string
 			for i := 0; i < 10; i++ {
-				password, err := generator.Generate()
+				randomString, err := generator.Generate(15)
 				Expect(err).NotTo(HaveOccurred())
-				passwords = append(passwords, password)
+				randomStrings = append(randomStrings, randomString)
 			}
-			Expect(HasUniqueUUIDs(passwords)).To(BeTrue())
+			Expect(HasUniqueValues(randomStrings)).To(BeTrue())
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when the reader fails", func() {
 				reader := &fakes.Reader{}
-				generator := helpers.NewPasswordGenerator(reader)
+				generator := helpers.NewStringGenerator(reader)
 				reader.ReadCall.Returns.Error = errors.New("reader failed")
 
-				_, err := generator.Generate()
+				_, err := generator.Generate(1)
 				Expect(err).To(MatchError("reader failed"))
 			})
 		})

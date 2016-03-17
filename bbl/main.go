@@ -25,7 +25,7 @@ import (
 
 func main() {
 	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
-	passwordGenerator := helpers.NewPasswordGenerator(rand.Reader)
+	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 
 	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator)
@@ -60,7 +60,7 @@ func main() {
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, passwordGenerator),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err = app.Run(os.Args[1:])

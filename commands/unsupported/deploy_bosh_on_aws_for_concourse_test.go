@@ -27,7 +27,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			cloudFormationClient  *fakes.CloudFormationClient
 			ec2Client             *fakes.EC2Client
 			clientProvider        *fakes.ClientProvider
-			passwordGenerator     *fakes.PasswordGenerator
+			stringGenerator       *fakes.StringGenerator
 			incomingState         storage.State
 			globalFlags           commands.GlobalFlags
 		)
@@ -63,8 +63,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
-			passwordGenerator = &fakes.PasswordGenerator{}
-			passwordGenerator.GenerateCall.Returns.Password = "some-generated-director-password"
+			stringGenerator = &fakes.StringGenerator{}
+			stringGenerator.GenerateCall.Returns.String = "some-random-string"
 
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
@@ -90,7 +90,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				},
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, passwordGenerator)
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator)
 		})
 
 		It("syncs the keypair", func() {
@@ -136,8 +136,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(unsupported.BOSHDeployInput{
-				DirectorUsername: "admin",
-				DirectorPassword: "some-generated-director-password",
+				DirectorUsername: "user-some-random-string",
+				DirectorPassword: "p-some-random-string",
 				State: boshinit.State{
 					"key": "value",
 				},
@@ -180,6 +180,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						PublicKey:  "some-public-key",
 					},
 					BOSH: &storage.BOSH{
+						DirectorUsername:       "some-director-username",
 						DirectorPassword:       "some-director-password",
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
@@ -250,9 +251,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						state, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("admin"))
-						Expect(boshDeployer.DeployCall.Receives.Input.DirectorPassword).To(Equal("some-generated-director-password"))
-						Expect(state.BOSH.DirectorPassword).To(Equal("some-generated-director-password"))
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("user-some-random-string"))
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorPassword).To(Equal("p-some-random-string"))
+						Expect(state.BOSH.DirectorPassword).To(Equal("p-some-random-string"))
 					})
 				})
 
@@ -261,7 +262,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						_, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("admin"))
+						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("some-director-username"))
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorPassword).To(Equal("some-director-password"))
 					})
 				})
@@ -371,16 +372,16 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, passwordGenerator)
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator)
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot deploy bosh"))
 			})
 
-			It("returns an error when it cannot generate a password for the bosh director", func() {
-				passwordGenerator.GenerateCall.Returns.Error = errors.New("cannot generate password")
+			It("returns an error when it cannot generate a string for the bosh director credentials", func() {
+				stringGenerator.GenerateCall.Returns.Error = errors.New("cannot generate string")
 				_, err := command.Execute(globalFlags, incomingState)
-				Expect(err).To(MatchError("cannot generate password"))
+				Expect(err).To(MatchError("cannot generate string"))
 			})
 		})
 	})

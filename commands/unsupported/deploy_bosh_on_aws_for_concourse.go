@@ -1,6 +1,8 @@
 package unsupported
 
 import (
+	"fmt"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
@@ -11,6 +13,10 @@ import (
 )
 
 const STACKNAME = "concourse"
+const USERNAME_PREFIX = "user-"
+const USERNAME_LENGTH = 7
+const PASSWORD_PREFIX = "p-"
+const PASSWORD_LENGTH = 15
 
 type awsClientProvider interface {
 	CloudFormationClient(aws.Config) (cloudformation.Client, error)
@@ -29,8 +35,8 @@ type boshDeployer interface {
 	Deploy(BOSHDeployInput) (BOSHDeployOutput, error)
 }
 
-type passwordGenerator interface {
-	Generate() (string, error)
+type stringGenerator interface {
+	Generate(int) (string, error)
 }
 
 type DeployBOSHOnAWSForConcourse struct {
@@ -38,16 +44,16 @@ type DeployBOSHOnAWSForConcourse struct {
 	keyPairSynchronizer   keyPairSynchronizer
 	awsClientProvider     awsClientProvider
 	boshDeployer          boshDeployer
-	passwordGenerator     passwordGenerator
+	stringGenerator       stringGenerator
 }
 
-func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer, passwordGenerator passwordGenerator) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator) DeployBOSHOnAWSForConcourse {
 	return DeployBOSHOnAWSForConcourse{
 		infrastructureCreator: infrastructureCreator,
 		keyPairSynchronizer:   keyPairSynchronizer,
 		awsClientProvider:     awsClientProvider,
 		boshDeployer:          boshDeployer,
-		passwordGenerator:     passwordGenerator,
+		stringGenerator:       stringGenerator,
 	}
 }
 
@@ -99,6 +105,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		BOSHInitState:      boshinit.State{},
 		Credentials:        boshinit.InternalCredentials{},
 	}
+	var directorUsername string
 	var directorPassword string
 	if state.BOSH != nil {
 		boshOutput.DirectorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
@@ -107,19 +114,28 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		if state.BOSH.State != nil {
 			boshOutput.BOSHInitState = state.BOSH.State
 		}
+		directorUsername = state.BOSH.DirectorUsername
 		directorPassword = state.BOSH.DirectorPassword
-
 	}
 
-	if directorPassword == "" {
-		directorPassword, err = d.passwordGenerator.Generate()
+	if directorUsername == "" {
+		directorUsername, err = d.stringGenerator.Generate(USERNAME_LENGTH)
 		if err != nil {
 			return state, err
 		}
+		directorUsername = fmt.Sprintf("%s%s", USERNAME_PREFIX, directorUsername)
+	}
+
+	if directorPassword == "" {
+		directorPassword, err = d.stringGenerator.Generate(PASSWORD_LENGTH)
+		if err != nil {
+			return state, err
+		}
+		directorPassword = fmt.Sprintf("%s%s", PASSWORD_PREFIX, directorPassword)
 	}
 
 	boshOutput, err = d.boshDeployer.Deploy(BOSHDeployInput{
-		DirectorUsername: "admin",
+		DirectorUsername: directorUsername,
 		DirectorPassword: directorPassword,
 		State:            boshOutput.BOSHInitState,
 		Stack:            stack,
@@ -138,6 +154,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 
 	if state.BOSH == nil {
 		state.BOSH = &storage.BOSH{
+			DirectorUsername:       directorUsername,
 			DirectorPassword:       directorPassword,
 			DirectorSSLCertificate: string(boshOutput.DirectorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(boshOutput.DirectorSSLKeyPair.PrivateKey),

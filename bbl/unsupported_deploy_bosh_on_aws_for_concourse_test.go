@@ -125,8 +125,8 @@ var _ = Describe("bbl", func() {
 				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
 
 				stdout := session.Out.Contents()
-				Expect(stdout).To(MatchRegexp("Director Username: admin"))
-				Expect(stdout).To(MatchRegexp(`Director Password: \w{15}`))
+				Expect(stdout).To(MatchRegexp(`Director Username: user-\w{7}`))
+				Expect(stdout).To(MatchRegexp(`Director Password: p-\w{15}`))
 			})
 
 			It("invokes bosh-init", func() {

@@ -25,7 +25,7 @@ var _ = Describe("UUIDGenerator", func() {
 				Expect(err).NotTo(HaveOccurred())
 				uuids = append(uuids, uuid)
 			}
-			Expect(HasUniqueUUIDs(uuids)).To(BeTrue())
+			Expect(HasUniqueValues(uuids)).To(BeTrue())
 		})
 
 		Context("failure cases", func() {
@@ -41,12 +41,12 @@ var _ = Describe("UUIDGenerator", func() {
 	})
 })
 
-func HasUniqueUUIDs(uuids []string) bool {
-	values := make(map[string]struct{})
+func HasUniqueValues(values []string) bool {
+	valueMap := make(map[string]struct{})
 
-	for _, uuid := range uuids {
-		values[uuid] = struct{}{}
+	for _, value := range values {
+		valueMap[value] = struct{}{}
 	}
 
-	return len(values) == len(uuids)
+	return len(valueMap) == len(values)
 }
