@@ -18,13 +18,12 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 	BeforeEach(func() {
 		stringGenerator = &fakes.StringGenerator{}
 		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(stringGenerator)
+		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+			return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
+		}
 	})
 
 	Describe("Build", func() {
-		BeforeEach(func() {
-			stringGenerator.GenerateCall.Returns.String = "fake-randomly-generated-password"
-		})
-
 		It("returns all cloud provider fields for manifest", func() {
 			cloudProvider, _, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
@@ -48,7 +47,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 					PrivateKey: "./bosh.pem",
 				},
 
-				MBus: "https://mbus:fake-randomly-generated-password@some-elastic-ip:6868",
+				MBus: "https://mbus-user-some-random-string:mbus-some-random-string@some-elastic-ip:6868",
 
 				Properties: boshinit.CloudProviderProperties{
 					AWS: boshinit.AWSProperties{
@@ -60,7 +59,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 					},
 
 					Agent: boshinit.AgentProperties{
-						MBus: "https://mbus:fake-randomly-generated-password@0.0.0.0:6868",
+						MBus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868",
 					},
 
 					Blobstore: boshinit.BlobstoreProperties{
@@ -77,7 +76,8 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 			_, manifestProperties, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(manifestProperties.Credentials.MBusPassword).To(Equal("fake-randomly-generated-password"))
+			Expect(manifestProperties.Credentials.MBusUsername).To(Equal("mbus-user-some-random-string"))
+			Expect(manifestProperties.Credentials.MBusPassword).To(Equal("mbus-some-random-string"))
 		})
 
 		It("returns manifest and manifest properties with existing credentials", func() {
@@ -89,18 +89,20 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				Region:          "some-region",
 				SecurityGroup:   "some-security-group",
 				Credentials: boshinit.InternalCredentials{
+					MBusUsername: "some-persisted-mbus-username",
 					MBusPassword: "some-persisted-mbus-password",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudProvider.MBus).To(Equal("https://mbus:some-persisted-mbus-password@some-elastic-ip:6868"))
-			Expect(cloudProvider.Properties.Agent.MBus).To(Equal("https://mbus:some-persisted-mbus-password@0.0.0.0:6868"))
+			Expect(cloudProvider.MBus).To(Equal("https://some-persisted-mbus-username:some-persisted-mbus-password@some-elastic-ip:6868"))
+			Expect(cloudProvider.Properties.Agent.MBus).To(Equal("https://some-persisted-mbus-username:some-persisted-mbus-password@0.0.0.0:6868"))
 			Expect(manifestProperties.Credentials.MBusPassword).To(Equal("some-persisted-mbus-password"))
 		})
 
 		Context("when string generator cannot generated a string", func() {
 			BeforeEach(func() {
+				stringGenerator.GenerateCall.Stub = nil
 				stringGenerator.GenerateCall.Returns.Error = fmt.Errorf("foo")
 			})
 

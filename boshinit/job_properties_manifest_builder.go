@@ -3,6 +3,12 @@ package boshinit
 import "fmt"
 
 type JobPropertiesManifestBuilder struct {
+	natsUsername              string
+	postgresUsername          string
+	registryUsername          string
+	blobstoreDirectorUsername string
+	blobstoreAgentUsername    string
+	hmUsername                string
 	natsPassword              string
 	redisPassword             string
 	postgresPassword          string
@@ -12,8 +18,14 @@ type JobPropertiesManifestBuilder struct {
 	hmPassword                string
 }
 
-func NewJobPropertiesManifestBuilder(natsPassword, redisPassword, postgresPassword, registryPassword, blobstoreDirectorPassword, blobstoreAgentPassword, hmPassword string) JobPropertiesManifestBuilder {
+func NewJobPropertiesManifestBuilder(natsUsername, postgresUsername, registryUsername, blobstoreDirectorUsername, blobstoreAgentUsername, hmUsername, natsPassword, redisPassword, postgresPassword, registryPassword, blobstoreDirectorPassword, blobstoreAgentPassword, hmPassword string) JobPropertiesManifestBuilder {
 	return JobPropertiesManifestBuilder{
+		natsUsername:              natsUsername,
+		postgresUsername:          postgresUsername,
+		registryUsername:          registryUsername,
+		blobstoreDirectorUsername: blobstoreDirectorUsername,
+		blobstoreAgentUsername:    blobstoreAgentUsername,
+		hmUsername:                hmUsername,
 		natsPassword:              natsPassword,
 		redisPassword:             redisPassword,
 		postgresPassword:          postgresPassword,
@@ -27,7 +39,7 @@ func NewJobPropertiesManifestBuilder(natsPassword, redisPassword, postgresPasswo
 func (j JobPropertiesManifestBuilder) NATS() NATSJobProperties {
 	return NATSJobProperties{
 		Address:  "127.0.0.1",
-		User:     "nats",
+		User:     j.natsUsername,
 		Password: j.natsPassword,
 	}
 }
@@ -44,7 +56,7 @@ func (j JobPropertiesManifestBuilder) Postgres() PostgresProperties {
 	return PostgresProperties{
 		ListenAddress: "127.0.0.1",
 		Host:          "127.0.0.1",
-		User:          "postgres",
+		User:          j.postgresUsername,
 		Password:      j.postgresPassword,
 		Database:      "bosh",
 		Adapter:       "postgres",
@@ -55,12 +67,12 @@ func (j JobPropertiesManifestBuilder) Registry() RegistryJobProperties {
 	return RegistryJobProperties{
 		Address:  "10.0.0.6",
 		Host:     "10.0.0.6",
-		Username: "admin",
+		Username: j.registryUsername,
 		Password: j.registryPassword,
 		Port:     25777,
 		DB:       j.Postgres(),
 		HTTP: HTTPProperties{
-			User:     "admin",
+			User:     j.registryUsername,
 			Password: j.registryPassword,
 			Port:     25777,
 		},
@@ -73,11 +85,11 @@ func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 		Port:     25250,
 		Provider: "dav",
 		Director: Credentials{
-			User:     "director",
+			User:     j.blobstoreDirectorUsername,
 			Password: j.blobstoreDirectorPassword,
 		},
 		Agent: Credentials{
-			User:     "agent",
+			User:     j.blobstoreAgentUsername,
 			Password: j.blobstoreAgentPassword,
 		},
 	}
@@ -99,7 +111,7 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 						Password: manifestProperties.DirectorPassword,
 					},
 					{
-						Name:     "hm",
+						Name:     j.hmUsername,
 						Password: j.hmPassword,
 					},
 				},
@@ -115,7 +127,7 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 func (j JobPropertiesManifestBuilder) HM() HMJobProperties {
 	return HMJobProperties{
 		DirectorAccount: Credentials{
-			User:     "hm",
+			User:     j.hmUsername,
 			Password: j.hmPassword,
 		},
 		ResurrectorEnabled: true,
@@ -124,6 +136,6 @@ func (j JobPropertiesManifestBuilder) HM() HMJobProperties {
 
 func (j JobPropertiesManifestBuilder) Agent() AgentProperties {
 	return AgentProperties{
-		MBus: fmt.Sprintf("nats://nats:%s@10.0.0.6:4222", j.natsPassword),
+		MBus: fmt.Sprintf("nats://%s:%s@10.0.0.6:4222", j.natsUsername, j.natsPassword),
 	}
 }

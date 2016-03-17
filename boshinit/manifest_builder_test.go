@@ -83,7 +83,7 @@ var _ = Describe("ManifestBuilder", func() {
 			}))
 			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("52.0.112.12"))
-			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus:mbus-some-random-string@52.0.112.12:6868"))
+			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus-user-some-random-string:mbus-some-random-string@52.0.112.12:6868"))
 
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
@@ -105,6 +105,13 @@ var _ = Describe("ManifestBuilder", func() {
 						PrivateKey:  []byte(privateKey),
 					},
 					Credentials: boshinit.InternalCredentials{
+						MBusUsername:              "mbus-user-some-random-string",
+						NatsUsername:              "nats-user-some-random-string",
+						PostgresUsername:          "postgres-user-some-random-string",
+						RegistryUsername:          "registry-user-some-random-string",
+						BlobstoreDirectorUsername: "blobstore-director-user-some-random-string",
+						BlobstoreAgentUsername:    "blobstore-agent-user-some-random-string",
+						HMUsername:                "hm-user-some-random-string",
 						MBusPassword:              "mbus-some-random-string",
 						NatsPassword:              "nats-some-random-string",
 						RedisPassword:             "redis-some-random-string",
@@ -139,8 +146,15 @@ var _ = Describe("ManifestBuilder", func() {
 		It("stores the randomly generated passwords into manifest properties", func() {
 			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(8))
+			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(15))
 			Expect(manifestProperties.Credentials).To(Equal(boshinit.InternalCredentials{
+				MBusUsername:              "mbus-user-some-random-string",
+				NatsUsername:              "nats-user-some-random-string",
+				PostgresUsername:          "postgres-user-some-random-string",
+				RegistryUsername:          "registry-user-some-random-string",
+				BlobstoreDirectorUsername: "blobstore-director-user-some-random-string",
+				BlobstoreAgentUsername:    "blobstore-agent-user-some-random-string",
+				HMUsername:                "hm-user-some-random-string",
 				MBusPassword:              "mbus-some-random-string",
 				NatsPassword:              "nats-some-random-string",
 				RedisPassword:             "redis-some-random-string",
@@ -154,6 +168,13 @@ var _ = Describe("ManifestBuilder", func() {
 
 		It("does not regenerate new random passwords if they already exist", func() {
 			manifestProperties.Credentials = boshinit.InternalCredentials{
+				MBusUsername:              "mbus-user-some-persisted-string",
+				NatsUsername:              "nats-user-some-persisted-string",
+				PostgresUsername:          "postgres-user-some-persisted-string",
+				RegistryUsername:          "registry-user-some-persisted-string",
+				BlobstoreDirectorUsername: "blobstore-director-user-some-persisted-string",
+				BlobstoreAgentUsername:    "blobstore-agent-user-some-persisted-string",
+				HMUsername:                "hm-user-some-persisted-string",
 				MBusPassword:              "mbus-some-persisted-string",
 				NatsPassword:              "nats-some-persisted-string",
 				RedisPassword:             "redis-some-persisted-string",
@@ -168,6 +189,13 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(0))
 			Expect(manifestProperties.Credentials).To(Equal(boshinit.InternalCredentials{
+				MBusUsername:              "mbus-user-some-persisted-string",
+				NatsUsername:              "nats-user-some-persisted-string",
+				PostgresUsername:          "postgres-user-some-persisted-string",
+				RegistryUsername:          "registry-user-some-persisted-string",
+				BlobstoreDirectorUsername: "blobstore-director-user-some-persisted-string",
+				BlobstoreAgentUsername:    "blobstore-agent-user-some-persisted-string",
+				HMUsername:                "hm-user-some-persisted-string",
 				MBusPassword:              "mbus-some-persisted-string",
 				NatsPassword:              "nats-some-persisted-string",
 				RedisPassword:             "redis-some-persisted-string",

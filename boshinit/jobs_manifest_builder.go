@@ -13,12 +13,18 @@ func NewJobsManifestBuilder(stringGenerator stringGenerator) JobsManifestBuilder
 func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job, ManifestProperties, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
-	manifestProperties, err := j.generateInternalPasswords(manifestProperties)
+	manifestProperties, err := j.generateInternalCredentials(manifestProperties)
 	if err != nil {
 		return nil, ManifestProperties{}, err
 	}
 
 	jobPropertiesManifestBuilder := NewJobPropertiesManifestBuilder(
+		manifestProperties.Credentials.NatsUsername,
+		manifestProperties.Credentials.PostgresUsername,
+		manifestProperties.Credentials.RegistryUsername,
+		manifestProperties.Credentials.BlobstoreDirectorUsername,
+		manifestProperties.Credentials.BlobstoreAgentUsername,
+		manifestProperties.Credentials.HMUsername,
 		manifestProperties.Credentials.NatsPassword,
 		manifestProperties.Credentials.RedisPassword,
 		manifestProperties.Credentials.PostgresPassword,
@@ -74,17 +80,23 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 	}, manifestProperties, nil
 }
 
-func (j JobsManifestBuilder) generateInternalPasswords(manifestProperties ManifestProperties) (ManifestProperties, error) {
-	var passwords = map[string]*string{}
-	passwords["nats-"] = &manifestProperties.Credentials.NatsPassword
-	passwords["redis-"] = &manifestProperties.Credentials.RedisPassword
-	passwords["postgres-"] = &manifestProperties.Credentials.PostgresPassword
-	passwords["registry-"] = &manifestProperties.Credentials.RegistryPassword
-	passwords["blobstore-director-"] = &manifestProperties.Credentials.BlobstoreDirectorPassword
-	passwords["blobstore-agent-"] = &manifestProperties.Credentials.BlobstoreAgentPassword
-	passwords["hm-"] = &manifestProperties.Credentials.HMPassword
+func (j JobsManifestBuilder) generateInternalCredentials(manifestProperties ManifestProperties) (ManifestProperties, error) {
+	var credentials = map[string]*string{}
+	credentials["nats-user-"] = &manifestProperties.Credentials.NatsUsername
+	credentials["postgres-user-"] = &manifestProperties.Credentials.PostgresUsername
+	credentials["registry-user-"] = &manifestProperties.Credentials.RegistryUsername
+	credentials["blobstore-director-user-"] = &manifestProperties.Credentials.BlobstoreDirectorUsername
+	credentials["blobstore-agent-user-"] = &manifestProperties.Credentials.BlobstoreAgentUsername
+	credentials["hm-user-"] = &manifestProperties.Credentials.HMUsername
+	credentials["nats-"] = &manifestProperties.Credentials.NatsPassword
+	credentials["redis-"] = &manifestProperties.Credentials.RedisPassword
+	credentials["postgres-"] = &manifestProperties.Credentials.PostgresPassword
+	credentials["registry-"] = &manifestProperties.Credentials.RegistryPassword
+	credentials["blobstore-director-"] = &manifestProperties.Credentials.BlobstoreDirectorPassword
+	credentials["blobstore-agent-"] = &manifestProperties.Credentials.BlobstoreAgentPassword
+	credentials["hm-"] = &manifestProperties.Credentials.HMPassword
 
-	for key, value := range passwords {
+	for key, value := range credentials {
 		if *value == "" {
 			generatedString, err := j.stringGenerator.Generate(key, PASSWORD_LENGTH)
 			if err != nil {

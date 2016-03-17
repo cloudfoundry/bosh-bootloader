@@ -52,6 +52,13 @@ var _ = Describe("BoshDeployer", func() {
 			PublicKey:  []byte("some-public-key"),
 		}
 		credentials = boshinit.InternalCredentials{
+			MBusUsername:              "some-mbus-username",
+			NatsUsername:              "some-nats-username",
+			PostgresUsername:          "some-postgres-username",
+			RegistryUsername:          "some-registry-username",
+			BlobstoreDirectorUsername: "some-blobstore-director-username",
+			BlobstoreAgentUsername:    "some-blobstore-agent-username",
+			HMUsername:                "some-hm-username",
 			MBusPassword:              "some-mbus-password",
 			NatsPassword:              "some-nats-password",
 			RedisPassword:             "some-redis-password",
@@ -113,6 +120,13 @@ var _ = Describe("BoshDeployer", func() {
 					PrivateKey:  []byte("some-private-key"),
 				},
 				Credentials: boshinit.InternalCredentials{
+					MBusUsername:              "some-mbus-username",
+					NatsUsername:              "some-nats-username",
+					PostgresUsername:          "some-postgres-username",
+					RegistryUsername:          "some-registry-username",
+					BlobstoreDirectorUsername: "some-blobstore-director-username",
+					BlobstoreAgentUsername:    "some-blobstore-agent-username",
+					HMUsername:                "some-hm-username",
 					MBusPassword:              "some-mbus-password",
 					NatsPassword:              "some-nats-password",
 					RedisPassword:             "some-redis-password",
@@ -131,6 +145,13 @@ var _ = Describe("BoshDeployer", func() {
 				"key": "value",
 			}))
 			Expect(boshOutput.Credentials).To(Equal(boshinit.InternalCredentials{
+				MBusUsername:              "some-mbus-username",
+				NatsUsername:              "some-nats-username",
+				PostgresUsername:          "some-postgres-username",
+				RegistryUsername:          "some-registry-username",
+				BlobstoreDirectorUsername: "some-blobstore-director-username",
+				BlobstoreAgentUsername:    "some-blobstore-agent-username",
+				HMUsername:                "some-hm-username",
 				MBusPassword:              "some-mbus-password",
 				NatsPassword:              "some-nats-password",
 				RedisPassword:             "some-redis-password",
