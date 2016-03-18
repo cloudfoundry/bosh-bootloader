@@ -81,10 +81,10 @@ var _ = Describe("SubnetTemplateBuilder", func() {
 
 	Describe("InternalSubnet", func() {
 		It("returns a template with all fields for the Internal subnet", func() {
-			subnet := builder.InternalSubnet()
+			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
 
 			Expect(subnet.Resources).To(HaveLen(4))
-			Expect(subnet.Resources).To(HaveKeyWithValue("InternalSubnet", templates.Resource{
+			Expect(subnet.Resources).To(HaveKeyWithValue("InternalSubnet1", templates.Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: templates.Subnet{
 					AvailabilityZone: map[string]interface{}{
@@ -95,12 +95,12 @@ var _ = Describe("SubnetTemplateBuilder", func() {
 							},
 						},
 					},
-					CidrBlock: templates.Ref{"InternalSubnetCIDR"},
+					CidrBlock: templates.Ref{"InternalSubnet1CIDR"},
 					VpcId:     templates.Ref{"VPC"},
 					Tags: []templates.Tag{
 						{
 							Key:   "Name",
-							Value: "Internal",
+							Value: "Internal1",
 						},
 					},
 				},
@@ -123,17 +123,17 @@ var _ = Describe("SubnetTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(subnet.Resources).To(HaveKeyWithValue("InternalSubnetRouteTableAssociation", templates.Resource{
+			Expect(subnet.Resources).To(HaveKeyWithValue("InternalSubnet1RouteTableAssociation", templates.Resource{
 				Type: "AWS::EC2::SubnetRouteTableAssociation",
 				Properties: templates.SubnetRouteTableAssociation{
 					RouteTableId: templates.Ref{"InternalRouteTable"},
-					SubnetId:     templates.Ref{"InternalSubnet"},
+					SubnetId:     templates.Ref{"InternalSubnet1"},
 				},
 			}))
 
 			Expect(subnet.Parameters).To(HaveLen(1))
-			Expect(subnet.Parameters).To(HaveKeyWithValue("InternalSubnetCIDR", templates.Parameter{
-				Description: "CIDR block for the Internal subnet.",
+			Expect(subnet.Parameters).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Parameter{
+				Description: "CIDR block for InternalSubnet1.",
 				Type:        "String",
 				Default:     "10.0.16.0/20",
 			}))

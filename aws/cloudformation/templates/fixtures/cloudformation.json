@@ -38,9 +38,19 @@
             "Description": "CIDR block for the BOSH subnet.",
             "Type": "String"
         },
-        "InternalSubnetCIDR": {
+        "InternalSubnet1CIDR": {
             "Default": "10.0.16.0/20",
-            "Description": "CIDR block for the Internal subnet.",
+            "Description": "CIDR block for InternalSubnet1.",
+            "Type": "String"
+        },
+        "InternalSubnet2CIDR": {
+            "Default": "10.0.32.0/20",
+            "Description": "CIDR block for InternalSubnet2.",
+            "Type": "String"
+        },
+        "InternalSubnet3CIDR": {
+			"Default": "10.0.48.0/20",
+			"Description": "CIDR block for InternalSubnet3.",
             "Type": "String"
         },
         "LoadBalancerSubnetCIDR": {
@@ -257,21 +267,57 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
-        "InternalSubnet": {
+        "InternalSubnet1": {
             "Properties": {
                 "AvailabilityZone": {
                     "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
                 },
-                "CidrBlock": {"Ref": "InternalSubnetCIDR"},
-                "Tags": [{"Key": "Name", "Value": "Internal"}],
+                "CidrBlock": {"Ref": "InternalSubnet1CIDR"},
+                "Tags": [{"Key": "Name", "Value": "Internal1"}],
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::Subnet"
         },
-        "InternalSubnetRouteTableAssociation": {
+        "InternalSubnet1RouteTableAssociation": {
             "Properties": {
                 "RouteTableId": {"Ref": "InternalRouteTable"},
-                "SubnetId": {"Ref": "InternalSubnet"}
+                "SubnetId": {"Ref": "InternalSubnet1"}
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "InternalSubnet2": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
+                },
+                "CidrBlock": {"Ref": "InternalSubnet2CIDR"},
+                "Tags": [{"Key": "Name", "Value": "Internal2"}],
+                "VpcId": {"Ref": "VPC"}
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "InternalSubnet2RouteTableAssociation": {
+            "Properties": {
+                "RouteTableId": {"Ref": "InternalRouteTable"},
+                "SubnetId": {"Ref": "InternalSubnet2"}
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "InternalSubnet3": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
+                },
+                "CidrBlock": {"Ref": "InternalSubnet3CIDR"},
+                "Tags": [{"Key": "Name", "Value": "Internal3"}],
+                "VpcId": {"Ref": "VPC"}
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "InternalSubnet3RouteTableAssociation": {
+            "Properties": {
+                "RouteTableId": {"Ref": "InternalRouteTable"},
+                "SubnetId": {"Ref": "InternalSubnet3"}
             },
             "Type": "AWS::EC2::SubnetRouteTableAssociation"
         },

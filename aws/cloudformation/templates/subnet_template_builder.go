@@ -1,5 +1,7 @@
 package templates
 
+import "fmt"
+
 type SubnetTemplateBuilder struct {
 }
 
@@ -69,33 +71,38 @@ func (s SubnetTemplateBuilder) BOSHSubnet() Template {
 	}
 }
 
-func (s SubnetTemplateBuilder) InternalSubnet() Template {
+func (s SubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrBlock string) Template {
+	subnetName := fmt.Sprintf("InternalSubnet%s", suffix)
+	subnetTag := fmt.Sprintf("Internal%s", suffix)
+	subnetCIDRName := fmt.Sprintf("%sCIDR", subnetName)
+	cidrDescription := fmt.Sprintf("CIDR block for %s.", subnetName)
+	subnetRouteTableAssociationName := fmt.Sprintf("%sRouteTableAssociation", subnetName)
 	return Template{
 		Parameters: map[string]Parameter{
-			"InternalSubnetCIDR": Parameter{
-				Description: "CIDR block for the Internal subnet.",
+			subnetCIDRName: Parameter{
+				Description: cidrDescription,
 				Type:        "String",
-				Default:     "10.0.16.0/20",
+				Default:     cidrBlock,
 			},
 		},
 		Resources: map[string]Resource{
-			"InternalSubnet": Resource{
+			subnetName: Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: Subnet{
 					AvailabilityZone: map[string]interface{}{
 						"Fn::Select": []interface{}{
-							"0",
+							fmt.Sprintf("%d", azIndex),
 							map[string]Ref{
 								"Fn::GetAZs": Ref{"AWS::Region"},
 							},
 						},
 					},
-					CidrBlock: Ref{"InternalSubnetCIDR"},
+					CidrBlock: Ref{subnetCIDRName},
 					VpcId:     Ref{"VPC"},
 					Tags: []Tag{
 						{
 							Key:   "Name",
-							Value: "Internal",
+							Value: subnetTag,
 						},
 					},
 				},
@@ -115,11 +122,11 @@ func (s SubnetTemplateBuilder) InternalSubnet() Template {
 					InstanceId:           Ref{"NATInstance"},
 				},
 			},
-			"InternalSubnetRouteTableAssociation": Resource{
+			subnetRouteTableAssociationName: Resource{
 				Type: "AWS::EC2::SubnetRouteTableAssociation",
 				Properties: SubnetRouteTableAssociation{
 					RouteTableId: Ref{"InternalRouteTable"},
-					SubnetId:     Ref{"InternalSubnet"},
+					SubnetId:     Ref{subnetName},
 				},
 			},
 		},
