@@ -177,15 +177,18 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			})
 		})
 
-		Context("cloud configurator", func() {
+		Describe("cloud configurator", func() {
 			It("generates a cloud config", func() {
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
+				Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
+					Name: "concourse",
+				}))
 			})
 		})
 
-		Context("state manipulation", func() {
+		Describe("state manipulation", func() {
 			BeforeEach(func() {
 				incomingState = storage.State{
 					KeyPair: &storage.KeyPair{
@@ -236,7 +239,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				})
 			})
 
-			Context("bosh", func() {
+			Describe("bosh", func() {
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
 						state, err := command.Execute(globalFlags, incomingState)

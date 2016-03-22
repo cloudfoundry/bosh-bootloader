@@ -78,6 +78,25 @@ func (s SubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrBlock str
 	cidrDescription := fmt.Sprintf("CIDR block for %s.", subnetName)
 	subnetRouteTableAssociationName := fmt.Sprintf("%sRouteTableAssociation", subnetName)
 	return Template{
+		Outputs: map[string]Output{
+			fmt.Sprintf("%sName", subnetName): Output{
+				Value: Ref{subnetName},
+			},
+			fmt.Sprintf("%sAZ", subnetName): Output{
+				FnGetAtt{
+					[]string{
+						subnetName,
+						"AvailabilityZone",
+					},
+				},
+			},
+			subnetCIDRName: Output{
+				Value: Ref{subnetCIDRName},
+			},
+			fmt.Sprintf("%sSecurityGroup", subnetName): Output{
+				Value: Ref{"InternalSecurityGroup"},
+			},
+		},
 		Parameters: map[string]Parameter{
 			subnetCIDRName: Parameter{
 				Description: cidrDescription,

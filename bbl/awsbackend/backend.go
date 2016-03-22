@@ -111,15 +111,51 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 					},
 					{
 						OutputKey:   aws.String("InternalSubnet1CIDR"),
-						OutputValue: aws.String("10.0.0.0/20"),
+						OutputValue: aws.String("10.0.16.0/20"),
 					},
 					{
 						OutputKey:   aws.String("InternalSubnet2CIDR"),
-						OutputValue: aws.String("10.0.0.0/20"),
+						OutputValue: aws.String("10.0.32.0/20"),
 					},
 					{
 						OutputKey:   aws.String("InternalSubnet3CIDR"),
-						OutputValue: aws.String("10.0.0.0/20"),
+						OutputValue: aws.String("10.0.48.0/20"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet1AZ"),
+						OutputValue: aws.String("us-east-1a"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet2AZ"),
+						OutputValue: aws.String("us-east-1b"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet3AZ"),
+						OutputValue: aws.String("us-east-1c"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet1Name"),
+						OutputValue: aws.String("some-subnet-1"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet2Name"),
+						OutputValue: aws.String("some-subnet-2"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet3Name"),
+						OutputValue: aws.String("some-subnet-3"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet1SecurityGroup"),
+						OutputValue: aws.String("some-security-group-1"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet2SecurityGroup"),
+						OutputValue: aws.String("some-security-group-2"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet3SecurityGroup"),
+						OutputValue: aws.String("some-security-group-3"),
 					},
 				},
 			},

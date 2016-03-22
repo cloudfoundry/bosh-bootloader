@@ -20,12 +20,36 @@
         "BOSHUserSecretAccessKey": {
             "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
         },
-		"BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
-		"BOSHSubnetAZ": {
-			"Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
-		},
-		"BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
-		"BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}}
+        "BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
+        "BOSHSubnetAZ": {
+          "Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
+        },
+        "BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
+        "BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}},
+        "InternalSubnet1CIDR": {
+          "Value": {"Ref" : "InternalSubnet1CIDR"}
+        },
+        "InternalSubnet2CIDR": {
+          "Value": {"Ref" : "InternalSubnet2CIDR"}
+        },
+        "InternalSubnet3CIDR": {
+          "Value": {"Ref" : "InternalSubnet3CIDR"}
+        },
+        "InternalSubnet1AZ": {
+          "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
+        },
+        "InternalSubnet2AZ": {
+          "Value": {"Fn::GetAtt": ["InternalSubnet2", "AvailabilityZone"]}
+        },
+        "InternalSubnet3AZ": {
+          "Value": {"Fn::GetAtt": ["InternalSubnet3", "AvailabilityZone"]}
+        },
+        "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
+        "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
+        "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
+        "InternalSubnet1SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
+        "InternalSubnet2SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
+        "InternalSubnet3SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {

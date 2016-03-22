@@ -80,7 +80,19 @@ var _ = Describe("SubnetTemplateBuilder", func() {
 	})
 
 	Describe("InternalSubnet", func() {
-		It("returns a template with all fields for the Internal subnet", func() {
+		It("returns a template with parameters for the internal subnet", func() {
+			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
+
+			Expect(subnet.Parameters).To(HaveLen(1))
+			Expect(subnet.Parameters).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Parameter{
+				Description: "CIDR block for InternalSubnet1.",
+				Type:        "String",
+				Default:     "10.0.16.0/20",
+			}))
+
+		})
+
+		It("returns a template with resources for the internal subnet", func() {
 			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
 
 			Expect(subnet.Resources).To(HaveLen(4))
@@ -130,12 +142,28 @@ var _ = Describe("SubnetTemplateBuilder", func() {
 					SubnetId:     templates.Ref{"InternalSubnet1"},
 				},
 			}))
+		})
 
-			Expect(subnet.Parameters).To(HaveLen(1))
-			Expect(subnet.Parameters).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Parameter{
-				Description: "CIDR block for InternalSubnet1.",
-				Type:        "String",
-				Default:     "10.0.16.0/20",
+		It("returns a template with outputs for the internal subnet", func() {
+			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
+
+			Expect(subnet.Outputs).To(HaveLen(4))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Output{
+				Value: templates.Ref{"InternalSubnet1CIDR"},
+			}))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1AZ", templates.Output{
+				Value: templates.FnGetAtt{
+					[]string{
+						"InternalSubnet1",
+						"AvailabilityZone",
+					},
+				},
+			}))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1Name", templates.Output{
+				Value: templates.Ref{"InternalSubnet1"},
+			}))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1SecurityGroup", templates.Output{
+				Value: templates.Ref{"InternalSecurityGroup"},
 			}))
 		})
 	})
