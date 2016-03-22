@@ -15,6 +15,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
@@ -56,11 +57,13 @@ func main() {
 	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
 	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
+	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
+	cloudConfigurator := unsupported.NewCloudConfigurator(logger, boshCloudConfigGenerator)
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator, cloudConfigurator),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err = app.Run(os.Args[1:])

@@ -186,6 +186,15 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 			})
 		})
+
+		Context("cloud config", func() {
+			It("prints out the cloud config", func() {
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				stdout := session.Out.Contents()
+				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+				Expect(stdout).To(ContainSubstring("cloud config:"))
+			})
+		})
 	})
 })
 

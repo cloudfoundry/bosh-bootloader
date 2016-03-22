@@ -109,6 +109,18 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 						OutputKey:   aws.String("BOSHEIP"),
 						OutputValue: aws.String("192.168.1.1"),
 					},
+					{
+						OutputKey:   aws.String("InternalSubnet1CIDR"),
+						OutputValue: aws.String("10.0.0.0/20"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet2CIDR"),
+						OutputValue: aws.String("10.0.0.0/20"),
+					},
+					{
+						OutputKey:   aws.String("InternalSubnet3CIDR"),
+						OutputValue: aws.String("10.0.0.0/20"),
+					},
 				},
 			},
 		},

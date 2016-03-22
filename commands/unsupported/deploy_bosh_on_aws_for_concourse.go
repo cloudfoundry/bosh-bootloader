@@ -37,21 +37,32 @@ type stringGenerator interface {
 	Generate(string, int) (string, error)
 }
 
+type cloudConfigurator interface {
+	Configure(cloudformation.Stack) error
+}
+
+type logger interface {
+	Step(string)
+	Println(string)
+}
+
 type DeployBOSHOnAWSForConcourse struct {
 	infrastructureCreator infrastructureCreator
 	keyPairSynchronizer   keyPairSynchronizer
 	awsClientProvider     awsClientProvider
 	boshDeployer          boshDeployer
 	stringGenerator       stringGenerator
+	cloudConfigurator     cloudConfigurator
 }
 
-func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator, cloudConfigurator cloudConfigurator) DeployBOSHOnAWSForConcourse {
 	return DeployBOSHOnAWSForConcourse{
 		infrastructureCreator: infrastructureCreator,
 		keyPairSynchronizer:   keyPairSynchronizer,
 		awsClientProvider:     awsClientProvider,
 		boshDeployer:          boshDeployer,
 		stringGenerator:       stringGenerator,
+		cloudConfigurator:     cloudConfigurator,
 	}
 }
 
@@ -157,6 +168,11 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			Credentials:            boshOutput.Credentials,
 			State:                  boshOutput.BOSHInitState,
 		}
+	}
+
+	err = d.cloudConfigurator.Configure(stack)
+	if err != nil {
+		return state, err
 	}
 
 	return state, nil

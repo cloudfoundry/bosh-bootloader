@@ -41,10 +41,6 @@ type boshInitRunner interface {
 	Deploy(manifest, privateKey []byte, state boshinit.State) (boshinit.State, error)
 }
 
-type logger interface {
-	Println(string)
-}
-
 func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder, runner boshInitRunner, logger logger) BOSHDeployer {
 	return BOSHDeployer{
 		manifestBuilder: manifestBuilder,

@@ -29,6 +29,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			ec2Client             *fakes.EC2Client
 			clientProvider        *fakes.ClientProvider
 			stringGenerator       *fakes.StringGenerator
+			cloudConfigurator     *fakes.BoshCloudConfigurator
 			incomingState         storage.State
 			globalFlags           commands.GlobalFlags
 		)
@@ -69,6 +70,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
 			}
 
+			cloudConfigurator = &fakes.BoshCloudConfigurator{}
+
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
 			}
@@ -93,7 +96,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				},
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator)
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator, cloudConfigurator)
 		})
 
 		It("syncs the keypair", func() {
@@ -171,6 +174,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
 				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(unsupported.KeyPair{}))
+			})
+		})
+
+		Context("cloud configurator", func() {
+			It("generates a cloud config", func() {
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
 			})
 		})
 
@@ -407,10 +418,17 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
+			It("returns an error when the cloud config cannot be configured", func() {
+				cloudConfigurator.ConfigureCall.Returns.Error = errors.New("bosh cloud configuration failed")
+
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("bosh cloud configuration failed"))
+			})
+
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator)
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator, cloudConfigurator)
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot deploy bosh"))
