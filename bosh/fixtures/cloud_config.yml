@@ -10,9 +10,51 @@ azs:
     availability_zone: us-east-1c
 
 vm_types:
-- name: default
+- name: m3.medium
   cloud_properties:
     instance_type: m3.medium
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: m3.large
+  cloud_properties:
+    instance_type: m3.large
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c3.large
+  cloud_properties:
+    instance_type: c3.large
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c3.xlarge
+  cloud_properties:
+    instance_type: c3.xlarge
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c3.2xlarge
+  cloud_properties:
+    instance_type: c3.2xlarge
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c4.large
+  cloud_properties:
+    instance_type: c4.large
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: r3.xlarge
+  cloud_properties:
+    instance_type: r3.xlarge
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: t2.micro
+  cloud_properties:
+    instance_type: t2.micro
     ephemeral_disk:
       size: 1024
       type: gp2

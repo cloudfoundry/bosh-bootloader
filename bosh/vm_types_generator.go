@@ -24,14 +24,25 @@ func NewVMTypesGenerator() VMTypesGenerator {
 
 func (g VMTypesGenerator) Generate() []VMType {
 	return []VMType{
-		{
-			Name: "default",
-			CloudProperties: &VMTypeCloudProperties{
-				InstanceType: "m3.medium",
-				EphemeralDisk: &EphemeralDisk{
-					Size: 1024,
-					Type: "gp2",
-				},
+		createVMType("m3.medium"),
+		createVMType("m3.large"),
+		createVMType("c3.large"),
+		createVMType("c3.xlarge"),
+		createVMType("c3.2xlarge"),
+		createVMType("c4.large"),
+		createVMType("r3.xlarge"),
+		createVMType("t2.micro"),
+	}
+}
+
+func createVMType(instanceType string) VMType {
+	return VMType{
+		Name: instanceType,
+		CloudProperties: &VMTypeCloudProperties{
+			InstanceType: instanceType,
+			EphemeralDisk: &EphemeralDisk{
+				Size: 1024,
+				Type: "gp2",
 			},
 		},
 	}

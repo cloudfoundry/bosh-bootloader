@@ -12,17 +12,28 @@ var _ = Describe("VMTypes Generator", func() {
 		It("returns cloud config VM Types", func() {
 			vmTypesGenerator := bosh.NewVMTypesGenerator()
 			vmTypes := vmTypesGenerator.Generate()
-			Expect(vmTypes).To(ConsistOf(
-				bosh.VMType{
-					Name: "default",
-					CloudProperties: &bosh.VMTypeCloudProperties{
-						InstanceType: "m3.medium",
-						EphemeralDisk: &bosh.EphemeralDisk{
-							Size: 1024,
-							Type: "gp2",
-						},
-					},
-				}))
+			ExpectToContainVMType(vmTypes, "c3.large")
+			ExpectToContainVMType(vmTypes, "c3.xlarge")
+			ExpectToContainVMType(vmTypes, "m3.large")
+			ExpectToContainVMType(vmTypes, "m3.medium")
+			ExpectToContainVMType(vmTypes, "r3.xlarge")
+			ExpectToContainVMType(vmTypes, "c4.large")
+			ExpectToContainVMType(vmTypes, "c3.2xlarge")
+			ExpectToContainVMType(vmTypes, "t2.micro")
 		})
 	})
 })
+
+func ExpectToContainVMType(vmTypes []bosh.VMType, vmType string) {
+	Expect(vmTypes).To(ContainElement(
+		bosh.VMType{
+			Name: vmType,
+			CloudProperties: &bosh.VMTypeCloudProperties{
+				InstanceType: vmType,
+				EphemeralDisk: &bosh.EphemeralDisk{
+					Size: 1024,
+					Type: "gp2",
+				},
+			},
+		}))
+}
