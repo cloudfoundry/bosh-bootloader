@@ -1,11 +1,10 @@
-package unsupported_test
+package bosh_test
 
 import (
 	"errors"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -18,13 +17,13 @@ var _ = Describe("CloudConfigurator", func() {
 		var (
 			logger               *fakes.Logger
 			cloudConfigGenerator *fakes.CloudConfigGenerator
-			cloudConfigurator    unsupported.CloudConfigurator
+			cloudConfigurator    bosh.CloudConfigurator
 		)
 
 		BeforeEach(func() {
 			logger = &fakes.Logger{}
 			cloudConfigGenerator = &fakes.CloudConfigGenerator{}
-			cloudConfigurator = unsupported.NewCloudConfigurator(logger, cloudConfigGenerator)
+			cloudConfigurator = bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
 		})
 
 		It("Generates and prints a bosh cloud config", func() {

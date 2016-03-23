@@ -58,7 +58,7 @@ func main() {
 	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
 	boshDeployer := boshinit.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
-	cloudConfigurator := unsupported.NewCloudConfigurator(logger, boshCloudConfigGenerator)
+	cloudConfigurator := bosh.NewCloudConfigurator(logger, boshCloudConfigGenerator)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever()
 
 	app := application.New(application.CommandSet{

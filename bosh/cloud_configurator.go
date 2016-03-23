@@ -1,11 +1,10 @@
-package unsupported
+package bosh
 
 import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 )
 
 type CloudConfigurator struct {
@@ -13,8 +12,13 @@ type CloudConfigurator struct {
 	Generator cloudConfigGenerator
 }
 
+type logger interface {
+	Step(message string)
+	Println(string)
+}
+
 type cloudConfigGenerator interface {
-	Generate(bosh.CloudConfigInput) (bosh.CloudConfig, error)
+	Generate(CloudConfigInput) (CloudConfig, error)
 }
 
 func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudConfigurator {
@@ -25,9 +29,9 @@ func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudCo
 }
 
 func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string) error {
-	cloudConfigInput := bosh.CloudConfigInput{
+	cloudConfigInput := CloudConfigInput{
 		AZs: azs,
-		Subnets: []bosh.SubnetInput{
+		Subnets: []SubnetInput{
 			{
 				AZ:             stack.Outputs["InternalSubnet1AZ"],
 				Subnet:         stack.Outputs["InternalSubnet1Name"],
