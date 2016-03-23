@@ -59,11 +59,12 @@ func main() {
 	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := unsupported.NewCloudConfigurator(logger, boshCloudConfigGenerator)
+	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever()
 
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator, cloudConfigurator),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator, cloudConfigurator, availabilityZoneRetriever),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err = app.Run(os.Args[1:])

@@ -24,13 +24,9 @@ func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudCo
 	}
 }
 
-func (c CloudConfigurator) Configure(stack cloudformation.Stack) error {
+func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string) error {
 	cloudConfigInput := bosh.CloudConfigInput{
-		AZs: []string{
-			stack.Outputs["InternalSubnet1AZ"],
-			stack.Outputs["InternalSubnet2AZ"],
-			stack.Outputs["InternalSubnet3AZ"],
-		},
+		AZs: azs,
 		Subnets: []bosh.SubnetInput{
 			{
 				AZ:             stack.Outputs["InternalSubnet1AZ"],

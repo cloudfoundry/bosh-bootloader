@@ -52,7 +52,8 @@ var _ = Describe("CloudConfigurator", func() {
 					"InternalSubnet3SecurityGroup": "some-security-group-3",
 				},
 			}
-			err := cloudConfigurator.Configure(cloudformationStack)
+			azs := []string{"us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"}
+			err := cloudConfigurator.Configure(cloudformationStack, azs)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating cloud config"))
 			Expect(logger.PrintlnCall.Receives.Message).To(MatchYAML(`---
@@ -66,6 +67,7 @@ vm_types:
 					"us-east-1a",
 					"us-east-1b",
 					"us-east-1c",
+					"us-east-1e",
 				},
 				Subnets: []bosh.SubnetInput{
 					{
@@ -89,10 +91,11 @@ vm_types:
 				},
 			}))
 		})
+
 		Context("failure cases", func() {
 			It("returns an error when cloud config cannot be generated", func() {
 				cloudConfigGenerator.GenerateCall.Returns.Error = errors.New("cloud config generator failed")
-				err := cloudConfigurator.Configure(cloudformation.Stack{})
+				err := cloudConfigurator.Configure(cloudformation.Stack{}, []string{})
 
 				Expect(err).To(MatchError("cloud config generator failed"))
 			})

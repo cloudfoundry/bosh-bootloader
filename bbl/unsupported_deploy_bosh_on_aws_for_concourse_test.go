@@ -205,6 +205,8 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("- name: m3.medium"))
 				Expect(stdout).To(ContainSubstring("- name: c3.large"))
 				Expect(stdout).To(ContainSubstring("- name: r3.xlarge"))
+				Expect(stdout).To(ContainSubstring("- name: r3.xlarge"))
+				Expect(stdout).To(ContainSubstring("availability_zone: us-east-1e"))
 			})
 		})
 	})

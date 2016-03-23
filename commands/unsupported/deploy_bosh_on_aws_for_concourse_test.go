@@ -21,17 +21,18 @@ import (
 var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 	Describe("Execute", func() {
 		var (
-			command               unsupported.DeployBOSHOnAWSForConcourse
-			boshDeployer          *fakes.BOSHDeployer
-			infrastructureCreator *fakes.InfrastructureCreator
-			keyPairSynchronizer   *fakes.KeyPairSynchronizer
-			cloudFormationClient  *fakes.CloudFormationClient
-			ec2Client             *fakes.EC2Client
-			clientProvider        *fakes.ClientProvider
-			stringGenerator       *fakes.StringGenerator
-			cloudConfigurator     *fakes.BoshCloudConfigurator
-			incomingState         storage.State
-			globalFlags           commands.GlobalFlags
+			command                   unsupported.DeployBOSHOnAWSForConcourse
+			boshDeployer              *fakes.BOSHDeployer
+			infrastructureCreator     *fakes.InfrastructureCreator
+			keyPairSynchronizer       *fakes.KeyPairSynchronizer
+			cloudFormationClient      *fakes.CloudFormationClient
+			ec2Client                 *fakes.EC2Client
+			clientProvider            *fakes.ClientProvider
+			stringGenerator           *fakes.StringGenerator
+			cloudConfigurator         *fakes.BoshCloudConfigurator
+			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
+			incomingState             storage.State
+			globalFlags               commands.GlobalFlags
 		)
 
 		BeforeEach(func() {
@@ -72,6 +73,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 			cloudConfigurator = &fakes.BoshCloudConfigurator{}
 
+			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
+
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
 			}
@@ -96,7 +99,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				},
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator, cloudConfigurator)
+			command = unsupported.NewDeployBOSHOnAWSForConcourse(
+				infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer,
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 		})
 
 		It("syncs the keypair", func() {
@@ -179,12 +184,16 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 		Describe("cloud configurator", func() {
 			It("generates a cloud config", func() {
+				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+
 				_, err := command.Execute(globalFlags, incomingState)
+
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
 				Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
 					Name: "concourse",
 				}))
+				Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
 			})
 		})
 
@@ -431,7 +440,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer, stringGenerator, cloudConfigurator)
+				command = unsupported.NewDeployBOSHOnAWSForConcourse(
+					infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer,
+					stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot deploy bosh"))
@@ -442,6 +453,13 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				stringGenerator.GenerateCall.Returns.Error = errors.New("cannot generate string")
 				_, err := command.Execute(globalFlags, incomingState)
 				Expect(err).To(MatchError("cannot generate string"))
+			})
+
+			It("returns an error when availability zones cannot be retrieved", func() {
+				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone could not be retrieved")
+
+				_, err := command.Execute(globalFlags, incomingState)
+				Expect(err).To(MatchError("availability zone could not be retrieved"))
 			})
 		})
 	})

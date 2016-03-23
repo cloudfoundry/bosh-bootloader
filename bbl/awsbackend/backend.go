@@ -88,6 +88,17 @@ func (b *Backend) UpdateStack(input *cloudformation.UpdateStackInput) (*cloudfor
 	return &cloudformation.UpdateStackOutput{}, nil
 }
 
+func (b *Backend) DescribeAvailabilityZones(input *ec2.DescribeAvailabilityZonesInput) (*ec2.DescribeAvailabilityZonesOutput, error) {
+	return &ec2.DescribeAvailabilityZonesOutput{
+		AvailabilityZones: []*ec2.AvailabilityZone{
+			{ZoneName: aws.String("us-east-1a")},
+			{ZoneName: aws.String("us-east-1b")},
+			{ZoneName: aws.String("us-east-1c")},
+			{ZoneName: aws.String("us-east-1e")},
+		},
+	}, nil
+}
+
 func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cloudformation.DescribeStacksOutput, error) {
 	name := *input.StackName
 	stack, ok := b.Stacks.Get(name)

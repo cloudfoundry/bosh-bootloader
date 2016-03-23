@@ -38,7 +38,11 @@ type stringGenerator interface {
 }
 
 type cloudConfigurator interface {
-	Configure(cloudformation.Stack) error
+	Configure(stack cloudformation.Stack, azs []string) error
+}
+
+type availabilityZoneRetriever interface {
+	Retrieve(region string, client ec2.Client) ([]string, error)
 }
 
 type logger interface {
@@ -47,22 +51,28 @@ type logger interface {
 }
 
 type DeployBOSHOnAWSForConcourse struct {
-	infrastructureCreator infrastructureCreator
-	keyPairSynchronizer   keyPairSynchronizer
-	awsClientProvider     awsClientProvider
-	boshDeployer          boshDeployer
-	stringGenerator       stringGenerator
-	cloudConfigurator     cloudConfigurator
+	infrastructureCreator     infrastructureCreator
+	keyPairSynchronizer       keyPairSynchronizer
+	awsClientProvider         awsClientProvider
+	boshDeployer              boshDeployer
+	stringGenerator           stringGenerator
+	cloudConfigurator         cloudConfigurator
+	availabilityZoneRetriever availabilityZoneRetriever
 }
 
-func NewDeployBOSHOnAWSForConcourse(infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer, awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator, cloudConfigurator cloudConfigurator) DeployBOSHOnAWSForConcourse {
+func NewDeployBOSHOnAWSForConcourse(
+	infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer,
+	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
+	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever) DeployBOSHOnAWSForConcourse {
+
 	return DeployBOSHOnAWSForConcourse{
-		infrastructureCreator: infrastructureCreator,
-		keyPairSynchronizer:   keyPairSynchronizer,
-		awsClientProvider:     awsClientProvider,
-		boshDeployer:          boshDeployer,
-		stringGenerator:       stringGenerator,
-		cloudConfigurator:     cloudConfigurator,
+		infrastructureCreator:     infrastructureCreator,
+		keyPairSynchronizer:       keyPairSynchronizer,
+		awsClientProvider:         awsClientProvider,
+		boshDeployer:              boshDeployer,
+		stringGenerator:           stringGenerator,
+		cloudConfigurator:         cloudConfigurator,
+		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
 
@@ -170,7 +180,12 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		}
 	}
 
-	err = d.cloudConfigurator.Configure(stack)
+	availabilityZones, err := d.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
+	if err != nil {
+		return state, err
+	}
+
+	err = d.cloudConfigurator.Configure(stack, availabilityZones)
 	if err != nil {
 		return state, err
 	}
