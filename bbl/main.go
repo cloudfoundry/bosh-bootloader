@@ -36,7 +36,7 @@ func main() {
 	stateStore := storage.NewStore()
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(logger)
-	infrastructureCreator := unsupported.NewInfrastructureCreator(templateBuilder, stackManager)
+	infrastructureCreator := cloudformation.NewInfrastructureCreator(templateBuilder, stackManager)
 	awsClientProvider := aws.NewClientProvider()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 

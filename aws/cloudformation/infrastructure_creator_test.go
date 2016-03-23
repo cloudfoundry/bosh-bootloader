@@ -1,4 +1,4 @@
-package unsupported_test
+package cloudformation_test
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -18,7 +17,7 @@ var _ = Describe("InfrastructureCreator", func() {
 		builder              *fakes.TemplateBuilder
 		stackManager         *fakes.StackManager
 		cloudFormationClient *fakes.CloudFormationClient
-		creator              unsupported.InfrastructureCreator
+		creator              cloudformation.InfrastructureCreator
 	)
 
 	BeforeEach(func() {
@@ -38,7 +37,7 @@ var _ = Describe("InfrastructureCreator", func() {
 			},
 		}
 
-		creator = unsupported.NewInfrastructureCreator(builder, stackManager)
+		creator = cloudformation.NewInfrastructureCreator(builder, stackManager)
 	})
 
 	It("creates the underlying infrastructure and returns the stack", func() {

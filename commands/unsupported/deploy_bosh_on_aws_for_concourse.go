@@ -10,7 +10,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-const STACKNAME = "concourse"
 const USERNAME_PREFIX = "user-"
 const USERNAME_LENGTH = 7
 const PASSWORD_PREFIX = "p-"
