@@ -129,6 +129,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		It("creates/updates the stack with the given name", func() {
+			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -138,7 +140,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Region:           "some-aws-region",
 				EndpointOverride: "some-endpoint",
 			}))
+
 			Expect(infrastructureCreator.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
+			Expect(infrastructureCreator.CreateCall.Receives.AvailabilityZones).To(ConsistOf("some-retrieved-az"))
 			Expect(infrastructureCreator.CreateCall.Returns.Error).To(BeNil())
 		})
 

@@ -1,5 +1,7 @@
 package templates
 
+import "fmt"
+
 type logger interface {
 	Step(message string)
 	Dot()
@@ -15,7 +17,7 @@ func NewTemplateBuilder(logger logger) TemplateBuilder {
 	}
 }
 
-func (t TemplateBuilder) Build(keyPairName string) Template {
+func (t TemplateBuilder) Build(keyPairName string, availabilityZones []string) Template {
 	t.logger.Step("generating cloudformation template")
 
 	boshIAMTemplateBuilder := NewBOSHIAMTemplateBuilder()
@@ -31,14 +33,12 @@ func (t TemplateBuilder) Build(keyPairName string) Template {
 		AWSTemplateFormatVersion: "2010-09-09",
 		Description:              "Infrastructure for a BOSH deployment with an ELB.",
 	}.Merge(
+		t.subnetTemplates(availabilityZones),
 		sshKeyPairTemplateBuilder.SSHKeyPairName(keyPairName),
 		boshIAMTemplateBuilder.BOSHIAMUser(),
 		natTemplateBuilder.NAT(),
 		vpcTemplateBuilder.VPC(),
 		subnetTemplateBuilder.BOSHSubnet(),
-		subnetTemplateBuilder.InternalSubnet(0, "1", "10.0.16.0/20"),
-		subnetTemplateBuilder.InternalSubnet(1, "2", "10.0.32.0/20"),
-		subnetTemplateBuilder.InternalSubnet(2, "3", "10.0.48.0/20"),
 		subnetTemplateBuilder.LoadBalancerSubnet(),
 		securityGroupTemplateBuilder.InternalSecurityGroup(),
 		securityGroupTemplateBuilder.BOSHSecurityGroup(),
@@ -46,4 +46,19 @@ func (t TemplateBuilder) Build(keyPairName string) Template {
 		webELBTemplateBuilder.WebELBLoadBalancer(),
 		boshEIPTemplateBuilder.BOSHEIP(),
 	)
+}
+
+func (t TemplateBuilder) subnetTemplates(availabilityZones []string) Template {
+	template := Template{}
+
+	subnetTemplateBuilder := NewSubnetTemplateBuilder()
+	for index, _ := range availabilityZones {
+		template = template.Merge(subnetTemplateBuilder.InternalSubnet(
+			index,
+			fmt.Sprintf("%d", index+1),
+			fmt.Sprintf("10.0.%d.0/20", 16*(index+1)),
+		))
+	}
+
+	return template
 }

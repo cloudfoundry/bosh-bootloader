@@ -35,6 +35,9 @@
         "InternalSubnet3CIDR": {
           "Value": {"Ref" : "InternalSubnet3CIDR"}
         },
+        "InternalSubnet4CIDR": {
+          "Value": {"Ref" : "InternalSubnet4CIDR"}
+        },
         "InternalSubnet1AZ": {
           "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
         },
@@ -44,12 +47,17 @@
         "InternalSubnet3AZ": {
           "Value": {"Fn::GetAtt": ["InternalSubnet3", "AvailabilityZone"]}
         },
+        "InternalSubnet4AZ": {
+          "Value": {"Fn::GetAtt": ["InternalSubnet4", "AvailabilityZone"]}
+        },
         "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
         "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
         "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
+        "InternalSubnet4Name": {"Value": {"Ref": "InternalSubnet4"}},
         "InternalSubnet1SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
         "InternalSubnet2SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
-        "InternalSubnet3SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}}
+        "InternalSubnet3SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
+        "InternalSubnet4SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {
@@ -75,6 +83,11 @@
         "InternalSubnet3CIDR": {
 			"Default": "10.0.48.0/20",
 			"Description": "CIDR block for InternalSubnet3.",
+            "Type": "String"
+        },
+        "InternalSubnet4CIDR": {
+			"Default": "10.0.64.0/20",
+			"Description": "CIDR block for InternalSubnet4.",
             "Type": "String"
         },
         "LoadBalancerSubnetCIDR": {
@@ -342,6 +355,24 @@
             "Properties": {
                 "RouteTableId": {"Ref": "InternalRouteTable"},
                 "SubnetId": {"Ref": "InternalSubnet3"}
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "InternalSubnet4": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": ["3", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
+                },
+                "CidrBlock": {"Ref": "InternalSubnet4CIDR"},
+                "Tags": [{"Key": "Name", "Value": "Internal4"}],
+                "VpcId": {"Ref": "VPC"}
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "InternalSubnet4RouteTableAssociation": {
+            "Properties": {
+                "RouteTableId": {"Ref": "InternalRouteTable"},
+                "SubnetId": {"Ref": "InternalSubnet4"}
             },
             "Type": "AWS::EC2::SubnetRouteTableAssociation"
         },

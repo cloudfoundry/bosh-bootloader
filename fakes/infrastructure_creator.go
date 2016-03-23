@@ -7,6 +7,7 @@ type InfrastructureCreator struct {
 		Receives struct {
 			KeyPairName          string
 			CloudFormationClient cloudformation.Client
+			AvailabilityZones    []string
 		}
 		Returns struct {
 			Stack cloudformation.Stack
@@ -15,8 +16,9 @@ type InfrastructureCreator struct {
 	}
 }
 
-func (c *InfrastructureCreator) Create(keyPairName string, client cloudformation.Client) (cloudformation.Stack, error) {
+func (c *InfrastructureCreator) Create(keyPairName string, azs []string, client cloudformation.Client) (cloudformation.Stack, error) {
 	c.CreateCall.Receives.KeyPairName = keyPairName
 	c.CreateCall.Receives.CloudFormationClient = client
+	c.CreateCall.Receives.AvailabilityZones = azs
 	return c.CreateCall.Returns.Stack, c.CreateCall.Returns.Error
 }

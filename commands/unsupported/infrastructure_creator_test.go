@@ -42,7 +42,7 @@ var _ = Describe("InfrastructureCreator", func() {
 	})
 
 	It("creates the underlying infrastructure and returns the stack", func() {
-		stack, err := creator.Create("some-key-pair-name", cloudFormationClient)
+		stack, err := creator.Create("some-key-pair-name", []string{"az-1", "az-2"}, cloudFormationClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(stack).To(Equal(cloudformation.Stack{
@@ -52,6 +52,7 @@ var _ = Describe("InfrastructureCreator", func() {
 			},
 		}))
 		Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-key-pair-name"))
+		Expect(builder.BuildCall.Receives.AZs).To(ConsistOf("az-1", "az-2"))
 
 		Expect(stackManager.CreateOrUpdateCall.Receives.Client).To(Equal(cloudFormationClient))
 		Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("concourse"))
@@ -69,21 +70,21 @@ var _ = Describe("InfrastructureCreator", func() {
 		It("returns an error when stack can't be created or updated", func() {
 			stackManager.CreateOrUpdateCall.Returns.Error = errors.New("stack create or update failed")
 
-			_, err := creator.Create("some-key-pair-name", cloudFormationClient)
+			_, err := creator.Create("some-key-pair-name", []string{}, cloudFormationClient)
 			Expect(err).To(MatchError("stack create or update failed"))
 		})
 
 		It("returns an error when waiting for stack completion fails", func() {
 			stackManager.WaitForCompletionCall.Returns.Error = errors.New("stack wait for completion failed")
 
-			_, err := creator.Create("some-key-pair-name", cloudFormationClient)
+			_, err := creator.Create("some-key-pair-name", []string{}, cloudFormationClient)
 			Expect(err).To(MatchError("stack wait for completion failed"))
 		})
 
 		It("returns an error when describing the stack fails", func() {
 			stackManager.DescribeCall.Returns.Error = errors.New("stack describe failed")
 
-			_, err := creator.Create("some-key-pair-name", cloudFormationClient)
+			_, err := creator.Create("some-key-pair-name", []string{}, cloudFormationClient)
 			Expect(err).To(MatchError("stack describe failed"))
 		})
 	})

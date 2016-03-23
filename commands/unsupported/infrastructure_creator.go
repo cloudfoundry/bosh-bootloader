@@ -8,7 +8,7 @@ import (
 )
 
 type templateBuilder interface {
-	Build(keypairName string) templates.Template
+	Build(keypairName string, availabilityZones []string) templates.Template
 }
 
 type stackManager interface {
@@ -29,8 +29,8 @@ func NewInfrastructureCreator(builder templateBuilder, stackManager stackManager
 	}
 }
 
-func (c InfrastructureCreator) Create(keyPairName string, cloudFormationClient cloudformation.Client) (cloudformation.Stack, error) {
-	template := c.templateBuilder.Build(keyPairName)
+func (c InfrastructureCreator) Create(keyPairName string, availabilityZones []string, cloudFormationClient cloudformation.Client) (cloudformation.Stack, error) {
+	template := c.templateBuilder.Build(keyPairName, availabilityZones)
 
 	if err := c.stackManager.CreateOrUpdate(cloudFormationClient, STACKNAME, template); err != nil {
 		return cloudformation.Stack{}, err

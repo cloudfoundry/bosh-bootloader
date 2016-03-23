@@ -26,7 +26,7 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureCreator interface {
-	Create(keyPairName string, client cloudformation.Client) (cloudformation.Stack, error)
+	Create(keyPairName string, azs []string, client cloudformation.Client) (cloudformation.Stack, error)
 }
 
 type boshDeployer interface {
@@ -114,7 +114,12 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	state.KeyPair.PublicKey = keyPair.PublicKey
 	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
-	stack, err := d.infrastructureCreator.Create(state.KeyPair.Name, cloudFormationClient)
+	availabilityZones, err := d.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
+	if err != nil {
+		return state, err
+	}
+
+	stack, err := d.infrastructureCreator.Create(state.KeyPair.Name, availabilityZones, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
@@ -178,11 +183,6 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			Credentials:            boshOutput.Credentials,
 			State:                  boshOutput.BOSHInitState,
 		}
-	}
-
-	availabilityZones, err := d.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
-	if err != nil {
-		return state, err
 	}
 
 	err = d.cloudConfigurator.Configure(stack, availabilityZones)
