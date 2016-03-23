@@ -1,4 +1,4 @@
-package unsupported_test
+package boshinit_test
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
@@ -18,7 +17,7 @@ var _ = Describe("BoshDeployer", func() {
 	var (
 		manifestBuilder *fakes.BOSHInitManifestBuilder
 		boshInitRunner  *fakes.BOSHInitRunner
-		boshDeployer    unsupported.BOSHDeployer
+		boshDeployer    boshinit.BOSHDeployer
 		logger          *fakes.Logger
 		stack           cloudformation.Stack
 		sslKeyPair      ssl.KeyPair
@@ -30,7 +29,7 @@ var _ = Describe("BoshDeployer", func() {
 		manifestBuilder = &fakes.BOSHInitManifestBuilder{}
 		boshInitRunner = &fakes.BOSHInitRunner{}
 		logger = &fakes.Logger{}
-		boshDeployer = unsupported.NewBOSHDeployer(manifestBuilder, boshInitRunner, logger)
+		boshDeployer = boshinit.NewBOSHDeployer(manifestBuilder, boshInitRunner, logger)
 
 		stack = cloudformation.Stack{
 			Outputs: map[string]string{
@@ -90,7 +89,7 @@ var _ = Describe("BoshDeployer", func() {
 
 	Describe("Deploy", func() {
 		It("deploys bosh and returns a bosh output", func() {
-			boshOutput, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
+			boshOutput, err := boshDeployer.Deploy(boshinit.BOSHDeployInput{
 				DirectorUsername: "some-director",
 				DirectorPassword: "some-password",
 				State: boshinit.State{
@@ -175,7 +174,7 @@ var _ = Describe("BoshDeployer", func() {
 				lines = append(lines, line)
 			}
 
-			_, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{
+			_, err := boshDeployer.Deploy(boshinit.BOSHDeployInput{
 				Stack:      stack,
 				AWSRegion:  "some-aws-region",
 				SSLKeyPair: sslKeyPair,
@@ -193,7 +192,7 @@ var _ = Describe("BoshDeployer", func() {
 				It("returns an error", func() {
 					manifestBuilder.BuildCall.Returns.Error = errors.New("failed to build manifest")
 
-					_, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{})
+					_, err := boshDeployer.Deploy(boshinit.BOSHDeployInput{})
 					Expect(err).To(MatchError("failed to build manifest"))
 				})
 			})
@@ -202,7 +201,7 @@ var _ = Describe("BoshDeployer", func() {
 				It("returns an error", func() {
 					boshInitRunner.DeployCall.Returns.Error = errors.New("failed to deploy")
 
-					_, err := boshDeployer.Deploy(unsupported.BOSHDeployInput{})
+					_, err := boshDeployer.Deploy(boshinit.BOSHDeployInput{})
 					Expect(err).To(MatchError("failed to deploy"))
 				})
 			})

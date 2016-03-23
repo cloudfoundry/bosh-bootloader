@@ -49,7 +49,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}
 
 			boshDeployer = &fakes.BOSHDeployer{}
-			boshDeployer.DeployCall.Returns.Output = unsupported.BOSHDeployOutput{
+			boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
 				DirectorSSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("updated-certificate"),
 					PrivateKey:  []byte("updated-private-key"),
@@ -150,7 +150,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(unsupported.BOSHDeployInput{
+			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.BOSHDeployInput{
 				DirectorUsername: "user-some-random-string",
 				DirectorPassword: "p-some-random-string",
 				State: boshinit.State{
@@ -300,7 +300,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Context("when the bosh credentials don't exist", func() {
 					It("returns the state with random credentials", func() {
 						incomingState.BOSH = nil
-						boshDeployer.DeployCall.Returns.Output = unsupported.BOSHDeployOutput{
+						boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
 							Credentials: boshinit.InternalCredentials{
 								MBusUsername:              "some-mbus-username",
 								NatsUsername:              "some-nats-username",

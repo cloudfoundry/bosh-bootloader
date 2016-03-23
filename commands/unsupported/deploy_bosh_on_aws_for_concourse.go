@@ -30,7 +30,7 @@ type infrastructureCreator interface {
 }
 
 type boshDeployer interface {
-	Deploy(BOSHDeployInput) (BOSHDeployOutput, error)
+	Deploy(boshinit.BOSHDeployInput) (boshinit.BOSHDeployOutput, error)
 }
 
 type stringGenerator interface {
@@ -124,7 +124,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	boshOutput := BOSHDeployOutput{
+	boshOutput := boshinit.BOSHDeployOutput{
 		DirectorSSLKeyPair: ssl.KeyPair{},
 		BOSHInitState:      boshinit.State{},
 		Credentials:        boshinit.InternalCredentials{},
@@ -156,7 +156,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		}
 	}
 
-	boshOutput, err = d.boshDeployer.Deploy(BOSHDeployInput{
+	boshOutput, err = d.boshDeployer.Deploy(boshinit.BOSHDeployInput{
 		DirectorUsername: directorUsername,
 		DirectorPassword: directorPassword,
 		State:            boshOutput.BOSHInitState,

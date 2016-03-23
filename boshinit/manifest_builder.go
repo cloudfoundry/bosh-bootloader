@@ -45,6 +45,7 @@ type InternalCredentials struct {
 
 type logger interface {
 	Step(message string)
+	Println(string)
 }
 
 type sslKeyPairGenerator interface {

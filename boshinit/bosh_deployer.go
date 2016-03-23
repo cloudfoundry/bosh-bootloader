@@ -1,4 +1,4 @@
-package unsupported
+package boshinit
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
 
@@ -19,26 +18,26 @@ type BOSHDeployer struct {
 type BOSHDeployInput struct {
 	DirectorUsername string
 	DirectorPassword string
-	State            boshinit.State
+	State            State
 	Stack            cloudformation.Stack
 	AWSRegion        string
 	SSLKeyPair       ssl.KeyPair
 	EC2KeyPair       ec2.KeyPair
-	Credentials      boshinit.InternalCredentials
+	Credentials      InternalCredentials
 }
 
 type BOSHDeployOutput struct {
-	Credentials        boshinit.InternalCredentials
-	BOSHInitState      boshinit.State
+	Credentials        InternalCredentials
+	BOSHInitState      State
 	DirectorSSLKeyPair ssl.KeyPair
 }
 
 type boshInitManifestBuilder interface {
-	Build(boshinit.ManifestProperties) (boshinit.Manifest, boshinit.ManifestProperties, error)
+	Build(ManifestProperties) (Manifest, ManifestProperties, error)
 }
 
 type boshInitRunner interface {
-	Deploy(manifest, privateKey []byte, state boshinit.State) (boshinit.State, error)
+	Deploy(manifest, privateKey []byte, state State) (State, error)
 }
 
 func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder, runner boshInitRunner, logger logger) BOSHDeployer {
@@ -50,7 +49,7 @@ func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder, runner boshInitRun
 }
 
 func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
-	manifest, manifestProperties, err := b.manifestBuilder.Build(boshinit.ManifestProperties{
+	manifest, manifestProperties, err := b.manifestBuilder.Build(ManifestProperties{
 		DirectorUsername: input.DirectorUsername,
 		DirectorPassword: input.DirectorPassword,
 		SubnetID:         input.Stack.Outputs["BOSHSubnet"],

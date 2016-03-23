@@ -56,7 +56,7 @@ func main() {
 	jobsManifestBuilder := boshinit.NewJobsManifestBuilder(stringGenerator)
 	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
-	boshDeployer := unsupported.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
+	boshDeployer := boshinit.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := unsupported.NewCloudConfigurator(logger, boshCloudConfigGenerator)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever()
