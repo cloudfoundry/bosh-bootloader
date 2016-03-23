@@ -26,7 +26,7 @@ var _ = Describe("KeyPairChecker", func() {
 	Describe("HasKeyPair", func() {
 		Context("when the keypair exists on AWS", func() {
 			BeforeEach(func() {
-				ec2Client.DescribeKeyPairsCall.Returns.DescribeKeyPairsOutput = &awsec2.DescribeKeyPairsOutput{
+				ec2Client.DescribeKeyPairsCall.Returns.Output = &awsec2.DescribeKeyPairsOutput{
 					KeyPairs: []*awsec2.KeyPairInfo{
 						{
 							KeyFingerprint: goaws.String("some-finger-print"),
