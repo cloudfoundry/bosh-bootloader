@@ -16,7 +16,7 @@ func NewAvailabilityZoneRetriever() AvailabilityZoneRetriever {
 func (r AvailabilityZoneRetriever) Retrieve(region string, client Client) ([]string, error) {
 	output, err := client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
-			Name:   goaws.String("region"),
+			Name:   goaws.String("region-name"),
 			Values: []*string{goaws.String(region)},
 		}},
 	})

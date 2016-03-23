@@ -3,6 +3,7 @@ package awsbackend
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -89,6 +90,17 @@ func (b *Backend) UpdateStack(input *cloudformation.UpdateStackInput) (*cloudfor
 }
 
 func (b *Backend) DescribeAvailabilityZones(input *ec2.DescribeAvailabilityZonesInput) (*ec2.DescribeAvailabilityZonesOutput, error) {
+	validInput := &ec2.DescribeAvailabilityZonesInput{
+		Filters: []*ec2.Filter{{
+			Name:   aws.String("region-name"),
+			Values: []*string{aws.String("some-region")},
+		}},
+	}
+
+	if !reflect.DeepEqual(input, validInput) {
+		return nil, nil
+	}
+
 	return &ec2.DescribeAvailabilityZonesOutput{
 		AvailabilityZones: []*ec2.AvailabilityZone{
 			{ZoneName: aws.String("us-east-1a")},

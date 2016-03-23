@@ -39,7 +39,7 @@ var _ = Describe("AvailabilityZoneRetriever", func() {
 		Expect(azs).To(ConsistOf("us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"))
 		Expect(ec2Client.DescribeAvailabilityZonesCall.Receives.Input).To(Equal(&awsec2.DescribeAvailabilityZonesInput{
 			Filters: []*awsec2.Filter{{
-				Name:   goaws.String("region"),
+				Name:   goaws.String("region-name"),
 				Values: []*string{goaws.String("us-east-1")},
 			}},
 		}))
