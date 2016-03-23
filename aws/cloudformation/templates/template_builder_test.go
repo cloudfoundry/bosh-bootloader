@@ -24,7 +24,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 	Describe("Build", func() {
 		It("builds a cloudformation template", func() {
-			template := builder.Build("keypair-name", []string{"az-1", "az-2", "az-3", "az-4", "az-5"})
+			template := builder.Build("keypair-name", 5)
 			Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 			Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with an ELB."))
 
@@ -47,7 +47,7 @@ var _ = Describe("TemplateBuilder", func() {
 		})
 
 		It("logs that the cloudformation template is being generated", func() {
-			builder.Build("keypair-name", []string{})
+			builder.Build("keypair-name", 0)
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating cloudformation template"))
 		})
@@ -55,7 +55,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 	Describe("template marshaling", func() {
 		It("can be marshaled to JSON", func() {
-			template := builder.Build("keypair-name", []string{"az-1", "az-2", "az-3", "az-4"})
+			template := builder.Build("keypair-name", 4)
 
 			buf, err := ioutil.ReadFile("fixtures/cloudformation.json")
 			Expect(err).NotTo(HaveOccurred())

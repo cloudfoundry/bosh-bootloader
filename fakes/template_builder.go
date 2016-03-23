@@ -6,7 +6,7 @@ type TemplateBuilder struct {
 	BuildCall struct {
 		Receives struct {
 			KeyPairName string
-			AZs         []string
+			NumberOfAZs int
 		}
 		Returns struct {
 			Template templates.Template
@@ -14,9 +14,9 @@ type TemplateBuilder struct {
 	}
 }
 
-func (b *TemplateBuilder) Build(keyPairName string, availabilityZones []string) templates.Template {
+func (b *TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int) templates.Template {
 	b.BuildCall.Receives.KeyPairName = keyPairName
-	b.BuildCall.Receives.AZs = availabilityZones
+	b.BuildCall.Receives.NumberOfAZs = numberOfAvailabilityZones
 
 	return b.BuildCall.Returns.Template
 }

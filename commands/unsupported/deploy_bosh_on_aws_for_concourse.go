@@ -26,7 +26,7 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureCreator interface {
-	Create(keyPairName string, azs []string, client cloudformation.Client) (cloudformation.Stack, error)
+	Create(keyPairName string, numberOfAZs int, client cloudformation.Client) (cloudformation.Stack, error)
 }
 
 type boshDeployer interface {
@@ -119,7 +119,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	stack, err := d.infrastructureCreator.Create(state.KeyPair.Name, availabilityZones, cloudFormationClient)
+	stack, err := d.infrastructureCreator.Create(state.KeyPair.Name, len(availabilityZones), cloudFormationClient)
 	if err != nil {
 		return state, err
 	}

@@ -142,7 +142,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}))
 
 			Expect(infrastructureCreator.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
-			Expect(infrastructureCreator.CreateCall.Receives.AvailabilityZones).To(ConsistOf("some-retrieved-az"))
+			Expect(infrastructureCreator.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
 			Expect(infrastructureCreator.CreateCall.Returns.Error).To(BeNil())
 		})
 

@@ -1,7 +1,5 @@
 package templates
 
-import "fmt"
-
 type logger interface {
 	Step(message string)
 	Dot()
@@ -17,13 +15,15 @@ func NewTemplateBuilder(logger logger) TemplateBuilder {
 	}
 }
 
-func (t TemplateBuilder) Build(keyPairName string, availabilityZones []string) Template {
+func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int) Template {
 	t.logger.Step("generating cloudformation template")
 
 	boshIAMTemplateBuilder := NewBOSHIAMTemplateBuilder()
 	natTemplateBuilder := NewNATTemplateBuilder()
 	vpcTemplateBuilder := NewVPCTemplateBuilder()
-	subnetTemplateBuilder := NewSubnetTemplateBuilder()
+	internalSubnetsTemplateBuilder := NewInternalSubnetsTemplateBuilder()
+	loadBalancerSubnetTemplateBuilder := NewLoadBalancerSubnetTemplateBuilder()
+	boshSubnetTemplateBuilder := NewBOSHSubnetTemplateBuilder()
 	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	webELBTemplateBuilder := NewWebELBTemplateBuilder()
 	boshEIPTemplateBuilder := NewBOSHEIPTemplateBuilder()
@@ -33,32 +33,17 @@ func (t TemplateBuilder) Build(keyPairName string, availabilityZones []string) T
 		AWSTemplateFormatVersion: "2010-09-09",
 		Description:              "Infrastructure for a BOSH deployment with an ELB.",
 	}.Merge(
-		t.subnetTemplates(availabilityZones),
+		internalSubnetsTemplateBuilder.InternalSubnets(numberOfAvailabilityZones),
 		sshKeyPairTemplateBuilder.SSHKeyPairName(keyPairName),
 		boshIAMTemplateBuilder.BOSHIAMUser(),
 		natTemplateBuilder.NAT(),
 		vpcTemplateBuilder.VPC(),
-		subnetTemplateBuilder.BOSHSubnet(),
-		subnetTemplateBuilder.LoadBalancerSubnet(),
+		boshSubnetTemplateBuilder.BOSHSubnet(),
+		loadBalancerSubnetTemplateBuilder.LoadBalancerSubnet(),
 		securityGroupTemplateBuilder.InternalSecurityGroup(),
 		securityGroupTemplateBuilder.BOSHSecurityGroup(),
 		securityGroupTemplateBuilder.WebSecurityGroup(),
 		webELBTemplateBuilder.WebELBLoadBalancer(),
 		boshEIPTemplateBuilder.BOSHEIP(),
 	)
-}
-
-func (t TemplateBuilder) subnetTemplates(availabilityZones []string) Template {
-	template := Template{}
-
-	subnetTemplateBuilder := NewSubnetTemplateBuilder()
-	for index, _ := range availabilityZones {
-		template = template.Merge(subnetTemplateBuilder.InternalSubnet(
-			index,
-			fmt.Sprintf("%d", index+1),
-			fmt.Sprintf("10.0.%d.0/20", 16*(index+1)),
-		))
-	}
-
-	return template
 }
