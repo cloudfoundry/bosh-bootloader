@@ -2,8 +2,8 @@ package ec2
 
 type KeyPair struct {
 	Name       string
-	PublicKey  []byte
-	PrivateKey []byte
+	PrivateKey string
+	PublicKey  string
 }
 
 func (kp KeyPair) IsEmpty() bool {

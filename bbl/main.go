@@ -32,7 +32,7 @@ func main() {
 	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator)
 	keyPairChecker := ec2.NewKeyPairChecker()
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
-	keyPairSynchronizer := unsupported.NewKeyPairSynchronizer(keyPairManager)
+	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
 	stateStore := storage.NewStore()
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(logger)

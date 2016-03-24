@@ -42,6 +42,6 @@ func (c KeyPairCreator) Create(client Client) (KeyPair, error) {
 
 	return KeyPair{
 		Name:       keyPairName,
-		PrivateKey: []byte(keyMaterial),
+		PrivateKey: keyMaterial,
 	}, nil
 }

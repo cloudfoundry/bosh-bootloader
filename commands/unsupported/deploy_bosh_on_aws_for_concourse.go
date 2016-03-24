@@ -21,7 +21,7 @@ type awsClientProvider interface {
 }
 
 type keyPairSynchronizer interface {
-	Sync(keypair KeyPair, ec2Client ec2.Client) (KeyPair, error)
+	Sync(keypair ec2.KeyPair, ec2Client ec2.Client) (ec2.KeyPair, error)
 }
 
 type infrastructureCreator interface {
@@ -100,7 +100,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		state.KeyPair = &storage.KeyPair{}
 	}
 
-	keyPair, err := d.keyPairSynchronizer.Sync(KeyPair{
+	keyPair, err := d.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
 		PublicKey:  state.KeyPair.PublicKey,
 		PrivateKey: state.KeyPair.PrivateKey,
@@ -164,8 +164,8 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		SSLKeyPair:       boshOutput.DirectorSSLKeyPair,
 		EC2KeyPair: ec2.KeyPair{
 			Name:       state.KeyPair.Name,
-			PrivateKey: []byte(state.KeyPair.PrivateKey),
-			PublicKey:  []byte(state.KeyPair.PublicKey),
+			PrivateKey: state.KeyPair.PrivateKey,
+			PublicKey:  state.KeyPair.PublicKey,
 		},
 		Credentials: boshOutput.Credentials,
 	})

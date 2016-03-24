@@ -47,8 +47,8 @@ var _ = Describe("BoshDeployer", func() {
 		}
 		ec2KeyPair = ec2.KeyPair{
 			Name:       "some-keypair-name",
-			PrivateKey: []byte("some-private-key"),
-			PublicKey:  []byte("some-public-key"),
+			PrivateKey: "some-private-key",
+			PublicKey:  "some-public-key",
 		}
 		credentials = boshinit.InternalCredentials{
 			MBusUsername:              "some-mbus-username",

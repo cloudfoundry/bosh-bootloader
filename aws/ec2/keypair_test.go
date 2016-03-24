@@ -17,8 +17,8 @@ var _ = Describe("KeyPair", func() {
 		It("returns false if the keypair is not empty", func() {
 			keypair := ec2.KeyPair{
 				Name:       "key-name",
-				PublicKey:  []byte("public"),
-				PrivateKey: []byte("private"),
+				PublicKey:  "public",
+				PrivateKey: "private",
 			}
 
 			Expect(keypair.IsEmpty()).To(BeFalse())

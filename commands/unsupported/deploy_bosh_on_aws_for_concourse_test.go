@@ -37,7 +37,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 		BeforeEach(func() {
 			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
-			keyPairSynchronizer.SyncCall.Returns.KeyPair = unsupported.KeyPair{
+			keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
 				Name:       "some-keypair-name",
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
@@ -115,7 +115,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				EndpointOverride: "some-endpoint",
 			}))
 			Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
-			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(unsupported.KeyPair{
+			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
@@ -166,8 +166,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				},
 				EC2KeyPair: ec2.KeyPair{
 					Name:       "some-keypair-name",
-					PublicKey:  []byte("some-public-key"),
-					PrivateKey: []byte("some-private-key"),
+					PublicKey:  "some-public-key",
+					PrivateKey: "some-private-key",
 				},
 			}))
 		})
@@ -182,7 +182,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
-				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(unsupported.KeyPair{}))
+				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{}))
 			})
 		})
 
@@ -220,7 +220,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					},
 				}
 
-				keyPairSynchronizer.SyncCall.Returns.KeyPair = unsupported.KeyPair{
+				keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",

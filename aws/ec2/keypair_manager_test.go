@@ -38,16 +38,16 @@ var _ = Describe("KeyPairManager", func() {
 			It("creates a keypair", func() {
 				creator.CreateCall.Returns.KeyPair = ec2.KeyPair{
 					Name:       "my-keypair",
-					PublicKey:  []byte("public"),
-					PrivateKey: []byte("private"),
+					PublicKey:  "public",
+					PrivateKey: "private",
 				}
 
 				keypair, err := manager.Sync(ec2Client, stateKeyPair)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(keypair).To(Equal(ec2.KeyPair{
 					Name:       "my-keypair",
-					PublicKey:  []byte("public"),
-					PrivateKey: []byte("private"),
+					PublicKey:  "public",
+					PrivateKey: "private",
 				}))
 
 				Expect(creator.CreateCall.Receives.Client).To(Equal(ec2Client))
@@ -81,8 +81,8 @@ var _ = Describe("KeyPairManager", func() {
 			BeforeEach(func() {
 				stateKeyPair = ec2.KeyPair{
 					Name:       "my-keypair",
-					PublicKey:  []byte("public"),
-					PrivateKey: []byte("private"),
+					PublicKey:  "public",
+					PrivateKey: "private",
 				}
 				checker.HasKeyPairCall.Stub = func(_ ec2.Client, name string) (bool, error) {
 					if checker.HasKeyPairCall.CallCount == 1 {
@@ -96,16 +96,16 @@ var _ = Describe("KeyPairManager", func() {
 			It("creates a keypair", func() {
 				creator.CreateCall.Returns.KeyPair = ec2.KeyPair{
 					Name:       "my-keypair",
-					PublicKey:  []byte("public"),
-					PrivateKey: []byte("private"),
+					PublicKey:  "public",
+					PrivateKey: "private",
 				}
 
 				keypair, err := manager.Sync(ec2Client, stateKeyPair)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(keypair).To(Equal(ec2.KeyPair{
 					Name:       "my-keypair",
-					PublicKey:  []byte("public"),
-					PrivateKey: []byte("private"),
+					PublicKey:  "public",
+					PrivateKey: "private",
 				}))
 
 				Expect(creator.CreateCall.Receives.Client).To(Equal(ec2Client))
@@ -138,8 +138,8 @@ var _ = Describe("KeyPairManager", func() {
 			BeforeEach(func() {
 				stateKeyPair = ec2.KeyPair{
 					Name:       "my-keypair",
-					PublicKey:  []byte("public"),
-					PrivateKey: []byte("private"),
+					PublicKey:  "public",
+					PrivateKey: "private",
 				}
 				checker.HasKeyPairCall.Returns.Present = true
 			})

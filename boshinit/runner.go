@@ -29,7 +29,7 @@ func NewRunner(dir string, command executable, logger logger) Runner {
 	}
 }
 
-func (r Runner) Deploy(manifest []byte, privateKey []byte, state State) (State, error) {
+func (r Runner) Deploy(manifest []byte, privateKey string, state State) (State, error) {
 	stateJSON, err := json.Marshal(state)
 	if err != nil {
 		return State{}, err
@@ -45,7 +45,7 @@ func (r Runner) Deploy(manifest []byte, privateKey []byte, state State) (State, 
 		return State{}, err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(r.directory, "bosh.pem"), privateKey, OS_READ_WRITE_MODE)
+	err = ioutil.WriteFile(filepath.Join(r.directory, "bosh.pem"), []byte(privateKey), OS_READ_WRITE_MODE)
 	if err != nil {
 		return State{}, err
 	}

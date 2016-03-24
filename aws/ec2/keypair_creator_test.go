@@ -39,7 +39,7 @@ var _ = Describe("KeyPairCreator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(keyPair.Name).To(Equal("keypair-guid"))
-			Expect(keyPair.PrivateKey).To(Equal([]byte("some-private-key")))
+			Expect(keyPair.PrivateKey).To(Equal("some-private-key"))
 
 			Expect(ec2Client.CreateKeyPairCall.Receives.Input).To(Equal(&awsec2.CreateKeyPairInput{
 				KeyName: goaws.String("keypair-guid"),
