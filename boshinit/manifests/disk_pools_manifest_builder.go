@@ -1,4 +1,4 @@
-package boshinit
+package manifests
 
 type DiskPoolsManifestBuilder struct{}
 

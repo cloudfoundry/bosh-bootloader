@@ -1,21 +1,21 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 
 type BOSHInitManifestBuilder struct {
 	BuildCall struct {
 		Receives struct {
-			Properties boshinit.ManifestProperties
+			Properties manifests.ManifestProperties
 		}
 		Returns struct {
-			Manifest   boshinit.Manifest
-			Properties boshinit.ManifestProperties
+			Manifest   manifests.Manifest
+			Properties manifests.ManifestProperties
 			Error      error
 		}
 	}
 }
 
-func (b *BOSHInitManifestBuilder) Build(properties boshinit.ManifestProperties) (boshinit.Manifest, boshinit.ManifestProperties, error) {
+func (b *BOSHInitManifestBuilder) Build(properties manifests.ManifestProperties) (manifests.Manifest, manifests.ManifestProperties, error) {
 	b.BuildCall.Receives.Properties = properties
 
 	return b.BuildCall.Returns.Manifest, b.BuildCall.Returns.Properties, b.BuildCall.Returns.Error

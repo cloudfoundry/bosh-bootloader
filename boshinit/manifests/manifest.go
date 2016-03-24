@@ -1,4 +1,4 @@
-package boshinit
+package manifests
 
 import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 

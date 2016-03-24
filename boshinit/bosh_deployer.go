@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
 
@@ -23,17 +24,22 @@ type BOSHDeployInput struct {
 	AWSRegion        string
 	SSLKeyPair       ssl.KeyPair
 	EC2KeyPair       ec2.KeyPair
-	Credentials      InternalCredentials
+	Credentials      manifests.InternalCredentials
 }
 
 type BOSHDeployOutput struct {
-	Credentials        InternalCredentials
+	Credentials        manifests.InternalCredentials
 	BOSHInitState      State
 	DirectorSSLKeyPair ssl.KeyPair
 }
 
+type logger interface {
+	Step(message string)
+	Println(string)
+}
+
 type boshInitManifestBuilder interface {
-	Build(ManifestProperties) (Manifest, ManifestProperties, error)
+	Build(manifests.ManifestProperties) (manifests.Manifest, manifests.ManifestProperties, error)
 }
 
 type boshInitRunner interface {
@@ -49,7 +55,7 @@ func NewBOSHDeployer(manifestBuilder boshInitManifestBuilder, runner boshInitRun
 }
 
 func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
-	manifest, manifestProperties, err := b.manifestBuilder.Build(ManifestProperties{
+	manifest, manifestProperties, err := b.manifestBuilder.Build(manifests.ManifestProperties{
 		DirectorUsername: input.DirectorUsername,
 		DirectorPassword: input.DirectorPassword,
 		SubnetID:         input.Stack.Outputs["BOSHSubnet"],

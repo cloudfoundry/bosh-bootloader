@@ -17,6 +17,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/helpers"
@@ -52,9 +53,9 @@ func main() {
 
 	boshInitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
 	boshInitDeployCommand := boshInitCommandBuilder.DeployCommand()
-	cloudProviderManifestBuilder := boshinit.NewCloudProviderManifestBuilder(stringGenerator)
-	jobsManifestBuilder := boshinit.NewJobsManifestBuilder(stringGenerator)
-	boshInitManifestBuilder := boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
+	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
+	boshInitManifestBuilder := manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
 	boshDeployer := boshinit.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()

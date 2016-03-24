@@ -1,16 +1,16 @@
-package boshinit_test
+package manifests_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 )
 
 var _ = Describe("DiskPoolsManifestBuilder", func() {
-	var diskPoolsManifestBuilder boshinit.DiskPoolsManifestBuilder
+	var diskPoolsManifestBuilder manifests.DiskPoolsManifestBuilder
 
 	BeforeEach(func() {
-		diskPoolsManifestBuilder = boshinit.NewDiskPoolsManifestBuilder()
+		diskPoolsManifestBuilder = manifests.NewDiskPoolsManifestBuilder()
 	})
 
 	Describe("Build", func() {
@@ -18,11 +18,11 @@ var _ = Describe("DiskPoolsManifestBuilder", func() {
 			diskPools := diskPoolsManifestBuilder.Build()
 
 			Expect(diskPools).To(HaveLen(1))
-			Expect(diskPools).To(ConsistOf([]boshinit.DiskPool{
+			Expect(diskPools).To(ConsistOf([]manifests.DiskPool{
 				{
 					Name:     "disks",
 					DiskSize: 20000,
-					CloudProperties: boshinit.DiskPoolsCloudProperties{
+					CloudProperties: manifests.DiskPoolsCloudProperties{
 						Type: "gp2",
 					},
 				},

@@ -1,4 +1,4 @@
-package boshinit_test
+package manifests_test
 
 import (
 	"errors"
@@ -6,19 +6,19 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 )
 
 var _ = Describe("JobsManifestBuilder", func() {
 	var (
-		jobsManifestBuilder boshinit.JobsManifestBuilder
+		jobsManifestBuilder manifests.JobsManifestBuilder
 		stringGenerator     *fakes.StringGenerator
 	)
 
 	BeforeEach(func() {
 		stringGenerator = &fakes.StringGenerator{}
-		jobsManifestBuilder = boshinit.NewJobsManifestBuilder(stringGenerator)
+		jobsManifestBuilder = manifests.NewJobsManifestBuilder(stringGenerator)
 	})
 
 	Describe("Build", func() {
@@ -29,7 +29,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("returns all jobs for manifest", func() {
-			jobs, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -46,7 +46,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.ResourcePool).To(Equal("vms"))
 			Expect(job.PersistentDiskPool).To(Equal("disks"))
 
-			Expect(job.Templates).To(ConsistOf([]boshinit.Template{
+			Expect(job.Templates).To(ConsistOf([]manifests.Template{
 				{Name: "nats", Release: "bosh"},
 				{Name: "redis", Release: "bosh"},
 				{Name: "postgres", Release: "bosh"},
@@ -57,7 +57,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 				{Name: "aws_cpi", Release: "bosh-aws-cpi"},
 			}))
 
-			Expect(job.Networks).To(ConsistOf([]boshinit.JobNetwork{
+			Expect(job.Networks).To(ConsistOf([]manifests.JobNetwork{
 				{
 					Name:      "private",
 					StaticIPs: []string{"10.0.0.6"},
@@ -85,7 +85,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("returns manifest properties with new credentials", func() {
-			_, manifestProperties, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			_, manifestProperties, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -110,13 +110,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("returns manifest and manifest properties with existing credentials", func() {
-			jobs, manifestProperties, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, manifestProperties, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
 				DefaultKeyName:  "some-key-name",
 				Region:          "some-region",
-				Credentials: boshinit.InternalCredentials{
+				Credentials: manifests.InternalCredentials{
 					NatsUsername:              "some-persisted-nats-username",
 					PostgresUsername:          "some-persisted-postgres-username",
 					RegistryUsername:          "some-persisted-registry-username",
@@ -143,7 +143,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.Registry.HTTP.User).To(Equal("some-persisted-registry-username"))
 			Expect(job.Properties.Blobstore.Director.User).To(Equal("some-persisted-blobstore-director-username"))
 			Expect(job.Properties.Blobstore.Agent.User).To(Equal("some-persisted-blobstore-agent-username"))
-			Expect(job.Properties.Director.UserManagement.Local.Users).To(ContainElement(boshinit.UserProperties{
+			Expect(job.Properties.Director.UserManagement.Local.Users).To(ContainElement(manifests.UserProperties{
 				Name:     "some-persisted-hm-username",
 				Password: "some-persisted-hm-password",
 			}))
@@ -175,7 +175,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("uses the same credentials for NATS and the Agent", func() {
-			jobs, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -192,7 +192,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for redis", func() {
-			jobs, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -207,7 +207,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for postgres", func() {
-			jobs, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -227,7 +227,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for blobstore director and agent", func() {
-			jobs, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -245,7 +245,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for health monitor", func() {
-			jobs, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -259,7 +259,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.HM.DirectorAccount.User).To(Equal("hm-user-some-random-string"))
 			Expect(job.Properties.HM.DirectorAccount.Password).To(Equal("hm-some-random-string"))
 			Expect(job.Properties.Director.UserManagement.Local.Users).To(ContainElement(
-				boshinit.UserProperties{
+				manifests.UserProperties{
 					Name:     "hm-user-some-random-string",
 					Password: "hm-some-random-string",
 				},
@@ -271,7 +271,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 				stringGenerator.GenerateCall.Stub = nil
 				stringGenerator.GenerateCall.Returns.Error = errors.New("string generation failed")
 
-				_, _, err := jobsManifestBuilder.Build(boshinit.ManifestProperties{})
+				_, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{})
 				Expect(err).To(MatchError("string generation failed"))
 
 			})

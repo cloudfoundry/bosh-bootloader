@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 
 type JobsManifestBuilder struct {
 	BuildCall struct {
@@ -10,6 +10,6 @@ type JobsManifestBuilder struct {
 	}
 }
 
-func (j JobsManifestBuilder) Build(manifestProperties boshinit.ManifestProperties) ([]boshinit.Job, boshinit.ManifestProperties, error) {
+func (j JobsManifestBuilder) Build(manifestProperties manifests.ManifestProperties) ([]manifests.Job, manifests.ManifestProperties, error) {
 	return nil, manifestProperties, j.BuildCall.Returns.Error
 }

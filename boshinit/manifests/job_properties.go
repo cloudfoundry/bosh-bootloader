@@ -1,4 +1,4 @@
-package boshinit
+package manifests
 
 type JobProperties struct {
 	NATS      NATSJobProperties      `yaml:"nats"`

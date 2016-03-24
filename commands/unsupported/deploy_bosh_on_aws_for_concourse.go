@@ -5,6 +5,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -126,7 +127,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	boshOutput := boshinit.BOSHDeployOutput{
 		DirectorSSLKeyPair: ssl.KeyPair{},
 		BOSHInitState:      boshinit.State{},
-		Credentials:        boshinit.InternalCredentials{},
+		Credentials:        manifests.InternalCredentials{},
 	}
 	var directorUsername string
 	var directorPassword string

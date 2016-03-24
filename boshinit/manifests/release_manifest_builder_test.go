@@ -1,16 +1,16 @@
-package boshinit_test
+package manifests_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 )
 
 var _ = Describe("ReleaseManifestBuilder", func() {
-	var releaseManifestBuilder boshinit.ReleaseManifestBuilder
+	var releaseManifestBuilder manifests.ReleaseManifestBuilder
 
 	BeforeEach(func() {
-		releaseManifestBuilder = boshinit.NewReleaseManifestBuilder()
+		releaseManifestBuilder = manifests.NewReleaseManifestBuilder()
 	})
 
 	Describe("Build", func() {
@@ -18,7 +18,7 @@ var _ = Describe("ReleaseManifestBuilder", func() {
 			releases := releaseManifestBuilder.Build()
 
 			Expect(releases).To(HaveLen(2))
-			Expect(releases).To(ConsistOf([]boshinit.Release{
+			Expect(releases).To(ConsistOf([]manifests.Release{
 				{
 					Name: "bosh",
 					URL:  "https://bosh.io/d/github.com/cloudfoundry/bosh?v=255.3",

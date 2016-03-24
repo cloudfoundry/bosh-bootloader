@@ -1,4 +1,4 @@
-package boshinit_test
+package manifests_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
@@ -20,21 +20,21 @@ var _ = Describe("ManifestBuilder", func() {
 		logger                       *fakes.Logger
 		sslKeyPairGenerator          *fakes.SSLKeyPairGenerator
 		stringGenerator              *fakes.StringGenerator
-		manifestBuilder              boshinit.ManifestBuilder
-		manifestProperties           boshinit.ManifestProperties
-		cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
-		jobsManifestBuilder          boshinit.JobsManifestBuilder
+		manifestBuilder              manifests.ManifestBuilder
+		manifestProperties           manifests.ManifestProperties
+		cloudProviderManifestBuilder manifests.CloudProviderManifestBuilder
+		jobsManifestBuilder          manifests.JobsManifestBuilder
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		sslKeyPairGenerator = &fakes.SSLKeyPairGenerator{}
 		stringGenerator = &fakes.StringGenerator{}
-		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(stringGenerator)
-		jobsManifestBuilder = boshinit.NewJobsManifestBuilder(stringGenerator)
+		cloudProviderManifestBuilder = manifests.NewCloudProviderManifestBuilder(stringGenerator)
+		jobsManifestBuilder = manifests.NewJobsManifestBuilder(stringGenerator)
 
-		manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
-		manifestProperties = boshinit.ManifestProperties{
+		manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+		manifestProperties = manifests.ManifestProperties{
 			DirectorUsername: "bosh-username",
 			DirectorPassword: "bosh-password",
 			SubnetID:         "subnet-12345",
@@ -62,7 +62,7 @@ var _ = Describe("ManifestBuilder", func() {
 			manifest, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 
-			expectedAWSProperties := boshinit.AWSProperties{
+			expectedAWSProperties := manifests.AWSProperties{
 				AccessKeyId:           "some-access-key-id",
 				SecretAccessKey:       "some-secret-access-key",
 				DefaultKeyName:        "some-key-name",
@@ -77,7 +77,7 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
 			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("52.0.112.12"))
 			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
-			Expect(manifest.Jobs[0].Properties.Director.SSL).To(Equal(boshinit.SSLProperties{
+			Expect(manifest.Jobs[0].Properties.Director.SSL).To(Equal(manifests.SSLProperties{
 				Cert: certificate,
 				Key:  privateKey,
 			}))
@@ -89,7 +89,7 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
 
 			Expect(manifestProperties).To(Equal(
-				boshinit.ManifestProperties{
+				manifests.ManifestProperties{
 					DirectorUsername: "bosh-username",
 					DirectorPassword: "bosh-password",
 					SubnetID:         "subnet-12345",
@@ -104,7 +104,7 @@ var _ = Describe("ManifestBuilder", func() {
 						Certificate: []byte(certificate),
 						PrivateKey:  []byte(privateKey),
 					},
-					Credentials: boshinit.InternalCredentials{
+					Credentials: manifests.InternalCredentials{
 						MBusUsername:              "mbus-user-some-random-string",
 						NatsUsername:              "nats-user-some-random-string",
 						PostgresUsername:          "postgres-user-some-random-string",
@@ -147,7 +147,7 @@ var _ = Describe("ManifestBuilder", func() {
 			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(15))
-			Expect(manifestProperties.Credentials).To(Equal(boshinit.InternalCredentials{
+			Expect(manifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-random-string",
 				NatsUsername:              "nats-user-some-random-string",
 				PostgresUsername:          "postgres-user-some-random-string",
@@ -167,7 +167,7 @@ var _ = Describe("ManifestBuilder", func() {
 		})
 
 		It("does not regenerate new random passwords if they already exist", func() {
-			manifestProperties.Credentials = boshinit.InternalCredentials{
+			manifestProperties.Credentials = manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-persisted-string",
 				NatsUsername:              "nats-user-some-persisted-string",
 				PostgresUsername:          "postgres-user-some-persisted-string",
@@ -188,7 +188,7 @@ var _ = Describe("ManifestBuilder", func() {
 			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(0))
-			Expect(manifestProperties.Credentials).To(Equal(boshinit.InternalCredentials{
+			Expect(manifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-persisted-string",
 				NatsUsername:              "nats-user-some-persisted-string",
 				PostgresUsername:          "postgres-user-some-persisted-string",
@@ -219,8 +219,8 @@ var _ = Describe("ManifestBuilder", func() {
 				BeforeEach(func() {
 					fakeCloudProviderManifestBuilder := &fakes.CloudProviderManifestBuilder{}
 					fakeCloudProviderManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
-					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
-					manifestProperties = boshinit.ManifestProperties{
+					manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
+					manifestProperties = manifests.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",
 						SubnetID:         "subnet-12345",
@@ -243,8 +243,8 @@ var _ = Describe("ManifestBuilder", func() {
 				BeforeEach(func() {
 					fakeJobsManifestBuilder := &fakes.JobsManifestBuilder{}
 					fakeJobsManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
-					manifestBuilder = boshinit.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
-					manifestProperties = boshinit.ManifestProperties{
+					manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
+					manifestProperties = manifests.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",
 						SubnetID:         "subnet-12345",

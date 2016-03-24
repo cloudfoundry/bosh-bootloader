@@ -1,21 +1,21 @@
-package boshinit_test
+package manifests_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 )
 
 var _ = Describe("SharedPropertiesManifestBuilder", func() {
-	var sharedPropertiesManifestBuilder *boshinit.SharedPropertiesManifestBuilder
+	var sharedPropertiesManifestBuilder *manifests.SharedPropertiesManifestBuilder
 
 	BeforeEach(func() {
-		sharedPropertiesManifestBuilder = boshinit.NewSharedPropertiesManifestBuilder()
+		sharedPropertiesManifestBuilder = manifests.NewSharedPropertiesManifestBuilder()
 	})
 
 	Describe("AWS", func() {
 		It("returns job properties for AWS", func() {
-			aws := sharedPropertiesManifestBuilder.AWS(boshinit.ManifestProperties{
+			aws := sharedPropertiesManifestBuilder.AWS(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -24,7 +24,7 @@ var _ = Describe("SharedPropertiesManifestBuilder", func() {
 				SecurityGroup:   "some-security-group",
 			})
 
-			Expect(aws).To(Equal(boshinit.AWSProperties{
+			Expect(aws).To(Equal(manifests.AWSProperties{
 				AccessKeyId:           "some-access-key-id",
 				SecretAccessKey:       "some-secret-access-key",
 				DefaultKeyName:        "some-key-name",

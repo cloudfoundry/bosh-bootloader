@@ -6,6 +6,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
@@ -22,7 +23,7 @@ var _ = Describe("BoshDeployer", func() {
 		stack           cloudformation.Stack
 		sslKeyPair      ssl.KeyPair
 		ec2KeyPair      ec2.KeyPair
-		credentials     boshinit.InternalCredentials
+		credentials     manifests.InternalCredentials
 	)
 
 	BeforeEach(func() {
@@ -50,7 +51,7 @@ var _ = Describe("BoshDeployer", func() {
 			PrivateKey: "some-private-key",
 			PublicKey:  "some-public-key",
 		}
-		credentials = boshinit.InternalCredentials{
+		credentials = manifests.InternalCredentials{
 			MBusUsername:              "some-mbus-username",
 			NatsUsername:              "some-nats-username",
 			PostgresUsername:          "some-postgres-username",
@@ -68,7 +69,7 @@ var _ = Describe("BoshDeployer", func() {
 			HMPassword:                "some-hm-password",
 		}
 
-		manifestBuilder.BuildCall.Returns.Properties = boshinit.ManifestProperties{
+		manifestBuilder.BuildCall.Returns.Properties = manifests.ManifestProperties{
 			DirectorUsername: "admin",
 			DirectorPassword: "admin",
 			ElasticIP:        "some-elastic-ip",
@@ -78,7 +79,7 @@ var _ = Describe("BoshDeployer", func() {
 			},
 			Credentials: credentials,
 		}
-		manifestBuilder.BuildCall.Returns.Manifest = boshinit.Manifest{
+		manifestBuilder.BuildCall.Returns.Manifest = manifests.Manifest{
 			Name: "bosh",
 		}
 
@@ -103,7 +104,7 @@ var _ = Describe("BoshDeployer", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(boshinit.ManifestProperties{
+			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(manifests.ManifestProperties{
 				DirectorUsername: "some-director",
 				DirectorPassword: "some-password",
 				SubnetID:         "subnet-12345",
@@ -118,7 +119,7 @@ var _ = Describe("BoshDeployer", func() {
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),
 				},
-				Credentials: boshinit.InternalCredentials{
+				Credentials: manifests.InternalCredentials{
 					MBusUsername:              "some-mbus-username",
 					NatsUsername:              "some-nats-username",
 					PostgresUsername:          "some-postgres-username",
@@ -143,7 +144,7 @@ var _ = Describe("BoshDeployer", func() {
 			Expect(boshOutput.BOSHInitState).To(Equal(boshinit.State{
 				"key": "value",
 			}))
-			Expect(boshOutput.Credentials).To(Equal(boshinit.InternalCredentials{
+			Expect(boshOutput.Credentials).To(Equal(manifests.InternalCredentials{
 				MBusUsername:              "some-mbus-username",
 				NatsUsername:              "some-nats-username",
 				PostgresUsername:          "some-postgres-username",

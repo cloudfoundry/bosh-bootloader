@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -53,7 +53,7 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
-					Credentials: boshinit.InternalCredentials{
+					Credentials: manifests.InternalCredentials{
 						MBusUsername:              "some-mbus-username",
 						NatsUsername:              "some-nats-username",
 						PostgresUsername:          "some-postgres-username",

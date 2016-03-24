@@ -1,23 +1,23 @@
-package boshinit_test
+package manifests_test
 
 import (
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 )
 
 var _ = Describe("CloudProviderManifestBuilder", func() {
 	var (
-		cloudProviderManifestBuilder boshinit.CloudProviderManifestBuilder
+		cloudProviderManifestBuilder manifests.CloudProviderManifestBuilder
 		stringGenerator              *fakes.StringGenerator
 	)
 
 	BeforeEach(func() {
 		stringGenerator = &fakes.StringGenerator{}
-		cloudProviderManifestBuilder = boshinit.NewCloudProviderManifestBuilder(stringGenerator)
+		cloudProviderManifestBuilder = manifests.NewCloudProviderManifestBuilder(stringGenerator)
 		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
 			return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
 		}
@@ -25,7 +25,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all cloud provider fields for manifest", func() {
-			cloudProvider, _, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
+			cloudProvider, _, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -34,13 +34,13 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				SecurityGroup:   "some-security-group",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudProvider).To(Equal(boshinit.CloudProvider{
-				Template: boshinit.Template{
+			Expect(cloudProvider).To(Equal(manifests.CloudProvider{
+				Template: manifests.Template{
 					Name:    "aws_cpi",
 					Release: "bosh-aws-cpi",
 				},
 
-				SSHTunnel: boshinit.SSHTunnel{
+				SSHTunnel: manifests.SSHTunnel{
 					Host:       "some-elastic-ip",
 					Port:       22,
 					User:       "vcap",
@@ -49,8 +49,8 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 				MBus: "https://mbus-user-some-random-string:mbus-some-random-string@some-elastic-ip:6868",
 
-				Properties: boshinit.CloudProviderProperties{
-					AWS: boshinit.AWSProperties{
+				Properties: manifests.CloudProviderProperties{
+					AWS: manifests.AWSProperties{
 						AccessKeyId:           "some-access-key-id",
 						SecretAccessKey:       "some-secret-access-key",
 						DefaultKeyName:        "some-key-name",
@@ -58,11 +58,11 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 						Region:                "some-region",
 					},
 
-					Agent: boshinit.AgentProperties{
+					Agent: manifests.AgentProperties{
 						MBus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868",
 					},
 
-					Blobstore: boshinit.BlobstoreProperties{
+					Blobstore: manifests.BlobstoreProperties{
 						Provider: "local",
 						Path:     "/var/vcap/micro_bosh/data/cache",
 					},
@@ -73,7 +73,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 		})
 
 		It("returns manifest properties with new credentials", func() {
-			_, manifestProperties, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
+			_, manifestProperties, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(manifestProperties.Credentials.MBusUsername).To(Equal("mbus-user-some-random-string"))
@@ -81,14 +81,14 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 		})
 
 		It("returns manifest and manifest properties with existing credentials", func() {
-			cloudProvider, manifestProperties, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{
+			cloudProvider, manifestProperties, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
 				DefaultKeyName:  "some-key-name",
 				Region:          "some-region",
 				SecurityGroup:   "some-security-group",
-				Credentials: boshinit.InternalCredentials{
+				Credentials: manifests.InternalCredentials{
 					MBusUsername: "some-persisted-mbus-username",
 					MBusPassword: "some-persisted-mbus-password",
 				},
@@ -107,7 +107,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 			})
 
 			It("forwards the error", func() {
-				_, _, err := cloudProviderManifestBuilder.Build(boshinit.ManifestProperties{})
+				_, _, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("foo"))
 			})

@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 
 type CloudProviderManifestBuilder struct {
 	BuildCall struct {
@@ -10,6 +10,6 @@ type CloudProviderManifestBuilder struct {
 	}
 }
 
-func (c CloudProviderManifestBuilder) Build(manifestProperties boshinit.ManifestProperties) (boshinit.CloudProvider, boshinit.ManifestProperties, error) {
-	return boshinit.CloudProvider{}, manifestProperties, c.BuildCall.Returns.Error
+func (c CloudProviderManifestBuilder) Build(manifestProperties manifests.ManifestProperties) (manifests.CloudProvider, manifests.ManifestProperties, error) {
+	return manifests.CloudProvider{}, manifestProperties, c.BuildCall.Returns.Error
 }

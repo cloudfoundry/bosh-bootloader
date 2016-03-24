@@ -1,15 +1,15 @@
-package boshinit_test
+package manifests_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
 
 var _ = Describe("JobPropertiesManifestBuilder", func() {
 	var (
-		jobPropertiesManifestBuilder boshinit.JobPropertiesManifestBuilder
+		jobPropertiesManifestBuilder manifests.JobPropertiesManifestBuilder
 		natsUsername                 string
 		postgresUsername             string
 		registryUsername             string
@@ -39,7 +39,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		blobstoreDirectorPassword = "random-blobstore-director-password"
 		blobstoreAgentPassword = "random-blobstore-agent-password"
 		hmPassword = "random-hm-password"
-		jobPropertiesManifestBuilder = boshinit.NewJobPropertiesManifestBuilder(
+		jobPropertiesManifestBuilder = manifests.NewJobPropertiesManifestBuilder(
 			natsUsername,
 			postgresUsername,
 			registryUsername,
@@ -60,7 +60,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		It("returns job properties for NATS", func() {
 			nats := jobPropertiesManifestBuilder.NATS()
 			Expect(nats).To(Equal(
-				boshinit.NATSJobProperties{
+				manifests.NATSJobProperties{
 					Address:  "127.0.0.1",
 					User:     natsUsername,
 					Password: natsPassword,
@@ -72,7 +72,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		It("returns job properties for Redis", func() {
 			redis := jobPropertiesManifestBuilder.Redis()
 			Expect(redis).To(Equal(
-				boshinit.RedisJobProperties{
+				manifests.RedisJobProperties{
 					ListenAddress: "127.0.0.1",
 					Address:       "127.0.0.1",
 					Password:      redisPassword,
@@ -83,7 +83,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Postgres", func() {
 		It("returns job properties for Postgres", func() {
 			postgres := jobPropertiesManifestBuilder.Postgres()
-			Expect(postgres).To(Equal(boshinit.PostgresProperties{
+			Expect(postgres).To(Equal(manifests.PostgresProperties{
 				ListenAddress: "127.0.0.1",
 				Host:          "127.0.0.1",
 				User:          postgresUsername,
@@ -97,13 +97,13 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Registry", func() {
 		It("returns job properties for Registry", func() {
 			registry := jobPropertiesManifestBuilder.Registry()
-			Expect(registry).To(Equal(boshinit.RegistryJobProperties{
+			Expect(registry).To(Equal(manifests.RegistryJobProperties{
 				Address:  "10.0.0.6",
 				Host:     "10.0.0.6",
 				Username: registryUsername,
 				Password: registryPassword,
 				Port:     25777,
-				DB: boshinit.PostgresProperties{
+				DB: manifests.PostgresProperties{
 					ListenAddress: "127.0.0.1",
 					Host:          "127.0.0.1",
 					User:          postgresUsername,
@@ -111,7 +111,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 					Database:      "bosh",
 					Adapter:       "postgres",
 				},
-				HTTP: boshinit.HTTPProperties{
+				HTTP: manifests.HTTPProperties{
 					User:     registryUsername,
 					Password: registryPassword,
 					Port:     25777,
@@ -123,15 +123,15 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Blobstore", func() {
 		It("returns job properties for Blobstore", func() {
 			blobstore := jobPropertiesManifestBuilder.Blobstore()
-			Expect(blobstore).To(Equal(boshinit.BlobstoreJobProperties{
+			Expect(blobstore).To(Equal(manifests.BlobstoreJobProperties{
 				Address:  "10.0.0.6",
 				Port:     25250,
 				Provider: "dav",
-				Director: boshinit.Credentials{
+				Director: manifests.Credentials{
 					User:     blobstoreDirectorUsername,
 					Password: blobstoreDirectorPassword,
 				},
-				Agent: boshinit.Credentials{
+				Agent: manifests.Credentials{
 					User:     blobstoreAgentUsername,
 					Password: blobstoreAgentPassword,
 				},
@@ -141,7 +141,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 
 	Describe("Director", func() {
 		It("returns job properties for Director", func() {
-			director := jobPropertiesManifestBuilder.Director(boshinit.ManifestProperties{
+			director := jobPropertiesManifestBuilder.Director(manifests.ManifestProperties{
 				DirectorUsername: "bosh-username",
 				DirectorPassword: "bosh-password",
 				SSLKeyPair: ssl.KeyPair{
@@ -149,12 +149,12 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 					PrivateKey:  []byte("some-ssl-key"),
 				},
 			})
-			Expect(director).To(Equal(boshinit.DirectorJobProperties{
+			Expect(director).To(Equal(manifests.DirectorJobProperties{
 				Address:    "127.0.0.1",
 				Name:       "my-bosh",
 				CPIJob:     "aws_cpi",
 				MaxThreads: 10,
-				DB: boshinit.PostgresProperties{
+				DB: manifests.PostgresProperties{
 					ListenAddress: "127.0.0.1",
 					Host:          "127.0.0.1",
 					User:          postgresUsername,
@@ -162,10 +162,10 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 					Database:      "bosh",
 					Adapter:       "postgres",
 				},
-				UserManagement: boshinit.UserManagementProperties{
+				UserManagement: manifests.UserManagementProperties{
 					Provider: "local",
-					Local: boshinit.LocalProperties{
-						Users: []boshinit.UserProperties{
+					Local: manifests.LocalProperties{
+						Users: []manifests.UserProperties{
 							{
 								Name:     "bosh-username",
 								Password: "bosh-password",
@@ -177,7 +177,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 						},
 					},
 				},
-				SSL: boshinit.SSLProperties{
+				SSL: manifests.SSLProperties{
 					Cert: "some-ssl-cert",
 					Key:  "some-ssl-key",
 				},
@@ -188,8 +188,8 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("HM", func() {
 		It("returns job properties for HM", func() {
 			hm := jobPropertiesManifestBuilder.HM()
-			Expect(hm).To(Equal(boshinit.HMJobProperties{
-				DirectorAccount: boshinit.Credentials{
+			Expect(hm).To(Equal(manifests.HMJobProperties{
+				DirectorAccount: manifests.Credentials{
 					User:     hmUsername,
 					Password: hmPassword,
 				},
@@ -201,7 +201,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Agent", func() {
 		It("returns job properties for Agent", func() {
 			agent := jobPropertiesManifestBuilder.Agent()
-			Expect(agent).To(Equal(boshinit.AgentProperties{
+			Expect(agent).To(Equal(manifests.AgentProperties{
 				MBus: "nats://random-nats-username:random-nats-password@10.0.0.6:4222",
 			}))
 		})

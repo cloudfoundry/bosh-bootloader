@@ -1,7 +1,7 @@
-package boshinit_test
+package manifests_test
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
 	. "github.com/onsi/ginkgo"
@@ -11,11 +11,11 @@ import (
 var _ = Describe("Manifest", func() {
 	Describe("DirectorSSLKeyPair", func() {
 		It("returns the director ssl keypair from a built manifest", func() {
-			manifest := boshinit.Manifest{
-				Jobs: []boshinit.Job{{
-					Properties: boshinit.JobProperties{
-						Director: boshinit.DirectorJobProperties{
-							SSL: boshinit.SSLProperties{
+			manifest := manifests.Manifest{
+				Jobs: []manifests.Job{{
+					Properties: manifests.JobProperties{
+						Director: manifests.DirectorJobProperties{
+							SSL: manifests.SSLProperties{
 								Cert: "some-cert",
 								Key:  "some-key",
 							},
@@ -32,7 +32,7 @@ var _ = Describe("Manifest", func() {
 		})
 
 		It("returns an empty keypair if there are no jobs", func() {
-			manifest := boshinit.Manifest{}
+			manifest := manifests.Manifest{}
 
 			keyPair := manifest.DirectorSSLKeyPair()
 			Expect(keyPair).To(Equal(ssl.KeyPair{}))

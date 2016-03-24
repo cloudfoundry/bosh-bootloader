@@ -8,6 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -301,7 +302,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					It("returns the state with random credentials", func() {
 						incomingState.BOSH = nil
 						boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
-							Credentials: boshinit.InternalCredentials{
+							Credentials: manifests.InternalCredentials{
 								MBusUsername:              "some-mbus-username",
 								NatsUsername:              "some-nats-username",
 								PostgresUsername:          "some-postgres-username",
@@ -322,7 +323,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 						state, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.BOSH.Credentials).To(Equal(boshinit.InternalCredentials{
+						Expect(state.BOSH.Credentials).To(Equal(manifests.InternalCredentials{
 							MBusUsername:              "some-mbus-username",
 							NatsUsername:              "some-nats-username",
 							PostgresUsername:          "some-postgres-username",
@@ -344,7 +345,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					Context("when the bosh credentials exist in the state.json", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
 							incomingState.BOSH = &storage.BOSH{
-								Credentials: boshinit.InternalCredentials{
+								Credentials: manifests.InternalCredentials{
 									MBusUsername:              "some-mbus-username",
 									NatsUsername:              "some-nats-username",
 									PostgresUsername:          "some-postgres-username",
@@ -365,7 +366,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 							state, err := command.Execute(globalFlags, incomingState)
 							Expect(err).NotTo(HaveOccurred())
-							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(boshinit.InternalCredentials{
+							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(manifests.InternalCredentials{
 								MBusUsername:              "some-mbus-username",
 								NatsUsername:              "some-nats-username",
 								PostgresUsername:          "some-postgres-username",
@@ -382,7 +383,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 								BlobstoreAgentPassword:    "some-blobstore-agent-password",
 								HMPassword:                "some-hm-password",
 							}))
-							Expect(state.BOSH.Credentials).To(Equal(boshinit.InternalCredentials{
+							Expect(state.BOSH.Credentials).To(Equal(manifests.InternalCredentials{
 								MBusUsername:              "some-mbus-username",
 								NatsUsername:              "some-nats-username",
 								PostgresUsername:          "some-postgres-username",
