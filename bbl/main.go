@@ -37,7 +37,7 @@ func main() {
 	stateStore := storage.NewStore()
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(logger)
-	infrastructureCreator := cloudformation.NewInfrastructureCreator(templateBuilder, stackManager)
+	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 	awsClientProvider := aws.NewClientProvider()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 
@@ -65,7 +65,7 @@ func main() {
 	app := application.New(application.CommandSet{
 		"help":    commands.NewUsage(os.Stdout),
 		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureCreator, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator, cloudConfigurator, availabilityZoneRetriever),
+		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator, cloudConfigurator, availabilityZoneRetriever),
 	}, stateStore, commands.NewUsage(os.Stdout).Print)
 
 	err = app.Run(os.Args[1:])

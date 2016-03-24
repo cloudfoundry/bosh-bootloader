@@ -23,7 +23,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		var (
 			command                   unsupported.DeployBOSHOnAWSForConcourse
 			boshDeployer              *fakes.BOSHDeployer
-			infrastructureCreator     *fakes.InfrastructureCreator
+			infrastructureManager     *fakes.InfrastructureManager
 			keyPairSynchronizer       *fakes.KeyPairSynchronizer
 			cloudFormationClient      *fakes.CloudFormationClient
 			ec2Client                 *fakes.EC2Client
@@ -31,7 +31,6 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			stringGenerator           *fakes.StringGenerator
 			cloudConfigurator         *fakes.BoshCloudConfigurator
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-			incomingState             storage.State
 			globalFlags               commands.GlobalFlags
 			boshInitCredentials       map[string]string
 		)
@@ -44,8 +43,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				PublicKey:  "some-public-key",
 			}
 
-			infrastructureCreator = &fakes.InfrastructureCreator{}
-			infrastructureCreator.CreateCall.Returns.Stack = cloudformation.Stack{
+			infrastructureManager = &fakes.InfrastructureManager{}
+			infrastructureManager.CreateCall.Returns.Stack = cloudformation.Stack{
 				Name: "concourse",
 			}
 
@@ -80,28 +79,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				EndpointOverride: "some-endpoint",
 			}
 
-			incomingState = storage.State{
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				KeyPair: &storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				},
-				BOSH: &storage.BOSH{
-					DirectorSSLCertificate: "some-certificate",
-					DirectorSSLPrivateKey:  "some-private-key",
-					State: map[string]interface{}{
-						"key": "value",
-					},
-				},
-			}
-
 			command = unsupported.NewDeployBOSHOnAWSForConcourse(
-				infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer,
+				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 
 			boshInitCredentials = map[string]string{
@@ -124,7 +103,18 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		It("syncs the keypair", func() {
-			state, err := command.Execute(globalFlags, incomingState)
+			state, err := command.Execute(globalFlags, storage.State{
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+				KeyPair: &storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
@@ -148,6 +138,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		It("creates/updates the stack with the given name", func() {
+			incomingState := storage.State{
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+			}
+
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
 			_, err := command.Execute(globalFlags, incomingState)
@@ -160,12 +158,32 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				EndpointOverride: "some-endpoint",
 			}))
 
-			Expect(infrastructureCreator.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
-			Expect(infrastructureCreator.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
-			Expect(infrastructureCreator.CreateCall.Returns.Error).To(BeNil())
+			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
+			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
+			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
 		})
 
 		It("deploys bosh", func() {
+			infrastructureManager.ExistsCall.Returns.Exists = true
+
+			incomingState := storage.State{
+				AWS: storage.AWS{
+					Region: "some-aws-region",
+				},
+				KeyPair: &storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
+				BOSH: &storage.BOSH{
+					DirectorSSLCertificate: "some-certificate",
+					DirectorSSLPrivateKey:  "some-private-key",
+					State: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			}
+
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -192,12 +210,8 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		Context("when there is no keypair", func() {
-			BeforeEach(func() {
-				incomingState.KeyPair = nil
-			})
-
 			It("syncs with an empty keypair", func() {
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
@@ -209,7 +223,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("generates a cloud config", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -222,23 +236,6 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 		Describe("state manipulation", func() {
 			BeforeEach(func() {
-				incomingState = storage.State{
-					KeyPair: &storage.KeyPair{
-						Name:       "some-keypair-name",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
-					BOSH: &storage.BOSH{
-						DirectorUsername:       "some-director-username",
-						DirectorPassword:       "some-director-password",
-						DirectorSSLCertificate: "some-certificate",
-						DirectorSSLPrivateKey:  "some-private-key",
-						State: map[string]interface{}{
-							"key": "value",
-						},
-					},
-				}
-
 				keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
@@ -249,17 +246,22 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			Context("aws keypair", func() {
 				Context("when the keypair exists", func() {
 					It("returns the given state unmodified", func() {
+						incomingState := storage.State{
+							KeyPair: &storage.KeyPair{
+								Name:       "some-keypair-name",
+								PrivateKey: "some-private-key",
+								PublicKey:  "some-public-key",
+							},
+						}
 						state, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state).To(Equal(incomingState))
+						Expect(state.KeyPair).To(Equal(incomingState.KeyPair))
 					})
 				})
 
 				Context("when the keypair doesn't exist", func() {
 					It("returns the state with a new key pair", func() {
-						incomingState.KeyPair = nil
-
-						state, err := command.Execute(globalFlags, incomingState)
+						state, err := command.Execute(globalFlags, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.KeyPair).To(Equal(&storage.KeyPair{
@@ -272,20 +274,28 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			})
 
 			Describe("bosh", func() {
+				BeforeEach(func() {
+					infrastructureManager.ExistsCall.Returns.Exists = true
+				})
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
-						state, err := command.Execute(globalFlags, incomingState)
+						state, err := command.Execute(globalFlags, storage.State{
+							BOSH: &storage.BOSH{
+								DirectorSSLCertificate: "some-certificate",
+								DirectorSSLPrivateKey:  "some-private-key",
+							},
+						})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state).To(Equal(incomingState))
+						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("some-certificate"))
+						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("some-private-key"))
 					})
 				})
 
 				Context("when the bosh director ssl keypair doesn't exist", func() {
 					It("returns the state with a new key pair", func() {
-						incomingState.BOSH = nil
-
-						state, err := command.Execute(globalFlags, incomingState)
+						state, err := command.Execute(globalFlags, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
+
 						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("updated-certificate"))
 						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("updated-private-key"))
 						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
@@ -296,8 +306,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				Context("when there are no director credentials", func() {
 					It("deploys with randomized director credentials", func() {
-						incomingState.BOSH = nil
-						state, err := command.Execute(globalFlags, incomingState)
+						state, err := command.Execute(globalFlags, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("user-some-random-string"))
@@ -308,6 +317,12 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				Context("when there are director credentials", func() {
 					It("uses the old credentials", func() {
+						incomingState := storage.State{
+							BOSH: &storage.BOSH{
+								DirectorUsername: "some-director-username",
+								DirectorPassword: "some-director-password",
+							},
+						}
 						_, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -318,21 +333,21 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				Context("when the bosh credentials don't exist", func() {
 					It("returns the state with random credentials", func() {
-						incomingState.BOSH = nil
 						boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
 							Credentials: boshInitCredentials,
 						}
 
-						state, err := command.Execute(globalFlags, incomingState)
+						state, err := command.Execute(globalFlags, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 					})
 
 					Context("when the bosh credentials exist in the state.json", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
-							incomingState.BOSH = &storage.BOSH{Credentials: boshInitCredentials}
+							state, err := command.Execute(globalFlags, storage.State{
+								BOSH: &storage.BOSH{Credentials: boshInitCredentials},
+							})
 
-							state, err := command.Execute(globalFlags, incomingState)
 							Expect(err).NotTo(HaveOccurred())
 							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(boshInitCredentials))
 							Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
@@ -343,38 +358,63 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = false
+
+				_, err := command.Execute(globalFlags, storage.State{
+					AWS: storage.AWS{
+						Region: "some-aws-region",
+					},
+					BOSH: &storage.BOSH{},
+				})
+
+				Expect(err).To(MatchError("Found BOSH data in state directory, " +
+					"but Cloud Formation stack \"concourse\" cannot be found for region \"some-aws-region\" and given " +
+					"AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at " +
+					"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance."))
+
+				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
+			})
+
+			It("returns an error when checking if the infrastructure exists fails", func() {
+				infrastructureManager.ExistsCall.Returns.Error = errors.New("error checking if stack exists")
+
+				_, err := command.Execute(globalFlags, storage.State{})
+				Expect(err).To(MatchError("error checking if stack exists"))
+			})
+
 			It("returns an error when the cloudformation client can not be created", func() {
 				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("error creating client")
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("error creating client"))
 			})
 
 			It("returns an error when the ec2 client can not be created", func() {
 				clientProvider.EC2ClientCall.Returns.Error = errors.New("error creating client")
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("error creating client"))
 			})
 
 			It("returns an error when the key pair fails to sync", func() {
 				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("error syncing key pair"))
 			})
 
 			It("returns an error when infrastructure cannot be created", func() {
-				infrastructureCreator.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
+				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
 			It("returns an error when the cloud config cannot be configured", func() {
 				cloudConfigurator.ConfigureCall.Returns.Error = errors.New("bosh cloud configuration failed")
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("bosh cloud configuration failed"))
 			})
 
@@ -382,24 +422,24 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = unsupported.NewDeployBOSHOnAWSForConcourse(
-					infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer,
+					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
 					stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
 			})
 
 			It("returns an error when it cannot generate a string for the bosh director credentials", func() {
 				stringGenerator.GenerateCall.Stub = nil
 				stringGenerator.GenerateCall.Returns.Error = errors.New("cannot generate string")
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("cannot generate string"))
 			})
 
 			It("returns an error when availability zones cannot be retrieved", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone could not be retrieved")
 
-				_, err := command.Execute(globalFlags, incomingState)
+				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
 			})
 		})

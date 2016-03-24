@@ -1,6 +1,8 @@
 package unsupported
 
 import (
+	"fmt"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
@@ -24,8 +26,9 @@ type keyPairSynchronizer interface {
 	Sync(keypair ec2.KeyPair, ec2Client ec2.Client) (ec2.KeyPair, error)
 }
 
-type infrastructureCreator interface {
+type infrastructureManager interface {
 	Create(keyPairName string, numberOfAZs int, client cloudformation.Client) (cloudformation.Stack, error)
+	Exists(client cloudformation.Client) (bool, error)
 }
 
 type boshDeployer interface {
@@ -50,7 +53,7 @@ type logger interface {
 }
 
 type DeployBOSHOnAWSForConcourse struct {
-	infrastructureCreator     infrastructureCreator
+	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
 	awsClientProvider         awsClientProvider
 	boshDeployer              boshDeployer
@@ -60,12 +63,12 @@ type DeployBOSHOnAWSForConcourse struct {
 }
 
 func NewDeployBOSHOnAWSForConcourse(
-	infrastructureCreator infrastructureCreator, keyPairSynchronizer keyPairSynchronizer,
+	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
 	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever) DeployBOSHOnAWSForConcourse {
 
 	return DeployBOSHOnAWSForConcourse{
-		infrastructureCreator:     infrastructureCreator,
+		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
 		awsClientProvider:         awsClientProvider,
 		boshDeployer:              boshDeployer,
@@ -76,7 +79,7 @@ func NewDeployBOSHOnAWSForConcourse(
 }
 
 func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
-	cloudFormationClient, err := d.awsClientProvider.CloudFormationClient(aws.Config{
+	cloudformationClient, err := d.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -84,6 +87,19 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	})
 	if err != nil {
 		return state, err
+	}
+
+	stackExists, err := d.infrastructureManager.Exists(cloudformationClient)
+	if err != nil {
+		return state, err
+	}
+
+	if state.BOSH != nil && !stackExists {
+		return state, fmt.Errorf(
+			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
+				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
+				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
+			cloudformation.STACK_NAME, state.AWS.Region)
 	}
 
 	ec2Client, err := d.awsClientProvider.EC2Client(aws.Config{
@@ -118,7 +134,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	stack, err := d.infrastructureCreator.Create(state.KeyPair.Name, len(availabilityZones), cloudFormationClient)
+	stack, err := d.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), cloudformationClient)
 	if err != nil {
 		return state, err
 	}

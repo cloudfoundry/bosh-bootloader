@@ -68,12 +68,8 @@ var _ = Describe("bbl", func() {
 		Context("when the cloudformation stack does not exist", func() {
 			var stack awsbackend.Stack
 
-			BeforeEach(func() {
-				writeEmptyStateJson(tempDirectory)
-			})
-
 			It("creates a stack and a keypair", func() {
-				deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get("concourse")
@@ -87,7 +83,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("creates an IAM user", func() {
-				deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get("concourse")
@@ -109,7 +105,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("logs the steps and bosh-init manifest", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: creating keypair"))
@@ -122,7 +118,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("prints out randomized bosh director credentials", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(MatchRegexp(`Director Username: user-\w{7}`))
@@ -130,20 +126,26 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("invokes bosh-init", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 			})
 
 			It("can invoke bosh-init idempotently", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 
-				session = deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session = deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value","md5checksum":`))
 				Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
+			})
+
+			It("fast fails if the bosh state exists", func() {
+				writeStateJson(storage.State{BOSH: &storage.BOSH{}}, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 1)
+				Expect(session.Err.Contents()).To(ContainSubstring("Found BOSH data in state directory"))
 			})
 		})
 
@@ -170,7 +172,7 @@ var _ = Describe("bbl", func() {
 
 				ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
 
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 
 				stack, ok := fakeAWS.Stacks.Get("concourse")
 				Expect(ok).To(BeTrue())
@@ -189,7 +191,7 @@ var _ = Describe("bbl", func() {
 
 		Context("cloud config", func() {
 			It("prints out the cloud config", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
 				Expect(stdout).To(ContainSubstring("cloud config:"))
@@ -212,16 +214,14 @@ var _ = Describe("bbl", func() {
 	})
 })
 
-func writeEmptyStateJson(tempDirectory string) {
-	state := storage.State{}
-
+func writeStateJson(state storage.State, tempDirectory string) {
 	buf, err := json.Marshal(state)
 	Expect(err).NotTo(HaveOccurred())
 
 	ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
 }
 
-func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string) *gexec.Session {
+func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--aws-access-key-id", "some-access-key",
@@ -233,7 +233,7 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string) *gexec.
 
 	session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
-	Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
 
 	return session
 }
