@@ -24,11 +24,11 @@ type BOSHDeployInput struct {
 	AWSRegion        string
 	SSLKeyPair       ssl.KeyPair
 	EC2KeyPair       ec2.KeyPair
-	Credentials      manifests.InternalCredentials
+	Credentials      map[string]string
 }
 
 type BOSHDeployOutput struct {
-	Credentials        manifests.InternalCredentials
+	Credentials        map[string]string
 	BOSHInitState      State
 	DirectorSSLKeyPair ssl.KeyPair
 }
@@ -67,7 +67,7 @@ func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
 		Region:           input.AWSRegion,
 		DefaultKeyName:   input.EC2KeyPair.Name,
 		SSLKeyPair:       input.SSLKeyPair,
-		Credentials:      input.Credentials,
+		Credentials:      manifests.NewInternalCredentials(input.Credentials),
 	})
 	if err != nil {
 		return BOSHDeployOutput{}, err
@@ -90,6 +90,6 @@ func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
 	return BOSHDeployOutput{
 		BOSHInitState:      state,
 		DirectorSSLKeyPair: manifestProperties.SSLKeyPair,
-		Credentials:        manifestProperties.Credentials,
+		Credentials:        manifestProperties.Credentials.ToMap(),
 	}, nil
 }

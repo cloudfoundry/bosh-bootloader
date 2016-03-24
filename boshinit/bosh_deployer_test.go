@@ -23,7 +23,7 @@ var _ = Describe("BoshDeployer", func() {
 		stack           cloudformation.Stack
 		sslKeyPair      ssl.KeyPair
 		ec2KeyPair      ec2.KeyPair
-		credentials     manifests.InternalCredentials
+		credentials     map[string]string
 	)
 
 	BeforeEach(func() {
@@ -51,22 +51,22 @@ var _ = Describe("BoshDeployer", func() {
 			PrivateKey: "some-private-key",
 			PublicKey:  "some-public-key",
 		}
-		credentials = manifests.InternalCredentials{
-			MBusUsername:              "some-mbus-username",
-			NatsUsername:              "some-nats-username",
-			PostgresUsername:          "some-postgres-username",
-			RegistryUsername:          "some-registry-username",
-			BlobstoreDirectorUsername: "some-blobstore-director-username",
-			BlobstoreAgentUsername:    "some-blobstore-agent-username",
-			HMUsername:                "some-hm-username",
-			MBusPassword:              "some-mbus-password",
-			NatsPassword:              "some-nats-password",
-			RedisPassword:             "some-redis-password",
-			PostgresPassword:          "some-postgres-password",
-			RegistryPassword:          "some-registry-password",
-			BlobstoreDirectorPassword: "some-blobstore-director-password",
-			BlobstoreAgentPassword:    "some-blobstore-agent-password",
-			HMPassword:                "some-hm-password",
+		credentials = map[string]string{
+			"mbusUsername":              "some-mbus-username",
+			"natsUsername":              "some-nats-username",
+			"postgresUsername":          "some-postgres-username",
+			"registryUsername":          "some-registry-username",
+			"blobstoreDirectorUsername": "some-blobstore-director-username",
+			"blobstoreAgentUsername":    "some-blobstore-agent-username",
+			"hmUsername":                "some-hm-username",
+			"mbusPassword":              "some-mbus-password",
+			"natsPassword":              "some-nats-password",
+			"redisPassword":             "some-redis-password",
+			"postgresPassword":          "some-postgres-password",
+			"registryPassword":          "some-registry-password",
+			"blobstoreDirectorPassword": "some-blobstore-director-password",
+			"blobstoreAgentPassword":    "some-blobstore-agent-password",
+			"hmPassword":                "some-hm-password",
 		}
 
 		manifestBuilder.BuildCall.Returns.Properties = manifests.ManifestProperties{
@@ -77,7 +77,23 @@ var _ = Describe("BoshDeployer", func() {
 				Certificate: []byte("updated-certificate"),
 				PrivateKey:  []byte("updated-private-key"),
 			},
-			Credentials: credentials,
+			Credentials: manifests.InternalCredentials{
+				MBusUsername:              "some-mbus-username",
+				NatsUsername:              "some-nats-username",
+				PostgresUsername:          "some-postgres-username",
+				RegistryUsername:          "some-registry-username",
+				BlobstoreDirectorUsername: "some-blobstore-director-username",
+				BlobstoreAgentUsername:    "some-blobstore-agent-username",
+				HMUsername:                "some-hm-username",
+				MBusPassword:              "some-mbus-password",
+				NatsPassword:              "some-nats-password",
+				RedisPassword:             "some-redis-password",
+				PostgresPassword:          "some-postgres-password",
+				RegistryPassword:          "some-registry-password",
+				BlobstoreDirectorPassword: "some-blobstore-director-password",
+				BlobstoreAgentPassword:    "some-blobstore-agent-password",
+				HMPassword:                "some-hm-password",
+			},
 		}
 		manifestBuilder.BuildCall.Returns.Manifest = manifests.Manifest{
 			Name: "bosh",
@@ -144,22 +160,22 @@ var _ = Describe("BoshDeployer", func() {
 			Expect(boshOutput.BOSHInitState).To(Equal(boshinit.State{
 				"key": "value",
 			}))
-			Expect(boshOutput.Credentials).To(Equal(manifests.InternalCredentials{
-				MBusUsername:              "some-mbus-username",
-				NatsUsername:              "some-nats-username",
-				PostgresUsername:          "some-postgres-username",
-				RegistryUsername:          "some-registry-username",
-				BlobstoreDirectorUsername: "some-blobstore-director-username",
-				BlobstoreAgentUsername:    "some-blobstore-agent-username",
-				HMUsername:                "some-hm-username",
-				MBusPassword:              "some-mbus-password",
-				NatsPassword:              "some-nats-password",
-				RedisPassword:             "some-redis-password",
-				PostgresPassword:          "some-postgres-password",
-				RegistryPassword:          "some-registry-password",
-				BlobstoreDirectorPassword: "some-blobstore-director-password",
-				BlobstoreAgentPassword:    "some-blobstore-agent-password",
-				HMPassword:                "some-hm-password",
+			Expect(boshOutput.Credentials).To(Equal(map[string]string{
+				"mbusUsername":              "some-mbus-username",
+				"natsUsername":              "some-nats-username",
+				"postgresUsername":          "some-postgres-username",
+				"registryUsername":          "some-registry-username",
+				"blobstoreDirectorUsername": "some-blobstore-director-username",
+				"blobstoreAgentUsername":    "some-blobstore-agent-username",
+				"hmUsername":                "some-hm-username",
+				"mbusPassword":              "some-mbus-password",
+				"natsPassword":              "some-nats-password",
+				"redisPassword":             "some-redis-password",
+				"postgresPassword":          "some-postgres-password",
+				"registryPassword":          "some-registry-password",
+				"blobstoreDirectorPassword": "some-blobstore-director-password",
+				"blobstoreAgentPassword":    "some-blobstore-agent-password",
+				"hmPassword":                "some-hm-password",
 			}))
 
 			Expect(boshInitRunner.DeployCall.Receives.Manifest).To(ContainSubstring("name: bosh"))

@@ -5,7 +5,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -124,64 +123,57 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	boshOutput := boshinit.BOSHDeployOutput{
-		DirectorSSLKeyPair: ssl.KeyPair{},
-		BOSHInitState:      boshinit.State{},
-		Credentials:        manifests.InternalCredentials{},
-	}
-	var directorUsername string
-	var directorPassword string
-	if state.BOSH != nil {
-		boshOutput.DirectorSSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
-		boshOutput.DirectorSSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
-		boshOutput.Credentials = state.BOSH.Credentials
-		if state.BOSH.State != nil {
-			boshOutput.BOSHInitState = state.BOSH.State
-		}
-		directorUsername = state.BOSH.DirectorUsername
-		directorPassword = state.BOSH.DirectorPassword
-	}
-
-	if directorUsername == "" {
-		directorUsername, err = d.stringGenerator.Generate(USERNAME_PREFIX, USERNAME_LENGTH)
-		if err != nil {
-			return state, err
-		}
-	}
-
-	if directorPassword == "" {
-		directorPassword, err = d.stringGenerator.Generate(PASSWORD_PREFIX, PASSWORD_LENGTH)
-		if err != nil {
-			return state, err
-		}
-	}
-
-	boshOutput, err = d.boshDeployer.Deploy(boshinit.BOSHDeployInput{
-		DirectorUsername: directorUsername,
-		DirectorPassword: directorPassword,
-		State:            boshOutput.BOSHInitState,
-		Stack:            stack,
-		AWSRegion:        state.AWS.Region,
-		SSLKeyPair:       boshOutput.DirectorSSLKeyPair,
+	boshDeployInput := boshinit.BOSHDeployInput{
+		State:      boshinit.State{},
+		Stack:      stack,
+		AWSRegion:  state.AWS.Region,
+		SSLKeyPair: ssl.KeyPair{},
 		EC2KeyPair: ec2.KeyPair{
 			Name:       state.KeyPair.Name,
 			PrivateKey: state.KeyPair.PrivateKey,
 			PublicKey:  state.KeyPair.PublicKey,
 		},
-		Credentials: boshOutput.Credentials,
-	})
+		Credentials: map[string]string{},
+	}
+
+	if state.BOSH != nil {
+		boshDeployInput.SSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
+		boshDeployInput.SSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
+		boshDeployInput.Credentials = state.BOSH.Credentials
+		if state.BOSH.State != nil {
+			boshDeployInput.State = state.BOSH.State
+		}
+		boshDeployInput.DirectorUsername = state.BOSH.DirectorUsername
+		boshDeployInput.DirectorPassword = state.BOSH.DirectorPassword
+	}
+
+	if boshDeployInput.DirectorUsername == "" {
+		boshDeployInput.DirectorUsername, err = d.stringGenerator.Generate(USERNAME_PREFIX, USERNAME_LENGTH)
+		if err != nil {
+			return state, err
+		}
+	}
+
+	if boshDeployInput.DirectorPassword == "" {
+		boshDeployInput.DirectorPassword, err = d.stringGenerator.Generate(PASSWORD_PREFIX, PASSWORD_LENGTH)
+		if err != nil {
+			return state, err
+		}
+	}
+
+	boshInitOutput, err := d.boshDeployer.Deploy(boshDeployInput)
 	if err != nil {
 		return state, err
 	}
 
 	if state.BOSH == nil {
 		state.BOSH = &storage.BOSH{
-			DirectorUsername:       directorUsername,
-			DirectorPassword:       directorPassword,
-			DirectorSSLCertificate: string(boshOutput.DirectorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(boshOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            boshOutput.Credentials,
-			State:                  boshOutput.BOSHInitState,
+			DirectorUsername:       boshDeployInput.DirectorUsername,
+			DirectorPassword:       boshDeployInput.DirectorPassword,
+			DirectorSSLCertificate: string(boshInitOutput.DirectorSSLKeyPair.Certificate),
+			DirectorSSLPrivateKey:  string(boshInitOutput.DirectorSSLKeyPair.PrivateKey),
+			Credentials:            boshInitOutput.Credentials,
+			State:                  boshInitOutput.BOSHInitState,
 		}
 	}
 

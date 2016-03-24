@@ -8,7 +8,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -34,6 +33,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			incomingState             storage.State
 			globalFlags               commands.GlobalFlags
+			boshInitCredentials       map[string]string
 		)
 
 		BeforeEach(func() {
@@ -103,6 +103,24 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			command = unsupported.NewDeployBOSHOnAWSForConcourse(
 				infrastructureCreator, keyPairSynchronizer, clientProvider, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever)
+
+			boshInitCredentials = map[string]string{
+				"mbusUsername":              "some-mbus-username",
+				"natsUsername":              "some-nats-username",
+				"postgresUsername":          "some-postgres-username",
+				"registryUsername":          "some-registry-username",
+				"blobstoreDirectorUsername": "some-blobstore-director-username",
+				"blobstoreAgentUsername":    "some-blobstore-agent-username",
+				"hmUsername":                "some-hm-username",
+				"mbusPassword":              "some-mbus-password",
+				"natsPassword":              "some-nats-password",
+				"redisPassword":             "some-redis-password",
+				"postgresPassword":          "some-postgres-password",
+				"registryPassword":          "some-registry-password",
+				"blobstoreDirectorPassword": "some-blobstore-director-password",
+				"blobstoreAgentPassword":    "some-blobstore-agent-password",
+				"hmPassword":                "some-hm-password",
+			}
 		})
 
 		It("syncs the keypair", func() {
@@ -302,104 +320,22 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 					It("returns the state with random credentials", func() {
 						incomingState.BOSH = nil
 						boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
-							Credentials: manifests.InternalCredentials{
-								MBusUsername:              "some-mbus-username",
-								NatsUsername:              "some-nats-username",
-								PostgresUsername:          "some-postgres-username",
-								RegistryUsername:          "some-registry-username",
-								BlobstoreDirectorUsername: "some-blobstore-director-username",
-								BlobstoreAgentUsername:    "some-blobstore-agent-username",
-								HMUsername:                "some-hm-username",
-								MBusPassword:              "some-mbus-password",
-								NatsPassword:              "some-nats-password",
-								RedisPassword:             "some-redis-password",
-								PostgresPassword:          "some-postgres-password",
-								RegistryPassword:          "some-registry-password",
-								BlobstoreDirectorPassword: "some-blobstore-director-password",
-								BlobstoreAgentPassword:    "some-blobstore-agent-password",
-								HMPassword:                "some-hm-password",
-							},
+							Credentials: boshInitCredentials,
 						}
 
 						state, err := command.Execute(globalFlags, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.BOSH.Credentials).To(Equal(manifests.InternalCredentials{
-							MBusUsername:              "some-mbus-username",
-							NatsUsername:              "some-nats-username",
-							PostgresUsername:          "some-postgres-username",
-							RegistryUsername:          "some-registry-username",
-							BlobstoreDirectorUsername: "some-blobstore-director-username",
-							BlobstoreAgentUsername:    "some-blobstore-agent-username",
-							HMUsername:                "some-hm-username",
-							MBusPassword:              "some-mbus-password",
-							NatsPassword:              "some-nats-password",
-							RedisPassword:             "some-redis-password",
-							PostgresPassword:          "some-postgres-password",
-							RegistryPassword:          "some-registry-password",
-							BlobstoreDirectorPassword: "some-blobstore-director-password",
-							BlobstoreAgentPassword:    "some-blobstore-agent-password",
-							HMPassword:                "some-hm-password",
-						}))
+						Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 					})
 
 					Context("when the bosh credentials exist in the state.json", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
-							incomingState.BOSH = &storage.BOSH{
-								Credentials: manifests.InternalCredentials{
-									MBusUsername:              "some-mbus-username",
-									NatsUsername:              "some-nats-username",
-									PostgresUsername:          "some-postgres-username",
-									RegistryUsername:          "some-registry-username",
-									BlobstoreDirectorUsername: "some-blobstore-director-username",
-									BlobstoreAgentUsername:    "some-blobstore-agent-username",
-									HMUsername:                "some-hm-username",
-									MBusPassword:              "some-mbus-password",
-									NatsPassword:              "some-nats-password",
-									RedisPassword:             "some-redis-password",
-									PostgresPassword:          "some-postgres-password",
-									RegistryPassword:          "some-registry-password",
-									BlobstoreDirectorPassword: "some-blobstore-director-password",
-									BlobstoreAgentPassword:    "some-blobstore-agent-password",
-									HMPassword:                "some-hm-password",
-								},
-							}
+							incomingState.BOSH = &storage.BOSH{Credentials: boshInitCredentials}
 
 							state, err := command.Execute(globalFlags, incomingState)
 							Expect(err).NotTo(HaveOccurred())
-							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(manifests.InternalCredentials{
-								MBusUsername:              "some-mbus-username",
-								NatsUsername:              "some-nats-username",
-								PostgresUsername:          "some-postgres-username",
-								RegistryUsername:          "some-registry-username",
-								BlobstoreDirectorUsername: "some-blobstore-director-username",
-								BlobstoreAgentUsername:    "some-blobstore-agent-username",
-								HMUsername:                "some-hm-username",
-								MBusPassword:              "some-mbus-password",
-								NatsPassword:              "some-nats-password",
-								RedisPassword:             "some-redis-password",
-								PostgresPassword:          "some-postgres-password",
-								RegistryPassword:          "some-registry-password",
-								BlobstoreDirectorPassword: "some-blobstore-director-password",
-								BlobstoreAgentPassword:    "some-blobstore-agent-password",
-								HMPassword:                "some-hm-password",
-							}))
-							Expect(state.BOSH.Credentials).To(Equal(manifests.InternalCredentials{
-								MBusUsername:              "some-mbus-username",
-								NatsUsername:              "some-nats-username",
-								PostgresUsername:          "some-postgres-username",
-								RegistryUsername:          "some-registry-username",
-								BlobstoreDirectorUsername: "some-blobstore-director-username",
-								BlobstoreAgentUsername:    "some-blobstore-agent-username",
-								HMUsername:                "some-hm-username",
-								MBusPassword:              "some-mbus-password",
-								NatsPassword:              "some-nats-password",
-								RedisPassword:             "some-redis-password",
-								PostgresPassword:          "some-postgres-password",
-								RegistryPassword:          "some-registry-password",
-								BlobstoreDirectorPassword: "some-blobstore-director-password",
-								BlobstoreAgentPassword:    "some-blobstore-agent-password",
-								HMPassword:                "some-hm-password",
-							}))
+							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(boshInitCredentials))
+							Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 						})
 					})
 				})

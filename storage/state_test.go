@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -53,22 +52,22 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
-					Credentials: manifests.InternalCredentials{
-						MBusUsername:              "some-mbus-username",
-						NatsUsername:              "some-nats-username",
-						PostgresUsername:          "some-postgres-username",
-						RegistryUsername:          "some-registry-username",
-						BlobstoreDirectorUsername: "some-blobstore-director-username",
-						BlobstoreAgentUsername:    "some-blobstore-agent-username",
-						HMUsername:                "some-hm-username",
-						MBusPassword:              "some-mbus-password",
-						NatsPassword:              "some-nats-password",
-						RedisPassword:             "some-redis-password",
-						PostgresPassword:          "some-postgres-password",
-						RegistryPassword:          "some-registry-password",
-						BlobstoreDirectorPassword: "some-blobstore-director-password",
-						BlobstoreAgentPassword:    "some-blobstore-agent-password",
-						HMPassword:                "some-hm-password",
+					Credentials: map[string]string{
+						"mbusUsername":              "some-mbus-username",
+						"natsUsername":              "some-nats-username",
+						"postgresUsername":          "some-postgres-username",
+						"registryUsername":          "some-registry-username",
+						"blobstoreDirectorUsername": "some-blobstore-director-username",
+						"blobstoreAgentUsername":    "some-blobstore-agent-username",
+						"hmUsername":                "some-hm-username",
+						"mbusPassword":              "some-mbus-password",
+						"natsPassword":              "some-nats-password",
+						"redisPassword":             "some-redis-password",
+						"postgresPassword":          "some-postgres-password",
+						"registryPassword":          "some-registry-password",
+						"blobstoreDirectorPassword": "some-blobstore-director-password",
+						"blobstoreAgentPassword":    "some-blobstore-agent-password",
+						"hmPassword":                "some-hm-password",
 					},
 				},
 			})
