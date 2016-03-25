@@ -1,7 +1,6 @@
 package boshinit
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -13,28 +12,36 @@ const PASSWORD_PREFIX = "p-"
 const PASSWORD_LENGTH = 15
 
 type BOSHDeployInput struct {
-	DirectorUsername string
-	DirectorPassword string
-	State            State
-	Stack            cloudformation.Stack
-	AWSRegion        string
-	SSLKeyPair       ssl.KeyPair
-	EC2KeyPair       ec2.KeyPair
-	Credentials      map[string]string
+	DirectorUsername            string
+	DirectorPassword            string
+	State                       State
+	InfrastructureConfiguration InfrastructureConfiguration
+	SSLKeyPair                  ssl.KeyPair
+	EC2KeyPair                  ec2.KeyPair
+	Credentials                 map[string]string
 }
 
 type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewBOSHDeployInput(state storage.State, stack cloudformation.Stack, stringGenerator stringGenerator) (BOSHDeployInput, error) {
+type InfrastructureConfiguration struct {
+	AWSRegion        string
+	SubnetID         string
+	AvailabilityZone string
+	ElasticIP        string
+	AccessKeyID      string
+	SecretAccessKey  string
+	SecurityGroup    string
+}
+
+func NewBOSHDeployInput(state storage.State, infrastructureConfiguration InfrastructureConfiguration, stringGenerator stringGenerator) (BOSHDeployInput, error) {
 	var err error
 	boshDeployInput := BOSHDeployInput{
-		State:      map[string]interface{}{},
-		Stack:      stack,
-		AWSRegion:  state.AWS.Region,
-		SSLKeyPair: ssl.KeyPair{},
-		EC2KeyPair: ec2.KeyPair{},
+		State: map[string]interface{}{},
+		InfrastructureConfiguration: infrastructureConfiguration,
+		SSLKeyPair:                  ssl.KeyPair{},
+		EC2KeyPair:                  ec2.KeyPair{},
 	}
 
 	if state.KeyPair != nil {

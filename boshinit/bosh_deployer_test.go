@@ -3,7 +3,6 @@ package boshinit_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
@@ -16,14 +15,14 @@ import (
 
 var _ = Describe("BoshDeployer", func() {
 	var (
-		manifestBuilder *fakes.BOSHInitManifestBuilder
-		boshInitRunner  *fakes.BOSHInitRunner
-		boshDeployer    boshinit.BOSHDeployer
-		logger          *fakes.Logger
-		stack           cloudformation.Stack
-		sslKeyPair      ssl.KeyPair
-		ec2KeyPair      ec2.KeyPair
-		credentials     map[string]string
+		manifestBuilder             *fakes.BOSHInitManifestBuilder
+		boshInitRunner              *fakes.BOSHInitRunner
+		boshDeployer                boshinit.BOSHDeployer
+		logger                      *fakes.Logger
+		infrastructureConfiguration boshinit.InfrastructureConfiguration
+		sslKeyPair                  ssl.KeyPair
+		ec2KeyPair                  ec2.KeyPair
+		credentials                 map[string]string
 	)
 
 	BeforeEach(func() {
@@ -32,25 +31,27 @@ var _ = Describe("BoshDeployer", func() {
 		logger = &fakes.Logger{}
 		boshDeployer = boshinit.NewBOSHDeployer(manifestBuilder, boshInitRunner, logger)
 
-		stack = cloudformation.Stack{
-			Outputs: map[string]string{
-				"BOSHSubnet":              "subnet-12345",
-				"BOSHSubnetAZ":            "some-az",
-				"BOSHEIP":                 "some-elastic-ip",
-				"BOSHUserAccessKey":       "some-access-key-id",
-				"BOSHUserSecretAccessKey": "some-secret-access-key",
-				"BOSHSecurityGroup":       "some-security-group",
-			},
+		infrastructureConfiguration = boshinit.InfrastructureConfiguration{
+			SubnetID:         "subnet-12345",
+			AvailabilityZone: "some-az",
+			ElasticIP:        "some-elastic-ip",
+			AccessKeyID:      "some-access-key-id",
+			SecretAccessKey:  "some-secret-access-key",
+			SecurityGroup:    "some-security-group",
+			AWSRegion:        "some-aws-region",
 		}
+
 		sslKeyPair = ssl.KeyPair{
 			Certificate: []byte("some-certificate"),
 			PrivateKey:  []byte("some-private-key"),
 		}
+
 		ec2KeyPair = ec2.KeyPair{
 			Name:       "some-keypair-name",
 			PrivateKey: "some-private-key",
 			PublicKey:  "some-public-key",
 		}
+
 		credentials = map[string]string{
 			"mbusUsername":              "some-mbus-username",
 			"natsUsername":              "some-nats-username",
@@ -112,11 +113,10 @@ var _ = Describe("BoshDeployer", func() {
 				State: boshinit.State{
 					"key": "value",
 				},
-				Stack:       stack,
-				AWSRegion:   "some-aws-region",
-				SSLKeyPair:  sslKeyPair,
-				EC2KeyPair:  ec2KeyPair,
-				Credentials: credentials,
+				InfrastructureConfiguration: infrastructureConfiguration,
+				SSLKeyPair:                  sslKeyPair,
+				EC2KeyPair:                  ec2KeyPair,
+				Credentials:                 credentials,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -192,10 +192,9 @@ var _ = Describe("BoshDeployer", func() {
 			}
 
 			_, err := boshDeployer.Deploy(boshinit.BOSHDeployInput{
-				Stack:      stack,
-				AWSRegion:  "some-aws-region",
-				SSLKeyPair: sslKeyPair,
-				EC2KeyPair: ec2KeyPair,
+				InfrastructureConfiguration: infrastructureConfiguration,
+				SSLKeyPair:                  sslKeyPair,
+				EC2KeyPair:                  ec2KeyPair,
 			})
 			Expect(err).NotTo(HaveOccurred())
 

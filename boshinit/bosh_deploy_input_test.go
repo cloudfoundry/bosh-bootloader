@@ -3,7 +3,6 @@ package boshinit_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -26,9 +25,6 @@ var _ = Describe("BOSHDeployInput", func() {
 
 		It("constructs a BOSHDeployInput given a state", func() {
 			state := storage.State{
-				AWS: storage.AWS{
-					Region: "some-aws-region",
-				},
 				KeyPair: &storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
@@ -48,13 +44,17 @@ var _ = Describe("BOSHDeployInput", func() {
 				},
 			}
 
-			stack := cloudformation.Stack{
-				Outputs: map[string]string{
-					"some-stack-output-key": "some-stack-output-value",
-				},
+			infrastructureConfiguration := boshinit.InfrastructureConfiguration{
+				AWSRegion:        "some-aws-region",
+				SubnetID:         "some-subnet-id",
+				AvailabilityZone: "some-az",
+				ElasticIP:        "some-eip",
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				SecurityGroup:    "some-security-group",
 			}
 
-			boshDeployInput, err := boshinit.NewBOSHDeployInput(state, stack, fakeStringGenerator)
+			boshDeployInput, err := boshinit.NewBOSHDeployInput(state, infrastructureConfiguration, fakeStringGenerator)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshDeployInput).To(Equal(boshinit.BOSHDeployInput{
@@ -63,12 +63,15 @@ var _ = Describe("BOSHDeployInput", func() {
 				State: map[string]interface{}{
 					"some-state-key": "some-state-value",
 				},
-				Stack: cloudformation.Stack{
-					Outputs: map[string]string{
-						"some-stack-output-key": "some-stack-output-value",
-					},
+				InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
+					AWSRegion:        "some-aws-region",
+					SubnetID:         "some-subnet-id",
+					AvailabilityZone: "some-az",
+					ElasticIP:        "some-eip",
+					AccessKeyID:      "some-access-key-id",
+					SecretAccessKey:  "some-secret-access-key",
+					SecurityGroup:    "some-security-group",
 				},
-				AWSRegion: "some-aws-region",
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-ssl-cert"),
 					PrivateKey:  []byte("some-ssl-private-key"),
@@ -108,13 +111,7 @@ var _ = Describe("BOSHDeployInput", func() {
 				},
 			}
 
-			stack := cloudformation.Stack{
-				Outputs: map[string]string{
-					"some-stack-output-key": "some-stack-output-value",
-				},
-			}
-
-			_, err := boshinit.NewBOSHDeployInput(state, stack, fakeStringGenerator)
+			_, err := boshinit.NewBOSHDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(state).To(Equal(storage.State{
@@ -152,7 +149,7 @@ var _ = Describe("BOSHDeployInput", func() {
 					return "", errors.New("too many calls to password generator")
 				}
 			}
-			boshDeployInput, err := boshinit.NewBOSHDeployInput(storage.State{}, cloudformation.Stack{}, fakeStringGenerator)
+			boshDeployInput, err := boshinit.NewBOSHDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshDeployInput).To(Equal(boshinit.BOSHDeployInput{
@@ -167,7 +164,7 @@ var _ = Describe("BOSHDeployInput", func() {
 		Describe("failure cases", func() {
 			It("returns an error when director username generation fails", func() {
 				fakeStringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate username")
-				_, err := boshinit.NewBOSHDeployInput(storage.State{}, cloudformation.Stack{}, fakeStringGenerator)
+				_, err := boshinit.NewBOSHDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 
 				Expect(err).To(MatchError("failed to generate username"))
 			})
@@ -181,7 +178,7 @@ var _ = Describe("BOSHDeployInput", func() {
 						return "", errors.New("failed to generate password")
 					}
 				}
-				_, err := boshinit.NewBOSHDeployInput(storage.State{}, cloudformation.Stack{}, fakeStringGenerator)
+				_, err := boshinit.NewBOSHDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 				Expect(err).To(MatchError("failed to generate password"))
 			})
 		})

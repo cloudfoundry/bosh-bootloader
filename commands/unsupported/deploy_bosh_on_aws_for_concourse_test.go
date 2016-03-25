@@ -46,6 +46,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			infrastructureManager = &fakes.InfrastructureManager{}
 			infrastructureManager.CreateCall.Returns.Stack = cloudformation.Stack{
 				Name: "concourse",
+				Outputs: map[string]string{
+					"BOSHSubnet":              "some-bosh-subnet",
+					"BOSHSubnetAZ":            "some-bosh-subnet-az",
+					"BOSHEIP":                 "some-bosh-elastic-ip",
+					"BOSHUserAccessKey":       "some-bosh-user-access-key",
+					"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+					"BOSHSecurityGroup":       "some-bosh-security-group",
+				},
 			}
 
 			boshDeployer = &fakes.BOSHDeployer{}
@@ -193,10 +201,15 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				State: boshinit.State{
 					"key": "value",
 				},
-				Stack: cloudformation.Stack{
-					Name: "concourse",
+				InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
+					AWSRegion:        "some-aws-region",
+					SubnetID:         "some-bosh-subnet",
+					AvailabilityZone: "some-bosh-subnet-az",
+					ElasticIP:        "some-bosh-elastic-ip",
+					AccessKeyID:      "some-bosh-user-access-key",
+					SecretAccessKey:  "some-bosh-user-secret-access-key",
+					SecurityGroup:    "some-bosh-security-group",
 				},
-				AWSRegion: "some-aws-region",
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),
@@ -229,6 +242,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
 				Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
 					Name: "concourse",
+					Outputs: map[string]string{
+						"BOSHSecurityGroup":       "some-bosh-security-group",
+						"BOSHSubnet":              "some-bosh-subnet",
+						"BOSHSubnetAZ":            "some-bosh-subnet-az",
+						"BOSHEIP":                 "some-bosh-elastic-ip",
+						"BOSHUserAccessKey":       "some-bosh-user-access-key",
+						"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+					},
 				}))
 				Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
 			})

@@ -133,7 +133,17 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	boshDeployInput, err := boshinit.NewBOSHDeployInput(state, stack, d.stringGenerator)
+	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
+		AWSRegion:        state.AWS.Region,
+		SubnetID:         stack.Outputs["BOSHSubnet"],
+		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
+		ElasticIP:        stack.Outputs["BOSHEIP"],
+		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
+		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
+		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
+	}
+
+	boshDeployInput, err := boshinit.NewBOSHDeployInput(state, infrastructureConfiguration, d.stringGenerator)
 	if err != nil {
 		return state, err
 	}
