@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
@@ -14,17 +12,6 @@ type BOSHDeployer struct {
 	manifestBuilder boshInitManifestBuilder
 	runner          boshInitRunner
 	logger          logger
-}
-
-type BOSHDeployInput struct {
-	DirectorUsername string
-	DirectorPassword string
-	State            State
-	Stack            cloudformation.Stack
-	AWSRegion        string
-	SSLKeyPair       ssl.KeyPair
-	EC2KeyPair       ec2.KeyPair
-	Credentials      map[string]string
 }
 
 type BOSHDeployOutput struct {

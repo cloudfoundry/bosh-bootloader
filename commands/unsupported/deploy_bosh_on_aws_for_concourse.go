@@ -8,14 +8,8 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
-
-const USERNAME_PREFIX = "user-"
-const USERNAME_LENGTH = 7
-const PASSWORD_PREFIX = "p-"
-const PASSWORD_LENGTH = 15
 
 type awsClientProvider interface {
 	CloudFormationClient(aws.Config) (cloudformation.Client, error)
@@ -139,42 +133,9 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	boshDeployInput := boshinit.BOSHDeployInput{
-		State:      boshinit.State{},
-		Stack:      stack,
-		AWSRegion:  state.AWS.Region,
-		SSLKeyPair: ssl.KeyPair{},
-		EC2KeyPair: ec2.KeyPair{
-			Name:       state.KeyPair.Name,
-			PrivateKey: state.KeyPair.PrivateKey,
-			PublicKey:  state.KeyPair.PublicKey,
-		},
-		Credentials: map[string]string{},
-	}
-
-	if state.BOSH != nil {
-		boshDeployInput.SSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
-		boshDeployInput.SSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
-		boshDeployInput.Credentials = state.BOSH.Credentials
-		if state.BOSH.State != nil {
-			boshDeployInput.State = state.BOSH.State
-		}
-		boshDeployInput.DirectorUsername = state.BOSH.DirectorUsername
-		boshDeployInput.DirectorPassword = state.BOSH.DirectorPassword
-	}
-
-	if boshDeployInput.DirectorUsername == "" {
-		boshDeployInput.DirectorUsername, err = d.stringGenerator.Generate(USERNAME_PREFIX, USERNAME_LENGTH)
-		if err != nil {
-			return state, err
-		}
-	}
-
-	if boshDeployInput.DirectorPassword == "" {
-		boshDeployInput.DirectorPassword, err = d.stringGenerator.Generate(PASSWORD_PREFIX, PASSWORD_LENGTH)
-		if err != nil {
-			return state, err
-		}
+	boshDeployInput, err := boshinit.NewBOSHDeployInput(state, stack, d.stringGenerator)
+	if err != nil {
+		return state, err
 	}
 
 	boshInitOutput, err := d.boshDeployer.Deploy(boshDeployInput)

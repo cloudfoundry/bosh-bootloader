@@ -34,7 +34,7 @@ name:
 `)
 		})
 
-		It("Reads and prints the bosh state", func() {
+		It("reads and prints the bosh state", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDir, "bosh.yml"), manifestData, os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
