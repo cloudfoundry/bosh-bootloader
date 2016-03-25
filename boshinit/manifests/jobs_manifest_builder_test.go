@@ -24,6 +24,9 @@ var _ = Describe("JobsManifestBuilder", func() {
 	Describe("Build", func() {
 		BeforeEach(func() {
 			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+				if length != 15 {
+					return "", errors.New("wrong length passed to string generator")
+				}
 				return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
 			}
 		})
@@ -273,7 +276,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 				_, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{})
 				Expect(err).To(MatchError("string generation failed"))
-
 			})
 		})
 	})

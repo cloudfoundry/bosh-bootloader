@@ -34,6 +34,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 				SecurityGroup:   "some-security-group",
 			})
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(cloudProvider).To(Equal(manifests.CloudProvider{
 				Template: manifests.Template{
 					Name:    "aws_cpi",
@@ -70,6 +71,9 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 					NTP: []string{"0.pool.ntp.org", "1.pool.ntp.org"},
 				},
 			}))
+
+			Expect(stringGenerator.GenerateCall.Receives.Prefixes).To(Equal([]string{"mbus-user-", "mbus-"}))
+			Expect(stringGenerator.GenerateCall.Receives.Lengths).To(Equal([]int{15, 15}))
 		})
 
 		It("returns manifest properties with new credentials", func() {

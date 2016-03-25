@@ -2,8 +2,8 @@ package manifests
 
 import "fmt"
 
-const MBUS_PASSWORD_PREFIX = "mbus-"
 const MBUS_USERNAME_PREFIX = "mbus-user-"
+const MBUS_PASSWORD_PREFIX = "mbus-"
 
 type CloudProviderManifestBuilder struct {
 	stringGenerator                 stringGenerator

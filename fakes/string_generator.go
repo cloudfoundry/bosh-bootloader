@@ -3,8 +3,8 @@ package fakes
 type StringGenerator struct {
 	GenerateCall struct {
 		Receives struct {
-			Prefix string
-			Length int
+			Prefixes []string
+			Lengths  []int
 		}
 		Returns struct {
 			String string
@@ -17,8 +17,8 @@ type StringGenerator struct {
 
 func (s *StringGenerator) Generate(prefix string, length int) (string, error) {
 	defer func() { s.GenerateCall.CallCount++ }()
-	s.GenerateCall.Receives.Length = length
-	s.GenerateCall.Receives.Prefix = prefix
+	s.GenerateCall.Receives.Lengths = append(s.GenerateCall.Receives.Lengths, length)
+	s.GenerateCall.Receives.Prefixes = append(s.GenerateCall.Receives.Prefixes, prefix)
 
 	if s.GenerateCall.Stub != nil {
 		return s.GenerateCall.Stub(prefix, length)

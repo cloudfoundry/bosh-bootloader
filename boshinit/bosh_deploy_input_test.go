@@ -160,6 +160,8 @@ var _ = Describe("BOSHDeployInput", func() {
 				DirectorUsername: "some-generated-username",
 				DirectorPassword: "some-generated-password",
 			}))
+			Expect(fakeStringGenerator.GenerateCall.Receives.Prefixes).To(Equal([]string{"user-", "p-"}))
+			Expect(fakeStringGenerator.GenerateCall.Receives.Lengths).To(Equal([]int{7, 15}))
 		})
 
 		Describe("failure cases", func() {
