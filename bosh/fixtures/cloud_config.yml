@@ -109,4 +109,4 @@ compilation:
   network: concourse
   az: z1
   reuse_compilation_vms: true
-  vm_type: default
+  vm_type: c3.large

@@ -22,7 +22,7 @@ var _ = Describe("Client", func() {
 				password    string
 			)
 
-			fakeBOSH := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				var (
 					err error
 				)
@@ -49,7 +49,7 @@ var _ = Describe("Client", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the status code is not StatusCreated", func() {
-				fakeBOSH := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 					responseWriter.WriteHeader(http.StatusInternalServerError)
 				}))
 
@@ -67,7 +67,7 @@ var _ = Describe("Client", func() {
 			})
 
 			It("returns an error when the director address is malformed", func() {
-				fakeBOSH := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 					responseWriter.WriteHeader(http.StatusInternalServerError)
 				}))
 

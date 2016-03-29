@@ -19,7 +19,7 @@ var _ = Describe("CompilationGenerator", func() {
 					Network:             "concourse",
 					AZ:                  "z1",
 					ReuseCompilationVMs: true,
-					VMType:              "default",
+					VMType:              "c3.large",
 				},
 			))
 		})

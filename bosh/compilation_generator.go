@@ -20,6 +20,6 @@ func (CompilationGenerator) Generate() *Compilation {
 		Network:             "concourse",
 		AZ:                  "z1",
 		ReuseCompilationVMs: true,
-		VMType:              "default",
+		VMType:              "c3.large",
 	}
 }

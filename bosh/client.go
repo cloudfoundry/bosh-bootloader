@@ -2,6 +2,7 @@ package bosh
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 )
@@ -32,7 +33,15 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 	request.Header.Set("Content-Type", "text/yaml")
 	request.SetBasicAuth(c.username, c.password)
 
-	response, err := http.DefaultClient.Do(request)
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	response, err := httpClient.Do(request)
 	if err != nil {
 		return err
 	}

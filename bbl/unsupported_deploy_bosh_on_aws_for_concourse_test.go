@@ -40,7 +40,7 @@ compilation:
   az: z1
   network: concourse
   reuse_compilation_vms: true
-  vm_type: default
+  vm_type: c3.large
   workers: 3
 disk_types:
 - cloud_properties:
