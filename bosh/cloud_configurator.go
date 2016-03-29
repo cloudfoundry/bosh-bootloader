@@ -1,6 +1,8 @@
 package bosh
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 )
@@ -27,28 +29,20 @@ func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudCo
 }
 
 func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, boshClient Client) error {
+	var subnets []SubnetInput
+	for az := range azs {
+		az++
+		subnets = append(subnets, SubnetInput{
+			AZ:             stack.Outputs[fmt.Sprintf("InternalSubnet%dAZ", az)],
+			Subnet:         stack.Outputs[fmt.Sprintf("InternalSubnet%dName", az)],
+			CIDR:           stack.Outputs[fmt.Sprintf("InternalSubnet%dCIDR", az)],
+			SecurityGroups: []string{stack.Outputs[fmt.Sprintf("InternalSubnet%dSecurityGroup", az)]},
+		})
+	}
+
 	cloudConfigInput := CloudConfigInput{
-		AZs: azs,
-		Subnets: []SubnetInput{
-			{
-				AZ:             stack.Outputs["InternalSubnet1AZ"],
-				Subnet:         stack.Outputs["InternalSubnet1Name"],
-				CIDR:           stack.Outputs["InternalSubnet1CIDR"],
-				SecurityGroups: []string{stack.Outputs["InternalSubnet1SecurityGroup"]},
-			},
-			{
-				AZ:             stack.Outputs["InternalSubnet2AZ"],
-				Subnet:         stack.Outputs["InternalSubnet2Name"],
-				CIDR:           stack.Outputs["InternalSubnet2CIDR"],
-				SecurityGroups: []string{stack.Outputs["InternalSubnet2SecurityGroup"]},
-			},
-			{
-				AZ:             stack.Outputs["InternalSubnet3AZ"],
-				Subnet:         stack.Outputs["InternalSubnet3Name"],
-				CIDR:           stack.Outputs["InternalSubnet3CIDR"],
-				SecurityGroups: []string{stack.Outputs["InternalSubnet3SecurityGroup"]},
-			},
-		},
+		AZs:     azs,
+		Subnets: subnets,
 	}
 
 	c.logger.Step("generating cloud config")

@@ -33,9 +33,6 @@ azs:
 - cloud_properties:
     availability_zone: us-east-1c
   name: z3
-- cloud_properties:
-    availability_zone: us-east-1e
-  name: z4
 compilation:
   az: z1
   network: concourse

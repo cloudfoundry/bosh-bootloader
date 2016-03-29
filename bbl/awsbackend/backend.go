@@ -108,7 +108,6 @@ func (b *Backend) DescribeAvailabilityZones(input *ec2.DescribeAvailabilityZones
 			{ZoneName: aws.String("us-east-1a")},
 			{ZoneName: aws.String("us-east-1b")},
 			{ZoneName: aws.String("us-east-1c")},
-			{ZoneName: aws.String("us-east-1e")},
 		},
 	}, nil
 }
