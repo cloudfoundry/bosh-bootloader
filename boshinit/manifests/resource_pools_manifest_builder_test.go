@@ -23,8 +23,8 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 					Name:    "vms",
 					Network: "private",
 					Stemcell: manifests.Stemcell{
-						URL:  "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3012",
-						SHA1: "3380b55948abe4c437dee97f67d2d8df4eec3fc1",
+						URL:  "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3215",
+						SHA1: "84c51fed6342d5eb7cd59728c7d691c75b6c1de8",
 					},
 					CloudProperties: manifests.ResourcePoolCloudProperties{
 						InstanceType: "m3.xlarge",
