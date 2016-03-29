@@ -45,7 +45,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 			infrastructureManager = &fakes.InfrastructureManager{}
 			infrastructureManager.CreateCall.Returns.Stack = cloudformation.Stack{
-				Name: "concourse",
+				Name: "bbl-aws-some-random-string",
 				Outputs: map[string]string{
 					"BOSHSubnet":              "some-bosh-subnet",
 					"BOSHSubnetAZ":            "some-bosh-subnet-az",
@@ -155,6 +155,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}
 
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+			var stackNameWasGenerated bool
+
+			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+				if prefix == "bbl-aws-" {
+					stackNameWasGenerated = true
+				}
+				return prefix + "some-random-string", nil
+			}
 
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
@@ -166,6 +174,9 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				EndpointOverride: "some-endpoint",
 			}))
 
+			Expect(stackNameWasGenerated).To(BeTrue())
+
+			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("bbl-aws-some-random-string"))
 			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
@@ -241,7 +252,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
 				Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
-					Name: "concourse",
+					Name: "bbl-aws-some-random-string",
 					Outputs: map[string]string{
 						"BOSHSecurityGroup":       "some-bosh-security-group",
 						"BOSHSubnet":              "some-bosh-subnet",
@@ -290,6 +301,30 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 							PrivateKey: "some-private-key",
 							PublicKey:  "some-public-key",
 						}))
+					})
+				})
+			})
+
+			Context("cloudformation", func() {
+				Context("when the stack name doesn't exist", func() {
+					It("populates a new stack name", func() {
+						incomingState := storage.State{}
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.Stack.Name).To(Equal("bbl-aws-some-random-string"))
+					})
+				})
+
+				Context("when the stack name exists", func() {
+					It("does not modify the state", func() {
+						incomingState := storage.State{
+							Stack: storage.Stack{
+								Name: "some-other-stack-name",
+							},
+						}
+						state, err := command.Execute(globalFlags, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
 					})
 				})
 			})
@@ -387,10 +422,16 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 						Region: "some-aws-region",
 					},
 					BOSH: &storage.BOSH{},
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
 				})
 
+				Expect(infrastructureManager.ExistsCall.Receives.Client).To(Equal(cloudFormationClient))
+				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack-name"))
+
 				Expect(err).To(MatchError("Found BOSH data in state directory, " +
-					"but Cloud Formation stack \"concourse\" cannot be found for region \"some-aws-region\" and given " +
+					"but Cloud Formation stack \"some-stack-name\" cannot be found for region \"some-aws-region\" and given " +
 					"AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at " +
 					"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance."))
 
@@ -450,9 +491,26 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				Expect(err).To(MatchError("cannot deploy bosh"))
 			})
 
+			It("returns an error when it cannot generate a string for the stack name", func() {
+				stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+					if prefix == "bbl-aws-" {
+						return "", errors.New("cannot generate string")
+					}
+
+					return "", nil
+				}
+				_, err := command.Execute(globalFlags, storage.State{})
+				Expect(err).To(MatchError("cannot generate string"))
+			})
+
 			It("returns an error when it cannot generate a string for the bosh director credentials", func() {
-				stringGenerator.GenerateCall.Stub = nil
-				stringGenerator.GenerateCall.Returns.Error = errors.New("cannot generate string")
+				stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
+					if prefix != "bbl-aws-" {
+						return "", errors.New("cannot generate string")
+					}
+
+					return "", nil
+				}
 				_, err := command.Execute(globalFlags, storage.State{})
 				Expect(err).To(MatchError("cannot generate string"))
 			})

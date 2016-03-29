@@ -22,8 +22,8 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, numberOfAZs int, client cloudformation.Client) (cloudformation.Stack, error)
-	Exists(client cloudformation.Client) (bool, error)
+	Create(keyPairName string, numberOfAZs int, stackName string, client cloudformation.Client) (cloudformation.Stack, error)
+	Exists(stackName string, client cloudformation.Client) (bool, error)
 }
 
 type boshDeployer interface {
@@ -84,7 +84,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	stackExists, err := d.infrastructureManager.Exists(cloudformationClient)
+	stackExists, err := d.infrastructureManager.Exists(state.Stack.Name, cloudformationClient)
 	if err != nil {
 		return state, err
 	}
@@ -94,7 +94,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
 				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
 				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
-			cloudformation.STACK_NAME, state.AWS.Region)
+			state.Stack.Name, state.AWS.Region)
 	}
 
 	ec2Client, err := d.awsClientProvider.EC2Client(aws.Config{
@@ -129,7 +129,14 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	stack, err := d.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), cloudformationClient)
+	if state.Stack.Name == "" {
+		state.Stack.Name, err = d.stringGenerator.Generate("bbl-aws-", 5)
+		if err != nil {
+			return state, err
+		}
+	}
+
+	stack, err := d.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, cloudformationClient)
 	if err != nil {
 		return state, err
 	}

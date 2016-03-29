@@ -70,6 +70,9 @@ var _ = Describe("Store", func() {
 						"hmPassword":                "some-hm-password",
 					},
 				},
+				Stack: storage.Stack{
+					Name: "some-stack-name",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -112,6 +115,9 @@ var _ = Describe("Store", func() {
 					"state": {
 						"key": "value"
 					}
+				},
+				"stack": {
+					"name": "some-stack-name"
 				}
 			}`))
 
@@ -141,7 +147,7 @@ var _ = Describe("Store", func() {
 	})
 
 	Describe("Get", func() {
-		It("gets the aws credentials", func() {
+		It("returns the stored state information", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
 				"version": 1,
 				"aws": {
@@ -157,6 +163,9 @@ var _ = Describe("Store", func() {
 				"bosh": {
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key"
+				},
+				"stack": {
+					"name": "some-stack-name"
 				}
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
@@ -179,6 +188,9 @@ var _ = Describe("Store", func() {
 				BOSH: &storage.BOSH{
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
+				},
+				Stack: storage.Stack{
+					Name: "some-stack-name",
 				},
 			}))
 		})

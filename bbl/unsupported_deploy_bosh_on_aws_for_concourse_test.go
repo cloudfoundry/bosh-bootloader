@@ -202,11 +202,11 @@ var _ = Describe("bbl", func() {
 			It("creates a stack and a keypair", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
-				var ok bool
-				stack, ok = fakeAWS.Stacks.Get("concourse")
-				Expect(ok).To(BeTrue())
+				state := readStateJson(tempDirectory)
 
-				Expect(stack.Name).To(Equal("concourse"))
+				var ok bool
+				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+				Expect(ok).To(BeTrue())
 
 				keyPairs := fakeAWS.KeyPairs.All()
 				Expect(keyPairs).To(HaveLen(1))
@@ -216,8 +216,10 @@ var _ = Describe("bbl", func() {
 			It("creates an IAM user", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
+				state := readStateJson(tempDirectory)
+
 				var ok bool
-				stack, ok = fakeAWS.Stacks.Get("concourse")
+				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
 				Expect(ok).To(BeTrue())
 
 				var template struct {
@@ -283,7 +285,7 @@ var _ = Describe("bbl", func() {
 		Context("when the keypair and cloudformation stack already exist", func() {
 			BeforeEach(func() {
 				fakeAWS.Stacks.Set(awsbackend.Stack{
-					Name: "concourse",
+					Name: "some-stack-name",
 				})
 				fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
 					Name: "some-keypair-name",
@@ -291,24 +293,25 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("updates the stack with the cloudformation template", func() {
-				state := storage.State{
+				buf, err := json.Marshal(storage.State{
 					KeyPair: &storage.KeyPair{
 						Name:       "some-keypair-name",
 						PrivateKey: privateKey,
 					},
-				}
-
-				buf, err := json.Marshal(state)
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
 
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
-				stack, ok := fakeAWS.Stacks.Get("concourse")
+				stack, ok := fakeAWS.Stacks.Get("some-stack-name")
 				Expect(ok).To(BeTrue())
 				Expect(stack).To(Equal(awsbackend.Stack{
-					Name:       "concourse",
+					Name:       "some-stack-name",
 					WasUpdated: true,
 				}))
 
@@ -337,6 +340,17 @@ func writeStateJson(state storage.State, tempDirectory string) {
 	Expect(err).NotTo(HaveOccurred())
 
 	ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+}
+
+func readStateJson(tempDirectory string) storage.State {
+	buf, err := ioutil.ReadFile(filepath.Join(tempDirectory, "state.json"))
+	Expect(err).NotTo(HaveOccurred())
+
+	var state storage.State
+	err = json.Unmarshal(buf, &state)
+	Expect(err).NotTo(HaveOccurred())
+
+	return state
 }
 
 func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {

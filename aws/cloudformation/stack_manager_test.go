@@ -119,6 +119,14 @@ var _ = Describe("StackManager", func() {
 				Expect(err).To(MatchError(cloudformation.StackNotFound))
 			})
 
+			It("returns a StackNotFound error when the stack name is empty", func() {
+				cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
+				_, err := manager.Describe(cloudformationClient, "")
+				Expect(err).To(MatchError(cloudformation.StackNotFound))
+
+				Expect(cloudformationClient.DescribeStacksCall.CallCount).To(Equal(0))
+			})
+
 			Context("when the api returns no stacks", func() {
 				It("returns a StackNotFound error", func() {
 					cloudformationClient.DescribeStacksCall.Returns.Output = &awscloudformation.DescribeStacksOutput{

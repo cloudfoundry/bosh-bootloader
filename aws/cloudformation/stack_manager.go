@@ -41,6 +41,10 @@ func (s StackManager) CreateOrUpdate(client Client, name string, template templa
 }
 
 func (s StackManager) Describe(client Client, name string) (Stack, error) {
+	if name == "" {
+		return Stack{}, StackNotFound
+	}
+
 	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})

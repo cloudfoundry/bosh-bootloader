@@ -32,11 +32,16 @@ type BOSH struct {
 	State                  map[string]interface{} `json:"state"`
 }
 
+type Stack struct {
+	Name string `json:"name"`
+}
+
 type State struct {
 	Version int      `json:"version"`
 	AWS     AWS      `json:"aws"`
 	KeyPair *KeyPair `json:"keyPair,omitempty"`
 	BOSH    *BOSH    `json:"bosh,omitempty"`
+	Stack   Stack    `json:"stack"`
 }
 
 type Store struct {
