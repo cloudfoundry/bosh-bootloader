@@ -1,15 +1,13 @@
 package bosh
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 )
 
 type CloudConfigurator struct {
-	Logger    logger
-	Generator cloudConfigGenerator
+	logger    logger
+	generator cloudConfigGenerator
 }
 
 type logger interface {
@@ -23,12 +21,12 @@ type cloudConfigGenerator interface {
 
 func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudConfigurator {
 	return CloudConfigurator{
-		Logger:    logger,
-		Generator: generator,
+		logger:    logger,
+		generator: generator,
 	}
 }
 
-func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string) error {
+func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, boshClient Client) error {
 	cloudConfigInput := CloudConfigInput{
 		AZs: azs,
 		Subnets: []SubnetInput{
@@ -53,8 +51,8 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string) e
 		},
 	}
 
-	c.Logger.Step("generating cloud config")
-	cloudConfig, err := c.Generator.Generate(cloudConfigInput)
+	c.logger.Step("generating cloud config")
+	cloudConfig, err := c.generator.Generate(cloudConfigInput)
 	if err != nil {
 		return err
 	}
@@ -63,8 +61,11 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string) e
 	if err != nil {
 		return err
 	}
-	c.Logger.Println("cloud config:")
-	c.Logger.Println(fmt.Sprintf("%s", yaml))
+
+	c.logger.Step("applying cloud config")
+	if err := boshClient.UpdateCloudConfig(yaml); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -198,7 +198,7 @@ var _ = Describe("BoshDeployer", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(lines).To(ContainElement("Director Address:  https://some-elastic-ip:25555"))
+			Expect(lines).To(ContainElement("Director Address:  some-elastic-ip"))
 			Expect(lines).To(ContainElement("Director Username: admin"))
 			Expect(lines).To(ContainElement("Director Password: admin"))
 		})

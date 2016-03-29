@@ -12,14 +12,16 @@ import (
 )
 
 type Backend struct {
-	KeyPairs *KeyPairs
-	Stacks   *Stacks
+	KeyPairs        *KeyPairs
+	Stacks          *Stacks
+	boshDirectorURL string
 }
 
-func New() *Backend {
+func New(boshDirectorURL string) *Backend {
 	return &Backend{
-		KeyPairs: NewKeyPairs(),
-		Stacks:   NewStacks(),
+		KeyPairs:        NewKeyPairs(),
+		Stacks:          NewStacks(),
+		boshDirectorURL: boshDirectorURL,
 	}
 }
 
@@ -130,7 +132,11 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 				Outputs: []*cloudformation.Output{
 					{
 						OutputKey:   aws.String("BOSHEIP"),
-						OutputValue: aws.String("192.168.1.1"),
+						OutputValue: aws.String("127.0.0.1"),
+					},
+					{
+						OutputKey:   aws.String("BOSHURL"),
+						OutputValue: aws.String(b.boshDirectorURL),
 					},
 					{
 						OutputKey:   aws.String("InternalSubnet1CIDR"),

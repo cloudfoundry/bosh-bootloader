@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
+	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -17,8 +19,120 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
+
+const expectedCloudConfig = `
+azs:
+- cloud_properties:
+    availability_zone: us-east-1a
+  name: z1
+- cloud_properties:
+    availability_zone: us-east-1b
+  name: z2
+- cloud_properties:
+    availability_zone: us-east-1c
+  name: z3
+- cloud_properties:
+    availability_zone: us-east-1e
+  name: z4
+compilation:
+  az: z1
+  network: concourse
+  reuse_compilation_vms: true
+  vm_type: default
+  workers: 3
+disk_types:
+- cloud_properties:
+    type: gp2
+  disk_size: 1024
+  name: default
+networks:
+- name: concourse
+  subnets:
+  - az: z1
+    cloud_properties:
+      security_groups:
+      - some-security-group-1
+      subnet: some-subnet-1
+    gateway: 10.0.16.1
+    range: 10.0.16.0/20
+    reserved:
+    - 10.0.16.2-10.0.16.3
+    - 10.0.31.255
+    static: []
+  - az: z2
+    cloud_properties:
+      security_groups:
+      - some-security-group-2
+      subnet: some-subnet-2
+    gateway: 10.0.32.1
+    range: 10.0.32.0/20
+    reserved:
+    - 10.0.32.2-10.0.32.3
+    - 10.0.47.255
+    static: []
+  - az: z3
+    cloud_properties:
+      security_groups:
+      - some-security-group-3
+      subnet: some-subnet-3
+    gateway: 10.0.48.1
+    range: 10.0.48.0/20
+    reserved:
+    - 10.0.48.2-10.0.48.3
+    - 10.0.63.255
+    static: []
+  type: manual
+vm_types:
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: m3.medium
+  name: m3.medium
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: m3.large
+  name: m3.large
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: c3.large
+  name: c3.large
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: c3.xlarge
+  name: c3.xlarge
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: c3.2xlarge
+  name: c3.2xlarge
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: c4.large
+  name: c4.large
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: r3.xlarge
+  name: r3.xlarge
+- cloud_properties:
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+    instance_type: t2.micro
+  name: t2.micro`
 
 const privateKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAt5oGrrqGwYvxJT3L37olM4X67ZNnWt7IXNTc0c61wzlyPkvU
@@ -48,16 +162,36 @@ O9wJ7sJLZLyHhV+ENrBZFashTJetQAPVT3ziwvasJq566g1y+Db3/8HAzOZd9toT
 ohmMhda49PmtPpDlTAMihjbjvLAM7IU/S7+FVIINjTBV+YVnjS2y
 -----END RSA PRIVATE KEY-----`
 
+type fakeBOSHDirector struct {
+	CloudConfig []byte
+}
+
+func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	buf, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		panic(err)
+	}
+	b.CloudConfig = buf
+	responseWriter.WriteHeader(http.StatusCreated)
+}
+
 var _ = Describe("bbl", func() {
 	var (
-		fakeAWS       *awsbackend.Backend
-		server        *httptest.Server
-		tempDirectory string
+		fakeAWS        *awsbackend.Backend
+		fakeAWSServer  *httptest.Server
+		fakeBOSHServer *httptest.Server
+		tempDirectory  string
+		fakeBOSH       *fakeBOSHDirector
 	)
 
 	BeforeEach(func() {
-		fakeAWS = awsbackend.New()
-		server = httptest.NewServer(awsfaker.New(fakeAWS))
+		fakeBOSH = &fakeBOSHDirector{}
+		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSH.ServeHTTP(responseWriter, request)
+		}))
+
+		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
+		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 		var err error
 		tempDirectory, err = ioutil.TempDir("", "")
@@ -69,7 +203,7 @@ var _ = Describe("bbl", func() {
 			var stack awsbackend.Stack
 
 			It("creates a stack and a keypair", func() {
-				deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get("concourse")
@@ -83,7 +217,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("creates an IAM user", func() {
-				deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get("concourse")
@@ -105,7 +239,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("logs the steps and bosh-init manifest", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: creating keypair"))
@@ -114,11 +248,11 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: generating bosh-init manifest"))
 				Expect(stdout).To(ContainSubstring("step: deploying bosh director"))
-				Expect(stdout).To(ContainSubstring("Director Address:  https://192.168.1.1:25555"))
+				Expect(stdout).To(ContainSubstring("Director Address:  127.0.0.1"))
 			})
 
 			It("prints out randomized bosh director credentials", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(MatchRegexp(`Director Username: user-\w{7}`))
@@ -126,17 +260,17 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("invokes bosh-init", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 			})
 
 			It("can invoke bosh-init idempotently", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 
-				session = deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				session = deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value","md5checksum":`))
 				Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
@@ -144,7 +278,7 @@ var _ = Describe("bbl", func() {
 
 			It("fast fails if the bosh state exists", func() {
 				writeStateJson(storage.State{BOSH: &storage.BOSH{}}, tempDirectory)
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 1)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
 				Expect(session.Err.Contents()).To(ContainSubstring("Found BOSH data in state directory"))
 			})
 		})
@@ -172,7 +306,7 @@ var _ = Describe("bbl", func() {
 
 				ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
 
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				stack, ok := fakeAWS.Stacks.Get("concourse")
 				Expect(ok).To(BeTrue())
@@ -190,25 +324,12 @@ var _ = Describe("bbl", func() {
 		})
 
 		Context("cloud config", func() {
-			It("prints out the cloud config", func() {
-				session := deployBOSHOnAWSForConcourse(server.URL, tempDirectory, 0)
+			It("applies the cloud config", func() {
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-				Expect(stdout).To(ContainSubstring("cloud config:"))
-				Expect(stdout).To(ContainSubstring("range: 10.0.16.0/20"))
-				Expect(stdout).To(ContainSubstring("range: 10.0.32.0/20"))
-				Expect(stdout).To(ContainSubstring("range: 10.0.48.0/20"))
-				Expect(stdout).To(ContainSubstring("subnet: some-subnet-1"))
-				Expect(stdout).To(ContainSubstring("subnet: some-subnet-2"))
-				Expect(stdout).To(ContainSubstring("subnet: some-subnet-3"))
-				Expect(stdout).To(ContainSubstring("- az: z1"))
-				Expect(stdout).To(ContainSubstring("- az: z2"))
-				Expect(stdout).To(ContainSubstring("- az: z3"))
-				Expect(stdout).To(ContainSubstring("- name: m3.medium"))
-				Expect(stdout).To(ContainSubstring("- name: c3.large"))
-				Expect(stdout).To(ContainSubstring("- name: r3.xlarge"))
-				Expect(stdout).To(ContainSubstring("- name: r3.xlarge"))
-				Expect(stdout).To(ContainSubstring("availability_zone: us-east-1e"))
+				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+				Expect(fakeBOSH.CloudConfig).To(MatchYAML(expectedCloudConfig))
 			})
 		})
 	})

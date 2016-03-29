@@ -17,7 +17,17 @@ func (t BOSHEIPTemplateBuilder) BOSHEIP() Template {
 			},
 		},
 		Outputs: map[string]Output{
-			"BOSHEIP": Output{Value: Ref{"BOSHEIP"}},
+			"BOSHEIP": {Value: Ref{"BOSHEIP"}},
+			"BOSHURL": {
+				Value: FnJoin{
+					Delimeter: "",
+					Values: []interface{}{
+						"https://",
+						Ref{"BOSHEIP"},
+						":25555",
+					},
+				},
+			},
 		},
 	}
 }

@@ -70,7 +70,7 @@ func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
 		return BOSHDeployOutput{}, err
 	}
 
-	b.logger.Println(fmt.Sprintf("Director Address:  https://%s:25555", manifestProperties.ElasticIP))
+	b.logger.Println(fmt.Sprintf("Director Address:  %s", manifestProperties.ElasticIP))
 	b.logger.Println("Director Username: " + manifestProperties.DirectorUsername)
 	b.logger.Println("Director Password: " + manifestProperties.DirectorPassword)
 

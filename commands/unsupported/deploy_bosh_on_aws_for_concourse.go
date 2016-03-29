@@ -6,6 +6,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -34,7 +35,7 @@ type stringGenerator interface {
 }
 
 type cloudConfigurator interface {
-	Configure(stack cloudformation.Stack, azs []string) error
+	Configure(stack cloudformation.Stack, azs []string, boshClient bosh.Client) error
 }
 
 type availabilityZoneRetriever interface {
@@ -164,7 +165,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		}
 	}
 
-	err = d.cloudConfigurator.Configure(stack, availabilityZones)
+	err = d.cloudConfigurator.Configure(stack, availabilityZones, bosh.NewClient(stack.Outputs["BOSHURL"], boshDeployInput.DirectorUsername, boshDeployInput.DirectorPassword))
 	if err != nil {
 		return state, err
 	}

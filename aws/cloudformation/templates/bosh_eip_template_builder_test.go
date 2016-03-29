@@ -26,9 +26,15 @@ var _ = Describe("BOSHEIPTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(eip.Outputs).To(HaveLen(1))
+			Expect(eip.Outputs).To(HaveLen(2))
 			Expect(eip.Outputs).To(HaveKeyWithValue("BOSHEIP", templates.Output{
 				Value: templates.Ref{"BOSHEIP"},
+			}))
+			Expect(eip.Outputs).To(HaveKeyWithValue("BOSHURL", templates.Output{
+				Value: templates.FnJoin{
+					Delimeter: "",
+					Values:    []interface{}{"https://", templates.Ref{"BOSHEIP"}, ":25555"},
+				},
 			}))
 		})
 	})

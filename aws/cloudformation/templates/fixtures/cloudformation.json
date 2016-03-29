@@ -25,6 +25,9 @@
           "Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
         },
         "BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
+		"BOSHURL": {"Value": {
+			"Fn::Join": ["", ["https://", {"Ref":"BOSHEIP"}, ":25555"]]
+		}},
         "BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}},
         "InternalSubnet1CIDR": {
           "Value": {"Ref" : "InternalSubnet1CIDR"}

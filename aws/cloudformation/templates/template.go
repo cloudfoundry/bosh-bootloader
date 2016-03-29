@@ -1,5 +1,7 @@
 package templates
 
+import "encoding/json"
+
 type AMI struct {
 	AMI string `json:",omitempty"`
 }
@@ -15,6 +17,17 @@ type Tag struct {
 
 type FnGetAtt struct {
 	FnGetAtt []string `json:"Fn::GetAtt"`
+}
+
+type FnJoin struct {
+	Delimeter string
+	Values    []interface{}
+}
+
+func (j FnJoin) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string][]interface{}{
+		"Fn::Join": {j.Delimeter, j.Values},
+	})
 }
 
 type Template struct {
