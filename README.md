@@ -22,7 +22,7 @@ brew install go
 ## Installation
 
 ```
-go get github.com/pivotal-cf-experimental/bosh-bootloader/...
+go get github.com/pivotal-cf-experimental/bosh-bootloader/bbl
 ```
 
 ## Usage
