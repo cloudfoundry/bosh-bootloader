@@ -18,6 +18,7 @@ type BOSHDeployOutput struct {
 	Credentials        map[string]string
 	BOSHInitState      State
 	DirectorSSLKeyPair ssl.KeyPair
+	BOSHInitManifest   string
 }
 
 type logger interface {
@@ -78,5 +79,6 @@ func (b BOSHDeployer) Deploy(input BOSHDeployInput) (BOSHDeployOutput, error) {
 		BOSHInitState:      state,
 		DirectorSSLKeyPair: manifestProperties.SSLKeyPair,
 		Credentials:        manifestProperties.Credentials.ToMap(),
+		BOSHInitManifest:   string(yaml),
 	}, nil
 }

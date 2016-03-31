@@ -169,6 +169,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			DirectorSSLPrivateKey:  string(boshInitOutput.DirectorSSLKeyPair.PrivateKey),
 			Credentials:            boshInitOutput.Credentials,
 			State:                  boshInitOutput.BOSHInitState,
+			Manifest:               boshInitOutput.BOSHInitManifest,
 		}
 	}
 

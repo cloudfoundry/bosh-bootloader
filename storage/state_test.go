@@ -52,6 +52,7 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
+					Manifest: "name: bosh",
 					Credentials: map[string]string{
 						"mbusUsername":              "some-mbus-username",
 						"natsUsername":              "some-nats-username",
@@ -112,6 +113,7 @@ var _ = Describe("Store", func() {
 						"blobstoreAgentPassword": "some-blobstore-agent-password",
 						"hmPassword": "some-hm-password"
 					},
+					"manifest": "name: bosh",
 					"state": {
 						"key": "value"
 					}
@@ -162,7 +164,8 @@ var _ = Describe("Store", func() {
 				},
 				"bosh": {
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
-					"directorSSLPrivateKey": "some-bosh-ssl-private-key"
+					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
+					"manifest": "name: bosh"
 				},
 				"stack": {
 					"name": "some-stack-name"
@@ -188,6 +191,7 @@ var _ = Describe("Store", func() {
 				BOSH: &storage.BOSH{
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
+					Manifest:               "name: bosh",
 				},
 				Stack: storage.Stack{
 					Name: "some-stack-name",

@@ -65,6 +65,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				BOSHInitState: boshinit.State{
 					"updated-key": "updated-value",
 				},
+				BOSHInitManifest: "name: bosh",
 			}
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
@@ -333,6 +334,14 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				BeforeEach(func() {
 					infrastructureManager.ExistsCall.Returns.Exists = true
 				})
+
+				It("writes the boshinit manifest", func() {
+					state, err := command.Execute(globalFlags, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state.BOSH.Manifest).To(ContainSubstring("name: bosh"))
+				})
+
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
 						state, err := command.Execute(globalFlags, storage.State{

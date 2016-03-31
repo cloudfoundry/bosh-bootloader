@@ -177,6 +177,7 @@ var _ = Describe("BoshDeployer", func() {
 				"blobstoreAgentPassword":    "some-blobstore-agent-password",
 				"hmPassword":                "some-hm-password",
 			}))
+			Expect(boshOutput.BOSHInitManifest).To(ContainSubstring("name: bosh"))
 
 			Expect(boshInitRunner.DeployCall.Receives.Manifest).To(ContainSubstring("name: bosh"))
 			Expect(boshInitRunner.DeployCall.Receives.PrivateKey).To(ContainSubstring("some-private-key"))
