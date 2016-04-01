@@ -1,4 +1,4 @@
-package unsupported_test
+package commands_test
 
 import (
 	"errors"
@@ -9,7 +9,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -18,10 +17,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
+var _ = Describe("Up", func() {
 	Describe("Execute", func() {
 		var (
-			command                   unsupported.DeployBOSHOnAWSForConcourse
+			command                   commands.Up
 			boshDeployer              *fakes.BOSHDeployer
 			infrastructureManager     *fakes.InfrastructureManager
 			keyPairSynchronizer       *fakes.KeyPairSynchronizer
@@ -57,7 +56,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			}
 
 			boshDeployer = &fakes.BOSHDeployer{}
-			boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
+			boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 				DirectorSSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("updated-certificate"),
 					PrivateKey:  []byte("updated-private-key"),
@@ -88,7 +87,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 				EndpointOverride: "some-endpoint",
 			}
 
-			command = unsupported.NewDeployBOSHOnAWSForConcourse(
+			command = commands.NewUp(
 				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 
@@ -207,7 +206,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			_, err := command.Execute(globalFlags, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.BOSHDeployInput{
+			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
 				DirectorUsername: "user-some-random-string",
 				DirectorPassword: "p-some-random-string",
 				State: boshinit.State{
@@ -398,7 +397,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 
 				Context("when the bosh credentials don't exist", func() {
 					It("returns the state with random credentials", func() {
-						boshDeployer.DeployCall.Returns.Output = boshinit.BOSHDeployOutput{
+						boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 							Credentials: boshInitCredentials,
 						}
 
@@ -492,7 +491,7 @@ var _ = Describe("DeployBOSHOnAWSForConcourse", func() {
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
-				command = unsupported.NewDeployBOSHOnAWSForConcourse(
+				command = commands.NewUp(
 					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
 					stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 

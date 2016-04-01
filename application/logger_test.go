@@ -46,6 +46,14 @@ var _ = Describe("Logger", func() {
 		})
 	})
 
+	Describe("Prompt", func() {
+		It("prompts for the given messge", func() {
+			logger.Prompt("do you like cheese?")
+
+			Expect(buffer.String()).To(Equal("do you like cheese? (y/N): "))
+		})
+	})
+
 	Describe("mixing steps, dots and printlns", func() {
 		It("prints out a coherent set of lines", func() {
 			logger.Step("creating keypair")
@@ -53,13 +61,12 @@ var _ = Describe("Logger", func() {
 			logger.Step("applying cloudformation template")
 			logger.Dot()
 			logger.Dot()
-			logger.Dot()
-			logger.Dot()
-			logger.Dot()
 			logger.Step("completed applying cloudformation template")
+			logger.Dot()
+			logger.Dot()
+			logger.Prompt("do you like turtles?")
 			logger.Println("**bosh manifest**")
 			logger.Step("doing more stuff")
-			logger.Dot()
 			logger.Dot()
 			logger.Dot()
 			logger.Println("SUCCESS!")
@@ -67,11 +74,12 @@ var _ = Describe("Logger", func() {
 			Expect(buffer.String()).To(Equal(`step: creating keypair
 step: generating cloudformation template
 step: applying cloudformation template
-•••••
+••
 step: completed applying cloudformation template
-**bosh manifest**
+••
+do you like turtles? (y/N): **bosh manifest**
 step: doing more stuff
-•••
+••
 SUCCESS!
 `))
 		})

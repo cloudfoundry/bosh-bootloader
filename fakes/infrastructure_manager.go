@@ -27,6 +27,16 @@ type InfrastructureManager struct {
 			Error  error
 		}
 	}
+
+	DeleteCall struct {
+		Receives struct {
+			Client    cloudformation.Client
+			StackName string
+		}
+		Returns struct {
+			Error error
+		}
+	}
 }
 
 func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stackName string, client cloudformation.Client) (cloudformation.Stack, error) {
@@ -35,11 +45,20 @@ func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stac
 	m.CreateCall.Receives.KeyPairName = keyPairName
 	m.CreateCall.Receives.CloudFormationClient = client
 	m.CreateCall.Receives.NumberOfAvailabilityZones = numberOfAZs
+
 	return m.CreateCall.Returns.Stack, m.CreateCall.Returns.Error
 }
 
 func (m *InfrastructureManager) Exists(stackName string, client cloudformation.Client) (bool, error) {
 	m.ExistsCall.Receives.StackName = stackName
 	m.ExistsCall.Receives.Client = client
+
 	return m.ExistsCall.Returns.Exists, m.ExistsCall.Returns.Error
+}
+
+func (m *InfrastructureManager) Delete(client cloudformation.Client, stackName string) error {
+	m.DeleteCall.Receives.Client = client
+	m.DeleteCall.Receives.StackName = stackName
+
+	return m.DeleteCall.Returns.Error
 }

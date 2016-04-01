@@ -11,9 +11,10 @@ type templateBuilder interface {
 }
 
 type stackManager interface {
-	CreateOrUpdate(cloudFormationClient Client, stackName string, template templates.Template) error
-	WaitForCompletion(cloudFormationClient Client, stackName string, sleepInterval time.Duration) error
-	Describe(cloudFormationClient Client, name string) (Stack, error)
+	CreateOrUpdate(client Client, stackName string, template templates.Template) error
+	WaitForCompletion(client Client, stackName string, sleepInterval time.Duration, action string) error
+	Describe(client Client, stackName string) (Stack, error)
+	Delete(client Client, stackName string) error
 }
 
 type InfrastructureManager struct {
@@ -35,7 +36,7 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 		return Stack{}, err
 	}
 
-	if err := m.stackManager.WaitForCompletion(cloudFormationClient, stackName, 15*time.Second); err != nil {
+	if err := m.stackManager.WaitForCompletion(cloudFormationClient, stackName, 15*time.Second, "applying cloudformation template"); err != nil {
 		return Stack{}, err
 	}
 
@@ -53,4 +54,18 @@ func (m InfrastructureManager) Exists(stackName string, cloudFormationClient Cli
 	default:
 		return false, err
 	}
+}
+
+func (m InfrastructureManager) Delete(client Client, stackName string) error {
+	err := m.stackManager.Delete(client, stackName)
+	if err != nil {
+		return err
+	}
+
+	err = m.stackManager.WaitForCompletion(client, stackName, 15*time.Second, "deleting cloudformation stack")
+	if err != nil && err != StackNotFound {
+		return err
+	}
+
+	return nil
 }

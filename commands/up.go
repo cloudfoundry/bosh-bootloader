@@ -1,4 +1,4 @@
-package unsupported
+package commands
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -24,14 +23,11 @@ type keyPairSynchronizer interface {
 type infrastructureManager interface {
 	Create(keyPairName string, numberOfAZs int, stackName string, client cloudformation.Client) (cloudformation.Stack, error)
 	Exists(stackName string, client cloudformation.Client) (bool, error)
+	Delete(client cloudformation.Client, stackName string) error
 }
 
 type boshDeployer interface {
-	Deploy(boshinit.BOSHDeployInput) (boshinit.BOSHDeployOutput, error)
-}
-
-type stringGenerator interface {
-	Generate(string, int) (string, error)
+	Deploy(boshinit.DeployInput) (boshinit.DeployOutput, error)
 }
 
 type cloudConfigurator interface {
@@ -45,9 +41,10 @@ type availabilityZoneRetriever interface {
 type logger interface {
 	Step(string)
 	Println(string)
+	Prompt(string)
 }
 
-type DeployBOSHOnAWSForConcourse struct {
+type Up struct {
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
 	awsClientProvider         awsClientProvider
@@ -57,12 +54,12 @@ type DeployBOSHOnAWSForConcourse struct {
 	availabilityZoneRetriever availabilityZoneRetriever
 }
 
-func NewDeployBOSHOnAWSForConcourse(
+func NewUp(
 	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
 	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
-	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever) DeployBOSHOnAWSForConcourse {
+	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever) Up {
 
-	return DeployBOSHOnAWSForConcourse{
+	return Up{
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
 		awsClientProvider:         awsClientProvider,
@@ -73,8 +70,8 @@ func NewDeployBOSHOnAWSForConcourse(
 	}
 }
 
-func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
-	cloudformationClient, err := d.awsClientProvider.CloudFormationClient(aws.Config{
+func (u Up) Execute(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
+	cloudformationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -84,7 +81,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		return state, err
 	}
 
-	stackExists, err := d.infrastructureManager.Exists(state.Stack.Name, cloudformationClient)
+	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name, cloudformationClient)
 	if err != nil {
 		return state, err
 	}
@@ -97,7 +94,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 			state.Stack.Name, state.AWS.Region)
 	}
 
-	ec2Client, err := d.awsClientProvider.EC2Client(aws.Config{
+	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -111,7 +108,7 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		state.KeyPair = &storage.KeyPair{}
 	}
 
-	keyPair, err := d.keyPairSynchronizer.Sync(ec2.KeyPair{
+	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
 		PublicKey:  state.KeyPair.PublicKey,
 		PrivateKey: state.KeyPair.PrivateKey,
@@ -124,19 +121,19 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 	state.KeyPair.PublicKey = keyPair.PublicKey
 	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
-	availabilityZones, err := d.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
+	availabilityZones, err := u.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
 	if err != nil {
 		return state, err
 	}
 
 	if state.Stack.Name == "" {
-		state.Stack.Name, err = d.stringGenerator.Generate("bbl-aws-", 5)
+		state.Stack.Name, err = u.stringGenerator.Generate("bbl-aws-", 5)
 		if err != nil {
 			return state, err
 		}
 	}
 
-	stack, err := d.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, cloudformationClient)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, cloudformationClient)
 	if err != nil {
 		return state, err
 	}
@@ -151,29 +148,29 @@ func (d DeployBOSHOnAWSForConcourse) Execute(globalFlags commands.GlobalFlags, s
 		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
 	}
 
-	boshDeployInput, err := boshinit.NewBOSHDeployInput(state, infrastructureConfiguration, d.stringGenerator)
+	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator)
 	if err != nil {
 		return state, err
 	}
 
-	boshInitOutput, err := d.boshDeployer.Deploy(boshDeployInput)
+	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
 		return state, err
 	}
 
 	if state.BOSH == nil {
 		state.BOSH = &storage.BOSH{
-			DirectorUsername:       boshDeployInput.DirectorUsername,
-			DirectorPassword:       boshDeployInput.DirectorPassword,
-			DirectorSSLCertificate: string(boshInitOutput.DirectorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(boshInitOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            boshInitOutput.Credentials,
-			State:                  boshInitOutput.BOSHInitState,
-			Manifest:               boshInitOutput.BOSHInitManifest,
+			DirectorUsername:       deployInput.DirectorUsername,
+			DirectorPassword:       deployInput.DirectorPassword,
+			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
+			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
+			Credentials:            deployOutput.Credentials,
+			State:                  deployOutput.BOSHInitState,
+			Manifest:               deployOutput.BOSHInitManifest,
 		}
 	}
 
-	err = d.cloudConfigurator.Configure(stack, availabilityZones, bosh.NewClient(stack.Outputs["BOSHURL"], boshDeployInput.DirectorUsername, boshDeployInput.DirectorPassword))
+	err = u.cloudConfigurator.Configure(stack, availabilityZones, bosh.NewClient(stack.Outputs["BOSHURL"], deployInput.DirectorUsername, deployInput.DirectorPassword))
 	if err != nil {
 		return state, err
 	}

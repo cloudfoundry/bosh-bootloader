@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
@@ -21,143 +19,6 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
-
-const expectedCloudConfig = `
-azs:
-- cloud_properties:
-    availability_zone: us-east-1a
-  name: z1
-- cloud_properties:
-    availability_zone: us-east-1b
-  name: z2
-- cloud_properties:
-    availability_zone: us-east-1c
-  name: z3
-compilation:
-  az: z1
-  network: concourse
-  reuse_compilation_vms: true
-  vm_type: c3.large
-  workers: 3
-disk_types:
-- cloud_properties:
-    type: gp2
-  disk_size: 1024
-  name: default
-networks:
-- name: concourse
-  subnets:
-  - az: z1
-    cloud_properties:
-      security_groups:
-      - some-security-group-1
-      subnet: some-subnet-1
-    gateway: 10.0.16.1
-    range: 10.0.16.0/20
-    reserved:
-    - 10.0.16.2-10.0.16.3
-    - 10.0.31.255
-    static: []
-  - az: z2
-    cloud_properties:
-      security_groups:
-      - some-security-group-2
-      subnet: some-subnet-2
-    gateway: 10.0.32.1
-    range: 10.0.32.0/20
-    reserved:
-    - 10.0.32.2-10.0.32.3
-    - 10.0.47.255
-    static: []
-  - az: z3
-    cloud_properties:
-      security_groups:
-      - some-security-group-3
-      subnet: some-subnet-3
-    gateway: 10.0.48.1
-    range: 10.0.48.0/20
-    reserved:
-    - 10.0.48.2-10.0.48.3
-    - 10.0.63.255
-    static: []
-  type: manual
-vm_types:
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: m3.medium
-  name: m3.medium
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: m3.large
-  name: m3.large
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: c3.large
-  name: c3.large
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: c3.xlarge
-  name: c3.xlarge
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: c3.2xlarge
-  name: c3.2xlarge
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: c4.large
-  name: c4.large
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: r3.xlarge
-  name: r3.xlarge
-- cloud_properties:
-    ephemeral_disk:
-      size: 1024
-      type: gp2
-    instance_type: t2.micro
-  name: t2.micro`
-
-const privateKey = `-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAt5oGrrqGwYvxJT3L37olM4X67ZNnWt7IXNTc0c61wzlyPkvU
-ReUoVDtxkuD6iNaU1AiVXxZ5xwqCdbxk+pH2y0bini7W50TEoVxNllJwKDU32c2L
-UyKLfyPVijafae90Mtuilo8Pyyl3xqs2JKs07IjA3rIwLzom1SEu7LuO3eeuMeyw
-T4cy3J3zRRYP2eEZ8IZ4WkMv0Pgkn7t696dIcV+U89xyze/WW0y8QOeTFMkDIcpg
-lFfrvSmxN4kV/+LJaJnQqfk8rTnySYgT6Yeod9mjdNx4LseYL2HMLSm4UO9YF21D
-cKQH324zlsB71kDn6b/riLgY09vBZhDj/E0uHwIDAQABAoIBACP7f8vGqppL/tq5
-nbcfGCNc4qyk8uCQQNxQq2ZDCMRWAdnLqrJ4EstPSxbqGK+wvkI/3GZiVUN4/9Br
-N68T5DY6kjdGHr/8bjzhhiMrzOdUZrm82s1UO9qS/0qzIdL1JuTAvsCbERFT8zFw
-ZJATLbAdrQ74BRF8aBflBPlIWNuMMx/nFV+GkOgRq1xvVdPYqtimT3cs/4Akuf9o
-LZZQZp4eSEJJp+JVGQpmOMak9dbpjyU8znWf69qrN6E7kfPfXl1csX2N1eV0nJq0
-4uuyUUsG04zIE2JWu8MW0pLDLDD8Nw56BZ6Zo7g1R0KYyXguSi079sEBRHS5fiVx
-HAP8DYECgYEA591z08bTt9Lm+SulXEadWwMwLlVnAXCGkKpTHnTZg2Q64awSi9Xq
-i7UhsR6DRhgrxgf07dAm0mgLWHmN834JP0jMmy/Pm/+1ck3edq6SMadQMrTdgMJD
-Z2cQW4W86MQ7Z3L+nxIYVDypKYQk7CxmVCRvHRzCqPcyJShJfaHaPHECgYEAyrZ9
-swZFSm6tGi/ehMrdFbjvHxjIRque5juuvVQLdYOtitkXRdfKtJ1puXpLfw6k7lsM
-8Y/YGGdk8CH5KGsFlVncYTOyxGi+a21m2ePfmXf1f1j/XKCx1ObhoZL6+6KKKawk
-5MaF6kp+QNjOL5MOl14v9aCoO652XnmWlBgdm48CgYBTxki2SM1wSoxXlPR/PahX
-HPTImOTJuV11YYT8qR16ArnfletxiM3gwoY016B4r/0I5RES57VPKnaG9gxa4Lv4
-mJYMsB6j76UgcpAhc3uw4xHv8Ddj8UynTK61UsHpnBUWkI787G3L6cr5DBzHFFe4
-qR1YeG7A2+fLUx4SfWs7kQKBgHOPv278pym8mIAyQ+duAsVsbR1MMnhfRDG6Wm5i
-aDnw/FEIW4UcdNmsV2Y+eqWPQqUDUQiw2R9oahmfNHw/Lqqq1MCxCTuA/vUdJCIZ
-DxJdWZ3krYcvsNFPYdeLg/tJ+PuywEGPjy42k20Ca+ChNBNExZCAqweC+MX5CMea
-S96vAoGBAKBP0opR+RiJ9cW7Aol8KaGZdk8tSehudgTchkqXyqfTOqnkLWCprQuN
-O9wJ7sJLZLyHhV+ENrBZFashTJetQAPVT3ziwvasJq566g1y+Db3/8HAzOZd9toT
-ohmMhda49PmtPpDlTAMihjbjvLAM7IU/S7+FVIINjTBV+YVnjS2y
------END RSA PRIVATE KEY-----`
 
 type fakeBOSHDirector struct {
 	CloudConfig []byte
@@ -174,11 +35,13 @@ func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request
 
 var _ = Describe("bbl", func() {
 	var (
-		fakeAWS        *awsbackend.Backend
-		fakeAWSServer  *httptest.Server
-		fakeBOSHServer *httptest.Server
-		tempDirectory  string
-		fakeBOSH       *fakeBOSHDirector
+		fakeAWS             *awsbackend.Backend
+		fakeAWSServer       *httptest.Server
+		fakeBOSHServer      *httptest.Server
+		fakeBOSH            *fakeBOSHDirector
+		tempDirectory       string
+		privateKey          string
+		expectedCloudConfig string
 	)
 
 	BeforeEach(func() {
@@ -193,6 +56,14 @@ var _ = Describe("bbl", func() {
 		var err error
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
+
+		contents, err := ioutil.ReadFile("fixtures/key.pem")
+		Expect(err).NotTo(HaveOccurred())
+		privateKey = string(contents)
+
+		contents, err = ioutil.ReadFile("fixtures/cloud-config.yml")
+		Expect(err).NotTo(HaveOccurred())
+		expectedCloudConfig = string(contents)
 	})
 
 	Describe("unsupported-deploy-bosh-on-aws-for-concourse", func() {
@@ -363,9 +234,5 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCod
 		"unsupported-deploy-bosh-on-aws-for-concourse",
 	}
 
-	session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
-	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
-
-	return session
+	return executeCommand(args, exitCode)
 }

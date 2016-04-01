@@ -13,13 +13,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Runner", func() {
-	Describe("Deploy", func() {
+var _ = Describe("CommandRunner", func() {
+	Describe("Execute", func() {
 		var (
 			tempDir    string
 			executable *fakes.Executable
-			logger     *fakes.Logger
-			runner     boshinit.Runner
+			runner     boshinit.CommandRunner
 		)
 
 		BeforeEach(func() {
@@ -28,17 +27,16 @@ var _ = Describe("Runner", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			executable = &fakes.Executable{}
-			logger = &fakes.Logger{}
 
 			executable.RunCall.Stub = func() error {
 				return ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte(`{"key": "value"}`), os.ModePerm)
 			}
 
-			runner = boshinit.NewRunner(tempDir, executable, logger)
+			runner = boshinit.NewCommandRunner(tempDir, executable)
 		})
 
 		It("writes out the bosh.yml file to a temporary directory", func() {
-			_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+			_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			manifest, err := ioutil.ReadFile(filepath.Join(tempDir, "bosh.yml"))
@@ -51,7 +49,7 @@ var _ = Describe("Runner", func() {
 		})
 
 		It("writes out the private key", func() {
-			_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+			_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			manifest, err := ioutil.ReadFile(filepath.Join(tempDir, "bosh.pem"))
@@ -64,30 +62,37 @@ var _ = Describe("Runner", func() {
 		})
 
 		It("runs the executable", func() {
-			_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+			_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(executable.RunCall.CallCount).To(Equal(1))
 		})
 
-		It("logs that it is deploying", func() {
-			_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logger.StepCall.Receives.Message).To(Equal("deploying bosh director"))
+		Context("when the bosh-state.json file exists", func() {
+			It("returns a bosh state object", func() {
+				state, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(state).To(Equal(boshinit.State{
+					"key": "value",
+				}))
+			})
 		})
 
-		It("returns a bosh state object", func() {
-			state, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(state).To(Equal(boshinit.State{
-				"key": "value",
-			}))
+		Context("when the bosh-state.json file does not exist", func() {
+			It("returns an empty bosh state object", func() {
+				executable.RunCall.Stub = func() error {
+					return os.Remove(filepath.Join(tempDir, "bosh-state.json"))
+				}
+
+				state, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(state).To(Equal(boshinit.State{}))
+			})
 		})
 
 		It("receives a bosh state object and writes the bosh-state.json file", func() {
 			executable.RunCall.Stub = nil
-			_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{
+			_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{
 				"original_key": "original_value",
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -106,7 +111,7 @@ var _ = Describe("Runner", func() {
 		Context("failure cases", func() {
 			Context("when the bosh-init state cannot be marshaled", func() {
 				It("returns an error", func() {
-					_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{
+					_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{
 						"key": func() {},
 					})
 					Expect(err).To(MatchError(ContainSubstring("unsupported type: func()")))
@@ -121,7 +126,7 @@ var _ = Describe("Runner", func() {
 					err = os.Chmod(filepath.Join(tempDir, "bosh-state.json"), os.FileMode(0000))
 					Expect(err).NotTo(HaveOccurred())
 
-					_, err = runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+					_, err = runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})
@@ -134,7 +139,7 @@ var _ = Describe("Runner", func() {
 					err = os.Chmod(filepath.Join(tempDir, "bosh.yml"), os.FileMode(0000))
 					Expect(err).NotTo(HaveOccurred())
 
-					_, err = runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+					_, err = runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})
@@ -147,7 +152,7 @@ var _ = Describe("Runner", func() {
 					err = os.Chmod(filepath.Join(tempDir, "bosh.pem"), os.FileMode(0000))
 					Expect(err).NotTo(HaveOccurred())
 
-					_, err = runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+					_, err = runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})
@@ -157,7 +162,7 @@ var _ = Describe("Runner", func() {
 					executable.RunCall.Stub = nil
 					executable.RunCall.Returns.Error = errors.New("failed to run")
 
-					_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+					_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 					Expect(err).To(MatchError("failed to run"))
 				})
 			})
@@ -173,17 +178,18 @@ var _ = Describe("Runner", func() {
 						return os.Chmod(filepath.Join(tempDir, "bosh-state.json"), 0000)
 					}
 
-					_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+					_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})
+
 			Context("when bosh-state.json cannot be unmarshalled", func() {
 				It("returns an error", func() {
 					executable.RunCall.Stub = func() error {
 						return ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("%%%%%"), os.ModePerm)
 					}
 
-					_, err := runner.Deploy([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
+					_, err := runner.Execute([]byte("some-manifest-yaml"), "some-private-key", boshinit.State{})
 					Expect(err).To(MatchError(ContainSubstring("invalid character")))
 				})
 			})

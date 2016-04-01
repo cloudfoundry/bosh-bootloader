@@ -6,4 +6,5 @@ type Client interface {
 	CreateStack(input *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error)
 	UpdateStack(input *cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error)
 	DescribeStacks(input *cloudformation.DescribeStacksInput) (*cloudformation.DescribeStacksOutput, error)
+	DeleteStack(input *cloudformation.DeleteStackInput) (*cloudformation.DeleteStackOutput, error)
 }

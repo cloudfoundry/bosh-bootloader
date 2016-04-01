@@ -3,6 +3,7 @@ package cloudformation
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -95,39 +96,46 @@ func (s StackManager) Describe(client Client, name string) (Stack, error) {
 	return Stack{}, StackNotFound
 }
 
-func (s StackManager) WaitForCompletion(client Client, name string, sleepInterval time.Duration) error {
-	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
-		StackName: aws.String(name),
-	})
+func (s StackManager) WaitForCompletion(client Client, name string, sleepInterval time.Duration, action string) error {
+	stack, err := s.Describe(client, name)
 	if err != nil {
+		if err == StackNotFound {
+			s.logger.Step(fmt.Sprintf("finished %s", action))
+			return nil
+		}
+
 		return err
 	}
 
-	status := "UNKNOWN"
-	for _, s := range output.Stacks {
-		if s.StackName != nil && *s.StackName == name {
-			if s.StackStatus != nil {
-				status = *s.StackStatus
-			}
-
-			break
-		}
-	}
-
-	switch status {
+	switch stack.Status {
 	case cloudformation.StackStatusCreateComplete,
 		cloudformation.StackStatusCreateFailed,
 		cloudformation.StackStatusRollbackComplete,
 		cloudformation.StackStatusRollbackFailed,
 		cloudformation.StackStatusUpdateComplete,
 		cloudformation.StackStatusUpdateRollbackComplete,
-		cloudformation.StackStatusUpdateRollbackFailed:
-		s.logger.Step("finished applying cloudformation template")
+		cloudformation.StackStatusUpdateRollbackFailed,
+		cloudformation.StackStatusDeleteComplete,
+		cloudformation.StackStatusDeleteFailed:
+		s.logger.Step(fmt.Sprintf("finished %s", action))
 		return nil
 	default:
 		s.logger.Dot()
 		time.Sleep(sleepInterval)
-		return s.WaitForCompletion(client, name, sleepInterval)
+		return s.WaitForCompletion(client, name, sleepInterval, action)
+	}
+
+	return nil
+}
+
+func (s StackManager) Delete(client Client, name string) error {
+	s.logger.Step("deleting cloudformation stack")
+
+	_, err := client.DeleteStack(&cloudformation.DeleteStackInput{
+		StackName: &name,
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil

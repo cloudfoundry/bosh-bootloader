@@ -31,4 +31,25 @@ var _ = Describe("CommandBuilder", func() {
 			}))
 		})
 	})
+
+	Describe("DeleteCommand", func() {
+		It("builds a command with the correct values", func() {
+			stdout := bytes.NewBuffer([]byte{})
+			stderr := bytes.NewBuffer([]byte{})
+			builder := boshinit.NewCommandBuilder("/tmp/bosh-init", "/tmp/some-dir", stdout, stderr)
+
+			cmd := builder.DeleteCommand()
+			Expect(cmd).To(Equal(&exec.Cmd{
+				Path: "/tmp/bosh-init",
+				Args: []string{
+					"bosh-init",
+					"delete",
+					"bosh.yml",
+				},
+				Dir:    "/tmp/some-dir",
+				Stdout: stdout,
+				Stderr: stderr,
+			}))
+		})
+	})
 })

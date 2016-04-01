@@ -35,3 +35,17 @@ func (b CommandBuilder) DeployCommand() *exec.Cmd {
 		Stderr: b.Stderr,
 	}
 }
+
+func (b CommandBuilder) DeleteCommand() *exec.Cmd {
+	return &exec.Cmd{
+		Path: b.Path,
+		Args: []string{
+			filepath.Base(b.Path),
+			"delete",
+			"bosh.yml",
+		},
+		Dir:    b.Directory,
+		Stdout: b.Stdout,
+		Stderr: b.Stderr,
+	}
+}

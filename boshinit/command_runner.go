@@ -9,10 +9,9 @@ import (
 
 const OS_READ_WRITE_MODE = os.FileMode(0644)
 
-type Runner struct {
+type CommandRunner struct {
 	directory string
 	command   executable
-	logger    logger
 }
 
 type State map[string]interface{}
@@ -21,21 +20,22 @@ type executable interface {
 	Run() error
 }
 
-func NewRunner(dir string, command executable, logger logger) Runner {
-	return Runner{
+func NewCommandRunner(dir string, command executable) CommandRunner {
+	return CommandRunner{
 		directory: dir,
 		command:   command,
-		logger:    logger,
 	}
 }
 
-func (r Runner) Deploy(manifest []byte, privateKey string, state State) (State, error) {
+func (r CommandRunner) Execute(manifest []byte, privateKey string, state State) (State, error) {
+	stateJSONPath := filepath.Join(r.directory, "bosh-state.json")
+
 	stateJSON, err := json.Marshal(state)
 	if err != nil {
 		return State{}, err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(r.directory, "bosh-state.json"), stateJSON, OS_READ_WRITE_MODE)
+	err = ioutil.WriteFile(stateJSONPath, stateJSON, OS_READ_WRITE_MODE)
 	if err != nil {
 		return State{}, err
 	}
@@ -50,13 +50,17 @@ func (r Runner) Deploy(manifest []byte, privateKey string, state State) (State, 
 		return State{}, err
 	}
 
-	r.logger.Step("deploying bosh director")
 	err = r.command.Run()
 	if err != nil {
 		return State{}, err
 	}
 
-	boshStateData, err := ioutil.ReadFile(filepath.Join(r.directory, "bosh-state.json"))
+	_, err = os.Stat(stateJSONPath)
+	if err != nil {
+		return State{}, nil
+	}
+
+	boshStateData, err := ioutil.ReadFile(stateJSONPath)
 	if err != nil {
 		return State{}, err
 	}

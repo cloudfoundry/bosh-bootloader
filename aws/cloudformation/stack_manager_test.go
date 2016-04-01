@@ -3,6 +3,7 @@ package cloudformation_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -357,7 +358,7 @@ var _ = Describe("StackManager", func() {
 	})
 
 	Describe("WaitForCompletion", func() {
-		DescribeTable("waiting for a done state", func(startState, endState string, callCount int) {
+		DescribeTable("waiting for a done state", func(startState, endState string, action string) {
 			cloudformationClient.DescribeStacksCall.Stub = func(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error) {
 				status := startState
 				if cloudformationClient.DescribeStacksCall.CallCount > 2 {
@@ -374,46 +375,86 @@ var _ = Describe("StackManager", func() {
 				}, nil
 			}
 
-			err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond)
+			err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond, action)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudformationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
 				StackName: aws.String("some-stack-name"),
 			}))
-			Expect(cloudformationClient.DescribeStacksCall.CallCount).To(Equal(callCount))
-			Expect(logger.DotCall.CallCount).To(Equal(callCount - 1))
-			Expect(logger.StepCall.Receives.Message).To(Equal("finished applying cloudformation template"))
+			Expect(cloudformationClient.DescribeStacksCall.CallCount).To(Equal(3))
+			Expect(logger.DotCall.CallCount).To(Equal(2))
+			Expect(logger.StepCall.Receives.Message).To(Equal(fmt.Sprintf("finished %s", action)))
 		},
 
 			Entry("create succeeded",
-				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateComplete, 3),
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateComplete, "creating stack"),
 
 			Entry("create failed",
-				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateFailed, 3),
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateFailed, "creating stack"),
 
 			Entry("rollback complete",
-				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackComplete, 3),
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackComplete, "creating stack"),
 
 			Entry("rollback failed",
-				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackFailed, 3),
+				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackFailed, "creating stack"),
 
 			Entry("update succeeded",
-				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateComplete, 3),
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateComplete, "updating stack"),
 
 			Entry("update failed, rollback succeeded",
-				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackComplete, 3),
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackComplete, "updating stack"),
 
 			Entry("update failed, rollback failed",
-				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackFailed, 3))
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackFailed, "updating stack"),
+
+			Entry("delete succeeded",
+				awscloudformation.StackStatusDeleteInProgress, awscloudformation.StackStatusDeleteComplete, "deleting stack"),
+
+			Entry("delete failed",
+				awscloudformation.StackStatusDeleteInProgress, awscloudformation.StackStatusDeleteFailed, "deleting stack"))
+
+		Context("when the stack does not exist", func() {
+			It("does not error", func() {
+				cloudformationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
+
+				err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond, "foo")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.StepCall.Receives.Message).To(Equal("finished foo"))
+			})
+		})
+
+		Context("failures cases", func() {
+			Context("when the describe stacks call fails", func() {
+				It("returns an error", func() {
+					cloudformationClient.DescribeStacksCall.Returns.Error = errors.New("failed to describe stack")
+
+					err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond, "foo")
+					Expect(err).To(MatchError("failed to describe stack"))
+				})
+			})
+		})
 	})
 
-	Context("failures cases", func() {
-		Context("when the describe stacks call fails", func() {
-			It("returns an error", func() {
-				cloudformationClient.DescribeStacksCall.Returns.Error = errors.New("failed to describe stack")
+	Describe("Delete", func() {
+		It("deletes the stack", func() {
+			err := manager.Delete(cloudformationClient, "some-stack-name")
+			Expect(err).NotTo(HaveOccurred())
 
-				err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond)
-				Expect(err).To(MatchError("failed to describe stack"))
+			Expect(cloudformationClient.DeleteStackCall.Receives.Input).To(Equal(&awscloudformation.DeleteStackInput{
+				StackName: aws.String("some-stack-name"),
+			}))
+
+			Expect(logger.StepCall.Receives.Message).To(Equal("deleting cloudformation stack"))
+		})
+
+		Context("failure cases", func() {
+			Context("when the stack delete call fails", func() {
+				It("returns an error", func() {
+					cloudformationClient.DeleteStackCall.Returns.Error = errors.New("failed to delete stack")
+
+					err := manager.Delete(cloudformationClient, "some-stack-name")
+					Expect(err).To(MatchError("failed to delete stack"))
+				})
 			})
 		})
 	})

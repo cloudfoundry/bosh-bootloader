@@ -2,29 +2,6 @@ package manifests
 
 import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
-type ManifestBuilder struct {
-	logger                       logger
-	sslKeyPairGenerator          sslKeyPairGenerator
-	stringGenerator              stringGenerator
-	cloudProviderManifestBuilder cloudProviderManifestBuilder
-	jobsManifestBuilder          jobsManifestBuilder
-}
-
-type ManifestProperties struct {
-	DirectorUsername string
-	DirectorPassword string
-	SubnetID         string
-	AvailabilityZone string
-	ElasticIP        string
-	AccessKeyID      string
-	SecretAccessKey  string
-	DefaultKeyName   string
-	Region           string
-	SecurityGroup    string
-	SSLKeyPair       ssl.KeyPair
-	Credentials      InternalCredentials
-}
-
 type logger interface {
 	Step(message string)
 	Println(string)
@@ -44,6 +21,29 @@ type cloudProviderManifestBuilder interface {
 
 type jobsManifestBuilder interface {
 	Build(ManifestProperties) ([]Job, ManifestProperties, error)
+}
+
+type ManifestProperties struct {
+	DirectorUsername string
+	DirectorPassword string
+	SubnetID         string
+	AvailabilityZone string
+	ElasticIP        string
+	AccessKeyID      string
+	SecretAccessKey  string
+	DefaultKeyName   string
+	Region           string
+	SecurityGroup    string
+	SSLKeyPair       ssl.KeyPair
+	Credentials      InternalCredentials
+}
+
+type ManifestBuilder struct {
+	logger                       logger
+	sslKeyPairGenerator          sslKeyPairGenerator
+	stringGenerator              stringGenerator
+	cloudProviderManifestBuilder cloudProviderManifestBuilder
+	jobsManifestBuilder          jobsManifestBuilder
 }
 
 func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator, stringGenerator stringGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {

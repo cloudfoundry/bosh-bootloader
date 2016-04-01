@@ -2,7 +2,8 @@ package fakes
 
 type Logger struct {
 	StepCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			Message string
 		}
 	}
@@ -17,9 +18,16 @@ type Logger struct {
 			Message string
 		}
 	}
+
+	PromptCall struct {
+		Receives struct {
+			Message string
+		}
+	}
 }
 
 func (l *Logger) Step(message string) {
+	l.StepCall.CallCount++
 	l.StepCall.Receives.Message = message
 }
 
@@ -33,4 +41,8 @@ func (l *Logger) Println(message string) {
 	if l.PrintlnCall.Stub != nil {
 		l.PrintlnCall.Stub(message)
 	}
+}
+
+func (l *Logger) Prompt(message string) {
+	l.PromptCall.Receives.Message = message
 }

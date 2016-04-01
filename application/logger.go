@@ -28,8 +28,7 @@ func (l *Logger) clear() {
 
 func (l *Logger) Step(message string) {
 	l.clear()
-	output := fmt.Sprintf("step: %s\n", message)
-	l.writer.Write([]byte(output))
+	fmt.Fprintf(l.writer, "step: %s\n", message)
 	l.newline = true
 }
 
@@ -40,6 +39,11 @@ func (l *Logger) Dot() {
 
 func (l *Logger) Println(message string) {
 	l.clear()
-	output := fmt.Sprintf("%s\n", message)
-	l.writer.Write([]byte(output))
+	fmt.Fprintf(l.writer, "%s\n", message)
+}
+
+func (l *Logger) Prompt(message string) {
+	l.clear()
+	fmt.Fprintf(l.writer, "%s (y/N): ", message)
+	l.newline = true
 }

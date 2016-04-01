@@ -2,8 +2,10 @@ package main_test
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -42,3 +44,12 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
+
+func executeCommand(args []string, exitCode int) *gexec.Session {
+	cmd := exec.Command(pathToBBL, args...)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
+
+	return session
+}

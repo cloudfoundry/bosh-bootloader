@@ -45,5 +45,6 @@ Global Options:
 Commands:
   help                                          "print usage"
   version                                       "print version"
-  unsupported-deploy-bosh-on-aws-for-concourse  "create a new concourse stack on AWS and deploy bosh-init manifest"
+  unsupported-deploy-bosh-on-aws-for-concourse  "deploys a BOSH Director on AWS"
+  destroy                                       "tears down a BOSH Director environment on AWS"
 ```

@@ -91,6 +91,13 @@ func (b *Backend) UpdateStack(input *cloudformation.UpdateStackInput) (*cloudfor
 	return &cloudformation.UpdateStackOutput{}, nil
 }
 
+func (b *Backend) DeleteStack(input *cloudformation.DeleteStackInput) (*cloudformation.DeleteStackOutput, error) {
+	name := *input.StackName
+	b.Stacks.Delete(name)
+
+	return &cloudformation.DeleteStackOutput{}, nil
+}
+
 func (b *Backend) DescribeAvailabilityZones(input *ec2.DescribeAvailabilityZonesInput) (*ec2.DescribeAvailabilityZonesOutput, error) {
 	validInput := &ec2.DescribeAvailabilityZonesInput{
 		Filters: []*ec2.Filter{{

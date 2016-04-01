@@ -35,6 +35,17 @@ type StackManager struct {
 			Client        cloudformation.Client
 			StackName     string
 			SleepInterval time.Duration
+			Action        string
+		}
+		Returns struct {
+			Error error
+		}
+	}
+
+	DeleteCall struct {
+		Receives struct {
+			Client    cloudformation.Client
+			StackName string
 		}
 		Returns struct {
 			Error error
@@ -50,17 +61,25 @@ func (m *StackManager) CreateOrUpdate(client cloudformation.Client, stackName st
 	return m.CreateOrUpdateCall.Returns.Error
 }
 
-func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName string, sleepInterval time.Duration) error {
+func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName string, sleepInterval time.Duration, action string) error {
 	m.WaitForCompletionCall.Receives.Client = client
 	m.WaitForCompletionCall.Receives.StackName = stackName
 	m.WaitForCompletionCall.Receives.SleepInterval = sleepInterval
+	m.WaitForCompletionCall.Receives.Action = action
 
 	return m.WaitForCompletionCall.Returns.Error
 }
 
-func (m *StackManager) Describe(client cloudformation.Client, name string) (cloudformation.Stack, error) {
+func (m *StackManager) Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error) {
 	m.DescribeCall.Receives.Client = client
-	m.DescribeCall.Receives.StackName = name
+	m.DescribeCall.Receives.StackName = stackName
 
 	return m.DescribeCall.Returns.Stack, m.DescribeCall.Returns.Error
+}
+
+func (m *StackManager) Delete(client cloudformation.Client, stackName string) error {
+	m.DeleteCall.Receives.Client = client
+	m.DeleteCall.Receives.StackName = stackName
+
+	return m.DeleteCall.Returns.Error
 }

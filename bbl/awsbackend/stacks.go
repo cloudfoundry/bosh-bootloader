@@ -33,3 +33,10 @@ func (s *Stacks) Get(name string) (Stack, bool) {
 	stack, ok := s.store[name]
 	return stack, ok
 }
+
+func (s *Stacks) Delete(name string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	delete(s.store, name)
+}

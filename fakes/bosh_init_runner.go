@@ -2,8 +2,8 @@ package fakes
 
 import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 
-type BOSHInitRunner struct {
-	DeployCall struct {
+type BOSHInitCommandRunner struct {
+	ExecuteCall struct {
 		Receives struct {
 			Manifest   []byte
 			PrivateKey string
@@ -16,10 +16,10 @@ type BOSHInitRunner struct {
 	}
 }
 
-func (r *BOSHInitRunner) Deploy(manifest []byte, privateKey string, state boshinit.State) (boshinit.State, error) {
-	r.DeployCall.Receives.Manifest = manifest
-	r.DeployCall.Receives.PrivateKey = privateKey
-	r.DeployCall.Receives.State = state
+func (r *BOSHInitCommandRunner) Execute(manifest []byte, privateKey string, state boshinit.State) (boshinit.State, error) {
+	r.ExecuteCall.Receives.Manifest = manifest
+	r.ExecuteCall.Receives.PrivateKey = privateKey
+	r.ExecuteCall.Receives.State = state
 
-	return r.DeployCall.Returns.State, r.DeployCall.Returns.Error
+	return r.ExecuteCall.Returns.State, r.ExecuteCall.Returns.Error
 }

@@ -57,6 +57,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
+			Expect(stackManager.WaitForCompletionCall.Receives.Action).To(Equal("applying cloudformation template"))
 
 			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
@@ -110,6 +111,49 @@ var _ = Describe("InfrastructureManager", func() {
 				stackManager.DescribeCall.Returns.Error = errors.New("some other error")
 				_, err := infrastructureManager.Exists("some-stack-name", cloudFormationClient)
 				Expect(err).To(MatchError("some other error"))
+			})
+		})
+	})
+
+	Describe("Delete", func() {
+		It("deletes the underlying infrastructure", func() {
+			err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(stackManager.DeleteCall.Receives.Client).To(Equal(cloudFormationClient))
+			Expect(stackManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
+
+			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
+			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
+			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
+			Expect(stackManager.WaitForCompletionCall.Receives.Action).To(Equal("deleting cloudformation stack"))
+		})
+
+		Context("when the stack goes away after being deleted", func() {
+			It("returns without an error", func() {
+				stackManager.WaitForCompletionCall.Returns.Error = cloudformation.StackNotFound
+
+				err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when the stack fails to delete", func() {
+				It("returns an error", func() {
+					stackManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
+
+					err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+					Expect(err).To(MatchError("failed to delete stack"))
+				})
+			})
+			Context("when the waiting for completion fails", func() {
+				It("returns an error", func() {
+					stackManager.WaitForCompletionCall.Returns.Error = errors.New("wait for completion failed")
+
+					err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+					Expect(err).To(MatchError("wait for completion failed"))
+				})
 			})
 		})
 	})

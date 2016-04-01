@@ -13,17 +13,17 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("BOSHDeployInput", func() {
+var _ = Describe("DeployInput", func() {
 	var (
 		fakeStringGenerator *fakes.StringGenerator
 	)
 
-	Describe("NewBOSHDeployInput", func() {
+	Describe("NewDeployInput", func() {
 		BeforeEach(func() {
 			fakeStringGenerator = &fakes.StringGenerator{}
 		})
 
-		It("constructs a BOSHDeployInput given a state", func() {
+		It("constructs a DeployInput given a state", func() {
 			state := storage.State{
 				KeyPair: &storage.KeyPair{
 					Name:       "some-keypair-name",
@@ -54,10 +54,10 @@ var _ = Describe("BOSHDeployInput", func() {
 				SecurityGroup:    "some-security-group",
 			}
 
-			boshDeployInput, err := boshinit.NewBOSHDeployInput(state, infrastructureConfiguration, fakeStringGenerator)
+			deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(boshDeployInput).To(Equal(boshinit.BOSHDeployInput{
+			Expect(deployInput).To(Equal(boshinit.DeployInput{
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
 				State: map[string]interface{}{
@@ -111,7 +111,7 @@ var _ = Describe("BOSHDeployInput", func() {
 				},
 			}
 
-			_, err := boshinit.NewBOSHDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+			_, err := boshinit.NewDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(state).To(Equal(storage.State{
@@ -149,10 +149,10 @@ var _ = Describe("BOSHDeployInput", func() {
 					return "", errors.New("too many calls to password generator")
 				}
 			}
-			boshDeployInput, err := boshinit.NewBOSHDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+			deployInput, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(boshDeployInput).To(Equal(boshinit.BOSHDeployInput{
+			Expect(deployInput).To(Equal(boshinit.DeployInput{
 				State:            map[string]interface{}{},
 				DirectorUsername: "some-generated-username",
 				DirectorPassword: "some-generated-password",
@@ -164,7 +164,7 @@ var _ = Describe("BOSHDeployInput", func() {
 		Describe("failure cases", func() {
 			It("returns an error when director username generation fails", func() {
 				fakeStringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate username")
-				_, err := boshinit.NewBOSHDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 
 				Expect(err).To(MatchError("failed to generate username"))
 			})
@@ -178,7 +178,7 @@ var _ = Describe("BOSHDeployInput", func() {
 						return "", errors.New("failed to generate password")
 					}
 				}
-				_, err := boshinit.NewBOSHDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
 				Expect(err).To(MatchError("failed to generate password"))
 			})
 		})

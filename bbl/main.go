@@ -19,28 +19,30 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands/unsupported"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/helpers"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 func main() {
+	// Utilities
 	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
+	stateStore := storage.NewStore()
+	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 
+	// Amazon
+	awsClientProvider := aws.NewClientProvider()
 	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator)
 	keyPairChecker := ec2.NewKeyPairChecker()
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
-	stateStore := storage.NewStore()
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	awsClientProvider := aws.NewClientProvider()
-	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 
+	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
 	if err != nil {
 		fail(err)
@@ -51,22 +53,34 @@ func main() {
 		fail(err)
 	}
 
-	boshInitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
-	boshInitDeployCommand := boshInitCommandBuilder.DeployCommand()
 	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
 	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
-	boshInitManifestBuilder := manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
-	boshInitRunner := boshinit.NewRunner(tempDir, boshInitDeployCommand, logger)
-	boshDeployer := boshinit.NewBOSHDeployer(boshInitManifestBuilder, boshInitRunner, logger)
+	boshinitManifestBuilder := manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+	boshinitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
+	boshinitDeployCommand := boshinitCommandBuilder.DeployCommand()
+	boshinitDeleteCommand := boshinitCommandBuilder.DeleteCommand()
+	boshinitDeployRunner := boshinit.NewCommandRunner(tempDir, boshinitDeployCommand)
+	boshinitDeleteRunner := boshinit.NewCommandRunner(tempDir, boshinitDeleteCommand)
+	boshinitExecutor := boshinit.NewExecutor(boshinitManifestBuilder, boshinitDeployRunner, boshinitDeleteRunner, logger)
+
+	// BOSH
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, boshCloudConfigGenerator)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever()
 
+	// Commands
+	help := commands.NewUsage(os.Stdout)
+	version := commands.NewVersion(os.Stdout)
+	up := commands.NewUp(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor, stringGenerator, cloudConfigurator, availabilityZoneRetriever)
+	destroy := commands.NewDestroy(logger, os.Stdin, boshinitExecutor, awsClientProvider, stackManager, stringGenerator, infrastructureManager)
+	usage := commands.NewUsage(os.Stdout)
+
 	app := application.New(application.CommandSet{
-		"help":    commands.NewUsage(os.Stdout),
-		"version": commands.NewVersion(os.Stdout),
-		"unsupported-deploy-bosh-on-aws-for-concourse": unsupported.NewDeployBOSHOnAWSForConcourse(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshDeployer, stringGenerator, cloudConfigurator, availabilityZoneRetriever),
-	}, stateStore, commands.NewUsage(os.Stdout).Print)
+		"help":    help,
+		"version": version,
+		"unsupported-deploy-bosh-on-aws-for-concourse": up,
+		"destroy": destroy,
+	}, stateStore, usage.Print)
 
 	err = app.Run(os.Args[1:])
 	if err != nil {
