@@ -56,13 +56,21 @@ func NewStore() Store {
 }
 
 func (s Store) Set(dir string, state State) error {
-	state.Version = s.version
+	if (state == State{}) {
+		err := os.Remove(filepath.Join(dir, "state.json"))
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+
+		return nil
+	}
 
 	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDWR|os.O_CREATE, OS_READ_WRITE_MODE)
 	if err != nil {
 		return err
 	}
 
+	state.Version = s.version
 	err = encode(file, state)
 	if err != nil {
 		return err

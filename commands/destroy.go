@@ -128,5 +128,5 @@ func (d Destroy) Execute(globalFlags GlobalFlags, state storage.State) (storage.
 		return state, err
 	}
 
-	return state, nil
+	return storage.State{}, nil
 }

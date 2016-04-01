@@ -70,7 +70,8 @@ var _ = Describe("destroy", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+			err = ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 
 			args := []string{
 				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
@@ -204,6 +205,13 @@ var _ = Describe("destroy", func() {
 
 			_, ok := fakeAWS.Stacks.Get("some-stack-name")
 			Expect(ok).To(BeFalse())
+		})
+
+		It("deletes the state.json file", func() {
+			destroy(fakeAWSServer.URL, tempDirectory, 0)
+
+			_, err := os.Stat(filepath.Join(tempDirectory, "state.json"))
+			Expect(os.IsNotExist(err)).To(BeTrue())
 		})
 	})
 })

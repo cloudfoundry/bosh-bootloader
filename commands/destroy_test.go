@@ -200,6 +200,12 @@ var _ = Describe("Destroy", func() {
 				Expect(keyPairDeleter.DeleteCall.Receives.Client).To(Equal(ec2Client))
 				Expect(keyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
 			})
+
+			It("clears the state", func() {
+				state, err := destroy.Execute(flags, state)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(state).To(Equal(storage.State{}))
+			})
 		})
 
 		Context("failure cases", func() {

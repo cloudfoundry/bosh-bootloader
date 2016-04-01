@@ -128,12 +128,51 @@ var _ = Describe("Store", func() {
 			Expect(fileInfo.Mode()).To(Equal(os.FileMode(0644)))
 		})
 
+		Context("when the state is empty", func() {
+			It("removes the state.json file", func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte("{}"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = store.Set(tempDir, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = os.Stat(filepath.Join(tempDir, "state.json"))
+				Expect(os.IsNotExist(err)).To(BeTrue())
+			})
+
+			Context("when the state.json file does not exist", func() {
+				It("does nothing", func() {
+					err := store.Set(tempDir, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = os.Stat(filepath.Join(tempDir, "state.json"))
+					Expect(os.IsNotExist(err)).To(BeTrue())
+				})
+			})
+
+			Context("failure cases", func() {
+				Context("when the state.json file cannot be removed", func() {
+					It("returns an error", func() {
+						err := os.Chmod(tempDir, 0000)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = store.Set(tempDir, storage.State{})
+						Expect(err).To(MatchError(ContainSubstring("permission denied")))
+					})
+				})
+			})
+		})
+
 		Context("failure cases", func() {
 			It("fails to open the state.json file", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = store.Set(tempDir, storage.State{})
+				err = store.Set(tempDir, storage.State{
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+				})
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 
@@ -142,7 +181,11 @@ var _ = Describe("Store", func() {
 					return errors.New("failed to encode")
 				})
 
-				err := store.Set(tempDir, storage.State{})
+				err := store.Set(tempDir, storage.State{
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+				})
 				Expect(err).To(MatchError("failed to encode"))
 			})
 		})
