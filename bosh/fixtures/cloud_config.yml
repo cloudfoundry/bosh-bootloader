@@ -60,7 +60,7 @@ vm_types:
       type: gp2
 
 networks:
-- name: concourse
+- name: private
   type: manual
   subnets:
   - az: z1
@@ -106,7 +106,7 @@ disk_types:
 
 compilation:
   workers: 3
-  network: concourse
+  network: private
   az: z1
   reuse_compilation_vms: true
   vm_type: c3.large

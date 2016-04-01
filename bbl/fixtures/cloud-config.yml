@@ -10,7 +10,7 @@ azs:
   name: z3
 compilation:
   az: z1
-  network: concourse
+  network: private
   reuse_compilation_vms: true
   vm_type: c3.large
   workers: 3
@@ -20,7 +20,7 @@ disk_types:
   disk_size: 1024
   name: default
 networks:
-- name: concourse
+- name: private
   subnets:
   - az: z1
     cloud_properties:

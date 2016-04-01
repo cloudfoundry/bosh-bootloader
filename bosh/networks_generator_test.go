@@ -39,7 +39,7 @@ var _ = Describe("NetworksGenerator", func() {
 
 			Expect(networks).To(ConsistOf(
 				bosh.Network{
-					Name: "concourse",
+					Name: "private",
 					Type: "manual",
 					Subnets: []bosh.NetworkSubnet{
 						{

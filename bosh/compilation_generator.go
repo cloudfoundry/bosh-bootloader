@@ -17,7 +17,7 @@ func NewCompilationGenerator() CompilationGenerator {
 func (CompilationGenerator) Generate() *Compilation {
 	return &Compilation{
 		Workers:             3,
-		Network:             "concourse",
+		Network:             "private",
 		AZ:                  "z1",
 		ReuseCompilationVMs: true,
 		VMType:              "c3.large",

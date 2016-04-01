@@ -38,7 +38,7 @@ func (n NetworksGenerator) Generate() ([]Network, error) {
 	const MINIMUM_CIDR_SIZE = 5
 
 	network := Network{
-		Name: "concourse",
+		Name: "private",
 		Type: "manual",
 	}
 	for _, subnet := range n.subnetInputs {

@@ -25,7 +25,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 					CidrBlock: templates.Ref{"VPCCIDR"},
 					Tags: []templates.Tag{
 						{
-							Value: "concourse",
+							Value: "bbl",
 							Key:   "Name",
 						},
 					},

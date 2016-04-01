@@ -16,7 +16,7 @@ var _ = Describe("CompilationGenerator", func() {
 			Expect(compilation).To(Equal(
 				&bosh.Compilation{
 					Workers:             3,
-					Network:             "concourse",
+					Network:             "private",
 					AZ:                  "z1",
 					ReuseCompilationVMs: true,
 					VMType:              "c3.large",

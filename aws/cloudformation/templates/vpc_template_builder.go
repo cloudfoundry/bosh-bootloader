@@ -22,7 +22,7 @@ func (t VPCTemplateBuilder) VPC() Template {
 					CidrBlock: Ref{"VPCCIDR"},
 					Tags: []Tag{
 						{
-							Value: "concourse",
+							Value: "bbl",
 							Key:   "Name",
 						},
 					},

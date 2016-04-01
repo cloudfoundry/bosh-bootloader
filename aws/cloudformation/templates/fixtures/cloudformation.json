@@ -454,7 +454,7 @@
         "VPC": {
             "Properties": {
                 "CidrBlock": {"Ref": "VPCCIDR"},
-                "Tags": [{"Key": "Name", "Value": "concourse"}]
+                "Tags": [{"Key": "Name", "Value": "bbl"}]
             },
             "Type": "AWS::EC2::VPC"
         },
