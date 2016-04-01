@@ -37,6 +37,12 @@ func (b *Backend) CreateKeyPair(input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPa
 	}, nil
 }
 
+func (b *Backend) DeleteKeyPair(input *ec2.DeleteKeyPairInput) (*ec2.DeleteKeyPairOutput, error) {
+	b.KeyPairs.Delete(*input.KeyName)
+
+	return &ec2.DeleteKeyPairOutput{}, nil
+}
+
 func (b *Backend) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.DescribeKeyPairsOutput, error) {
 	var keyPairs []KeyPair
 	for _, name := range input.KeyNames {

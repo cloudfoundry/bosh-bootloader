@@ -29,6 +29,8 @@ var _ = Describe("Destroy", func() {
 		clientProvider        *fakes.ClientProvider
 		stringGenerator       *fakes.StringGenerator
 		logger                *fakes.Logger
+		keyPairDeleter        *fakes.KeyPairDeleter
+		ec2Client             *fakes.EC2Client
 		stdin                 *bytes.Buffer
 	)
 
@@ -37,15 +39,18 @@ var _ = Describe("Destroy", func() {
 		logger = &fakes.Logger{}
 
 		cloudFormationClient = &fakes.CloudFormationClient{}
+		ec2Client = &fakes.EC2Client{}
 		clientProvider = &fakes.ClientProvider{}
 		clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
+		clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
 		stackManager = &fakes.StackManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		boshDeleter = &fakes.BOSHDeleter{}
+		keyPairDeleter = &fakes.KeyPairDeleter{}
 		stringGenerator = &fakes.StringGenerator{}
 
-		destroy = commands.NewDestroy(logger, stdin, boshDeleter, clientProvider, stackManager, stringGenerator, infrastructureManager)
+		destroy = commands.NewDestroy(logger, stdin, boshDeleter, clientProvider, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	})
 
 	Describe("Execute", func() {
@@ -180,6 +185,21 @@ var _ = Describe("Destroy", func() {
 				Expect(infrastructureManager.DeleteCall.Receives.Client).To(Equal(cloudFormationClient))
 				Expect(infrastructureManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
 			})
+
+			It("deletes the keypair", func() {
+				_, err := destroy.Execute(flags, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
+					AccessKeyID:      "some-access-key-id",
+					SecretAccessKey:  "some-secret-access-key",
+					Region:           "some-aws-region",
+					EndpointOverride: "some-endpoint",
+				}))
+
+				Expect(keyPairDeleter.DeleteCall.Receives.Client).To(Equal(ec2Client))
+				Expect(keyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
+			})
 		})
 
 		Context("failure cases", func() {
@@ -187,39 +207,67 @@ var _ = Describe("Destroy", func() {
 				stdin.Write([]byte("yes\n"))
 			})
 
-			It("returns an error when the bosh delete fails", func() {
-				boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
+			Context("when the bosh delete fails", func() {
+				It("returns an error", func() {
+					boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
-				Expect(err).To(MatchError("BOSH Delete Failed"))
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("BOSH Delete Failed"))
+				})
 			})
 
-			It("returns an error when the stack manager cannot describe the stack", func() {
-				stackManager.DescribeCall.Returns.Error = errors.New("cannot describe stack")
+			Context("when the stack manager cannot describe the stack", func() {
+				It("returns an error", func() {
+					stackManager.DescribeCall.Returns.Error = errors.New("cannot describe stack")
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
-				Expect(err).To(MatchError("cannot describe stack"))
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("cannot describe stack"))
+				})
 			})
 
-			It("returns an error when the cloudformation client cannot be created", func() {
-				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("failed to create cloudformation client")
+			Context("when the cloudformation client cannot be created", func() {
+				It("returns an error", func() {
+					clientProvider.CloudFormationClientCall.Returns.Error = errors.New("failed to create cloudformation client")
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
-				Expect(err).To(MatchError("failed to create cloudformation client"))
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("failed to create cloudformation client"))
+				})
 			})
 
-			It("returns an error when failing to construct DeployInput", func() {
-				stringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate string")
+			Context("when failing to construct DeployInput", func() {
+				It("returns an error", func() {
+					stringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate string")
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
-				Expect(err).To(MatchError("failed to generate string"))
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("failed to generate string"))
+				})
 			})
 
-			It("returns an error when failing to delete the stack", func() {
-				infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
+			Context("when failing to delete the stack", func() {
+				It("returns an error", func() {
+					infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
-				Expect(err).To(MatchError("failed to delete stack"))
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("failed to delete stack"))
+				})
+			})
+
+			Context("when the ec2 client cannot be created", func() {
+				It("returns an error", func() {
+					clientProvider.EC2ClientCall.Returns.Error = errors.New("failed to create ec2 client")
+
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("failed to create ec2 client"))
+				})
+			})
+
+			Context("when the keypair cannot be deleted", func() {
+				It("returns an error", func() {
+					keyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete keypair")
+
+					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					Expect(err).To(MatchError("failed to delete keypair"))
+				})
 			})
 		})
 	})

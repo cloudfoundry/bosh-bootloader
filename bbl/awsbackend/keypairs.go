@@ -32,6 +32,13 @@ func (k *KeyPairs) Get(name string) (KeyPair, bool) {
 	return keyPair, ok
 }
 
+func (k *KeyPairs) Delete(name string) {
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
+
+	delete(k.store, name)
+}
+
 func (k *KeyPairs) All() []KeyPair {
 	var keyPairs []KeyPair
 	for _, keyPair := range k.store {

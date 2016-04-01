@@ -35,6 +35,7 @@ func main() {
 	// Amazon
 	awsClientProvider := aws.NewClientProvider()
 	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator)
+	keyPairDeleter := ec2.NewKeyPairDeleter(logger)
 	keyPairChecker := ec2.NewKeyPairChecker()
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
@@ -72,7 +73,7 @@ func main() {
 	help := commands.NewUsage(os.Stdout)
 	version := commands.NewVersion(os.Stdout)
 	up := commands.NewUp(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor, stringGenerator, cloudConfigurator, availabilityZoneRetriever)
-	destroy := commands.NewDestroy(logger, os.Stdin, boshinitExecutor, awsClientProvider, stackManager, stringGenerator, infrastructureManager)
+	destroy := commands.NewDestroy(logger, os.Stdin, boshinitExecutor, awsClientProvider, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	usage := commands.NewUsage(os.Stdout)
 
 	app := application.New(application.CommandSet{

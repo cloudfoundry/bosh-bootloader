@@ -43,6 +43,16 @@ type EC2Client struct {
 			Error  error
 		}
 	}
+
+	DeleteKeyPairCall struct {
+		Receives struct {
+			Input *awsec2.DeleteKeyPairInput
+		}
+		Returns struct {
+			Output *awsec2.DeleteKeyPairOutput
+			Error  error
+		}
+	}
 }
 
 func (c *EC2Client) ImportKeyPair(input *awsec2.ImportKeyPairInput) (*awsec2.ImportKeyPairOutput, error) {
@@ -67,4 +77,10 @@ func (c *EC2Client) DescribeAvailabilityZones(input *awsec2.DescribeAvailability
 	c.DescribeAvailabilityZonesCall.Receives.Input = input
 
 	return c.DescribeAvailabilityZonesCall.Returns.Output, c.DescribeAvailabilityZonesCall.Returns.Error
+}
+
+func (c *EC2Client) DeleteKeyPair(input *awsec2.DeleteKeyPairInput) (*awsec2.DeleteKeyPairOutput, error) {
+	c.DeleteKeyPairCall.Receives.Input = input
+
+	return c.DeleteKeyPairCall.Returns.Output, c.DeleteKeyPairCall.Returns.Error
 }

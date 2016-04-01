@@ -196,6 +196,15 @@ var _ = Describe("destroy", func() {
 			_, ok := fakeAWS.Stacks.Get("some-stack-name")
 			Expect(ok).To(BeFalse())
 		})
+
+		It("deletes the keypair", func() {
+			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting keypair"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+
+			_, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeFalse())
+		})
 	})
 })
 
