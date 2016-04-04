@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -21,6 +22,10 @@ type Destroy struct {
 	stringGenerator       stringGenerator
 	infrastructureManager infrastructureManager
 	keyPairDeleter        keyPairDeleter
+}
+
+type destroyConfig struct {
+	NoConfirm bool
 }
 
 type keyPairDeleter interface {
@@ -57,16 +62,23 @@ func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, clientP
 	}
 }
 
-func (d Destroy) Execute(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
-	d.logger.Prompt("Are you sure you want to delete your infrastructure? This operation cannot be undone!")
+func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+	config, err := d.parseFlags(subcommandFlags)
+	if err != nil {
+		return state, err
+	}
 
-	var proceed string
-	fmt.Fscanln(d.stdin, &proceed)
+	if !config.NoConfirm {
+		d.logger.Prompt("Are you sure you want to delete your infrastructure? This operation cannot be undone!")
 
-	proceed = strings.ToLower(proceed)
-	if proceed != "yes" && proceed != "y" {
-		d.logger.Step("exiting")
-		return state, nil
+		var proceed string
+		fmt.Fscanln(d.stdin, &proceed)
+
+		proceed = strings.ToLower(proceed)
+		if proceed != "yes" && proceed != "y" {
+			d.logger.Step("exiting")
+			return state, nil
+		}
 	}
 
 	d.logger.Step("destroying infrastructure")
@@ -129,4 +141,18 @@ func (d Destroy) Execute(globalFlags GlobalFlags, state storage.State) (storage.
 	}
 
 	return storage.State{}, nil
+}
+
+func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
+	destroyFlags := flags.New("destroy")
+
+	config := destroyConfig{}
+	destroyFlags.Bool(&config.NoConfirm, "n", "no-confirm", false)
+
+	err := destroyFlags.Parse(subcommandFlags)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
 }

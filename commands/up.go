@@ -70,7 +70,7 @@ func NewUp(
 	}
 }
 
-func (u Up) Execute(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
+func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
 	cloudformationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,

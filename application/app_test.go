@@ -14,7 +14,7 @@ import (
 
 type setNewKeyPairName struct{}
 
-func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, state storage.State) (storage.State, error) {
+func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
 	state.KeyPair = &storage.KeyPair{
 		Name:       "some-new-keypair-name",
 		PublicKey:  state.KeyPair.PublicKey,
@@ -52,7 +52,7 @@ var _ = Describe("App", func() {
 			"set-new-keypair-name": setNewKeyPairName{},
 		},
 			stateStore,
-			func() { helpCmd.Execute(commands.GlobalFlags{}, storage.State{}) })
+			func() { helpCmd.Execute(commands.GlobalFlags{}, []string{}, storage.State{}) })
 	})
 
 	Describe("Run", func() {
@@ -124,6 +124,21 @@ var _ = Describe("App", func() {
 					Name:       "some-new-keypair-name",
 					PrivateKey: "some-private-key",
 				}))
+			})
+
+			Context("when subcommand flags are provided", func() {
+				It("passes the flags to the subcommand", func() {
+					Expect(app.Run([]string{
+						"some",
+						"--first-subcommand-flag", "first-value",
+						"--second-subcommand-flag", "second-value",
+					})).To(Succeed())
+
+					Expect(someCmd.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{
+						"--first-subcommand-flag", "first-value",
+						"--second-subcommand-flag", "second-value",
+					}))
+				})
 			})
 
 			Context("when global flags are provided", func() {

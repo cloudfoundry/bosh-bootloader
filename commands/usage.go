@@ -36,7 +36,7 @@ func NewUsage(stdout io.Writer) Usage {
 	return Usage{stdout}
 }
 
-func (u Usage) Execute(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
+func (u Usage) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
 	u.Print()
 	return state, nil
 }

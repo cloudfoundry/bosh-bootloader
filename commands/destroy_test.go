@@ -58,7 +58,7 @@ var _ = Describe("Destroy", func() {
 			func(response string, proceed bool) {
 				fmt.Fprintf(stdin, "%s\n", response)
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+				_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete your infrastructure? This operation cannot be undone!"))
@@ -80,6 +80,19 @@ var _ = Describe("Destroy", func() {
 			Entry("responding with 'No'", "No", false),
 			Entry("responding with 'N'", "N", false),
 		)
+
+		Context("when the --no-confirm flag is supplied", func() {
+			DescribeTable("destroys without prompting the user for confirmation", func(flag string) {
+				_, err := destroy.Execute(commands.GlobalFlags{}, []string{flag}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
+			},
+				Entry("--no-confirm", "--no-confirm"),
+				Entry("-n", "-n"),
+			)
+		})
 
 		Context("destroys the infrastructure", func() {
 			var (
@@ -135,7 +148,7 @@ var _ = Describe("Destroy", func() {
 					},
 				}
 
-				_, err := destroy.Execute(flags, state)
+				_, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
@@ -179,7 +192,7 @@ var _ = Describe("Destroy", func() {
 			})
 
 			It("deletes the stack", func() {
-				_, err := destroy.Execute(flags, state)
+				_, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(infrastructureManager.DeleteCall.Receives.Client).To(Equal(cloudFormationClient))
@@ -187,7 +200,7 @@ var _ = Describe("Destroy", func() {
 			})
 
 			It("deletes the keypair", func() {
-				_, err := destroy.Execute(flags, state)
+				_, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
@@ -202,7 +215,7 @@ var _ = Describe("Destroy", func() {
 			})
 
 			It("clears the state", func() {
-				state, err := destroy.Execute(flags, state)
+				state, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{}))
 			})
@@ -213,11 +226,18 @@ var _ = Describe("Destroy", func() {
 				stdin.Write([]byte("yes\n"))
 			})
 
+			Context("when an invalid command line flag is supplied", func() {
+				It("returns an error", func() {
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{"--invalid-flag"}, storage.State{})
+					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+				})
+			})
+
 			Context("when the bosh delete fails", func() {
 				It("returns an error", func() {
 					boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("BOSH Delete Failed"))
 				})
 			})
@@ -226,7 +246,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					stackManager.DescribeCall.Returns.Error = errors.New("cannot describe stack")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("cannot describe stack"))
 				})
 			})
@@ -235,7 +255,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					clientProvider.CloudFormationClientCall.Returns.Error = errors.New("failed to create cloudformation client")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to create cloudformation client"))
 				})
 			})
@@ -244,7 +264,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					stringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate string")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to generate string"))
 				})
 			})
@@ -253,7 +273,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to delete stack"))
 				})
 			})
@@ -262,7 +282,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					clientProvider.EC2ClientCall.Returns.Error = errors.New("failed to create ec2 client")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to create ec2 client"))
 				})
 			})
@@ -271,7 +291,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					keyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete keypair")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, storage.State{})
+					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to delete keypair"))
 				})
 			})

@@ -10,8 +10,9 @@ type Command struct {
 		CallCount int
 		PassState bool
 		Receives  struct {
-			GlobalFlags commands.GlobalFlags
-			State       storage.State
+			GlobalFlags     commands.GlobalFlags
+			State           storage.State
+			SubcommandFlags []string
 		}
 		Returns struct {
 			State storage.State
@@ -20,10 +21,11 @@ type Command struct {
 	}
 }
 
-func (c *Command) Execute(globalFlags commands.GlobalFlags, state storage.State) (storage.State, error) {
+func (c *Command) Execute(globalFlags commands.GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
 	c.ExecuteCall.CallCount++
 	c.ExecuteCall.Receives.GlobalFlags = globalFlags
 	c.ExecuteCall.Receives.State = state
+	c.ExecuteCall.Receives.SubcommandFlags = subcommandFlags
 
 	if c.ExecuteCall.PassState {
 		c.ExecuteCall.Returns.State = state

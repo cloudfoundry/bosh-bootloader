@@ -31,9 +31,10 @@ func New(commands CommandSet, store store, usage func()) App {
 }
 
 type config struct {
-	Command string
-	Help    bool
-	Version bool
+	Command         string
+	SubcommandFlags []string
+	Help            bool
+	Version         bool
 	commands.GlobalFlags
 }
 
@@ -48,7 +49,7 @@ func (a App) Run(args []string) error {
 		return err
 	}
 
-	newState, err := a.execute(cfg, a.applyGlobalConfig(cfg.GlobalFlags, state))
+	newState, err := a.execute(cfg, cfg.SubcommandFlags, a.applyGlobalConfig(cfg.GlobalFlags, state))
 	if err != nil {
 		return err
 	}
@@ -85,6 +86,7 @@ func (a App) configure(args []string) (config, error) {
 
 	if len(globalFlags.Args()) > 0 {
 		cfg.Command = globalFlags.Args()[0]
+		cfg.SubcommandFlags = globalFlags.Args()[1:]
 	}
 
 	if cfg.Version {
@@ -114,14 +116,14 @@ func (a App) applyGlobalConfig(globals commands.GlobalFlags, state storage.State
 	return state
 }
 
-func (a App) execute(cfg config, state storage.State) (storage.State, error) {
+func (a App) execute(cfg config, subcommandFlags []string, state storage.State) (storage.State, error) {
 	cmd, ok := a.commands[cfg.Command]
 	if !ok {
 		a.usage()
 		return state, fmt.Errorf("unknown command: %s", cfg.Command)
 	}
 
-	state, err := cmd.Execute(cfg.GlobalFlags, state)
+	state, err := cmd.Execute(cfg.GlobalFlags, subcommandFlags, state)
 	if err != nil {
 		return state, err
 	}

@@ -20,7 +20,8 @@ type Logger struct {
 	}
 
 	PromptCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			Message string
 		}
 	}
@@ -44,5 +45,6 @@ func (l *Logger) Println(message string) {
 }
 
 func (l *Logger) Prompt(message string) {
+	l.PromptCall.CallCount++
 	l.PromptCall.Receives.Message = message
 }
