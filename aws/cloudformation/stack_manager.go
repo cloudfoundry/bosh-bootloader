@@ -109,16 +109,17 @@ func (s StackManager) WaitForCompletion(client Client, name string, sleepInterva
 
 	switch stack.Status {
 	case cloudformation.StackStatusCreateComplete,
-		cloudformation.StackStatusCreateFailed,
-		cloudformation.StackStatusRollbackComplete,
-		cloudformation.StackStatusRollbackFailed,
 		cloudformation.StackStatusUpdateComplete,
-		cloudformation.StackStatusUpdateRollbackComplete,
-		cloudformation.StackStatusUpdateRollbackFailed,
-		cloudformation.StackStatusDeleteComplete,
-		cloudformation.StackStatusDeleteFailed:
+		cloudformation.StackStatusDeleteComplete:
 		s.logger.Step(fmt.Sprintf("finished %s", action))
 		return nil
+	case cloudformation.StackStatusCreateFailed,
+		cloudformation.StackStatusRollbackComplete,
+		cloudformation.StackStatusRollbackFailed,
+		cloudformation.StackStatusUpdateRollbackComplete,
+		cloudformation.StackStatusUpdateRollbackFailed,
+		cloudformation.StackStatusDeleteFailed:
+		return fmt.Errorf("aws cloudformation failed: %s", stack.Status)
 	default:
 		s.logger.Dot()
 		time.Sleep(sleepInterval)

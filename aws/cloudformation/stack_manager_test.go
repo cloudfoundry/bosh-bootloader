@@ -358,10 +358,10 @@ var _ = Describe("StackManager", func() {
 	})
 
 	Describe("WaitForCompletion", func() {
-		DescribeTable("waiting for a done state", func(startState, endState string, action string) {
-			cloudformationClient.DescribeStacksCall.Stub = func(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error) {
+		var stubDescribeStacksCall = func(startState string, endState string, cloudFormationClient *fakes.CloudFormationClient) {
+			cloudFormationClient.DescribeStacksCall.Stub = func(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error) {
 				status := startState
-				if cloudformationClient.DescribeStacksCall.CallCount > 2 {
+				if cloudFormationClient.DescribeStacksCall.CallCount > 2 {
 					status = endState
 				}
 
@@ -374,6 +374,10 @@ var _ = Describe("StackManager", func() {
 					},
 				}, nil
 			}
+		}
+
+		DescribeTable("waiting for a done state", func(startState, endState string, action string) {
+			stubDescribeStacksCall(startState, endState, cloudformationClient)
 
 			err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond, action)
 			Expect(err).NotTo(HaveOccurred())
@@ -389,6 +393,20 @@ var _ = Describe("StackManager", func() {
 			Entry("create succeeded",
 				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateComplete, "creating stack"),
 
+			Entry("update succeeded",
+				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateComplete, "updating stack"),
+
+			Entry("delete succeeded",
+				awscloudformation.StackStatusDeleteInProgress, awscloudformation.StackStatusDeleteComplete, "deleting stack"),
+		)
+
+		DescribeTable("waiting for a done state", func(startState, endState string, action string) {
+			stubDescribeStacksCall(startState, endState, cloudformationClient)
+
+			err := manager.WaitForCompletion(cloudformationClient, "some-stack-name", 0*time.Millisecond, action)
+			Expect(err).To(MatchError("aws cloudformation failed: " + endState))
+		},
+
 			Entry("create failed",
 				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusCreateFailed, "creating stack"),
 
@@ -398,20 +416,15 @@ var _ = Describe("StackManager", func() {
 			Entry("rollback failed",
 				awscloudformation.StackStatusCreateInProgress, awscloudformation.StackStatusRollbackFailed, "creating stack"),
 
-			Entry("update succeeded",
-				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateComplete, "updating stack"),
-
 			Entry("update failed, rollback succeeded",
 				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackComplete, "updating stack"),
 
 			Entry("update failed, rollback failed",
 				awscloudformation.StackStatusUpdateInProgress, awscloudformation.StackStatusUpdateRollbackFailed, "updating stack"),
 
-			Entry("delete succeeded",
-				awscloudformation.StackStatusDeleteInProgress, awscloudformation.StackStatusDeleteComplete, "deleting stack"),
-
 			Entry("delete failed",
-				awscloudformation.StackStatusDeleteInProgress, awscloudformation.StackStatusDeleteFailed, "deleting stack"))
+				awscloudformation.StackStatusDeleteInProgress, awscloudformation.StackStatusDeleteFailed, "deleting stack"),
+		)
 
 		Context("when the stack does not exist", func() {
 			It("does not error", func() {
