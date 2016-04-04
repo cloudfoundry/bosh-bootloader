@@ -83,51 +83,17 @@ func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, stat
 
 	d.logger.Step("destroying infrastructure")
 
-	cloudFormationClient, err := d.clientProvider.CloudFormationClient(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	})
+	cloudFormationClient, ec2Client, err := d.createAWSClients(state, globalFlags)
 	if err != nil {
 		return state, err
 	}
 
-	stack, err := d.stackManager.Describe(cloudFormationClient, state.Stack.Name)
+	state, err = d.deleteBOSH(cloudFormationClient, state)
 	if err != nil {
-		return state, err
-	}
-
-	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		AWSRegion:        state.AWS.Region,
-		SubnetID:         stack.Outputs["BOSHSubnet"],
-		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
-		ElasticIP:        stack.Outputs["BOSHEIP"],
-		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
-		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
-		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
-	}
-
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, d.stringGenerator)
-	if err != nil {
-		return state, err
-	}
-
-	if err := d.boshDeleter.Delete(deployInput); err != nil {
 		return state, err
 	}
 
 	if err := d.infrastructureManager.Delete(cloudFormationClient, state.Stack.Name); err != nil {
-		return state, err
-	}
-
-	ec2Client, err := d.clientProvider.EC2Client(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	})
-	if err != nil {
 		return state, err
 	}
 
@@ -155,4 +121,53 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (d Destroy) createAWSClients(state storage.State, globalFlags GlobalFlags) (cloudformation.Client, ec2.Client, error) {
+	awsConfig := aws.Config{
+		AccessKeyID:      state.AWS.AccessKeyID,
+		SecretAccessKey:  state.AWS.SecretAccessKey,
+		Region:           state.AWS.Region,
+		EndpointOverride: globalFlags.EndpointOverride,
+	}
+
+	cloudFormationClient, err := d.clientProvider.CloudFormationClient(awsConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ec2Client, err := d.clientProvider.EC2Client(awsConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return cloudFormationClient, ec2Client, nil
+}
+
+func (d Destroy) deleteBOSH(cloudFormationClient cloudformation.Client, state storage.State) (storage.State, error) {
+	stack, err := d.stackManager.Describe(cloudFormationClient, state.Stack.Name)
+	if err != nil {
+		return state, err
+	}
+
+	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
+		AWSRegion:        state.AWS.Region,
+		SubnetID:         stack.Outputs["BOSHSubnet"],
+		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
+		ElasticIP:        stack.Outputs["BOSHEIP"],
+		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
+		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
+		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
+	}
+
+	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, d.stringGenerator)
+	if err != nil {
+		return state, err
+	}
+
+	if err := d.boshDeleter.Delete(deployInput); err != nil {
+		return state, err
+	}
+
+	return state, nil
 }
