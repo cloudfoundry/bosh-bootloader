@@ -18,7 +18,7 @@ var _ = Describe("CloudConfigurator", func() {
 			logger               *fakes.Logger
 			cloudConfigGenerator *fakes.CloudConfigGenerator
 			boshClient           *fakes.BOSHClient
-			cloudformationStack  cloudformation.Stack
+			cloudFormationStack  cloudformation.Stack
 			azs                  []string
 			cloudConfigurator    bosh.CloudConfigurator
 		)
@@ -37,7 +37,7 @@ var _ = Describe("CloudConfigurator", func() {
 				},
 			}
 
-			cloudformationStack = cloudformation.Stack{
+			cloudFormationStack = cloudformation.Stack{
 				Outputs: map[string]string{
 					"InternalSubnet1AZ":            "us-east-1a",
 					"InternalSubnet2AZ":            "us-east-1b",
@@ -63,7 +63,7 @@ var _ = Describe("CloudConfigurator", func() {
 		})
 
 		It("generates a bosh cloud config", func() {
-			err := cloudConfigurator.Configure(cloudformationStack, azs, boshClient)
+			err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("applying cloud config"))
@@ -106,7 +106,7 @@ var _ = Describe("CloudConfigurator", func() {
 		})
 
 		It("applies the generated cloud config", func() {
-			err := cloudConfigurator.Configure(cloudformationStack, azs, boshClient)
+			err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("applying cloud config"))
@@ -127,7 +127,7 @@ var _ = Describe("CloudConfigurator", func() {
 		Context("failure cases", func() {
 			It("returns an error when cloud config cannot be applied", func() {
 				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to apply")
-				err := cloudConfigurator.Configure(cloudformationStack, azs, boshClient)
+				err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 				Expect(err).To(MatchError("failed to apply"))
 			})
 

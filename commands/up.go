@@ -71,7 +71,7 @@ func NewUp(
 }
 
 func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
-	cloudformationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
+	cloudFormationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
@@ -81,7 +81,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name, cloudformationClient)
+	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
@@ -133,7 +133,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, cloudformationClient)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}

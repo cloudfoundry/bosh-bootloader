@@ -33,12 +33,12 @@ var _ = Describe("ClientProvider", func() {
 			_, ok := client.(cloudformation.Client)
 			Expect(ok).To(BeTrue())
 
-			cloudformationClient, ok := client.(*awscloudformation.CloudFormation)
+			cloudFormationClient, ok := client.(*awscloudformation.CloudFormation)
 			Expect(ok).To(BeTrue())
 
-			Expect(cloudformationClient.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
-			Expect(cloudformationClient.Config.Region).To(Equal(goaws.String("some-region")))
-			Expect(cloudformationClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
+			Expect(cloudFormationClient.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
+			Expect(cloudFormationClient.Config.Region).To(Equal(goaws.String("some-region")))
+			Expect(cloudFormationClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
 
 		Context("failure cases", func() {
