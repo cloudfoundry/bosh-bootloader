@@ -53,6 +53,16 @@ type EC2Client struct {
 			Error  error
 		}
 	}
+
+	DescribeInstancesCall struct {
+		Receives struct {
+			Input *awsec2.DescribeInstancesInput
+		}
+		Returns struct {
+			Output *awsec2.DescribeInstancesOutput
+			Error  error
+		}
+	}
 }
 
 func (c *EC2Client) ImportKeyPair(input *awsec2.ImportKeyPairInput) (*awsec2.ImportKeyPairOutput, error) {
@@ -83,4 +93,10 @@ func (c *EC2Client) DeleteKeyPair(input *awsec2.DeleteKeyPairInput) (*awsec2.Del
 	c.DeleteKeyPairCall.Receives.Input = input
 
 	return c.DeleteKeyPairCall.Returns.Output, c.DeleteKeyPairCall.Returns.Error
+}
+
+func (c *EC2Client) DescribeInstances(input *awsec2.DescribeInstancesInput) (*awsec2.DescribeInstancesOutput, error) {
+	c.DescribeInstancesCall.Receives.Input = input
+
+	return c.DescribeInstancesCall.Returns.Output, c.DescribeInstancesCall.Returns.Error
 }

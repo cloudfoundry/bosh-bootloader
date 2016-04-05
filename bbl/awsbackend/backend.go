@@ -1,6 +1,7 @@
 package awsbackend
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -68,6 +69,35 @@ func (b *Backend) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.Descr
 	return &ec2.DescribeKeyPairsOutput{
 		KeyPairs: keyPairInfos,
 	}, nil
+}
+
+func (b *Backend) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+	if aws.StringValue(input.Filters[0].Name) == "vpc-id" &&
+		aws.StringValue(input.Filters[0].Values[0]) == "some-vpc-id" {
+
+		return &ec2.DescribeInstancesOutput{
+			Reservations: []*ec2.Reservation{
+				&ec2.Reservation{
+					Instances: []*ec2.Instance{
+						{
+							Tags: []*ec2.Tag{{
+								Key:   aws.String("Name"),
+								Value: aws.String("NAT"),
+							}},
+						},
+						{
+							Tags: []*ec2.Tag{{
+								Key:   aws.String("Name"),
+								Value: aws.String("bosh/0"),
+							}},
+						},
+					},
+				},
+			},
+		}, nil
+	}
+
+	return nil, errors.New("vpc does not exist")
 }
 
 func (b *Backend) CreateStack(input *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {
@@ -197,6 +227,10 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 					{
 						OutputKey:   aws.String("InternalSubnet3SecurityGroup"),
 						OutputValue: aws.String("some-security-group-3"),
+					},
+					{
+						OutputKey:   aws.String("VPCID"),
+						OutputValue: aws.String("some-vpc-id"),
 					},
 				},
 			},

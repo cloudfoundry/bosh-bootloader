@@ -27,6 +27,7 @@ var _ = Describe("Destroy", func() {
 		infrastructureManager *fakes.InfrastructureManager
 		cloudFormationClient  *fakes.CloudFormationClient
 		clientProvider        *fakes.ClientProvider
+		vpcStatusChecker      *fakes.VPCStatusChecker
 		stringGenerator       *fakes.StringGenerator
 		logger                *fakes.Logger
 		keyPairDeleter        *fakes.KeyPairDeleter
@@ -44,13 +45,14 @@ var _ = Describe("Destroy", func() {
 		clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
 		clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
+		vpcStatusChecker = &fakes.VPCStatusChecker{}
 		stackManager = &fakes.StackManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		boshDeleter = &fakes.BOSHDeleter{}
 		keyPairDeleter = &fakes.KeyPairDeleter{}
 		stringGenerator = &fakes.StringGenerator{}
 
-		destroy = commands.NewDestroy(logger, stdin, boshDeleter, clientProvider, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
+		destroy = commands.NewDestroy(logger, stdin, boshDeleter, clientProvider, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	})
 
 	Describe("Execute", func() {
@@ -94,7 +96,7 @@ var _ = Describe("Destroy", func() {
 			)
 		})
 
-		Context("destroys the infrastructure", func() {
+		Describe("destroying the infrastructure", func() {
 			var (
 				state storage.State
 				flags commands.GlobalFlags
@@ -132,6 +134,23 @@ var _ = Describe("Destroy", func() {
 						Name: "some-stack-name",
 					},
 				}
+			})
+
+			It("fails fast if BOSH deployed VMs still exist in the VPC", func() {
+				stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+					Name:   "some-stack-name",
+					Status: "some-stack-status",
+					Outputs: map[string]string{
+						"VPCID": "some-vpc-id",
+					},
+				}
+				vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
+
+				_, err := destroy.Execute(flags, []string{}, state)
+				Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
+
+				Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
+				Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.Client).To(Equal(ec2Client))
 			})
 
 			It("invokes bosh-init delete", func() {
