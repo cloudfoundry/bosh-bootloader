@@ -60,7 +60,8 @@
         "InternalSubnet1SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
         "InternalSubnet2SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
         "InternalSubnet3SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
-        "InternalSubnet4SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}}
+        "InternalSubnet4SecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
+		"VPCID": {"Value": {"Ref": "VPC"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {

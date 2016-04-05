@@ -15,6 +15,7 @@ func (t VPCTemplateBuilder) VPC() Template {
 				Default:     "10.0.0.0/16",
 			},
 		},
+
 		Resources: map[string]Resource{
 			"VPC": Resource{
 				Type: "AWS::EC2::VPC",
@@ -36,6 +37,14 @@ func (t VPCTemplateBuilder) VPC() Template {
 				Properties: VPCGatewayAttachment{
 					VpcId:             Ref{"VPC"},
 					InternetGatewayId: Ref{"VPCGatewayInternetGateway"},
+				},
+			},
+		},
+
+		Outputs: map[string]Output{
+			"VPCID": Output{
+				Value: Ref{
+					Ref: "VPC",
 				},
 			},
 		},

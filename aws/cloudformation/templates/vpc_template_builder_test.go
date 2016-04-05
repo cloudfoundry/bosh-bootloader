@@ -15,7 +15,18 @@ var _ = Describe("VPCTemplateBuilder", func() {
 	})
 
 	Describe("VPC", func() {
-		It("returns a template with all the VPC-related fields", func() {
+		It("returns a template with the VPC-related parameters", func() {
+			vpc := builder.VPC()
+
+			Expect(vpc.Parameters).To(HaveLen(1))
+			Expect(vpc.Parameters).To(HaveKeyWithValue("VPCCIDR", templates.Parameter{
+				Description: "CIDR block for the VPC.",
+				Type:        "String",
+				Default:     "10.0.0.0/16",
+			}))
+		})
+
+		It("returns a template with the VPC-related resources", func() {
 			vpc := builder.VPC()
 
 			Expect(vpc.Resources).To(HaveLen(3))
@@ -43,12 +54,13 @@ var _ = Describe("VPCTemplateBuilder", func() {
 					InternetGatewayId: templates.Ref{"VPCGatewayInternetGateway"},
 				},
 			}))
+		})
 
-			Expect(vpc.Parameters).To(HaveLen(1))
-			Expect(vpc.Parameters).To(HaveKeyWithValue("VPCCIDR", templates.Parameter{
-				Description: "CIDR block for the VPC.",
-				Type:        "String",
-				Default:     "10.0.0.0/16",
+		It("returns a template with the VPC-related outputs", func() {
+			vpc := builder.VPC()
+
+			Expect(vpc.Outputs).To(HaveKeyWithValue("VPCID", templates.Output{
+				Value: templates.Ref{Ref: "VPC"},
 			}))
 		})
 	})
