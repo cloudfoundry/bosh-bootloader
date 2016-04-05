@@ -1,7 +1,6 @@
 package awsbackend
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -15,6 +14,7 @@ import (
 type Backend struct {
 	KeyPairs        *KeyPairs
 	Stacks          *Stacks
+	Instances       *Instances
 	boshDirectorURL string
 }
 
@@ -22,6 +22,7 @@ func New(boshDirectorURL string) *Backend {
 	return &Backend{
 		KeyPairs:        NewKeyPairs(),
 		Stacks:          NewStacks(),
+		Instances:       NewInstances(),
 		boshDirectorURL: boshDirectorURL,
 	}
 }
@@ -72,32 +73,27 @@ func (b *Backend) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*ec2.Descr
 }
 
 func (b *Backend) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
-	if aws.StringValue(input.Filters[0].Name) == "vpc-id" &&
-		aws.StringValue(input.Filters[0].Values[0]) == "some-vpc-id" {
+	reservations := []*ec2.Reservation{}
+	for _, instance := range b.Instances.Get() {
+		if aws.StringValue(input.Filters[0].Name) == "vpc-id" &&
+			aws.StringValue(input.Filters[0].Values[0]) == instance.VPCID {
 
-		return &ec2.DescribeInstancesOutput{
-			Reservations: []*ec2.Reservation{
-				&ec2.Reservation{
-					Instances: []*ec2.Instance{
-						{
-							Tags: []*ec2.Tag{{
-								Key:   aws.String("Name"),
-								Value: aws.String("NAT"),
-							}},
-						},
-						{
-							Tags: []*ec2.Tag{{
-								Key:   aws.String("Name"),
-								Value: aws.String("bosh/0"),
-							}},
-						},
+			reservations = append(reservations, &ec2.Reservation{
+				Instances: []*ec2.Instance{
+					{
+						Tags: []*ec2.Tag{{
+							Key:   aws.String("Name"),
+							Value: aws.String(instance.Name),
+						}},
 					},
 				},
-			},
-		}, nil
+			})
+		}
 	}
 
-	return nil, errors.New("vpc does not exist")
+	return &ec2.DescribeInstancesOutput{
+		Reservations: reservations,
+	}, nil
 }
 
 func (b *Backend) CreateStack(input *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {

@@ -49,6 +49,10 @@ var _ = Describe("destroy", func() {
 			fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
 				Name: "some-keypair-name",
 			})
+			fakeAWS.Instances.Set([]awsbackend.Instance{
+				{Name: "bosh/0", VPCID: "some-vpc-id"},
+				{Name: "NAT", VPCID: "some-vpc-id"},
+			})
 			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 			var err error
@@ -157,6 +161,10 @@ var _ = Describe("destroy", func() {
 			})
 			fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
 				Name: "some-keypair-name",
+			})
+			fakeAWS.Instances.Set([]awsbackend.Instance{
+				{Name: "NAT"},
+				{Name: "bosh/0"},
 			})
 			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
