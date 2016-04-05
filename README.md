@@ -46,5 +46,5 @@ Commands:
   help                                          "print usage"
   version                                       "print version"
   unsupported-deploy-bosh-on-aws-for-concourse  "deploys a BOSH Director on AWS"
-  destroy                                       "tears down a BOSH Director environment on AWS"
+  destroy [--no-confirm]                        "tears down a BOSH Director environment on AWS"
 ```
