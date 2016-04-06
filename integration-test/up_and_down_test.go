@@ -44,7 +44,21 @@ var _ = Describe("bbl", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("provisions AWS and deploys a bosh director", func() {
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			session := bbl([]string{
+				"--aws-access-key-id", config.AWSAccessKeyID,
+				"--aws-secret-access-key", config.AWSSecretAccessKey,
+				"--aws-region", config.AWSRegion,
+				"--state-dir", tempDirectory,
+				"destroy",
+				"--no-confirm",
+			})
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+		}
+	})
+
+	It("provisions AWS, deploys and tears down a bosh director", func() {
 		By("running bbl up", func() {
 			session := bbl([]string{
 				"--aws-access-key-id", config.AWSAccessKeyID,
