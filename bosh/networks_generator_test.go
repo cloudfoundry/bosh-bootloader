@@ -1,11 +1,56 @@
 package bosh_test
 
 import (
+	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("optional network fields", func() {
+	Describe("Network", func() {
+		Context("when Subnets or CloudProperties are missing", func() {
+			It("does not appear in the YAML output", func() {
+				subnet := bosh.Network{
+					Name: "some-network",
+					Type: "some-type",
+				}
+				bytes, _ := candiedyaml.Marshal(subnet)
+				Expect(bytes).To(MatchYAML(`{ "name": "some-network", "type": "some-type" }`))
+			})
+		})
+		Context("when CloudProperties are present", func() {
+			It("marshals them", func() {
+				subnet := bosh.Network{
+					Name: "some-network",
+					Type: "dynamic",
+					CloudProperties: &bosh.NetworkCloudProperties{
+						Subnet: "some-subnet",
+					},
+				}
+				bytes, _ := candiedyaml.Marshal(subnet)
+				Expect(bytes).To(MatchYAML(`
+name: some-network
+type: dynamic
+cloud_properties: { "subnet": "some-subnet" }`))
+			})
+		})
+	})
+	Describe("NetworkSubnetCloudProperties", func() {
+		Context("when SecurityGroups are missing", func() {
+			It("does not appear in the YAML output", func() {
+				subnetCloudProps := bosh.SubnetCloudProperties{
+					Subnet: "some-subnet",
+				}
+				bytes, _ := candiedyaml.Marshal(subnetCloudProps)
+				Expect(bytes).To(MatchYAML(`{ "subnet": "some-subnet" }`))
+			})
+		})
+	})
+})
 
 var _ = Describe("NetworksGenerator", func() {
 	Describe("Generate", func() {
