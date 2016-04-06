@@ -147,7 +147,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("fast fails if the bosh state exists", func() {
-				writeStateJson(storage.State{BOSH: &storage.BOSH{}}, tempDirectory)
+				writeStateJson(storage.State{BOSH: storage.BOSH{DirectorAddress: "some-director-address"}}, tempDirectory)
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
 				Expect(session.Err.Contents()).To(ContainSubstring("Found BOSH data in state directory"))
 			})
@@ -165,7 +165,7 @@ var _ = Describe("bbl", func() {
 
 			It("updates the stack with the cloudformation template", func() {
 				buf, err := json.Marshal(storage.State{
-					KeyPair: &storage.KeyPair{
+					KeyPair: storage.KeyPair{
 						Name:       "some-keypair-name",
 						PrivateKey: privateKey,
 					},

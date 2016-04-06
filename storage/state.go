@@ -5,17 +5,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 )
 
 const OS_READ_WRITE_MODE = os.FileMode(0644)
 
 var encode func(io.Writer, interface{}) error = encodeFile
-
-type KeyPair struct {
-	Name       string `json:"name"`
-	PrivateKey string `json:"privateKey"`
-	PublicKey  string `json:"publicKey"`
-}
 
 type AWS struct {
 	AccessKeyID     string `json:"accessKeyId"`
@@ -23,27 +18,16 @@ type AWS struct {
 	Region          string `json:"region"`
 }
 
-type BOSH struct {
-	DirectorUsername       string                 `json:"directorUsername"`
-	DirectorPassword       string                 `json:"directorPassword"`
-	DirectorAddress        string                 `json:"directorAddress"`
-	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
-	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
-	Credentials            map[string]string      `json:"credentials"`
-	State                  map[string]interface{} `json:"state"`
-	Manifest               string                 `json:"manifest"`
-}
-
 type Stack struct {
 	Name string `json:"name"`
 }
 
 type State struct {
-	Version int      `json:"version"`
-	AWS     AWS      `json:"aws"`
-	KeyPair *KeyPair `json:"keyPair,omitempty"`
-	BOSH    *BOSH    `json:"bosh,omitempty"`
-	Stack   Stack    `json:"stack"`
+	Version int     `json:"version"`
+	AWS     AWS     `json:"aws"`
+	KeyPair KeyPair `json:"keyPair,omitempty"`
+	BOSH    BOSH    `json:"bosh,omitempty"`
+	Stack   Stack   `json:"stack"`
 }
 
 type Store struct {
@@ -57,7 +41,7 @@ func NewStore() Store {
 }
 
 func (s Store) Set(dir string, state State) error {
-	if (state == State{}) {
+	if reflect.DeepEqual(state, State{}) {
 		err := os.Remove(filepath.Join(dir, "state.json"))
 		if err != nil && !os.IsNotExist(err) {
 			return err

@@ -64,7 +64,7 @@ var _ = Describe("destroy", func() {
 			privateKey = string(contents)
 
 			buf, err := json.Marshal(storage.State{
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: privateKey,
 				},
@@ -177,7 +177,7 @@ var _ = Describe("destroy", func() {
 			privateKey = string(contents)
 
 			buf, err := json.Marshal(storage.State{
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: privateKey,
 				},

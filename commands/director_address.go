@@ -17,7 +17,7 @@ func NewDirectorAddress(logger logger) DirectorAddress {
 }
 
 func (d DirectorAddress) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
-	if state.BOSH == nil || state.BOSH.DirectorAddress == "" {
+	if state.BOSH.DirectorAddress == "" {
 		return state, errors.New("Could not retrieve director address, please make sure you are targeting the proper state dir.")
 	}
 

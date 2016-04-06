@@ -86,7 +86,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	if state.BOSH != nil && !stackExists {
+	if !state.BOSH.IsEmpty() && !stackExists {
 		return state, fmt.Errorf(
 			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
 				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
@@ -102,10 +102,6 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	})
 	if err != nil {
 		return state, err
-	}
-
-	if state.KeyPair == nil {
-		state.KeyPair = &storage.KeyPair{}
 	}
 
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
@@ -158,8 +154,8 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	if state.BOSH == nil {
-		state.BOSH = &storage.BOSH{
+	if state.BOSH.IsEmpty() {
+		state.BOSH = storage.BOSH{
 			DirectorAddress:        stack.Outputs["BOSHURL"],
 			DirectorUsername:       deployInput.DirectorUsername,
 			DirectorPassword:       deployInput.DirectorPassword,

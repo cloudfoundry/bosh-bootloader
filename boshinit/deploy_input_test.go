@@ -25,12 +25,12 @@ var _ = Describe("DeployInput", func() {
 
 		It("constructs a DeployInput given a state", func() {
 			state := storage.State{
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorSSLCertificate: "some-ssl-cert",
 					DirectorSSLPrivateKey:  "some-ssl-private-key",
 					Credentials: map[string]string{
@@ -92,12 +92,12 @@ var _ = Describe("DeployInput", func() {
 				AWS: storage.AWS{
 					Region: "some-aws-region",
 				},
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorSSLCertificate: "some-ssl-cert",
 					DirectorSSLPrivateKey:  "some-ssl-private-key",
 					Credentials: map[string]string{
@@ -118,12 +118,12 @@ var _ = Describe("DeployInput", func() {
 				AWS: storage.AWS{
 					Region: "some-aws-region",
 				},
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorSSLCertificate: "some-ssl-cert",
 					DirectorSSLPrivateKey:  "some-ssl-private-key",
 					Credentials: map[string]string{

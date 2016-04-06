@@ -15,7 +15,7 @@ import (
 type setNewKeyPairName struct{}
 
 func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
-	state.KeyPair = &storage.KeyPair{
+	state.KeyPair = storage.KeyPair{
 		Name:       "some-new-keypair-name",
 		PublicKey:  state.KeyPair.PublicKey,
 		PrivateKey: state.KeyPair.PrivateKey,
@@ -105,7 +105,7 @@ var _ = Describe("App", func() {
 
 			It("save state when the command has modified the state", func() {
 				stateStore.GetCall.Returns.State = storage.State{
-					KeyPair: &storage.KeyPair{
+					KeyPair: storage.KeyPair{
 						Name:       "some-keypair-name",
 						PrivateKey: "some-private-key",
 					},
@@ -120,7 +120,7 @@ var _ = Describe("App", func() {
 					"set-new-keypair-name",
 				})).To(Succeed())
 
-				Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(&storage.KeyPair{
+				Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(storage.KeyPair{
 					Name:       "some-new-keypair-name",
 					PrivateKey: "some-private-key",
 				}))
@@ -144,7 +144,7 @@ var _ = Describe("App", func() {
 			Context("when global flags are provided", func() {
 				It("stores the flags in the state store", func() {
 					stateStore.GetCall.Returns.State = storage.State{
-						KeyPair: &storage.KeyPair{
+						KeyPair: storage.KeyPair{
 							Name: "some-keypair-name",
 						},
 					}
@@ -167,7 +167,7 @@ var _ = Describe("App", func() {
 							SecretAccessKey: "some-aws-secret-access-key",
 							AccessKeyID:     "some-aws-access-key-id",
 						},
-						KeyPair: &storage.KeyPair{
+						KeyPair: storage.KeyPair{
 							Name: "some-keypair-name",
 						},
 					}))
@@ -176,7 +176,7 @@ var _ = Describe("App", func() {
 				Context("when the state has not changed", func() {
 					It("does not store the state again", func() {
 						stateStore.GetCall.Returns.State = storage.State{
-							KeyPair: &storage.KeyPair{
+							KeyPair: storage.KeyPair{
 								Name: "some-new-keypair-name",
 							},
 						}

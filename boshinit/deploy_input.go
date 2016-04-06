@@ -50,13 +50,13 @@ func NewDeployInput(state storage.State, infrastructureConfiguration Infrastruct
 		EC2KeyPair:                  ec2.KeyPair{},
 	}
 
-	if state.KeyPair != nil {
+	if !state.KeyPair.IsEmpty() {
 		deployInput.EC2KeyPair.Name = state.KeyPair.Name
 		deployInput.EC2KeyPair.PrivateKey = state.KeyPair.PrivateKey
 		deployInput.EC2KeyPair.PublicKey = state.KeyPair.PublicKey
 	}
 
-	if state.BOSH != nil {
+	if !state.BOSH.IsEmpty() {
 		deployInput.DirectorUsername = state.BOSH.DirectorUsername
 		deployInput.DirectorPassword = state.BOSH.DirectorPassword
 		deployInput.State = state.BOSH.State

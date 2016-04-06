@@ -118,7 +118,7 @@ var _ = Describe("Up", func() {
 					SecretAccessKey: "some-secret-access-key",
 					AccessKeyID:     "some-access-key-id",
 				},
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
@@ -139,7 +139,7 @@ var _ = Describe("Up", func() {
 				PublicKey:  "some-public-key",
 			}))
 
-			Expect(state.KeyPair).To(Equal(&storage.KeyPair{
+			Expect(state.KeyPair).To(Equal(storage.KeyPair{
 				Name:       "some-keypair-name",
 				PublicKey:  "some-public-key",
 				PrivateKey: "some-private-key",
@@ -190,12 +190,12 @@ var _ = Describe("Up", func() {
 				AWS: storage.AWS{
 					Region: "some-aws-region",
 				},
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorSSLCertificate: "some-certificate",
 					DirectorSSLPrivateKey:  "some-private-key",
 					State: map[string]interface{}{
@@ -281,7 +281,7 @@ var _ = Describe("Up", func() {
 				Context("when the keypair exists", func() {
 					It("returns the given state unmodified", func() {
 						incomingState := storage.State{
-							KeyPair: &storage.KeyPair{
+							KeyPair: storage.KeyPair{
 								Name:       "some-keypair-name",
 								PrivateKey: "some-private-key",
 								PublicKey:  "some-public-key",
@@ -298,7 +298,7 @@ var _ = Describe("Up", func() {
 						state, err := command.Execute(globalFlags, []string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(state.KeyPair).To(Equal(&storage.KeyPair{
+						Expect(state.KeyPair).To(Equal(storage.KeyPair{
 							Name:       "some-keypair-name",
 							PrivateKey: "some-private-key",
 							PublicKey:  "some-public-key",
@@ -353,7 +353,7 @@ var _ = Describe("Up", func() {
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
 						state, err := command.Execute(globalFlags, []string{}, storage.State{
-							BOSH: &storage.BOSH{
+							BOSH: storage.BOSH{
 								DirectorSSLCertificate: "some-certificate",
 								DirectorSSLPrivateKey:  "some-private-key",
 							},
@@ -391,7 +391,7 @@ var _ = Describe("Up", func() {
 				Context("when there are director credentials", func() {
 					It("uses the old credentials", func() {
 						incomingState := storage.State{
-							BOSH: &storage.BOSH{
+							BOSH: storage.BOSH{
 								DirectorUsername: "some-director-username",
 								DirectorPassword: "some-director-password",
 							},
@@ -418,7 +418,7 @@ var _ = Describe("Up", func() {
 					Context("when the bosh credentials exist in the state.json", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
 							state, err := command.Execute(globalFlags, []string{}, storage.State{
-								BOSH: &storage.BOSH{Credentials: boshInitCredentials},
+								BOSH: storage.BOSH{Credentials: boshInitCredentials},
 							})
 
 							Expect(err).NotTo(HaveOccurred())
@@ -438,7 +438,9 @@ var _ = Describe("Up", func() {
 					AWS: storage.AWS{
 						Region: "some-aws-region",
 					},
-					BOSH: &storage.BOSH{},
+					BOSH: storage.BOSH{
+						DirectorAddress: "some-director-address",
+					},
 					Stack: storage.Stack{
 						Name: "some-stack-name",
 					},

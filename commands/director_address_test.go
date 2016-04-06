@@ -22,7 +22,7 @@ var _ = Describe("director-address", func() {
 	Describe("Execute", func() {
 		It("prints out the director address", func() {
 			state := storage.State{
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorAddress: "some-director-address",
 				},
 			}
@@ -35,7 +35,7 @@ var _ = Describe("director-address", func() {
 
 		It("returns the given state unmodified", func() {
 			incomingState := storage.State{
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorAddress: "some-director-address",
 				},
 			}
@@ -56,7 +56,7 @@ var _ = Describe("director-address", func() {
 
 				It("returns a helpful error message", func() {
 					_, err := command.Execute(commands.GlobalFlags{}, []string{}, storage.State{
-						BOSH: &storage.BOSH{},
+						BOSH: storage.BOSH{},
 					})
 					Expect(err).To(MatchError("Could not retrieve director address, please make sure you are targeting the proper state dir."))
 

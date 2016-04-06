@@ -113,12 +113,12 @@ var _ = Describe("Destroy", func() {
 						SecretAccessKey: "some-secret-access-key",
 						Region:          "some-aws-region",
 					},
-					KeyPair: &storage.KeyPair{
+					KeyPair: storage.KeyPair{
 						Name:       "some-ec2-key-pair-name",
 						PrivateKey: "some-private-key",
 						PublicKey:  "some-public-key",
 					},
-					BOSH: &storage.BOSH{
+					BOSH: storage.BOSH{
 						DirectorUsername: "some-director-username",
 						DirectorPassword: "some-director-password",
 						State: map[string]interface{}{

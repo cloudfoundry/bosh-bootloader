@@ -39,12 +39,12 @@ var _ = Describe("Store", func() {
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-region",
 				},
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-name",
 					PrivateKey: "some-private",
 					PublicKey:  "some-public",
 				},
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorUsername:       "some-director-username",
 					DirectorPassword:       "some-director-password",
 					DirectorAddress:        "some-director-address",
@@ -229,12 +229,12 @@ var _ = Describe("Store", func() {
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-aws-region",
 				},
-				KeyPair: &storage.KeyPair{
+				KeyPair: storage.KeyPair{
 					Name:       "some-name",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				BOSH: &storage.BOSH{
+				BOSH: storage.BOSH{
 					DirectorAddress:        "some-director-address",
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",

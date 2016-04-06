@@ -113,10 +113,6 @@ func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, stat
 		return state, err
 	}
 
-	if state.KeyPair == nil {
-		state.KeyPair = &storage.KeyPair{}
-	}
-
 	err = d.keyPairDeleter.Delete(ec2Client, state.KeyPair.Name)
 	if err != nil {
 		return state, err
