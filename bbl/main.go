@@ -76,12 +76,14 @@ func main() {
 	up := commands.NewUp(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor, stringGenerator, cloudConfigurator, availabilityZoneRetriever)
 	destroy := commands.NewDestroy(logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	usage := commands.NewUsage(os.Stdout)
+	directorAddress := commands.NewDirectorAddress(logger)
 
 	app := application.New(application.CommandSet{
 		"help":    help,
 		"version": version,
 		"unsupported-deploy-bosh-on-aws-for-concourse": up,
-		"destroy": destroy,
+		"destroy":          destroy,
+		"director-address": directorAddress,
 	}, stateStore, usage.Print)
 
 	err = app.Run(os.Args[1:])

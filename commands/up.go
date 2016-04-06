@@ -160,6 +160,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 
 	if state.BOSH == nil {
 		state.BOSH = &storage.BOSH{
+			DirectorAddress:        stack.Outputs["BOSHURL"],
 			DirectorUsername:       deployInput.DirectorUsername,
 			DirectorPassword:       deployInput.DirectorPassword,
 			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),

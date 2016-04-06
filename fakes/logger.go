@@ -13,8 +13,9 @@ type Logger struct {
 	}
 
 	PrintlnCall struct {
-		Stub     func(string)
-		Receives struct {
+		CallCount int
+		Stub      func(string)
+		Receives  struct {
 			Message string
 		}
 	}
@@ -37,6 +38,7 @@ func (l *Logger) Dot() {
 }
 
 func (l *Logger) Println(message string) {
+	l.PrintlnCall.CallCount++
 	l.PrintlnCall.Receives.Message = message
 
 	if l.PrintlnCall.Stub != nil {

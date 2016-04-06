@@ -26,6 +26,7 @@ type AWS struct {
 type BOSH struct {
 	DirectorUsername       string                 `json:"directorUsername"`
 	DirectorPassword       string                 `json:"directorPassword"`
+	DirectorAddress        string                 `json:"directorAddress"`
 	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
 	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
 	Credentials            map[string]string      `json:"credentials"`

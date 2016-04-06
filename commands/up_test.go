@@ -49,6 +49,7 @@ var _ = Describe("Up", func() {
 					"BOSHSubnet":              "some-bosh-subnet",
 					"BOSHSubnetAZ":            "some-bosh-subnet-az",
 					"BOSHEIP":                 "some-bosh-elastic-ip",
+					"BOSHURL":                 "some-bosh-url",
 					"BOSHUserAccessKey":       "some-bosh-user-access-key",
 					"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 					"BOSHSecurityGroup":       "some-bosh-security-group",
@@ -258,6 +259,7 @@ var _ = Describe("Up", func() {
 						"BOSHSubnet":              "some-bosh-subnet",
 						"BOSHSubnetAZ":            "some-bosh-subnet-az",
 						"BOSHEIP":                 "some-bosh-elastic-ip",
+						"BOSHURL":                 "some-bosh-url",
 						"BOSHUserAccessKey":       "some-bosh-user-access-key",
 						"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 					},
@@ -339,6 +341,13 @@ var _ = Describe("Up", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state.BOSH.Manifest).To(ContainSubstring("name: bosh"))
+				})
+
+				It("writes the bosh director address", func() {
+					state, err := command.Execute(globalFlags, []string{}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state.BOSH.DirectorAddress).To(ContainSubstring("some-bosh-url"))
 				})
 
 				Context("when the bosh director ssl keypair exists", func() {

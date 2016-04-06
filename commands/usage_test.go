@@ -40,10 +40,11 @@ Global Options:
   --state-dir             "Directory that stores the state.json"
 
 Commands:
-  help                                          "print usage"
-  version                                       "print version"
-  unsupported-deploy-bosh-on-aws-for-concourse  "deploys a BOSH Director on AWS"
   destroy [--no-confirm]                        "tears down a BOSH Director environment on AWS"
+  director-address                              "print the BOSH director address"
+  help                                          "print usage"
+  unsupported-deploy-bosh-on-aws-for-concourse  "deploys a BOSH Director on AWS"
+  version                                       "print version"
 `)))
 		})
 
