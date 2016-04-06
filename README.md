@@ -45,6 +45,7 @@ Global Options:
 Commands:
   destroy [--no-confirm]                        "tears down a BOSH Director environment on AWS"
   director-address                              "print the BOSH director address"
+  director-username                             "print the BOSH director username"
   help                                          "print usage"
   unsupported-deploy-bosh-on-aws-for-concourse  "deploys a BOSH Director on AWS"
   version                                       "print version"

@@ -1,6 +1,9 @@
 package commands_test
 
 import (
+	"fmt"
+	"math/rand"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -9,18 +12,21 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("director-address", func() {
+var _ = Describe("StateQuery", func() {
 	var (
-		command    commands.DirectorAddress
 		fakeLogger *fakes.Logger
 	)
+
 	BeforeEach(func() {
 		fakeLogger = &fakes.Logger{}
-		command = commands.NewDirectorAddress(fakeLogger)
 	})
 
 	Describe("Execute", func() {
 		It("prints out the director address", func() {
+			command := commands.NewStateQuery(fakeLogger, "director address", func(state storage.State) string {
+				return state.BOSH.DirectorAddress
+			})
+
 			state := storage.State{
 				BOSH: storage.BOSH{
 					DirectorAddress: "some-director-address",
@@ -40,29 +46,26 @@ var _ = Describe("director-address", func() {
 				},
 			}
 
+			command := commands.NewStateQuery(fakeLogger, "director address", func(state storage.State) string {
+				return incomingState.BOSH.DirectorAddress
+			})
+
 			state, err := command.Execute(commands.GlobalFlags{}, []string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(state).To(Equal(incomingState))
 		})
 
-		Context("failure cases", func() {
-			Context("returns an error when the director address does not exist", func() {
-				It("does not panic when the state is empty", func() {
-					_, err := command.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
-					Expect(err).To(MatchError("Could not retrieve director address, please make sure you are targeting the proper state dir."))
-
-					Expect(fakeLogger.PrintlnCall.CallCount).To(Equal(0))
-				})
-
-				It("returns a helpful error message", func() {
-					_, err := command.Execute(commands.GlobalFlags{}, []string{}, storage.State{
-						BOSH: storage.BOSH{},
-					})
-					Expect(err).To(MatchError("Could not retrieve director address, please make sure you are targeting the proper state dir."))
-
-					Expect(fakeLogger.PrintlnCall.CallCount).To(Equal(0))
-				})
+		It("returns an error when the state value is empty", func() {
+			propertyName := fmt.Sprintf("%s-%d", "some-name", rand.Int())
+			command := commands.NewStateQuery(fakeLogger, propertyName, func(state storage.State) string {
+				return ""
 			})
+			_, err := command.Execute(commands.GlobalFlags{}, []string{}, storage.State{
+				BOSH: storage.BOSH{},
+			})
+			Expect(err).To(MatchError(fmt.Sprintf("Could not retrieve %s, please make sure you are targeting the proper state dir.", propertyName)))
+
+			Expect(fakeLogger.PrintlnCall.CallCount).To(Equal(0))
 		})
 	})
 })
