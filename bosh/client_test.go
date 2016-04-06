@@ -13,6 +13,63 @@ import (
 )
 
 var _ = Describe("Client", func() {
+	Describe("Info", func() {
+		It("returns the director info", func() {
+			fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				responseWriter.Write([]byte(`{
+					"name": "some-bosh-director",
+					"uuid": "some-uuid",
+					"version": "some-version"
+				}`))
+			}))
+
+			client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+			info, err := client.Info()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(info).To(Equal(bosh.Info{
+				Name:    "some-bosh-director",
+				UUID:    "some-uuid",
+				Version: "some-version",
+			}))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the response is not StatusOK", func() {
+				fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					responseWriter.WriteHeader(http.StatusNotFound)
+				}))
+
+				client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+				_, err := client.Info()
+				Expect(err).To(MatchError("unexpected http response 404 Not Found"))
+			})
+
+			It("returns an error when the url cannot be parsed", func() {
+				client := bosh.NewClient("%%%", "some-username", "some-password")
+				_, err := client.Info()
+				Expect(err.(*url.Error).Op).To(Equal("parse"))
+			})
+
+			It("returns an error when the request fails", func() {
+				client := bosh.NewClient("fake://some-url", "some-username", "some-password")
+				_, err := client.Info()
+				Expect(err).To(MatchError(ContainSubstring("unsupported protocol scheme")))
+			})
+
+			It("returns an error when it cannot parse info json", func() {
+				fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					responseWriter.Write([]byte(`%%%`))
+				}))
+
+				client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+				_, err := client.Info()
+				Expect(err).To(MatchError(ContainSubstring("invalid character")))
+			})
+
+		})
+
+	})
+
 	Describe("UpdateCloudConfig", func() {
 		It("uploads the given cloud config", func() {
 			var (

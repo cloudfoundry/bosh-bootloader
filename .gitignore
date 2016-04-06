@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 
 state.json*
+integration_config.json
