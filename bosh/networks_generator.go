@@ -10,7 +10,13 @@ type NetworksGenerator struct {
 type Network struct {
 	Name    string          `yaml:"name"`
 	Type    string          `yaml:"type"`
-	Subnets []NetworkSubnet `yaml:"subnets"`
+	Subnets []NetworkSubnet `yaml:"subnets,omitempty"`
+
+	CloudProperties *NetworkCloudProperties `yaml:"cloud_properties,omitempty"`
+}
+
+type NetworkCloudProperties struct {
+	Subnet string `yaml:"subnet"`
 }
 
 type NetworkSubnet struct {
@@ -24,7 +30,7 @@ type NetworkSubnet struct {
 
 type SubnetCloudProperties struct {
 	Subnet         string   `yaml:"subnet"`
-	SecurityGroups []string `yaml:"security_groups"`
+	SecurityGroups []string `yaml:"security_groups,omitempty"`
 }
 
 func NewNetworksGenerator(inputs []SubnetInput, azAssociations map[string]string) NetworksGenerator {
