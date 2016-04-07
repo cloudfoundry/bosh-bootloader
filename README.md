@@ -48,6 +48,7 @@ Commands:
   director-password                             "print the BOSH director password"
   director-username                             "print the BOSH director username"
   help                                          "print usage"
+  ssh-key                                       "print the ssh private key"
   unsupported-deploy-bosh-on-aws-for-concourse  "deploys a BOSH Director on AWS"
   version                                       "print version"
 ```

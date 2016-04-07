@@ -85,6 +85,9 @@ func main() {
 	directorPassword := commands.NewStateQuery(logger, "director password", func(state storage.State) string {
 		return state.BOSH.DirectorPassword
 	})
+	sshKey := commands.NewStateQuery(logger, "ssh key", func(state storage.State) string {
+		return state.KeyPair.PrivateKey
+	})
 
 	app := application.New(application.CommandSet{
 		"help":    help,
@@ -94,6 +97,7 @@ func main() {
 		"director-address":  directorAddress,
 		"director-username": directorUsername,
 		"director-password": directorPassword,
+		"ssh-key":           sshKey,
 	}, stateStore, usage.Print)
 
 	err = app.Run(os.Args[1:])
