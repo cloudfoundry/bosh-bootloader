@@ -82,6 +82,9 @@ func main() {
 	directorUsername := commands.NewStateQuery(logger, "director username", func(state storage.State) string {
 		return state.BOSH.DirectorUsername
 	})
+	directorPassword := commands.NewStateQuery(logger, "director password", func(state storage.State) string {
+		return state.BOSH.DirectorPassword
+	})
 
 	app := application.New(application.CommandSet{
 		"help":    help,
@@ -90,6 +93,7 @@ func main() {
 		"destroy":           destroy,
 		"director-address":  directorAddress,
 		"director-username": directorUsername,
+		"director-password": directorPassword,
 	}, stateStore, usage.Print)
 
 	err = app.Run(os.Args[1:])
