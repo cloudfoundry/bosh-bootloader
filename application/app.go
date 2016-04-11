@@ -2,12 +2,15 @@ package application
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
+
+var getwd func() (string, error) = os.Getwd
 
 type CommandSet map[string]commands.Command
 
@@ -95,6 +98,15 @@ func (a App) configure(args []string) (config, error) {
 
 	if cfg.Help {
 		cfg.Command = "help"
+	}
+
+	if cfg.GlobalFlags.StateDir == "" {
+		wd, err := getwd()
+		if err != nil {
+			return cfg, err
+		}
+
+		cfg.GlobalFlags.StateDir = wd
 	}
 
 	return cfg, nil

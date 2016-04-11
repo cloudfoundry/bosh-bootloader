@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"errors"
+	"os"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
@@ -26,15 +27,18 @@ func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, subcommandFlag
 
 var _ = Describe("App", func() {
 	var (
-		app        application.App
-		helpCmd    *fakes.Command
-		versionCmd *fakes.Command
-		someCmd    *fakes.Command
-		errorCmd   *fakes.Command
-		stateStore *fakes.StateStore
+		app              application.App
+		helpCmd          *fakes.Command
+		versionCmd       *fakes.Command
+		someCmd          *fakes.Command
+		errorCmd         *fakes.Command
+		stateStore       *fakes.StateStore
+		currentDirectory string
 	)
 
 	BeforeEach(func() {
+		var err error
+
 		helpCmd = &fakes.Command{}
 		versionCmd = &fakes.Command{}
 		errorCmd = &fakes.Command{}
@@ -43,6 +47,9 @@ var _ = Describe("App", func() {
 		someCmd.ExecuteCall.PassState = true
 
 		stateStore = &fakes.StateStore{}
+
+		currentDirectory, err = os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
 
 		app = application.New(application.CommandSet{
 			"help":                 helpCmd,
@@ -55,24 +62,34 @@ var _ = Describe("App", func() {
 			func() { helpCmd.Execute(commands.GlobalFlags{}, []string{}, storage.State{}) })
 	})
 
+	AfterEach(func() {
+		application.ResetGetwd()
+	})
+
 	Describe("Run", func() {
 		Context("printing help", func() {
 			It("prints out the usage when provided the --help flag", func() {
 				Expect(app.Run([]string{"--help"})).To(Succeed())
 				Expect(helpCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(helpCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(helpCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
 			})
 
 			It("prints out the usage when provided the -h flag", func() {
 				Expect(app.Run([]string{"-h"})).To(Succeed())
 				Expect(helpCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(helpCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(helpCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
 			})
 
 			It("prints out the usage when provided the help command", func() {
 				Expect(app.Run([]string{"help"})).To(Succeed())
 				Expect(helpCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(helpCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(helpCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
 			})
 		})
 
@@ -80,19 +97,25 @@ var _ = Describe("App", func() {
 			It("prints out the current version when provided the -v flag", func() {
 				Expect(app.Run([]string{"-v"})).To(Succeed())
 				Expect(versionCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(versionCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(versionCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
 			})
 
 			It("prints out the current version when provided the --version flag", func() {
 				Expect(app.Run([]string{"--version"})).To(Succeed())
 				Expect(versionCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(versionCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(versionCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
 			})
 
 			It("prints out the current version when provided the version command", func() {
 				Expect(app.Run([]string{"version"})).To(Succeed())
 				Expect(versionCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(versionCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(versionCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
 			})
 		})
 
@@ -100,7 +123,19 @@ var _ = Describe("App", func() {
 			It("executes the correct command", func() {
 				Expect(app.Run([]string{"some"})).To(Succeed())
 				Expect(someCmd.ExecuteCall.CallCount).To(Equal(1))
-				Expect(someCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{}))
+				Expect(someCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
+					StateDir: currentDirectory,
+				}))
+			})
+
+			It("defaults the state-dir to the current directory", func() {
+				stateStore.GetCall.Returns.State = storage.State{}
+
+				Expect(app.Run([]string{
+					"set-new-keypair-name",
+				})).To(Succeed())
+
+				Expect(stateStore.GetCall.Receives.Dir).To(Equal(currentDirectory))
 			})
 
 			It("save state when the command has modified the state", func() {
@@ -214,6 +249,15 @@ var _ = Describe("App", func() {
 		})
 
 		Context("error cases", func() {
+			It("returns an error when the current directory can not be determined", func() {
+				application.SetGetwd(func() (string, error) {
+					return "", errors.New("failed to determine current dir")
+				})
+
+				err := app.Run([]string{})
+				Expect(err).To(MatchError("failed to determine current dir"))
+			})
+
 			It("returns an error when the store can not be read from", func() {
 				stateStore.GetCall.Returns.Error = errors.New("could not read from store")
 				err := app.Run([]string{

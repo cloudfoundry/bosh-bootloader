@@ -41,6 +41,11 @@ func NewStore() Store {
 }
 
 func (s Store) Set(dir string, state State) error {
+	_, err := os.Stat(dir)
+	if err != nil {
+		return err
+	}
+
 	if reflect.DeepEqual(state, State{}) {
 		err := os.Remove(filepath.Join(dir, "state.json"))
 		if err != nil && !os.IsNotExist(err) {
@@ -66,6 +71,12 @@ func (s Store) Set(dir string, state State) error {
 
 func (Store) Get(dir string) (State, error) {
 	state := State{}
+
+	_, err := os.Stat(dir)
+	if err != nil {
+		return state, err
+	}
+
 	file, err := os.Open(filepath.Join(dir, "state.json"))
 	if err != nil {
 		if os.IsNotExist(err) {

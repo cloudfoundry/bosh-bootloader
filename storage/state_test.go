@@ -166,6 +166,11 @@ var _ = Describe("Store", func() {
 		})
 
 		Context("failure cases", func() {
+			It("fails when the directory does not exist", func() {
+				err := store.Set("some-fake-directory", storage.State{})
+				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			})
+
 			It("fails to open the state.json file", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
@@ -256,6 +261,11 @@ var _ = Describe("Store", func() {
 		})
 
 		Context("failure cases", func() {
+			It("fails when the directory does not exist", func() {
+				_, err := store.Get("some-fake-directory")
+				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			})
+
 			It("fails to open the state.json file", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
