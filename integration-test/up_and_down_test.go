@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -25,6 +26,8 @@ var _ = Describe("bbl", func() {
 		tempDirectory        string
 		stateChecksum        string
 		directorURL          string
+		directorUsername     string
+		directorPassword     string
 		state                storage.State
 		stackManager         cloudformation.StackManager
 		cloudFormationClient cloudformation.Client
@@ -81,12 +84,28 @@ var _ = Describe("bbl", func() {
 			state, err = loadBOSHStateJson(tempDirectory)
 			Expect(err).NotTo(HaveOccurred())
 
-			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
+			_, err = stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			directorURL = stack.Outputs["BOSHURL"]
+			session := bbl([]string{
+				"--state-dir", tempDirectory,
+				"director-address",
+			})
+			directorURL = strings.TrimSpace(string(session.Wait().Buffer().Contents()))
 
-			client := bosh.NewClient(directorURL, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+			session = bbl([]string{
+				"--state-dir", tempDirectory,
+				"director-username",
+			})
+			directorUsername = strings.TrimSpace(string(session.Wait().Buffer().Contents()))
+
+			session = bbl([]string{
+				"--state-dir", tempDirectory,
+				"director-password",
+			})
+			directorPassword = strings.TrimSpace(string(session.Wait().Buffer().Contents()))
+
+			client := bosh.NewClient(directorURL, directorUsername, directorPassword)
 
 			_, err = client.Info()
 			Expect(err).NotTo(HaveOccurred())
@@ -100,7 +119,7 @@ var _ = Describe("bbl", func() {
 				"--state-dir", tempDirectory,
 				"unsupported-deploy-bosh-on-aws-for-concourse",
 			})
-			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("checking that the checksum of state.json is the same", func() {
@@ -120,7 +139,7 @@ var _ = Describe("bbl", func() {
 		})
 
 		By("checking that bosh director is down", func() {
-			client := bosh.NewClient(directorURL, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+			client := bosh.NewClient(directorURL, directorUsername, directorPassword)
 
 			_, err := client.Info()
 			Expect(err.(*url.Error).Op).To(Equal("Get"))
