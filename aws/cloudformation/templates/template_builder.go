@@ -22,16 +22,14 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	natTemplateBuilder := NewNATTemplateBuilder()
 	vpcTemplateBuilder := NewVPCTemplateBuilder()
 	internalSubnetsTemplateBuilder := NewInternalSubnetsTemplateBuilder()
-	loadBalancerSubnetTemplateBuilder := NewLoadBalancerSubnetTemplateBuilder()
 	boshSubnetTemplateBuilder := NewBOSHSubnetTemplateBuilder()
-	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
-	webELBTemplateBuilder := NewWebELBTemplateBuilder()
 	boshEIPTemplateBuilder := NewBOSHEIPTemplateBuilder()
+	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
 
 	return Template{
 		AWSTemplateFormatVersion: "2010-09-09",
-		Description:              "Infrastructure for a BOSH deployment with an ELB.",
+		Description:              "Infrastructure for a BOSH deployment.",
 	}.Merge(
 		internalSubnetsTemplateBuilder.InternalSubnets(numberOfAvailabilityZones),
 		sshKeyPairTemplateBuilder.SSHKeyPairName(keyPairName),
@@ -39,11 +37,8 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		natTemplateBuilder.NAT(),
 		vpcTemplateBuilder.VPC(),
 		boshSubnetTemplateBuilder.BOSHSubnet(),
-		loadBalancerSubnetTemplateBuilder.LoadBalancerSubnet(),
 		securityGroupTemplateBuilder.InternalSecurityGroup(),
 		securityGroupTemplateBuilder.BOSHSecurityGroup(),
-		securityGroupTemplateBuilder.WebSecurityGroup(),
-		webELBTemplateBuilder.WebELBLoadBalancer(),
 		boshEIPTemplateBuilder.BOSHEIP(),
 	)
 }

@@ -17,16 +17,14 @@ func (t SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						{
-							SourceSecurityGroupId: Ref{"WebSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "0",
-							ToPort:                "65535",
+							IpProtocol: "tcp",
+							FromPort:   "0",
+							ToPort:     "65535",
 						},
 						{
-							SourceSecurityGroupId: Ref{"WebSecurityGroup"},
-							IpProtocol:            "udp",
-							FromPort:              "0",
-							ToPort:                "65535",
+							IpProtocol: "udp",
+							FromPort:   "0",
+							ToPort:     "65535",
 						},
 						{
 							CidrIp:     "0.0.0.0/0",

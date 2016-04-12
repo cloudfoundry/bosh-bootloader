@@ -26,7 +26,7 @@ var _ = Describe("TemplateBuilder", func() {
 		It("builds a cloudformation template", func() {
 			template := builder.Build("keypair-name", 5)
 			Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
-			Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with an ELB."))
+			Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment."))
 
 			Expect(template.Parameters).To(HaveKey("SSHKeyPairName"))
 			Expect(template.Resources).To(HaveKey("BOSHUser"))
@@ -38,11 +38,8 @@ var _ = Describe("TemplateBuilder", func() {
 			Expect(template.Resources).To(HaveKey("InternalSubnet3"))
 			Expect(template.Resources).To(HaveKey("InternalSubnet4"))
 			Expect(template.Resources).To(HaveKey("InternalSubnet5"))
-			Expect(template.Resources).To(HaveKey("LoadBalancerSubnet"))
 			Expect(template.Resources).To(HaveKey("InternalSecurityGroup"))
 			Expect(template.Resources).To(HaveKey("BOSHSecurityGroup"))
-			Expect(template.Resources).To(HaveKey("WebSecurityGroup"))
-			Expect(template.Resources).To(HaveKey("WebELBLoadBalancer"))
 			Expect(template.Resources).To(HaveKey("BOSHEIP"))
 		})
 
