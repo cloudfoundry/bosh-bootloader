@@ -119,7 +119,9 @@ func (s StackManager) WaitForCompletion(client Client, name string, sleepInterva
 		cloudformation.StackStatusUpdateRollbackComplete,
 		cloudformation.StackStatusUpdateRollbackFailed,
 		cloudformation.StackStatusDeleteFailed:
-		return fmt.Errorf("aws cloudformation failed: %s", stack.Status)
+		return fmt.Errorf(`Failed creating cloudformation stack '%s'.
+			Check the AWS console for error events related to this stack,
+			and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues.`, name)
 	default:
 		s.logger.Dot()
 		time.Sleep(sleepInterval)
