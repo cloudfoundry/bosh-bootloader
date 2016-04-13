@@ -1,6 +1,7 @@
 package awsbackend
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -8,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/rosenhouse/awsfaker"
 )
 
@@ -162,7 +164,7 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 		}
 	}
 
-	return &cloudformation.DescribeStacksOutput{
+	stackOutput := &cloudformation.DescribeStacksOutput{
 		Stacks: []*cloudformation.Stack{
 			{
 				StackName:   aws.String(stack.Name),
@@ -231,5 +233,22 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 				},
 			},
 		},
-	}, nil
+	}
+
+	if stack.Template != "" {
+		var template templates.Template
+		err := json.Unmarshal([]byte(stack.Template), &template)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := template.Resources["WebELBLoadBalancer"]; ok {
+			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
+				OutputKey:   aws.String("LB"),
+				OutputValue: aws.String("some-lb"),
+			})
+		}
+	}
+
+	return stackOutput, nil
 }

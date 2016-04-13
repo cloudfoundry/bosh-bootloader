@@ -245,26 +245,81 @@ var _ = Describe("Up", func() {
 		})
 
 		Describe("cloud configurator", func() {
-			It("generates a cloud config", func() {
-				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+			BeforeEach(func() {
+				infrastructureManager.CreateCall.Stub = func(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error) {
+					stack := cloudformation.Stack{
+						Name: "bbl-aws-some-random-string",
+						Outputs: map[string]string{
+							"BOSHSubnet":              "some-bosh-subnet",
+							"BOSHSubnetAZ":            "some-bosh-subnet-az",
+							"BOSHEIP":                 "some-bosh-elastic-ip",
+							"BOSHURL":                 "some-bosh-url",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+							"BOSHSecurityGroup":       "some-bosh-security-group",
+						},
+					}
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+					switch lbType {
+					case "concourse":
+						stack.Outputs["LB"] = "some-lb-name"
+						stack.Outputs["LBURL"] = "some-lb-url"
+					default:
+					}
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
-				Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
-					Name: "bbl-aws-some-random-string",
-					Outputs: map[string]string{
-						"BOSHSecurityGroup":       "some-bosh-security-group",
-						"BOSHSubnet":              "some-bosh-subnet",
-						"BOSHSubnetAZ":            "some-bosh-subnet-az",
-						"BOSHEIP":                 "some-bosh-elastic-ip",
-						"BOSHURL":                 "some-bosh-url",
-						"BOSHUserAccessKey":       "some-bosh-user-access-key",
-						"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
-					},
-				}))
-				Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
+					return stack, nil
+				}
+			})
+
+			Context("no lb", func() {
+				It("generates a cloud config", func() {
+					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+
+					_, err := command.Execute(globalFlags, []string{}, storage.State{})
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
+					Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
+						Name: "bbl-aws-some-random-string",
+						Outputs: map[string]string{
+							"BOSHSecurityGroup":       "some-bosh-security-group",
+							"BOSHSubnet":              "some-bosh-subnet",
+							"BOSHSubnetAZ":            "some-bosh-subnet-az",
+							"BOSHEIP":                 "some-bosh-elastic-ip",
+							"BOSHURL":                 "some-bosh-url",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+						},
+					}))
+					Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
+				})
+			})
+
+			Context("concourse lb", func() {
+				It("generates a cloud config", func() {
+					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+
+					_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
+					Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
+						Name: "bbl-aws-some-random-string",
+						Outputs: map[string]string{
+							"BOSHSecurityGroup":       "some-bosh-security-group",
+							"BOSHSubnet":              "some-bosh-subnet",
+							"BOSHSubnetAZ":            "some-bosh-subnet-az",
+							"BOSHEIP":                 "some-bosh-elastic-ip",
+							"BOSHURL":                 "some-bosh-url",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+							"LBURL":                   "some-lb-url",
+							"LB":                      "some-lb-name",
+						},
+					}))
+
+					Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
+				})
 			})
 		})
 
@@ -431,6 +486,13 @@ var _ = Describe("Up", func() {
 		})
 
 		Context("failure cases", func() {
+			Context("when an invalid command line flag is supplied", func() {
+				It("returns an error", func() {
+					_, err := command.Execute(commands.GlobalFlags{}, []string{"--invalid-flag"}, storage.State{})
+					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+				})
+			})
+
 			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 

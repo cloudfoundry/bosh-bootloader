@@ -8,6 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -21,7 +22,7 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, numberOfAZs int, stackName string, client cloudformation.Client) (cloudformation.Stack, error)
+	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error)
 	Exists(stackName string, client cloudformation.Client) (bool, error)
 	Delete(client cloudformation.Client, stackName string) error
 }
@@ -42,6 +43,10 @@ type logger interface {
 	Step(string)
 	Println(string)
 	Prompt(string)
+}
+
+type upConfig struct {
+	lbType string
 }
 
 type Up struct {
@@ -70,7 +75,26 @@ func NewUp(
 	}
 }
 
+func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
+	upFlags := flags.New("unsupported-deploy-bosh-on-aws-for-concourse")
+
+	config := upConfig{}
+	upFlags.String(&config.lbType, "lb-type", "")
+
+	err := upFlags.Parse(subcommandFlags)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
+}
+
 func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+	config, err := u.parseFlags(subcommandFlags)
+	if err != nil {
+		return state, err
+	}
+
 	cloudFormationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
@@ -129,7 +153,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, cloudFormationClient)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, config.lbType, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}

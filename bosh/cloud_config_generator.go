@@ -3,6 +3,7 @@ package bosh
 type CloudConfigInput struct {
 	AZs     []string
 	Subnets []SubnetInput
+	LB      string
 }
 
 type SubnetInput struct {
@@ -33,7 +34,15 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 		return CloudConfig{}, err
 	}
 
+	if c.input.LB != "" {
+		c.generateVMExtensions()
+	}
+
 	return c.cloudConfig, nil
+}
+
+func (c *CloudConfigGenerator) generateVMExtensions() {
+	c.cloudConfig.VMExtensions = NewVMExtensionsGenerator(c.input.LB).Generate()
 }
 
 func (c *CloudConfigGenerator) generateAZs() {

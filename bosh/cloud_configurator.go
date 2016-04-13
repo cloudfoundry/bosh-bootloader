@@ -43,6 +43,7 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 	cloudConfigInput := CloudConfigInput{
 		AZs:     azs,
 		Subnets: subnets,
+		LB:      stack.Outputs["LB"],
 	}
 
 	c.logger.Step("generating cloud config")

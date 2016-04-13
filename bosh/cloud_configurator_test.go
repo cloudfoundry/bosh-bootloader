@@ -124,6 +124,29 @@ var _ = Describe("CloudConfigurator", func() {
 			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal(yaml))
 		})
 
+		Context("vm extensions", func() {
+			Context("no lb", func() {
+				It("generates a cloud config with no lb vm extension", func() {
+					cloudFormationStack.Outputs["LB"] = ""
+					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LB).To(Equal(""))
+				})
+			})
+
+			Context("concourse lb", func() {
+				It("generates a cloud config with a concourse lb vm extension", func() {
+					cloudFormationStack.Outputs["LB"] = "some-lb"
+
+					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LB).To(Equal("some-lb"))
+				})
+			})
+		})
+
 		Context("failure cases", func() {
 			It("returns an error when cloud config cannot be applied", func() {
 				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to apply")

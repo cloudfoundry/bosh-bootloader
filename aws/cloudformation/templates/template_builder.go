@@ -15,7 +15,7 @@ func NewTemplateBuilder(logger logger) TemplateBuilder {
 	}
 }
 
-func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int) Template {
+func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int, lbType string) Template {
 	t.logger.Step("generating cloudformation template")
 
 	boshIAMTemplateBuilder := NewBOSHIAMTemplateBuilder()
@@ -26,8 +26,10 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	boshEIPTemplateBuilder := NewBOSHEIPTemplateBuilder()
 	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
+	loadBalancerSubnetTemplateBuilder := NewLoadBalancerSubnetTemplateBuilder()
+	webELBTemplateBuilder := NewWebELBTemplateBuilder()
 
-	return Template{
+	template := Template{
 		AWSTemplateFormatVersion: "2010-09-09",
 		Description:              "Infrastructure for a BOSH deployment.",
 	}.Merge(
@@ -41,4 +43,15 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		securityGroupTemplateBuilder.BOSHSecurityGroup(),
 		boshEIPTemplateBuilder.BOSHEIP(),
 	)
+
+	if lbType == "concourse" {
+		template.Description = "Infrastructure for a BOSH deployment with a Concourse ELB."
+		template.Merge(
+			loadBalancerSubnetTemplateBuilder.LoadBalancerSubnet(),
+			securityGroupTemplateBuilder.WebSecurityGroup(),
+			webELBTemplateBuilder.WebELBLoadBalancer(),
+		)
+	}
+
+	return template
 }

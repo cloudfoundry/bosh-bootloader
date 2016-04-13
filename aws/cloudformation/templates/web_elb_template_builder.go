@@ -8,6 +8,17 @@ func NewWebELBTemplateBuilder() WebELBTemplateBuilder {
 
 func (t WebELBTemplateBuilder) WebELBLoadBalancer() Template {
 	return Template{
+		Outputs: map[string]Output{
+			"LB": {Value: Ref{"WebELBLoadBalancer"}},
+			"LBURL": {
+				Value: FnGetAtt{
+					[]string{
+						"WebELBLoadBalancer",
+						"DNSName",
+					},
+				},
+			},
+		},
 		Resources: map[string]Resource{
 			"WebELBLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",

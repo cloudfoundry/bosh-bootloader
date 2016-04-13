@@ -1,0 +1,116 @@
+azs:
+- name: z1
+  cloud_properties:
+    availability_zone: us-east-1a
+- name: z2
+  cloud_properties:
+    availability_zone: us-east-1b
+- name: z3
+  cloud_properties:
+    availability_zone: us-east-1c
+
+vm_types:
+- name: m3.medium
+  cloud_properties:
+    instance_type: m3.medium
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: m3.large
+  cloud_properties:
+    instance_type: m3.large
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c3.large
+  cloud_properties:
+    instance_type: c3.large
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c3.xlarge
+  cloud_properties:
+    instance_type: c3.xlarge
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c3.2xlarge
+  cloud_properties:
+    instance_type: c3.2xlarge
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: c4.large
+  cloud_properties:
+    instance_type: c4.large
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: r3.xlarge
+  cloud_properties:
+    instance_type: r3.xlarge
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+- name: t2.micro
+  cloud_properties:
+    instance_type: t2.micro
+    ephemeral_disk:
+      size: 1024
+      type: gp2
+
+networks:
+- name: private
+  type: manual
+  subnets:
+  - az: z1
+    gateway: 10.0.16.1
+    range: 10.0.16.0/20
+    static: []
+    reserved:
+    - 10.0.16.2-10.0.16.3
+    - 10.0.31.255
+    cloud_properties:
+      subnet: some-subnet-1
+      security_groups:
+      - some-security-group-1
+  - az: z2
+    gateway: 10.0.32.1
+    range: 10.0.32.0/20
+    static: []
+    reserved:
+    - 10.0.32.2-10.0.32.3
+    - 10.0.47.255
+    cloud_properties:
+      subnet: some-subnet-2
+      security_groups:
+      - some-security-group-2
+  - az: z3
+    gateway: 10.0.48.1
+    range: 10.0.48.0/20
+    static: []
+    reserved:
+    - 10.0.48.2-10.0.48.3
+    - 10.0.63.255
+    cloud_properties:
+      subnet: some-subnet-3
+      security_groups:
+      - some-security-group-3
+
+
+disk_types:
+- name: default
+  disk_size: 1024
+  cloud_properties:
+    type: gp2
+
+compilation:
+  workers: 3
+  network: private
+  az: z1
+  reuse_compilation_vms: true
+  vm_type: c3.large
+vm_extensions:
+- name: lb
+  cloud_properties:
+    elbs: [some-lb]

@@ -18,6 +18,20 @@ var _ = Describe("WebELBTemplateBuilder", func() {
 		It("returns a template containing the web elb load balancer", func() {
 			web_elb_load_balancer := builder.WebELBLoadBalancer()
 
+			Expect(web_elb_load_balancer.Outputs).To(HaveLen(2))
+			Expect(web_elb_load_balancer.Outputs).To(HaveKeyWithValue("LB", templates.Output{
+				Value: templates.Ref{"WebELBLoadBalancer"},
+			}))
+
+			Expect(web_elb_load_balancer.Outputs).To(HaveKeyWithValue("LBURL", templates.Output{
+				Value: templates.FnGetAtt{
+					[]string{
+						"WebELBLoadBalancer",
+						"DNSName",
+					},
+				},
+			}))
+
 			Expect(web_elb_load_balancer.Resources).To(HaveLen(1))
 			Expect(web_elb_load_balancer.Resources).To(HaveKeyWithValue("WebELBLoadBalancer", templates.Resource{
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",

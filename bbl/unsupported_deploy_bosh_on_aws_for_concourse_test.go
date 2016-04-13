@@ -35,13 +35,12 @@ func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request
 
 var _ = Describe("bbl", func() {
 	var (
-		fakeAWS             *awsbackend.Backend
-		fakeAWSServer       *httptest.Server
-		fakeBOSHServer      *httptest.Server
-		fakeBOSH            *fakeBOSHDirector
-		tempDirectory       string
-		privateKey          string
-		expectedCloudConfig string
+		fakeAWS        *awsbackend.Backend
+		fakeAWSServer  *httptest.Server
+		fakeBOSHServer *httptest.Server
+		fakeBOSH       *fakeBOSHDirector
+		tempDirectory  string
+		privateKey     string
 	)
 
 	BeforeEach(func() {
@@ -60,10 +59,6 @@ var _ = Describe("bbl", func() {
 		contents, err := ioutil.ReadFile("fixtures/key.pem")
 		Expect(err).NotTo(HaveOccurred())
 		privateKey = string(contents)
-
-		contents, err = ioutil.ReadFile("fixtures/cloud-config.yml")
-		Expect(err).NotTo(HaveOccurred())
-		expectedCloudConfig = string(contents)
 	})
 
 	Describe("unsupported-deploy-bosh-on-aws-for-concourse", func() {
@@ -195,12 +190,51 @@ var _ = Describe("bbl", func() {
 		})
 
 		Context("cloud config", func() {
-			It("applies the cloud config", func() {
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
-				stdout := session.Out.Contents()
-				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-				Expect(fakeBOSH.CloudConfig).To(MatchYAML(expectedCloudConfig))
+			Context("when no elb is specified", func() {
+				It("applies the cloud config", func() {
+					contents, err := ioutil.ReadFile("fixtures/cloud-config-no-elb.yml")
+					Expect(err).NotTo(HaveOccurred())
+
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+						"--aws-access-key-id", "some-access-key",
+						"--aws-secret-access-key", "some-access-secret",
+						"--aws-region", "some-region",
+						"--state-dir", tempDirectory,
+						"unsupported-deploy-bosh-on-aws-for-concourse",
+					}
+
+					session := executeCommand(args, 0)
+					stdout := session.Out.Contents()
+
+					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+					Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+				})
+			})
+
+			Context("when elb type is concourse", func() {
+				It("applies the cloud config", func() {
+					contents, err := ioutil.ReadFile("fixtures/cloud-config-concourse-elb.yml")
+					Expect(err).NotTo(HaveOccurred())
+
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+						"--aws-access-key-id", "some-access-key",
+						"--aws-secret-access-key", "some-access-secret",
+						"--aws-region", "some-region",
+						"--state-dir", tempDirectory,
+						"unsupported-deploy-bosh-on-aws-for-concourse",
+						"--lb-type", "concourse",
+					}
+
+					session := executeCommand(args, 0)
+					stdout := session.Out.Contents()
+
+					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+					Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+				})
 			})
 		})
 	})

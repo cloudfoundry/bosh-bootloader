@@ -156,7 +156,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		It("returns a template containing the web security group", func() {
 			securityGroup := builder.WebSecurityGroup()
 
-			Expect(securityGroup.Resources).To(HaveLen(1))
+			Expect(securityGroup.Resources).To(HaveLen(3))
 			Expect(securityGroup.Resources).To(HaveKeyWithValue("WebSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
@@ -183,6 +183,28 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 							ToPort:     "443",
 						},
 					},
+				},
+			}))
+
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromWebSecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: templates.SecurityGroupIngress{
+					GroupId:               templates.Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"WebSecurityGroup"},
+					IpProtocol:            "tcp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			}))
+
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromWebSecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: templates.SecurityGroupIngress{
+					GroupId:               templates.Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"WebSecurityGroup"},
+					IpProtocol:            "udp",
+					FromPort:              "0",
+					ToPort:                "65535",
 				},
 			}))
 		})

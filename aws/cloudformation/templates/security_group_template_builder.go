@@ -168,6 +168,26 @@ func (t SecurityGroupTemplateBuilder) WebSecurityGroup() Template {
 					},
 				},
 			},
+			"InternalSecurityGroupIngressTCPfromWebSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: SecurityGroupIngress{
+					GroupId:               Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: Ref{"WebSecurityGroup"},
+					IpProtocol:            "tcp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			},
+			"InternalSecurityGroupIngressUDPfromWebSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: SecurityGroupIngress{
+					GroupId:               Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: Ref{"WebSecurityGroup"},
+					IpProtocol:            "udp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			},
 		},
 	}
 }
