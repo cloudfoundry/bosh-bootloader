@@ -10,6 +10,8 @@ initial goal is to support bootstrapping a CloudFoundry installation on AWS.
 
 ## Prerequisites
 
+### Install Dependencies
+
 The following should be installed on your local machine
 - Golang (>= 1.5)
 
@@ -19,6 +21,30 @@ If using homebrew, these can be installed with:
 brew install go
 ```
 
+### Configure AWS
+
+The AWS IAM user that is provided to bbl will need the following policy:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:*",
+                "cloudformation:*",
+                "elasticloadbalancing:*",
+                "iam:*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}
+```
+
 ## Installation
 
 ```
@@ -26,6 +52,7 @@ go get github.com/pivotal-cf-experimental/bosh-bootloader/bbl
 ```
 
 ## Usage
+
 The `bbl` command can be invoked on the command line and will display it's usage.
 
 ```
