@@ -275,6 +275,7 @@ var _ = Describe("StackManager", func() {
 
 			Expect(cloudFormationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
 				StackName:    aws.String("some-stack-name"),
+				Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 				TemplateBody: aws.String(string(templateJson)),
 			}))
 
@@ -282,7 +283,7 @@ var _ = Describe("StackManager", func() {
 		})
 
 		It("does not return an error when no updates are to be performed", func() {
-			cloudFormationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
+			cloudFormationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("ValidationError", "No updates are to be performed.", errors.New("")), 400, "0")
 			cloudFormationClient.DescribeStacksCall.Returns.Output = &awscloudformation.DescribeStacksOutput{
 				Stacks: []*awscloudformation.Stack{
 					{
@@ -308,11 +309,31 @@ var _ = Describe("StackManager", func() {
 
 			Expect(cloudFormationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
 				StackName:    aws.String("some-stack-name"),
+				Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 				TemplateBody: aws.String(string(templateJson)),
 			}))
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when the stack fails to update", func() {
+				cloudFormationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("some-error", "something bad happened", errors.New("")), 400, "0")
+				cloudFormationClient.DescribeStacksCall.Returns.Output = &awscloudformation.DescribeStacksOutput{
+					Stacks: []*awscloudformation.Stack{
+						{
+							StackName:   aws.String("some-stack-name"),
+							StackStatus: aws.String(awscloudformation.StackStatusUpdateComplete),
+						},
+					},
+				}
+
+				template := templates.Template{
+					Description: "testing template",
+				}
+
+				err := manager.CreateOrUpdate(cloudFormationClient, "some-stack-name", template)
+				Expect(err).To(MatchError(ContainSubstring(("something bad happened"))))
+			})
+
 			It("returns an error when the stack cannot be described", func() {
 				cloudFormationClient.DescribeStacksCall.Returns.Error = errors.New("error describing stack")
 

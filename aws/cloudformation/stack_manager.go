@@ -176,6 +176,7 @@ func (s StackManager) update(client Client, name string, template templates.Temp
 
 	params := &cloudformation.UpdateStackInput{
 		StackName:    aws.String(name),
+		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
 	}
 
@@ -184,10 +185,11 @@ func (s StackManager) update(client Client, name string, template templates.Temp
 		if err != nil {
 			switch err.(type) {
 			case awserr.RequestFailure:
-				if err.(awserr.RequestFailure).StatusCode() == 400 {
+				requestFailure := err.(awserr.RequestFailure)
+				if requestFailure.StatusCode() == 400 && requestFailure.Code() == "ValidationError" &&
+					requestFailure.Message() == "No updates are to be performed." {
 					return nil
 				}
-
 				return err
 			default:
 				return err
