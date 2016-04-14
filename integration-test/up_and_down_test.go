@@ -81,7 +81,7 @@ var _ = Describe("bbl", func() {
 
 		By("checking that bosh director is up", func() {
 			var err error
-			state, err = loadBOSHStateJson(tempDirectory)
+			state, err = loadStateJson(tempDirectory)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = stackManager.Describe(cloudFormationClient, state.Stack.Name)
@@ -161,7 +161,7 @@ func getChecksum(stateDirectory string) (string, error) {
 	return fmt.Sprintf("%x", md5.Sum(buf)), nil
 }
 
-func loadBOSHStateJson(stateDirectory string) (storage.State, error) {
+func loadStateJson(stateDirectory string) (storage.State, error) {
 	stateFile, err := os.Open(filepath.Join(stateDirectory, "state.json"))
 	if err != nil {
 		return storage.State{}, err
