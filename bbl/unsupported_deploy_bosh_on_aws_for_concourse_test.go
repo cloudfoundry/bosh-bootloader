@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
@@ -21,7 +22,15 @@ import (
 )
 
 type fakeBOSHDirector struct {
+	mutex       sync.Mutex
 	CloudConfig []byte
+}
+
+func (b *fakeBOSHDirector) SetCloudConfig(cloudConfig []byte) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	b.CloudConfig = cloudConfig
 }
 
 func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
@@ -29,7 +38,7 @@ func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request
 	if err != nil {
 		panic(err)
 	}
-	b.CloudConfig = buf
+	b.SetCloudConfig(buf)
 	responseWriter.WriteHeader(http.StatusCreated)
 }
 
@@ -174,12 +183,14 @@ var _ = Describe("bbl", func() {
 
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
+				template, err := ioutil.ReadFile("fixtures/cloudformation-no-elb.json")
+				Expect(err).NotTo(HaveOccurred())
+
 				stack, ok := fakeAWS.Stacks.Get("some-stack-name")
 				Expect(ok).To(BeTrue())
-				Expect(stack).To(Equal(awsbackend.Stack{
-					Name:       "some-stack-name",
-					WasUpdated: true,
-				}))
+				Expect(stack.Name).To(Equal("some-stack-name"))
+				Expect(stack.WasUpdated).To(Equal(true))
+				Expect(stack.Template).To(MatchJSON(string(template)))
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: using existing keypair"))
@@ -234,6 +245,37 @@ var _ = Describe("bbl", func() {
 					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
 					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
 					Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+				})
+
+				It("idempotently applies the cloud config", func() {
+					contents, err := ioutil.ReadFile("fixtures/cloud-config-concourse-elb.yml")
+					Expect(err).NotTo(HaveOccurred())
+
+					By("invoking bbl with the lb-type flag", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--aws-access-key-id", "some-access-key",
+							"--aws-secret-access-key", "some-access-secret",
+							"--aws-region", "some-region",
+							"--state-dir", tempDirectory,
+							"unsupported-deploy-bosh-on-aws-for-concourse",
+							"--lb-type", "concourse",
+						}
+
+						executeCommand(args, 0)
+						Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+					})
+
+					By("invoking bbl without the lb-type", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--state-dir", tempDirectory,
+							"unsupported-deploy-bosh-on-aws-for-concourse",
+						}
+
+						executeCommand(args, 0)
+						Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+					})
 				})
 			})
 		})

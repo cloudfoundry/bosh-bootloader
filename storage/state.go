@@ -19,7 +19,8 @@ type AWS struct {
 }
 
 type Stack struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	LBType string `json:"lbType"`
 }
 
 type State struct {

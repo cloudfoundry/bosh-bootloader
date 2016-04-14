@@ -73,7 +73,8 @@ var _ = Describe("Store", func() {
 					},
 				},
 				Stack: storage.Stack{
-					Name: "some-stack-name",
+					Name:   "some-stack-name",
+					LBType: "some-lb-type",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -121,7 +122,8 @@ var _ = Describe("Store", func() {
 					}
 				},
 				"stack": {
-					"name": "some-stack-name"
+					"name": "some-stack-name",
+					"lbType": "some-lb-type"
 				}
 			}`))
 
@@ -219,7 +221,8 @@ var _ = Describe("Store", func() {
 					"manifest": "name: bosh"
 				},
 				"stack": {
-					"name": "some-stack-name"
+					"name": "some-stack-name",
+					"lbType": "some-lb"
 				}
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
@@ -246,7 +249,8 @@ var _ = Describe("Store", func() {
 					Manifest:               "name: bosh",
 				},
 				Stack: storage.Stack{
-					Name: "some-stack-name",
+					Name:   "some-stack-name",
+					LBType: "some-lb",
 				},
 			}))
 		})

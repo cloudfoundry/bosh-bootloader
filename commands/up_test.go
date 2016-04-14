@@ -332,6 +332,33 @@ var _ = Describe("Up", func() {
 				}
 			})
 
+			Context("lb type", func() {
+				Context("when the lb type does not exist", func() {
+					It("populates the lb type", func() {
+						state, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.Stack.LBType).To(Equal("concourse"))
+					})
+				})
+
+				Context("when the lb type exists", func() {
+					It("returns an unmodified stack in state", func() {
+						incomingState := storage.State{
+							Stack: storage.Stack{
+								Name:   "some-stack-name",
+								LBType: "concourse",
+							},
+						}
+
+						state, err := command.Execute(globalFlags, []string{}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.Stack).To(Equal(incomingState.Stack))
+					})
+				})
+			})
+
 			Context("aws keypair", func() {
 				Context("when the keypair exists", func() {
 					It("returns the given state unmodified", func() {

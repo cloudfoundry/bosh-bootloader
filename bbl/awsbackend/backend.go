@@ -120,6 +120,7 @@ func (b *Backend) UpdateStack(input *cloudformation.UpdateStackInput) (*cloudfor
 	}
 
 	stack.WasUpdated = true
+	stack.Template = *input.TemplateBody
 	b.Stacks.Set(stack)
 
 	return &cloudformation.UpdateStackOutput{}, nil

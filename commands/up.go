@@ -153,7 +153,11 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, config.lbType, cloudFormationClient)
+	if config.lbType != "" {
+		state.Stack.LBType = config.lbType
+	}
+
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
