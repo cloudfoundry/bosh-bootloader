@@ -5,7 +5,7 @@ function main() {
 	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 	pushd "${root_dir}" > /dev/null
-		ginkgo -r -p -race -randomizeAllSpecs -randomizeSuites integration-test ${@}
+		ginkgo -r -race -randomizeAllSpecs -randomizeSuites integration-test ${@}
 	popd > /dev/null
 }
 
