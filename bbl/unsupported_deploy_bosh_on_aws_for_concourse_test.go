@@ -23,14 +23,21 @@ import (
 
 type fakeBOSHDirector struct {
 	mutex       sync.Mutex
-	CloudConfig []byte
+	cloudConfig []byte
 }
 
 func (b *fakeBOSHDirector) SetCloudConfig(cloudConfig []byte) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	b.CloudConfig = cloudConfig
+	b.cloudConfig = cloudConfig
+}
+
+func (b *fakeBOSHDirector) GetCloudConfig() []byte {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	return b.cloudConfig
 }
 
 func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
@@ -220,7 +227,7 @@ var _ = Describe("bbl", func() {
 
 					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
 					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-					Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 				})
 			})
 
@@ -244,7 +251,7 @@ var _ = Describe("bbl", func() {
 
 					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
 					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-					Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 				})
 
 				It("idempotently applies the cloud config", func() {
@@ -263,7 +270,7 @@ var _ = Describe("bbl", func() {
 						}
 
 						executeCommand(args, 0)
-						Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 					})
 
 					By("invoking bbl without the lb-type", func() {
@@ -274,7 +281,7 @@ var _ = Describe("bbl", func() {
 						}
 
 						executeCommand(args, 0)
-						Expect(fakeBOSH.CloudConfig).To(MatchYAML(string(contents)))
+						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 					})
 				})
 			})
