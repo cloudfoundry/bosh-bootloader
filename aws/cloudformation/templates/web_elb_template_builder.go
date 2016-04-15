@@ -1,12 +1,19 @@
 package templates
 
+import "fmt"
+
 type WebELBTemplateBuilder struct{}
 
 func NewWebELBTemplateBuilder() WebELBTemplateBuilder {
 	return WebELBTemplateBuilder{}
 }
 
-func (t WebELBTemplateBuilder) WebELBLoadBalancer() Template {
+func (t WebELBTemplateBuilder) WebELBLoadBalancer(numberOfAvailabliltyZones int) Template {
+	subnets := []interface{}{}
+	for i := 1; i <= numberOfAvailabliltyZones; i++ {
+		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
+	}
+
 	return Template{
 		Outputs: map[string]Output{
 			"LB": {Value: Ref{"WebELBLoadBalancer"}},
@@ -23,7 +30,7 @@ func (t WebELBTemplateBuilder) WebELBLoadBalancer() Template {
 			"WebELBLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
-					Subnets:        []interface{}{Ref{"LoadBalancerSubnet"}},
+					Subnets:        subnets,
 					SecurityGroups: []interface{}{Ref{"WebSecurityGroup"}},
 
 					HealthCheck: HealthCheck{

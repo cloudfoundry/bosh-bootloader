@@ -16,7 +16,7 @@ var _ = Describe("WebELBTemplateBuilder", func() {
 
 	Describe("Web ELB Load Balancer", func() {
 		It("returns a template containing the web elb load balancer", func() {
-			web_elb_load_balancer := builder.WebELBLoadBalancer()
+			web_elb_load_balancer := builder.WebELBLoadBalancer(2)
 
 			Expect(web_elb_load_balancer.Outputs).To(HaveLen(2))
 			Expect(web_elb_load_balancer.Outputs).To(HaveKeyWithValue("LB", templates.Output{
@@ -36,7 +36,7 @@ var _ = Describe("WebELBTemplateBuilder", func() {
 			Expect(web_elb_load_balancer.Resources).To(HaveKeyWithValue("WebELBLoadBalancer", templates.Resource{
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
-					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet"}},
+					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
 					SecurityGroups: []interface{}{templates.Ref{"WebSecurityGroup"}},
 
 					HealthCheck: templates.HealthCheck{

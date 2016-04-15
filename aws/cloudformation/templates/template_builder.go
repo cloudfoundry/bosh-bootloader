@@ -26,7 +26,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	boshEIPTemplateBuilder := NewBOSHEIPTemplateBuilder()
 	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
-	loadBalancerSubnetTemplateBuilder := NewLoadBalancerSubnetTemplateBuilder()
+	loadBalancerSubnetsTemplateBuilder := NewLoadBalancerSubnetsTemplateBuilder()
 	webELBTemplateBuilder := NewWebELBTemplateBuilder()
 
 	template := Template{
@@ -47,9 +47,9 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	if lbType == "concourse" {
 		template.Description = "Infrastructure for a BOSH deployment with a Concourse ELB."
 		template.Merge(
-			loadBalancerSubnetTemplateBuilder.LoadBalancerSubnet(),
+			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.WebSecurityGroup(),
-			webELBTemplateBuilder.WebELBLoadBalancer(),
+			webELBTemplateBuilder.WebELBLoadBalancer(numberOfAvailabilityZones),
 		)
 	}
 

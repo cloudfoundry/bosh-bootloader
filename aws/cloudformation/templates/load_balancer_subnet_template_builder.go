@@ -1,38 +1,40 @@
 package templates
 
+import "fmt"
+
 type LoadBalancerSubnetTemplateBuilder struct{}
 
 func NewLoadBalancerSubnetTemplateBuilder() LoadBalancerSubnetTemplateBuilder {
 	return LoadBalancerSubnetTemplateBuilder{}
 }
 
-func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet() Template {
+func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetSuffix string, cidrBlock string) Template {
 	return Template{
 		Parameters: map[string]Parameter{
-			"LoadBalancerSubnetCIDR": Parameter{
+			fmt.Sprintf("LoadBalancerSubnet%sCIDR", subnetSuffix): Parameter{
 				Description: "CIDR block for the ELB subnet.",
 				Type:        "String",
-				Default:     "10.0.2.0/24",
+				Default:     cidrBlock,
 			},
 		},
 		Resources: map[string]Resource{
-			"LoadBalancerSubnet": Resource{
+			fmt.Sprintf("LoadBalancerSubnet%s", subnetSuffix): Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: Subnet{
 					AvailabilityZone: map[string]interface{}{
 						"Fn::Select": []interface{}{
-							"0",
+							fmt.Sprintf("%d", azIndex),
 							map[string]Ref{
 								"Fn::GetAZs": Ref{"AWS::Region"},
 							},
 						},
 					},
-					CidrBlock: Ref{"LoadBalancerSubnetCIDR"},
+					CidrBlock: Ref{fmt.Sprintf("LoadBalancerSubnet%sCIDR", subnetSuffix)},
 					VpcId:     Ref{"VPC"},
 					Tags: []Tag{
 						{
 							Key:   "Name",
-							Value: "LoadBalancer",
+							Value: fmt.Sprintf("LoadBalancer%s", subnetSuffix),
 						},
 					},
 				},
@@ -52,11 +54,11 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet() Template {
 					RouteTableId:         Ref{"LoadBalancerRouteTable"},
 				},
 			},
-			"LoadBalancerSubnetRouteTableAssociation": {
+			fmt.Sprintf("LoadBalancerSubnet%sRouteTableAssociation", subnetSuffix): {
 				Type: "AWS::EC2::SubnetRouteTableAssociation",
 				Properties: SubnetRouteTableAssociation{
 					RouteTableId: Ref{"LoadBalancerRouteTable"},
-					SubnetId:     Ref{"LoadBalancerSubnet"},
+					SubnetId:     Ref{fmt.Sprintf("LoadBalancerSubnet%s", subnetSuffix)},
 				},
 			},
 		},
