@@ -113,6 +113,7 @@ jobs:
         adapter: postgres
       cpi_job: aws_cpi
       max_threads: 10
+      enable_post_deploy: true
       user_management:
         provider: local
         local:
