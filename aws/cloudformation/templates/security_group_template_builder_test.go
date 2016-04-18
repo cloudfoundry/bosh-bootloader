@@ -13,7 +13,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		builder = templates.NewSecurityGroupTemplateBuilder()
 	})
 
-	Describe("Internal Security Group", func() {
+	Describe("InternalSecurityGroup", func() {
 		It("returns a template containing all the fields for internal security group", func() {
 			securityGroup := builder.InternalSecurityGroup()
 
@@ -91,7 +91,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		})
 	})
 
-	Describe("BOSH Security Group", func() {
+	Describe("BOSHSecurityGroup", func() {
 		It("returns a template containing the bosh security group", func() {
 			securityGroup := builder.BOSHSecurityGroup()
 
@@ -152,7 +152,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		})
 	})
 
-	Describe("Web Security Group", func() {
+	Describe("WebSecurityGroup", func() {
 		It("returns a template containing the web security group", func() {
 			securityGroup := builder.WebSecurityGroup()
 
@@ -202,6 +202,64 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
 					SourceSecurityGroupId: templates.Ref{"WebSecurityGroup"},
+					IpProtocol:            "udp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			}))
+		})
+	})
+
+	Describe("RouterSecurityGroup", func() {
+		It("returns a template containing the router security group", func() {
+			securityGroup := builder.RouterSecurityGroup()
+
+			Expect(securityGroup.Resources).To(HaveLen(3))
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("RouterSecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: templates.SecurityGroup{
+					VpcId:               templates.Ref{"VPC"},
+					GroupDescription:    "Router",
+					SecurityGroupEgress: []string{},
+					SecurityGroupIngress: []templates.SecurityGroupIngress{
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "80",
+							ToPort:     "80",
+						},
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "2222",
+							ToPort:     "2222",
+						},
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "443",
+							ToPort:     "443",
+						},
+					},
+				},
+			}))
+
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromRouterSecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: templates.SecurityGroupIngress{
+					GroupId:               templates.Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"RouterSecurityGroup"},
+					IpProtocol:            "tcp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			}))
+
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromRouterSecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: templates.SecurityGroupIngress{
+					GroupId:               templates.Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"RouterSecurityGroup"},
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",

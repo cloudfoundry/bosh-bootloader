@@ -285,6 +285,61 @@ var _ = Describe("bbl", func() {
 					})
 				})
 			})
+
+			Context("when elb type is cf", func() {
+				It("applies the cloud config", func() {
+					contents, err := ioutil.ReadFile("fixtures/cloud-config-cf-elb.yml")
+					Expect(err).NotTo(HaveOccurred())
+
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+						"--aws-access-key-id", "some-access-key",
+						"--aws-secret-access-key", "some-access-secret",
+						"--aws-region", "some-region",
+						"--state-dir", tempDirectory,
+						"unsupported-deploy-bosh-on-aws-for-concourse",
+						"--lb-type", "cf",
+					}
+
+					session := executeCommand(args, 0)
+					stdout := session.Out.Contents()
+
+					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+				})
+
+				It("idempotently applies the cloud config", func() {
+					contents, err := ioutil.ReadFile("fixtures/cloud-config-cf-elb.yml")
+					Expect(err).NotTo(HaveOccurred())
+
+					By("invoking bbl with the lb-type flag", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--aws-access-key-id", "some-access-key",
+							"--aws-secret-access-key", "some-access-secret",
+							"--aws-region", "some-region",
+							"--state-dir", tempDirectory,
+							"unsupported-deploy-bosh-on-aws-for-concourse",
+							"--lb-type", "cf",
+						}
+
+						executeCommand(args, 0)
+						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+					})
+
+					By("invoking bbl without the lb-type", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--state-dir", tempDirectory,
+							"unsupported-deploy-bosh-on-aws-for-concourse",
+						}
+
+						executeCommand(args, 0)
+						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+					})
+				})
+			})
 		})
 	})
 })

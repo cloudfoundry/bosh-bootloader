@@ -28,6 +28,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
 	loadBalancerSubnetsTemplateBuilder := NewLoadBalancerSubnetsTemplateBuilder()
 	webELBTemplateBuilder := NewWebELBTemplateBuilder()
+	cfLoadBalancerTemplateBuilder := NewCFLoadBalancerTemplateBuilder()
 
 	template := Template{
 		AWSTemplateFormatVersion: "2010-09-09",
@@ -50,6 +51,15 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.WebSecurityGroup(),
 			webELBTemplateBuilder.WebELBLoadBalancer(numberOfAvailabilityZones),
+		)
+	}
+
+	if lbType == "cf" {
+		template.Description = "Infrastructure for a BOSH deployment with a CloudFoundry ELB."
+		template.Merge(
+			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
+			securityGroupTemplateBuilder.RouterSecurityGroup(),
+			cfLoadBalancerTemplateBuilder.CFLoadBalancer(numberOfAvailabilityZones),
 		)
 	}
 

@@ -191,3 +191,58 @@ func (t SecurityGroupTemplateBuilder) WebSecurityGroup() Template {
 		},
 	}
 }
+
+func (SecurityGroupTemplateBuilder) RouterSecurityGroup() Template {
+	return Template{
+		Resources: map[string]Resource{
+			"RouterSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: SecurityGroup{
+					VpcId:               Ref{"VPC"},
+					GroupDescription:    "Router",
+					SecurityGroupEgress: []string{},
+					SecurityGroupIngress: []SecurityGroupIngress{
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "80",
+							ToPort:     "80",
+						},
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "2222",
+							ToPort:     "2222",
+						},
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "443",
+							ToPort:     "443",
+						},
+					},
+				},
+			},
+			"InternalSecurityGroupIngressTCPfromRouterSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: SecurityGroupIngress{
+					GroupId:               Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: Ref{"RouterSecurityGroup"},
+					IpProtocol:            "tcp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			},
+			"InternalSecurityGroupIngressUDPfromRouterSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: SecurityGroupIngress{
+					GroupId:               Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: Ref{"RouterSecurityGroup"},
+					IpProtocol:            "udp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			},
+		},
+	}
+}

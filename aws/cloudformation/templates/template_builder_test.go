@@ -8,6 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -52,6 +53,35 @@ var _ = Describe("TemplateBuilder", func() {
 			})
 		})
 
+		Context("cf elb template", func() {
+			It("builds a cloudformation template", func() {
+				template := builder.Build("keypair-name", 5, "cf")
+				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
+				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with a CloudFoundry ELB."))
+
+				Expect(template.Parameters).To(HaveKey("SSHKeyPairName"))
+				Expect(template.Resources).To(HaveKey("BOSHUser"))
+				Expect(template.Resources).To(HaveKey("NATInstance"))
+				Expect(template.Resources).To(HaveKey("VPC"))
+				Expect(template.Resources).To(HaveKey("BOSHSubnet"))
+				Expect(template.Resources).To(HaveKey("InternalSubnet1"))
+				Expect(template.Resources).To(HaveKey("InternalSubnet2"))
+				Expect(template.Resources).To(HaveKey("InternalSubnet3"))
+				Expect(template.Resources).To(HaveKey("InternalSubnet4"))
+				Expect(template.Resources).To(HaveKey("InternalSubnet5"))
+				Expect(template.Resources).To(HaveKey("InternalSecurityGroup"))
+				Expect(template.Resources).To(HaveKey("BOSHSecurityGroup"))
+				Expect(template.Resources).To(HaveKey("BOSHEIP"))
+				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet1"))
+				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet2"))
+				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet3"))
+				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet4"))
+				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
+				Expect(template.Resources).To(HaveKey("RouterSecurityGroup"))
+				Expect(template.Resources).To(HaveKey("CFLoadBalancer"))
+			})
+		})
+
 		Context("no elb template", func() {
 			It("builds a cloudformation template", func() {
 				template := builder.Build("keypair-name", 5, "")
@@ -89,16 +119,19 @@ var _ = Describe("TemplateBuilder", func() {
 	})
 
 	Describe("template marshaling", func() {
-		It("can be marshaled to JSON", func() {
-			template := builder.Build("keypair-name", 4, "")
+		DescribeTable("marshals template to JSON", func(lbType string, fixture string) {
+			template := builder.Build("keypair-name", 4, lbType)
 
-			buf, err := ioutil.ReadFile("fixtures/cloudformation.json")
+			buf, err := ioutil.ReadFile("fixtures/" + fixture)
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := json.Marshal(template)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(output).To(MatchJSON(string(buf)))
-		})
+		},
+			Entry("without load balancer", "", "cloudformation_without_elb.json"),
+			Entry("with cf load balancer", "cf", "cloudformation_with_cf_elb.json"),
+		)
 	})
 })

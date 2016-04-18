@@ -189,14 +189,14 @@ type ElasticLoadBalancingLoadBalancer struct {
 	SecurityGroups []interface{} `json:",omitempty"`
 	HealthCheck    HealthCheck   `json:",omitempty"`
 	Listeners      []Listener    `json:',omitempty"`
+	CrossZone      bool
 }
 
 type Listener struct {
-	Protocol         string                 `json:",omitempty"`
-	LoadBalancerPort string                 `json:",omitempty"`
-	InstanceProtocol string                 `json:",omitempty"`
-	InstancePort     string                 `json:",omitempty"`
-	SSLCertificateId map[string]interface{} `json:",omitempty"`
+	Protocol         string `json:",omitempty"`
+	LoadBalancerPort string `json:",omitempty"`
+	InstanceProtocol string `json:",omitempty"`
+	InstancePort     string `json:",omitempty"`
 }
 
 type HealthCheck struct {

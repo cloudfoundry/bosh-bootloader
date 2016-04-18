@@ -43,7 +43,7 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 	cloudConfigInput := CloudConfigInput{
 		AZs:     azs,
 		Subnets: subnets,
-		LB:      stack.Outputs["LB"],
+		LBs:     c.populateLBs(stack),
 	}
 
 	c.logger.Step("generating cloud config")
@@ -63,4 +63,16 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 	}
 
 	return nil
+}
+
+func (CloudConfigurator) populateLBs(stack cloudformation.Stack) map[string]string {
+	lbs := map[string]string{}
+	if stack.Outputs["LB"] != "" {
+		lbs["lb"] = stack.Outputs["LB"]
+	}
+
+	if stack.Outputs["CFLB"] != "" {
+		lbs["cf-lb"] = stack.Outputs["CFLB"]
+	}
+	return lbs
 }

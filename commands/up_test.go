@@ -264,6 +264,11 @@ var _ = Describe("Up", func() {
 					case "concourse":
 						stack.Outputs["LB"] = "some-lb-name"
 						stack.Outputs["LBURL"] = "some-lb-url"
+					case "cf":
+						stack.Outputs["RouterLB"] = "some-router-lb-name"
+						stack.Outputs["RouterLBURL"] = "some-router-lb-url"
+						stack.Outputs["SSHProxyLB"] = "some-ssh-proxy-lb-name"
+						stack.Outputs["SSHProxyLBURL"] = "some-ssh-proxy-lb-url"
 					default:
 					}
 
@@ -271,7 +276,7 @@ var _ = Describe("Up", func() {
 				}
 			})
 
-			Context("no lb", func() {
+			Context("when no load balancer has been requested", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
@@ -295,7 +300,7 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("concourse lb", func() {
+			Context("when the load balancer type is concourse", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
@@ -315,6 +320,35 @@ var _ = Describe("Up", func() {
 							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 							"LBURL":                   "some-lb-url",
 							"LB":                      "some-lb-name",
+						},
+					}))
+
+					Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
+				})
+			})
+
+			Context("when the load balancer type is cf", func() {
+				It("generates a cloud config", func() {
+					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+
+					_, err := command.Execute(globalFlags, []string{"--lb-type", "cf"}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
+					Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
+						Name: "bbl-aws-some-random-string",
+						Outputs: map[string]string{
+							"BOSHSecurityGroup":       "some-bosh-security-group",
+							"BOSHSubnet":              "some-bosh-subnet",
+							"BOSHSubnetAZ":            "some-bosh-subnet-az",
+							"BOSHEIP":                 "some-bosh-elastic-ip",
+							"BOSHURL":                 "some-bosh-url",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+							"RouterLBURL":             "some-router-lb-url",
+							"RouterLB":                "some-router-lb-name",
+							"SSHProxyLBURL":           "some-ssh-proxy-lb-url",
+							"SSHProxyLB":              "some-ssh-proxy-lb-name",
 						},
 					}))
 

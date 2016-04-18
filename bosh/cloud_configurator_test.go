@@ -102,6 +102,7 @@ var _ = Describe("CloudConfigurator", func() {
 						SecurityGroups: []string{"some-security-group-4"},
 					},
 				},
+				LBs: map[string]string{},
 			}))
 		})
 
@@ -125,24 +126,35 @@ var _ = Describe("CloudConfigurator", func() {
 		})
 
 		Context("vm extensions", func() {
-			Context("no lb", func() {
+			Context("when there is no lb", func() {
 				It("generates a cloud config with no lb vm extension", func() {
 					cloudFormationStack.Outputs["LB"] = ""
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LB).To(Equal(""))
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveLen(0))
 				})
 			})
 
-			Context("concourse lb", func() {
+			Context("when the load balancer type is concourse", func() {
 				It("generates a cloud config with a concourse lb vm extension", func() {
 					cloudFormationStack.Outputs["LB"] = "some-lb"
 
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LB).To(Equal("some-lb"))
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("lb", "some-lb"))
+				})
+			})
+
+			Context("when the load balancer type is cf", func() {
+				It("generates a cloud config with a cf lb vm extension", func() {
+					cloudFormationStack.Outputs["CFLB"] = "some-cf-lb"
+
+					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("cf-lb", "some-cf-lb"))
 				})
 			})
 		})
