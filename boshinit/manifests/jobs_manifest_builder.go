@@ -50,6 +50,7 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 				{Name: "health_monitor", Release: "bosh"},
 				{Name: "registry", Release: "bosh"},
 				{Name: "aws_cpi", Release: "bosh-aws-cpi"},
+				{Name: "powerdns", Release: "bosh"},
 			},
 
 			Networks: []JobNetwork{
@@ -75,6 +76,7 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 				AWS:       sharedPropertiesManifestBuilder.AWS(manifestProperties),
 				Agent:     jobPropertiesManifestBuilder.Agent(),
 				NTP:       sharedPropertiesManifestBuilder.NTP(),
+				DNS:       jobPropertiesManifestBuilder.DNS(),
 			},
 		},
 	}, manifestProperties, nil

@@ -58,6 +58,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 				{Name: "health_monitor", Release: "bosh"},
 				{Name: "registry", Release: "bosh"},
 				{Name: "aws_cpi", Release: "bosh-aws-cpi"},
+				{Name: "powerdns", Release: "bosh"},
 			}))
 
 			Expect(job.Networks).To(ConsistOf([]manifests.JobNetwork{
@@ -224,9 +225,11 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.Postgres.User).To(Equal("postgres-user-some-random-string"))
 			Expect(job.Properties.Registry.DB.User).To(Equal("postgres-user-some-random-string"))
 			Expect(job.Properties.Director.DB.User).To(Equal("postgres-user-some-random-string"))
+			Expect(job.Properties.DNS.DB.User).To(Equal("postgres-user-some-random-string"))
 			Expect(job.Properties.Postgres.Password).To(Equal("postgres-some-random-string"))
 			Expect(job.Properties.Registry.DB.Password).To(Equal("postgres-some-random-string"))
 			Expect(job.Properties.Director.DB.Password).To(Equal("postgres-some-random-string"))
+			Expect(job.Properties.DNS.DB.Password).To(Equal("postgres-some-random-string"))
 		})
 
 		It("generates a password for blobstore director and agent", func() {

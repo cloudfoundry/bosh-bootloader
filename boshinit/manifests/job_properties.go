@@ -8,6 +8,7 @@ type JobProperties struct {
 	Blobstore BlobstoreJobProperties `yaml:"blobstore"`
 	Director  DirectorJobProperties  `yaml:"director"`
 	HM        HMJobProperties        `yaml:"hm"`
+	DNS       DNSJobProperties       `yaml:"dns"`
 	AWS       AWSProperties          `yaml:"aws"`
 	Agent     AgentProperties        `yaml:"agent"`
 	NTP       []string               `yaml:"ntp"`
@@ -56,6 +57,11 @@ type DirectorJobProperties struct {
 type HMJobProperties struct {
 	DirectorAccount    Credentials `yaml:"director_account"`
 	ResurrectorEnabled bool        `yaml:"resurrector_enabled"`
+}
+
+type DNSJobProperties struct {
+	Address  string             `yaml:"address"`
+	DB       PostgresProperties `yaml:"db"`
 }
 
 type LocalProperties struct {
