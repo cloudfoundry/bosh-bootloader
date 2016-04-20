@@ -8,7 +8,7 @@ func NewLoadBalancerTemplateBuilder() LoadBalancerTemplateBuilder {
 	return LoadBalancerTemplateBuilder{}
 }
 
-func (LoadBalancerTemplateBuilder) CFLoadBalancer(numberOfAvailabliltyZones int) Template {
+func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabliltyZones int) Template {
 	subnets := []interface{}{}
 	for i := 1; i <= numberOfAvailabliltyZones; i++ {
 		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
@@ -16,18 +16,18 @@ func (LoadBalancerTemplateBuilder) CFLoadBalancer(numberOfAvailabliltyZones int)
 
 	return Template{
 		Outputs: map[string]Output{
-			"CFLB": {Value: Ref{"CFLoadBalancer"}},
+			"CFLB": {Value: Ref{"CFRouterLoadBalancer"}},
 			"CFLBURL": {
 				Value: FnGetAtt{
 					[]string{
-						"CFLoadBalancer",
+						"CFRouterLoadBalancer",
 						"DNSName",
 					},
 				},
 			},
 		},
 		Resources: map[string]Resource{
-			"CFLoadBalancer": {
+			"CFRouterLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,

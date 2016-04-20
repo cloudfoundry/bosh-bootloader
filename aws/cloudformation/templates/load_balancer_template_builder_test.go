@@ -14,26 +14,26 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 		builder = templates.NewLoadBalancerTemplateBuilder()
 	})
 
-	Describe("CFLoadBalancer", func() {
+	Describe("CFRouterLoadBalancer", func() {
 		It("returns a template containing the cf load balancer", func() {
-			cf_load_balancer := builder.CFLoadBalancer(2)
+			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2)
 
-			Expect(cf_load_balancer.Outputs).To(HaveLen(2))
-			Expect(cf_load_balancer.Outputs).To(HaveKeyWithValue("CFLB", templates.Output{
-				Value: templates.Ref{"CFLoadBalancer"},
+			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveLen(2))
+			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFLB", templates.Output{
+				Value: templates.Ref{"CFRouterLoadBalancer"},
 			}))
 
-			Expect(cf_load_balancer.Outputs).To(HaveKeyWithValue("CFLBURL", templates.Output{
+			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFLBURL", templates.Output{
 				Value: templates.FnGetAtt{
 					[]string{
-						"CFLoadBalancer",
+						"CFRouterLoadBalancer",
 						"DNSName",
 					},
 				},
 			}))
 
-			Expect(cf_load_balancer.Resources).To(HaveLen(1))
-			Expect(cf_load_balancer.Resources).To(HaveKeyWithValue("CFLoadBalancer", templates.Resource{
+			Expect(cfRouterLoadBalancerTemplate.Resources).To(HaveLen(1))
+			Expect(cfRouterLoadBalancerTemplate.Resources).To(HaveKeyWithValue("CFRouterLoadBalancer", templates.Resource{
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,

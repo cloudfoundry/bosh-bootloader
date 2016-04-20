@@ -58,7 +58,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.CFRouterSecurityGroup(),
-			loadBalancerTemplateBuilder.CFLoadBalancer(numberOfAvailabilityZones),
+			loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones),
 		)
 	}
 

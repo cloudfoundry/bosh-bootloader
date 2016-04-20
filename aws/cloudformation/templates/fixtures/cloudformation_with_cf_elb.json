@@ -75,12 +75,12 @@
 		},
 		"CFLB": {
 			"Value": {
-				"Ref": "CFLoadBalancer"
+				"Ref": "CFRouterLoadBalancer"
 			}
 		},
 		"CFLBURL": {
 			"Value": {
-				"Fn::GetAtt": ["CFLoadBalancer", "DNSName"]
+				"Fn::GetAtt": ["CFRouterLoadBalancer", "DNSName"]
 			}
 		},
 		"InternalSubnet1AZ": {
@@ -378,7 +378,7 @@
 			},
 			"Type": "AWS::IAM::AccessKey"
 		},
-		"CFLoadBalancer": {
+		"CFRouterLoadBalancer": {
 			"Properties": {
 				"CrossZone": true,
 				"HealthCheck": {
