@@ -91,8 +91,8 @@ var _ = Describe("bbl", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs["LB"]).To(ContainSubstring("ConcourseELB"))
-			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("ConcourseELB"))
+			Expect(stack.Outputs["LB"]).To(ContainSubstring("Concours"))
+			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("Concours"))
 		})
 
 		By("running bbl up", func() {
@@ -110,8 +110,8 @@ var _ = Describe("bbl", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs["LB"]).To(ContainSubstring("ConcourseELB"))
-			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("ConcourseELB"))
+			Expect(stack.Outputs["LB"]).To(ContainSubstring("Concours"))
+			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("Concours"))
 		})
 
 		By("destroying bbl", func() {
