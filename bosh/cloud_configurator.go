@@ -71,8 +71,8 @@ func (CloudConfigurator) populateLBs(stack cloudformation.Stack) map[string]stri
 		lbs["lb"] = stack.Outputs["ConcourseLoadBalancer"]
 	}
 
-	if stack.Outputs["CFLB"] != "" {
-		lbs["cf-lb"] = stack.Outputs["CFLB"]
+	if stack.Outputs["CFRouterLoadBalancer"] != "" {
+		lbs["cf-lb"] = stack.Outputs["CFRouterLoadBalancer"]
 	}
 	return lbs
 }

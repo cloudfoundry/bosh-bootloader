@@ -73,12 +73,12 @@
 				"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]
 			}
 		},
-		"CFLB": {
+		"CFRouterLoadBalancer": {
 			"Value": {
 				"Ref": "CFRouterLoadBalancer"
 			}
 		},
-		"CFLBURL": {
+		"CFRouterLoadBalancerURL": {
 			"Value": {
 				"Fn::GetAtt": ["CFRouterLoadBalancer", "DNSName"]
 			}

@@ -252,7 +252,7 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 
 		if _, ok := template.Resources["CFRouterLoadBalancer"]; ok {
 			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
-				OutputKey:   aws.String("CFLB"),
+				OutputKey:   aws.String("CFRouterLoadBalancer"),
 				OutputValue: aws.String("cf-lb"),
 			})
 		}

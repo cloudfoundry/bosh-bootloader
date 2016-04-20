@@ -19,11 +19,11 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2)
 
 			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveLen(2))
-			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFLB", templates.Output{
+			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFRouterLoadBalancer", templates.Output{
 				Value: templates.Ref{"CFRouterLoadBalancer"},
 			}))
 
-			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFLBURL", templates.Output{
+			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFRouterLoadBalancerURL", templates.Output{
 				Value: templates.FnGetAtt{
 					[]string{
 						"CFRouterLoadBalancer",

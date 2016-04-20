@@ -149,7 +149,7 @@ var _ = Describe("CloudConfigurator", func() {
 
 			Context("when the load balancer type is cf", func() {
 				It("generates a cloud config with a cf lb vm extension", func() {
-					cloudFormationStack.Outputs["CFLB"] = "some-cf-lb"
+					cloudFormationStack.Outputs["CFRouterLoadBalancer"] = "some-cf-lb"
 
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())

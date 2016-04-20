@@ -16,8 +16,8 @@ func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabliltyZone
 
 	return Template{
 		Outputs: map[string]Output{
-			"CFLB": {Value: Ref{"CFRouterLoadBalancer"}},
-			"CFLBURL": {
+			"CFRouterLoadBalancer": {Value: Ref{"CFRouterLoadBalancer"}},
+			"CFRouterLoadBalancerURL": {
 				Value: FnGetAtt{
 					[]string{
 						"CFRouterLoadBalancer",
