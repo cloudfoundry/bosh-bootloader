@@ -49,7 +49,7 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet4"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).To(HaveKey("WebSecurityGroup"))
-				Expect(template.Resources).To(HaveKey("WebELBLoadBalancer"))
+				Expect(template.Resources).To(HaveKey("ConcourseLoadBalancer"))
 			})
 		})
 
@@ -107,7 +107,8 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet4"))
 				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).NotTo(HaveKey("WebSecurityGroup"))
-				Expect(template.Resources).NotTo(HaveKey("WebELBLoadBalancer"))
+				Expect(template.Resources).NotTo(HaveKey("ConcourseLoadBalancer"))
+				Expect(template.Resources).NotTo(HaveKey("CFLoadBalancer"))
 			})
 		})
 

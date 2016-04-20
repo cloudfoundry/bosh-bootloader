@@ -27,7 +27,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
 	loadBalancerSubnetsTemplateBuilder := NewLoadBalancerSubnetsTemplateBuilder()
-	webELBTemplateBuilder := NewWebELBTemplateBuilder()
+	concourseELBTemplateBuilder := NewConcourseELBTemplateBuilder()
 	cfLoadBalancerTemplateBuilder := NewCFLoadBalancerTemplateBuilder()
 
 	template := Template{
@@ -50,7 +50,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.WebSecurityGroup(),
-			webELBTemplateBuilder.WebELBLoadBalancer(numberOfAvailabilityZones),
+			concourseELBTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones),
 		)
 	}
 

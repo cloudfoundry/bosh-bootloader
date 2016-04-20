@@ -87,12 +87,12 @@ var _ = Describe("bbl", func() {
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
-		By("checking that there is an lb for concourse", func() {
+		By("checking that there is a load balancer for concourse", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs["LB"]).To(ContainSubstring("WebELB"))
-			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("WebELB"))
+			Expect(stack.Outputs["LB"]).To(ContainSubstring("ConcourseELB"))
+			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("ConcourseELB"))
 		})
 
 		By("running bbl up", func() {
@@ -106,12 +106,12 @@ var _ = Describe("bbl", func() {
 			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 		})
 
-		By("checking that the concourse lb is still there", func() {
+		By("checking that the concourse load balancer is still there", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs["LB"]).To(ContainSubstring("WebELB"))
-			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("WebELB"))
+			Expect(stack.Outputs["LB"]).To(ContainSubstring("ConcourseELB"))
+			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("ConcourseELB"))
 		})
 
 		By("destroying bbl", func() {

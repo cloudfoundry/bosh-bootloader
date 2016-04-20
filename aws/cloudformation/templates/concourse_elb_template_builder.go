@@ -2,13 +2,13 @@ package templates
 
 import "fmt"
 
-type WebELBTemplateBuilder struct{}
+type ConcourseELBTemplateBuilder struct{}
 
-func NewWebELBTemplateBuilder() WebELBTemplateBuilder {
-	return WebELBTemplateBuilder{}
+func NewConcourseELBTemplateBuilder() ConcourseELBTemplateBuilder {
+	return ConcourseELBTemplateBuilder{}
 }
 
-func (t WebELBTemplateBuilder) WebELBLoadBalancer(numberOfAvailabliltyZones int) Template {
+func (t ConcourseELBTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabliltyZones int) Template {
 	subnets := []interface{}{}
 	for i := 1; i <= numberOfAvailabliltyZones; i++ {
 		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
@@ -16,18 +16,18 @@ func (t WebELBTemplateBuilder) WebELBLoadBalancer(numberOfAvailabliltyZones int)
 
 	return Template{
 		Outputs: map[string]Output{
-			"LB": {Value: Ref{"WebELBLoadBalancer"}},
+			"LB": {Value: Ref{"ConcourseLoadBalancer"}},
 			"LBURL": {
 				Value: FnGetAtt{
 					[]string{
-						"WebELBLoadBalancer",
+						"ConcourseLoadBalancer",
 						"DNSName",
 					},
 				},
 			},
 		},
 		Resources: map[string]Resource{
-			"WebELBLoadBalancer": {
+			"ConcourseLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					Subnets:        subnets,

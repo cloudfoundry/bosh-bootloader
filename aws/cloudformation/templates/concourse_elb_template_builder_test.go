@@ -7,33 +7,33 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("WebELBTemplateBuilder", func() {
-	var builder templates.WebELBTemplateBuilder
+var _ = Describe("ConcourseELBTemplateBuilder", func() {
+	var builder templates.ConcourseELBTemplateBuilder
 
 	BeforeEach(func() {
-		builder = templates.NewWebELBTemplateBuilder()
+		builder = templates.NewConcourseELBTemplateBuilder()
 	})
 
-	Describe("Web ELB Load Balancer", func() {
+	Describe("ConcourseLoadBalancer", func() {
 		It("returns a template containing the web elb load balancer", func() {
-			web_elb_load_balancer := builder.WebELBLoadBalancer(2)
+			concourseLoadBalancer := builder.ConcourseLoadBalancer(2)
 
-			Expect(web_elb_load_balancer.Outputs).To(HaveLen(2))
-			Expect(web_elb_load_balancer.Outputs).To(HaveKeyWithValue("LB", templates.Output{
-				Value: templates.Ref{"WebELBLoadBalancer"},
+			Expect(concourseLoadBalancer.Outputs).To(HaveLen(2))
+			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("LB", templates.Output{
+				Value: templates.Ref{"ConcourseLoadBalancer"},
 			}))
 
-			Expect(web_elb_load_balancer.Outputs).To(HaveKeyWithValue("LBURL", templates.Output{
+			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("LBURL", templates.Output{
 				Value: templates.FnGetAtt{
 					[]string{
-						"WebELBLoadBalancer",
+						"ConcourseLoadBalancer",
 						"DNSName",
 					},
 				},
 			}))
 
-			Expect(web_elb_load_balancer.Resources).To(HaveLen(1))
-			Expect(web_elb_load_balancer.Resources).To(HaveKeyWithValue("WebELBLoadBalancer", templates.Resource{
+			Expect(concourseLoadBalancer.Resources).To(HaveLen(1))
+			Expect(concourseLoadBalancer.Resources).To(HaveKeyWithValue("ConcourseLoadBalancer", templates.Resource{
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
