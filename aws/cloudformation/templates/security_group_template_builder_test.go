@@ -152,16 +152,16 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		})
 	})
 
-	Describe("WebSecurityGroup", func() {
-		It("returns a template containing the web security group", func() {
-			securityGroup := builder.WebSecurityGroup()
+	Describe("ConcourseSecurityGroup", func() {
+		It("returns a template", func() {
+			securityGroup := builder.ConcourseSecurityGroup()
 
 			Expect(securityGroup.Resources).To(HaveLen(3))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("WebSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("ConcourseSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
-					GroupDescription:    "Web",
+					GroupDescription:    "Concourse",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
@@ -186,22 +186,22 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromWebSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromConcourseSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"WebSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
 					IpProtocol:            "tcp",
 					FromPort:              "0",
 					ToPort:                "65535",
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromWebSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromConcourseSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"WebSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",

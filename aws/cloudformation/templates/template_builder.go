@@ -49,7 +49,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		template.Description = "Infrastructure for a BOSH deployment with a Concourse ELB."
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
-			securityGroupTemplateBuilder.WebSecurityGroup(),
+			securityGroupTemplateBuilder.ConcourseSecurityGroup(),
 			concourseELBTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones),
 		)
 	}

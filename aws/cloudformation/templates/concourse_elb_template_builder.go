@@ -31,7 +31,7 @@ func (t ConcourseELBTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabliltyZ
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					Subnets:        subnets,
-					SecurityGroups: []interface{}{Ref{"WebSecurityGroup"}},
+					SecurityGroups: []interface{}{Ref{"ConcourseSecurityGroup"}},
 
 					HealthCheck: HealthCheck{
 						HealthyThreshold:   "2",

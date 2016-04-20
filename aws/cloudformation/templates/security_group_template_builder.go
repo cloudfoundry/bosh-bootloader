@@ -137,14 +137,14 @@ func (t SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 	}
 }
 
-func (t SecurityGroupTemplateBuilder) WebSecurityGroup() Template {
+func (t SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
-			"WebSecurityGroup": Resource{
+			"ConcourseSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
-					GroupDescription:    "Web",
+					GroupDescription:    "Concourse",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						{
@@ -168,21 +168,21 @@ func (t SecurityGroupTemplateBuilder) WebSecurityGroup() Template {
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromWebSecurityGroup": Resource{
+			"InternalSecurityGroupIngressTCPfromConcourseSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: SecurityGroupIngress{
 					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"WebSecurityGroup"},
+					SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
 					IpProtocol:            "tcp",
 					FromPort:              "0",
 					ToPort:                "65535",
 				},
 			},
-			"InternalSecurityGroupIngressUDPfromWebSecurityGroup": Resource{
+			"InternalSecurityGroupIngressUDPfromConcourseSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: SecurityGroupIngress{
 					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"WebSecurityGroup"},
+					SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",

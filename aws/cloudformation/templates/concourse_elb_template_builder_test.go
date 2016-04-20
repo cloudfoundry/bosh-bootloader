@@ -37,7 +37,7 @@ var _ = Describe("ConcourseELBTemplateBuilder", func() {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
-					SecurityGroups: []interface{}{templates.Ref{"WebSecurityGroup"}},
+					SecurityGroups: []interface{}{templates.Ref{"ConcourseSecurityGroup"}},
 
 					HealthCheck: templates.HealthCheck{
 						HealthyThreshold:   "2",
