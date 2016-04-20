@@ -210,12 +210,12 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		})
 	})
 
-	Describe("RouterSecurityGroup", func() {
+	Describe("CFRouterSecurityGroup", func() {
 		It("returns a template containing the router security group", func() {
-			securityGroup := builder.RouterSecurityGroup()
+			securityGroup := builder.CFRouterSecurityGroup()
 
 			Expect(securityGroup.Resources).To(HaveLen(3))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("RouterSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFRouterSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
@@ -244,22 +244,22 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromRouterSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"RouterSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"CFRouterSecurityGroup"},
 					IpProtocol:            "tcp",
 					FromPort:              "0",
 					ToPort:                "65535",
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromRouterSecurityGroup", templates.Resource{
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: templates.SecurityGroupIngress{
 					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"RouterSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"CFRouterSecurityGroup"},
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",

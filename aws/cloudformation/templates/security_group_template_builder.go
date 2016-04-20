@@ -192,10 +192,10 @@ func (t SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 	}
 }
 
-func (SecurityGroupTemplateBuilder) RouterSecurityGroup() Template {
+func (SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
-			"RouterSecurityGroup": Resource{
+			"CFRouterSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
@@ -223,21 +223,21 @@ func (SecurityGroupTemplateBuilder) RouterSecurityGroup() Template {
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromRouterSecurityGroup": Resource{
+			"InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: SecurityGroupIngress{
 					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"RouterSecurityGroup"},
+					SourceSecurityGroupId: Ref{"CFRouterSecurityGroup"},
 					IpProtocol:            "tcp",
 					FromPort:              "0",
 					ToPort:                "65535",
 				},
 			},
-			"InternalSecurityGroupIngressUDPfromRouterSecurityGroup": Resource{
+			"InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroupIngress",
 				Properties: SecurityGroupIngress{
 					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"RouterSecurityGroup"},
+					SourceSecurityGroupId: Ref{"CFRouterSecurityGroup"},
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",

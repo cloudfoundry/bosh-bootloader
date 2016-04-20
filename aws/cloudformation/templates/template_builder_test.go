@@ -77,7 +77,7 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet3"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet4"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
-				Expect(template.Resources).To(HaveKey("RouterSecurityGroup"))
+				Expect(template.Resources).To(HaveKey("CFRouterSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("CFLoadBalancer"))
 			})
 		})

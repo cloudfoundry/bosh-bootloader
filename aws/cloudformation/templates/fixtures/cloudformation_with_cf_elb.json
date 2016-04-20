@@ -866,7 +866,7 @@
 			},
 			"Type": "AWS::EC2::VPC"
 		},
-		"RouterSecurityGroup": {
+		"CFRouterSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
 				"VpcId": {
@@ -892,28 +892,28 @@
 				}]
 			}
 		},
-		"InternalSecurityGroupIngressTCPfromRouterSecurityGroup": {
+		"InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroupIngress",
 			"Properties": {
 				"GroupId": {
 					"Ref": "InternalSecurityGroup"
 				},
 				"SourceSecurityGroupId": {
-					"Ref": "RouterSecurityGroup"
+					"Ref": "CFRouterSecurityGroup"
 				},
 				"IpProtocol": "tcp",
 				"FromPort": "0",
 				"ToPort": "65535"
 			}
 		},
-		"InternalSecurityGroupIngressUDPfromRouterSecurityGroup": {
+		"InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroupIngress",
 			"Properties": {
 				"GroupId": {
 					"Ref": "InternalSecurityGroup"
 				},
 				"SourceSecurityGroupId": {
-					"Ref": "RouterSecurityGroup"
+					"Ref": "CFRouterSecurityGroup"
 				},
 				"IpProtocol": "udp",
 				"FromPort": "0",
