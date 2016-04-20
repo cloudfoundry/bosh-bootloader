@@ -66,11 +66,11 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 			concourseLoadBalancer := builder.ConcourseLoadBalancer(2)
 
 			Expect(concourseLoadBalancer.Outputs).To(HaveLen(2))
-			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("LB", templates.Output{
+			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("ConcourseLoadBalancer", templates.Output{
 				Value: templates.Ref{"ConcourseLoadBalancer"},
 			}))
 
-			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("LBURL", templates.Output{
+			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("ConcourseLoadBalancerURL", templates.Output{
 				Value: templates.FnGetAtt{
 					[]string{
 						"ConcourseLoadBalancer",

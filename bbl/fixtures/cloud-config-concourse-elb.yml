@@ -108,4 +108,4 @@ vm_types:
 vm_extensions:
 - name: lb
   cloud_properties:
-    elbs: [some-lb]
+    elbs: [some-concourse-lb]

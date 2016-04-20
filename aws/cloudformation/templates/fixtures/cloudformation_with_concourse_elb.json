@@ -73,12 +73,12 @@
 				"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]
 			}
 		},
-		"LB": {
+		"ConcourseLoadBalancer": {
 			"Value": {
 				"Ref": "ConcourseLoadBalancer"
 			}
 		},
-		"LBURL": {
+		"ConcourseLoadBalancerURL": {
 			"Value": {
 				"Fn::GetAtt": ["ConcourseLoadBalancer", "DNSName"]
 			}

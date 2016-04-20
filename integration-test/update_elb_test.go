@@ -71,8 +71,8 @@ var _ = Describe("bbl", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs).NotTo(HaveKey("LB"))
-			Expect(stack.Outputs).NotTo(HaveKey("LBURL"))
+			Expect(stack.Outputs).NotTo(HaveKey("ConcourseLoadBalancer"))
+			Expect(stack.Outputs).NotTo(HaveKey("ConcourseLoadBalancerURL"))
 		})
 
 		By("running bbl up --lb-type=concourse", func() {
@@ -91,8 +91,8 @@ var _ = Describe("bbl", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs["LB"]).To(ContainSubstring("Concours"))
-			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("Concours"))
+			Expect(stack.Outputs["ConcourseLoadBalancer"]).To(ContainSubstring("Concours"))
+			Expect(stack.Outputs["ConcourseLoadBalancerURL"]).To(ContainSubstring("Concours"))
 		})
 
 		By("running bbl up", func() {
@@ -110,8 +110,8 @@ var _ = Describe("bbl", func() {
 			stack, err := stackManager.Describe(cloudFormationClient, state.Stack.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stack.Outputs["LB"]).To(ContainSubstring("Concours"))
-			Expect(stack.Outputs["LBURL"]).To(ContainSubstring("Concours"))
+			Expect(stack.Outputs["ConcourseLoadBalancer"]).To(ContainSubstring("Concours"))
+			Expect(stack.Outputs["ConcourseLoadBalancerURL"]).To(ContainSubstring("Concours"))
 		})
 
 		By("destroying bbl", func() {

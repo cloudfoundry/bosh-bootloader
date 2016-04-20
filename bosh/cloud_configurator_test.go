@@ -128,7 +128,7 @@ var _ = Describe("CloudConfigurator", func() {
 		Context("vm extensions", func() {
 			Context("when there is no lb", func() {
 				It("generates a cloud config with no lb vm extension", func() {
-					cloudFormationStack.Outputs["LB"] = ""
+					cloudFormationStack.Outputs["ConcourseLoadBalancer"] = ""
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -138,7 +138,7 @@ var _ = Describe("CloudConfigurator", func() {
 
 			Context("when the load balancer type is concourse", func() {
 				It("generates a cloud config with a concourse lb vm extension", func() {
-					cloudFormationStack.Outputs["LB"] = "some-lb"
+					cloudFormationStack.Outputs["ConcourseLoadBalancer"] = "some-lb"
 
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())

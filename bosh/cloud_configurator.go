@@ -67,8 +67,8 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 
 func (CloudConfigurator) populateLBs(stack cloudformation.Stack) map[string]string {
 	lbs := map[string]string{}
-	if stack.Outputs["LB"] != "" {
-		lbs["lb"] = stack.Outputs["LB"]
+	if stack.Outputs["ConcourseLoadBalancer"] != "" {
+		lbs["lb"] = stack.Outputs["ConcourseLoadBalancer"]
 	}
 
 	if stack.Outputs["CFLB"] != "" {

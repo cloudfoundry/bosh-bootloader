@@ -262,8 +262,8 @@ var _ = Describe("Up", func() {
 
 					switch lbType {
 					case "concourse":
-						stack.Outputs["LB"] = "some-lb-name"
-						stack.Outputs["LBURL"] = "some-lb-url"
+						stack.Outputs["ConcourseLoadBalancer"] = "some-lb-name"
+						stack.Outputs["ConcourseLoadBalancerURL"] = "some-lb-url"
 					case "cf":
 						stack.Outputs["RouterLB"] = "some-router-lb-name"
 						stack.Outputs["RouterLBURL"] = "some-router-lb-url"
@@ -311,15 +311,15 @@ var _ = Describe("Up", func() {
 					Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
 						Name: "bbl-aws-some-random-string",
 						Outputs: map[string]string{
-							"BOSHSecurityGroup":       "some-bosh-security-group",
-							"BOSHSubnet":              "some-bosh-subnet",
-							"BOSHSubnetAZ":            "some-bosh-subnet-az",
-							"BOSHEIP":                 "some-bosh-elastic-ip",
-							"BOSHURL":                 "some-bosh-url",
-							"BOSHUserAccessKey":       "some-bosh-user-access-key",
-							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
-							"LBURL":                   "some-lb-url",
-							"LB":                      "some-lb-name",
+							"BOSHSecurityGroup":        "some-bosh-security-group",
+							"BOSHSubnet":               "some-bosh-subnet",
+							"BOSHSubnetAZ":             "some-bosh-subnet-az",
+							"BOSHEIP":                  "some-bosh-elastic-ip",
+							"BOSHURL":                  "some-bosh-url",
+							"BOSHUserAccessKey":        "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey":  "some-bosh-user-secret-access-key",
+							"ConcourseLoadBalancerURL": "some-lb-url",
+							"ConcourseLoadBalancer":    "some-lb-name",
 						},
 					}))
 

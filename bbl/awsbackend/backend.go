@@ -245,8 +245,8 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 
 		if _, ok := template.Resources["ConcourseLoadBalancer"]; ok {
 			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
-				OutputKey:   aws.String("LB"),
-				OutputValue: aws.String("some-lb"),
+				OutputKey:   aws.String("ConcourseLoadBalancer"),
+				OutputValue: aws.String("some-concourse-lb"),
 			})
 		}
 

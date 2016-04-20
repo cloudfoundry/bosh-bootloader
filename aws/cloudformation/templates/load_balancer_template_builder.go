@@ -64,8 +64,8 @@ func (LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabliltyZon
 
 	return Template{
 		Outputs: map[string]Output{
-			"LB": {Value: Ref{"ConcourseLoadBalancer"}},
-			"LBURL": {
+			"ConcourseLoadBalancer": {Value: Ref{"ConcourseLoadBalancer"}},
+			"ConcourseLoadBalancerURL": {
 				Value: FnGetAtt{
 					[]string{
 						"ConcourseLoadBalancer",
