@@ -27,8 +27,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	securityGroupTemplateBuilder := NewSecurityGroupTemplateBuilder()
 	sshKeyPairTemplateBuilder := NewSSHKeyPairTemplateBuilder()
 	loadBalancerSubnetsTemplateBuilder := NewLoadBalancerSubnetsTemplateBuilder()
-	concourseELBTemplateBuilder := NewConcourseELBTemplateBuilder()
-	cfLoadBalancerTemplateBuilder := NewCFLoadBalancerTemplateBuilder()
+	loadBalancerTemplateBuilder := NewLoadBalancerTemplateBuilder()
 
 	template := Template{
 		AWSTemplateFormatVersion: "2010-09-09",
@@ -50,7 +49,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.ConcourseSecurityGroup(),
-			concourseELBTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones),
+			loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones),
 		)
 	}
 
@@ -59,7 +58,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.CFRouterSecurityGroup(),
-			cfLoadBalancerTemplateBuilder.CFLoadBalancer(numberOfAvailabilityZones),
+			loadBalancerTemplateBuilder.CFLoadBalancer(numberOfAvailabilityZones),
 		)
 	}
 
