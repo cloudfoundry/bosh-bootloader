@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "Infrastructure for a BOSH deployment with a CloudFoundry ELB.",
+	"Description": "Infrastructure for a BOSH deployment with a Concourse ELB.",
 	"Mappings": {
 		"AWSNATAMI": {
 			"ap-northeast-1": {
@@ -73,14 +73,14 @@
 				"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]
 			}
 		},
-		"CFLB": {
+		"LB": {
 			"Value": {
-				"Ref": "CFLoadBalancer"
+				"Ref": "ConcourseLoadBalancer"
 			}
 		},
-		"CFLBURL": {
+		"LBURL": {
 			"Value": {
-				"Fn::GetAtt": ["CFLoadBalancer", "DNSName"]
+				"Fn::GetAtt": ["ConcourseLoadBalancer", "DNSName"]
 			}
 		},
 		"InternalSubnet1AZ": {
@@ -378,24 +378,30 @@
 			},
 			"Type": "AWS::IAM::AccessKey"
 		},
-		"CFLoadBalancer": {
+		"ConcourseLoadBalancer": {
 			"Properties": {
-				"CrossZone": true,
 				"HealthCheck": {
-					"HealthyThreshold": "5",
-					"Interval": "12",
-					"Target": "tcp:80",
-					"Timeout": "2",
-					"UnhealthyThreshold": "2"
+					"HealthyThreshold": "2",
+					"Interval": "30",
+					"Target": "tcp:8080",
+					"Timeout": "5",
+					"UnhealthyThreshold": "10"
 				},
-				"Listeners": [{
-					"InstancePort": "80",
-					"InstanceProtocol": "http",
-					"LoadBalancerPort": "80",
-					"Protocol": "http"
-				}],
+				"Listeners": [
+					{
+						"InstancePort": "8080",
+						"InstanceProtocol": "tcp",
+						"LoadBalancerPort": "80",
+						"Protocol": "tcp"
+					}, {
+						"InstancePort": "2222",
+						"InstanceProtocol": "tcp",
+						"LoadBalancerPort": "2222",
+						"Protocol": "tcp"
+					}
+				],
 				"SecurityGroups": [{
-					"Ref": "CFSecurityGroup"
+					"Ref": "ConcourseSecurityGroup"
 				}],
 				"Subnets": [{
 					"Ref": "LoadBalancerSubnet1"
@@ -866,13 +872,13 @@
 			},
 			"Type": "AWS::EC2::VPC"
 		},
-		"CFRouterSecurityGroup": {
+		"ConcourseSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
 				"VpcId": {
 					"Ref": "VPC"
 				},
-				"GroupDescription": "Router",
+				"GroupDescription": "Concourse",
 				"SecurityGroupEgress": [],
 				"SecurityGroupIngress": [{
 					"CidrIp": "0.0.0.0/0",
@@ -892,28 +898,28 @@
 				}]
 			}
 		},
-		"InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": {
+		"InternalSecurityGroupIngressTCPfromConcourseSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroupIngress",
 			"Properties": {
 				"GroupId": {
 					"Ref": "InternalSecurityGroup"
 				},
 				"SourceSecurityGroupId": {
-					"Ref": "CFRouterSecurityGroup"
+					"Ref": "ConcourseSecurityGroup"
 				},
 				"IpProtocol": "tcp",
 				"FromPort": "0",
 				"ToPort": "65535"
 			}
 		},
-		"InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": {
+		"InternalSecurityGroupIngressUDPfromConcourseSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroupIngress",
 			"Properties": {
 				"GroupId": {
 					"Ref": "InternalSecurityGroup"
 				},
 				"SourceSecurityGroupId": {
-					"Ref": "CFRouterSecurityGroup"
+					"Ref": "ConcourseSecurityGroup"
 				},
 				"IpProtocol": "udp",
 				"FromPort": "0",

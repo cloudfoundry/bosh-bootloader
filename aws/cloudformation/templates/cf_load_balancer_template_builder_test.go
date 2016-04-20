@@ -37,7 +37,7 @@ var _ = Describe("CFLoadBalancerTemplateBuilder", func() {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
-					Subnets:        []interface{}{templates.Ref{"CFLoadBalancerSubnet1"}, templates.Ref{"CFLoadBalancerSubnet2"}},
+					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
 					SecurityGroups: []interface{}{templates.Ref{"CFSecurityGroup"}},
 
 					HealthCheck: templates.HealthCheck{

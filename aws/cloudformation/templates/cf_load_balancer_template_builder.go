@@ -11,7 +11,7 @@ func NewCFLoadBalancerTemplateBuilder() CFLoadBalancerTemplateBuilder {
 func (CFLoadBalancerTemplateBuilder) CFLoadBalancer(numberOfAvailabliltyZones int) Template {
 	subnets := []interface{}{}
 	for i := 1; i <= numberOfAvailabliltyZones; i++ {
-		subnets = append(subnets, Ref{fmt.Sprintf("CFLoadBalancerSubnet%d", i)})
+		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
 	}
 
 	return Template{

@@ -175,34 +175,34 @@ type IAMAccessKey struct {
 }
 
 type VPC struct {
-	CidrBlock Ref   `json:",omitempty"`
-	Tags      []Tag `json:",omitempty"`
+	CidrBlock Ref   `json:"CidrBlock,omitempty"`
+	Tags      []Tag `json:"Tags,omitempty"`
 }
 
 type VPCGatewayAttachment struct {
-	VpcId             Ref `json:",omitempty"`
-	InternetGatewayId Ref `json:",omitempty"`
+	VpcId             Ref `json:"VpcId,omitempty"`
+	InternetGatewayId Ref `json:"InternetGatewayId,omitempty"`
 }
 
 type ElasticLoadBalancingLoadBalancer struct {
-	Subnets        []interface{} `json:",omitempty"`
-	SecurityGroups []interface{} `json:",omitempty"`
-	HealthCheck    HealthCheck   `json:",omitempty"`
-	Listeners      []Listener    `json:',omitempty"`
-	CrossZone      bool
+	Subnets        []interface{} `json:"Subnets,omitempty"`
+	SecurityGroups []interface{} `json:"SecurityGroups,omitempty"`
+	HealthCheck    HealthCheck   `json:"HealthCheck,omitempty"`
+	Listeners      []Listener    `json:"Listeners,omitempty"`
+	CrossZone      bool          `json:"CrossZone,omitempty"`
 }
 
 type Listener struct {
-	Protocol         string `json:",omitempty"`
-	LoadBalancerPort string `json:",omitempty"`
-	InstanceProtocol string `json:",omitempty"`
-	InstancePort     string `json:",omitempty"`
+	Protocol         string `json:"Protocol,omitempty"`
+	LoadBalancerPort string `json:"LoadBalancerPort,omitempty"`
+	InstanceProtocol string `json:"InstanceProtocol,omitempty"`
+	InstancePort     string `json:"InstancePort,omitempty"`
 }
 
 type HealthCheck struct {
-	HealthyThreshold   string `json",omitempty"`
-	Interval           string `json",omitempty"`
-	Target             string `json",omitempty"`
-	Timeout            string `json",omitempty"`
-	UnhealthyThreshold string `json",omitempty"`
+	HealthyThreshold   string `json:"HealthyThreshold,omitempty"`
+	Interval           string `json:"Interval,omitempty"`
+	Target             string `json:"Target,omitempty"`
+	Timeout            string `json:"Timeout,omitempty"`
+	UnhealthyThreshold string `json:"UnhealthyThreshold,omitempty"`
 }

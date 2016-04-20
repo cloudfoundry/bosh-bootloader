@@ -135,6 +135,7 @@ var _ = Describe("TemplateBuilder", func() {
 		},
 			Entry("without load balancer", "", "cloudformation_without_elb.json"),
 			Entry("with cf load balancer", "cf", "cloudformation_with_cf_elb.json"),
+			Entry("with concourse load balancer", "concourse", "cloudformation_with_concourse_elb.json"),
 		)
 	})
 })
