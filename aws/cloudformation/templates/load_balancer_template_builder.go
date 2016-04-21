@@ -8,30 +8,15 @@ func NewLoadBalancerTemplateBuilder() LoadBalancerTemplateBuilder {
 	return LoadBalancerTemplateBuilder{}
 }
 
-func (LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailabilityZones int) Template {
-	subnets := []interface{}{}
-	for i := 1; i <= numberOfAvailabilityZones; i++ {
-		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
-	}
-
+func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailabilityZones int) Template {
 	return Template{
-		Outputs: map[string]Output{
-			"CFSSHProxyLoadBalancer": {Value: Ref{"CFSSHProxyLoadBalancer"}},
-			"CFSSHProxyLoadBalancerURL": {
-				Value: FnGetAtt{
-					[]string{
-						"CFSSHProxyLoadBalancer",
-						"DNSName",
-					},
-				},
-			},
-		},
+		Outputs: l.outputsFor("CFSSHProxyLoadBalancer"),
 		Resources: map[string]Resource{
 			"CFSSHProxyLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
-					Subnets:        subnets,
+					Subnets:        l.loadBalancerSubnets(numberOfAvailabilityZones),
 					SecurityGroups: []interface{}{Ref{"CFSSHProxySecurityGroup"}},
 
 					HealthCheck: HealthCheck{
@@ -56,30 +41,15 @@ func (LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailabilityZo
 	}
 }
 
-func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZones int) Template {
-	subnets := []interface{}{}
-	for i := 1; i <= numberOfAvailabilityZones; i++ {
-		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
-	}
-
+func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZones int) Template {
 	return Template{
-		Outputs: map[string]Output{
-			"CFRouterLoadBalancer": {Value: Ref{"CFRouterLoadBalancer"}},
-			"CFRouterLoadBalancerURL": {
-				Value: FnGetAtt{
-					[]string{
-						"CFRouterLoadBalancer",
-						"DNSName",
-					},
-				},
-			},
-		},
+		Outputs: l.outputsFor("CFRouterLoadBalancer"),
 		Resources: map[string]Resource{
 			"CFRouterLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
-					Subnets:        subnets,
+					Subnets:        l.loadBalancerSubnets(numberOfAvailabilityZones),
 					SecurityGroups: []interface{}{Ref{"CFRouterSecurityGroup"}},
 
 					HealthCheck: HealthCheck{
@@ -104,29 +74,14 @@ func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZone
 	}
 }
 
-func (LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabliltyZones int) Template {
-	subnets := []interface{}{}
-	for i := 1; i <= numberOfAvailabliltyZones; i++ {
-		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
-	}
-
+func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZones int) Template {
 	return Template{
-		Outputs: map[string]Output{
-			"ConcourseLoadBalancer": {Value: Ref{"ConcourseLoadBalancer"}},
-			"ConcourseLoadBalancerURL": {
-				Value: FnGetAtt{
-					[]string{
-						"ConcourseLoadBalancer",
-						"DNSName",
-					},
-				},
-			},
-		},
+		Outputs: l.outputsFor("ConcourseLoadBalancer"),
 		Resources: map[string]Resource{
 			"ConcourseLoadBalancer": {
 				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
-					Subnets:        subnets,
+					Subnets:        l.loadBalancerSubnets(numberOfAvailabilityZones),
 					SecurityGroups: []interface{}{Ref{"ConcourseSecurityGroup"}},
 
 					HealthCheck: HealthCheck{
@@ -155,4 +110,27 @@ func (LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabliltyZon
 			},
 		},
 	}
+}
+
+func (LoadBalancerTemplateBuilder) outputsFor(loadBalancerName string) map[string]Output {
+	return map[string]Output{
+		loadBalancerName: {Value: Ref{loadBalancerName}},
+		loadBalancerName + "URL": {
+			Value: FnGetAtt{
+				[]string{
+					loadBalancerName,
+					"DNSName",
+				},
+			},
+		},
+	}
+}
+
+func (LoadBalancerTemplateBuilder) loadBalancerSubnets(numberOfAvailabilityZones int) []interface{} {
+	subnets := []interface{}{}
+	for i := 1; i <= numberOfAvailabilityZones; i++ {
+		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
+	}
+
+	return subnets
 }
