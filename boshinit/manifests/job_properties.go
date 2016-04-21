@@ -44,14 +44,16 @@ type BlobstoreJobProperties struct {
 }
 
 type DirectorJobProperties struct {
-	Address        string                   `yaml:"address"`
-	Name           string                   `yaml:"name"`
-	CPIJob         string                   `yaml:"cpi_job"`
-	MaxThreads     int                      `yaml:"max_threads"`
-	DB             PostgresProperties       `yaml:"db"`
-	UserManagement UserManagementProperties `yaml:"user_management"`
-	SSL            SSLProperties            `yaml:"ssl"`
+	Address             string                   `yaml:"address"`
+	Name                string                   `yaml:"name"`
+	CPIJob              string                   `yaml:"cpi_job"`
+	MaxThreads          int                      `yaml:"max_threads"`
+	EnablePostDeploy    bool                     `yaml:"enable_post_deploy"`	
+	DB                  PostgresProperties       `yaml:"db"`
+	UserManagement      UserManagementProperties `yaml:"user_management"`
+	SSL                 SSLProperties            `yaml:"ssl"`
 }
+
 
 type HMJobProperties struct {
 	DirectorAccount    Credentials `yaml:"director_account"`

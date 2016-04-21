@@ -154,6 +154,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				Name:       "my-bosh",
 				CPIJob:     "aws_cpi",
 				MaxThreads: 10,
+				EnablePostDeploy: true,
 				DB: manifests.PostgresProperties{
 					ListenAddress: "127.0.0.1",
 					Host:          "127.0.0.1",

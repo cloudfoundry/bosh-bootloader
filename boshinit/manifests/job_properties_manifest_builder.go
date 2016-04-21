@@ -101,6 +101,7 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 		Name:       "my-bosh",
 		CPIJob:     "aws_cpi",
 		MaxThreads: 10,
+		EnablePostDeploy: true,
 		DB:         j.Postgres(),
 		UserManagement: UserManagementProperties{
 			Provider: "local",
