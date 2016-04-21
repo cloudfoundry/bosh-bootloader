@@ -6,7 +6,7 @@ func NewSecurityGroupTemplateBuilder() SecurityGroupTemplateBuilder {
 	return SecurityGroupTemplateBuilder{}
 }
 
-func (t SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
+func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
 			"InternalSecurityGroup": Resource{
@@ -16,70 +16,21 @@ func (t SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 					GroupDescription:    "Internal",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							IpProtocol: "tcp",
-							FromPort:   "0",
-							ToPort:     "65535",
-						},
-						{
-							IpProtocol: "udp",
-							FromPort:   "0",
-							ToPort:     "65535",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "icmp",
-							FromPort:   "-1",
-							ToPort:     "-1",
-						},
+						s.securityGroupIngress(nil, "tcp", "0", "65535", nil),
+						s.securityGroupIngress(nil, "udp", "0", "65535", nil),
+						s.securityGroupIngress("0.0.0.0/0", "icmp", "-1", "-1", nil),
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromBOSH": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"BOSHSecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
-			"InternalSecurityGroupIngressUDPfromBOSH": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"BOSHSecurityGroup"},
-					IpProtocol:            "udp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
-			"InternalSecurityGroupIngressTCPfromSelf": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
-			"InternalSecurityGroupIngressUDPfromSelf": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-					IpProtocol:            "udp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
+			"InternalSecurityGroupIngressTCPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "tcp"),
+			"InternalSecurityGroupIngressUDPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "udp"),
+			"InternalSecurityGroupIngressTCPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "tcp"),
+			"InternalSecurityGroupIngressUDPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "udp"),
 		},
 	}
 }
 
-func (t SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
+func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 	return Template{
 		Parameters: map[string]Parameter{
 			"BOSHInboundCIDR": Parameter{
@@ -96,37 +47,11 @@ func (t SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 					GroupDescription:    "BOSH",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							CidrIp:     Ref{"BOSHInboundCIDR"},
-							IpProtocol: "tcp",
-							FromPort:   "22",
-							ToPort:     "22",
-						},
-
-						{
-							CidrIp:     Ref{"BOSHInboundCIDR"},
-							IpProtocol: "tcp",
-							FromPort:   "6868",
-							ToPort:     "6868",
-						},
-						{
-							CidrIp:     Ref{"BOSHInboundCIDR"},
-							IpProtocol: "tcp",
-							FromPort:   "25555",
-							ToPort:     "25555",
-						},
-						{
-							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "0",
-							ToPort:                "65535",
-						},
-						{
-							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-							IpProtocol:            "udp",
-							FromPort:              "0",
-							ToPort:                "65535",
-						},
+						s.securityGroupIngress(Ref{"BOSHInboundCIDR"}, "tcp", "22", "22", nil),
+						s.securityGroupIngress(Ref{"BOSHInboundCIDR"}, "tcp", "6868", "6868", nil),
+						s.securityGroupIngress(Ref{"BOSHInboundCIDR"}, "tcp", "25555", "25555", nil),
+						s.securityGroupIngress(nil, "tcp", "0", "65535", Ref{"InternalSecurityGroup"}),
+						s.securityGroupIngress(nil, "udp", "0", "65535", Ref{"InternalSecurityGroup"}),
 					},
 				},
 			},
@@ -137,7 +62,7 @@ func (t SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 	}
 }
 
-func (t SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
+func (s SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
 			"ConcourseSecurityGroup": Resource{
@@ -147,52 +72,19 @@ func (t SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 					GroupDescription:    "Concourse",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "80",
-							ToPort:     "80",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "2222",
-							ToPort:     "2222",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "443",
-							ToPort:     "443",
-						},
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "443", "443", nil),
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromConcourseSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
-			"InternalSecurityGroupIngressUDPfromConcourseSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
-					IpProtocol:            "udp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
+			"InternalSecurityGroupIngressTCPfromConcourseSecurityGroup": s.internalSecurityGroupIngress("ConcourseSecurityGroup", "tcp"),
+			"InternalSecurityGroupIngressUDPfromConcourseSecurityGroup": s.internalSecurityGroupIngress("ConcourseSecurityGroup", "udp"),
 		},
 	}
 }
 
-func (SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
+func (s SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
 			"CFRouterSecurityGroup": Resource{
@@ -202,52 +94,19 @@ func (SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 					GroupDescription:    "Router",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "80",
-							ToPort:     "80",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "2222",
-							ToPort:     "2222",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "443",
-							ToPort:     "443",
-						},
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "443", "443", nil),
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"CFRouterSecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
-			"InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"CFRouterSecurityGroup"},
-					IpProtocol:            "udp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
+			"InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": s.internalSecurityGroupIngress("CFRouterSecurityGroup", "tcp"),
+			"InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": s.internalSecurityGroupIngress("CFRouterSecurityGroup", "udp"),
 		},
 	}
 }
 
-func (SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
+func (s SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
 			"CFSSHProxySecurityGroup": Resource{
@@ -257,25 +116,37 @@ func (SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
 					GroupDescription:    "CFSSHProxy",
 					SecurityGroupEgress: []string{},
 					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "2222",
-							ToPort:     "2222",
-						},
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: SecurityGroupIngress{
-					GroupId:               Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: Ref{"CFSSHProxySecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			},
+			"InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup": s.internalSecurityGroupIngress("CFSSHProxySecurityGroup", "tcp"),
 		},
+	}
+}
+
+func (SecurityGroupTemplateBuilder) internalSecurityGroupIngress(sourceSecurityGroupId, ipProtocol string) Resource {
+	return Resource{
+		Type: "AWS::EC2::SecurityGroupIngress",
+		Properties: SecurityGroupIngress{
+			GroupId:               Ref{"InternalSecurityGroup"},
+			SourceSecurityGroupId: Ref{sourceSecurityGroupId},
+			IpProtocol:            ipProtocol,
+			FromPort:              "0",
+			ToPort:                "65535",
+		},
+	}
+}
+
+func (SecurityGroupTemplateBuilder) securityGroupIngress(
+	cidrIP interface{}, ipProtocol string, fromPort string, toPort string,
+	sourceSecurityGroupId interface{}) SecurityGroupIngress {
+
+	return SecurityGroupIngress{
+		CidrIp:                cidrIP,
+		IpProtocol:            ipProtocol,
+		FromPort:              fromPort,
+		ToPort:                toPort,
+		SourceSecurityGroupId: sourceSecurityGroupId,
 	}
 }
