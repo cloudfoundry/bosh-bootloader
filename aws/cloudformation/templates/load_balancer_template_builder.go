@@ -8,9 +8,57 @@ func NewLoadBalancerTemplateBuilder() LoadBalancerTemplateBuilder {
 	return LoadBalancerTemplateBuilder{}
 }
 
-func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabliltyZones int) Template {
+func (LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailabilityZones int) Template {
 	subnets := []interface{}{}
-	for i := 1; i <= numberOfAvailabliltyZones; i++ {
+	for i := 1; i <= numberOfAvailabilityZones; i++ {
+		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
+	}
+
+	return Template{
+		Outputs: map[string]Output{
+			"CFSSHProxyLoadBalancer": {Value: Ref{"CFSSHProxyLoadBalancer"}},
+			"CFSSHProxyLoadBalancerURL": {
+				Value: FnGetAtt{
+					[]string{
+						"CFSSHProxyLoadBalancer",
+						"DNSName",
+					},
+				},
+			},
+		},
+		Resources: map[string]Resource{
+			"CFSSHProxyLoadBalancer": {
+				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Properties: ElasticLoadBalancingLoadBalancer{
+					CrossZone:      true,
+					Subnets:        subnets,
+					SecurityGroups: []interface{}{Ref{"CFSSHProxySecurityGroup"}},
+
+					HealthCheck: HealthCheck{
+						HealthyThreshold:   "5",
+						Interval:           "6",
+						Target:             "tcp:2222",
+						Timeout:            "2",
+						UnhealthyThreshold: "2",
+					},
+
+					Listeners: []Listener{
+						{
+							Protocol:         "tcp",
+							LoadBalancerPort: "2222",
+							InstanceProtocol: "tcp",
+							InstancePort:     "2222",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZones int) Template {
+	subnets := []interface{}{}
+	for i := 1; i <= numberOfAvailabilityZones; i++ {
 		subnets = append(subnets, Ref{fmt.Sprintf("LoadBalancerSubnet%d", i)})
 	}
 
@@ -32,7 +80,7 @@ func (LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabliltyZone
 				Properties: ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
 					Subnets:        subnets,
-					SecurityGroups: []interface{}{Ref{"CFSecurityGroup"}},
+					SecurityGroups: []interface{}{Ref{"CFRouterSecurityGroup"}},
 
 					HealthCheck: HealthCheck{
 						HealthyThreshold:   "5",

@@ -79,6 +79,8 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).To(HaveKey("CFRouterSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("CFRouterLoadBalancer"))
+				Expect(template.Resources).To(HaveKey("CFSSHProxySecurityGroup"))
+				Expect(template.Resources).To(HaveKey("CFSSHProxyLoadBalancer"))
 			})
 		})
 
@@ -109,8 +111,10 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).NotTo(HaveKey("ConcourseSecurityGroup"))
 				Expect(template.Resources).NotTo(HaveKey("ConcourseLoadBalancer"))
-				Expect(template.Resources).NotTo(HaveKey("CFSecurityGroup"))
+				Expect(template.Resources).NotTo(HaveKey("CFRouterSecurityGroup"))
 				Expect(template.Resources).NotTo(HaveKey("CFRouterLoadBalancer"))
+				Expect(template.Resources).NotTo(HaveKey("CFSSHProxySecurityGroup"))
+				Expect(template.Resources).NotTo(HaveKey("CFSSHProxyLoadBalancer"))
 			})
 		})
 

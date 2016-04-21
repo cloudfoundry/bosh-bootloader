@@ -38,7 +38,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
-					SecurityGroups: []interface{}{templates.Ref{"CFSecurityGroup"}},
+					SecurityGroups: []interface{}{templates.Ref{"CFRouterSecurityGroup"}},
 
 					HealthCheck: templates.HealthCheck{
 						HealthyThreshold:   "5",
@@ -54,6 +54,53 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 							LoadBalancerPort: "80",
 							InstanceProtocol: "http",
 							InstancePort:     "80",
+						},
+					},
+				},
+			}))
+		})
+	})
+
+	Describe("CFSSHProxyLoadBalancer", func() {
+		It("returns a template containing the cf ssh proxy load balancer", func() {
+			cfSSHProxyLoadBalancerTemplate := builder.CFSSHProxyLoadBalancer(2)
+
+			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveLen(2))
+			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFSSHProxyLoadBalancer", templates.Output{
+				Value: templates.Ref{"CFSSHProxyLoadBalancer"},
+			}))
+
+			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFSSHProxyLoadBalancerURL", templates.Output{
+				Value: templates.FnGetAtt{
+					[]string{
+						"CFSSHProxyLoadBalancer",
+						"DNSName",
+					},
+				},
+			}))
+
+			Expect(cfSSHProxyLoadBalancerTemplate.Resources).To(HaveLen(1))
+			Expect(cfSSHProxyLoadBalancerTemplate.Resources).To(HaveKeyWithValue("CFSSHProxyLoadBalancer", templates.Resource{
+				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Properties: templates.ElasticLoadBalancingLoadBalancer{
+					CrossZone:      true,
+					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
+					SecurityGroups: []interface{}{templates.Ref{"CFSSHProxySecurityGroup"}},
+
+					HealthCheck: templates.HealthCheck{
+						HealthyThreshold:   "5",
+						Interval:           "6",
+						Target:             "tcp:2222",
+						Timeout:            "2",
+						UnhealthyThreshold: "2",
+					},
+
+					Listeners: []templates.Listener{
+						{
+							Protocol:         "tcp",
+							LoadBalancerPort: "2222",
+							InstanceProtocol: "tcp",
+							InstancePort:     "2222",
 						},
 					},
 				},

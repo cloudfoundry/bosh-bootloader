@@ -267,4 +267,39 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 			}))
 		})
 	})
+
+	Describe("CFSSHProxySecurityGroup", func() {
+		It("returns a template containing the cf ssh proxy security group", func() {
+			securityGroup := builder.CFSSHProxySecurityGroup()
+
+			Expect(securityGroup.Resources).To(HaveLen(2))
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFSSHProxySecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: templates.SecurityGroup{
+					VpcId:               templates.Ref{"VPC"},
+					GroupDescription:    "CFSSHProxy",
+					SecurityGroupEgress: []string{},
+					SecurityGroupIngress: []templates.SecurityGroupIngress{
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "2222",
+							ToPort:     "2222",
+						},
+					},
+				},
+			}))
+
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: templates.SecurityGroupIngress{
+					GroupId:               templates.Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: templates.Ref{"CFSSHProxySecurityGroup"},
+					IpProtocol:            "tcp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			}))
+		})
+	})
 })

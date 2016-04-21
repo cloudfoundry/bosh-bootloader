@@ -246,3 +246,36 @@ func (SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 		},
 	}
 }
+
+func (SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
+	return Template{
+		Resources: map[string]Resource{
+			"CFSSHProxySecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: SecurityGroup{
+					VpcId:               Ref{"VPC"},
+					GroupDescription:    "CFSSHProxy",
+					SecurityGroupEgress: []string{},
+					SecurityGroupIngress: []SecurityGroupIngress{
+						{
+							CidrIp:     "0.0.0.0/0",
+							IpProtocol: "tcp",
+							FromPort:   "2222",
+							ToPort:     "2222",
+						},
+					},
+				},
+			},
+			"InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroupIngress",
+				Properties: SecurityGroupIngress{
+					GroupId:               Ref{"InternalSecurityGroup"},
+					SourceSecurityGroupId: Ref{"CFSSHProxySecurityGroup"},
+					IpProtocol:            "tcp",
+					FromPort:              "0",
+					ToPort:                "65535",
+				},
+			},
+		},
+	}
+}

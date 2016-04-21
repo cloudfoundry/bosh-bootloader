@@ -83,6 +83,16 @@
 				"Fn::GetAtt": ["CFRouterLoadBalancer", "DNSName"]
 			}
 		},
+		"CFSSHProxyLoadBalancer": {
+			"Value": {
+				"Ref": "CFSSHProxyLoadBalancer"
+			}
+		},
+		"CFSSHProxyLoadBalancerURL": {
+			"Value": {
+				"Fn::GetAtt": ["CFSSHProxyLoadBalancer", "DNSName"]
+			}
+		},
 		"InternalSubnet1AZ": {
 			"Value": {
 				"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]
@@ -395,7 +405,7 @@
 					"Protocol": "http"
 				}],
 				"SecurityGroups": [{
-					"Ref": "CFSecurityGroup"
+					"Ref": "CFRouterSecurityGroup"
 				}],
 				"Subnets": [{
 					"Ref": "LoadBalancerSubnet1"
@@ -408,6 +418,69 @@
 				}]
 			},
 			"Type": "AWS::ElasticLoadBalancing::LoadBalancer"
+		},
+		"CFSSHProxyLoadBalancer": {
+			"Properties": {
+				"CrossZone": true,
+				"HealthCheck": {
+					"HealthyThreshold": "5",
+					"Interval": "6",
+					"Target": "tcp:2222",
+					"Timeout": "2",
+					"UnhealthyThreshold": "2"
+				},
+				"Listeners": [{
+					"InstancePort": "2222",
+					"InstanceProtocol": "tcp",
+					"LoadBalancerPort": "2222",
+					"Protocol": "tcp"
+				}],
+				"SecurityGroups": [{
+					"Ref": "CFSSHProxySecurityGroup"
+				}],
+				"Subnets": [{
+					"Ref": "LoadBalancerSubnet1"
+				}, {
+					"Ref": "LoadBalancerSubnet2"
+				}, {
+					"Ref": "LoadBalancerSubnet3"
+				}, {
+					"Ref": "LoadBalancerSubnet4"
+				}]
+			},
+			"Type": "AWS::ElasticLoadBalancing::LoadBalancer"
+		},
+		"CFSSHProxySecurityGroup": {
+			"Properties": {
+				"GroupDescription": "CFSSHProxy",
+				"SecurityGroupEgress": [],
+				"SecurityGroupIngress": [
+					{
+						"CidrIp": "0.0.0.0/0",
+						"FromPort": "2222",
+						"IpProtocol": "tcp",
+						"ToPort": "2222"
+					}
+				],
+				"VpcId": {
+					"Ref": "VPC"
+				}
+			},
+			"Type": "AWS::EC2::SecurityGroup"
+		},
+		"InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Properties": {
+				"GroupId": {
+					"Ref": "InternalSecurityGroup"
+				},
+				"SourceSecurityGroupId": {
+					"Ref": "CFSSHProxySecurityGroup"
+				},
+				"IpProtocol": "tcp",
+				"FromPort": "0",
+				"ToPort": "65535"
+			}
 		},
 		"LoadBalancerRoute": {
 			"DependsOn": "VPCGatewayInternetGateway",
