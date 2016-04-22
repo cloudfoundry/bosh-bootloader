@@ -106,6 +106,9 @@ vm_types:
     instance_type: t2.micro
   name: t2.micro
 vm_extensions:
-- name: cf-lb
+- name: router-lb
   cloud_properties:
-    elbs: [cf-lb]
+    elbs: [some-cf-router-lb]
+- name: ssh-proxy-lb
+  cloud_properties:
+    elbs: [some-cf-ssh-proxy-lb]

@@ -111,6 +111,9 @@ compilation:
   reuse_compilation_vms: true
   vm_type: c3.large
 vm_extensions:
-- name: lb
+- name: first-lb
   cloud_properties:
-    elbs: [some-lb]
+    elbs: [some-lb-1]
+- name: second-lb
+  cloud_properties:
+    elbs: [some-lb-2]

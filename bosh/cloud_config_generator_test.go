@@ -53,7 +53,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			buf, err := ioutil.ReadFile("fixtures/cloud_config_no_lb.yml")
+			buf, err := ioutil.ReadFile("fixtures/cloud_config_without_load_balancers.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := candiedyaml.Marshal(cloudConfig)
@@ -63,10 +63,11 @@ var _ = Describe("CloudConfigGenerator", func() {
 		})
 
 		Context("vm extensions", func() {
-			It("generates a cloud config with a concourse lb vm extension", func() {
+			It("generates a cloud config with load balancer vm extensions", func() {
 				cloudConfig, err := cloudConfigGenerator.Generate(bosh.CloudConfigInput{
 					LBs: map[string]string{
-						"lb": "some-lb",
+						"first-lb":  "some-lb-1",
+						"second-lb": "some-lb-2",
 					},
 					AZs: []string{"us-east-1a", "us-east-1b", "us-east-1c"},
 					Subnets: []bosh.SubnetInput{
@@ -98,51 +99,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				buf, err := ioutil.ReadFile("fixtures/cloud_config_concourse_lb.yml")
-				Expect(err).NotTo(HaveOccurred())
-
-				output, err := candiedyaml.Marshal(cloudConfig)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(output).To(MatchYAML(string(buf)))
-			})
-
-			It("generates a cloud config with a cf lb vm extension", func() {
-				cloudConfig, err := cloudConfigGenerator.Generate(bosh.CloudConfigInput{
-					LBs: map[string]string{
-						"cf-lb": "cf-lb",
-					},
-					AZs: []string{"us-east-1a", "us-east-1b", "us-east-1c"},
-					Subnets: []bosh.SubnetInput{
-						{
-							AZ:     "us-east-1a",
-							Subnet: "some-subnet-1",
-							CIDR:   "10.0.16.0/20",
-							SecurityGroups: []string{
-								"some-security-group-1",
-							},
-						},
-						{
-							AZ:     "us-east-1b",
-							Subnet: "some-subnet-2",
-							CIDR:   "10.0.32.0/20",
-							SecurityGroups: []string{
-								"some-security-group-2",
-							},
-						},
-						{
-							AZ:     "us-east-1c",
-							Subnet: "some-subnet-3",
-							CIDR:   "10.0.48.0/20",
-							SecurityGroups: []string{
-								"some-security-group-3",
-							},
-						},
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				buf, err := ioutil.ReadFile("fixtures/cloud_config_cf_lb.yml")
+				buf, err := ioutil.ReadFile("fixtures/cloud_config_with_load_balancers.yml")
 				Expect(err).NotTo(HaveOccurred())
 
 				output, err := candiedyaml.Marshal(cloudConfig)

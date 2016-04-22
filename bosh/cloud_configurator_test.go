@@ -148,13 +148,15 @@ var _ = Describe("CloudConfigurator", func() {
 			})
 
 			Context("when the load balancer type is cf", func() {
-				It("generates a cloud config with a cf lb vm extension", func() {
-					cloudFormationStack.Outputs["CFRouterLoadBalancer"] = "some-cf-lb"
+				It("generates a cloud config with router-lb and ssh-proxy-lb vm extensions", func() {
+					cloudFormationStack.Outputs["CFRouterLoadBalancer"] = "some-cf-router-load-balancer"
+					cloudFormationStack.Outputs["CFSSHProxyLoadBalancer"] = "some-cf-ssh-proxy-load-balancer"
 
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("cf-lb", "some-cf-lb"))
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("router-lb", "some-cf-router-load-balancer"))
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("ssh-proxy-lb", "some-cf-ssh-proxy-load-balancer"))
 				})
 			})
 		})
