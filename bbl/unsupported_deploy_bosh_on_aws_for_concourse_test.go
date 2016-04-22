@@ -17,6 +17,7 @@ import (
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
@@ -207,140 +208,42 @@ var _ = Describe("bbl", func() {
 			})
 		})
 
-		Context("cloud config", func() {
-			Context("when no elb is specified", func() {
-				It("applies the cloud config", func() {
-					contents, err := ioutil.ReadFile("fixtures/cloud-config-no-elb.yml")
-					Expect(err).NotTo(HaveOccurred())
+		DescribeTable("cloud config", func(lbType, fixtureLocation string) {
+			contents, err := ioutil.ReadFile(fixtureLocation)
+			Expect(err).NotTo(HaveOccurred())
 
-					args := []string{
-						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-						"--aws-access-key-id", "some-access-key",
-						"--aws-secret-access-key", "some-access-secret",
-						"--aws-region", "some-region",
-						"--state-dir", tempDirectory,
-						"unsupported-deploy-bosh-on-aws-for-concourse",
-					}
+			args := []string{
+				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+				"--aws-access-key-id", "some-access-key",
+				"--aws-secret-access-key", "some-access-secret",
+				"--aws-region", "some-region",
+				"--state-dir", tempDirectory,
+				"unsupported-deploy-bosh-on-aws-for-concourse",
+				"--lb-type", lbType,
+			}
 
-					session := executeCommand(args, 0)
-					stdout := session.Out.Contents()
+			session := executeCommand(args, 0)
+			stdout := session.Out.Contents()
 
-					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-				})
+			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+
+			By("executing idempotently", func() {
+				args = []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"unsupported-deploy-bosh-on-aws-for-concourse",
+				}
+
+				executeCommand(args, 0)
+				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 			})
-
-			Context("when elb type is concourse", func() {
-				It("applies the cloud config", func() {
-					contents, err := ioutil.ReadFile("fixtures/cloud-config-concourse-elb.yml")
-					Expect(err).NotTo(HaveOccurred())
-
-					args := []string{
-						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-						"--aws-access-key-id", "some-access-key",
-						"--aws-secret-access-key", "some-access-secret",
-						"--aws-region", "some-region",
-						"--state-dir", tempDirectory,
-						"unsupported-deploy-bosh-on-aws-for-concourse",
-						"--lb-type", "concourse",
-					}
-
-					session := executeCommand(args, 0)
-					stdout := session.Out.Contents()
-
-					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-				})
-
-				It("idempotently applies the cloud config", func() {
-					contents, err := ioutil.ReadFile("fixtures/cloud-config-concourse-elb.yml")
-					Expect(err).NotTo(HaveOccurred())
-
-					By("invoking bbl with the lb-type flag", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--aws-access-key-id", "some-access-key",
-							"--aws-secret-access-key", "some-access-secret",
-							"--aws-region", "some-region",
-							"--state-dir", tempDirectory,
-							"unsupported-deploy-bosh-on-aws-for-concourse",
-							"--lb-type", "concourse",
-						}
-
-						executeCommand(args, 0)
-						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-					})
-
-					By("invoking bbl without the lb-type", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--state-dir", tempDirectory,
-							"unsupported-deploy-bosh-on-aws-for-concourse",
-						}
-
-						executeCommand(args, 0)
-						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-					})
-				})
-			})
-
-			Context("when elb type is cf", func() {
-				It("applies the cloud config", func() {
-					contents, err := ioutil.ReadFile("fixtures/cloud-config-cf-elb.yml")
-					Expect(err).NotTo(HaveOccurred())
-
-					args := []string{
-						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-						"--aws-access-key-id", "some-access-key",
-						"--aws-secret-access-key", "some-access-secret",
-						"--aws-region", "some-region",
-						"--state-dir", tempDirectory,
-						"unsupported-deploy-bosh-on-aws-for-concourse",
-						"--lb-type", "cf",
-					}
-
-					session := executeCommand(args, 0)
-					stdout := session.Out.Contents()
-
-					Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-					Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-				})
-
-				It("idempotently applies the cloud config", func() {
-					contents, err := ioutil.ReadFile("fixtures/cloud-config-cf-elb.yml")
-					Expect(err).NotTo(HaveOccurred())
-
-					By("invoking bbl with the lb-type flag", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--aws-access-key-id", "some-access-key",
-							"--aws-secret-access-key", "some-access-secret",
-							"--aws-region", "some-region",
-							"--state-dir", tempDirectory,
-							"unsupported-deploy-bosh-on-aws-for-concourse",
-							"--lb-type", "cf",
-						}
-
-						executeCommand(args, 0)
-						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-					})
-
-					By("invoking bbl without the lb-type", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--state-dir", tempDirectory,
-							"unsupported-deploy-bosh-on-aws-for-concourse",
-						}
-
-						executeCommand(args, 0)
-						Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-					})
-				})
-			})
-		})
+		},
+			Entry("generates a cloud config with no lb type", "", "fixtures/cloud-config-no-elb.yml"),
+			Entry("generates a cloud config with cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
+			Entry("generates a cloud config with concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
+		)
 	})
 })
 
