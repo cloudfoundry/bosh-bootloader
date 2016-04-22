@@ -87,7 +87,7 @@ func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, stat
 		}
 	}
 
-	d.logger.Step("destroying infrastructure")
+	d.logger.Step("destroying BOSH director and AWS stack")
 
 	cloudFormationClient, ec2Client, err := d.createAWSClients(state, globalFlags)
 	if err != nil {

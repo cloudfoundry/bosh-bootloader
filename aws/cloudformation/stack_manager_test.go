@@ -425,7 +425,7 @@ var _ = Describe("StackManager", func() {
 			stubDescribeStacksCall(startState, endState, cloudFormationClient)
 
 			err := manager.WaitForCompletion(cloudFormationClient, "some-stack-name", 0*time.Millisecond, action)
-			Expect(err).To(MatchError(`Failed creating cloudformation stack 'some-stack-name'.
+			Expect(err).To(MatchError(`CloudFormation failure on stack 'some-stack-name'.
 Check the AWS console for error events related to this stack,
 and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues.`))
 		},

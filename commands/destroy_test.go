@@ -66,7 +66,7 @@ var _ = Describe("Destroy", func() {
 				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete your infrastructure? This operation cannot be undone!"))
 
 				if proceed {
-					Expect(logger.StepCall.Receives.Message).To(Equal("destroying infrastructure"))
+					Expect(logger.StepCall.Receives.Message).To(Equal("destroying BOSH director and AWS stack"))
 					Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
 				} else {
 					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
