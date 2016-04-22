@@ -24,10 +24,7 @@ func NewBBL(stateDirectory, pathToBBL string) BBL {
 }
 
 func (b BBL) Up(loadBalancerType string) {
-	configPath, err := integration.ConfigPath()
-	Expect(err).NotTo(HaveOccurred())
-
-	config, err := integration.LoadConfig(configPath)
+	config, err := integration.LoadConfig()
 	Expect(err).NotTo(HaveOccurred())
 
 	session := b.execute([]string{

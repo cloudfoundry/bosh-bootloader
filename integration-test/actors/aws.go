@@ -16,10 +16,7 @@ type AWS struct {
 }
 
 func NewAWS() AWS {
-	configPath, err := integration.ConfigPath()
-	Expect(err).NotTo(HaveOccurred())
-
-	config, err := integration.LoadConfig(configPath)
+	config, err := integration.LoadConfig()
 	Expect(err).NotTo(HaveOccurred())
 
 	stackManager := cloudformation.NewStackManager(application.NewLogger(os.Stdout))

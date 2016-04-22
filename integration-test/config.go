@@ -14,17 +14,8 @@ type Config struct {
 	AWSRegion          string
 }
 
-func ConfigPath() (string, error) {
-	path := os.Getenv("BIT_CONFIG")
-	if path == "" || !strings.HasPrefix(path, "/") {
-		return "", fmt.Errorf("$BIT_CONFIG %q does not specify an absolute path to test config file", path)
-	}
-
-	return path, nil
-}
-
-func LoadConfig(configFilePath string) (Config, error) {
-	config, err := loadConfigJsonFromPath(configFilePath)
+func LoadConfig() (Config, error) {
+	config, err := loadConfigJson()
 	if err != nil {
 		return Config{}, err
 	}
@@ -44,8 +35,13 @@ func LoadConfig(configFilePath string) (Config, error) {
 	return config, nil
 }
 
-func loadConfigJsonFromPath(configFilePath string) (Config, error) {
-	configFile, err := os.Open(configFilePath)
+func loadConfigJson() (Config, error) {
+	path, err := configPath()
+	if err != nil {
+		return Config{}, err
+	}
+
+	configFile, err := os.Open(path)
 	if err != nil {
 		return Config{}, err
 	}
@@ -56,4 +52,13 @@ func loadConfigJsonFromPath(configFilePath string) (Config, error) {
 	}
 
 	return config, nil
+}
+
+func configPath() (string, error) {
+	path := os.Getenv("BIT_CONFIG")
+	if path == "" || !strings.HasPrefix(path, "/") {
+		return "", fmt.Errorf("$BIT_CONFIG %q does not specify an absolute path to test config file", path)
+	}
+
+	return path, nil
 }
