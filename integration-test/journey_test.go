@@ -19,8 +19,11 @@ var _ = Describe("BBL", func() {
 		stateDirectory, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(stateDirectory, pathToBBL)
-		aws = actors.NewAWS()
+		configuration, err := integration.LoadConfig()
+		Expect(err).NotTo(HaveOccurred())
+
+		bbl = actors.NewBBL(stateDirectory, pathToBBL, configuration)
+		aws = actors.NewAWS(configuration)
 		state = integration.NewState(stateDirectory)
 		bosh = actors.NewBOSH()
 	})

@@ -14,23 +14,22 @@ import (
 type BBL struct {
 	stateDirectory string
 	pathToBBL      string
+	configuration  integration.Config
 }
 
-func NewBBL(stateDirectory, pathToBBL string) BBL {
+func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config) BBL {
 	return BBL{
 		stateDirectory: stateDirectory,
 		pathToBBL:      pathToBBL,
+		configuration:  configuration,
 	}
 }
 
 func (b BBL) Up(loadBalancerType string) {
-	config, err := integration.LoadConfig()
-	Expect(err).NotTo(HaveOccurred())
-
 	session := b.execute([]string{
-		"--aws-access-key-id", config.AWSAccessKeyID,
-		"--aws-secret-access-key", config.AWSSecretAccessKey,
-		"--aws-region", config.AWSRegion,
+		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
+		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
+		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"unsupported-deploy-bosh-on-aws-for-concourse",
 		"--lb-type", loadBalancerType,

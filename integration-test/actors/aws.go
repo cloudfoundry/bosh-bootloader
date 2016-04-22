@@ -15,15 +15,12 @@ type AWS struct {
 	cloudFormationClient cloudformation.Client
 }
 
-func NewAWS() AWS {
-	config, err := integration.LoadConfig()
-	Expect(err).NotTo(HaveOccurred())
-
+func NewAWS(configuration integration.Config) AWS {
 	stackManager := cloudformation.NewStackManager(application.NewLogger(os.Stdout))
 	cloudFormationClient, err := aws.NewClientProvider().CloudFormationClient(aws.Config{
-		AccessKeyID:     config.AWSAccessKeyID,
-		SecretAccessKey: config.AWSSecretAccessKey,
-		Region:          config.AWSRegion,
+		AccessKeyID:     configuration.AWSAccessKeyID,
+		SecretAccessKey: configuration.AWSSecretAccessKey,
+		Region:          configuration.AWSRegion,
 	})
 	Expect(err).NotTo(HaveOccurred())
 
