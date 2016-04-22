@@ -1,7 +1,7 @@
 package bosh
 
 type VMExtensionsGenerators struct {
-	lbTypes map[string]string
+	loadBalancerExtensions []LoadBalancerExtension
 }
 
 type VMExtension struct {
@@ -13,19 +13,24 @@ type VMExtensionCloudProperties struct {
 	ELBS []string `yaml:"elbs"`
 }
 
-func NewVMExtensionsGenerator(lbTypes map[string]string) VMExtensionsGenerators {
+type LoadBalancerExtension struct {
+	Name    string
+	ELBName string
+}
+
+func NewVMExtensionsGenerator(loadBalancerExtensions []LoadBalancerExtension) VMExtensionsGenerators {
 	return VMExtensionsGenerators{
-		lbTypes: lbTypes,
+		loadBalancerExtensions: loadBalancerExtensions,
 	}
 }
 
 func (g VMExtensionsGenerators) Generate() []VMExtension {
 	vmExtensions := []VMExtension{}
-	for k, v := range g.lbTypes {
+	for _, v := range g.loadBalancerExtensions {
 		vmExtensions = append(vmExtensions, VMExtension{
-			Name: k,
+			Name: v.Name,
 			CloudProperties: VMExtensionCloudProperties{
-				ELBS: []string{v},
+				ELBS: []string{v.ELBName},
 			},
 		})
 	}

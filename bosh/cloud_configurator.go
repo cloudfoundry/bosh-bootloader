@@ -65,18 +65,20 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 	return nil
 }
 
-func (CloudConfigurator) populateLBs(stack cloudformation.Stack) map[string]string {
-	lbs := map[string]string{}
+func (CloudConfigurator) populateLBs(stack cloudformation.Stack) []LoadBalancerExtension {
+	lbs := []LoadBalancerExtension{}
+
 	if value := stack.Outputs["ConcourseLoadBalancer"]; value != "" {
-		lbs["lb"] = stack.Outputs["ConcourseLoadBalancer"]
+		lbs = append(lbs, LoadBalancerExtension{Name: "lb", ELBName: value})
 	}
 
 	if value := stack.Outputs["CFRouterLoadBalancer"]; value != "" {
-		lbs["router-lb"] = value
+		lbs = append(lbs, LoadBalancerExtension{Name: "router-lb", ELBName: value})
 	}
 
 	if value := stack.Outputs["CFSSHProxyLoadBalancer"]; value != "" {
-		lbs["ssh-proxy-lb"] = value
+		lbs = append(lbs, LoadBalancerExtension{Name: "ssh-proxy-lb", ELBName: value})
 	}
+
 	return lbs
 }

@@ -102,7 +102,7 @@ var _ = Describe("CloudConfigurator", func() {
 						SecurityGroups: []string{"some-security-group-4"},
 					},
 				},
-				LBs: map[string]string{},
+				LBs: []bosh.LoadBalancerExtension{},
 			}))
 		})
 
@@ -143,7 +143,10 @@ var _ = Describe("CloudConfigurator", func() {
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("lb", "some-lb"))
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(Equal([]bosh.LoadBalancerExtension{{
+						Name:    "lb",
+						ELBName: "some-lb",
+					}}))
 				})
 			})
 
@@ -155,8 +158,16 @@ var _ = Describe("CloudConfigurator", func() {
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("router-lb", "some-cf-router-load-balancer"))
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveKeyWithValue("ssh-proxy-lb", "some-cf-ssh-proxy-load-balancer"))
+					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(Equal([]bosh.LoadBalancerExtension{
+						{
+							Name:    "router-lb",
+							ELBName: "some-cf-router-load-balancer",
+						},
+						{
+							Name:    "ssh-proxy-lb",
+							ELBName: "some-cf-ssh-proxy-load-balancer",
+						},
+					}))
 				})
 			})
 		})

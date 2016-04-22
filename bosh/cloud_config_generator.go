@@ -3,7 +3,7 @@ package bosh
 type CloudConfigInput struct {
 	AZs     []string
 	Subnets []SubnetInput
-	LBs     map[string]string
+	LBs     []LoadBalancerExtension
 }
 
 type SubnetInput struct {

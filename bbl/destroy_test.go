@@ -117,7 +117,7 @@ var _ = Describe("destroy", func() {
 				}
 
 				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("step: destroying infrastructure"))
+			}, "10s", "10s").Should(ContainSubstring("step: destroying BOSH director and AWS stack"))
 
 			Eventually(cmd.Wait).Should(Succeed())
 		})

@@ -65,9 +65,15 @@ var _ = Describe("CloudConfigGenerator", func() {
 		Context("vm extensions", func() {
 			It("generates a cloud config with load balancer vm extensions", func() {
 				cloudConfig, err := cloudConfigGenerator.Generate(bosh.CloudConfigInput{
-					LBs: map[string]string{
-						"first-lb":  "some-lb-1",
-						"second-lb": "some-lb-2",
+					LBs: []bosh.LoadBalancerExtension{
+						{
+							Name:    "first-lb",
+							ELBName: "some-lb-1",
+						},
+						{
+							Name:    "second-lb",
+							ELBName: "some-lb-2",
+						},
 					},
 					AZs: []string{"us-east-1a", "us-east-1b", "us-east-1c"},
 					Subnets: []bosh.SubnetInput{
