@@ -243,6 +243,7 @@ var _ = Describe("bbl", func() {
 			Entry("generates a cloud config with no lb type", "", "fixtures/cloud-config-no-elb.yml"),
 			Entry("generates a cloud config with cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
 			Entry("generates a cloud config with concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
+			Entry("generates a cloud config with none lb type", "none", "fixtures/cloud-config-no-elb.yml"),
 		)
 	})
 })

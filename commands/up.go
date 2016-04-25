@@ -75,20 +75,6 @@ func NewUp(
 	}
 }
 
-func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
-	upFlags := flags.New("unsupported-deploy-bosh-on-aws-for-concourse")
-
-	config := upConfig{}
-	upFlags.String(&config.lbType, "lb-type", "")
-
-	err := upFlags.Parse(subcommandFlags)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
-}
-
 func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
@@ -153,9 +139,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	if config.lbType != "" {
-		state.Stack.LBType = config.lbType
-	}
+	state.Stack.LBType = determineLBType(state.Stack.LBType, config.lbType)
 
 	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, cloudFormationClient)
 	if err != nil {
@@ -201,4 +185,29 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	}
 
 	return state, nil
+}
+
+func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
+	upFlags := flags.New("unsupported-deploy-bosh-on-aws-for-concourse")
+
+	config := upConfig{}
+	upFlags.String(&config.lbType, "lb-type", "")
+
+	err := upFlags.Parse(subcommandFlags)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
+}
+
+func determineLBType(stateLBType, flagLBType string) string {
+	switch {
+	case flagLBType == "" && stateLBType == "":
+		return "none"
+	case flagLBType != "":
+		return flagLBType
+	default:
+		return stateLBType
+	}
 }

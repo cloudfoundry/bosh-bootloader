@@ -369,15 +369,15 @@ var _ = Describe("Up", func() {
 			Context("lb type", func() {
 				Context("when the lb type does not exist", func() {
 					It("populates the lb type", func() {
-						state, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
+						state, err := command.Execute(globalFlags, []string{"--lb-type", ""}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(state.Stack.LBType).To(Equal("concourse"))
+						Expect(state.Stack.LBType).To(Equal("none"))
 					})
 				})
 
 				Context("when the lb type exists", func() {
-					It("returns an unmodified stack in state", func() {
+					It("does not change the lb type when no lb type has been specified", func() {
 						incomingState := storage.State{
 							Stack: storage.Stack{
 								Name:   "some-stack-name",
@@ -385,10 +385,24 @@ var _ = Describe("Up", func() {
 							},
 						}
 
-						state, err := command.Execute(globalFlags, []string{}, incomingState)
+						state, err := command.Execute(globalFlags, []string{"--lb-type", ""}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(state.Stack).To(Equal(incomingState.Stack))
+						Expect(state.Stack.LBType).To(Equal("concourse"))
+					})
+
+					It("updates the state when an lb type has been specified", func() {
+						incomingState := storage.State{
+							Stack: storage.Stack{
+								Name:   "some-stack-name",
+								LBType: "cf",
+							},
+						}
+
+						state, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.Stack.LBType).To(Equal("concourse"))
 					})
 				})
 			})
