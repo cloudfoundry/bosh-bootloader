@@ -56,7 +56,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("LoadBalancerRoute", templates.Resource{
 				Type:      "AWS::EC2::Route",
-				DependsOn: "VPCGatewayInternetGateway",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.Route{
 					DestinationCidrBlock: "0.0.0.0/0",
 					GatewayId:            templates.Ref{"VPCGatewayInternetGateway"},

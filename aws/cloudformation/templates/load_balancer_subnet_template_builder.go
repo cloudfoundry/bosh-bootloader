@@ -53,7 +53,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetS
 			},
 			"LoadBalancerRoute": Resource{
 				Type:      "AWS::EC2::Route",
-				DependsOn: "VPCGatewayInternetGateway",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: Route{
 					DestinationCidrBlock: "0.0.0.0/0",
 					GatewayId:            Ref{"VPCGatewayInternetGateway"},

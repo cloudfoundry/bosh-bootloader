@@ -71,7 +71,8 @@ func (t NATTemplateBuilder) NAT() Template {
 				},
 			},
 			"NATEIP": Resource{
-				Type: "AWS::EC2::EIP",
+				DependsOn: "VPCGatewayAttachment",
+				Type:      "AWS::EC2::EIP",
 				Properties: EIP{
 					Domain:     "vpc",
 					InstanceId: Ref{"NATInstance"},

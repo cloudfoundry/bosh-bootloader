@@ -34,7 +34,8 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 			Expect(cfRouterLoadBalancerTemplate.Resources).To(HaveLen(1))
 			Expect(cfRouterLoadBalancerTemplate.Resources).To(HaveKeyWithValue("CFRouterLoadBalancer", templates.Resource{
-				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
@@ -81,7 +82,8 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 			Expect(cfSSHProxyLoadBalancerTemplate.Resources).To(HaveLen(1))
 			Expect(cfSSHProxyLoadBalancerTemplate.Resources).To(HaveKeyWithValue("CFSSHProxyLoadBalancer", templates.Resource{
-				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
@@ -109,7 +111,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 	})
 
 	Describe("ConcourseLoadBalancer", func() {
-		It("returns a template containing the web elb load balancer", func() {
+		It("returns a template containing the concourse load balancer", func() {
 			concourseLoadBalancer := builder.ConcourseLoadBalancer(2)
 
 			Expect(concourseLoadBalancer.Outputs).To(HaveLen(2))
@@ -128,7 +130,8 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 			Expect(concourseLoadBalancer.Resources).To(HaveLen(1))
 			Expect(concourseLoadBalancer.Resources).To(HaveKeyWithValue("ConcourseLoadBalancer", templates.Resource{
-				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
 					SecurityGroups: []interface{}{templates.Ref{"ConcourseSecurityGroup"}},

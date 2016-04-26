@@ -40,8 +40,8 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("BOSHRoute", templates.Resource{
+				DependsOn: "VPCGatewayAttachment",
 				Type:      "AWS::EC2::Route",
-				DependsOn: "VPCGatewayInternetGateway",
 				Properties: templates.Route{
 					DestinationCidrBlock: "0.0.0.0/0",
 					GatewayId:            templates.Ref{"VPCGatewayInternetGateway"},

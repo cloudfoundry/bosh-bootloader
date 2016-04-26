@@ -10,7 +10,8 @@ func (t BOSHEIPTemplateBuilder) BOSHEIP() Template {
 	return Template{
 		Resources: map[string]Resource{
 			"BOSHEIP": Resource{
-				Type: "AWS::EC2::EIP",
+				DependsOn: "VPCGatewayAttachment",
+				Type:      "AWS::EC2::EIP",
 				Properties: EIP{
 					Domain: "vpc",
 				},

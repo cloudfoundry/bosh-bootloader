@@ -82,7 +82,8 @@ var _ = Describe("NATTemplateBuilder", func() {
 				},
 			}))
 			Expect(nat.Resources).To(HaveKeyWithValue("NATEIP", templates.Resource{
-				Type: "AWS::EC2::EIP",
+				Type:      "AWS::EC2::EIP",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.EIP{
 					Domain:     "vpc",
 					InstanceId: templates.Ref{"NATInstance"},

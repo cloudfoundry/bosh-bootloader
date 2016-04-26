@@ -36,8 +36,8 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet() Template {
 				},
 			},
 			"BOSHRoute": Resource{
+				DependsOn: "VPCGatewayAttachment",
 				Type:      "AWS::EC2::Route",
-				DependsOn: "VPCGatewayInternetGateway",
 				Properties: Route{
 					DestinationCidrBlock: "0.0.0.0/0",
 					GatewayId:            Ref{"VPCGatewayInternetGateway"},

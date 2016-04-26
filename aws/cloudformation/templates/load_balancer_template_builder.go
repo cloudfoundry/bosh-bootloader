@@ -13,7 +13,8 @@ func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailability
 		Outputs: l.outputsFor("CFSSHProxyLoadBalancer"),
 		Resources: map[string]Resource{
 			"CFSSHProxyLoadBalancer": {
-				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
 					Subnets:        l.loadBalancerSubnets(numberOfAvailabilityZones),
@@ -46,7 +47,8 @@ func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZo
 		Outputs: l.outputsFor("CFRouterLoadBalancer"),
 		Resources: map[string]Resource{
 			"CFRouterLoadBalancer": {
-				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
+				DependsOn: "VPCGatewayAttachment",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					CrossZone:      true,
 					Subnets:        l.loadBalancerSubnets(numberOfAvailabilityZones),
@@ -79,7 +81,8 @@ func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZ
 		Outputs: l.outputsFor("ConcourseLoadBalancer"),
 		Resources: map[string]Resource{
 			"ConcourseLoadBalancer": {
-				Type: "AWS::ElasticLoadBalancing::LoadBalancer",
+				DependsOn: "VPCGatewayAttachment",
+				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
 				Properties: ElasticLoadBalancingLoadBalancer{
 					Subnets:        l.loadBalancerSubnets(numberOfAvailabilityZones),
 					SecurityGroups: []interface{}{Ref{"ConcourseSecurityGroup"}},

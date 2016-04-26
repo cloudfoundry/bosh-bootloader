@@ -20,7 +20,8 @@ var _ = Describe("BOSHEIPTemplateBuilder", func() {
 
 			Expect(eip.Resources).To(HaveLen(1))
 			Expect(eip.Resources).To(HaveKeyWithValue("BOSHEIP", templates.Resource{
-				Type: "AWS::EC2::EIP",
+				DependsOn: "VPCGatewayAttachment",
+				Type:      "AWS::EC2::EIP",
 				Properties: templates.EIP{
 					Domain: "vpc",
 				},
