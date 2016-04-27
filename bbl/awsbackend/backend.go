@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/rosenhouse/awsfaker"
 )
@@ -16,6 +17,7 @@ import (
 type Backend struct {
 	KeyPairs        *KeyPairs
 	Stacks          *Stacks
+	LoadBalancers   *LoadBalancers
 	Instances       *Instances
 	boshDirectorURL string
 }
@@ -26,6 +28,7 @@ func New(boshDirectorURL string) *Backend {
 		Stacks:          NewStacks(),
 		Instances:       NewInstances(),
 		boshDirectorURL: boshDirectorURL,
+		LoadBalancers:   NewLoadBalancers(),
 	}
 }
 
@@ -152,6 +155,32 @@ func (b *Backend) DescribeAvailabilityZones(input *ec2.DescribeAvailabilityZones
 			{ZoneName: aws.String("us-east-1c")},
 		},
 	}, nil
+}
+
+func (b *Backend) DescribeLoadBalancers(input *elb.DescribeLoadBalancersInput) (*elb.DescribeLoadBalancersOutput, error) {
+	var loadBalancer LoadBalancer
+
+	if len(input.LoadBalancerNames) > 0 {
+		loadBalancer, _ = b.LoadBalancers.Get(aws.StringValue(input.LoadBalancerNames[0]))
+	}
+
+	output := &elb.DescribeLoadBalancersOutput{
+		LoadBalancerDescriptions: []*elb.LoadBalancerDescription{
+			{
+				Instances: []*elb.Instance{},
+			},
+		},
+	}
+
+	for _, name := range loadBalancer.Instances {
+		instance := &elb.Instance{
+			InstanceId: aws.String(name),
+		}
+
+		output.LoadBalancerDescriptions[0].Instances = append(output.LoadBalancerDescriptions[0].Instances, instance)
+	}
+
+	return output, nil
 }
 
 func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cloudformation.DescribeStacksOutput, error) {

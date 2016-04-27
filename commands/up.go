@@ -2,10 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -15,6 +17,7 @@ import (
 type awsClientProvider interface {
 	CloudFormationClient(aws.Config) (cloudformation.Client, error)
 	EC2Client(aws.Config) (ec2.Client, error)
+	ELBClient(aws.Config) (elb.Client, error)
 }
 
 type keyPairSynchronizer interface {
@@ -25,6 +28,7 @@ type infrastructureManager interface {
 	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error)
 	Exists(stackName string, client cloudformation.Client) (bool, error)
 	Delete(client cloudformation.Client, stackName string) error
+	Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error)
 }
 
 type boshDeployer interface {
@@ -37,6 +41,10 @@ type cloudConfigurator interface {
 
 type availabilityZoneRetriever interface {
 	Retrieve(region string, client ec2.Client) ([]string, error)
+}
+
+type elbDescriber interface {
+	Describe(elbName string, client elb.Client) ([]string, error)
 }
 
 type logger interface {
@@ -57,12 +65,14 @@ type Up struct {
 	stringGenerator           stringGenerator
 	cloudConfigurator         cloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
+	elbDescriber              elbDescriber
 }
 
 func NewUp(
 	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
 	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
-	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever) Up {
+	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
+	elbDescriber elbDescriber) Up {
 
 	return Up{
 		infrastructureManager:     infrastructureManager,
@@ -72,6 +82,7 @@ func NewUp(
 		stringGenerator:           stringGenerator,
 		cloudConfigurator:         cloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
+		elbDescriber:              elbDescriber,
 	}
 }
 
@@ -103,6 +114,40 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
 			state.Stack.Name, state.AWS.Region)
 	}
+
+	newLBType := determineLBType(state.Stack.LBType, config.lbType)
+
+	if stackExists && newLBType != state.Stack.LBType {
+		elbClient, err := u.awsClientProvider.ELBClient(aws.Config{
+			AccessKeyID:      state.AWS.AccessKeyID,
+			SecretAccessKey:  state.AWS.SecretAccessKey,
+			Region:           state.AWS.Region,
+			EndpointOverride: globalFlags.EndpointOverride,
+		})
+		if err != nil {
+			return state, err
+		}
+
+		stack, err := u.infrastructureManager.Describe(cloudFormationClient, state.Stack.Name)
+		if err != nil {
+			return state, err
+		}
+
+		for _, lbName := range []string{"ConcourseLoadBalancer", "CFSSHProxyLoadBalancer", "CFRouterLoadBalancer"} {
+			if id, ok := stack.Outputs[lbName]; ok {
+				instances, err := u.elbDescriber.Describe(id, elbClient)
+				if err != nil {
+					return state, err
+				}
+
+				if len(instances) > 0 {
+					return state, fmt.Errorf("Load balancer %q cannot be deleted since it has attached instances: %s", id, strings.Join(instances, ", "))
+				}
+			}
+		}
+	}
+
+	state.Stack.LBType = newLBType
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
@@ -138,8 +183,6 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 			return state, err
 		}
 	}
-
-	state.Stack.LBType = determineLBType(state.Stack.LBType, config.lbType)
 
 	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, cloudFormationClient)
 	if err != nil {

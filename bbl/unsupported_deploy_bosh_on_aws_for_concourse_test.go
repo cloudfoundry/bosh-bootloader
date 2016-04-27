@@ -208,21 +208,27 @@ var _ = Describe("bbl", func() {
 			})
 		})
 
+		Context("when running again with a different load balancer", func() {
+			It("fails fast if there are instances associated with the existing load balancer", func() {
+				deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+
+				fakeAWS.LoadBalancers.Set(awsbackend.LoadBalancer{
+					Name:      "some-concourse-lb",
+					Instances: []string{"some-instance-1", "some-instance-2"},
+				})
+
+				session := deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "none", 1)
+
+				stderr := session.Err.Contents()
+				Expect(stderr).To(ContainSubstring("Load balancer \"some-concourse-lb\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
+			})
+		})
+
 		DescribeTable("cloud config", func(lbType, fixtureLocation string) {
 			contents, err := ioutil.ReadFile(fixtureLocation)
 			Expect(err).NotTo(HaveOccurred())
 
-			args := []string{
-				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-				"--aws-access-key-id", "some-access-key",
-				"--aws-secret-access-key", "some-access-secret",
-				"--aws-region", "some-region",
-				"--state-dir", tempDirectory,
-				"unsupported-deploy-bosh-on-aws-for-concourse",
-				"--lb-type", lbType,
-			}
-
-			session := executeCommand(args, 0)
+			session := deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, lbType, 0)
 			stdout := session.Out.Contents()
 
 			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
@@ -230,7 +236,7 @@ var _ = Describe("bbl", func() {
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 
 			By("executing idempotently", func() {
-				args = []string{
+				args := []string{
 					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
 					"--state-dir", tempDirectory,
 					"unsupported-deploy-bosh-on-aws-for-concourse",
@@ -264,6 +270,20 @@ func readStateJson(tempDirectory string) storage.State {
 	Expect(err).NotTo(HaveOccurred())
 
 	return state
+}
+
+func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", serverURL),
+		"--aws-access-key-id", "some-access-key",
+		"--aws-secret-access-key", "some-access-secret",
+		"--aws-region", "some-region",
+		"--state-dir", tempDirectory,
+		"unsupported-deploy-bosh-on-aws-for-concourse",
+		"--lb-type", lbType,
+	}
+
+	return executeCommand(args, exitCode)
 }
 
 func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {

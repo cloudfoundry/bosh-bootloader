@@ -26,10 +26,12 @@ var _ = Describe("Up", func() {
 			keyPairSynchronizer       *fakes.KeyPairSynchronizer
 			cloudFormationClient      *fakes.CloudFormationClient
 			ec2Client                 *fakes.EC2Client
+			elbClient                 *fakes.ELBClient
 			clientProvider            *fakes.ClientProvider
 			stringGenerator           *fakes.StringGenerator
 			cloudConfigurator         *fakes.BoshCloudConfigurator
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
+			elbDescriber              *fakes.ELBDescriber
 			globalFlags               commands.GlobalFlags
 			boshInitCredentials       map[string]string
 		)
@@ -70,10 +72,12 @@ var _ = Describe("Up", func() {
 
 			cloudFormationClient = &fakes.CloudFormationClient{}
 			ec2Client = &fakes.EC2Client{}
+			elbClient = &fakes.ELBClient{}
 
 			clientProvider = &fakes.ClientProvider{}
 			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
+			clientProvider.ELBClientCall.Returns.Client = elbClient
 
 			stringGenerator = &fakes.StringGenerator{}
 			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
@@ -84,13 +88,15 @@ var _ = Describe("Up", func() {
 
 			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 
+			elbDescriber = &fakes.ELBDescriber{}
+
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
 			}
 
 			command = commands.NewUp(
 				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever)
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber)
 
 			boshInitCredentials = map[string]string{
 				"mbusUsername":              "some-mbus-username",
@@ -232,6 +238,118 @@ var _ = Describe("Up", func() {
 					PrivateKey: "some-private-key",
 				},
 			}))
+		})
+
+		Context("when there are instances attached to an lb", func() {
+			BeforeEach(func() {
+				infrastructureManager.ExistsCall.Returns.Exists = true
+			})
+
+			It("should not check for ELBs if the stack does not exist", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = false
+				infrastructureManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
+
+				_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not verify instances if the lb type has not changed", func() {
+				incomingState := storage.State{
+					Stack: storage.Stack{
+						Name:   "some-stack-name",
+						LBType: "concourse",
+					},
+				}
+
+				infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+					Name:    "some-stack-name",
+					Outputs: map[string]string{"ConcourseLoadBalancer": "some-load-balancer"},
+				}
+
+				_, err := command.Execute(globalFlags, []string{"--lb-type", ""}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(elbDescriber.DescribeCall.CallCount).To(Equal(0))
+			})
+
+			Context("concourse", func() {
+				It("should fast fail when ConcourseLoadBalancer has instances", func() {
+					incomingState := storage.State{
+						Stack: storage.Stack{
+							Name:   "some-stack-name",
+							LBType: "concourse",
+						},
+					}
+
+					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+						Name:    "some-stack-name",
+						Outputs: map[string]string{"ConcourseLoadBalancer": "some-load-balancer"},
+					}
+
+					elbDescriber.DescribeCall.Returns.Instances = []string{"some-instance-1", "some-instance-2"}
+
+					_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, incomingState)
+					Expect(err).To(MatchError("Load balancer \"some-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
+				})
+			})
+
+			Context("cf", func() {
+				It("should fast fail when CFRouterLoadBalancer has instances", func() {
+					incomingState := storage.State{
+						Stack: storage.Stack{
+							Name:   "some-stack-name",
+							LBType: "cf",
+						},
+					}
+
+					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+						Name: "some-stack-name",
+						Outputs: map[string]string{
+							"CFRouterLoadBalancer":   "some-router-load-balancer",
+							"CFSSHProxyLoadBalancer": "some-ssh-proxy-load-balancer",
+						},
+					}
+
+					elbDescriber.DescribeCall.Stub = func(lbName string) ([]string, error) {
+						if lbName == "some-router-load-balancer" {
+							return []string{"some-instance-1", "some-instance-2"}, nil
+						}
+
+						return []string{}, nil
+					}
+
+					_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, incomingState)
+					Expect(err).To(MatchError("Load balancer \"some-router-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
+				})
+
+				It("should fast fail when CFSSHProxyLoadBalancer has instances", func() {
+					incomingState := storage.State{
+						Stack: storage.Stack{
+							Name:   "some-stack-name",
+							LBType: "cf",
+						},
+					}
+
+					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+						Name: "some-stack-name",
+						Outputs: map[string]string{
+							"CFRouterLoadBalancer":   "some-router-load-balancer",
+							"CFSSHProxyLoadBalancer": "some-ssh-proxy-load-balancer",
+						},
+					}
+
+					elbDescriber.DescribeCall.Stub = func(lbName string) ([]string, error) {
+						if lbName == "some-ssh-proxy-load-balancer" {
+							return []string{"some-instance-1", "some-instance-2"}, nil
+						}
+
+						return []string{}, nil
+					}
+
+					_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, incomingState)
+					Expect(err).To(MatchError("Load balancer \"some-ssh-proxy-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
+				})
+			})
 		})
 
 		Context("when there is no keypair", func() {
@@ -601,6 +719,14 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
+			It("returns an error when the ELB client can not be created", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = true
+				clientProvider.ELBClientCall.Returns.Error = errors.New("error creating client")
+
+				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				Expect(err).To(MatchError("error creating client"))
+			})
+
 			It("returns an error when the cloudformation client can not be created", func() {
 				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("error creating client")
 
@@ -622,6 +748,14 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("error syncing key pair"))
 			})
 
+			It("returns an error when infrastructure cannot be described", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = true
+				infrastructureManager.DescribeCall.Returns.Error = errors.New("infrastructure describe failed")
+
+				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				Expect(err).To(MatchError("infrastructure describe failed"))
+			})
+
 			It("returns an error when infrastructure cannot be created", func() {
 				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
@@ -641,7 +775,7 @@ var _ = Describe("Up", func() {
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = commands.NewUp(
 					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-					stringGenerator, cloudConfigurator, availabilityZoneRetriever)
+					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber)
 
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
@@ -676,6 +810,22 @@ var _ = Describe("Up", func() {
 
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
+			})
+
+			It("returns an error when an elb cannot be described", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = true
+				infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+					Name: "some-stack-name",
+					Outputs: map[string]string{
+						"CFRouterLoadBalancer":   "some-router-load-balancer",
+						"CFSSHProxyLoadBalancer": "some-ssh-proxy-load-balancer",
+					},
+				}
+
+				elbDescriber.DescribeCall.Returns.Error = errors.New("elb cannot be described")
+
+				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				Expect(err).To(MatchError("elb cannot be described"))
 			})
 		})
 	})

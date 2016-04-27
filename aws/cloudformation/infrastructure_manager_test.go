@@ -158,4 +158,26 @@ var _ = Describe("InfrastructureManager", func() {
 			})
 		})
 	})
+
+	Describe("Describe", func() {
+		It("returns a stack with a given name", func() {
+			expectedStack := cloudformation.Stack{
+				Name:   "some-stack-name",
+				Status: "some-status",
+				Outputs: map[string]string{
+					"some-output":       "some-value",
+					"some-other-output": "some-other-value",
+				},
+			}
+
+			stackManager.DescribeCall.Returns.Stack = expectedStack
+
+			stack, err := infrastructureManager.Describe(cloudFormationClient, "some-stack-name")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stack).To(Equal(expectedStack))
+
+			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
+			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
+		})
+	})
 })

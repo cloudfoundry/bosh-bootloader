@@ -39,6 +39,17 @@ type InfrastructureManager struct {
 			Error error
 		}
 	}
+
+	DescribeCall struct {
+		Receives struct {
+			Client    cloudformation.Client
+			StackName string
+		}
+		Returns struct {
+			Stack cloudformation.Stack
+			Error error
+		}
+	}
 }
 
 func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error) {
@@ -68,4 +79,11 @@ func (m *InfrastructureManager) Delete(client cloudformation.Client, stackName s
 	m.DeleteCall.Receives.StackName = stackName
 
 	return m.DeleteCall.Returns.Error
+}
+
+func (m *InfrastructureManager) Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error) {
+	m.DescribeCall.Receives.Client = client
+	m.DescribeCall.Receives.StackName = stackName
+
+	return m.DescribeCall.Returns.Stack, m.DescribeCall.Returns.Error
 }

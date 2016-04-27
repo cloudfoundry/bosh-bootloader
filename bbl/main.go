@@ -15,6 +15,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
@@ -43,6 +44,7 @@ func main() {
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
+	elbDescriber := elb.NewDescriber()
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -73,7 +75,7 @@ func main() {
 	// Commands
 	help := commands.NewUsage(os.Stdout)
 	version := commands.NewVersion(os.Stdout)
-	up := commands.NewUp(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor, stringGenerator, cloudConfigurator, availabilityZoneRetriever)
+	up := commands.NewUp(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor, stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber)
 	destroy := commands.NewDestroy(logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	usage := commands.NewUsage(os.Stdout)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {

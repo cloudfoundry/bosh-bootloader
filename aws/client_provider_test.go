@@ -5,9 +5,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	awselb "github.com/aws/aws-sdk-go/service/elb"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,6 +20,35 @@ var _ = Describe("ClientProvider", func() {
 
 	BeforeEach(func() {
 		provider = aws.NewClientProvider()
+	})
+
+	Describe("ELBClient", func() {
+		It("returns a Client with the provided configuration", func() {
+			client, err := provider.ELBClient(aws.Config{
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				Region:           "some-region",
+				EndpointOverride: "some-endpoint-override",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, ok := client.(elb.Client)
+			Expect(ok).To(BeTrue())
+
+			elbClient, ok := client.(*awselb.ELB)
+			Expect(ok).To(BeTrue())
+
+			Expect(elbClient.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
+			Expect(elbClient.Config.Region).To(Equal(goaws.String("some-region")))
+			Expect(elbClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the credentials are not provided", func() {
+				_, err := provider.ELBClient(aws.Config{})
+				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
+			})
+		})
 	})
 
 	Describe("CloudFormationClient", func() {

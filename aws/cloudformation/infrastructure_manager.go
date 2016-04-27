@@ -56,6 +56,10 @@ func (m InfrastructureManager) Exists(stackName string, cloudFormationClient Cli
 	}
 }
 
+func (m InfrastructureManager) Describe(client Client, stackName string) (Stack, error) {
+	return m.stackManager.Describe(client, stackName)
+}
+
 func (m InfrastructureManager) Delete(client Client, stackName string) error {
 	err := m.stackManager.Delete(client, stackName)
 	if err != nil {
