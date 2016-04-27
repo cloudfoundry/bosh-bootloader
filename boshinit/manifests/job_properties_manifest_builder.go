@@ -10,7 +10,6 @@ type JobPropertiesManifestBuilder struct {
 	blobstoreAgentUsername    string
 	hmUsername                string
 	natsPassword              string
-	redisPassword             string
 	postgresPassword          string
 	registryPassword          string
 	blobstoreDirectorPassword string
@@ -18,7 +17,7 @@ type JobPropertiesManifestBuilder struct {
 	hmPassword                string
 }
 
-func NewJobPropertiesManifestBuilder(natsUsername, postgresUsername, registryUsername, blobstoreDirectorUsername, blobstoreAgentUsername, hmUsername, natsPassword, redisPassword, postgresPassword, registryPassword, blobstoreDirectorPassword, blobstoreAgentPassword, hmPassword string) JobPropertiesManifestBuilder {
+func NewJobPropertiesManifestBuilder(natsUsername, postgresUsername, registryUsername, blobstoreDirectorUsername, blobstoreAgentUsername, hmUsername, natsPassword, postgresPassword, registryPassword, blobstoreDirectorPassword, blobstoreAgentPassword, hmPassword string) JobPropertiesManifestBuilder {
 	return JobPropertiesManifestBuilder{
 		natsUsername:              natsUsername,
 		postgresUsername:          postgresUsername,
@@ -27,7 +26,6 @@ func NewJobPropertiesManifestBuilder(natsUsername, postgresUsername, registryUse
 		blobstoreAgentUsername:    blobstoreAgentUsername,
 		hmUsername:                hmUsername,
 		natsPassword:              natsPassword,
-		redisPassword:             redisPassword,
 		postgresPassword:          postgresPassword,
 		registryPassword:          registryPassword,
 		blobstoreDirectorPassword: blobstoreDirectorPassword,
@@ -41,14 +39,6 @@ func (j JobPropertiesManifestBuilder) NATS() NATSJobProperties {
 		Address:  "127.0.0.1",
 		User:     j.natsUsername,
 		Password: j.natsPassword,
-	}
-}
-
-func (j JobPropertiesManifestBuilder) Redis() RedisJobProperties {
-	return RedisJobProperties{
-		ListenAddress: "127.0.0.1",
-		Address:       "127.0.0.1",
-		Password:      j.redisPassword,
 	}
 }
 
@@ -97,12 +87,12 @@ func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 
 func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProperties) DirectorJobProperties {
 	return DirectorJobProperties{
-		Address:    "127.0.0.1",
-		Name:       "my-bosh",
-		CPIJob:     "aws_cpi",
-		MaxThreads: 10,
+		Address:          "127.0.0.1",
+		Name:             "my-bosh",
+		CPIJob:           "aws_cpi",
+		MaxThreads:       10,
 		EnablePostDeploy: true,
-		DB:         j.Postgres(),
+		DB:               j.Postgres(),
 		UserManagement: UserManagementProperties{
 			Provider: "local",
 			Local: LocalProperties{

@@ -10,7 +10,6 @@ type InternalCredentials struct {
 	HMUsername                string `json:"hmUsername"`
 	MBusPassword              string `json:"mbusPassword"`
 	NatsPassword              string `json:"natsPassword"`
-	RedisPassword             string `json:"redisPassword"`
 	PostgresPassword          string `json:"postgresPassword"`
 	RegistryPassword          string `json:"registryPassword"`
 	BlobstoreDirectorPassword string `json:"blobstoreDirectorPassword"`
@@ -29,7 +28,6 @@ func NewInternalCredentials(credentials map[string]string) InternalCredentials {
 		HMUsername:                credentials["hmUsername"],
 		MBusPassword:              credentials["mbusPassword"],
 		NatsPassword:              credentials["natsPassword"],
-		RedisPassword:             credentials["redisPassword"],
 		PostgresPassword:          credentials["postgresPassword"],
 		RegistryPassword:          credentials["registryPassword"],
 		BlobstoreDirectorPassword: credentials["blobstoreDirectorPassword"],
@@ -49,7 +47,6 @@ func (c InternalCredentials) ToMap() map[string]string {
 		"hmUsername":                c.HMUsername,
 		"mbusPassword":              c.MBusPassword,
 		"natsPassword":              c.NatsPassword,
-		"redisPassword":             c.RedisPassword,
 		"postgresPassword":          c.PostgresPassword,
 		"registryPassword":          c.RegistryPassword,
 		"blobstoreDirectorPassword": c.BlobstoreDirectorPassword,

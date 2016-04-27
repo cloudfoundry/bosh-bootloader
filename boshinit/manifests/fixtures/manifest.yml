@@ -42,7 +42,6 @@ jobs:
 
   templates:
   - {name: nats, release: bosh}
-  - {name: redis, release: bosh}
   - {name: postgres, release: bosh}
   - {name: blobstore, release: bosh}
   - {name: director, release: bosh}
@@ -65,11 +64,6 @@ jobs:
       address: 127.0.0.1
       user: nats-user-some-random-string
       password: nats-some-random-string
-
-    redis:
-      listen_address: 127.0.0.1
-      address: 127.0.0.1
-      password: redis-some-random-string
 
     postgres:
       listen_address: 127.0.0.1

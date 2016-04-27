@@ -114,7 +114,6 @@ var _ = Describe("ManifestBuilder", func() {
 						HMUsername:                "hm-user-some-random-string",
 						MBusPassword:              "mbus-some-random-string",
 						NatsPassword:              "nats-some-random-string",
-						RedisPassword:             "redis-some-random-string",
 						PostgresPassword:          "postgres-some-random-string",
 						RegistryPassword:          "registry-some-random-string",
 						BlobstoreDirectorPassword: "blobstore-director-some-random-string",
@@ -146,7 +145,7 @@ var _ = Describe("ManifestBuilder", func() {
 		It("stores the randomly generated passwords into manifest properties", func() {
 			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(15))
+			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(14))
 			Expect(manifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-random-string",
 				NatsUsername:              "nats-user-some-random-string",
@@ -157,7 +156,6 @@ var _ = Describe("ManifestBuilder", func() {
 				HMUsername:                "hm-user-some-random-string",
 				MBusPassword:              "mbus-some-random-string",
 				NatsPassword:              "nats-some-random-string",
-				RedisPassword:             "redis-some-random-string",
 				PostgresPassword:          "postgres-some-random-string",
 				RegistryPassword:          "registry-some-random-string",
 				BlobstoreDirectorPassword: "blobstore-director-some-random-string",
@@ -177,7 +175,6 @@ var _ = Describe("ManifestBuilder", func() {
 				HMUsername:                "hm-user-some-persisted-string",
 				MBusPassword:              "mbus-some-persisted-string",
 				NatsPassword:              "nats-some-persisted-string",
-				RedisPassword:             "redis-some-persisted-string",
 				PostgresPassword:          "postgres-some-persisted-string",
 				RegistryPassword:          "registry-some-persisted-string",
 				BlobstoreDirectorPassword: "blobstore-director-some-persisted-string",
@@ -198,7 +195,6 @@ var _ = Describe("ManifestBuilder", func() {
 				HMUsername:                "hm-user-some-persisted-string",
 				MBusPassword:              "mbus-some-persisted-string",
 				NatsPassword:              "nats-some-persisted-string",
-				RedisPassword:             "redis-some-persisted-string",
 				PostgresPassword:          "postgres-some-persisted-string",
 				RegistryPassword:          "registry-some-persisted-string",
 				BlobstoreDirectorPassword: "blobstore-director-some-persisted-string",

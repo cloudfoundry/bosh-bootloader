@@ -2,7 +2,6 @@ package manifests
 
 type JobProperties struct {
 	NATS      NATSJobProperties      `yaml:"nats"`
-	Redis     RedisJobProperties     `yaml:"redis"`
 	Postgres  PostgresProperties     `yaml:"postgres"`
 	Registry  RegistryJobProperties  `yaml:"registry"`
 	Blobstore BlobstoreJobProperties `yaml:"blobstore"`
@@ -17,12 +16,6 @@ type NATSJobProperties struct {
 	Address  string `yaml:"address"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
-}
-
-type RedisJobProperties struct {
-	Address       string `yaml:"address"`
-	ListenAddress string `yaml:"listen_address"`
-	Password      string `yaml:"password"`
 }
 
 type RegistryJobProperties struct {
@@ -44,16 +37,15 @@ type BlobstoreJobProperties struct {
 }
 
 type DirectorJobProperties struct {
-	Address             string                   `yaml:"address"`
-	Name                string                   `yaml:"name"`
-	CPIJob              string                   `yaml:"cpi_job"`
-	MaxThreads          int                      `yaml:"max_threads"`
-	EnablePostDeploy    bool                     `yaml:"enable_post_deploy"`	
-	DB                  PostgresProperties       `yaml:"db"`
-	UserManagement      UserManagementProperties `yaml:"user_management"`
-	SSL                 SSLProperties            `yaml:"ssl"`
+	Address          string                   `yaml:"address"`
+	Name             string                   `yaml:"name"`
+	CPIJob           string                   `yaml:"cpi_job"`
+	MaxThreads       int                      `yaml:"max_threads"`
+	EnablePostDeploy bool                     `yaml:"enable_post_deploy"`
+	DB               PostgresProperties       `yaml:"db"`
+	UserManagement   UserManagementProperties `yaml:"user_management"`
+	SSL              SSLProperties            `yaml:"ssl"`
 }
-
 
 type HMJobProperties struct {
 	DirectorAccount    Credentials `yaml:"director_account"`

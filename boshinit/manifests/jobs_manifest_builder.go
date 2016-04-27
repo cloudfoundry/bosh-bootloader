@@ -26,7 +26,6 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 		manifestProperties.Credentials.BlobstoreAgentUsername,
 		manifestProperties.Credentials.HMUsername,
 		manifestProperties.Credentials.NatsPassword,
-		manifestProperties.Credentials.RedisPassword,
 		manifestProperties.Credentials.PostgresPassword,
 		manifestProperties.Credentials.RegistryPassword,
 		manifestProperties.Credentials.BlobstoreDirectorPassword,
@@ -43,7 +42,6 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 
 			Templates: []Template{
 				{Name: "nats", Release: "bosh"},
-				{Name: "redis", Release: "bosh"},
 				{Name: "postgres", Release: "bosh"},
 				{Name: "blobstore", Release: "bosh"},
 				{Name: "director", Release: "bosh"},
@@ -66,7 +64,6 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 
 			Properties: JobProperties{
 				NATS:      jobPropertiesManifestBuilder.NATS(),
-				Redis:     jobPropertiesManifestBuilder.Redis(),
 				Postgres:  jobPropertiesManifestBuilder.Postgres(),
 				Registry:  jobPropertiesManifestBuilder.Registry(),
 				Blobstore: jobPropertiesManifestBuilder.Blobstore(),
@@ -89,7 +86,6 @@ func (j JobsManifestBuilder) generateInternalCredentials(manifestProperties Mani
 	credentials["blobstore-agent-user-"] = &manifestProperties.Credentials.BlobstoreAgentUsername
 	credentials["hm-user-"] = &manifestProperties.Credentials.HMUsername
 	credentials["nats-"] = &manifestProperties.Credentials.NatsPassword
-	credentials["redis-"] = &manifestProperties.Credentials.RedisPassword
 	credentials["postgres-"] = &manifestProperties.Credentials.PostgresPassword
 	credentials["registry-"] = &manifestProperties.Credentials.RegistryPassword
 	credentials["blobstore-director-"] = &manifestProperties.Credentials.BlobstoreDirectorPassword
