@@ -293,12 +293,6 @@
             "FromPort": "2222",
             "IpProtocol": "tcp",
             "ToPort": "2222"
-          },
-          {
-            "CidrIp": "0.0.0.0/0",
-            "FromPort": "443",
-            "IpProtocol": "tcp",
-            "ToPort": "443"
           }
         ],
         "VpcId": {"Ref": "VPC"}
