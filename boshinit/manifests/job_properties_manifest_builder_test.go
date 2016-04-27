@@ -17,7 +17,6 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		blobstoreAgentUsername       string
 		hmUsername                   string
 		natsPassword                 string
-		redisPassword                string
 		postgresPassword             string
 		registryPassword             string
 		blobstoreDirectorPassword    string
@@ -33,7 +32,6 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		blobstoreAgentUsername = "random-blobstore-agent-username"
 		hmUsername = "random-hm-username"
 		natsPassword = "random-nats-password"
-		redisPassword = "random-redis-password"
 		postgresPassword = "random-postgres-password"
 		registryPassword = "random-registry-password"
 		blobstoreDirectorPassword = "random-blobstore-director-password"
@@ -47,7 +45,6 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 			blobstoreAgentUsername,
 			hmUsername,
 			natsPassword,
-			redisPassword,
 			postgresPassword,
 			registryPassword,
 			blobstoreDirectorPassword,
@@ -64,18 +61,6 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 					Address:  "127.0.0.1",
 					User:     natsUsername,
 					Password: natsPassword,
-				}))
-		})
-	})
-
-	Describe("Redis", func() {
-		It("returns job properties for Redis", func() {
-			redis := jobPropertiesManifestBuilder.Redis()
-			Expect(redis).To(Equal(
-				manifests.RedisJobProperties{
-					ListenAddress: "127.0.0.1",
-					Address:       "127.0.0.1",
-					Password:      redisPassword,
 				}))
 		})
 	})
@@ -150,10 +135,10 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				},
 			})
 			Expect(director).To(Equal(manifests.DirectorJobProperties{
-				Address:    "127.0.0.1",
-				Name:       "my-bosh",
-				CPIJob:     "aws_cpi",
-				MaxThreads: 10,
+				Address:          "127.0.0.1",
+				Name:             "my-bosh",
+				CPIJob:           "aws_cpi",
+				MaxThreads:       10,
 				EnablePostDeploy: true,
 				DB: manifests.PostgresProperties{
 					ListenAddress: "127.0.0.1",

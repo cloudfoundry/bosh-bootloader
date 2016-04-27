@@ -51,7 +51,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 			Expect(job.Templates).To(ConsistOf([]manifests.Template{
 				{Name: "nats", Release: "bosh"},
-				{Name: "redis", Release: "bosh"},
 				{Name: "postgres", Release: "bosh"},
 				{Name: "blobstore", Release: "bosh"},
 				{Name: "director", Release: "bosh"},
@@ -73,7 +72,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			}))
 
 			Expect(job.Properties.NATS.User).To(Equal("nats-user-some-random-string"))
-			Expect(job.Properties.Redis.Address).To(Equal("127.0.0.1"))
 			Expect(job.Properties.Postgres.User).To(Equal("postgres-user-some-random-string"))
 			Expect(job.Properties.Registry.Username).To(Equal("registry-user-some-random-string"))
 			Expect(job.Properties.Blobstore.Provider).To(Equal("dav"))
@@ -104,7 +102,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(manifestProperties.Credentials.BlobstoreAgentUsername).To(Equal("blobstore-agent-user-some-random-string"))
 			Expect(manifestProperties.Credentials.HMUsername).To(Equal("hm-user-some-random-string"))
 			Expect(manifestProperties.Credentials.NatsPassword).To(Equal("nats-some-random-string"))
-			Expect(manifestProperties.Credentials.RedisPassword).To(Equal("redis-some-random-string"))
 			Expect(manifestProperties.Credentials.PostgresPassword).To(Equal("postgres-some-random-string"))
 			Expect(manifestProperties.Credentials.RegistryPassword).To(Equal("registry-some-random-string"))
 			Expect(manifestProperties.Credentials.BlobstoreDirectorPassword).To(Equal("blobstore-director-some-random-string"))
@@ -127,7 +124,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 					BlobstoreAgentUsername:    "some-persisted-blobstore-agent-username",
 					HMUsername:                "some-persisted-hm-username",
 					NatsPassword:              "some-persisted-nats-password",
-					RedisPassword:             "some-persisted-redis-password",
 					PostgresPassword:          "some-persisted-postgres-password",
 					RegistryPassword:          "some-persisted-registry-password",
 					BlobstoreDirectorPassword: "some-persisted-blobstore-director-password",
@@ -160,7 +156,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(manifestProperties.Credentials.HMUsername).To(Equal("some-persisted-hm-username"))
 
 			Expect(job.Properties.NATS.Password).To(Equal("some-persisted-nats-password"))
-			Expect(job.Properties.Redis.Password).To(Equal("some-persisted-redis-password"))
 			Expect(job.Properties.Postgres.Password).To(Equal("some-persisted-postgres-password"))
 			Expect(job.Properties.Registry.Password).To(Equal("some-persisted-registry-password"))
 			Expect(job.Properties.Registry.HTTP.Password).To(Equal("some-persisted-registry-password"))
@@ -169,7 +164,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.HM.DirectorAccount.Password).To(Equal("some-persisted-hm-password"))
 
 			Expect(manifestProperties.Credentials.NatsPassword).To(Equal("some-persisted-nats-password"))
-			Expect(manifestProperties.Credentials.RedisPassword).To(Equal("some-persisted-redis-password"))
 			Expect(manifestProperties.Credentials.PostgresPassword).To(Equal("some-persisted-postgres-password"))
 			Expect(manifestProperties.Credentials.RegistryPassword).To(Equal("some-persisted-registry-password"))
 			Expect(manifestProperties.Credentials.BlobstoreDirectorPassword).To(Equal("some-persisted-blobstore-director-password"))
@@ -192,21 +186,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.Agent.MBus).To(Equal("nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"))
 			Expect(job.Properties.NATS.User).To(Equal("nats-user-some-random-string"))
 			Expect(job.Properties.NATS.Password).To(Equal("nats-some-random-string"))
-		})
-
-		It("generates a password for redis", func() {
-			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			job := jobs[0]
-
-			Expect(job.Properties.Redis.Password).To(Equal("redis-some-random-string"))
 		})
 
 		It("generates a password for postgres", func() {
