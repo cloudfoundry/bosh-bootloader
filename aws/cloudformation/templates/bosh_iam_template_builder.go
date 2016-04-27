@@ -38,6 +38,8 @@ func (t BOSHIAMTemplateBuilder) BOSHIAMUser() Template {
 											"ec2:CreateTags",
 											"ec2:RunInstances",
 											"ec2:TerminateInstances",
+											"ec2:RegisterImage",
+											"ec2:DeregisterImage",
 										},
 										Effect:   "Allow",
 										Resource: "*",
