@@ -222,18 +222,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 							FromPort:   "80",
 							ToPort:     "80",
 						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "2222",
-							ToPort:     "2222",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "443",
-							ToPort:     "443",
-						},
 					},
 				},
 			}))
