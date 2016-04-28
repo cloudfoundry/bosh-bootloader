@@ -685,6 +685,11 @@ var _ = Describe("Up", func() {
 				})
 			})
 
+			It("returns an error when an unknown lb-type is supplied", func() {
+				_, err := command.Execute(commands.GlobalFlags{}, []string{"--lb-type", "some-lb"}, storage.State{})
+				Expect(err).To(MatchError("Unknown lb-type \"some-lb\", supported lb-types are: concourse, cf or none"))
+			})
+
 			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 
