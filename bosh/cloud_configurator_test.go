@@ -139,7 +139,7 @@ var _ = Describe("CloudConfigurator", func() {
 			Context("when the load balancer type is concourse", func() {
 				It("generates a cloud config with a concourse lb vm extension", func() {
 					cloudFormationStack.Outputs["ConcourseLoadBalancer"] = "some-lb"
-					cloudFormationStack.Outputs["ConcourseSecurityGroup"] = "some-concourse-security-group"
+					cloudFormationStack.Outputs["ConcourseInternalSecurityGroup"] = "some-concourse-internal-security-group"
 					cloudFormationStack.Outputs["InternalSecurityGroup"] = "some-internal-security-group"
 
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
@@ -149,7 +149,7 @@ var _ = Describe("CloudConfigurator", func() {
 						Name:    "lb",
 						ELBName: "some-lb",
 						SecurityGroups: []string{
-							"some-concourse-security-group",
+							"some-concourse-internal-security-group",
 							"some-internal-security-group",
 						},
 					}}))

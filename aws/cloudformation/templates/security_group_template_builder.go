@@ -6,6 +6,41 @@ func NewSecurityGroupTemplateBuilder() SecurityGroupTemplateBuilder {
 	return SecurityGroupTemplateBuilder{}
 }
 
+func (s SecurityGroupTemplateBuilder) ConcourseInternalSecurityGroup() Template {
+	return Template{
+		Resources: map[string]Resource{
+			"ConcourseInternalSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: SecurityGroup{
+					VpcId:            Ref{"VPC"},
+					GroupDescription: "ConcourseInternal",
+					SecurityGroupEgress: []SecurityGroupEgress{
+						{
+							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+					SecurityGroupIngress: []SecurityGroupIngress{
+						{
+							SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+				},
+			},
+		},
+		Outputs: map[string]Output{
+			"ConcourseInternalSecurityGroup": Output{
+				Value: Ref{"ConcourseInternalSecurityGroup"},
+			},
+		},
+	}
+}
+
 func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
@@ -14,7 +49,7 @@ func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
 					GroupDescription:    "Internal",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress(nil, "tcp", "0", "65535", nil),
 						s.securityGroupIngress(nil, "udp", "0", "65535", nil),
@@ -48,7 +83,7 @@ func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
 					GroupDescription:    "BOSH",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress(Ref{"BOSHInboundCIDR"}, "tcp", "22", "22", nil),
 						s.securityGroupIngress(Ref{"BOSHInboundCIDR"}, "tcp", "6868", "6868", nil),
@@ -73,16 +108,13 @@ func (s SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
 					GroupDescription:    "Concourse",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
 						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
 					},
 				},
 			},
-		},
-		Outputs: map[string]Output{
-			"ConcourseSecurityGroup": {Value: Ref{"ConcourseSecurityGroup"}},
 		},
 	}
 }
@@ -95,7 +127,7 @@ func (s SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
 					GroupDescription:    "Router",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
 					},
@@ -116,7 +148,7 @@ func (s SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
 					GroupDescription:    "CFSSHProxy",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
 					},

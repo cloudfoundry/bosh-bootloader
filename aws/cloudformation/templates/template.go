@@ -100,7 +100,14 @@ type SecurityGroup struct {
 	VpcId                interface{}            `json:",omitempty"`
 	GroupDescription     string                 `json:",omitempty"`
 	SecurityGroupIngress []SecurityGroupIngress `json:",omitempty"`
-	SecurityGroupEgress  []string
+	SecurityGroupEgress  []SecurityGroupEgress  `json:","`
+}
+
+type SecurityGroupEgress struct {
+	SourceSecurityGroupId interface{} `json:",omitempty"`
+	IpProtocol            string      `json:",omitempty"`
+	FromPort              string      `json:",omitempty"`
+	ToPort                string      `json:",omitempty"`
 }
 
 type SecurityGroupIngress struct {

@@ -110,5 +110,5 @@ vm_extensions:
   cloud_properties:
     elbs: [some-concourse-lb]
     security_groups:
-    - some-concourse-security-group
+    - some-concourse-internal-security-group
     - some-internal-security-group

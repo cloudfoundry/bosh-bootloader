@@ -49,6 +49,7 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet4"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).To(HaveKey("ConcourseSecurityGroup"))
+				Expect(template.Resources).To(HaveKey("ConcourseInternalSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("ConcourseLoadBalancer"))
 			})
 		})

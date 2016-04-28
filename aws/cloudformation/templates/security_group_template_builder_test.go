@@ -23,7 +23,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
 					GroupDescription:    "Internal",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
 							IpProtocol: "tcp",
@@ -118,7 +118,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
 					GroupDescription:    "BOSH",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
 							CidrIp:     templates.Ref{"BOSHInboundCIDR"},
@@ -167,7 +167,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
 					GroupDescription:    "Concourse",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
 							CidrIp:     "0.0.0.0/0",
@@ -184,10 +184,41 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 					},
 				},
 			}))
+		})
+	})
+
+	Describe("ConcourseInternalSecurityGroup", func() {
+		It("returns a template", func() {
+			securityGroup := builder.ConcourseInternalSecurityGroup()
+
+			Expect(securityGroup.Resources).To(HaveLen(1))
+			Expect(securityGroup.Resources).To(HaveKeyWithValue("ConcourseInternalSecurityGroup", templates.Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: templates.SecurityGroup{
+					VpcId:            templates.Ref{"VPC"},
+					GroupDescription: "ConcourseInternal",
+					SecurityGroupEgress: []templates.SecurityGroupEgress{
+						{
+							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+					SecurityGroupIngress: []templates.SecurityGroupIngress{
+						{
+							SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+				},
+			}))
 
 			Expect(securityGroup.Outputs).To(HaveLen(1))
-			Expect(securityGroup.Outputs).To(HaveKeyWithValue("ConcourseSecurityGroup", templates.Output{
-				Value: templates.Ref{"ConcourseSecurityGroup"},
+			Expect(securityGroup.Outputs).To(HaveKeyWithValue("ConcourseInternalSecurityGroup", templates.Output{
+				Value: templates.Ref{"ConcourseInternalSecurityGroup"},
 			}))
 		})
 	})
@@ -202,7 +233,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
 					GroupDescription:    "Router",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
 							CidrIp:     "0.0.0.0/0",
@@ -231,7 +262,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
 					GroupDescription:    "CFSSHProxy",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
 							CidrIp:     "0.0.0.0/0",

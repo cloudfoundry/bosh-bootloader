@@ -28,7 +28,7 @@ func (t NATTemplateBuilder) NAT() Template {
 				Properties: SecurityGroup{
 					VpcId:               Ref{"VPC"},
 					GroupDescription:    "NAT",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						{
 							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},

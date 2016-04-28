@@ -73,7 +73,7 @@ func (CloudConfigurator) populateLBs(stack cloudformation.Stack) []LoadBalancerE
 			Name:    "lb",
 			ELBName: value,
 			SecurityGroups: []string{
-				stack.Outputs["ConcourseSecurityGroup"],
+				stack.Outputs["ConcourseInternalSecurityGroup"],
 				stack.Outputs["InternalSecurityGroup"],
 			},
 		})

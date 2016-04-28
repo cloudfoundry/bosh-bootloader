@@ -49,6 +49,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.ConcourseSecurityGroup(),
+			securityGroupTemplateBuilder.ConcourseInternalSecurityGroup(),
 			loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones),
 		)
 	}

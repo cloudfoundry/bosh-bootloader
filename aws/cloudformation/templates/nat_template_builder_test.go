@@ -38,7 +38,7 @@ var _ = Describe("NATTemplateBuilder", func() {
 				Properties: templates.SecurityGroup{
 					VpcId:               templates.Ref{"VPC"},
 					GroupDescription:    "NAT",
-					SecurityGroupEgress: []string{},
+					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
 							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},

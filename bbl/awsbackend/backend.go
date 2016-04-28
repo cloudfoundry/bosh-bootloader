@@ -282,8 +282,8 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 				OutputValue: aws.String("some-concourse-lb"),
 			})
 			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
-				OutputKey:   aws.String("ConcourseSecurityGroup"),
-				OutputValue: aws.String("some-concourse-security-group"),
+				OutputKey:   aws.String("ConcourseInternalSecurityGroup"),
+				OutputValue: aws.String("some-concourse-internal-security-group"),
 			})
 		}
 
