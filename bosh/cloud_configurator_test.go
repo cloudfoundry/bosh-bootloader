@@ -161,8 +161,8 @@ var _ = Describe("CloudConfigurator", func() {
 					cloudFormationStack.Outputs["CFRouterLoadBalancer"] = "some-cf-router-load-balancer"
 					cloudFormationStack.Outputs["CFSSHProxyLoadBalancer"] = "some-cf-ssh-proxy-load-balancer"
 					cloudFormationStack.Outputs["InternalSecurityGroup"] = "some-internal-security-group"
-					cloudFormationStack.Outputs["CFRouterSecurityGroup"] = "some-cf-router-security-group"
-					cloudFormationStack.Outputs["CFSSHProxySecurityGroup"] = "some-cf-ssh-proxy-security-group"
+					cloudFormationStack.Outputs["CFRouterInternalSecurityGroup"] = "some-cf-router-internal-security-group"
+					cloudFormationStack.Outputs["CFSSHProxyInternalSecurityGroup"] = "some-cf-ssh-proxy-internal-security-group"
 
 					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
 					Expect(err).NotTo(HaveOccurred())
@@ -172,7 +172,7 @@ var _ = Describe("CloudConfigurator", func() {
 							Name:    "router-lb",
 							ELBName: "some-cf-router-load-balancer",
 							SecurityGroups: []string{
-								"some-cf-router-security-group",
+								"some-cf-router-internal-security-group",
 								"some-internal-security-group",
 							},
 						},
@@ -180,7 +180,7 @@ var _ = Describe("CloudConfigurator", func() {
 							Name:    "ssh-proxy-lb",
 							ELBName: "some-cf-ssh-proxy-load-balancer",
 							SecurityGroups: []string{
-								"some-cf-ssh-proxy-security-group",
+								"some-cf-ssh-proxy-internal-security-group",
 								"some-internal-security-group",
 							},
 						},

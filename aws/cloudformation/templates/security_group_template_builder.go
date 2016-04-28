@@ -41,6 +41,76 @@ func (s SecurityGroupTemplateBuilder) ConcourseInternalSecurityGroup() Template 
 	}
 }
 
+func (s SecurityGroupTemplateBuilder) CFRouterInternalSecurityGroup() Template {
+	return Template{
+		Resources: map[string]Resource{
+			"CFRouterInternalSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: SecurityGroup{
+					VpcId:            Ref{"VPC"},
+					GroupDescription: "CFRouterInternal",
+					SecurityGroupEgress: []SecurityGroupEgress{
+						{
+							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+					SecurityGroupIngress: []SecurityGroupIngress{
+						{
+							SourceSecurityGroupId: Ref{"CFRouterSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+				},
+			},
+		},
+		Outputs: map[string]Output{
+			"CFRouterInternalSecurityGroup": Output{
+				Value: Ref{"CFRouterInternalSecurityGroup"},
+			},
+		},
+	}
+}
+
+func (s SecurityGroupTemplateBuilder) CFSSHProxyInternalSecurityGroup() Template {
+	return Template{
+		Resources: map[string]Resource{
+			"CFSSHProxyInternalSecurityGroup": Resource{
+				Type: "AWS::EC2::SecurityGroup",
+				Properties: SecurityGroup{
+					VpcId:            Ref{"VPC"},
+					GroupDescription: "CFSSHProxyInternal",
+					SecurityGroupEgress: []SecurityGroupEgress{
+						{
+							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+					SecurityGroupIngress: []SecurityGroupIngress{
+						{
+							SourceSecurityGroupId: Ref{"CFSSHProxySecurityGroup"},
+							IpProtocol:            "tcp",
+							FromPort:              "0",
+							ToPort:                "65535",
+						},
+					},
+				},
+			},
+		},
+		Outputs: map[string]Output{
+			"CFSSHProxyInternalSecurityGroup": Output{
+				Value: Ref{"CFSSHProxyInternalSecurityGroup"},
+			},
+		},
+	}
+}
+
 func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
@@ -134,9 +204,6 @@ func (s SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 				},
 			},
 		},
-		Outputs: map[string]Output{
-			"CFRouterSecurityGroup": {Value: Ref{"CFRouterSecurityGroup"}},
-		},
 	}
 }
 
@@ -154,9 +221,6 @@ func (s SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
 					},
 				},
 			},
-		},
-		Outputs: map[string]Output{
-			"CFSSHProxySecurityGroup": {Value: Ref{"CFSSHProxySecurityGroup"}},
 		},
 	}
 }

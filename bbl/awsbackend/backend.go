@@ -297,12 +297,12 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 				OutputValue: aws.String("some-cf-ssh-proxy-lb"),
 			})
 			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
-				OutputKey:   aws.String("CFRouterSecurityGroup"),
-				OutputValue: aws.String("some-cf-router-security-group"),
+				OutputKey:   aws.String("CFRouterInternalSecurityGroup"),
+				OutputValue: aws.String("some-cf-router-internal-security-group"),
 			})
 			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
-				OutputKey:   aws.String("CFSSHProxySecurityGroup"),
-				OutputValue: aws.String("some-cf-ssh-proxy-security-group"),
+				OutputKey:   aws.String("CFSSHProxyInternalSecurityGroup"),
+				OutputValue: aws.String("some-cf-ssh-proxy-internal-security-group"),
 			})
 		}
 	}

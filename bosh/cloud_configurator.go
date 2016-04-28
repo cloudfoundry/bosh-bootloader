@@ -84,7 +84,7 @@ func (CloudConfigurator) populateLBs(stack cloudformation.Stack) []LoadBalancerE
 			Name:    "router-lb",
 			ELBName: value,
 			SecurityGroups: []string{
-				stack.Outputs["CFRouterSecurityGroup"],
+				stack.Outputs["CFRouterInternalSecurityGroup"],
 				stack.Outputs["InternalSecurityGroup"],
 			},
 		})
@@ -95,7 +95,7 @@ func (CloudConfigurator) populateLBs(stack cloudformation.Stack) []LoadBalancerE
 			Name:    "ssh-proxy-lb",
 			ELBName: value,
 			SecurityGroups: []string{
-				stack.Outputs["CFSSHProxySecurityGroup"],
+				stack.Outputs["CFSSHProxyInternalSecurityGroup"],
 				stack.Outputs["InternalSecurityGroup"],
 			},
 		})

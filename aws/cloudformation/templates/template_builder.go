@@ -60,9 +60,11 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 
 			securityGroupTemplateBuilder.CFRouterSecurityGroup(),
+			securityGroupTemplateBuilder.CFRouterInternalSecurityGroup(),
 			loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones),
 
 			securityGroupTemplateBuilder.CFSSHProxySecurityGroup(),
+			securityGroupTemplateBuilder.CFSSHProxyInternalSecurityGroup(),
 			loadBalancerTemplateBuilder.CFSSHProxyLoadBalancer(numberOfAvailabilityZones),
 		)
 	}

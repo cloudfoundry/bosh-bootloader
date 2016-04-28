@@ -110,11 +110,11 @@ vm_extensions:
   cloud_properties:
     elbs: [some-cf-router-lb]
     security_groups:
-    - some-cf-router-security-group
+    - some-cf-router-internal-security-group
     - some-internal-security-group
 - name: ssh-proxy-lb
   cloud_properties:
     elbs: [some-cf-ssh-proxy-lb]
     security_groups:
-    - some-cf-ssh-proxy-security-group
+    - some-cf-ssh-proxy-internal-security-group
     - some-internal-security-group
