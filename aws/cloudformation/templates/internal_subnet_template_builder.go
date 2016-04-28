@@ -31,9 +31,6 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrB
 			subnetCIDRName: Output{
 				Value: Ref{subnetCIDRName},
 			},
-			fmt.Sprintf("%sSecurityGroup", subnetName): Output{
-				Value: Ref{"InternalSecurityGroup"},
-			},
 		},
 		Parameters: map[string]Parameter{
 			subnetCIDRName: Parameter{

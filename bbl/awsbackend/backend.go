@@ -245,18 +245,6 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 						OutputValue: aws.String("some-subnet-3"),
 					},
 					{
-						OutputKey:   aws.String("InternalSubnet1SecurityGroup"),
-						OutputValue: aws.String("some-security-group-1"),
-					},
-					{
-						OutputKey:   aws.String("InternalSubnet2SecurityGroup"),
-						OutputValue: aws.String("some-security-group-2"),
-					},
-					{
-						OutputKey:   aws.String("InternalSubnet3SecurityGroup"),
-						OutputValue: aws.String("some-security-group-3"),
-					},
-					{
 						OutputKey:   aws.String("InternalSecurityGroup"),
 						OutputValue: aws.String("some-internal-security-group"),
 					},

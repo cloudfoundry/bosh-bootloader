@@ -25,7 +25,7 @@ networks:
   - az: z1
     cloud_properties:
       security_groups:
-      - some-security-group-1
+      - some-internal-security-group
       subnet: some-subnet-1
     gateway: 10.0.16.1
     range: 10.0.16.0/20
@@ -36,7 +36,7 @@ networks:
   - az: z2
     cloud_properties:
       security_groups:
-      - some-security-group-2
+      - some-internal-security-group
       subnet: some-subnet-2
     gateway: 10.0.32.1
     range: 10.0.32.0/20
@@ -47,7 +47,7 @@ networks:
   - az: z3
     cloud_properties:
       security_groups:
-      - some-security-group-3
+      - some-internal-security-group
       subnet: some-subnet-3
     gateway: 10.0.48.1
     range: 10.0.48.0/20

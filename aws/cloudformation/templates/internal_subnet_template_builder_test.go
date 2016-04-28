@@ -80,7 +80,7 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 		It("returns a template with outputs for the internal subnet", func() {
 			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
 
-			Expect(subnet.Outputs).To(HaveLen(4))
+			Expect(subnet.Outputs).To(HaveLen(3))
 			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Output{
 				Value: templates.Ref{"InternalSubnet1CIDR"},
 			}))
@@ -94,9 +94,6 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 			}))
 			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1Name", templates.Output{
 				Value: templates.Ref{"InternalSubnet1"},
-			}))
-			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1SecurityGroup", templates.Output{
-				Value: templates.Ref{"InternalSecurityGroup"},
 			}))
 		})
 	})

@@ -36,7 +36,7 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 			AZ:             stack.Outputs[fmt.Sprintf("InternalSubnet%dAZ", az)],
 			Subnet:         stack.Outputs[fmt.Sprintf("InternalSubnet%dName", az)],
 			CIDR:           stack.Outputs[fmt.Sprintf("InternalSubnet%dCIDR", az)],
-			SecurityGroups: []string{stack.Outputs[fmt.Sprintf("InternalSubnet%dSecurityGroup", az)]},
+			SecurityGroups: []string{stack.Outputs["InternalSecurityGroup"]},
 		})
 	}
 

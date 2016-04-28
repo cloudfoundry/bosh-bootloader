@@ -51,33 +51,21 @@
         },
         "InternalSubnet1CIDR": {"Value": {"Ref": "InternalSubnet1CIDR"}},
         "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
-        "InternalSubnet1SecurityGroup": {
-            "Value": {"Ref": "InternalSecurityGroup"}
-        },
         "InternalSubnet2AZ": {
             "Value": {"Fn::GetAtt": ["InternalSubnet2", "AvailabilityZone"]}
         },
         "InternalSubnet2CIDR": {"Value": {"Ref": "InternalSubnet2CIDR"}},
         "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
-        "InternalSubnet2SecurityGroup": {
-            "Value": {"Ref": "InternalSecurityGroup"}
-        },
         "InternalSubnet3AZ": {
             "Value": {"Fn::GetAtt": ["InternalSubnet3", "AvailabilityZone"]}
         },
         "InternalSubnet3CIDR": {"Value": {"Ref": "InternalSubnet3CIDR"}},
         "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
-        "InternalSubnet3SecurityGroup": {
-            "Value": {"Ref": "InternalSecurityGroup"}
-        },
         "InternalSubnet4AZ": {
             "Value": {"Fn::GetAtt": ["InternalSubnet4", "AvailabilityZone"]}
         },
         "InternalSubnet4CIDR": {"Value": {"Ref": "InternalSubnet4CIDR"}},
         "InternalSubnet4Name": {"Value": {"Ref": "InternalSubnet4"}},
-        "InternalSubnet4SecurityGroup": {
-            "Value": {"Ref": "InternalSecurityGroup"}
-        },
         "VPCID": {"Value": {"Ref": "VPC"}}
     },
     "Parameters": {
