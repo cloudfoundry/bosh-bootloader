@@ -88,6 +88,11 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 					ToPort:                "65535",
 				},
 			}))
+
+			Expect(securityGroup.Outputs).To(HaveLen(1))
+			Expect(securityGroup.Outputs).To(HaveKeyWithValue("InternalSecurityGroup", templates.Output{
+				Value: templates.Ref{"InternalSecurityGroup"},
+			}))
 		})
 	})
 
@@ -156,7 +161,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		It("returns a template", func() {
 			securityGroup := builder.ConcourseSecurityGroup()
 
-			Expect(securityGroup.Resources).To(HaveLen(3))
+			Expect(securityGroup.Resources).To(HaveLen(1))
 			Expect(securityGroup.Resources).To(HaveKeyWithValue("ConcourseSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
@@ -180,26 +185,9 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromConcourseSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: templates.SecurityGroupIngress{
-					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			}))
-
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromConcourseSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: templates.SecurityGroupIngress{
-					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
-					IpProtocol:            "udp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
+			Expect(securityGroup.Outputs).To(HaveLen(1))
+			Expect(securityGroup.Outputs).To(HaveKeyWithValue("ConcourseSecurityGroup", templates.Output{
+				Value: templates.Ref{"ConcourseSecurityGroup"},
 			}))
 		})
 	})
@@ -208,7 +196,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		It("returns a template containing the router security group", func() {
 			securityGroup := builder.CFRouterSecurityGroup()
 
-			Expect(securityGroup.Resources).To(HaveLen(3))
+			Expect(securityGroup.Resources).To(HaveLen(1))
 			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFRouterSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
@@ -226,26 +214,9 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: templates.SecurityGroupIngress{
-					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"CFRouterSecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
-			}))
-
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: templates.SecurityGroupIngress{
-					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"CFRouterSecurityGroup"},
-					IpProtocol:            "udp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
+			Expect(securityGroup.Outputs).To(HaveLen(1))
+			Expect(securityGroup.Outputs).To(HaveKeyWithValue("CFRouterSecurityGroup", templates.Output{
+				Value: templates.Ref{"CFRouterSecurityGroup"},
 			}))
 		})
 	})
@@ -254,7 +225,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		It("returns a template containing the cf ssh proxy security group", func() {
 			securityGroup := builder.CFSSHProxySecurityGroup()
 
-			Expect(securityGroup.Resources).To(HaveLen(2))
+			Expect(securityGroup.Resources).To(HaveLen(1))
 			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFSSHProxySecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
@@ -272,15 +243,9 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				},
 			}))
 
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroupIngress",
-				Properties: templates.SecurityGroupIngress{
-					GroupId:               templates.Ref{"InternalSecurityGroup"},
-					SourceSecurityGroupId: templates.Ref{"CFSSHProxySecurityGroup"},
-					IpProtocol:            "tcp",
-					FromPort:              "0",
-					ToPort:                "65535",
-				},
+			Expect(securityGroup.Outputs).To(HaveLen(1))
+			Expect(securityGroup.Outputs).To(HaveKeyWithValue("CFSSHProxySecurityGroup", templates.Output{
+				Value: templates.Ref{"CFSSHProxySecurityGroup"},
 			}))
 		})
 	})

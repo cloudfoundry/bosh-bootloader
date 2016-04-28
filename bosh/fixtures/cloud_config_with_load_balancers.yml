@@ -117,3 +117,6 @@ vm_extensions:
 - name: second-lb
   cloud_properties:
     elbs: [some-lb-2]
+    security_groups:
+    - some-security-group
+    - some-other-security-group

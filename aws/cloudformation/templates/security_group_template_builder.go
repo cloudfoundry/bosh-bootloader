@@ -27,6 +27,9 @@ func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 			"InternalSecurityGroupIngressTCPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "tcp"),
 			"InternalSecurityGroupIngressUDPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "udp"),
 		},
+		Outputs: map[string]Output{
+			"InternalSecurityGroup": {Value: Ref{"InternalSecurityGroup"}},
+		},
 	}
 }
 
@@ -77,8 +80,9 @@ func (s SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromConcourseSecurityGroup": s.internalSecurityGroupIngress("ConcourseSecurityGroup", "tcp"),
-			"InternalSecurityGroupIngressUDPfromConcourseSecurityGroup": s.internalSecurityGroupIngress("ConcourseSecurityGroup", "udp"),
+		},
+		Outputs: map[string]Output{
+			"ConcourseSecurityGroup": {Value: Ref{"ConcourseSecurityGroup"}},
 		},
 	}
 }
@@ -97,8 +101,9 @@ func (s SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": s.internalSecurityGroupIngress("CFRouterSecurityGroup", "tcp"),
-			"InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": s.internalSecurityGroupIngress("CFRouterSecurityGroup", "udp"),
+		},
+		Outputs: map[string]Output{
+			"CFRouterSecurityGroup": {Value: Ref{"CFRouterSecurityGroup"}},
 		},
 	}
 }
@@ -117,7 +122,9 @@ func (s SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup": s.internalSecurityGroupIngress("CFSSHProxySecurityGroup", "tcp"),
+		},
+		Outputs: map[string]Output{
+			"CFSSHProxySecurityGroup": {Value: Ref{"CFSSHProxySecurityGroup"}},
 		},
 	}
 }

@@ -69,15 +69,36 @@ func (CloudConfigurator) populateLBs(stack cloudformation.Stack) []LoadBalancerE
 	lbs := []LoadBalancerExtension{}
 
 	if value := stack.Outputs["ConcourseLoadBalancer"]; value != "" {
-		lbs = append(lbs, LoadBalancerExtension{Name: "lb", ELBName: value})
+		lbs = append(lbs, LoadBalancerExtension{
+			Name:    "lb",
+			ELBName: value,
+			SecurityGroups: []string{
+				stack.Outputs["ConcourseSecurityGroup"],
+				stack.Outputs["InternalSecurityGroup"],
+			},
+		})
 	}
 
 	if value := stack.Outputs["CFRouterLoadBalancer"]; value != "" {
-		lbs = append(lbs, LoadBalancerExtension{Name: "router-lb", ELBName: value})
+		lbs = append(lbs, LoadBalancerExtension{
+			Name:    "router-lb",
+			ELBName: value,
+			SecurityGroups: []string{
+				stack.Outputs["CFRouterSecurityGroup"],
+				stack.Outputs["InternalSecurityGroup"],
+			},
+		})
 	}
 
 	if value := stack.Outputs["CFSSHProxyLoadBalancer"]; value != "" {
-		lbs = append(lbs, LoadBalancerExtension{Name: "ssh-proxy-lb", ELBName: value})
+		lbs = append(lbs, LoadBalancerExtension{
+			Name:    "ssh-proxy-lb",
+			ELBName: value,
+			SecurityGroups: []string{
+				stack.Outputs["CFSSHProxySecurityGroup"],
+				stack.Outputs["InternalSecurityGroup"],
+			},
+		})
 	}
 
 	return lbs

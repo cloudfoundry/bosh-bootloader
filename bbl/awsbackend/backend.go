@@ -257,6 +257,10 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 						OutputValue: aws.String("some-security-group-3"),
 					},
 					{
+						OutputKey:   aws.String("InternalSecurityGroup"),
+						OutputValue: aws.String("some-internal-security-group"),
+					},
+					{
 						OutputKey:   aws.String("VPCID"),
 						OutputValue: aws.String("some-vpc-id"),
 					},
@@ -277,6 +281,10 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 				OutputKey:   aws.String("ConcourseLoadBalancer"),
 				OutputValue: aws.String("some-concourse-lb"),
 			})
+			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
+				OutputKey:   aws.String("ConcourseSecurityGroup"),
+				OutputValue: aws.String("some-concourse-security-group"),
+			})
 		}
 
 		if _, ok := template.Resources["CFRouterLoadBalancer"]; ok {
@@ -287,6 +295,14 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
 				OutputKey:   aws.String("CFSSHProxyLoadBalancer"),
 				OutputValue: aws.String("some-cf-ssh-proxy-lb"),
+			})
+			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
+				OutputKey:   aws.String("CFRouterSecurityGroup"),
+				OutputValue: aws.String("some-cf-router-security-group"),
+			})
+			stackOutput.Stacks[0].Outputs = append(stackOutput.Stacks[0].Outputs, &cloudformation.Output{
+				OutputKey:   aws.String("CFSSHProxySecurityGroup"),
+				OutputValue: aws.String("some-cf-ssh-proxy-security-group"),
 			})
 		}
 	}

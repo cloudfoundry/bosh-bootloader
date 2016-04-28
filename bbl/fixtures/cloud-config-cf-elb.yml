@@ -109,6 +109,12 @@ vm_extensions:
 - name: router-lb
   cloud_properties:
     elbs: [some-cf-router-lb]
+    security_groups:
+    - some-cf-router-security-group
+    - some-internal-security-group
 - name: ssh-proxy-lb
   cloud_properties:
     elbs: [some-cf-ssh-proxy-lb]
+    security_groups:
+    - some-cf-ssh-proxy-security-group
+    - some-internal-security-group

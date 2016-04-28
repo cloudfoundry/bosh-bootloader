@@ -109,3 +109,6 @@ vm_extensions:
 - name: lb
   cloud_properties:
     elbs: [some-concourse-lb]
+    security_groups:
+    - some-concourse-security-group
+    - some-internal-security-group

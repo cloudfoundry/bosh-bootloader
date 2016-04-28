@@ -31,6 +31,9 @@
         "BOSHUserSecretAccessKey": {
             "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
         },
+        "InternalSecurityGroup": {
+            "Value": {"Ref": "InternalSecurityGroup"}
+        },
         "InternalSubnet1AZ": {
             "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
         },

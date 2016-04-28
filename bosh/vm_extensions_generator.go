@@ -10,12 +10,14 @@ type VMExtension struct {
 }
 
 type VMExtensionCloudProperties struct {
-	ELBS []string `yaml:"elbs"`
+	ELBS           []string `yaml:"elbs"`
+	SecurityGroups []string `yaml:"security_groups,omitempty"`
 }
 
 type LoadBalancerExtension struct {
-	Name    string
-	ELBName string
+	Name           string
+	ELBName        string
+	SecurityGroups []string
 }
 
 func NewVMExtensionsGenerator(loadBalancerExtensions []LoadBalancerExtension) VMExtensionsGenerators {
@@ -30,7 +32,8 @@ func (g VMExtensionsGenerators) Generate() []VMExtension {
 		vmExtensions = append(vmExtensions, VMExtension{
 			Name: v.Name,
 			CloudProperties: VMExtensionCloudProperties{
-				ELBS: []string{v.ELBName},
+				ELBS:           []string{v.ELBName},
+				SecurityGroups: v.SecurityGroups,
 			},
 		})
 	}

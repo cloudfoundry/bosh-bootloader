@@ -73,6 +73,10 @@ var _ = Describe("CloudConfigGenerator", func() {
 						{
 							Name:    "second-lb",
 							ELBName: "some-lb-2",
+							SecurityGroups: []string{
+								"some-security-group",
+								"some-other-security-group",
+							},
 						},
 					},
 					AZs: []string{"us-east-1a", "us-east-1b", "us-east-1c"},

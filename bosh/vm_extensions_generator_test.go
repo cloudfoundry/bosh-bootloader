@@ -18,6 +18,10 @@ var _ = Describe("VMExtensionsGenerator", func() {
 				{
 					Name:    "another-lb",
 					ELBName: "some-other-lb",
+					SecurityGroups: []string{
+						"some-security-group",
+						"some-other-security-group",
+					},
 				},
 			}
 
@@ -34,7 +38,8 @@ var _ = Describe("VMExtensionsGenerator", func() {
 				{
 					Name: "another-lb",
 					CloudProperties: bosh.VMExtensionCloudProperties{
-						ELBS: []string{"some-other-lb"},
+						ELBS:           []string{"some-other-lb"},
+						SecurityGroups: []string{"some-security-group", "some-other-security-group"},
 					},
 				},
 			}))

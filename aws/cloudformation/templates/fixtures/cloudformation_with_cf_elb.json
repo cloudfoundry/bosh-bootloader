@@ -33,10 +33,13 @@
     "CFRouterLoadBalancerURL": {
       "Value": {"Fn::GetAtt": ["CFRouterLoadBalancer", "DNSName"]}
     },
+    "CFRouterSecurityGroup": {"Value": {"Ref": "CFRouterSecurityGroup"}},
     "CFSSHProxyLoadBalancer": {"Value": {"Ref": "CFSSHProxyLoadBalancer"}},
     "CFSSHProxyLoadBalancerURL": {
       "Value": {"Fn::GetAtt": ["CFSSHProxyLoadBalancer", "DNSName"]}
     },
+    "CFSSHProxySecurityGroup": {"Value": {"Ref": "CFSSHProxySecurityGroup"}},
+    "InternalSecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
     "InternalSubnet1AZ": {
       "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
     },
@@ -380,26 +383,6 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
-    "InternalSecurityGroupIngressTCPfromCFRouterSecurityGroup": {
-      "Properties": {
-        "FromPort": "0",
-        "GroupId": {"Ref": "InternalSecurityGroup"},
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {"Ref": "CFRouterSecurityGroup"},
-        "ToPort": "65535"
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
-    "InternalSecurityGroupIngressTCPfromCFSSHProxySecurityGroup": {
-      "Properties": {
-        "FromPort": "0",
-        "GroupId": {"Ref": "InternalSecurityGroup"},
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {"Ref": "CFSSHProxySecurityGroup"},
-        "ToPort": "65535"
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
     "InternalSecurityGroupIngressTCPfromSelf": {
       "Properties": {
         "FromPort": "0",
@@ -416,16 +399,6 @@
         "GroupId": {"Ref": "InternalSecurityGroup"},
         "IpProtocol": "udp",
         "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
-        "ToPort": "65535"
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
-    "InternalSecurityGroupIngressUDPfromCFRouterSecurityGroup": {
-      "Properties": {
-        "FromPort": "0",
-        "GroupId": {"Ref": "InternalSecurityGroup"},
-        "IpProtocol": "udp",
-        "SourceSecurityGroupId": {"Ref": "CFRouterSecurityGroup"},
         "ToPort": "65535"
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
