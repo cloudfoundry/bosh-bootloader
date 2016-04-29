@@ -27,11 +27,13 @@ var _ = Describe("Up", func() {
 			cloudFormationClient      *fakes.CloudFormationClient
 			ec2Client                 *fakes.EC2Client
 			elbClient                 *fakes.ELBClient
+			iamClient                 *fakes.IAMClient
 			clientProvider            *fakes.ClientProvider
 			stringGenerator           *fakes.StringGenerator
 			cloudConfigurator         *fakes.BoshCloudConfigurator
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			elbDescriber              *fakes.ELBDescriber
+			certificateUploader       *fakes.CertificateUploader
 			globalFlags               commands.GlobalFlags
 			boshInitCredentials       map[string]string
 		)
@@ -73,11 +75,13 @@ var _ = Describe("Up", func() {
 			cloudFormationClient = &fakes.CloudFormationClient{}
 			ec2Client = &fakes.EC2Client{}
 			elbClient = &fakes.ELBClient{}
+			iamClient = &fakes.IAMClient{}
 
 			clientProvider = &fakes.ClientProvider{}
 			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 			clientProvider.ELBClientCall.Returns.Client = elbClient
+			clientProvider.IAMClientCall.Returns.Client = iamClient
 
 			stringGenerator = &fakes.StringGenerator{}
 			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
@@ -90,13 +94,16 @@ var _ = Describe("Up", func() {
 
 			elbDescriber = &fakes.ELBDescriber{}
 
+			certificateUploader = &fakes.CertificateUploader{}
+
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
 			}
 
 			command = commands.NewUp(
 				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber)
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateUploader,
+			)
 
 			boshInitCredentials = map[string]string{
 				"mbusUsername":              "some-mbus-username",
@@ -237,6 +244,52 @@ var _ = Describe("Up", func() {
 					PrivateKey: "some-private-key",
 				},
 			}))
+		})
+
+		Context("when specifying an lb", func() {
+			Context("when cert and key are provided", func() {
+				It("uploads the given cert and key", func() {
+					subcommandArgs := []string{
+						"--lb-type", "concourse",
+						"--cert", "some-certificate-file",
+						"--key", "some-private-key-file",
+					}
+
+					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(certificateUploader.UploadCall.Receives.Client).To(Equal(iamClient))
+					Expect(certificateUploader.UploadCall.Receives.Certificate).To(Equal("some-certificate-file"))
+					Expect(certificateUploader.UploadCall.Receives.PrivateKey).To(Equal("some-private-key-file"))
+					Expect(certificateUploader.UploadCall.Receives.Name).To(Equal("bbl-certificate"))
+				})
+
+				It("does not upload certs if the lb-type is none", func() {
+					subcommandArgs := []string{
+						"--lb-type", "none",
+						"--cert", "some-certificate-file",
+						"--key", "some-private-key-file",
+					}
+
+					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(certificateUploader.UploadCall.CallCount).To(Equal(0))
+				})
+			})
+
+			Context("when cert and key are not provided", func() {
+				It("does not upload a cert and key", func() {
+					subcommandArgs := []string{
+						"--lb-type", "concourse",
+					}
+
+					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(certificateUploader.UploadCall.CallCount).To(Equal(0))
+				})
+			})
 		})
 
 		Context("when there are instances attached to an lb", func() {
@@ -723,6 +776,28 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
+			It("returns an error when the IAM client can not be created", func() {
+				clientProvider.IAMClientCall.Returns.Error = errors.New("error creating client")
+
+				_, err := command.Execute(globalFlags, []string{
+					"--lb-type", "cf",
+					"--cert", "some-cert",
+					"--key", "some-key",
+				}, storage.State{})
+				Expect(err).To(MatchError("error creating client"))
+			})
+
+			It("returns an error when the certificate cannot be uploaded", func() {
+				certificateUploader.UploadCall.Returns.Error = errors.New("error uploading certificate")
+
+				_, err := command.Execute(globalFlags, []string{
+					"--lb-type", "cf",
+					"--cert", "some-cert",
+					"--key", "some-key",
+				}, storage.State{})
+				Expect(err).To(MatchError("error uploading certificate"))
+			})
+
 			It("returns an error when the ELB client can not be created", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = true
 				clientProvider.ELBClientCall.Returns.Error = errors.New("error creating client")
@@ -779,7 +854,7 @@ var _ = Describe("Up", func() {
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = commands.NewUp(
 					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber)
+					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateUploader)
 
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))

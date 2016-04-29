@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/rosenhouse/awsfaker"
 )
@@ -19,6 +20,7 @@ type Backend struct {
 	Stacks          *Stacks
 	LoadBalancers   *LoadBalancers
 	Instances       *Instances
+	Certificates    *Certificates
 	boshDirectorURL string
 }
 
@@ -29,6 +31,7 @@ func New(boshDirectorURL string) *Backend {
 		Instances:       NewInstances(),
 		boshDirectorURL: boshDirectorURL,
 		LoadBalancers:   NewLoadBalancers(),
+		Certificates:    NewCertificates(),
 	}
 }
 
@@ -296,4 +299,14 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 	}
 
 	return stackOutput, nil
+}
+
+func (b *Backend) UploadServerCertificate(input *iam.UploadServerCertificateInput) (*iam.UploadServerCertificateOutput, error) {
+	b.Certificates.Set(Certificate{
+		Name:            aws.StringValue(input.ServerCertificateName),
+		CertificateBody: aws.StringValue(input.CertificateBody),
+		PrivateKey:      aws.StringValue(input.PrivateKey),
+	})
+
+	return nil, nil
 }

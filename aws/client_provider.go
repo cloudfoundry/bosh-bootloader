@@ -5,9 +5,11 @@ import (
 	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	awselb "github.com/aws/aws-sdk-go/service/elb"
+	awsiam "github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 )
 
 type ClientProvider struct{}
@@ -36,4 +38,12 @@ func (s ClientProvider) EC2Client(config Config) (ec2.Client, error) {
 	}
 
 	return awsec2.New(session.New(config.ClientConfig())), nil
+}
+
+func (s ClientProvider) IAMClient(config Config) (iam.Client, error) {
+	if err := config.ValidateCredentials(); err != nil {
+		return nil, err
+	}
+
+	return awsiam.New(session.New(config.ClientConfig())), nil
 }

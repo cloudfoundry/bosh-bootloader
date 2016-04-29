@@ -8,6 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -18,6 +19,7 @@ type awsClientProvider interface {
 	CloudFormationClient(aws.Config) (cloudformation.Client, error)
 	EC2Client(aws.Config) (ec2.Client, error)
 	ELBClient(aws.Config) (elb.Client, error)
+	IAMClient(aws.Config) (iam.Client, error)
 }
 
 type keyPairSynchronizer interface {
@@ -47,6 +49,10 @@ type elbDescriber interface {
 	Describe(elbName string, client elb.Client) ([]string, error)
 }
 
+type certificateUploader interface {
+	Upload(name string, certificate string, privateKey string, client iam.Client) error
+}
+
 type logger interface {
 	Step(string)
 	Println(string)
@@ -54,7 +60,9 @@ type logger interface {
 }
 
 type upConfig struct {
-	lbType string
+	lbType   string
+	certPath string
+	keyPath  string
 }
 
 type Up struct {
@@ -66,13 +74,14 @@ type Up struct {
 	cloudConfigurator         cloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
 	elbDescriber              elbDescriber
+	certificateUploader       certificateUploader
 }
 
 func NewUp(
 	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
 	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
-	elbDescriber elbDescriber) Up {
+	elbDescriber elbDescriber, certificateUploader certificateUploader) Up {
 
 	return Up{
 		infrastructureManager:     infrastructureManager,
@@ -83,6 +92,7 @@ func NewUp(
 		cloudConfigurator:         cloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		elbDescriber:              elbDescriber,
+		certificateUploader:       certificateUploader,
 	}
 }
 
@@ -148,6 +158,23 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	}
 
 	state.Stack.LBType = newLBType
+
+	if state.Stack.LBType != "none" && config.certPath != "" && config.keyPath != "" {
+		iamClient, err := u.awsClientProvider.IAMClient(aws.Config{
+			AccessKeyID:      state.AWS.AccessKeyID,
+			SecretAccessKey:  state.AWS.SecretAccessKey,
+			Region:           state.AWS.Region,
+			EndpointOverride: globalFlags.EndpointOverride,
+		})
+		if err != nil {
+			return state, err
+		}
+
+		err = u.certificateUploader.Upload("bbl-certificate", config.certPath, config.keyPath, iamClient)
+		if err != nil {
+			return state, err
+		}
+	}
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
@@ -235,6 +262,8 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 
 	config := upConfig{}
 	upFlags.String(&config.lbType, "lb-type", "")
+	upFlags.String(&config.certPath, "cert", "")
+	upFlags.String(&config.keyPath, "key", "")
 
 	err := upFlags.Parse(subcommandFlags)
 	if err != nil {

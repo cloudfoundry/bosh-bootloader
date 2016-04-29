@@ -5,6 +5,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 )
 
 type ClientProvider struct {
@@ -37,6 +38,16 @@ type ClientProvider struct {
 			Error  error
 		}
 	}
+
+	IAMClientCall struct {
+		Receives struct {
+			Config aws.Config
+		}
+		Returns struct {
+			Client iam.Client
+			Error  error
+		}
+	}
 }
 
 func (p *ClientProvider) CloudFormationClient(config aws.Config) (cloudformation.Client, error) {
@@ -55,4 +66,10 @@ func (p *ClientProvider) ELBClient(config aws.Config) (elb.Client, error) {
 	p.ELBClientCall.Receives.Config = config
 
 	return p.ELBClientCall.Returns.Client, p.ELBClientCall.Returns.Error
+}
+
+func (p *ClientProvider) IAMClient(config aws.Config) (iam.Client, error) {
+	p.IAMClientCall.Receives.Config = config
+
+	return p.IAMClientCall.Returns.Client, p.IAMClientCall.Returns.Error
 }

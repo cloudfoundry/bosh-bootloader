@@ -208,19 +208,40 @@ var _ = Describe("bbl", func() {
 			})
 		})
 
-		Context("when running again with a different load balancer", func() {
-			It("fails fast if there are instances associated with the existing load balancer", func() {
-				deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+		Context("when lb-type has been specified", func() {
+			Context("when cert and key have been specified", func() {
+				It("uploads a cert and key", func() {
+					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
 
-				fakeAWS.LoadBalancers.Set(awsbackend.LoadBalancer{
-					Name:      "some-concourse-lb",
-					Instances: []string{"some-instance-1", "some-instance-2"},
+					certificates := fakeAWS.Certificates.All()
+
+					lbCert, err := ioutil.ReadFile("fixtures/lb-cert.pem")
+					Expect(err).NotTo(HaveOccurred())
+
+					lbKey, err := ioutil.ReadFile("fixtures/lb-key.pem")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(certificates).To(HaveLen(1))
+					Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
+					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
+					Expect(certificates[0].Name).To(Equal("bbl-certificate"))
 				})
+			})
 
-				session := deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "none", 1)
+			Context("when running again with a different load balancer", func() {
+				It("fails fast if there are instances associated with the existing load balancer", func() {
+					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
 
-				stderr := session.Err.Contents()
-				Expect(stderr).To(ContainSubstring("Load balancer \"some-concourse-lb\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
+					fakeAWS.LoadBalancers.Set(awsbackend.LoadBalancer{
+						Name:      "some-concourse-lb",
+						Instances: []string{"some-instance-1", "some-instance-2"},
+					})
+
+					session := deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "none", 1)
+
+					stderr := session.Err.Contents()
+					Expect(stderr).To(ContainSubstring("Load balancer \"some-concourse-lb\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
+				})
 			})
 		})
 
@@ -273,6 +294,8 @@ func readStateJson(tempDirectory string) storage.State {
 }
 
 func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
+	dir, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--aws-access-key-id", "some-access-key",
@@ -281,6 +304,8 @@ func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory
 		"--state-dir", tempDirectory,
 		"unsupported-deploy-bosh-on-aws-for-concourse",
 		"--lb-type", lbType,
+		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
+		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
 	}
 
 	return executeCommand(args, exitCode)

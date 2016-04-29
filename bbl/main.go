@@ -16,6 +16,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
@@ -45,6 +46,7 @@ func main() {
 	stackManager := cloudformation.NewStackManager(logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 	elbDescriber := elb.NewDescriber()
+	certificateUploader := iam.NewCertificateUploader()
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -59,13 +61,17 @@ func main() {
 
 	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
 	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
-	boshinitManifestBuilder := manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+	boshinitManifestBuilder := manifests.NewManifestBuilder(
+		logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder,
+	)
 	boshinitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
 	boshinitDeployCommand := boshinitCommandBuilder.DeployCommand()
 	boshinitDeleteCommand := boshinitCommandBuilder.DeleteCommand()
 	boshinitDeployRunner := boshinit.NewCommandRunner(tempDir, boshinitDeployCommand)
 	boshinitDeleteRunner := boshinit.NewCommandRunner(tempDir, boshinitDeleteCommand)
-	boshinitExecutor := boshinit.NewExecutor(boshinitManifestBuilder, boshinitDeployRunner, boshinitDeleteRunner, logger)
+	boshinitExecutor := boshinit.NewExecutor(
+		boshinitManifestBuilder, boshinitDeployRunner, boshinitDeleteRunner, logger,
+	)
 
 	// BOSH
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
@@ -75,8 +81,14 @@ func main() {
 	// Commands
 	help := commands.NewUsage(os.Stdout)
 	version := commands.NewVersion(os.Stdout)
-	up := commands.NewUp(infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor, stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber)
-	destroy := commands.NewDestroy(logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
+	up := commands.NewUp(
+		infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor,
+		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateUploader,
+	)
+	destroy := commands.NewDestroy(
+		logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker,
+		stackManager, stringGenerator, infrastructureManager, keyPairDeleter,
+	)
 	usage := commands.NewUsage(os.Stdout)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
 		return state.BOSH.DirectorAddress
