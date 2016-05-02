@@ -7,7 +7,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
-
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
@@ -63,7 +62,6 @@ var _ = Describe("CertificateUploader", func() {
 					ServerCertificateName: aws.String("some-certificate"),
 				},
 			))
-
 		})
 
 		Context("failure cases", func() {

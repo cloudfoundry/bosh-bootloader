@@ -226,6 +226,24 @@ var _ = Describe("bbl", func() {
 					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
 					Expect(certificates[0].Name).To(Equal("bbl-certificate"))
 				})
+
+				It("doesn't upload a cert and key twice", func() {
+					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+
+					certificates := fakeAWS.Certificates.All()
+
+					lbCert, err := ioutil.ReadFile("fixtures/lb-cert.pem")
+					Expect(err).NotTo(HaveOccurred())
+
+					lbKey, err := ioutil.ReadFile("fixtures/lb-key.pem")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(certificates).To(HaveLen(1))
+					Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
+					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
+					Expect(certificates[0].Name).To(Equal("bbl-certificate"))
+				})
 			})
 
 			Context("when running again with a different load balancer", func() {

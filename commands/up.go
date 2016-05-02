@@ -49,8 +49,8 @@ type elbDescriber interface {
 	Describe(elbName string, client elb.Client) ([]string, error)
 }
 
-type certificateUploader interface {
-	Upload(name string, certificate string, privateKey string, client iam.Client) error
+type certificateManager interface {
+	CreateOrUpdate(name string, certificate string, privateKey string, client iam.Client) error
 }
 
 type logger interface {
@@ -74,14 +74,14 @@ type Up struct {
 	cloudConfigurator         cloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
 	elbDescriber              elbDescriber
-	certificateUploader       certificateUploader
+	certificateManager        certificateManager
 }
 
 func NewUp(
 	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
 	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
-	elbDescriber elbDescriber, certificateUploader certificateUploader) Up {
+	elbDescriber elbDescriber, certificateManager certificateManager) Up {
 
 	return Up{
 		infrastructureManager:     infrastructureManager,
@@ -92,7 +92,7 @@ func NewUp(
 		cloudConfigurator:         cloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		elbDescriber:              elbDescriber,
-		certificateUploader:       certificateUploader,
+		certificateManager:        certificateManager,
 	}
 }
 
@@ -170,7 +170,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 			return state, err
 		}
 
-		err = u.certificateUploader.Upload("bbl-certificate", config.certPath, config.keyPath, iamClient)
+		err = u.certificateManager.CreateOrUpdate("bbl-certificate", config.certPath, config.keyPath, iamClient)
 		if err != nil {
 			return state, err
 		}

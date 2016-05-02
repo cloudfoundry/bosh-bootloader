@@ -47,6 +47,9 @@ func main() {
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 	elbDescriber := elb.NewDescriber()
 	certificateUploader := iam.NewCertificateUploader()
+	certificateDescriber := iam.NewCertificateDescriber()
+	certificateDeleter := iam.NewCertificateDeleter()
+	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -83,7 +86,7 @@ func main() {
 	version := commands.NewVersion(os.Stdout)
 	up := commands.NewUp(
 		infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor,
-		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateUploader,
+		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateManager,
 	)
 	destroy := commands.NewDestroy(
 		logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker,

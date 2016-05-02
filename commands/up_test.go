@@ -33,7 +33,7 @@ var _ = Describe("Up", func() {
 			cloudConfigurator         *fakes.BoshCloudConfigurator
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			elbDescriber              *fakes.ELBDescriber
-			certificateUploader       *fakes.CertificateUploader
+			certificateManager        *fakes.CertificateManager
 			globalFlags               commands.GlobalFlags
 			boshInitCredentials       map[string]string
 		)
@@ -94,7 +94,7 @@ var _ = Describe("Up", func() {
 
 			elbDescriber = &fakes.ELBDescriber{}
 
-			certificateUploader = &fakes.CertificateUploader{}
+			certificateManager = &fakes.CertificateManager{}
 
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
@@ -102,7 +102,7 @@ var _ = Describe("Up", func() {
 
 			command = commands.NewUp(
 				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateUploader,
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateManager,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -258,10 +258,10 @@ var _ = Describe("Up", func() {
 					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateUploader.UploadCall.Receives.Client).To(Equal(iamClient))
-					Expect(certificateUploader.UploadCall.Receives.Certificate).To(Equal("some-certificate-file"))
-					Expect(certificateUploader.UploadCall.Receives.PrivateKey).To(Equal("some-private-key-file"))
-					Expect(certificateUploader.UploadCall.Receives.Name).To(Equal("bbl-certificate"))
+					Expect(certificateManager.CreateOrUpdateCall.Receives.Client).To(Equal(iamClient))
+					Expect(certificateManager.CreateOrUpdateCall.Receives.Certificate).To(Equal("some-certificate-file"))
+					Expect(certificateManager.CreateOrUpdateCall.Receives.PrivateKey).To(Equal("some-private-key-file"))
+					Expect(certificateManager.CreateOrUpdateCall.Receives.Name).To(Equal("bbl-certificate"))
 				})
 
 				It("does not upload certs if the lb-type is none", func() {
@@ -274,7 +274,7 @@ var _ = Describe("Up", func() {
 					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateUploader.UploadCall.CallCount).To(Equal(0))
+					Expect(certificateManager.CreateOrUpdateCall.CallCount).To(Equal(0))
 				})
 			})
 
@@ -287,7 +287,7 @@ var _ = Describe("Up", func() {
 					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateUploader.UploadCall.CallCount).To(Equal(0))
+					Expect(certificateManager.CreateOrUpdateCall.CallCount).To(Equal(0))
 				})
 			})
 		})
@@ -788,7 +788,7 @@ var _ = Describe("Up", func() {
 			})
 
 			It("returns an error when the certificate cannot be uploaded", func() {
-				certificateUploader.UploadCall.Returns.Error = errors.New("error uploading certificate")
+				certificateManager.CreateOrUpdateCall.Returns.Error = errors.New("error uploading certificate")
 
 				_, err := command.Execute(globalFlags, []string{
 					"--lb-type", "cf",
@@ -854,7 +854,7 @@ var _ = Describe("Up", func() {
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = commands.NewUp(
 					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateUploader)
+					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateManager)
 
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))

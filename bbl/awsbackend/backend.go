@@ -301,12 +301,60 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 	return stackOutput, nil
 }
 
-func (b *Backend) UploadServerCertificate(input *iam.UploadServerCertificateInput) (*iam.UploadServerCertificateOutput, error) {
-	b.Certificates.Set(Certificate{
-		Name:            aws.StringValue(input.ServerCertificateName),
-		CertificateBody: aws.StringValue(input.CertificateBody),
-		PrivateKey:      aws.StringValue(input.PrivateKey),
-	})
+func (b *Backend) GetServerCertificate(input *iam.GetServerCertificateInput) (*iam.GetServerCertificateOutput, error) {
+	certificateName := aws.StringValue(input.ServerCertificateName)
 
-	return nil, nil
+	if certificate, ok := b.Certificates.Get(certificateName); ok {
+		return &iam.GetServerCertificateOutput{
+			ServerCertificate: &iam.ServerCertificate{
+				CertificateBody: aws.String(certificate.CertificateBody),
+				ServerCertificateMetadata: &iam.ServerCertificateMetadata{
+					Path:                  aws.String("some-certificate-path"),
+					Arn:                   aws.String("some-certificate-arn"),
+					ServerCertificateId:   aws.String("some-server-certificate-id"),
+					ServerCertificateName: input.ServerCertificateName,
+				},
+			},
+		}, nil
+	}
+
+	return nil, &awsfaker.ErrorResponse{
+		HTTPStatusCode:  http.StatusNotFound,
+		AWSErrorCode:    "NoSuchEntity",
+		AWSErrorMessage: fmt.Sprintf("The Server Certificate with name %s cannot be found.", certificateName),
+	}
+}
+
+func (b *Backend) UploadServerCertificate(input *iam.UploadServerCertificateInput) (*iam.UploadServerCertificateOutput, error) {
+	certificateName := aws.StringValue(input.ServerCertificateName)
+
+	if _, ok := b.Certificates.Get(certificateName); !ok {
+		b.Certificates.Set(Certificate{
+			Name:            certificateName,
+			CertificateBody: aws.StringValue(input.CertificateBody),
+			PrivateKey:      aws.StringValue(input.PrivateKey),
+		})
+		return nil, nil
+	}
+
+	return nil, &awsfaker.ErrorResponse{
+		HTTPStatusCode:  http.StatusConflict,
+		AWSErrorCode:    "EntityAlreadyExists",
+		AWSErrorMessage: fmt.Sprintf("The Server Certificate with name %s already exists.", certificateName),
+	}
+}
+
+func (b *Backend) DeleteServerCertificate(input *iam.DeleteServerCertificateInput) (*iam.DeleteServerCertificateOutput, error) {
+	certificateName := aws.StringValue(input.ServerCertificateName)
+
+	if _, ok := b.Certificates.Get(certificateName); ok {
+		b.Certificates.Delete(certificateName)
+		return &iam.DeleteServerCertificateOutput{}, nil
+	}
+
+	return nil, &awsfaker.ErrorResponse{
+		HTTPStatusCode:  http.StatusNotFound,
+		AWSErrorCode:    "NoSuchEntity",
+		AWSErrorMessage: fmt.Sprintf("The Server Certificate with name %s cannot be found.", certificateName),
+	}
 }

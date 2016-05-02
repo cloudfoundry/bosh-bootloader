@@ -7,14 +7,13 @@ import (
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 )
 
-type CertificateUploader struct {
-}
+type CertificateUploader struct{}
 
 func NewCertificateUploader() CertificateUploader {
 	return CertificateUploader{}
 }
 
-func (c CertificateUploader) Upload(name, certificatePath, privateKeyPath string, iamClient Client) error {
+func (CertificateUploader) Upload(name, certificatePath, privateKeyPath string, iamClient Client) error {
 	certificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return err
@@ -33,6 +32,5 @@ func (c CertificateUploader) Upload(name, certificatePath, privateKeyPath string
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
