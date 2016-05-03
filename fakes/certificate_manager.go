@@ -12,17 +12,18 @@ type CertificateManager struct {
 			PrivateKey  string
 		}
 		Returns struct {
-			Error error
+			Error           error
+			CertificateName string
 		}
 	}
 }
 
-func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string, client iam.Client) error {
+func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string, client iam.Client) (string, error) {
 	c.CreateOrUpdateCall.CallCount++
 	c.CreateOrUpdateCall.Receives.Client = client
 	c.CreateOrUpdateCall.Receives.Certificate = certificate
 	c.CreateOrUpdateCall.Receives.PrivateKey = privatekey
 	c.CreateOrUpdateCall.Receives.Name = name
 
-	return c.CreateOrUpdateCall.Returns.Error
+	return c.CreateOrUpdateCall.Returns.CertificateName, c.CreateOrUpdateCall.Returns.Error
 }

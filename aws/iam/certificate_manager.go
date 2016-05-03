@@ -14,7 +14,7 @@ type Certificate struct {
 }
 
 type certificateUploader interface {
-	Upload(certificateName, certificatePath, privateKeyPath string, iamClient Client) error
+	Upload(certificatePath, privateKeyPath string, iamClient Client) (string, error)
 }
 
 type certificateDescriber interface {
@@ -33,38 +33,42 @@ func NewCertificateManager(certificateUploader certificateUploader, certificateD
 	}
 }
 
-func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath string, iamClient Client) error {
+func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath string, iamClient Client) (string, error) {
+	if name == "" {
+		return c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
+	}
+
 	remoteCertificate, err := c.certificateDescriber.Describe(name, iamClient)
 
 	if err == CertificateNotFound {
-		return c.certificateUploader.Upload(name, certificatePath, privateKeyPath, iamClient)
+		return c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
 	}
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	localCertificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if remoteCertificate.Body != string(localCertificate) {
 		return c.overwriteCertificate(name, certificatePath, privateKeyPath, iamClient)
 	}
 
-	return nil
+	return name, nil
 }
 
-func (c CertificateManager) overwriteCertificate(name, certificatePath, privateKeyPath string, iamClient Client) error {
+func (c CertificateManager) overwriteCertificate(name, certificatePath, privateKeyPath string, iamClient Client) (string, error) {
 	err := c.certificateDeleter.Delete(name, iamClient)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	err = c.certificateUploader.Upload(name, certificatePath, privateKeyPath, iamClient)
+	certificateName, err := c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return err
+	return certificateName, err
 }

@@ -24,11 +24,12 @@ type Stack struct {
 }
 
 type State struct {
-	Version int     `json:"version"`
-	AWS     AWS     `json:"aws"`
-	KeyPair KeyPair `json:"keyPair,omitempty"`
-	BOSH    BOSH    `json:"bosh,omitempty"`
-	Stack   Stack   `json:"stack"`
+	Version         int     `json:"version"`
+	AWS             AWS     `json:"aws"`
+	KeyPair         KeyPair `json:"keyPair,omitempty"`
+	BOSH            BOSH    `json:"bosh,omitempty"`
+	Stack           Stack   `json:"stack"`
+	CertificateName string  `json:"certificateName"`
 }
 
 type Store struct {

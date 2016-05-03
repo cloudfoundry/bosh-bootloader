@@ -50,7 +50,7 @@ type elbDescriber interface {
 }
 
 type certificateManager interface {
-	CreateOrUpdate(name string, certificate string, privateKey string, client iam.Client) error
+	CreateOrUpdate(name string, certificate string, privateKey string, client iam.Client) (string, error)
 }
 
 type logger interface {
@@ -170,10 +170,11 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 			return state, err
 		}
 
-		err = u.certificateManager.CreateOrUpdate("bbl-certificate", config.certPath, config.keyPath, iamClient)
+		certName, err := u.certificateManager.CreateOrUpdate(state.CertificateName, config.certPath, config.keyPath, iamClient)
 		if err != nil {
 			return state, err
 		}
+		state.CertificateName = certName
 	}
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{

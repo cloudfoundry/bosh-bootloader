@@ -75,6 +75,7 @@ var _ = Describe("Store", func() {
 					Name:   "some-stack-name",
 					LBType: "some-lb-type",
 				},
+				CertificateName: "some-certificate-name",
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -122,7 +123,8 @@ var _ = Describe("Store", func() {
 				"stack": {
 					"name": "some-stack-name",
 					"lbType": "some-lb-type"
-				}
+				},
+				"certificateName": "some-certificate-name"
 			}`))
 
 			fileInfo, err := os.Stat(filepath.Join(tempDir, "state.json"))
@@ -221,7 +223,8 @@ var _ = Describe("Store", func() {
 				"stack": {
 					"name": "some-stack-name",
 					"lbType": "some-lb"
-				}
+				},
+				"certificateName": "some-certificate-name"
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -250,6 +253,7 @@ var _ = Describe("Store", func() {
 					Name:   "some-stack-name",
 					LBType: "some-lb",
 				},
+				CertificateName: "some-certificate-name",
 			}))
 		})
 

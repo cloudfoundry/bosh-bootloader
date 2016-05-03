@@ -43,16 +43,18 @@ var _ = Describe("CertificateManager", func() {
 		It("creates the certificate if it doesn't exist", func() {
 			certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{}
 			certificateDescriber.DescribeCall.Returns.Error = iam.CertificateNotFound
+			certificateUploader.UploadCall.Returns.CertificateName = "some-new-certificate"
 
-			err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+			certificateName, err := manager.CreateOrUpdate("some-non-existant-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(certificateName).To(Equal("some-new-certificate"))
+
 			Expect(certificateDescriber.DescribeCall.CallCount).To(Equal(1))
-			Expect(certificateDescriber.DescribeCall.Receives.CertificateName).To(Equal("some-certificate"))
+			Expect(certificateDescriber.DescribeCall.Receives.CertificateName).To(Equal("some-non-existant-certificate"))
 			Expect(certificateDescriber.DescribeCall.Receives.IAMClient).To(Equal(iamClient))
 
 			Expect(certificateUploader.UploadCall.CallCount).To(Equal(1))
-			Expect(certificateUploader.UploadCall.Receives.CertificateName).To(Equal("some-certificate"))
 			Expect(certificateUploader.UploadCall.Receives.CertificatePath).To(Equal(certificateFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.PrivateKeyPath).To(Equal(privateKeyFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.IAMClient).To(Equal(iamClient))
@@ -72,8 +74,10 @@ var _ = Describe("CertificateManager", func() {
 				Body: "some-certificate-body",
 			}
 
-			err = manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+			certificateName, err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(certificateName).To(Equal("some-certificate"))
 
 			Expect(certificateDescriber.DescribeCall.CallCount).To(Equal(1))
 			Expect(certificateDescriber.DescribeCall.Receives.CertificateName).To(Equal("some-certificate"))
@@ -96,8 +100,12 @@ var _ = Describe("CertificateManager", func() {
 				Body: "some-certificate-body",
 			}
 
-			err = manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+			certificateUploader.UploadCall.Returns.CertificateName = "some-new-certificate"
+
+			certificateName, err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(certificateName).To(Equal("some-new-certificate"))
 
 			Expect(certificateDescriber.DescribeCall.CallCount).To(Equal(1))
 			Expect(certificateDescriber.DescribeCall.Receives.CertificateName).To(Equal("some-certificate"))
@@ -108,10 +116,16 @@ var _ = Describe("CertificateManager", func() {
 			Expect(certificateDeleter.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
 
 			Expect(certificateUploader.UploadCall.CallCount).To(Equal(1))
-			Expect(certificateUploader.UploadCall.Receives.CertificateName).To(Equal("some-certificate"))
 			Expect(certificateUploader.UploadCall.Receives.CertificatePath).To(Equal(certificateFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.PrivateKeyPath).To(Equal(privateKeyFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.IAMClient).To(Equal(iamClient))
+		})
+
+		It("doesn't call describe when no existing certificate name is passed in", func() {
+			_, err := manager.CreateOrUpdate("", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(certificateDescriber.DescribeCall.CallCount).To(Equal(0))
+			Expect(certificateUploader.UploadCall.CallCount).To(Equal(1))
 		})
 
 		Context("failure cases", func() {
@@ -119,7 +133,7 @@ var _ = Describe("CertificateManager", func() {
 				certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{}
 				certificateDescriber.DescribeCall.Returns.Error = errors.New("failed to describe")
 
-				err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+				_, err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 				Expect(err).To(MatchError("failed to describe"))
 			})
 
@@ -127,7 +141,7 @@ var _ = Describe("CertificateManager", func() {
 				certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{}
 				certificateDescriber.DescribeCall.Returns.Error = nil
 
-				err := manager.CreateOrUpdate("some-certificate", "/path/to/non-existitent/file", privateKeyFile.Name(), iamClient)
+				_, err := manager.CreateOrUpdate("some-certificate", "/path/to/non-existitent/file", privateKeyFile.Name(), iamClient)
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
@@ -137,7 +151,7 @@ var _ = Describe("CertificateManager", func() {
 
 				certificateUploader.UploadCall.Returns.Error = errors.New("failed to upload")
 
-				err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+				_, err := manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 				Expect(err).To(MatchError("failed to upload"))
 			})
 
@@ -152,7 +166,7 @@ var _ = Describe("CertificateManager", func() {
 
 				certificateDeleter.DeleteCall.Returns.Error = errors.New("deletion failed")
 
-				err = manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+				_, err = manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 				Expect(err).To(MatchError("deletion failed"))
 			})
 
@@ -167,7 +181,7 @@ var _ = Describe("CertificateManager", func() {
 
 				certificateUploader.UploadCall.Returns.Error = errors.New("upload failed")
 
-				err = manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
+				_, err = manager.CreateOrUpdate("some-certificate", certificateFile.Name(), privateKeyFile.Name(), iamClient)
 				Expect(err).To(MatchError("upload failed"))
 			})
 		})

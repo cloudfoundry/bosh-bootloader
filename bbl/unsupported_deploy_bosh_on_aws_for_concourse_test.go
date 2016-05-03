@@ -224,7 +224,7 @@ var _ = Describe("bbl", func() {
 					Expect(certificates).To(HaveLen(1))
 					Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
 					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
-					Expect(certificates[0].Name).To(Equal("bbl-certificate"))
+					Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 				})
 
 				It("doesn't upload a cert and key twice", func() {
@@ -242,7 +242,7 @@ var _ = Describe("bbl", func() {
 					Expect(certificates).To(HaveLen(1))
 					Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
 					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
-					Expect(certificates[0].Name).To(Equal("bbl-certificate"))
+					Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 				})
 			})
 

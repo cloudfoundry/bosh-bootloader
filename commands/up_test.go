@@ -261,7 +261,7 @@ var _ = Describe("Up", func() {
 					Expect(certificateManager.CreateOrUpdateCall.Receives.Client).To(Equal(iamClient))
 					Expect(certificateManager.CreateOrUpdateCall.Receives.Certificate).To(Equal("some-certificate-file"))
 					Expect(certificateManager.CreateOrUpdateCall.Receives.PrivateKey).To(Equal("some-private-key-file"))
-					Expect(certificateManager.CreateOrUpdateCall.Receives.Name).To(Equal("bbl-certificate"))
+					Expect(certificateManager.CreateOrUpdateCall.Receives.Name).To(Equal(""))
 				})
 
 				It("does not upload certs if the lb-type is none", func() {
@@ -573,6 +573,24 @@ var _ = Describe("Up", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.Stack.LBType).To(Equal("concourse"))
+					})
+				})
+
+				Context("when the cert and key changes", func() {
+					It("saves certificate name in state when certificate manager updates certificate", func() {
+						incomingState := storage.State{
+							CertificateName: "some-certificate-name",
+						}
+						certificateManager.CreateOrUpdateCall.Returns.CertificateName = "some-other-certificate-name"
+						state, err := command.Execute(globalFlags, []string{
+							"--lb-type", "concourse",
+							"--cert", "some-cert-path",
+							"--key", "some-key-path",
+						}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.CertificateName).To(Equal("some-other-certificate-name"))
+						Expect(certificateManager.CreateOrUpdateCall.Receives.Name).To(Equal("some-certificate-name"))
 					})
 				})
 			})
