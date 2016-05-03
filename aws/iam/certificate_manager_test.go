@@ -62,8 +62,8 @@ var _ = Describe("CertificateManager", func() {
 			Expect(certificateDeleter.DeleteCall.CallCount).To(Equal(0))
 		})
 
-		It("does not create a new certificate if the certificate is the same", func() {
-			err := ioutil.WriteFile(certificateFile.Name(), []byte("some-certificate-body"), os.ModePerm)
+		It("does not upload a new certificate if the certificate is the same ignoring leading and trailing whitespace", func() {
+			err := ioutil.WriteFile(certificateFile.Name(), []byte("   some-certificate-body\n   "), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = ioutil.WriteFile(privateKeyFile.Name(), []byte("some-private-key-body"), os.ModePerm)
@@ -88,7 +88,7 @@ var _ = Describe("CertificateManager", func() {
 			Expect(certificateUploader.UploadCall.CallCount).To(Equal(0))
 		})
 
-		It("creates a new certificate if the certificate is different", func() {
+		It("uploads new certificate if the certificate is different", func() {
 			err := ioutil.WriteFile(certificateFile.Name(), []byte("some-other-certificate-body"), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

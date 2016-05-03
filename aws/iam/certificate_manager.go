@@ -1,6 +1,9 @@
 package iam
 
-import "io/ioutil"
+import (
+	"io/ioutil"
+	"strings"
+)
 
 type CertificateManager struct {
 	certificateUploader  certificateUploader
@@ -48,12 +51,14 @@ func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath
 		return "", err
 	}
 
-	localCertificate, err := ioutil.ReadFile(certificatePath)
+	localCertificateBody, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return "", err
 	}
 
-	if remoteCertificate.Body != string(localCertificate) {
+	trimmedLocalCertificateBody := strings.TrimSpace(string(localCertificateBody))
+
+	if remoteCertificate.Body != trimmedLocalCertificateBody {
 		return c.overwriteCertificate(name, certificatePath, privateKeyPath, iamClient)
 	}
 
