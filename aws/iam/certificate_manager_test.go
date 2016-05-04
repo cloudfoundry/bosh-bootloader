@@ -187,4 +187,22 @@ var _ = Describe("CertificateManager", func() {
 		})
 	})
 
+	Describe("Delete", func() {
+		It("should call certificateDeleter.Delete", func() {
+			manager.Delete("some-certificate-name", iamClient)
+
+			Expect(certificateDeleter.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+			Expect(certificateDeleter.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
+		})
+
+		Context("failure cases", func() {
+			It("should return an error when certificateDeleter.Delete fails", func() {
+				certificateDeleter.DeleteCall.Returns.Error = errors.New("unknown certificate error")
+
+				err := manager.Delete("some-non-existant-certificate", iamClient)
+				Expect(err).To(MatchError("unknown certificate error"))
+			})
+		})
+	})
+
 })

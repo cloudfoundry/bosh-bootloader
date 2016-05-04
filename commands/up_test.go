@@ -246,7 +246,7 @@ var _ = Describe("Up", func() {
 			}))
 		})
 
-		Context("when specifying an lb", func() {
+		Context("when specifying an lb type that is not \"none\"", func() {
 			Context("when cert and key are provided", func() {
 				It("uploads the given cert and key", func() {
 					subcommandArgs := []string{
@@ -288,6 +288,77 @@ var _ = Describe("Up", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(certificateManager.CreateOrUpdateCall.CallCount).To(Equal(0))
+				})
+			})
+		})
+
+		Context("when specifying an lb type of none", func() {
+			Context("when state has a certificate name", func() {
+				It("should call awsClientProvider.IAMClient", func() {
+					subcommandArgs := []string{"--lb-type", "none"}
+
+					state := storage.State{
+						CertificateName: "certificate-name-from-state",
+						AWS: storage.AWS{
+							AccessKeyID:     "access-key-id",
+							SecretAccessKey: "secret-access-key",
+							Region:          "region",
+						},
+					}
+					globalFlags.EndpointOverride = "endpoint-override"
+
+					_, err := command.Execute(globalFlags, subcommandArgs, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(clientProvider.IAMClientCall.Receives.Config).To(Equal(aws.Config{
+						AccessKeyID:      "access-key-id",
+						SecretAccessKey:  "secret-access-key",
+						Region:           "region",
+						EndpointOverride: "endpoint-override",
+					}))
+				})
+
+				It("should call certificateManager.Delete", func() {
+					subcommandArgs := []string{"--lb-type", "none"}
+					state := storage.State{CertificateName: "certificate-name-from-state"}
+
+					_, err := command.Execute(globalFlags, subcommandArgs, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("certificate-name-from-state"))
+					Expect(certificateManager.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
+				})
+
+				It("should remove CertificateName from state", func() {
+					subcommandArgs := []string{"--lb-type", "none"}
+					state := storage.State{CertificateName: "certificate-name-from-state"}
+
+					actualState, err := command.Execute(globalFlags, subcommandArgs, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(actualState.CertificateName).To(Equal(""))
+				})
+
+				Context("failure cases", func() {
+					It("should return error when awsClientProviderIAMClient fails", func() {
+						subcommandArgs := []string{"--lb-type", "none"}
+						state := storage.State{CertificateName: "certificate-name-from-state"}
+
+						clientProvider.IAMClientCall.Returns.Error = errors.New("iam client error")
+
+						_, err := command.Execute(globalFlags, subcommandArgs, state)
+						Expect(err).To(MatchError("iam client error"))
+					})
+
+					It("should return error when certificateManager.Delete fails", func() {
+						subcommandArgs := []string{"--lb-type", "none"}
+						state := storage.State{CertificateName: "certificate-name-from-state"}
+
+						certificateManager.DeleteCall.Returns.Error = errors.New("certificate manager delete error")
+
+						_, err := command.Execute(globalFlags, subcommandArgs, state)
+						Expect(err).To(MatchError("certificate manager delete error"))
+					})
 				})
 			})
 		})

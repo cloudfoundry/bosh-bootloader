@@ -244,6 +244,20 @@ var _ = Describe("bbl", func() {
 					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
 					Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 				})
+
+				Context("when running again with load balancer type none", func() {
+					It("should delete previous cert and key on aws", func() {
+						deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+
+						certificates := fakeAWS.Certificates.All()
+						Expect(certificates).To(HaveLen(1))
+
+						deployBOSHOnAWSForConcourseWithoutCertAndKey(fakeAWSServer.URL, tempDirectory, "none", 0)
+
+						certificates = fakeAWS.Certificates.All()
+						Expect(certificates).To(HaveLen(0))
+					})
+				})
 			})
 
 			Context("when running again with a different load balancer", func() {
@@ -324,6 +338,20 @@ func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory
 		"--lb-type", lbType,
 		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
 		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
+	}
+
+	return executeCommand(args, exitCode)
+}
+
+func deployBOSHOnAWSForConcourseWithoutCertAndKey(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", serverURL),
+		"--aws-access-key-id", "some-access-key",
+		"--aws-secret-access-key", "some-access-secret",
+		"--aws-region", "some-region",
+		"--state-dir", tempDirectory,
+		"unsupported-deploy-bosh-on-aws-for-concourse",
+		"--lb-type", lbType,
 	}
 
 	return executeCommand(args, exitCode)

@@ -51,6 +51,7 @@ type elbDescriber interface {
 
 type certificateManager interface {
 	CreateOrUpdate(name string, certificate string, privateKey string, client iam.Client) (string, error)
+	Delete(certificateName string, iamClient iam.Client) error
 }
 
 type logger interface {
@@ -175,6 +176,26 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 			return state, err
 		}
 		state.CertificateName = certName
+	}
+
+	if state.Stack.LBType == "none" && state.CertificateName != "" {
+		client, err := u.awsClientProvider.IAMClient(aws.Config{
+			AccessKeyID:      state.AWS.AccessKeyID,
+			SecretAccessKey:  state.AWS.SecretAccessKey,
+			Region:           state.AWS.Region,
+			EndpointOverride: globalFlags.EndpointOverride,
+		})
+
+		if err != nil {
+			return state, err
+		}
+
+		err = u.certificateManager.Delete(state.CertificateName, client)
+		if err != nil {
+			return state, err
+		}
+
+		state.CertificateName = ""
 	}
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{

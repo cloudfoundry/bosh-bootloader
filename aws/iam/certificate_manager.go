@@ -65,6 +65,10 @@ func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath
 	return name, nil
 }
 
+func (c CertificateManager) Delete(certificateName string, iamClient Client) error {
+	return c.certificateDeleter.Delete(certificateName, iamClient)
+}
+
 func (c CertificateManager) overwriteCertificate(name, certificatePath, privateKeyPath string, iamClient Client) (string, error) {
 	err := c.certificateDeleter.Delete(name, iamClient)
 	if err != nil {

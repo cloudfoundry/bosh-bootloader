@@ -44,6 +44,8 @@ func (c *Certificates) Delete(name string) {
 func (c *Certificates) All() []Certificate {
 	var certificates []Certificate
 
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	for _, certificate := range c.store {
 		certificates = append(certificates, certificate)
 	}
