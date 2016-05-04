@@ -189,7 +189,8 @@ var _ = Describe("CertificateManager", func() {
 
 	Describe("Delete", func() {
 		It("should call certificateDeleter.Delete", func() {
-			manager.Delete("some-certificate-name", iamClient)
+			err := manager.Delete("some-certificate-name", iamClient)
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateDeleter.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
 			Expect(certificateDeleter.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
@@ -200,6 +201,36 @@ var _ = Describe("CertificateManager", func() {
 				certificateDeleter.DeleteCall.Returns.Error = errors.New("unknown certificate error")
 
 				err := manager.Delete("some-non-existant-certificate", iamClient)
+				Expect(err).To(MatchError("unknown certificate error"))
+			})
+		})
+	})
+
+	Describe("Describe", func() {
+		It("returns a certificate", func() {
+			certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{
+				Name: "some-certificate-name",
+				ARN:  "some-certificate-arn",
+				Body: "some-certificate-body",
+			}
+
+			certificate, err := manager.Describe("some-certificate-name", iamClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(certificate).To(Equal(iam.Certificate{
+				Name: "some-certificate-name",
+				ARN:  "some-certificate-arn",
+				Body: "some-certificate-body",
+			}))
+			Expect(certificateDescriber.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+			Expect(certificateDescriber.DescribeCall.Receives.IAMClient).To(Equal(iamClient))
+		})
+
+		Context("failure cases", func() {
+			It("should return an error when certificateDescriber.Describe fails", func() {
+				certificateDescriber.DescribeCall.Returns.Error = errors.New("unknown certificate error")
+
+				_, err := manager.Describe("some-non-existant-certificate", iamClient)
 				Expect(err).To(MatchError("unknown certificate error"))
 			})
 		})

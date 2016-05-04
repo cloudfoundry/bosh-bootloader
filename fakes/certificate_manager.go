@@ -26,6 +26,18 @@ type CertificateManager struct {
 			Error error
 		}
 	}
+
+	DescribeCall struct {
+		CallCount int
+		Receives  struct {
+			CertificateName string
+			IAMClient       iam.Client
+		}
+		Returns struct {
+			Certificate iam.Certificate
+			Error       error
+		}
+	}
 }
 
 func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string, client iam.Client) (string, error) {
@@ -42,4 +54,11 @@ func (c *CertificateManager) Delete(certificateName string, iamClient iam.Client
 	c.DeleteCall.Receives.CertificateName = certificateName
 	c.DeleteCall.Receives.IAMClient = iamClient
 	return c.DeleteCall.Returns.Error
+}
+
+func (c *CertificateManager) Describe(certificateName string, iamClient iam.Client) (iam.Certificate, error) {
+	c.DescribeCall.CallCount++
+	c.DescribeCall.Receives.CertificateName = certificateName
+	c.DescribeCall.Receives.IAMClient = iamClient
+	return c.DescribeCall.Returns.Certificate, c.DescribeCall.Returns.Error
 }

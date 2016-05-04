@@ -76,7 +76,7 @@ func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZo
 	}
 }
 
-func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZones int) Template {
+func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZones int, sslCertificateId string) Template {
 	return Template{
 		Outputs: l.outputsFor("ConcourseLoadBalancer"),
 		Resources: map[string]Resource{
@@ -107,6 +107,13 @@ func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZ
 							LoadBalancerPort: "2222",
 							InstanceProtocol: "tcp",
 							InstancePort:     "2222",
+						},
+						{
+							Protocol:         "ssl",
+							LoadBalancerPort: "443",
+							InstanceProtocol: "tcp",
+							InstancePort:     "8080",
+							SSLCertificateId: sslCertificateId,
 						},
 					},
 				},

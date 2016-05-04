@@ -112,7 +112,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 	Describe("ConcourseLoadBalancer", func() {
 		It("returns a template containing the concourse load balancer", func() {
-			concourseLoadBalancer := builder.ConcourseLoadBalancer(2)
+			concourseLoadBalancer := builder.ConcourseLoadBalancer(2, "some-certificate-arn")
 
 			Expect(concourseLoadBalancer.Outputs).To(HaveLen(2))
 			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("ConcourseLoadBalancer", templates.Output{
@@ -156,6 +156,13 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 							LoadBalancerPort: "2222",
 							InstanceProtocol: "tcp",
 							InstancePort:     "2222",
+						},
+						{
+							Protocol:         "ssl",
+							LoadBalancerPort: "443",
+							InstanceProtocol: "tcp",
+							InstancePort:     "8080",
+							SSLCertificateId: "some-certificate-arn",
 						},
 					},
 				},

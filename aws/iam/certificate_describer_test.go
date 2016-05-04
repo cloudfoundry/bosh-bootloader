@@ -45,6 +45,7 @@ var _ = Describe("CertificateDescriber", func() {
 			Expect(iamClient.GetServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
 			Expect(certificate.Name).To(Equal("some-certificate"))
 			Expect(certificate.Body).To(Equal("some-certificate-body"))
+			Expect(certificate.ARN).To(Equal("some-certificate-arn"))
 		})
 
 		Context("failure cases", func() {

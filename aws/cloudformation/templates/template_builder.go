@@ -15,7 +15,7 @@ func NewTemplateBuilder(logger logger) TemplateBuilder {
 	}
 }
 
-func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int, lbType string) Template {
+func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int, lbType, lbCertificateARN string) Template {
 	t.logger.Step("generating cloudformation template")
 
 	boshIAMTemplateBuilder := NewBOSHIAMTemplateBuilder()
@@ -50,7 +50,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 			securityGroupTemplateBuilder.ConcourseSecurityGroup(),
 			securityGroupTemplateBuilder.ConcourseInternalSecurityGroup(),
-			loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones),
+			loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones, lbCertificateARN),
 		)
 	}
 

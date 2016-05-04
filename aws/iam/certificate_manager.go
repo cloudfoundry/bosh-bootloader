@@ -14,6 +14,7 @@ type CertificateManager struct {
 type Certificate struct {
 	Name string
 	Body string
+	ARN  string
 }
 
 type certificateUploader interface {
@@ -67,6 +68,10 @@ func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath
 
 func (c CertificateManager) Delete(certificateName string, iamClient Client) error {
 	return c.certificateDeleter.Delete(certificateName, iamClient)
+}
+
+func (c CertificateManager) Describe(certificateName string, iamClient Client) (Certificate, error) {
+	return c.certificateDescriber.Describe(certificateName, iamClient)
 }
 
 func (c CertificateManager) overwriteCertificate(name, certificatePath, privateKeyPath string, iamClient Client) (string, error) {

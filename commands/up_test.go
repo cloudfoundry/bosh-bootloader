@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -246,6 +247,44 @@ var _ = Describe("Up", func() {
 			}))
 		})
 
+		Context("when there is an lb type and lb certificate", func() {
+			It("attaches the lb certificate to the lb type in cloudformation", func() {
+				certificateManager.CreateOrUpdateCall.Returns.CertificateName = "some-certificate-name"
+				certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
+					Name: "some-certificate-name",
+					Body: "some-certificate-body",
+					ARN:  "some-certificate-arn",
+				}
+
+				subcommandArgs := []string{
+					"--lb-type", "concourse",
+					"--cert", "some-certificate-file",
+					"--key", "some-private-key-file",
+				}
+
+				_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
+			})
+
+			Context("failure cases", func() {
+				It("returns an error when it can't describe the certificate", func() {
+					certificateManager.CreateOrUpdateCall.Returns.CertificateName = "some-certificate-name"
+					certificateManager.DescribeCall.Returns.Error = errors.New("failed to describe certificate")
+					subcommandArgs := []string{
+						"--lb-type", "concourse",
+						"--cert", "some-certificate-file",
+						"--key", "some-private-key-file",
+					}
+
+					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+					Expect(err).To(MatchError("failed to describe certificate"))
+				})
+			})
+		})
+
 		Context("when specifying an lb type that is not \"none\"", func() {
 			Context("when cert and key are provided", func() {
 				It("uploads the given cert and key", func() {
@@ -361,6 +400,21 @@ var _ = Describe("Up", func() {
 					})
 				})
 			})
+		})
+
+		Context("when there is no certificate uploaded", func() {
+			It("does not attempt to describe certificate to attach in cloudformation", func() {
+				subcommandArgs := []string{
+					"--lb-type", "none",
+				}
+
+				_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(certificateManager.DescribeCall.CallCount).To(Equal(0))
+				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal(""))
+			})
+
 		})
 
 		Context("when there are instances attached to an lb", func() {

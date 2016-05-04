@@ -182,6 +182,7 @@ func (s SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
 						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
+						s.securityGroupIngress("0.0.0.0/0", "tcp", "443", "443", nil),
 					},
 				},
 			},

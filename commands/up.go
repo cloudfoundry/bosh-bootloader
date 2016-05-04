@@ -27,7 +27,7 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error)
+	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, client cloudformation.Client) (cloudformation.Stack, error)
 	Exists(stackName string, client cloudformation.Client) (bool, error)
 	Delete(client cloudformation.Client, stackName string) error
 	Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error)
@@ -52,6 +52,7 @@ type elbDescriber interface {
 type certificateManager interface {
 	CreateOrUpdate(name string, certificate string, privateKey string, client iam.Client) (string, error)
 	Delete(certificateName string, iamClient iam.Client) error
+	Describe(certificateName string, iamClient iam.Client) (iam.Certificate, error)
 }
 
 type logger interface {
@@ -160,13 +161,14 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 
 	state.Stack.LBType = newLBType
 
+	iamClient, err := u.awsClientProvider.IAMClient(aws.Config{
+		AccessKeyID:      state.AWS.AccessKeyID,
+		SecretAccessKey:  state.AWS.SecretAccessKey,
+		Region:           state.AWS.Region,
+		EndpointOverride: globalFlags.EndpointOverride,
+	})
+
 	if state.Stack.LBType != "none" && config.certPath != "" && config.keyPath != "" {
-		iamClient, err := u.awsClientProvider.IAMClient(aws.Config{
-			AccessKeyID:      state.AWS.AccessKeyID,
-			SecretAccessKey:  state.AWS.SecretAccessKey,
-			Region:           state.AWS.Region,
-			EndpointOverride: globalFlags.EndpointOverride,
-		})
 		if err != nil {
 			return state, err
 		}
@@ -179,23 +181,25 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	}
 
 	if state.Stack.LBType == "none" && state.CertificateName != "" {
-		client, err := u.awsClientProvider.IAMClient(aws.Config{
-			AccessKeyID:      state.AWS.AccessKeyID,
-			SecretAccessKey:  state.AWS.SecretAccessKey,
-			Region:           state.AWS.Region,
-			EndpointOverride: globalFlags.EndpointOverride,
-		})
-
 		if err != nil {
 			return state, err
 		}
 
-		err = u.certificateManager.Delete(state.CertificateName, client)
+		err = u.certificateManager.Delete(state.CertificateName, iamClient)
 		if err != nil {
 			return state, err
 		}
 
 		state.CertificateName = ""
+	}
+
+	var certificateARN string
+	if state.CertificateName != "" {
+		certificate, err := u.certificateManager.Describe(state.CertificateName, iamClient)
+		certificateARN = certificate.ARN
+		if err != nil {
+			return state, err
+		}
 	}
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
@@ -233,7 +237,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, cloudFormationClient)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}

@@ -227,6 +227,36 @@ var _ = Describe("bbl", func() {
 					Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 				})
 
+				It("attaches cert and key to the load balancer", func() {
+					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+
+					state := readStateJson(tempDirectory)
+
+					stack, ok := fakeAWS.Stacks.Get(state.Stack.Name)
+					Expect(ok).To(BeTrue())
+
+					type listener struct {
+						SSLCertificateId string
+					}
+
+					var template struct {
+						Resources struct {
+							ConcourseLoadBalancer struct {
+								Properties struct {
+									Listeners []listener
+								}
+							}
+						}
+					}
+
+					err := json.Unmarshal([]byte(stack.Template), &template)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(template.Resources.ConcourseLoadBalancer.Properties.Listeners).To(ContainElement(listener{
+						SSLCertificateId: "some-certificate-arn",
+					}))
+				})
+
 				It("doesn't upload a cert and key twice", func() {
 					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
 					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)

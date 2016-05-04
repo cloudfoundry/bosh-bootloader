@@ -39,5 +39,6 @@ func (CertificateDescriber) Describe(certificateName string, iamClient Client) (
 	return Certificate{
 		Name: aws.StringValue(output.ServerCertificate.ServerCertificateMetadata.ServerCertificateName),
 		Body: aws.StringValue(output.ServerCertificate.CertificateBody),
+		ARN:  aws.StringValue(output.ServerCertificate.ServerCertificateMetadata.Arn),
 	}, nil
 }

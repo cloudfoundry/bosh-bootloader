@@ -10,6 +10,7 @@ type InfrastructureManager struct {
 			KeyPairName               string
 			StackName                 string
 			LBType                    string
+			LBCertificateARN          string
 			CloudFormationClient      cloudformation.Client
 			NumberOfAvailabilityZones int
 		}
@@ -52,10 +53,11 @@ type InfrastructureManager struct {
 	}
 }
 
-func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error) {
+func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, client cloudformation.Client) (cloudformation.Stack, error) {
 	m.CreateCall.CallCount++
 	m.CreateCall.Receives.StackName = stackName
 	m.CreateCall.Receives.LBType = lbType
+	m.CreateCall.Receives.LBCertificateARN = lbCertificateARN
 	m.CreateCall.Receives.KeyPairName = keyPairName
 	m.CreateCall.Receives.CloudFormationClient = client
 	m.CreateCall.Receives.NumberOfAvailabilityZones = numberOfAZs

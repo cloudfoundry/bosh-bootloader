@@ -204,6 +204,7 @@ type Listener struct {
 	LoadBalancerPort string `json:"LoadBalancerPort,omitempty"`
 	InstanceProtocol string `json:"InstanceProtocol,omitempty"`
 	InstancePort     string `json:"InstancePort,omitempty"`
+	SSLCertificateId string `json:"SSLCertificateId,omitempty"`
 }
 
 type HealthCheck struct {
