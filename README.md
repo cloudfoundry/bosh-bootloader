@@ -47,6 +47,8 @@ The AWS IAM user that is provided to bbl will need the following policy:
 
 ## Installation
 
+bbl requires bosh-init. Instructions on how to install bosh-init [can be found here](http://bosh.io/docs/install-bosh-init.html)
+
 ```
 go get github.com/pivotal-cf-experimental/bosh-bootloader/bbl
 ```
