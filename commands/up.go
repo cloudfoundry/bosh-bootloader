@@ -51,6 +51,7 @@ type elbDescriber interface {
 
 type loadBalancerCertificateManager interface {
 	Create(input iam.CertificateCreateInput, client iam.Client) (iam.CertificateCreateOutput, error)
+	IsValidLBType(lbType string) bool
 }
 
 type logger interface {
@@ -100,6 +101,10 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err
+	}
+
+	if !u.loadBalancerCertificateManager.IsValidLBType(config.lbType) {
+		return state, fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
 	}
 
 	cloudFormationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
@@ -272,19 +277,5 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 		return config, err
 	}
 
-	if !isValidLBType(config.lbType) {
-		return config, fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
-	}
-
 	return config, nil
-}
-
-func isValidLBType(lbType string) bool {
-	for _, v := range []string{"concourse", "cf", "none", ""} {
-		if lbType == v {
-			return true
-		}
-	}
-
-	return false
 }

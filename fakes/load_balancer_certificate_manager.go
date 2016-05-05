@@ -12,9 +12,22 @@ type LoadBalancerCertificateManager struct {
 			Input iam.CertificateCreateInput
 		}
 	}
+	IsValidLBTypeCall struct {
+		Returns struct {
+			Result bool
+		}
+		Receives struct {
+			LBType string
+		}
+	}
 }
 
 func (l *LoadBalancerCertificateManager) Create(input iam.CertificateCreateInput, iamClient iam.Client) (iam.CertificateCreateOutput, error) {
 	l.CreateCall.Receives.Input = input
 	return l.CreateCall.Returns.Output, l.CreateCall.Returns.Error
+}
+
+func (l *LoadBalancerCertificateManager) IsValidLBType(lbType string) bool {
+	l.IsValidLBTypeCall.Receives.LBType = lbType
+	return l.IsValidLBTypeCall.Returns.Result
 }

@@ -64,6 +64,16 @@ func (l LoadBalancerCertificateManager) Create(input CertificateCreateInput, iam
 	return certOutput, nil
 }
 
+func (LoadBalancerCertificateManager) IsValidLBType(lbType string) bool {
+	for _, v := range []string{"concourse", "cf", "none", ""} {
+		if lbType == v {
+			return true
+		}
+	}
+
+	return false
+}
+
 func determineLBType(currentLBType, desiredLBType string) string {
 	switch {
 	case desiredLBType == "" && currentLBType == "":

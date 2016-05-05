@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -17,15 +18,12 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 		lbCertificateManager iam.LoadBalancerCertificateManager
 	)
 
+	BeforeEach(func() {
+		iamClient = &fakes.IAMClient{}
+		certificateManager = &fakes.CertificateManager{}
+		lbCertificateManager = iam.NewLoadBalancerCertificateManager(certificateManager)
+	})
 	Describe("Create", func() {
-		BeforeEach(func() {
-			iamClient = &fakes.IAMClient{}
-			certificateManager = &fakes.CertificateManager{}
-			lbCertificateManager = iam.NewLoadBalancerCertificateManager(
-				certificateManager,
-			)
-		})
-
 		Context("when desired lb type is specified", func() {
 			Context("when cert and key are provided", func() {
 				It("creates a new certificate", func() {
@@ -134,6 +132,23 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 				}, iamClient)
 				Expect(err).To(MatchError("failed to describe certificate"))
 			})
+		})
+	})
+
+	Describe("IsValidLBType", func() {
+		DescribeTable("check for valid lb type", func(lbType string) {
+			isValid := lbCertificateManager.IsValidLBType(lbType)
+			Expect(isValid).To(BeTrue())
+		},
+			Entry("concourse is supported", "concourse"),
+			Entry("cf is supported", "cf"),
+			Entry("none is supported", "none"),
+			Entry("empty is supported", "none"),
+		)
+
+		It("returns false if something other than the supported lb types are passed in", func() {
+			isValid := lbCertificateManager.IsValidLBType("some-unsupported-type")
+			Expect(isValid).To(BeFalse())
 		})
 	})
 })

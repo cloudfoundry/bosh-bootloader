@@ -96,6 +96,7 @@ var _ = Describe("Up", func() {
 			elbDescriber = &fakes.ELBDescriber{}
 
 			loadBalancerCertificateManager = &fakes.LoadBalancerCertificateManager{}
+			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
 
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
@@ -122,6 +123,13 @@ var _ = Describe("Up", func() {
 				"blobstoreAgentPassword":    "some-blobstore-agent-password",
 				"hmPassword":                "some-hm-password",
 			}
+		})
+
+		It("checks if the lb type flag is valid", func() {
+			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
+			_, err := command.Execute(commands.GlobalFlags{}, []string{"--lb-type", "concourse"}, storage.State{})
+			Expect(loadBalancerCertificateManager.IsValidLBTypeCall.Receives.LBType).To(Equal("concourse"))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("syncs the keypair", func() {
@@ -743,7 +751,9 @@ var _ = Describe("Up", func() {
 			})
 
 			It("returns an error when an unknown lb-type is supplied", func() {
+				loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = false
 				_, err := command.Execute(commands.GlobalFlags{}, []string{"--lb-type", "some-lb"}, storage.State{})
+				Expect(loadBalancerCertificateManager.IsValidLBTypeCall.Receives.LBType).To(Equal("some-lb"))
 				Expect(err).To(MatchError("Unknown lb-type \"some-lb\", supported lb-types are: concourse, cf or none"))
 			})
 
