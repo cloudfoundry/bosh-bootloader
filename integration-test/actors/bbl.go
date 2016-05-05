@@ -26,14 +26,23 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 }
 
 func (b BBL) Up(loadBalancerType string) {
-	session := b.execute([]string{
+	args := []string{
 		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"unsupported-deploy-bosh-on-aws-for-concourse",
 		"--lb-type", loadBalancerType,
-	})
+	}
+
+	if loadBalancerType == "cf" || loadBalancerType == "concourse" {
+		args = append(args, []string{
+			"--cert", "bbl-certs/bbl.crt",
+			"--key", "bbl-certs/bbl.key",
+		}...)
+	}
+
+	session := b.execute(args)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }
 
