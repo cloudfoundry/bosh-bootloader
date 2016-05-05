@@ -49,10 +49,8 @@ type elbDescriber interface {
 	Describe(elbName string, client elb.Client) ([]string, error)
 }
 
-type certificateManager interface {
-	CreateOrUpdate(name string, certificate string, privateKey string, client iam.Client) (string, error)
-	Delete(certificateName string, iamClient iam.Client) error
-	Describe(certificateName string, iamClient iam.Client) (iam.Certificate, error)
+type loadBalancerCertificateManager interface {
+	Create(input iam.CertificateCreateInput, client iam.Client) (iam.CertificateCreateOutput, error)
 }
 
 type logger interface {
@@ -68,33 +66,33 @@ type upConfig struct {
 }
 
 type Up struct {
-	infrastructureManager     infrastructureManager
-	keyPairSynchronizer       keyPairSynchronizer
-	awsClientProvider         awsClientProvider
-	boshDeployer              boshDeployer
-	stringGenerator           stringGenerator
-	cloudConfigurator         cloudConfigurator
-	availabilityZoneRetriever availabilityZoneRetriever
-	elbDescriber              elbDescriber
-	certificateManager        certificateManager
+	infrastructureManager          infrastructureManager
+	keyPairSynchronizer            keyPairSynchronizer
+	awsClientProvider              awsClientProvider
+	boshDeployer                   boshDeployer
+	stringGenerator                stringGenerator
+	cloudConfigurator              cloudConfigurator
+	availabilityZoneRetriever      availabilityZoneRetriever
+	elbDescriber                   elbDescriber
+	loadBalancerCertificateManager loadBalancerCertificateManager
 }
 
 func NewUp(
 	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
 	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
-	elbDescriber elbDescriber, certificateManager certificateManager) Up {
+	elbDescriber elbDescriber, loadBalancerCertificateManager loadBalancerCertificateManager) Up {
 
 	return Up{
-		infrastructureManager:     infrastructureManager,
-		keyPairSynchronizer:       keyPairSynchronizer,
-		awsClientProvider:         awsClientProvider,
-		boshDeployer:              boshDeployer,
-		stringGenerator:           stringGenerator,
-		cloudConfigurator:         cloudConfigurator,
-		availabilityZoneRetriever: availabilityZoneRetriever,
-		elbDescriber:              elbDescriber,
-		certificateManager:        certificateManager,
+		infrastructureManager:          infrastructureManager,
+		keyPairSynchronizer:            keyPairSynchronizer,
+		awsClientProvider:              awsClientProvider,
+		boshDeployer:                   boshDeployer,
+		stringGenerator:                stringGenerator,
+		cloudConfigurator:              cloudConfigurator,
+		availabilityZoneRetriever:      availabilityZoneRetriever,
+		elbDescriber:                   elbDescriber,
+		loadBalancerCertificateManager: loadBalancerCertificateManager,
 	}
 }
 
@@ -127,9 +125,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 			state.Stack.Name, state.AWS.Region)
 	}
 
-	newLBType := determineLBType(state.Stack.LBType, config.lbType)
-
-	if stackExists && newLBType != state.Stack.LBType {
+	if stackExists && state.Stack.LBType != config.lbType {
 		elbClient, err := u.awsClientProvider.ELBClient(aws.Config{
 			AccessKeyID:      state.AWS.AccessKeyID,
 			SecretAccessKey:  state.AWS.SecretAccessKey,
@@ -159,48 +155,27 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	state.Stack.LBType = newLBType
-
 	iamClient, err := u.awsClientProvider.IAMClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
-
-	if state.Stack.LBType != "none" && config.certPath != "" && config.keyPath != "" {
-		if err != nil {
-			return state, err
-		}
-
-		certName, err := u.certificateManager.CreateOrUpdate(state.CertificateName, config.certPath, config.keyPath, iamClient)
-		if err != nil {
-			return state, err
-		}
-		state.CertificateName = certName
+	if err != nil {
+		return state, err
 	}
 
-	if state.Stack.LBType == "none" && state.CertificateName != "" {
-		if err != nil {
-			return state, err
-		}
-
-		err = u.certificateManager.Delete(state.CertificateName, iamClient)
-		if err != nil {
-			return state, err
-		}
-
-		state.CertificateName = ""
+	certOutput, err := u.loadBalancerCertificateManager.Create(iam.CertificateCreateInput{
+		CurrentLBType:          state.Stack.LBType,
+		DesiredLBType:          config.lbType,
+		CurrentCertificateName: state.CertificateName,
+		CertPath:               config.certPath,
+		KeyPath:                config.keyPath,
+	}, iamClient)
+	if err != nil {
+		return state, err
 	}
-
-	var certificateARN string
-	if state.CertificateName != "" {
-		certificate, err := u.certificateManager.Describe(state.CertificateName, iamClient)
-		certificateARN = certificate.ARN
-		if err != nil {
-			return state, err
-		}
-	}
+	state.CertificateName = certOutput.CertificateName
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
@@ -237,10 +212,11 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN, cloudFormationClient)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, certOutput.LBType, certOutput.CertificateARN, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
+	state.Stack.LBType = certOutput.LBType
 
 	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
 		AWSRegion:        state.AWS.Region,
@@ -311,15 +287,4 @@ func isValidLBType(lbType string) bool {
 	}
 
 	return false
-}
-
-func determineLBType(stateLBType, flagLBType string) string {
-	switch {
-	case flagLBType == "" && stateLBType == "":
-		return "none"
-	case flagLBType != "":
-		return flagLBType
-	default:
-		return stateLBType
-	}
 }

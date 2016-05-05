@@ -50,6 +50,7 @@ func main() {
 	certificateDescriber := iam.NewCertificateDescriber()
 	certificateDeleter := iam.NewCertificateDeleter()
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
+	loadBalancerCertificateManager := iam.NewLoadBalancerCertificateManager(certificateManager)
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -86,7 +87,7 @@ func main() {
 	version := commands.NewVersion(os.Stdout)
 	up := commands.NewUp(
 		infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor,
-		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateManager,
+		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
 	)
 	destroy := commands.NewDestroy(
 		logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker,

@@ -21,22 +21,22 @@ import (
 var _ = Describe("Up", func() {
 	Describe("Execute", func() {
 		var (
-			command                   commands.Up
-			boshDeployer              *fakes.BOSHDeployer
-			infrastructureManager     *fakes.InfrastructureManager
-			keyPairSynchronizer       *fakes.KeyPairSynchronizer
-			cloudFormationClient      *fakes.CloudFormationClient
-			ec2Client                 *fakes.EC2Client
-			elbClient                 *fakes.ELBClient
-			iamClient                 *fakes.IAMClient
-			clientProvider            *fakes.ClientProvider
-			stringGenerator           *fakes.StringGenerator
-			cloudConfigurator         *fakes.BoshCloudConfigurator
-			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-			elbDescriber              *fakes.ELBDescriber
-			certificateManager        *fakes.CertificateManager
-			globalFlags               commands.GlobalFlags
-			boshInitCredentials       map[string]string
+			command                        commands.Up
+			boshDeployer                   *fakes.BOSHDeployer
+			infrastructureManager          *fakes.InfrastructureManager
+			keyPairSynchronizer            *fakes.KeyPairSynchronizer
+			cloudFormationClient           *fakes.CloudFormationClient
+			ec2Client                      *fakes.EC2Client
+			elbClient                      *fakes.ELBClient
+			iamClient                      *fakes.IAMClient
+			clientProvider                 *fakes.ClientProvider
+			stringGenerator                *fakes.StringGenerator
+			cloudConfigurator              *fakes.BoshCloudConfigurator
+			availabilityZoneRetriever      *fakes.AvailabilityZoneRetriever
+			elbDescriber                   *fakes.ELBDescriber
+			loadBalancerCertificateManager *fakes.LoadBalancerCertificateManager
+			globalFlags                    commands.GlobalFlags
+			boshInitCredentials            map[string]string
 		)
 
 		BeforeEach(func() {
@@ -95,7 +95,7 @@ var _ = Describe("Up", func() {
 
 			elbDescriber = &fakes.ELBDescriber{}
 
-			certificateManager = &fakes.CertificateManager{}
+			loadBalancerCertificateManager = &fakes.LoadBalancerCertificateManager{}
 
 			globalFlags = commands.GlobalFlags{
 				EndpointOverride: "some-endpoint",
@@ -103,7 +103,7 @@ var _ = Describe("Up", func() {
 
 			command = commands.NewUp(
 				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateManager,
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -249,11 +249,9 @@ var _ = Describe("Up", func() {
 
 		Context("when there is an lb type and lb certificate", func() {
 			It("attaches the lb certificate to the lb type in cloudformation", func() {
-				certificateManager.CreateOrUpdateCall.Returns.CertificateName = "some-certificate-name"
-				certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
-					Name: "some-certificate-name",
-					Body: "some-certificate-body",
-					ARN:  "some-certificate-arn",
+				loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
+					CertificateName: "some-certificate-name",
+					CertificateARN:  "some-certificate-arn",
 				}
 
 				subcommandArgs := []string{
@@ -264,24 +262,7 @@ var _ = Describe("Up", func() {
 
 				_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
 				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			})
-
-			Context("failure cases", func() {
-				It("returns an error when it can't describe the certificate", func() {
-					certificateManager.CreateOrUpdateCall.Returns.CertificateName = "some-certificate-name"
-					certificateManager.DescribeCall.Returns.Error = errors.New("failed to describe certificate")
-					subcommandArgs := []string{
-						"--lb-type", "concourse",
-						"--cert", "some-certificate-file",
-						"--key", "some-private-key-file",
-					}
-
-					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
-					Expect(err).To(MatchError("failed to describe certificate"))
-				})
 			})
 		})
 
@@ -297,124 +278,15 @@ var _ = Describe("Up", func() {
 					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateManager.CreateOrUpdateCall.Receives.Client).To(Equal(iamClient))
-					Expect(certificateManager.CreateOrUpdateCall.Receives.Certificate).To(Equal("some-certificate-file"))
-					Expect(certificateManager.CreateOrUpdateCall.Receives.PrivateKey).To(Equal("some-private-key-file"))
-					Expect(certificateManager.CreateOrUpdateCall.Receives.Name).To(Equal(""))
-				})
-
-				It("does not upload certs if the lb-type is none", func() {
-					subcommandArgs := []string{
-						"--lb-type", "none",
-						"--cert", "some-certificate-file",
-						"--key", "some-private-key-file",
-					}
-
-					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(certificateManager.CreateOrUpdateCall.CallCount).To(Equal(0))
-				})
-			})
-
-			Context("when cert and key are not provided", func() {
-				It("does not upload a cert and key", func() {
-					subcommandArgs := []string{
-						"--lb-type", "concourse",
-					}
-
-					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(certificateManager.CreateOrUpdateCall.CallCount).To(Equal(0))
-				})
-			})
-		})
-
-		Context("when specifying an lb type of none", func() {
-			Context("when state has a certificate name", func() {
-				It("should call awsClientProvider.IAMClient", func() {
-					subcommandArgs := []string{"--lb-type", "none"}
-
-					state := storage.State{
-						CertificateName: "certificate-name-from-state",
-						AWS: storage.AWS{
-							AccessKeyID:     "access-key-id",
-							SecretAccessKey: "secret-access-key",
-							Region:          "region",
-						},
-					}
-					globalFlags.EndpointOverride = "endpoint-override"
-
-					_, err := command.Execute(globalFlags, subcommandArgs, state)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(clientProvider.IAMClientCall.Receives.Config).To(Equal(aws.Config{
-						AccessKeyID:      "access-key-id",
-						SecretAccessKey:  "secret-access-key",
-						Region:           "region",
-						EndpointOverride: "endpoint-override",
+					Expect(loadBalancerCertificateManager.CreateCall.Receives.Input).To(Equal(iam.CertificateCreateInput{
+						CurrentCertificateName: "",
+						CurrentLBType:          "",
+						DesiredLBType:          "concourse",
+						CertPath:               "some-certificate-file",
+						KeyPath:                "some-private-key-file",
 					}))
 				})
-
-				It("should call certificateManager.Delete", func() {
-					subcommandArgs := []string{"--lb-type", "none"}
-					state := storage.State{CertificateName: "certificate-name-from-state"}
-
-					_, err := command.Execute(globalFlags, subcommandArgs, state)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("certificate-name-from-state"))
-					Expect(certificateManager.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
-				})
-
-				It("should remove CertificateName from state", func() {
-					subcommandArgs := []string{"--lb-type", "none"}
-					state := storage.State{CertificateName: "certificate-name-from-state"}
-
-					actualState, err := command.Execute(globalFlags, subcommandArgs, state)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(actualState.CertificateName).To(Equal(""))
-				})
-
-				Context("failure cases", func() {
-					It("should return error when awsClientProviderIAMClient fails", func() {
-						subcommandArgs := []string{"--lb-type", "none"}
-						state := storage.State{CertificateName: "certificate-name-from-state"}
-
-						clientProvider.IAMClientCall.Returns.Error = errors.New("iam client error")
-
-						_, err := command.Execute(globalFlags, subcommandArgs, state)
-						Expect(err).To(MatchError("iam client error"))
-					})
-
-					It("should return error when certificateManager.Delete fails", func() {
-						subcommandArgs := []string{"--lb-type", "none"}
-						state := storage.State{CertificateName: "certificate-name-from-state"}
-
-						certificateManager.DeleteCall.Returns.Error = errors.New("certificate manager delete error")
-
-						_, err := command.Execute(globalFlags, subcommandArgs, state)
-						Expect(err).To(MatchError("certificate manager delete error"))
-					})
-				})
 			})
-		})
-
-		Context("when there is no certificate uploaded", func() {
-			It("does not attempt to describe certificate to attach in cloudformation", func() {
-				subcommandArgs := []string{
-					"--lb-type", "none",
-				}
-
-				_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(certificateManager.DescribeCall.CallCount).To(Equal(0))
-				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal(""))
-			})
-
 		})
 
 		Context("when there are instances attached to an lb", func() {
@@ -443,7 +315,7 @@ var _ = Describe("Up", func() {
 					Outputs: map[string]string{"ConcourseLoadBalancer": "some-load-balancer"},
 				}
 
-				_, err := command.Execute(globalFlags, []string{"--lb-type", ""}, incomingState)
+				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(elbDescriber.DescribeCall.CallCount).To(Equal(0))
@@ -598,6 +470,11 @@ var _ = Describe("Up", func() {
 			Context("when the load balancer type is concourse", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+					loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
+						CertificateName: "some-certificate-name",
+						CertificateARN:  "some-certificate-arn",
+						LBType:          "concourse",
+					}
 
 					_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
@@ -625,6 +502,11 @@ var _ = Describe("Up", func() {
 			Context("when the load balancer type is cf", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
+					loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
+						CertificateName: "some-certificate-name",
+						CertificateARN:  "some-certificate-arn",
+						LBType:          "cf",
+					}
 
 					_, err := command.Execute(globalFlags, []string{"--lb-type", "cf"}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
@@ -662,43 +544,15 @@ var _ = Describe("Up", func() {
 			})
 
 			Context("lb type", func() {
-				Context("when the lb type does not exist", func() {
-					It("populates the lb type", func() {
-						state, err := command.Execute(globalFlags, []string{"--lb-type", ""}, storage.State{})
-						Expect(err).NotTo(HaveOccurred())
+				It("populates the lb type from the load balancer certificate manager", func() {
+					loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
+						LBType: "cf",
+					}
 
-						Expect(state.Stack.LBType).To(Equal("none"))
-					})
-				})
+					state, err := command.Execute(globalFlags, []string{"--lb-type", ""}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
 
-				Context("when the lb type exists", func() {
-					It("does not change the lb type when no lb type has been specified", func() {
-						incomingState := storage.State{
-							Stack: storage.Stack{
-								Name:   "some-stack-name",
-								LBType: "concourse",
-							},
-						}
-
-						state, err := command.Execute(globalFlags, []string{"--lb-type", ""}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(state.Stack.LBType).To(Equal("concourse"))
-					})
-
-					It("updates the state when an lb type has been specified", func() {
-						incomingState := storage.State{
-							Stack: storage.Stack{
-								Name:   "some-stack-name",
-								LBType: "cf",
-							},
-						}
-
-						state, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(state.Stack.LBType).To(Equal("concourse"))
-					})
+					Expect(state.Stack.LBType).To(Equal("cf"))
 				})
 
 				Context("when the cert and key changes", func() {
@@ -706,7 +560,9 @@ var _ = Describe("Up", func() {
 						incomingState := storage.State{
 							CertificateName: "some-certificate-name",
 						}
-						certificateManager.CreateOrUpdateCall.Returns.CertificateName = "some-other-certificate-name"
+						loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
+							CertificateName: "some-other-certificate-name",
+						}
 						state, err := command.Execute(globalFlags, []string{
 							"--lb-type", "concourse",
 							"--cert", "some-cert-path",
@@ -715,7 +571,12 @@ var _ = Describe("Up", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.CertificateName).To(Equal("some-other-certificate-name"))
-						Expect(certificateManager.CreateOrUpdateCall.Receives.Name).To(Equal("some-certificate-name"))
+						Expect(loadBalancerCertificateManager.CreateCall.Receives.Input).To(Equal(iam.CertificateCreateInput{
+							CurrentCertificateName: "some-certificate-name",
+							DesiredLBType:          "concourse",
+							CertPath:               "some-cert-path",
+							KeyPath:                "some-key-path",
+						}))
 					})
 				})
 			})
@@ -931,7 +792,7 @@ var _ = Describe("Up", func() {
 			})
 
 			It("returns an error when the certificate cannot be uploaded", func() {
-				certificateManager.CreateOrUpdateCall.Returns.Error = errors.New("error uploading certificate")
+				loadBalancerCertificateManager.CreateCall.Returns.Error = errors.New("error uploading certificate")
 
 				_, err := command.Execute(globalFlags, []string{
 					"--lb-type", "cf",
@@ -945,7 +806,7 @@ var _ = Describe("Up", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = true
 				clientProvider.ELBClientCall.Returns.Error = errors.New("error creating client")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
 				Expect(err).To(MatchError("error creating client"))
 			})
 
@@ -974,7 +835,7 @@ var _ = Describe("Up", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = true
 				infrastructureManager.DescribeCall.Returns.Error = errors.New("infrastructure describe failed")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
 				Expect(err).To(MatchError("infrastructure describe failed"))
 			})
 
@@ -997,7 +858,7 @@ var _ = Describe("Up", func() {
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = commands.NewUp(
 					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, certificateManager)
+					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager)
 
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
@@ -1046,7 +907,7 @@ var _ = Describe("Up", func() {
 
 				elbDescriber.DescribeCall.Returns.Error = errors.New("elb cannot be described")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
 				Expect(err).To(MatchError("elb cannot be described"))
 			})
 		})
