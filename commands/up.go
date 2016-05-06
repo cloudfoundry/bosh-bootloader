@@ -103,10 +103,6 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	if !u.loadBalancerCertificateManager.IsValidLBType(config.lbType) {
-		return state, fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
-	}
-
 	cloudFormationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
@@ -117,47 +113,9 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name, cloudFormationClient)
+	err = u.checkForFastFails(globalFlags, config, state, cloudFormationClient)
 	if err != nil {
 		return state, err
-	}
-
-	if !state.BOSH.IsEmpty() && !stackExists {
-		return state, fmt.Errorf(
-			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
-				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
-				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
-			state.Stack.Name, state.AWS.Region)
-	}
-
-	if stackExists && state.Stack.LBType != config.lbType {
-		elbClient, err := u.awsClientProvider.ELBClient(aws.Config{
-			AccessKeyID:      state.AWS.AccessKeyID,
-			SecretAccessKey:  state.AWS.SecretAccessKey,
-			Region:           state.AWS.Region,
-			EndpointOverride: globalFlags.EndpointOverride,
-		})
-		if err != nil {
-			return state, err
-		}
-
-		stack, err := u.infrastructureManager.Describe(cloudFormationClient, state.Stack.Name)
-		if err != nil {
-			return state, err
-		}
-
-		for _, lbName := range []string{"ConcourseLoadBalancer", "CFSSHProxyLoadBalancer", "CFRouterLoadBalancer"} {
-			if id, ok := stack.Outputs[lbName]; ok {
-				instances, err := u.elbDescriber.Describe(id, elbClient)
-				if err != nil {
-					return state, err
-				}
-
-				if len(instances) > 0 {
-					return state, fmt.Errorf("Load balancer %q cannot be deleted since it has attached instances: %s", id, strings.Join(instances, ", "))
-				}
-			}
-		}
 	}
 
 	iamClient, err := u.awsClientProvider.IAMClient(aws.Config{
@@ -278,4 +236,55 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (u Up) checkForFastFails(globalFlags GlobalFlags, config upConfig, state storage.State, cloudFormationClient cloudformation.Client) error {
+	if !u.loadBalancerCertificateManager.IsValidLBType(config.lbType) {
+		return fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
+	}
+
+	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name, cloudFormationClient)
+	if err != nil {
+		return err
+	}
+
+	if !state.BOSH.IsEmpty() && !stackExists {
+		return fmt.Errorf(
+			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
+				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
+				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
+			state.Stack.Name, state.AWS.Region)
+	}
+
+	if stackExists && state.Stack.LBType != config.lbType {
+		elbClient, err := u.awsClientProvider.ELBClient(aws.Config{
+			AccessKeyID:      state.AWS.AccessKeyID,
+			SecretAccessKey:  state.AWS.SecretAccessKey,
+			Region:           state.AWS.Region,
+			EndpointOverride: globalFlags.EndpointOverride,
+		})
+		if err != nil {
+			return err
+		}
+
+		stack, err := u.infrastructureManager.Describe(cloudFormationClient, state.Stack.Name)
+		if err != nil {
+			return err
+		}
+
+		for _, lbName := range []string{"ConcourseLoadBalancer", "CFSSHProxyLoadBalancer", "CFRouterLoadBalancer"} {
+			if id, ok := stack.Outputs[lbName]; ok {
+				instances, err := u.elbDescriber.Describe(id, elbClient)
+				if err != nil {
+					return err
+				}
+
+				if len(instances) > 0 {
+					return fmt.Errorf("Load balancer %q cannot be deleted since it has attached instances: %s", id, strings.Join(instances, ", "))
+				}
+			}
+		}
+	}
+
+	return nil
 }
