@@ -55,7 +55,7 @@ go get github.com/pivotal-cf-experimental/bosh-bootloader/bbl
 
 ## Usage
 
-The `bbl` command can be invoked on the command line and will display it's usage.
+The `bbl` command can be invoked on the command line and will display its usage.
 
 ```
 $ bbl
