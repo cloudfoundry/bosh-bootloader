@@ -648,11 +648,64 @@ var _ = Describe("Up", func() {
 					infrastructureManager.ExistsCall.Returns.Exists = true
 				})
 
-				It("writes the boshinit manifest", func() {
-					state, err := command.Execute(globalFlags, []string{}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
+				Context("boshinit manifest", func() {
+					It("writes the boshinit manifest", func() {
+						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(state.BOSH.Manifest).To(ContainSubstring("name: bosh"))
+						Expect(state.BOSH.Manifest).To(ContainSubstring("name: bosh"))
+					})
+
+					It("writes the updated boshinit manifest", func() {
+						boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
+							BOSHInitManifest: "name: updated-bosh",
+						}
+
+						state, err := command.Execute(globalFlags, []string{}, storage.State{
+							BOSH: storage.BOSH{
+								Manifest: "name: bosh",
+							},
+						})
+
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.BOSH.Manifest).To(ContainSubstring("name: updated-bosh"))
+
+					})
+				})
+
+				Context("bosh state", func() {
+					It("writes the bosh state", func() {
+						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+							"updated-key": "updated-value",
+						}))
+					})
+
+					It("writes the updated boshinit manifest", func() {
+						boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
+							BOSHInitState: boshinit.State{
+								"some-key":       "some-value",
+								"some-other-key": "some-other-value",
+							},
+						}
+
+						state, err := command.Execute(globalFlags, []string{}, storage.State{
+							BOSH: storage.BOSH{
+								Manifest: "name: bosh",
+								State: boshinit.State{
+									"some-key": "some-value",
+								},
+							},
+						})
+
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+							"some-key":       "some-value",
+							"some-other-key": "some-other-value",
+						}))
+					})
 				})
 
 				It("writes the bosh director address", func() {

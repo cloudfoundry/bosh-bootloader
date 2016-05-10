@@ -209,10 +209,11 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
 			Credentials:            deployOutput.Credentials,
-			State:                  deployOutput.BOSHInitState,
-			Manifest:               deployOutput.BOSHInitManifest,
 		}
 	}
+
+	state.BOSH.State = deployOutput.BOSHInitState
+	state.BOSH.Manifest = deployOutput.BOSHInitManifest
 
 	err = u.cloudConfigurator.Configure(stack, availabilityZones, bosh.NewClient(stack.Outputs["BOSHURL"], deployInput.DirectorUsername, deployInput.DirectorPassword))
 	if err != nil {
