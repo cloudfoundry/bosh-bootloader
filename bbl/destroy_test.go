@@ -15,6 +15,7 @@ import (
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"github.com/rosenhouse/awsfaker"
 
@@ -177,12 +178,13 @@ var _ = Describe("destroy", func() {
 			privateKey = string(contents)
 
 			buf, err := json.Marshal(storage.State{
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: privateKey,
-				},
 				Stack: storage.Stack{
 					Name: "some-stack-name",
+				},
+				BOSH: storage.BOSH{
+					State: boshinit.State{
+						"key": "value",
+					},
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -194,7 +196,7 @@ var _ = Describe("destroy", func() {
 			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
 			Expect(session.Out.Contents()).To(ContainSubstring("step: destroying bosh director"))
 			Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init delete bosh.yml]"))
-			Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {}`))
+			Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value"}`))
 		})
 
 		It("deletes the stack", func() {

@@ -36,32 +36,10 @@ func NewExecutor(manifestBuilder manifestBuilder, deployCommand command, deleteC
 	}
 }
 
-func (e Executor) Delete(input DeployInput) error {
-	manifest, _, err := e.manifestBuilder.Build(manifests.ManifestProperties{
-		DirectorUsername: input.DirectorUsername,
-		DirectorPassword: input.DirectorPassword,
-		SubnetID:         input.InfrastructureConfiguration.SubnetID,
-		AvailabilityZone: input.InfrastructureConfiguration.AvailabilityZone,
-		ElasticIP:        input.InfrastructureConfiguration.ElasticIP,
-		AccessKeyID:      input.InfrastructureConfiguration.AccessKeyID,
-		SecretAccessKey:  input.InfrastructureConfiguration.SecretAccessKey,
-		SecurityGroup:    input.InfrastructureConfiguration.SecurityGroup,
-		Region:           input.InfrastructureConfiguration.AWSRegion,
-		DefaultKeyName:   input.EC2KeyPair.Name,
-		SSLKeyPair:       input.SSLKeyPair,
-		Credentials:      manifests.NewInternalCredentials(input.Credentials),
-	})
-	if err != nil {
-		return err
-	}
-
-	manifestYaml, err := candiedyaml.Marshal(manifest)
-	if err != nil {
-		return err
-	}
-
+func (e Executor) Delete(boshInitManifest string, boshInitState State, ec2PrivateKey string) error {
 	e.logger.Step("destroying bosh director")
-	_, err = e.deleteCommand.Execute(manifestYaml, input.EC2KeyPair.PrivateKey, input.State)
+
+	_, err := e.deleteCommand.Execute([]byte(boshInitManifest), ec2PrivateKey, boshInitState)
 	if err != nil {
 		return err
 	}

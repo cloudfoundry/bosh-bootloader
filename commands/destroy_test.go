@@ -7,11 +7,9 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -129,6 +127,7 @@ var _ = Describe("Destroy", func() {
 						},
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
+						Manifest:               "bosh-init-manifest",
 					},
 					Stack: storage.Stack{
 						Name: "some-stack-name",
@@ -180,34 +179,9 @@ var _ = Describe("Destroy", func() {
 				Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
 				Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-				Expect(boshDeleter.DeleteCall.Receives.Input).To(Equal(boshinit.DeployInput{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
-						SubnetID:         "some-subnet-id",
-						AvailabilityZone: "some-availability-zone",
-						ElasticIP:        "some-elastic-ip",
-						AccessKeyID:      "some-access-key-id",
-						SecretAccessKey:  "some-secret-access-key",
-						SecurityGroup:    "some-security-group",
-						AWSRegion:        "some-aws-region",
-					},
-					EC2KeyPair: ec2.KeyPair{
-						Name:       "some-ec2-key-pair-name",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
-					SSLKeyPair: ssl.KeyPair{
-						Certificate: []byte("some-certificate"),
-						PrivateKey:  []byte("some-private-key"),
-					},
-					Credentials: map[string]string{
-						"some-username": "some-password",
-					},
-					State: map[string]interface{}{
-						"key": "value",
-					},
-				}))
+				Expect(boshDeleter.DeleteCall.Receives.BOSHInitManifest).To(Equal("bosh-init-manifest"))
+				Expect(boshDeleter.DeleteCall.Receives.BOSHInitState).To(Equal(boshinit.State{"key": "value"}))
+				Expect(boshDeleter.DeleteCall.Receives.EC2PrivateKey).To(Equal("some-private-key"))
 			})
 
 			It("deletes the stack", func() {
@@ -276,15 +250,6 @@ var _ = Describe("Destroy", func() {
 
 					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to create cloudformation client"))
-				})
-			})
-
-			Context("when failing to construct DeployInput", func() {
-				It("returns an error", func() {
-					stringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate string")
-
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
-					Expect(err).To(MatchError("failed to generate string"))
 				})
 			})
 

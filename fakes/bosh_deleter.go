@@ -6,7 +6,9 @@ type BOSHDeleter struct {
 	DeleteCall struct {
 		CallCount int
 		Receives  struct {
-			Input boshinit.DeployInput
+			BOSHInitManifest string
+			BOSHInitState    boshinit.State
+			EC2PrivateKey    string
 		}
 		Returns struct {
 			Error error
@@ -14,9 +16,11 @@ type BOSHDeleter struct {
 	}
 }
 
-func (d *BOSHDeleter) Delete(boshDeployInput boshinit.DeployInput) error {
+func (d *BOSHDeleter) Delete(boshInitManifest string, boshInitState boshinit.State, ec2PrivateKey string) error {
 	d.DeleteCall.CallCount++
-	d.DeleteCall.Receives.Input = boshDeployInput
+	d.DeleteCall.Receives.BOSHInitManifest = boshInitManifest
+	d.DeleteCall.Receives.BOSHInitState = boshInitState
+	d.DeleteCall.Receives.EC2PrivateKey = ec2PrivateKey
 
 	return d.DeleteCall.Returns.Error
 }

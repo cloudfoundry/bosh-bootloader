@@ -34,7 +34,7 @@ type keyPairDeleter interface {
 }
 
 type boshDeleter interface {
-	Delete(boshinit.DeployInput) error
+	Delete(boshInitManifest string, boshInitState boshinit.State, ec2PrivateKey string) error
 }
 
 type clientProvider interface {
@@ -157,22 +157,7 @@ func (d Destroy) createAWSClients(state storage.State, globalFlags GlobalFlags) 
 }
 
 func (d Destroy) deleteBOSH(stack cloudformation.Stack, state storage.State) (storage.State, error) {
-	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		AWSRegion:        state.AWS.Region,
-		SubnetID:         stack.Outputs["BOSHSubnet"],
-		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
-		ElasticIP:        stack.Outputs["BOSHEIP"],
-		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
-		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
-		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
-	}
-
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, d.stringGenerator)
-	if err != nil {
-		return state, err
-	}
-
-	if err := d.boshDeleter.Delete(deployInput); err != nil {
+	if err := d.boshDeleter.Delete(state.BOSH.Manifest, state.BOSH.State, state.KeyPair.PrivateKey); err != nil {
 		return state, err
 	}
 
