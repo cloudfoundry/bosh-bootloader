@@ -66,6 +66,10 @@ func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath
 	return name, nil
 }
 
+func (c CertificateManager) Create(certificatePath, privateKeyPath string, iamClient Client) (string, error) {
+	return c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
+}
+
 func (c CertificateManager) Delete(certificateName string, iamClient Client) error {
 	return c.certificateDeleter.Delete(certificateName, iamClient)
 }

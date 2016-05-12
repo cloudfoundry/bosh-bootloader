@@ -35,7 +35,7 @@ func (s StackManager) CreateOrUpdate(client Client, name string, template templa
 	case StackNotFound:
 		return s.create(client, name, template)
 	case nil:
-		return s.update(client, name, template)
+		return s.Update(client, name, template)
 	default:
 		return err
 	}
@@ -52,10 +52,11 @@ func (s StackManager) Describe(client Client, name string) (Stack, error) {
 	if err != nil {
 		switch err.(type) {
 		case awserr.RequestFailure:
-			if err.(awserr.RequestFailure).StatusCode() == 400 {
+			requestFailure := err.(awserr.RequestFailure)
+			if requestFailure.StatusCode() == 400 && requestFailure.Code() == "ValidationError" &&
+				requestFailure.Message() == fmt.Sprintf("Stack with id %s does not exist", name) {
 				return Stack{}, StackNotFound
 			}
-
 			return Stack{}, err
 		default:
 			return Stack{}, err
@@ -166,7 +167,7 @@ func (s StackManager) create(client Client, name string, template templates.Temp
 	return nil
 }
 
-func (s StackManager) update(client Client, name string, template templates.Template) error {
+func (s StackManager) Update(client Client, name string, template templates.Template) error {
 	s.logger.Step("updating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -182,18 +183,23 @@ func (s StackManager) update(client Client, name string, template templates.Temp
 
 	_, err = client.UpdateStack(params)
 	if err != nil {
-		if err != nil {
-			switch err.(type) {
-			case awserr.RequestFailure:
-				requestFailure := err.(awserr.RequestFailure)
-				if requestFailure.StatusCode() == 400 && requestFailure.Code() == "ValidationError" &&
-					requestFailure.Message() == "No updates are to be performed." {
+		switch err.(type) {
+		case awserr.RequestFailure:
+			requestFailure := err.(awserr.RequestFailure)
+
+			if requestFailure.StatusCode() == 400 && requestFailure.Code() == "ValidationError" {
+				switch requestFailure.Message() {
+				case "No updates are to be performed.":
 					return nil
+				case fmt.Sprintf("Stack [%s] does not exist", name):
+					return StackNotFound
+				default:
 				}
-				return err
-			default:
-				return err
 			}
+
+			return err
+		default:
+			return err
 		}
 	}
 

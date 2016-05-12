@@ -20,6 +20,21 @@ type InfrastructureManager struct {
 		}
 	}
 
+	UpdateCall struct {
+		Receives struct {
+			KeyPairName               string
+			NumberOfAvailabilityZones int
+			StackName                 string
+			LBType                    string
+			LBCertificateARN          string
+			CloudFormationClient      cloudformation.Client
+		}
+		Returns struct {
+			Stack cloudformation.Stack
+			Error error
+		}
+	}
+
 	ExistsCall struct {
 		Receives struct {
 			StackName string
@@ -67,6 +82,16 @@ func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stac
 	}
 
 	return m.CreateCall.Returns.Stack, m.CreateCall.Returns.Error
+}
+
+func (m *InfrastructureManager) Update(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, cloudFormationClient cloudformation.Client) (cloudformation.Stack, error) {
+	m.UpdateCall.Receives.KeyPairName = keyPairName
+	m.UpdateCall.Receives.NumberOfAvailabilityZones = numberOfAZs
+	m.UpdateCall.Receives.StackName = stackName
+	m.UpdateCall.Receives.LBType = lbType
+	m.UpdateCall.Receives.LBCertificateARN = lbCertificateARN
+	m.UpdateCall.Receives.CloudFormationClient = cloudFormationClient
+	return m.UpdateCall.Returns.Stack, m.UpdateCall.Returns.Error
 }
 
 func (m *InfrastructureManager) Exists(stackName string, client cloudformation.Client) (bool, error) {

@@ -30,6 +30,17 @@ type StackManager struct {
 		}
 	}
 
+	UpdateCall struct {
+		Receives struct {
+			StackName string
+			Template  templates.Template
+			Client    cloudformation.Client
+		}
+		Returns struct {
+			Error error
+		}
+	}
+
 	WaitForCompletionCall struct {
 		Receives struct {
 			Client        cloudformation.Client
@@ -59,6 +70,14 @@ func (m *StackManager) CreateOrUpdate(client cloudformation.Client, stackName st
 	m.CreateOrUpdateCall.Receives.Template = template
 
 	return m.CreateOrUpdateCall.Returns.Error
+}
+
+func (m *StackManager) Update(client cloudformation.Client, stackName string, template templates.Template) error {
+	m.UpdateCall.Receives.Client = client
+	m.UpdateCall.Receives.StackName = stackName
+	m.UpdateCall.Receives.Template = template
+
+	return m.UpdateCall.Returns.Error
 }
 
 func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName string, sleepInterval time.Duration, action string) error {

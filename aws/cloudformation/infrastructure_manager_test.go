@@ -89,6 +89,39 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 	})
 
+	Describe("Update", func() {
+		BeforeEach(func() {
+			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{Name: "some-stack-name"}
+		})
+
+		It("updates the stack and returns the stack", func() {
+			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", cloudFormationClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
+			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-key-pair-name"))
+			Expect(builder.BuildCall.Receives.NumberOfAZs).To(Equal(2))
+			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
+			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
+
+			Expect(stackManager.UpdateCall.Receives.Client).To(Equal(cloudFormationClient))
+			Expect(stackManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
+			Expect(stackManager.UpdateCall.Receives.Template).To(Equal(templates.Template{
+				AWSTemplateFormatVersion: "some-template-version",
+				Description:              "some-description",
+			}))
+
+			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
+			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
+			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
+			Expect(stackManager.WaitForCompletionCall.Receives.Action).To(Equal("applying cloudformation template"))
+
+			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
+			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
+
+		})
+	})
+
 	Describe("Exists", func() {
 		It("returns true when the stack exists", func() {
 			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{}

@@ -28,6 +28,7 @@ type keyPairSynchronizer interface {
 
 type infrastructureManager interface {
 	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, client cloudformation.Client) (cloudformation.Stack, error)
+	Update(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, client cloudformation.Client) (cloudformation.Stack, error)
 	Exists(stackName string, client cloudformation.Client) (bool, error)
 	Delete(client cloudformation.Client, stackName string) error
 	Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error)
@@ -215,7 +216,12 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	state.BOSH.State = deployOutput.BOSHInitState
 	state.BOSH.Manifest = deployOutput.BOSHInitManifest
 
-	err = u.cloudConfigurator.Configure(stack, availabilityZones, bosh.NewClient(stack.Outputs["BOSHURL"], deployInput.DirectorUsername, deployInput.DirectorPassword))
+	boshClient := bosh.NewClient(
+		stack.Outputs["BOSHURL"],
+		deployInput.DirectorUsername,
+		deployInput.DirectorPassword,
+	)
+	err = u.cloudConfigurator.Configure(stack, availabilityZones, boshClient)
 	if err != nil {
 		return state, err
 	}

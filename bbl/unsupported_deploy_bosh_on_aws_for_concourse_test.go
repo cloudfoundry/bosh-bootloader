@@ -42,12 +42,28 @@ func (b *fakeBOSHDirector) GetCloudConfig() []byte {
 }
 
 func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	buf, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		panic(err)
+	switch request.URL.Path {
+	case "/info":
+		responseWriter.Write([]byte(`{
+			"name": "some-bosh-director",
+			"uuid": "some-uuid",
+			"version": "some-version"
+		}`))
+
+		return
+	case "/cloud_configs":
+		buf, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			panic(err)
+		}
+		b.SetCloudConfig(buf)
+		responseWriter.WriteHeader(http.StatusCreated)
+
+		return
+	default:
+		responseWriter.WriteHeader(http.StatusNotFound)
+		return
 	}
-	b.SetCloudConfig(buf)
-	responseWriter.WriteHeader(http.StatusCreated)
 }
 
 var _ = Describe("bbl", func() {
@@ -137,6 +153,7 @@ var _ = Describe("bbl", func() {
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
+
 				Expect(stdout).To(MatchRegexp(`Director Username: user-\w{7}`))
 				Expect(stdout).To(MatchRegexp(`Director Password: p-\w{15}`))
 			})
@@ -336,24 +353,6 @@ var _ = Describe("bbl", func() {
 		)
 	})
 })
-
-func writeStateJson(state storage.State, tempDirectory string) {
-	buf, err := json.Marshal(state)
-	Expect(err).NotTo(HaveOccurred())
-
-	ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
-}
-
-func readStateJson(tempDirectory string) storage.State {
-	buf, err := ioutil.ReadFile(filepath.Join(tempDirectory, "state.json"))
-	Expect(err).NotTo(HaveOccurred())
-
-	var state storage.State
-	err = json.Unmarshal(buf, &state)
-	Expect(err).NotTo(HaveOccurred())
-
-	return state
-}
 
 func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
 	dir, err := os.Getwd()

@@ -187,8 +187,35 @@ var _ = Describe("CertificateManager", func() {
 		})
 	})
 
+	Describe("Create", func() {
+		It("creates the given certificate", func() {
+			certificateUploader.UploadCall.Returns.CertificateName = "some-new-certificate"
+
+			certificateName, err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), iamClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(certificateUploader.UploadCall.CallCount).To(Equal(1))
+			Expect(certificateUploader.UploadCall.Receives.CertificatePath).To(Equal(certificateFile.Name()))
+			Expect(certificateUploader.UploadCall.Receives.PrivateKeyPath).To(Equal(privateKeyFile.Name()))
+			Expect(certificateUploader.UploadCall.Receives.IAMClient).To(Equal(iamClient))
+
+			Expect(certificateName).To(Equal("some-new-certificate"))
+		})
+
+		Context("failure cases", func() {
+			Context("when certificate uploader fails to upload", func() {
+				It("returns an error", func() {
+					certificateUploader.UploadCall.Returns.Error = errors.New("upload failed")
+
+					_, err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), iamClient)
+					Expect(err).To(MatchError("upload failed"))
+				})
+			})
+		})
+	})
+
 	Describe("Delete", func() {
-		It("should call certificateDeleter.Delete", func() {
+		It("deletes the given certificate", func() {
 			err := manager.Delete("some-certificate-name", iamClient)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -197,7 +224,7 @@ var _ = Describe("CertificateManager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("should return an error when certificateDeleter.Delete fails", func() {
+			It("returns an error when certificate fails to delete", func() {
 				certificateDeleter.DeleteCall.Returns.Error = errors.New("unknown certificate error")
 
 				err := manager.Delete("some-non-existant-certificate", iamClient)
@@ -227,7 +254,7 @@ var _ = Describe("CertificateManager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("should return an error when certificateDescriber.Describe fails", func() {
+			It("returns an error when the describe fails", func() {
 				certificateDescriber.DescribeCall.Returns.Error = errors.New("unknown certificate error")
 
 				_, err := manager.Describe("some-non-existant-certificate", iamClient)
@@ -235,5 +262,4 @@ var _ = Describe("CertificateManager", func() {
 			})
 		})
 	})
-
 })

@@ -78,6 +78,7 @@ func main() {
 	)
 
 	// BOSH
+	boshClientProvider := bosh.NewClientProvider()
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, boshCloudConfigGenerator)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever()
@@ -92,6 +93,10 @@ func main() {
 	destroy := commands.NewDestroy(
 		logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker,
 		stackManager, stringGenerator, infrastructureManager, keyPairDeleter,
+	)
+	createLBs := commands.NewCreateLBs(
+		awsClientProvider, certificateManager, infrastructureManager,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigurator,
 	)
 	usage := commands.NewUsage(os.Stdout)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
@@ -111,11 +116,12 @@ func main() {
 		"help":    help,
 		"version": version,
 		"unsupported-deploy-bosh-on-aws-for-concourse": up,
-		"destroy":           destroy,
-		"director-address":  directorAddress,
-		"director-username": directorUsername,
-		"director-password": directorPassword,
-		"ssh-key":           sshKey,
+		"destroy":                destroy,
+		"director-address":       directorAddress,
+		"director-username":      directorUsername,
+		"director-password":      directorPassword,
+		"ssh-key":                sshKey,
+		"unsupported-create-lbs": createLBs,
 	}, stateStore, usage.Print)
 
 	err = app.Run(os.Args[1:])

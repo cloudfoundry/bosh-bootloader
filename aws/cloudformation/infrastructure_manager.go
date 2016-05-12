@@ -12,6 +12,7 @@ type templateBuilder interface {
 
 type stackManager interface {
 	CreateOrUpdate(client Client, stackName string, template templates.Template) error
+	Update(client Client, stackName string, template templates.Template) error
 	WaitForCompletion(client Client, stackName string, sleepInterval time.Duration, action string) error
 	Describe(client Client, stackName string) (Stack, error)
 	Delete(client Client, stackName string) error
@@ -33,6 +34,20 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
 
 	if err := m.stackManager.CreateOrUpdate(cloudFormationClient, stackName, template); err != nil {
+		return Stack{}, err
+	}
+
+	if err := m.stackManager.WaitForCompletion(cloudFormationClient, stackName, 15*time.Second, "applying cloudformation template"); err != nil {
+		return Stack{}, err
+	}
+
+	return m.stackManager.Describe(cloudFormationClient, stackName)
+}
+
+func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string, cloudFormationClient Client) (Stack, error) {
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
+
+	if err := m.stackManager.Update(cloudFormationClient, stackName, template); err != nil {
 		return Stack{}, err
 	}
 

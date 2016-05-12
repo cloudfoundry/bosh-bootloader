@@ -13,7 +13,8 @@ type CloudFormationClient struct {
 	}
 
 	UpdateStackCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			Input *cloudformation.UpdateStackInput
 		}
 		Returns struct {
@@ -51,6 +52,7 @@ func (c *CloudFormationClient) CreateStack(input *cloudformation.CreateStackInpu
 }
 
 func (c *CloudFormationClient) UpdateStack(input *cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error) {
+	c.UpdateStackCall.CallCount++
 	c.UpdateStackCall.Receives.Input = input
 	return nil, c.UpdateStackCall.Returns.Error
 }
