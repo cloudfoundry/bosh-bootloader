@@ -67,12 +67,13 @@ Global Options:
   --state-dir             "Directory that stores the state.json"
 
 Commands:
-  destroy [--no-confirm]                                                      "tears down a BOSH Director environment on AWS"
-  director-address                                                            "print the BOSH director address"
-  director-password                                                           "print the BOSH director password"
-  director-username                                                           "print the BOSH director username"
-  help                                                                        "print usage"
-  ssh-key                                                                     "print the ssh private key"
-  unsupported-deploy-bosh-on-aws-for-concourse [--lb-type=concourse,cf,none]  "deploys a BOSH Director on AWS"
-  version                                                                     "print version"
+  destroy [--no-confirm]                                                        "tears down a BOSH Director environment on AWS"
+  director-address                                                              "print the BOSH director address"
+  director-password                                                             "print the BOSH director password"
+  director-username                                                             "print the BOSH director username"
+  help                                                                          "print usage"
+  ssh-key                                                                       "print the ssh private key"
+  unsupported-create-lbs [--type=<concourse,cf>] [--cert=<path>] [--key=<path>] "attaches a load balancer with the supplied certificate and key"
+  unsupported-deploy-bosh-on-aws-for-concourse [--lb-type=concourse,cf,none]    "deploys a BOSH Director on AWS"
+  version                                                                       "print version"
 ```
