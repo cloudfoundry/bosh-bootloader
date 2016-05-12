@@ -184,6 +184,23 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		})
 	})
 
+		Describe("DNS", func() {
+		It("returns job properties for DNS", func() {
+			dns := jobPropertiesManifestBuilder.DNS()
+			Expect(dns).To(Equal(manifests.DNSJobProperties{
+				Address:    "10.0.0.6",
+				DB: manifests.PostgresProperties{
+					ListenAddress: "127.0.0.1",
+					Host:          "127.0.0.1",
+					User:          postgresUsername,
+					Password:      postgresPassword,
+					Database:      "bosh",
+					Adapter:       "postgres",
+				},				
+			}))
+		})
+	})
+
 	Describe("Agent", func() {
 		It("returns job properties for Agent", func() {
 			agent := jobPropertiesManifestBuilder.Agent()

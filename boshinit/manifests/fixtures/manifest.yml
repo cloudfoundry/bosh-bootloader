@@ -48,6 +48,7 @@ jobs:
   - {name: health_monitor, release: bosh}
   - {name: registry, release: bosh}
   - {name: aws_cpi, release: bosh-aws-cpi}
+  - {name: powerdns, release: bosh}
 
   resource_pool: vms
   persistent_disk_pool: disks
@@ -178,6 +179,16 @@ jobs:
     agent: {mbus: "nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"}
 
     ntp: [0.pool.ntp.org, 1.pool.ntp.org]
+
+    dns:
+      address: 10.0.0.6
+      db:
+        listen_address: 127.0.0.1
+        host: 127.0.0.1
+        user: postgres-user-some-random-string
+        password: postgres-some-random-string
+        database: bosh
+        adapter: postgres
 
 cloud_provider:
   template: {name: aws_cpi, release: bosh-aws-cpi}

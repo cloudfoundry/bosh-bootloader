@@ -125,6 +125,13 @@ func (j JobPropertiesManifestBuilder) HM() HMJobProperties {
 	}
 }
 
+func (j JobPropertiesManifestBuilder) DNS() DNSJobProperties {
+	return DNSJobProperties{
+		Address:    "10.0.0.6",
+		DB:         j.Postgres(),
+	}
+}
+
 func (j JobPropertiesManifestBuilder) Agent() AgentProperties {
 	return AgentProperties{
 		MBus: fmt.Sprintf("nats://%s:%s@10.0.0.6:4222", j.natsUsername, j.natsPassword),
