@@ -312,6 +312,15 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when an lb already exists", func() {
+				_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "cf"}, storage.State{
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
+				})
+				Expect(err).To(MatchError("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
+			})
+
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
 					_, err := command.Execute(commands.GlobalFlags{}, []string{"--invalid-flag"}, storage.State{})

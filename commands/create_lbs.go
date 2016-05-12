@@ -62,6 +62,10 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", config.lbType)
 	}
 
+	if state.Stack.LBType != "" {
+		return state, fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", state.Stack.LBType)
+	}
+
 	awsConfig := aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
