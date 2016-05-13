@@ -103,6 +103,7 @@ disk_types:
   disk_size: 1024
   cloud_properties:
     type: gp2
+    encrypted: true
 
 compilation:
   workers: 3

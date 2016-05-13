@@ -23,7 +23,9 @@ resource_pools:
 disk_pools:
 - name: disks
   disk_size: 20_000
-  cloud_properties: {type: gp2}
+  cloud_properties:
+    type: gp2
+    encrypted: true
 
 networks:
 - name: private

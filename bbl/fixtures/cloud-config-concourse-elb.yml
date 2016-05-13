@@ -17,6 +17,7 @@ compilation:
 disk_types:
 - cloud_properties:
     type: gp2
+    encrypted: true
   disk_size: 1024
   name: default
 networks:

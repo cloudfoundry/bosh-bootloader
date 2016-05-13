@@ -23,7 +23,8 @@ var _ = Describe("DiskPoolsManifestBuilder", func() {
 					Name:     "disks",
 					DiskSize: 20000,
 					CloudProperties: manifests.DiskPoolsCloudProperties{
-						Type: "gp2",
+						Type:      "gp2",
+						Encrypted: true,
 					},
 				},
 			}))

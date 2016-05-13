@@ -18,7 +18,8 @@ var _ = Describe("DiskTypesGenerator", func() {
 					Name:     "default",
 					DiskSize: 1024,
 					CloudProperties: bosh.DiskTypeCloudProperties{
-						Type: "gp2",
+						Type:      "gp2",
+						Encrypted: true,
 					},
 				},
 			))

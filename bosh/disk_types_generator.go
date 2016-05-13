@@ -9,7 +9,8 @@ type DiskType struct {
 }
 
 type DiskTypeCloudProperties struct {
-	Type string `yaml:"type"`
+	Type      string `yaml:"type"`
+	Encrypted bool   `yaml:"encrypted"`
 }
 
 func NewDiskTypesGenerator() DiskTypesGenerator {
@@ -22,7 +23,8 @@ func (DiskTypesGenerator) Generate() []DiskType {
 			Name:     "default",
 			DiskSize: 1024,
 			CloudProperties: DiskTypeCloudProperties{
-				Type: "gp2",
+				Type:      "gp2",
+				Encrypted: true,
 			},
 		},
 	}

@@ -61,7 +61,8 @@ type DiskPool struct {
 }
 
 type DiskPoolsCloudProperties struct {
-	Type string `yaml:"type"`
+	Type      string `yaml:"type"`
+	Encrypted bool   `yaml:"encrypted"`
 }
 
 type Network struct {

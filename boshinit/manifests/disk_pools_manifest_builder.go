@@ -12,7 +12,8 @@ func (r DiskPoolsManifestBuilder) Build() []DiskPool {
 			Name:     "disks",
 			DiskSize: 20000,
 			CloudProperties: DiskPoolsCloudProperties{
-				Type: "gp2",
+				Type:      "gp2",
+				Encrypted: true,
 			},
 		},
 	}
