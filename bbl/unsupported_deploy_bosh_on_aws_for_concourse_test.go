@@ -146,16 +146,6 @@ var _ = Describe("bbl", func() {
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: generating bosh-init manifest"))
 				Expect(stdout).To(ContainSubstring("step: deploying bosh director"))
-				Expect(stdout).To(ContainSubstring("Director Address:  127.0.0.1"))
-			})
-
-			It("prints out randomized bosh director credentials", func() {
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
-
-				stdout := session.Out.Contents()
-
-				Expect(stdout).To(MatchRegexp(`Director Username: user-\w{7}`))
-				Expect(stdout).To(MatchRegexp(`Director Password: p-\w{15}`))
 			})
 
 			It("invokes bosh-init", func() {

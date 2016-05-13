@@ -1,8 +1,6 @@
 package boshinit
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 )
@@ -76,10 +74,6 @@ func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 	if err != nil {
 		return DeployOutput{}, err
 	}
-
-	e.logger.Println(fmt.Sprintf("Director Address:  %s", manifestProperties.ElasticIP))
-	e.logger.Println("Director Username: " + manifestProperties.DirectorUsername)
-	e.logger.Println("Director Password: " + manifestProperties.DirectorPassword)
 
 	return DeployOutput{
 		BOSHInitState:      state,

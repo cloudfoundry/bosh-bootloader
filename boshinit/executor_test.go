@@ -217,24 +217,6 @@ var _ = Describe("Executor", func() {
 			}))
 		})
 
-		It("prints out the bosh director information", func() {
-			var lines []string
-			logger.PrintlnCall.Stub = func(line string) {
-				lines = append(lines, line)
-			}
-
-			_, err := executor.Deploy(boshinit.DeployInput{
-				InfrastructureConfiguration: infrastructureConfiguration,
-				SSLKeyPair:                  sslKeyPair,
-				EC2KeyPair:                  ec2KeyPair,
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(lines).To(ContainElement("Director Address:  some-elastic-ip"))
-			Expect(lines).To(ContainElement("Director Username: admin"))
-			Expect(lines).To(ContainElement("Director Password: admin"))
-		})
-
 		It("prints out that the director is being deployed", func() {
 			_, err := executor.Deploy(boshinit.DeployInput{
 				InfrastructureConfiguration: infrastructureConfiguration,
