@@ -1,6 +1,8 @@
 package actors
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -42,7 +44,7 @@ func (b BBL) Up(loadBalancerType string) {
 		}...)
 	}
 
-	session := b.execute(args)
+	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }
 
@@ -51,7 +53,7 @@ func (b BBL) Destroy() {
 		"--state-dir", b.stateDirectory,
 		"destroy",
 		"--no-confirm",
-	})
+	}, os.Stdout, os.Stderr)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
@@ -79,21 +81,26 @@ func (b BBL) CreateLB(loadBalancerType string) {
 		"--key", "bbl-certs/bbl.key",
 	}
 
-	session := b.execute(args)
+	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }
 
 func (b BBL) fetchValue(value string) string {
-	session := b.execute([]string{
+	args := []string{
 		"--state-dir", b.stateDirectory,
 		value,
-	})
-	return strings.TrimSpace(string(session.Wait().Buffer().Contents()))
+	}
+
+	stdout := bytes.NewBuffer([]byte{})
+	stderr := bytes.NewBuffer([]byte{})
+	b.execute(args, stdout, stderr).Wait()
+
+	return strings.TrimSpace(string(stdout.Bytes()))
 }
 
-func (b BBL) execute(args []string) *gexec.Session {
+func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.Session {
 	cmd := exec.Command(b.pathToBBL, args...)
-	session, err := gexec.Start(cmd, os.Stdout, os.Stderr)
+	session, err := gexec.Start(cmd, stdout, stderr)
 	Expect(err).NotTo(HaveOccurred())
 
 	return session
