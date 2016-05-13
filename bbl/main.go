@@ -98,6 +98,7 @@ func main() {
 		awsClientProvider, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator,
 	)
+	updateLBs := commands.NewUpdateLBs(certificateManager, awsClientProvider, availabilityZoneRetriever, infrastructureManager)
 	usage := commands.NewUsage(os.Stdout)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
 		return state.BOSH.DirectorAddress
@@ -122,6 +123,7 @@ func main() {
 		"director-password":      directorPassword,
 		"ssh-key":                sshKey,
 		"unsupported-create-lbs": createLBs,
+		"unsupported-update-lbs": updateLBs,
 	}, stateStore, usage.Print)
 
 	err = app.Run(os.Args[1:])

@@ -29,6 +29,7 @@ type lbConfig struct {
 type certificateManager interface {
 	Create(certificate, privateKey string, client iam.Client) (string, error)
 	Describe(certificateName string, client iam.Client) (iam.Certificate, error)
+	Delete(certificateName string, client iam.Client) error
 }
 
 type boshClientProvider interface {
@@ -127,7 +128,7 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 	return state, nil
 }
 
-func (c CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
+func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
 	lbFlags := flags.New("create-lbs")
 
 	config := lbConfig{}
@@ -143,7 +144,7 @@ func (c CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
 	return config, nil
 }
 
-func (c CreateLBs) isValidLBType(lbType string) bool {
+func (CreateLBs) isValidLBType(lbType string) bool {
 	for _, v := range []string{"concourse", "cf"} {
 		if lbType == v {
 			return true

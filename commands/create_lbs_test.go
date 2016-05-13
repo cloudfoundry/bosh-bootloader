@@ -235,6 +235,7 @@ var _ = Describe("Create LBs", func() {
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.EC2Client).To(Equal(ec2Client))
 
 			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+			Expect(certificateManager.DescribeCall.Receives.IAMClient).To(Equal(iamClient))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
