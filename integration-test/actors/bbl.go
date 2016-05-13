@@ -67,6 +67,22 @@ func (b BBL) DirectorAddress() string {
 	return b.fetchValue("director-address")
 }
 
+func (b BBL) CreateLB(loadBalancerType string) {
+	args := []string{
+		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
+		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
+		"--aws-region", b.configuration.AWSRegion,
+		"--state-dir", b.stateDirectory,
+		"unsupported-create-lbs",
+		"--type", loadBalancerType,
+		"--cert", "bbl-certs/bbl.crt",
+		"--key", "bbl-certs/bbl.key",
+	}
+
+	session := b.execute(args)
+	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+}
+
 func (b BBL) fetchValue(value string) string {
 	session := b.execute([]string{
 		"--state-dir", b.stateDirectory,

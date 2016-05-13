@@ -9,7 +9,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
 )
 
-var _ = Describe("BBL", func() {
+var _ = Describe("up and destroy", func() {
 	var bbl actors.BBL
 	var aws actors.AWS
 	var state integration.State
