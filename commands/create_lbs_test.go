@@ -2,15 +2,18 @@ package commands_test
 
 import (
 	"errors"
+	"fmt"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Create LBs", func() {
@@ -312,14 +315,18 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when an lb already exists", func() {
-				_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "cf"}, storage.State{
-					Stack: storage.Stack{
-						LBType: "concourse",
-					},
-				})
-				Expect(err).To(MatchError("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
-			})
+			DescribeTable("returns an error when an lb already exists",
+				func(newLbType, oldLbType string) {
+					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", newLbType}, storage.State{
+						Stack: storage.Stack{
+							LBType: oldLbType,
+						},
+					})
+					Expect(err).To(MatchError(fmt.Sprintf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", oldLbType)))
+				},
+				Entry("when the previous lb type is concourse", "concourse", "cf"),
+				Entry("when the previous lb type is cf", "cf", "concourse"),
+			)
 
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
