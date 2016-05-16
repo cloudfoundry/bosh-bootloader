@@ -54,6 +54,8 @@ var _ = Describe("Update LBs", func() {
 			ARN: "some-certificate-arn",
 		}
 
+		infrastructureManager.ExistsCall.Returns.Exists = true
+
 		command = commands.NewUpdateLBs(certificateManager, clientProvider, availabilityZoneRetriever, infrastructureManager)
 	})
 
@@ -132,6 +134,12 @@ var _ = Describe("Update LBs", func() {
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
 		})
 
+		It("returns an error if the user hasn't bbl up'd yet", func() {
+			infrastructureManager.ExistsCall.Returns.Exists = false
+			_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+			Expect(err).To(MatchError("a bbl environment could not be found, please create a new environment before running this command again"))
+		})
+
 		Describe("state manipulation", func() {
 			It("updates the state with the new certificate name", func() {
 				certificateManager.CreateCall.Returns.CertificateName = "some-new-certificate-name"
@@ -146,6 +154,12 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		Describe("failure cases", func() {
+			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
+				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
+				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				Expect(err).To(MatchError("failed to check for stack"))
+			})
+
 			It("returns an error when invalid flags are provided", func() {
 				_, err := command.Execute(commands.GlobalFlags{}, []string{
 					"--invalid-flag",

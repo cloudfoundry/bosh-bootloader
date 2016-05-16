@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"errors"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -42,6 +44,20 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		EndpointOverride: globalFlags.EndpointOverride,
 	}
 
+	cloudFormationClient, err := c.clientProvider.CloudFormationClient(awsConfig)
+	if err != nil {
+		return state, err
+	}
+
+	stackExists, err := c.infrastructureManager.Exists(state.Stack.Name, cloudFormationClient)
+	if err != nil {
+		return state, err
+	}
+
+	if !stackExists {
+		return state, errors.New("a bbl environment could not be found, please create a new environment before running this command again")
+	}
+
 	iamClient, err := c.clientProvider.IAMClient(awsConfig)
 	if err != nil {
 		return state, err
@@ -63,11 +79,6 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 	}
 
 	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
-	if err != nil {
-		return state, err
-	}
-
-	cloudFormationClient, err := c.clientProvider.CloudFormationClient(awsConfig)
 	if err != nil {
 		return state, err
 	}
