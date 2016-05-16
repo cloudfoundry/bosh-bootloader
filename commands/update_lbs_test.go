@@ -169,7 +169,7 @@ var _ = Describe("Update LBs", func() {
 		It("returns an error if the user hasn't bbl up'd yet", func() {
 			infrastructureManager.ExistsCall.Returns.Exists = false
 			_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
-			Expect(err).To(MatchError("a bbl environment could not be found, please create a new environment before running this command again"))
+			Expect(err).To(MatchError(commands.BBLNotFound))
 		})
 
 		It("returns an error if there is no lb", func() {

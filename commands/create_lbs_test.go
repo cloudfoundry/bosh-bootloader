@@ -50,9 +50,7 @@ var _ = Describe("Create LBs", func() {
 			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
-			infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-				Name: "some-stack",
-			}
+			infrastructureManager.ExistsCall.Returns.Exists = true
 
 			incomingState = storage.State{
 				Stack: storage.Stack{
@@ -140,67 +138,6 @@ var _ = Describe("Create LBs", func() {
 			}))
 		})
 
-		It("invokes bosh client with director address, username, and password from state", func() {
-			_, err := command.Execute(
-				commands.GlobalFlags{
-					EndpointOverride: "some-endpoint",
-				},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-		})
-
-		It("checks if stack exists before creating lb", func() {
-			_, err := command.Execute(commands.GlobalFlags{},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(infrastructureManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
-			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack"))
-		})
-
-		It("checks if bosh director exists before create lb", func() {
-			_, err := command.Execute(commands.GlobalFlags{},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(boshClient.InfoCall.CallCount).To(Equal(1))
-		})
-
-		Context("when bosh director cannot be reached", func() {
-			It("returns an error", func() {
-				boshClient.InfoCall.Returns.Error = errors.New("Get http://127.0.0.1/info: dial tcp 127.0.0.1:80: getsockopt: connection refused")
-
-				_, err := command.Execute(commands.GlobalFlags{},
-					[]string{
-						"--type", "concourse",
-						"--cert", "temp/some-cert.crt",
-						"--key", "temp/some-key.key",
-					},
-					incomingState)
-
-				Expect(err).To(MatchError("bosh director cannot be reached: Get http://127.0.0.1/info: dial tcp 127.0.0.1:80: getsockopt: connection refused"))
-			})
-		})
-
 		It("uploads a cert and key", func() {
 			_, err := command.Execute(commands.GlobalFlags{},
 				[]string{
@@ -279,21 +216,41 @@ var _ = Describe("Create LBs", func() {
 			})
 		})
 
-		Context("stack does not exist", func() {
-			It("returns an error", func() {
-				infrastructureManager.DescribeCall.Returns.Error = errors.New("stack does not exist")
+		Context("fast fail if the stack or BOSH director does not exist", func() {
+			It("returns an error when the stack does not exist", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = false
+
 				_, err := command.Execute(commands.GlobalFlags{},
 					[]string{
 						"--type", "concourse",
 						"--cert", "temp/some-cert.crt",
 						"--key", "temp/some-key.key",
-					},
-					storage.State{
-						Stack: storage.Stack{
-							Name: "some-stack-name",
-						},
-					})
-				Expect(err).To(MatchError("stack does not exist"))
+					}, incomingState)
+
+				Expect(infrastructureManager.ExistsCall.Receives.Client).To(Equal(cloudFormationClient))
+				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack"))
+
+				Expect(err).To(MatchError(commands.BBLNotFound))
+			})
+
+			It("returns an error when the BOSH director does not exist", func() {
+				boshClient.InfoCall.Returns.Error = errors.New("director not found")
+				infrastructureManager.ExistsCall.Returns.Exists = true
+
+				_, err := command.Execute(commands.GlobalFlags{},
+					[]string{
+						"--type", "concourse",
+						"--cert", "temp/some-cert.crt",
+						"--key", "temp/some-key.key",
+					}, incomingState)
+
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+
+				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
+
+				Expect(err).To(MatchError(commands.BBLNotFound))
 			})
 		})
 
@@ -328,6 +285,12 @@ var _ = Describe("Create LBs", func() {
 				Entry("when the previous lb type is concourse", "concourse", "cf"),
 				Entry("when the previous lb type is cf", "cf", "concourse"),
 			)
+
+			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
+				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
+				_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
+				Expect(err).To(MatchError("failed to check for stack"))
+			})
 
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {

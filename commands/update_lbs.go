@@ -147,7 +147,7 @@ func (c UpdateLBs) checkFastFails(stackName string, lbType string, cloudFormatio
 	}
 
 	if !stackExists {
-		return errors.New("a bbl environment could not be found, please create a new environment before running this command again")
+		return BBLNotFound
 	}
 
 	if lbType != "concourse" && lbType != "cf" {

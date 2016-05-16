@@ -10,6 +10,7 @@ import (
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"github.com/rosenhouse/awsfaker"
 
@@ -109,6 +110,34 @@ var _ = Describe("load balancers", func() {
 
 				Expect(stderr).To(ContainSubstring("\"some-fake-lb-type\" is not a valid lb type, valid lb types are: concourse and cf"))
 			})
+
+			Context("when the environment has not been provisioned", func() {
+				It("exits 1 when the cloudformation stack does not exist", func() {
+					fakeAWS.Stacks.Delete("some-stack-name")
+					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+				})
+
+				It("exits 1 when the BOSH director does not exist", func() {
+					writeStateJson(storage.State{
+						Stack: storage.Stack{
+							Name: "some-stack-name",
+						},
+						BOSH: storage.BOSH{
+							DirectorUsername: "admin",
+							DirectorPassword: "admin",
+							DirectorAddress:  "",
+						},
+					}, tempDirectory)
+
+					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+				})
+			})
 		})
 	})
 
@@ -162,7 +191,7 @@ var _ = Describe("load balancers", func() {
 					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
 					stderr := session.Err.Contents()
 
-					Expect(stderr).To(ContainSubstring("a bbl environment could not be found, please create a new environment before running this command again"))
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
 				})
 			})
 		})

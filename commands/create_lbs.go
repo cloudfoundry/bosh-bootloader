@@ -138,15 +138,16 @@ func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackN
 		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
 	}
 
-	_, err := c.infrastructureManager.Describe(cloudFormationClient, stackName)
-	if err != nil {
+	if stackExists, err := c.infrastructureManager.Exists(stackName, cloudFormationClient); err != nil {
 		return err
+	} else if !stackExists {
+		return BBLNotFound
 	}
 
-	_, err = boshClient.Info()
-	if err != nil {
-		return fmt.Errorf("bosh director cannot be reached: %s", err.Error())
+	if _, err := boshClient.Info(); err != nil {
+		return BBLNotFound
 	}
+
 	return nil
 }
 
