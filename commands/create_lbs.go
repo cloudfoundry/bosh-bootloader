@@ -5,6 +5,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -59,14 +60,6 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	if !c.isValidLBType(config.lbType) {
-		return state, fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", config.lbType)
-	}
-
-	if state.Stack.LBType == "concourse" || state.Stack.LBType == "cf" {
-		return state, fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", state.Stack.LBType)
-	}
-
 	awsConfig := aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
@@ -79,20 +72,19 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	_, err = c.infrastructureManager.Describe(cloudFormationClient, state.Stack.Name)
+	iamClient, err := c.clientProvider.IAMClient(awsConfig)
+	if err != nil {
+		return state, err
+	}
+
+	ec2Client, err := c.clientProvider.EC2Client(awsConfig)
 	if err != nil {
 		return state, err
 	}
 
 	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 
-	_, err = boshClient.Info()
-	if err != nil {
-		return state, fmt.Errorf("bosh director cannot be reached: %s", err.Error())
-	}
-
-	iamClient, err := c.clientProvider.IAMClient(awsConfig)
-	if err != nil {
+	if err := c.checkFastFails(config.lbType, state.Stack.LBType, state.Stack.Name, boshClient, cloudFormationClient); err != nil {
 		return state, err
 	}
 
@@ -100,28 +92,11 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 	if err != nil {
 		return state, err
 	}
+
 	state.CertificateName = certificateName
 	state.Stack.LBType = config.lbType
 
-	ec2Client, err := c.clientProvider.EC2Client(awsConfig)
-	if err != nil {
-		return state, err
-	}
-
-	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsConfig.Region, ec2Client)
-	if err != nil {
-		return state, err
-	}
-
-	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
-
-	stack, err := c.infrastructureManager.Update(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, config.lbType, certificate.ARN, cloudFormationClient)
-	if err != nil {
-		return state, err
-	}
-
-	err = c.boshCloudConfigurator.Configure(stack, availabilityZones, boshClient)
-	if err != nil {
+	if err := c.updateStackAndBOSH(awsConfig.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, ec2Client, iamClient, cloudFormationClient, boshClient); err != nil {
 		return state, err
 	}
 
@@ -152,4 +127,50 @@ func (CreateLBs) isValidLBType(lbType string) bool {
 	}
 
 	return false
+}
+
+func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client, cloudFormationClient cloudformation.Client) error {
+	if !c.isValidLBType(newLBType) {
+		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", newLBType)
+	}
+
+	if currentLBType == "concourse" || currentLBType == "cf" {
+		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
+	}
+
+	_, err := c.infrastructureManager.Describe(cloudFormationClient, stackName)
+	if err != nil {
+		return err
+	}
+
+	_, err = boshClient.Info()
+	if err != nil {
+		return fmt.Errorf("bosh director cannot be reached: %s", err.Error())
+	}
+	return nil
+}
+
+func (c CreateLBs) updateStackAndBOSH(
+	awsRegion string, certificateName string, keyPairName string, stackName string, lbType string,
+	ec2Client ec2.Client, iamClient iam.Client, cloudFormationClient cloudformation.Client, boshClient bosh.Client,
+) error {
+
+	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion, ec2Client)
+	if err != nil {
+		return err
+	}
+
+	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
+
+	stack, err := c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, cloudFormationClient)
+	if err != nil {
+		return err
+	}
+
+	err = c.boshCloudConfigurator.Configure(stack, availabilityZones, boshClient)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
