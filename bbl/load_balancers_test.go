@@ -95,7 +95,8 @@ var _ = Describe("load balancers", func() {
 			writeStateJson(storage.State{
 				CertificateName: "bbl-cert-old-certificate",
 				Stack: storage.Stack{
-					Name: "some-stack-name",
+					Name:   "some-stack-name",
+					LBType: "cf",
 				},
 				BOSH: storage.BOSH{
 					DirectorUsername: "admin",

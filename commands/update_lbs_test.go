@@ -16,6 +16,7 @@ import (
 var _ = Describe("Update LBs", func() {
 	var (
 		command                   commands.UpdateLBs
+		incomingState             storage.State
 		certificateManager        *fakes.CertificateManager
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
@@ -56,12 +57,21 @@ var _ = Describe("Update LBs", func() {
 
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
+		incomingState = storage.State{
+			Stack: storage.Stack{
+				LBType: "concourse",
+			},
+		}
+
 		command = commands.NewUpdateLBs(certificateManager, clientProvider, availabilityZoneRetriever, infrastructureManager)
 	})
 
 	Describe("Execute", func() {
 		It("creates the new certificate and private key", func() {
 			updateLBs("some-cert.crt", "some-key.key", storage.State{
+				Stack: storage.Stack{
+					LBType: "cf",
+				},
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
@@ -85,7 +95,7 @@ var _ = Describe("Update LBs", func() {
 			updateLBs("some-cert.crt", "some-key.key", storage.State{
 				Stack: storage.Stack{
 					Name:   "some-stack",
-					LBType: "some-lb-type",
+					LBType: "concourse",
 				},
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
@@ -120,13 +130,16 @@ var _ = Describe("Update LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
-			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("some-lb-type"))
+			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			Expect(infrastructureManager.UpdateCall.Receives.CloudFormationClient).To(Equal(cloudFormationClient))
 		})
 
 		It("deletes the existing certificate and private key", func() {
 			updateLBs("some-cert.crt", "some-key.key", storage.State{
+				Stack: storage.Stack{
+					LBType: "cf",
+				},
 				CertificateName: "some-certificate-name",
 			})
 
@@ -136,8 +149,17 @@ var _ = Describe("Update LBs", func() {
 
 		It("returns an error if the user hasn't bbl up'd yet", func() {
 			infrastructureManager.ExistsCall.Returns.Exists = false
-			_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+			_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 			Expect(err).To(MatchError("a bbl environment could not be found, please create a new environment before running this command again"))
+		})
+
+		It("returns an error if there is no lb", func() {
+			_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{
+				Stack: storage.Stack{
+					LBType: "none",
+				},
+			})
+			Expect(err).To(MatchError("no load balancer has been found for this bbl environment"))
 		})
 
 		Describe("state manipulation", func() {
@@ -145,6 +167,9 @@ var _ = Describe("Update LBs", func() {
 				certificateManager.CreateCall.Returns.CertificateName = "some-new-certificate-name"
 
 				state, err := updateLBs("some-cert.crt", "some-key.key", storage.State{
+					Stack: storage.Stack{
+						LBType: "cf",
+					},
 					CertificateName: "some-certificate-name",
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -156,63 +181,63 @@ var _ = Describe("Update LBs", func() {
 		Describe("failure cases", func() {
 			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("failed to check for stack"))
 			})
 
 			It("returns an error when invalid flags are provided", func() {
 				_, err := command.Execute(commands.GlobalFlags{}, []string{
 					"--invalid-flag",
-				}, storage.State{})
+				}, incomingState)
 
 				Expect(err).To(MatchError(ContainSubstring("flag provided but not defined")))
 			})
 
 			It("returns an error when the cloudformation client cannot be constructed", func() {
 				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("cloudformation client construction failed")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("cloudformation client construction failed"))
 			})
 
 			It("returns an error when the ec2 client cannot be constructed", func() {
 				clientProvider.EC2ClientCall.Returns.Error = errors.New("ec2 client construction failed")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("ec2 client construction failed"))
 			})
 
 			It("returns an error when the IAM client cannot be constructed", func() {
 				clientProvider.IAMClientCall.Returns.Error = errors.New("iam client construction failed")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("iam client construction failed"))
 			})
 
 			It("returns an error when infrastructure update fails", func() {
 				infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update stack")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("failed to update stack"))
 			})
 
 			It("returns an error when certificate describer fails", func() {
 				certificateManager.DescribeCall.Returns.Error = errors.New("certificate failed to descript")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("certificate failed to descript"))
 			})
 
 			It("returns an error when availability zone retriever fails", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("az retrieve failed")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("az retrieve failed"))
 			})
 
 			It("returns an error when certificate creation fails", func() {
 				certificateManager.CreateCall.Returns.Error = errors.New("certificate creation failed")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("certificate creation failed"))
 			})
 
 			It("returns an error when certificate deletion fails", func() {
 				certificateManager.DeleteCall.Returns.Error = errors.New("certificate deletion failed")
-				_, err := updateLBs("some-cert.crt", "some-key.key", storage.State{})
+				_, err := updateLBs("some-cert.crt", "some-key.key", incomingState)
 				Expect(err).To(MatchError("certificate deletion failed"))
 			})
 		})

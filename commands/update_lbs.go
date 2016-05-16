@@ -58,6 +58,10 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, errors.New("a bbl environment could not be found, please create a new environment before running this command again")
 	}
 
+	if state.Stack.LBType != "concourse" && state.Stack.LBType != "cf" {
+		return state, errors.New("no load balancer has been found for this bbl environment")
+	}
+
 	iamClient, err := c.clientProvider.IAMClient(awsConfig)
 	if err != nil {
 		return state, err
