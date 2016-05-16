@@ -2,8 +2,10 @@ package commands
 
 import (
 	"errors"
+	"io/ioutil"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
@@ -67,6 +69,12 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
+	if match, err := c.certificatesMatch(config.certPath, state.CertificateName, iamClient); err != nil {
+		return state, err
+	} else if match {
+		return state, nil
+	}
+
 	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, iamClient)
 	if err != nil {
 		return state, err
@@ -100,6 +108,20 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 	state.CertificateName = certificateName
 
 	return state, nil
+}
+
+func (c UpdateLBs) certificatesMatch(certPath string, oldCertName string, client iam.Client) (bool, error) {
+	localCertificate, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		return false, err
+	}
+
+	remoteCertificate, err := c.certificateManager.Describe(oldCertName, client)
+	if err != nil {
+		return false, err
+	}
+
+	return string(localCertificate) == remoteCertificate.Body, nil
 }
 
 func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {

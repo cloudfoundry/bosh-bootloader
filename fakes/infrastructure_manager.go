@@ -21,7 +21,8 @@ type InfrastructureManager struct {
 	}
 
 	UpdateCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			KeyPairName               string
 			NumberOfAvailabilityZones int
 			StackName                 string
@@ -85,6 +86,7 @@ func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stac
 }
 
 func (m *InfrastructureManager) Update(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, cloudFormationClient cloudformation.Client) (cloudformation.Stack, error) {
+	m.UpdateCall.CallCount++
 	m.UpdateCall.Receives.KeyPairName = keyPairName
 	m.UpdateCall.Receives.NumberOfAvailabilityZones = numberOfAZs
 	m.UpdateCall.Receives.StackName = stackName
