@@ -7,16 +7,20 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
 )
 
 type AWS struct {
 	stackManager         cloudformation.StackManager
 	cloudFormationClient cloudformation.Client
+	certificateDescriber iam.CertificateDescriber
+	iamClient            iam.Client
 }
 
 func NewAWS(configuration integration.Config) AWS {
 	stackManager := cloudformation.NewStackManager(application.NewLogger(os.Stdout))
+	certificateDescriber := iam.NewCertificateDescriber()
 	cloudFormationClient, err := aws.NewClientProvider().CloudFormationClient(aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
@@ -24,9 +28,17 @@ func NewAWS(configuration integration.Config) AWS {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
+	iamClient, err := aws.NewClientProvider().IAMClient(aws.Config{
+		AccessKeyID:     configuration.AWSAccessKeyID,
+		SecretAccessKey: configuration.AWSSecretAccessKey,
+		Region:          configuration.AWSRegion,
+	})
+
 	return AWS{
 		stackManager:         stackManager,
+		certificateDescriber: certificateDescriber,
 		cloudFormationClient: cloudFormationClient,
+		iamClient:            iamClient,
 	}
 }
 
@@ -54,4 +66,11 @@ func (a AWS) LoadBalancers(stackName string) []string {
 	}
 
 	return loadBalancers
+}
+
+func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
+	certificate, err := a.certificateDescriber.Describe(certificateName, a.iamClient)
+	Expect(err).NotTo(HaveOccurred())
+
+	return certificate
 }

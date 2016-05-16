@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"io/ioutil"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -9,12 +10,17 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
 )
 
-var _ = Describe("create-lb", func() {
-	var bbl actors.BBL
-	var aws actors.AWS
-	var state integration.State
+var _ = Describe("load balancer tests", func() {
+	var (
+		bbl         actors.BBL
+		aws         actors.AWS
+		state       integration.State
+		certBody    []byte
+		newCertBody []byte
+	)
 
 	BeforeEach(func() {
+		var err error
 		stateDirectory, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -24,6 +30,13 @@ var _ = Describe("create-lb", func() {
 		bbl = actors.NewBBL(stateDirectory, pathToBBL, configuration)
 		aws = actors.NewAWS(configuration)
 		state = integration.NewState(stateDirectory)
+
+		certBody, err = ioutil.ReadFile("bbl-certs/bbl.crt")
+		Expect(err).NotTo(HaveOccurred())
+
+		newCertBody, err = ioutil.ReadFile("bbl-certs/new-bbl.crt")
+		Expect(err).NotTo(HaveOccurred())
+
 	})
 
 	AfterEach(func() {
@@ -33,7 +46,7 @@ var _ = Describe("create-lb", func() {
 	})
 
 	Context("when bbl up has already created a BOSH director", func() {
-		It("creates an LB with specified cert and keys", func() {
+		It("creates and updates an LB with the specified cert and key", func() {
 			bbl.Up("")
 
 			stackName := state.StackName()
@@ -43,6 +56,11 @@ var _ = Describe("create-lb", func() {
 			bbl.CreateLB("concourse")
 
 			Expect(aws.LoadBalancers(stackName)).To(Equal([]string{"ConcourseLoadBalancer"}))
+			Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(certBody))))
+
+			bbl.UpdateLB("bbl-certs/new-bbl.crt", "bbl-certs/new-bbl.key")
+			Expect(aws.LoadBalancers(stackName)).To(Equal([]string{"ConcourseLoadBalancer"}))
+			Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(newCertBody))))
 		})
 	})
 
