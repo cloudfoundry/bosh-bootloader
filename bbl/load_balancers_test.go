@@ -88,6 +88,28 @@ var _ = Describe("load balancers", func() {
 			Entry("it attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
 			Entry("it attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 		)
+
+		Context("failure cases", func() {
+			Context("when an lb already exists", func() {
+				BeforeEach(func() {
+					createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+				})
+
+				It("exits 1", func() {
+					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
+				})
+			})
+
+			It("exits 1 when an unknown lb-type is supplied", func() {
+				session := createLBs(fakeAWSServer.URL, tempDirectory, "some-fake-lb-type", 1)
+				stderr := session.Err.Contents()
+
+				Expect(stderr).To(ContainSubstring("\"some-fake-lb-type\" is not a valid lb type, valid lb types are: concourse and cf"))
+			})
+		})
 	})
 
 	Describe("update-lbs", func() {
@@ -111,7 +133,7 @@ var _ = Describe("load balancers", func() {
 				PrivateKey:      "some-old-private-key",
 			})
 
-			updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 0).Wait()
+			updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 0)
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
@@ -122,6 +144,27 @@ var _ = Describe("load balancers", func() {
 			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
 			Expect(ok).To(BeTrue())
 			Expect(stack.WasUpdated).To(BeTrue())
+		})
+
+		Context("failure cases", func() {
+			Context("when an lb type does not exist", func() {
+				It("exits 1", func() {
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
+				})
+			})
+
+			Context("when bbl environment is not up", func() {
+				It("exits 1", func() {
+					writeStateJson(storage.State{}, tempDirectory)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring("a bbl environment could not be found, please create a new environment before running this command again"))
+				})
+			})
 		})
 	})
 })
