@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -51,21 +53,17 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	stackExists, err := c.infrastructureManager.Exists(state.Stack.Name, cloudFormationClient)
+	iamClient, err := c.clientProvider.IAMClient(awsConfig)
 	if err != nil {
 		return state, err
 	}
 
-	if !stackExists {
-		return state, errors.New("a bbl environment could not be found, please create a new environment before running this command again")
-	}
-
-	if state.Stack.LBType != "concourse" && state.Stack.LBType != "cf" {
-		return state, errors.New("no load balancer has been found for this bbl environment")
-	}
-
-	iamClient, err := c.clientProvider.IAMClient(awsConfig)
+	ec2Client, err := c.clientProvider.EC2Client(awsConfig)
 	if err != nil {
+		return state, err
+	}
+
+	if err := c.checkFastFails(state.Stack.Name, state.Stack.LBType, cloudFormationClient); err != nil {
 		return state, err
 	}
 
@@ -80,23 +78,7 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	ec2Client, err := c.clientProvider.EC2Client(awsConfig)
-	if err != nil {
-		return state, err
-	}
-
-	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
-	if err != nil {
-		return state, err
-	}
-
-	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
-	if err != nil {
-		return state, err
-	}
-
-	_, err = c.infrastructureManager.Update(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificate.ARN, cloudFormationClient)
-	if err != nil {
+	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region, iamClient, cloudFormationClient, ec2Client); err != nil {
 		return state, err
 	}
 
@@ -137,4 +119,40 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion string, iamClient iam.Client, cloudFormationClient cloudformation.Client, ec2Client ec2.Client) error {
+	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion, ec2Client)
+	if err != nil {
+		return err
+	}
+
+	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, cloudFormationClient)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c UpdateLBs) checkFastFails(stackName string, lbType string, cloudFormationClient cloudformation.Client) error {
+	stackExists, err := c.infrastructureManager.Exists(stackName, cloudFormationClient)
+	if err != nil {
+		return err
+	}
+
+	if !stackExists {
+		return errors.New("a bbl environment could not be found, please create a new environment before running this command again")
+	}
+
+	if lbType != "concourse" && lbType != "cf" {
+		return errors.New("no load balancer has been found for this bbl environment")
+	}
+
+	return nil
 }
