@@ -43,7 +43,7 @@ func (s State) StackName() string {
 
 func (s State) CertificateName() string {
 	state := s.readStateFile()
-	return state.stack.CertificateName
+	return state.Stack.CertificateName
 }
 
 func (s State) readStateFile() state {
