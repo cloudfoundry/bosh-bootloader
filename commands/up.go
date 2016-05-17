@@ -132,14 +132,14 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	certOutput, err := u.loadBalancerCertificateManager.Create(iam.CertificateCreateInput{
 		CurrentLBType:          state.Stack.LBType,
 		DesiredLBType:          config.lbType,
-		CurrentCertificateName: state.CertificateName,
+		CurrentCertificateName: state.Stack.CertificateName,
 		CertPath:               config.certPath,
 		KeyPath:                config.keyPath,
 	}, iamClient)
 	if err != nil {
 		return state, err
 	}
-	state.CertificateName = certOutput.CertificateName
+	state.Stack.CertificateName = certOutput.CertificateName
 
 	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,

@@ -67,7 +67,7 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	if match, err := c.certificatesMatch(config.certPath, state.CertificateName, iamClient); err != nil {
+	if match, err := c.certificatesMatch(config.certPath, state.Stack.CertificateName, iamClient); err != nil {
 		return state, err
 	} else if match {
 		return state, nil
@@ -82,12 +82,12 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	err = c.certificateManager.Delete(state.CertificateName, iamClient)
+	err = c.certificateManager.Delete(state.Stack.CertificateName, iamClient)
 	if err != nil {
 		return state, err
 	}
 
-	state.CertificateName = certificateName
+	state.Stack.CertificateName = certificateName
 
 	return state, nil
 }

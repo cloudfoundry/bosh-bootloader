@@ -266,7 +266,7 @@ var _ = Describe("Create LBs", func() {
 					storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(state.CertificateName).To(Equal("some-certificate-name"))
+				Expect(state.Stack.CertificateName).To(Equal("some-certificate-name"))
 				Expect(state.Stack.LBType).To(Equal("concourse"))
 			})
 

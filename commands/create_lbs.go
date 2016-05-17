@@ -93,7 +93,7 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	state.CertificateName = certificateName
+	state.Stack.CertificateName = certificateName
 	state.Stack.LBType = config.lbType
 
 	if err := c.updateStackAndBOSH(awsConfig.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, ec2Client, iamClient, cloudFormationClient, boshClient); err != nil {

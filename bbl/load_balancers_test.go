@@ -144,10 +144,10 @@ var _ = Describe("load balancers", func() {
 	Describe("update-lbs", func() {
 		It("updates the load balancer with the given key and cert", func() {
 			writeStateJson(storage.State{
-				CertificateName: "bbl-cert-old-certificate",
 				Stack: storage.Stack{
-					Name:   "some-stack-name",
-					LBType: "cf",
+					Name:            "some-stack-name",
+					LBType:          "cf",
+					CertificateName: "bbl-cert-old-certificate",
 				},
 				BOSH: storage.BOSH{
 					DirectorUsername: "admin",

@@ -64,9 +64,9 @@ var _ = Describe("Update LBs", func() {
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
 		incomingState = storage.State{
-			CertificateName: "some-certificate-name",
 			Stack: storage.Stack{
-				LBType: "concourse",
+				LBType:          "concourse",
+				CertificateName: "some-certificate-name",
 			},
 		}
 
@@ -157,9 +157,9 @@ var _ = Describe("Update LBs", func() {
 		It("deletes the existing certificate and private key", func() {
 			updateLBs(certFile.Name(), keyFile.Name(), storage.State{
 				Stack: storage.Stack{
-					LBType: "cf",
+					LBType:          "cf",
+					CertificateName: "some-certificate-name",
 				},
-				CertificateName: "some-certificate-name",
 			})
 
 			Expect(certificateManager.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
@@ -200,13 +200,13 @@ var _ = Describe("Update LBs", func() {
 
 				state, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{
 					Stack: storage.Stack{
-						LBType: "cf",
+						LBType:          "cf",
+						CertificateName: "some-certificate-name",
 					},
-					CertificateName: "some-certificate-name",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(state.CertificateName).To(Equal("some-new-certificate-name"))
+				Expect(state.Stack.CertificateName).To(Equal("some-new-certificate-name"))
 			})
 		})
 

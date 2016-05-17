@@ -566,7 +566,9 @@ var _ = Describe("Up", func() {
 				Context("when the cert and key changes", func() {
 					It("saves certificate name in state when certificate manager updates certificate", func() {
 						incomingState := storage.State{
-							CertificateName: "some-certificate-name",
+							Stack: storage.Stack{
+								CertificateName: "some-certificate-name",
+							},
 						}
 						loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
 							CertificateName: "some-other-certificate-name",
@@ -578,7 +580,7 @@ var _ = Describe("Up", func() {
 						}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(state.CertificateName).To(Equal("some-other-certificate-name"))
+						Expect(state.Stack.CertificateName).To(Equal("some-other-certificate-name"))
 						Expect(loadBalancerCertificateManager.CreateCall.Receives.Input).To(Equal(iam.CertificateCreateInput{
 							CurrentCertificateName: "some-certificate-name",
 							DesiredLBType:          "concourse",

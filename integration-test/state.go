@@ -16,12 +16,12 @@ type State struct {
 }
 
 type stack struct {
-	Name string `json:"name"`
+	Name            string `json:"name"`
+	CertificateName string `json:"certificateName"`
 }
 
 type state struct {
-	Stack           stack  `json:"stack"`
-	CertificateName string `json:"certificateName"`
+	Stack stack `json:"stack"`
 }
 
 func NewState(stateDirectory string) State {
@@ -43,7 +43,7 @@ func (s State) StackName() string {
 
 func (s State) CertificateName() string {
 	state := s.readStateFile()
-	return state.CertificateName
+	return state.stack.CertificateName
 }
 
 func (s State) readStateFile() state {

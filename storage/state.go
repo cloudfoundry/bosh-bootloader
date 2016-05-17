@@ -19,17 +19,17 @@ type AWS struct {
 }
 
 type Stack struct {
-	Name   string `json:"name"`
-	LBType string `json:"lbType"`
+	Name            string `json:"name"`
+	LBType          string `json:"lbType"`
+	CertificateName string `json:"certificateName"`
 }
 
 type State struct {
-	Version         int     `json:"version"`
-	AWS             AWS     `json:"aws"`
-	KeyPair         KeyPair `json:"keyPair,omitempty"`
-	BOSH            BOSH    `json:"bosh,omitempty"`
-	Stack           Stack   `json:"stack"`
-	CertificateName string  `json:"certificateName"`
+	Version int     `json:"version"`
+	AWS     AWS     `json:"aws"`
+	KeyPair KeyPair `json:"keyPair,omitempty"`
+	BOSH    BOSH    `json:"bosh,omitempty"`
+	Stack   Stack   `json:"stack"`
 }
 
 type Store struct {
