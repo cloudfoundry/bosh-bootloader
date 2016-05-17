@@ -61,6 +61,8 @@ var _ = Describe("load balancer tests", func() {
 			bbl.UpdateLB("bbl-certs/new-bbl.crt", "bbl-certs/new-bbl.key")
 			Expect(aws.LoadBalancers(stackName)).To(Equal([]string{"ConcourseLoadBalancer"}))
 			Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(newCertBody))))
+
+			bbl.Destroy()
 		})
 	})
 
