@@ -148,7 +148,7 @@ var _ = Describe("Create LBs", func() {
 				storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(certificateManager.CreateCall.Receives.Client).To(Equal(iamClient))
+			Expect(certificateManager.CreateCall.Receives.IAMClient).To(Equal(iamClient))
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
 		})

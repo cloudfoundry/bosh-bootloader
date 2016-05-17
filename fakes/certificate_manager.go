@@ -6,7 +6,7 @@ type CertificateManager struct {
 	CreateOrUpdateCall struct {
 		CallCount int
 		Receives  struct {
-			Client      iam.Client
+			IAMClient   iam.Client
 			Certificate string
 			Name        string
 			PrivateKey  string
@@ -20,7 +20,7 @@ type CertificateManager struct {
 	CreateCall struct {
 		CallCount int
 		Receives  struct {
-			Client      iam.Client
+			IAMClient   iam.Client
 			Certificate string
 			PrivateKey  string
 		}
@@ -55,9 +55,9 @@ type CertificateManager struct {
 	}
 }
 
-func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string, client iam.Client) (string, error) {
+func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string, iamClient iam.Client) (string, error) {
 	c.CreateOrUpdateCall.CallCount++
-	c.CreateOrUpdateCall.Receives.Client = client
+	c.CreateOrUpdateCall.Receives.IAMClient = iamClient
 	c.CreateOrUpdateCall.Receives.Certificate = certificate
 	c.CreateOrUpdateCall.Receives.PrivateKey = privatekey
 	c.CreateOrUpdateCall.Receives.Name = name
@@ -65,9 +65,9 @@ func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string
 	return c.CreateOrUpdateCall.Returns.CertificateName, c.CreateOrUpdateCall.Returns.Error
 }
 
-func (c *CertificateManager) Create(certificate, privatekey string, client iam.Client) (string, error) {
+func (c *CertificateManager) Create(certificate, privatekey string, iamClient iam.Client) (string, error) {
 	c.CreateCall.CallCount++
-	c.CreateCall.Receives.Client = client
+	c.CreateCall.Receives.IAMClient = iamClient
 	c.CreateCall.Receives.Certificate = certificate
 	c.CreateCall.Receives.PrivateKey = privatekey
 

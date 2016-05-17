@@ -105,7 +105,7 @@ var _ = Describe("Update LBs", func() {
 				EndpointOverride: "some-endpoint",
 			}))
 
-			Expect(certificateManager.CreateCall.Receives.Client).To(Equal(iamClient))
+			Expect(certificateManager.CreateCall.Receives.IAMClient).To(Equal(iamClient))
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFile.Name()))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFile.Name()))
 		})
