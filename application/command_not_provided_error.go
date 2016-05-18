@@ -1,8 +1,6 @@
 package application
 
-type CommandNotProvidedError struct {
-	rawError error
-}
+type CommandNotProvidedError struct{}
 
 func NewCommandNotProvidedError() CommandNotProvidedError {
 	return CommandNotProvidedError{}

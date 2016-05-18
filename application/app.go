@@ -1,7 +1,7 @@
 package application
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -42,8 +42,7 @@ func (a App) Run() error {
 func (a App) execute(configuration Configuration) (storage.State, error) {
 	command, ok := a.commands[configuration.Command]
 	if !ok {
-		a.usage()
-		return storage.State{}, a.commandError(configuration.Command)
+		return storage.State{}, errors.New("command not found")
 	}
 
 	globalFlags := commands.GlobalFlags{
@@ -60,11 +59,4 @@ func (a App) execute(configuration Configuration) (storage.State, error) {
 	}
 
 	return state, nil
-}
-
-func (a App) commandError(command string) error {
-	if command == "" {
-		command = "[EMPTY]"
-	}
-	return fmt.Errorf("unknown command: %s", command)
 }

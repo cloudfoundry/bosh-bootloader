@@ -299,33 +299,6 @@ var _ = Describe("Create LBs", func() {
 				})
 			})
 
-			Context("when client provider for cloudformation client fails", func() {
-				It("returns an error", func() {
-					clientProvider.CloudFormationClientCall.Returns.Error = errors.New("failed to return cloudformation client")
-
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
-					Expect(err).To(MatchError("failed to return cloudformation client"))
-				})
-			})
-
-			Context("when client provider for iam client fails", func() {
-				It("returns an error", func() {
-					clientProvider.IAMClientCall.Returns.Error = errors.New("failed to return iam client")
-
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
-					Expect(err).To(MatchError("failed to return iam client"))
-				})
-			})
-
-			Context("when client provider for ec2 client fails", func() {
-				It("returns an error", func() {
-					clientProvider.EC2ClientCall.Returns.Error = errors.New("failed to return ec2 client")
-
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
-					Expect(err).To(MatchError("failed to return ec2 client"))
-				})
-			})
-
 			Context("when availability zone retriever fails", func() {
 				It("returns an error", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve azs")

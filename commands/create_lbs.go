@@ -67,20 +67,9 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		EndpointOverride: globalFlags.EndpointOverride,
 	}
 
-	cloudFormationClient, err := c.clientProvider.CloudFormationClient(awsConfig)
-	if err != nil {
-		return state, err
-	}
-
-	iamClient, err := c.clientProvider.IAMClient(awsConfig)
-	if err != nil {
-		return state, err
-	}
-
-	ec2Client, err := c.clientProvider.EC2Client(awsConfig)
-	if err != nil {
-		return state, err
-	}
+	cloudFormationClient := c.clientProvider.CloudFormationClient(awsConfig)
+	iamClient := c.clientProvider.IAMClient(awsConfig)
+	ec2Client := c.clientProvider.EC2Client(awsConfig)
 
 	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 

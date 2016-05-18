@@ -15,7 +15,6 @@ type ClientProvider struct {
 		}
 		Returns struct {
 			Client cloudformation.Client
-			Error  error
 		}
 	}
 
@@ -25,7 +24,6 @@ type ClientProvider struct {
 		}
 		Returns struct {
 			Client ec2.Client
-			Error  error
 		}
 	}
 
@@ -35,7 +33,6 @@ type ClientProvider struct {
 		}
 		Returns struct {
 			Client elb.Client
-			Error  error
 		}
 	}
 
@@ -45,31 +42,30 @@ type ClientProvider struct {
 		}
 		Returns struct {
 			Client iam.Client
-			Error  error
 		}
 	}
 }
 
-func (p *ClientProvider) CloudFormationClient(config aws.Config) (cloudformation.Client, error) {
+func (p *ClientProvider) CloudFormationClient(config aws.Config) cloudformation.Client {
 	p.CloudFormationClientCall.Receives.Config = config
 
-	return p.CloudFormationClientCall.Returns.Client, p.CloudFormationClientCall.Returns.Error
+	return p.CloudFormationClientCall.Returns.Client
 }
 
-func (p *ClientProvider) EC2Client(config aws.Config) (ec2.Client, error) {
+func (p *ClientProvider) EC2Client(config aws.Config) ec2.Client {
 	p.EC2ClientCall.Receives.Config = config
 
-	return p.EC2ClientCall.Returns.Client, p.EC2ClientCall.Returns.Error
+	return p.EC2ClientCall.Returns.Client
 }
 
-func (p *ClientProvider) ELBClient(config aws.Config) (elb.Client, error) {
+func (p *ClientProvider) ELBClient(config aws.Config) elb.Client {
 	p.ELBClientCall.Receives.Config = config
 
-	return p.ELBClientCall.Returns.Client, p.ELBClientCall.Returns.Error
+	return p.ELBClientCall.Returns.Client
 }
 
-func (p *ClientProvider) IAMClient(config aws.Config) (iam.Client, error) {
+func (p *ClientProvider) IAMClient(config aws.Config) iam.Client {
 	p.IAMClientCall.Receives.Config = config
 
-	return p.IAMClientCall.Returns.Client, p.IAMClientCall.Returns.Error
+	return p.IAMClientCall.Returns.Client
 }

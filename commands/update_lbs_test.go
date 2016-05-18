@@ -258,24 +258,6 @@ var _ = Describe("Update LBs", func() {
 				Expect(err).To(MatchError(ContainSubstring("flag provided but not defined")))
 			})
 
-			It("returns an error when the cloudformation client cannot be constructed", func() {
-				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("cloudformation client construction failed")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
-				Expect(err).To(MatchError("cloudformation client construction failed"))
-			})
-
-			It("returns an error when the ec2 client cannot be constructed", func() {
-				clientProvider.EC2ClientCall.Returns.Error = errors.New("ec2 client construction failed")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
-				Expect(err).To(MatchError("ec2 client construction failed"))
-			})
-
-			It("returns an error when the IAM client cannot be constructed", func() {
-				clientProvider.IAMClientCall.Returns.Error = errors.New("iam client construction failed")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
-				Expect(err).To(MatchError("iam client construction failed"))
-			})
-
 			It("returns an error when infrastructure update fails", func() {
 				infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update stack")
 				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)

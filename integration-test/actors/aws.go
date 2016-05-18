@@ -21,14 +21,13 @@ type AWS struct {
 func NewAWS(configuration integration.Config) AWS {
 	stackManager := cloudformation.NewStackManager(application.NewLogger(os.Stdout))
 	certificateDescriber := iam.NewCertificateDescriber()
-	cloudFormationClient, err := aws.NewClientProvider().CloudFormationClient(aws.Config{
+	cloudFormationClient := aws.NewClientProvider().CloudFormationClient(aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
 		Region:          configuration.AWSRegion,
 	})
-	Expect(err).NotTo(HaveOccurred())
 
-	iamClient, err := aws.NewClientProvider().IAMClient(aws.Config{
+	iamClient := aws.NewClientProvider().IAMClient(aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
 		Region:          configuration.AWSRegion,

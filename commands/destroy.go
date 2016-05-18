@@ -17,7 +17,7 @@ type Destroy struct {
 	logger                logger
 	stdin                 io.Reader
 	boshDeleter           boshDeleter
-	clientProvider        clientProvider
+	awsClientProvider     awsClientProvider
 	vpcStatusChecker      vpcStatusChecker
 	stackManager          stackManager
 	stringGenerator       stringGenerator
@@ -37,11 +37,6 @@ type boshDeleter interface {
 	Delete(boshInitManifest string, boshInitState boshinit.State, ec2PrivateKey string) error
 }
 
-type clientProvider interface {
-	CloudFormationClient(aws.Config) (cloudformation.Client, error)
-	EC2Client(aws.Config) (ec2.Client, error)
-}
-
 type vpcStatusChecker interface {
 	ValidateSafeToDelete(ec2.Client, string) error
 }
@@ -54,12 +49,12 @@ type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, clientProvider clientProvider, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
+func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, awsClientProvider awsClientProvider, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
 	return Destroy{
 		logger:                logger,
 		stdin:                 stdin,
 		boshDeleter:           boshDeleter,
-		clientProvider:        clientProvider,
+		awsClientProvider:     awsClientProvider,
 		vpcStatusChecker:      vpcStatusChecker,
 		stackManager:          stackManager,
 		stringGenerator:       stringGenerator,
@@ -89,10 +84,7 @@ func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, stat
 
 	d.logger.Step("destroying BOSH director and AWS stack")
 
-	cloudFormationClient, ec2Client, err := d.createAWSClients(state, globalFlags)
-	if err != nil {
-		return state, err
-	}
+	cloudFormationClient, ec2Client := d.createAWSClients(state, globalFlags)
 
 	stack, err := d.stackManager.Describe(cloudFormationClient, state.Stack.Name)
 	if err != nil {
@@ -135,7 +127,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) createAWSClients(state storage.State, globalFlags GlobalFlags) (cloudformation.Client, ec2.Client, error) {
+func (d Destroy) createAWSClients(state storage.State, globalFlags GlobalFlags) (cloudformation.Client, ec2.Client) {
 	awsConfig := aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
@@ -143,17 +135,11 @@ func (d Destroy) createAWSClients(state storage.State, globalFlags GlobalFlags) 
 		EndpointOverride: globalFlags.EndpointOverride,
 	}
 
-	cloudFormationClient, err := d.clientProvider.CloudFormationClient(awsConfig)
-	if err != nil {
-		return nil, nil, err
-	}
+	cloudFormationClient := d.awsClientProvider.CloudFormationClient(awsConfig)
 
-	ec2Client, err := d.clientProvider.EC2Client(awsConfig)
-	if err != nil {
-		return nil, nil, err
-	}
+	ec2Client := d.awsClientProvider.EC2Client(awsConfig)
 
-	return cloudFormationClient, ec2Client, nil
+	return cloudFormationClient, ec2Client
 }
 
 func (d Destroy) deleteBOSH(stack cloudformation.Stack, state storage.State) (storage.State, error) {

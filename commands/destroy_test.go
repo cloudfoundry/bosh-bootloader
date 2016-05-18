@@ -244,30 +244,12 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
-			Context("when the cloudformation client cannot be created", func() {
-				It("returns an error", func() {
-					clientProvider.CloudFormationClientCall.Returns.Error = errors.New("failed to create cloudformation client")
-
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
-					Expect(err).To(MatchError("failed to create cloudformation client"))
-				})
-			})
-
 			Context("when failing to delete the stack", func() {
 				It("returns an error", func() {
 					infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
 
 					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
 					Expect(err).To(MatchError("failed to delete stack"))
-				})
-			})
-
-			Context("when the ec2 client cannot be created", func() {
-				It("returns an error", func() {
-					clientProvider.EC2ClientCall.Returns.Error = errors.New("failed to create ec2 client")
-
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
-					Expect(err).To(MatchError("failed to create ec2 client"))
 				})
 			})
 

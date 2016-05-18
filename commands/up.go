@@ -16,10 +16,10 @@ import (
 )
 
 type awsClientProvider interface {
-	CloudFormationClient(aws.Config) (cloudformation.Client, error)
-	EC2Client(aws.Config) (ec2.Client, error)
-	ELBClient(aws.Config) (elb.Client, error)
-	IAMClient(aws.Config) (iam.Client, error)
+	CloudFormationClient(aws.Config) cloudformation.Client
+	EC2Client(aws.Config) ec2.Client
+	ELBClient(aws.Config) elb.Client
+	IAMClient(aws.Config) iam.Client
 }
 
 type keyPairSynchronizer interface {
@@ -104,30 +104,24 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	cloudFormationClient, err := u.awsClientProvider.CloudFormationClient(aws.Config{
+	cloudFormationClient := u.awsClientProvider.CloudFormationClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
-	if err != nil {
-		return state, err
-	}
 
 	err = u.checkForFastFails(globalFlags, config, state, cloudFormationClient)
 	if err != nil {
 		return state, err
 	}
 
-	iamClient, err := u.awsClientProvider.IAMClient(aws.Config{
+	iamClient := u.awsClientProvider.IAMClient(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
-	if err != nil {
-		return state, err
-	}
 
 	certOutput, err := u.loadBalancerCertificateManager.Create(iam.CertificateCreateInput{
 		CurrentLBType:          state.Stack.LBType,
@@ -141,15 +135,12 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	}
 	state.Stack.CertificateName = certOutput.CertificateName
 
-	ec2Client, err := u.awsClientProvider.EC2Client(aws.Config{
+	ec2Client := u.awsClientProvider.EC2Client(aws.Config{
 		AccessKeyID:      state.AWS.AccessKeyID,
 		SecretAccessKey:  state.AWS.SecretAccessKey,
 		Region:           state.AWS.Region,
 		EndpointOverride: globalFlags.EndpointOverride,
 	})
-	if err != nil {
-		return state, err
-	}
 
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
@@ -264,15 +255,12 @@ func (u Up) checkForFastFails(globalFlags GlobalFlags, config upConfig, state st
 	}
 
 	if stackExists && state.Stack.LBType != config.lbType {
-		elbClient, err := u.awsClientProvider.ELBClient(aws.Config{
+		elbClient := u.awsClientProvider.ELBClient(aws.Config{
 			AccessKeyID:      state.AWS.AccessKeyID,
 			SecretAccessKey:  state.AWS.SecretAccessKey,
 			Region:           state.AWS.Region,
 			EndpointOverride: globalFlags.EndpointOverride,
 		})
-		if err != nil {
-			return err
-		}
 
 		stack, err := u.infrastructureManager.Describe(cloudFormationClient, state.Stack.Name)
 		if err != nil {

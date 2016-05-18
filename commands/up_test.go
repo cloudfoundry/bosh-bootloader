@@ -845,17 +845,6 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
-			It("returns an error when the IAM client can not be created", func() {
-				clientProvider.IAMClientCall.Returns.Error = errors.New("error creating client")
-
-				_, err := command.Execute(globalFlags, []string{
-					"--lb-type", "cf",
-					"--cert", "some-cert",
-					"--key", "some-key",
-				}, storage.State{})
-				Expect(err).To(MatchError("error creating client"))
-			})
-
 			It("returns an error when the certificate cannot be uploaded", func() {
 				loadBalancerCertificateManager.CreateCall.Returns.Error = errors.New("error uploading certificate")
 
@@ -865,28 +854,6 @@ var _ = Describe("Up", func() {
 					"--key", "some-key",
 				}, storage.State{})
 				Expect(err).To(MatchError("error uploading certificate"))
-			})
-
-			It("returns an error when the ELB client can not be created", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = true
-				clientProvider.ELBClientCall.Returns.Error = errors.New("error creating client")
-
-				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
-				Expect(err).To(MatchError("error creating client"))
-			})
-
-			It("returns an error when the cloudformation client can not be created", func() {
-				clientProvider.CloudFormationClientCall.Returns.Error = errors.New("error creating client")
-
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
-				Expect(err).To(MatchError("error creating client"))
-			})
-
-			It("returns an error when the ec2 client can not be created", func() {
-				clientProvider.EC2ClientCall.Returns.Error = errors.New("error creating client")
-
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
-				Expect(err).To(MatchError("error creating client"))
 			})
 
 			It("returns an error when the key pair fails to sync", func() {

@@ -114,13 +114,17 @@ func main() {
 	})
 
 	commandLineParser := application.NewCommandLineParser()
-	configurationParser := application.NewConfigurationParser(commandLineParser, stateStore)
+	awsCredentialValidator := application.NewAWSCredentialValidator()
+	configurationParser := application.NewConfigurationParser(commandLineParser, awsCredentialValidator, stateStore)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
 		switch err := err.(type) {
 		default:
 			fail(err)
 		case application.InvalidFlagError:
+			usage.Print()
+			fail(err)
+		case application.InvalidCommandError:
 			usage.Print()
 			fail(err)
 		case application.CommandNotProvidedError:

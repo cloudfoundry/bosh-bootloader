@@ -27,13 +27,12 @@ var _ = Describe("ClientProvider", func() {
 
 	Describe("ELBClient", func() {
 		It("returns a Client with the provided configuration", func() {
-			client, err := provider.ELBClient(aws.Config{
+			client := provider.ELBClient(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-region",
 				EndpointOverride: "some-endpoint-override",
 			})
-			Expect(err).NotTo(HaveOccurred())
 
 			_, ok := client.(elb.Client)
 			Expect(ok).To(BeTrue())
@@ -45,24 +44,16 @@ var _ = Describe("ClientProvider", func() {
 			Expect(elbClient.Config.Region).To(Equal(goaws.String("some-region")))
 			Expect(elbClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
-
-		Context("failure cases", func() {
-			It("returns an error when the credentials are not provided", func() {
-				_, err := provider.ELBClient(aws.Config{})
-				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
-			})
-		})
 	})
 
 	Describe("CloudFormationClient", func() {
 		It("returns a Client with the provided configuration", func() {
-			client, err := provider.CloudFormationClient(aws.Config{
+			client := provider.CloudFormationClient(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-region",
 				EndpointOverride: "some-endpoint-override",
 			})
-			Expect(err).NotTo(HaveOccurred())
 
 			_, ok := client.(cloudformation.Client)
 			Expect(ok).To(BeTrue())
@@ -74,24 +65,16 @@ var _ = Describe("ClientProvider", func() {
 			Expect(cloudFormationClient.Config.Region).To(Equal(goaws.String("some-region")))
 			Expect(cloudFormationClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
-
-		Context("failure cases", func() {
-			It("returns an error when the credentials are not provided", func() {
-				_, err := provider.CloudFormationClient(aws.Config{})
-				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
-			})
-		})
 	})
 
 	Describe("EC2Client", func() {
 		It("returns a EC2Client with the provided configuration", func() {
-			client, err := provider.EC2Client(aws.Config{
+			client := provider.EC2Client(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-region",
 				EndpointOverride: "some-endpoint-override",
 			})
-			Expect(err).NotTo(HaveOccurred())
 
 			_, ok := client.(ec2.Client)
 			Expect(ok).To(BeTrue())
@@ -103,24 +86,16 @@ var _ = Describe("ClientProvider", func() {
 			Expect(ec2Client.Config.Region).To(Equal(goaws.String("some-region")))
 			Expect(ec2Client.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
-
-		Context("failure cases", func() {
-			It("returns an error when the credentials are not provided", func() {
-				_, err := provider.EC2Client(aws.Config{})
-				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
-			})
-		})
 	})
 
 	Describe("IAMClient", func() {
 		It("returns a IAMClient with the provided configuration", func() {
-			client, err := provider.IAMClient(aws.Config{
+			client := provider.IAMClient(aws.Config{
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",
 				Region:           "some-region",
 				EndpointOverride: "some-endpoint-override",
 			})
-			Expect(err).NotTo(HaveOccurred())
 
 			_, ok := client.(iam.Client)
 			Expect(ok).To(BeTrue())
@@ -131,13 +106,6 @@ var _ = Describe("ClientProvider", func() {
 			Expect(iamClient.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
 			Expect(iamClient.Config.Region).To(Equal(goaws.String("some-region")))
 			Expect(iamClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
-		})
-
-		Context("failure cases", func() {
-			It("returns an error when the credentials are not provided", func() {
-				_, err := provider.IAMClient(aws.Config{})
-				Expect(err).To(MatchError("--aws-access-key-id must be provided"))
-			})
 		})
 	})
 })

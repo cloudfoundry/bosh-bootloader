@@ -48,20 +48,9 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		EndpointOverride: globalFlags.EndpointOverride,
 	}
 
-	cloudFormationClient, err := c.clientProvider.CloudFormationClient(awsConfig)
-	if err != nil {
-		return state, err
-	}
-
-	iamClient, err := c.clientProvider.IAMClient(awsConfig)
-	if err != nil {
-		return state, err
-	}
-
-	ec2Client, err := c.clientProvider.EC2Client(awsConfig)
-	if err != nil {
-		return state, err
-	}
+	cloudFormationClient := c.clientProvider.CloudFormationClient(awsConfig)
+	iamClient := c.clientProvider.IAMClient(awsConfig)
+	ec2Client := c.clientProvider.EC2Client(awsConfig)
 
 	if err := c.checkFastFails(state.Stack.Name, state.Stack.LBType, cloudFormationClient); err != nil {
 		return state, err
