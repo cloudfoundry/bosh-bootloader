@@ -113,6 +113,20 @@ func main() {
 		return state.KeyPair.PrivateKey
 	})
 
+	configurationParser := application.NewConfigurationParser(stateStore)
+	configuration, err := configurationParser.Parse(os.Args[1:])
+	if err != nil {
+		switch err := err.(type) {
+		default:
+			fail(err)
+		case application.InvalidFlagError:
+			usage.Print()
+			fail(err)
+		case application.CommandNotProvidedError:
+			usage.Print()
+			fail(err)
+		}
+	}
 	app := application.New(application.CommandSet{
 		"help":    help,
 		"version": version,
@@ -124,9 +138,9 @@ func main() {
 		"ssh-key":                sshKey,
 		"unsupported-create-lbs": createLBs,
 		"unsupported-update-lbs": updateLBs,
-	}, stateStore, usage.Print)
+	}, configuration, stateStore, usage.Print)
 
-	err = app.Run(os.Args[1:])
+	err = app.Run()
 	if err != nil {
 		fail(err)
 	}
