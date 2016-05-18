@@ -113,7 +113,8 @@ func main() {
 		return state.KeyPair.PrivateKey
 	})
 
-	configurationParser := application.NewConfigurationParser(stateStore)
+	commandLineParser := application.NewCommandLineParser()
+	configurationParser := application.NewConfigurationParser(commandLineParser, stateStore)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
 		switch err := err.(type) {

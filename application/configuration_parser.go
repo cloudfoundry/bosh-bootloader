@@ -1,13 +1,10 @@
 package application
 
-import (
-	"os"
+import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
-)
-
-var getwd func() (string, error) = os.Getwd
+type commandLineParser interface {
+	Parse(arguments []string) (CommandLineConfiguration, error)
+}
 
 type stateStore interface {
 	Get(stateDirectory string) (storage.State, error)
@@ -15,25 +12,31 @@ type stateStore interface {
 }
 
 type ConfigurationParser struct {
-	stateStore stateStore
+	commandLineParser commandLineParser
+	stateStore        stateStore
 }
 
-func NewConfigurationParser(stateStore stateStore) ConfigurationParser {
+func NewConfigurationParser(commandLineParser commandLineParser, stateStore stateStore) ConfigurationParser {
 	return ConfigurationParser{
-		stateStore: stateStore,
+		commandLineParser: commandLineParser,
+		stateStore:        stateStore,
 	}
 }
 
 func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
-	configuration := Configuration{
-		Global:          GlobalConfiguration{},
-		Command:         "",
-		SubcommandFlags: []string{},
-	}
-
-	configuration, err := p.parseCommandLineArguments(configuration, arguments)
+	commandLineConfiguration, err := p.commandLineParser.Parse(arguments)
 	if err != nil {
 		return Configuration{}, err
+	}
+
+	configuration := Configuration{
+		Global: GlobalConfiguration{
+			StateDir:         commandLineConfiguration.StateDir,
+			EndpointOverride: commandLineConfiguration.EndpointOverride,
+		},
+		Command:         commandLineConfiguration.Command,
+		SubcommandFlags: commandLineConfiguration.SubcommandFlags,
+		State:           storage.State{},
 	}
 
 	configuration.State, err = p.stateStore.Get(configuration.Global.StateDir)
@@ -41,103 +44,22 @@ func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
 		return Configuration{}, err
 	}
 
-	configuration.State.AWS = p.overrideAWSCredentials(configuration.Global, configuration.State.AWS)
+	configuration.State.AWS = p.overrideAWSCredentials(commandLineConfiguration, configuration.State.AWS)
 
 	return configuration, nil
 }
 
-func (p ConfigurationParser) parseCommandLineArguments(configuration Configuration, arguments []string) (Configuration, error) {
-	var err error
-	var remainingArguments []string
-	configuration.Global, remainingArguments, err = p.parseGlobalFlags(configuration.Global, arguments)
-	if err != nil {
-		return Configuration{}, err
+func (ConfigurationParser) overrideAWSCredentials(commandLineConfiguration CommandLineConfiguration, awsState storage.AWS) storage.AWS {
+	if commandLineConfiguration.AWSAccessKeyID != "" {
+		awsState.AccessKeyID = commandLineConfiguration.AWSAccessKeyID
 	}
 
-	configuration = p.convertFlagsToCommands(configuration)
-
-	if configuration.Command == "" {
-		configuration, err = p.parseCommandAndSubcommandFlags(configuration, remainingArguments)
-		if err != nil {
-			return Configuration{}, err
-		}
+	if commandLineConfiguration.AWSSecretAccessKey != "" {
+		awsState.SecretAccessKey = commandLineConfiguration.AWSSecretAccessKey
 	}
 
-	configuration, err = p.setDefaultStateDirectory(configuration)
-	if err != nil {
-		return Configuration{}, err
-	}
-
-	return configuration, nil
-}
-
-func (ConfigurationParser) parseGlobalFlags(globalConfiguration GlobalConfiguration, arguments []string) (GlobalConfiguration, []string, error) {
-	globalFlags := flags.New("global")
-
-	globalFlags.String(&globalConfiguration.EndpointOverride, "endpoint-override", "")
-	globalFlags.String(&globalConfiguration.StateDir, "state-dir", "")
-
-	globalFlags.Bool(&globalConfiguration.help, "h", "help", false)
-	globalFlags.Bool(&globalConfiguration.version, "v", "version", false)
-	globalFlags.String(&globalConfiguration.awsAccessKeyID, "aws-access-key-id", "")
-	globalFlags.String(&globalConfiguration.awsSecretAccessKey, "aws-secret-access-key", "")
-	globalFlags.String(&globalConfiguration.awsRegion, "aws-region", "")
-
-	err := globalFlags.Parse(arguments)
-	if err != nil {
-		return GlobalConfiguration{}, []string{}, NewInvalidFlagError(err)
-	}
-
-	return globalConfiguration, globalFlags.Args(), nil
-}
-
-func (ConfigurationParser) parseCommandAndSubcommandFlags(configuration Configuration, remainingArguments []string) (Configuration, error) {
-	if len(remainingArguments) == 0 {
-		return Configuration{}, NewCommandNotProvidedError()
-	}
-
-	configuration.Command = remainingArguments[0]
-	configuration.SubcommandFlags = remainingArguments[1:]
-
-	return configuration, nil
-}
-
-func (ConfigurationParser) setDefaultStateDirectory(configuration Configuration) (Configuration, error) {
-	if configuration.Global.StateDir == "" {
-		wd, err := getwd()
-		if err != nil {
-			return Configuration{}, err
-		}
-
-		configuration.Global.StateDir = wd
-	}
-
-	return configuration, nil
-}
-
-func (ConfigurationParser) convertFlagsToCommands(configuration Configuration) Configuration {
-	if configuration.Global.version {
-		configuration.Command = "version"
-	}
-
-	if configuration.Global.help {
-		configuration.Command = "help"
-	}
-
-	return configuration
-}
-
-func (ConfigurationParser) overrideAWSCredentials(globalConfiguration GlobalConfiguration, awsState storage.AWS) storage.AWS {
-	if globalConfiguration.awsAccessKeyID != "" {
-		awsState.AccessKeyID = globalConfiguration.awsAccessKeyID
-	}
-
-	if globalConfiguration.awsSecretAccessKey != "" {
-		awsState.SecretAccessKey = globalConfiguration.awsSecretAccessKey
-	}
-
-	if globalConfiguration.awsRegion != "" {
-		awsState.Region = globalConfiguration.awsRegion
+	if commandLineConfiguration.AWSRegion != "" {
+		awsState.Region = commandLineConfiguration.AWSRegion
 	}
 
 	return awsState
