@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -24,10 +23,6 @@ var _ = Describe("Update LBs", func() {
 		certificateManager        *fakes.CertificateManager
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
-		clientProvider            *fakes.ClientProvider
-		iamClient                 *fakes.IAMClient
-		cloudFormationClient      *fakes.CloudFormationClient
-		ec2Client                 *fakes.EC2Client
 	)
 
 	var updateLBs = func(certificatePath string, keyPath string, state storage.State) (storage.State, error) {
@@ -43,17 +38,8 @@ var _ = Describe("Update LBs", func() {
 		var err error
 
 		certificateManager = &fakes.CertificateManager{}
-		clientProvider = &fakes.ClientProvider{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
-
-		iamClient = &fakes.IAMClient{}
-		cloudFormationClient = &fakes.CloudFormationClient{}
-		ec2Client = &fakes.EC2Client{}
-
-		clientProvider.IAMClientCall.Returns.Client = iamClient
-		clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
-		clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
 		availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
 		certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
@@ -82,7 +68,7 @@ var _ = Describe("Update LBs", func() {
 		err = ioutil.WriteFile(keyFile.Name(), []byte("some-key-contents"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
-		command = commands.NewUpdateLBs(certificateManager, clientProvider, availabilityZoneRetriever, infrastructureManager)
+		command = commands.NewUpdateLBs(certificateManager, availabilityZoneRetriever, infrastructureManager)
 	})
 
 	Describe("Execute", func() {
@@ -98,14 +84,6 @@ var _ = Describe("Update LBs", func() {
 				},
 			})
 
-			Expect(clientProvider.IAMClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint",
-			}))
-
-			Expect(certificateManager.CreateCall.Receives.IAMClient).To(Equal(iamClient))
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFile.Name()))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFile.Name()))
 		})
@@ -126,32 +104,15 @@ var _ = Describe("Update LBs", func() {
 				},
 			})
 
-			Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint",
-			}))
-
-			Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint",
-			}))
-
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.EC2Client).To(Equal(ec2Client))
 
 			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
-			Expect(certificateManager.DescribeCall.Receives.IAMClient).To(Equal(iamClient))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			Expect(infrastructureManager.UpdateCall.Receives.CloudFormationClient).To(Equal(cloudFormationClient))
 		})
 
 		It("deletes the existing certificate and private key", func() {
@@ -162,7 +123,6 @@ var _ = Describe("Update LBs", func() {
 				},
 			})
 
-			Expect(certificateManager.DeleteCall.Receives.IAMClient).To(Equal(iamClient))
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
 		})
 
@@ -212,7 +172,7 @@ var _ = Describe("Update LBs", func() {
 
 		Describe("failure cases", func() {
 			It("returns an error when the original certificate cannot be described", func() {
-				certificateManager.DescribeCall.Stub = func(certificateName string, client iam.Client) (iam.Certificate, error) {
+				certificateManager.DescribeCall.Stub = func(certificateName string) (iam.Certificate, error) {
 					if certificateName == "some-certificate-name" {
 						return iam.Certificate{}, errors.New("old certificate failed to describe")
 					}
@@ -227,7 +187,7 @@ var _ = Describe("Update LBs", func() {
 			It("returns an error when new certificate cannot be described", func() {
 				certificateManager.CreateCall.Returns.CertificateName = "some-new-certificate-name"
 
-				certificateManager.DescribeCall.Stub = func(certificateName string, client iam.Client) (iam.Certificate, error) {
+				certificateManager.DescribeCall.Stub = func(certificateName string) (iam.Certificate, error) {
 					if certificateName == "some-new-certificate-name" {
 						return iam.Certificate{}, errors.New("new certificate failed to describe")
 					}

@@ -11,16 +11,18 @@ type guidGenerator interface {
 }
 
 type KeyPairCreator struct {
+	ec2Client     Client
 	guidGenerator guidGenerator
 }
 
-func NewKeyPairCreator(guidGenerator guidGenerator) KeyPairCreator {
+func NewKeyPairCreator(ec2Client Client, guidGenerator guidGenerator) KeyPairCreator {
 	return KeyPairCreator{
+		ec2Client:     ec2Client,
 		guidGenerator: guidGenerator,
 	}
 }
 
-func (c KeyPairCreator) Create(client Client) (KeyPair, error) {
+func (c KeyPairCreator) Create() (KeyPair, error) {
 	guid, err := c.guidGenerator.Generate()
 	if err != nil {
 		return KeyPair{}, err
@@ -28,7 +30,7 @@ func (c KeyPairCreator) Create(client Client) (KeyPair, error) {
 
 	keyPairName := fmt.Sprintf("keypair-%s", guid)
 
-	output, err := client.CreateKeyPair(&ec2.CreateKeyPairInput{
+	output, err := c.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
 		KeyName: &keyPairName,
 	})
 	if err != nil {

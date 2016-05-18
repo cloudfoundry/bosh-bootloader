@@ -22,7 +22,7 @@ var _ = Describe("CertificateDescriber", func() {
 
 	BeforeEach(func() {
 		iamClient = &fakes.IAMClient{}
-		describer = iam.NewCertificateDescriber()
+		describer = iam.NewCertificateDescriber(iamClient)
 	})
 
 	Describe("Describe", func() {
@@ -39,7 +39,7 @@ var _ = Describe("CertificateDescriber", func() {
 				},
 			}
 
-			certificate, err := describer.Describe("some-certificate", iamClient)
+			certificate, err := describer.Describe("some-certificate")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(iamClient.GetServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
@@ -54,7 +54,7 @@ var _ = Describe("CertificateDescriber", func() {
 					ServerCertificate: nil,
 				}
 
-				_, err := describer.Describe("some-certificate", iamClient)
+				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
 			})
 
@@ -65,7 +65,7 @@ var _ = Describe("CertificateDescriber", func() {
 					},
 				}
 
-				_, err := describer.Describe("some-certificate", iamClient)
+				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
 			})
 
@@ -77,7 +77,7 @@ var _ = Describe("CertificateDescriber", func() {
 					), 404, "0",
 				)
 
-				_, err := describer.Describe("some-certificate", iamClient)
+				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(ContainSubstring("something bad happened")))
 			})
 
@@ -89,7 +89,7 @@ var _ = Describe("CertificateDescriber", func() {
 					), 404, "0",
 				)
 
-				_, err := describer.Describe("some-certificate", iamClient)
+				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(iam.CertificateNotFound))
 			})
 		})

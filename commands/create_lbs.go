@@ -3,9 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -13,7 +11,6 @@ import (
 )
 
 type CreateLBs struct {
-	clientProvider            awsClientProvider
 	certificateManager        certificateManager
 	infrastructureManager     infrastructureManager
 	boshClientProvider        boshClientProvider
@@ -28,9 +25,9 @@ type lbConfig struct {
 }
 
 type certificateManager interface {
-	Create(certificate, privateKey string, client iam.Client) (string, error)
-	Describe(certificateName string, client iam.Client) (iam.Certificate, error)
-	Delete(certificateName string, client iam.Client) error
+	Create(certificate, privateKey string) (string, error)
+	Describe(certificateName string) (iam.Certificate, error)
+	Delete(certificateName string) error
 }
 
 type boshClientProvider interface {
@@ -41,11 +38,10 @@ type boshCloudConfigurator interface {
 	Configure(stack cloudformation.Stack, azs []string, client bosh.Client) error
 }
 
-func NewCreateLBs(clientProvider awsClientProvider, certificateManager certificateManager,
-	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
-	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator) CreateLBs {
+func NewCreateLBs(certificateManager certificateManager, infrastructureManager infrastructureManager,
+	availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
+	boshCloudConfigurator boshCloudConfigurator) CreateLBs {
 	return CreateLBs{
-		clientProvider:            clientProvider,
 		certificateManager:        certificateManager,
 		infrastructureManager:     infrastructureManager,
 		boshClientProvider:        boshClientProvider,
@@ -60,24 +56,13 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	awsConfig := aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	}
-
-	cloudFormationClient := c.clientProvider.CloudFormationClient(awsConfig)
-	iamClient := c.clientProvider.IAMClient(awsConfig)
-	ec2Client := c.clientProvider.EC2Client(awsConfig)
-
 	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 
-	if err := c.checkFastFails(config.lbType, state.Stack.LBType, state.Stack.Name, boshClient, cloudFormationClient); err != nil {
+	if err := c.checkFastFails(config.lbType, state.Stack.LBType, state.Stack.Name, boshClient); err != nil {
 		return state, err
 	}
 
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, iamClient)
+	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath)
 	if err != nil {
 		return state, err
 	}
@@ -85,7 +70,7 @@ func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 	state.Stack.CertificateName = certificateName
 	state.Stack.LBType = config.lbType
 
-	if err := c.updateStackAndBOSH(awsConfig.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, ec2Client, iamClient, cloudFormationClient, boshClient); err != nil {
+	if err := c.updateStackAndBOSH(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, boshClient); err != nil {
 		return state, err
 	}
 
@@ -118,7 +103,7 @@ func (CreateLBs) isValidLBType(lbType string) bool {
 	return false
 }
 
-func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client, cloudFormationClient cloudformation.Client) error {
+func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client) error {
 	if !c.isValidLBType(newLBType) {
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", newLBType)
 	}
@@ -127,7 +112,7 @@ func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackN
 		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
 	}
 
-	if stackExists, err := c.infrastructureManager.Exists(stackName, cloudFormationClient); err != nil {
+	if stackExists, err := c.infrastructureManager.Exists(stackName); err != nil {
 		return err
 	} else if !stackExists {
 		return BBLNotFound
@@ -141,18 +126,18 @@ func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackN
 }
 
 func (c CreateLBs) updateStackAndBOSH(
-	awsRegion string, certificateName string, keyPairName string, stackName string, lbType string,
-	ec2Client ec2.Client, iamClient iam.Client, cloudFormationClient cloudformation.Client, boshClient bosh.Client,
+	awsRegion string, certificateName string, keyPairName string, stackName string,
+	lbType string, boshClient bosh.Client,
 ) error {
 
-	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion, ec2Client)
+	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
 	if err != nil {
 		return err
 	}
 
-	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
+	certificate, err := c.certificateManager.Describe(certificateName)
 
-	stack, err := c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, cloudFormationClient)
+	stack, err := c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN)
 	if err != nil {
 		return err
 	}

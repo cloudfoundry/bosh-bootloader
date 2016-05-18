@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
@@ -22,10 +21,6 @@ var _ = Describe("Create LBs", func() {
 			command                   commands.CreateLBs
 			certificateManager        *fakes.CertificateManager
 			infrastructureManager     *fakes.InfrastructureManager
-			clientProvider            *fakes.ClientProvider
-			iamClient                 *fakes.IAMClient
-			cloudFormationClient      *fakes.CloudFormationClient
-			ec2Client                 *fakes.EC2Client
 			boshClient                *fakes.BOSHClient
 			boshClientProvider        *fakes.BOSHClientProvider
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
@@ -36,18 +31,11 @@ var _ = Describe("Create LBs", func() {
 		BeforeEach(func() {
 			certificateManager = &fakes.CertificateManager{}
 			infrastructureManager = &fakes.InfrastructureManager{}
-			clientProvider = &fakes.ClientProvider{}
-			iamClient = &fakes.IAMClient{}
-			cloudFormationClient = &fakes.CloudFormationClient{}
-			ec2Client = &fakes.EC2Client{}
 			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 			boshCloudConfigurator = &fakes.BoshCloudConfigurator{}
 			boshClient = &fakes.BOSHClient{}
 			boshClientProvider = &fakes.BOSHClientProvider{}
 
-			clientProvider.IAMClientCall.Returns.Client = iamClient
-			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
-			clientProvider.EC2ClientCall.Returns.Client = ec2Client
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
 			infrastructureManager.ExistsCall.Returns.Exists = true
@@ -71,71 +59,8 @@ var _ = Describe("Create LBs", func() {
 				},
 			}
 
-			command = commands.NewCreateLBs(clientProvider, certificateManager, infrastructureManager,
+			command = commands.NewCreateLBs(certificateManager, infrastructureManager,
 				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator)
-		})
-
-		It("invokes iam client with aws config from state", func() {
-			_, err := command.Execute(
-				commands.GlobalFlags{
-					EndpointOverride: "some-endpoint",
-				},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(clientProvider.IAMClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint",
-			}))
-		})
-
-		It("invokes cloudformation client with aws config from state", func() {
-			_, err := command.Execute(
-				commands.GlobalFlags{
-					EndpointOverride: "some-endpoint",
-				},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint",
-			}))
-		})
-
-		It("invokes ec2 client with aws config from state", func() {
-			_, err := command.Execute(
-				commands.GlobalFlags{
-					EndpointOverride: "some-endpoint",
-				},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint",
-			}))
 		})
 
 		It("uploads a cert and key", func() {
@@ -148,7 +73,6 @@ var _ = Describe("Create LBs", func() {
 				storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(certificateManager.CreateCall.Receives.IAMClient).To(Equal(iamClient))
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
 		})
@@ -169,17 +93,14 @@ var _ = Describe("Create LBs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.EC2Client).To(Equal(ec2Client))
 
 			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
-			Expect(certificateManager.DescribeCall.Receives.IAMClient).To(Equal(iamClient))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			Expect(infrastructureManager.UpdateCall.Receives.CloudFormationClient).To(Equal(cloudFormationClient))
 		})
 
 		It("updates the cloud config with lb type", func() {
@@ -227,7 +148,6 @@ var _ = Describe("Create LBs", func() {
 						"--key", "temp/some-key.key",
 					}, incomingState)
 
-				Expect(infrastructureManager.ExistsCall.Receives.Client).To(Equal(cloudFormationClient))
 				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack"))
 
 				Expect(err).To(MatchError(commands.BBLNotFound))

@@ -19,9 +19,9 @@ type CertificateCreateOutput struct {
 }
 
 type certificateManager interface {
-	CreateOrUpdate(name string, certificate string, privateKey string, client Client) (string, error)
-	Delete(certificateName string, iamClient Client) error
-	Describe(certificateName string, iamClient Client) (Certificate, error)
+	CreateOrUpdate(name string, certificate string, privateKey string) (string, error)
+	Delete(certificateName string) error
+	Describe(certificateName string) (Certificate, error)
 }
 
 func NewLoadBalancerCertificateManager(certificateManager certificateManager) LoadBalancerCertificateManager {
@@ -30,7 +30,7 @@ func NewLoadBalancerCertificateManager(certificateManager certificateManager) Lo
 	}
 }
 
-func (l LoadBalancerCertificateManager) Create(input CertificateCreateInput, iamClient Client) (CertificateCreateOutput, error) {
+func (l LoadBalancerCertificateManager) Create(input CertificateCreateInput) (CertificateCreateOutput, error) {
 	var err error
 	certOutput := CertificateCreateOutput{
 		LBType:          determineLBType(input.CurrentLBType, input.DesiredLBType),
@@ -38,14 +38,14 @@ func (l LoadBalancerCertificateManager) Create(input CertificateCreateInput, iam
 	}
 
 	if certOutput.LBType != "none" && input.CertPath != "" && input.KeyPath != "" {
-		certOutput.CertificateName, err = l.certificateManager.CreateOrUpdate(certOutput.CertificateName, input.CertPath, input.KeyPath, iamClient)
+		certOutput.CertificateName, err = l.certificateManager.CreateOrUpdate(certOutput.CertificateName, input.CertPath, input.KeyPath)
 		if err != nil {
 			return certOutput, err
 		}
 	}
 
 	if certOutput.LBType == "none" && certOutput.CertificateName != "" {
-		err = l.certificateManager.Delete(certOutput.CertificateName, iamClient)
+		err = l.certificateManager.Delete(certOutput.CertificateName)
 		if err != nil {
 			return certOutput, err
 		}
@@ -54,7 +54,7 @@ func (l LoadBalancerCertificateManager) Create(input CertificateCreateInput, iam
 	}
 
 	if certOutput.CertificateName != "" {
-		certificate, err := l.certificateManager.Describe(certOutput.CertificateName, iamClient)
+		certificate, err := l.certificateManager.Describe(certOutput.CertificateName)
 		certOutput.CertificateARN = certificate.ARN
 		if err != nil {
 			return certOutput, err

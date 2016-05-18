@@ -8,13 +8,9 @@ type KeyPairCreator struct {
 			KeyPair ec2.KeyPair
 			Error   error
 		}
-		Receives struct {
-			Client ec2.Client
-		}
 	}
 }
 
-func (k *KeyPairCreator) Create(client ec2.Client) (ec2.KeyPair, error) {
-	k.CreateCall.Receives.Client = client
+func (k *KeyPairCreator) Create() (ec2.KeyPair, error) {
 	return k.CreateCall.Returns.KeyPair, k.CreateCall.Returns.Error
 }

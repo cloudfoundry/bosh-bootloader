@@ -9,14 +9,17 @@ import (
 )
 
 type VPCStatusChecker struct {
+	ec2Client Client
 }
 
-func NewVPCStatusChecker() VPCStatusChecker {
-	return VPCStatusChecker{}
+func NewVPCStatusChecker(ec2Client Client) VPCStatusChecker {
+	return VPCStatusChecker{
+		ec2Client: ec2Client,
+	}
 }
 
-func (v VPCStatusChecker) ValidateSafeToDelete(ec2Client Client, vpcID string) error {
-	output, err := ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
+func (v VPCStatusChecker) ValidateSafeToDelete(vpcID string) error {
+	output, err := v.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
 		Filters: []*awsec2.Filter{{
 			Name:   aws.String("vpc-id"),
 			Values: []*string{aws.String(vpcID)},

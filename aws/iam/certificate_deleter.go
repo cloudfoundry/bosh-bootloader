@@ -5,14 +5,18 @@ import (
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 )
 
-type CertificateDeleter struct{}
-
-func NewCertificateDeleter() CertificateDeleter {
-	return CertificateDeleter{}
+type CertificateDeleter struct {
+	iamClient Client
 }
 
-func (CertificateDeleter) Delete(certificateName string, iamClient Client) error {
-	_, err := iamClient.DeleteServerCertificate(&awsiam.DeleteServerCertificateInput{
+func NewCertificateDeleter(iamClient Client) CertificateDeleter {
+	return CertificateDeleter{
+		iamClient: iamClient,
+	}
+}
+
+func (c CertificateDeleter) Delete(certificateName string) error {
+	_, err := c.iamClient.DeleteServerCertificate(&awsiam.DeleteServerCertificateInput{
 		ServerCertificateName: aws.String(certificateName),
 	})
 	return err

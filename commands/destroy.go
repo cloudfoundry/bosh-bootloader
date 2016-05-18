@@ -5,9 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -17,7 +15,6 @@ type Destroy struct {
 	logger                logger
 	stdin                 io.Reader
 	boshDeleter           boshDeleter
-	awsClientProvider     awsClientProvider
 	vpcStatusChecker      vpcStatusChecker
 	stackManager          stackManager
 	stringGenerator       stringGenerator
@@ -30,7 +27,7 @@ type destroyConfig struct {
 }
 
 type keyPairDeleter interface {
-	Delete(client ec2.Client, name string) error
+	Delete(name string) error
 }
 
 type boshDeleter interface {
@@ -38,23 +35,22 @@ type boshDeleter interface {
 }
 
 type vpcStatusChecker interface {
-	ValidateSafeToDelete(ec2.Client, string) error
+	ValidateSafeToDelete(string) error
 }
 
 type stackManager interface {
-	Describe(cloudformation.Client, string) (cloudformation.Stack, error)
+	Describe(string) (cloudformation.Stack, error)
 }
 
 type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, awsClientProvider awsClientProvider, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
+func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
 	return Destroy{
 		logger:                logger,
 		stdin:                 stdin,
 		boshDeleter:           boshDeleter,
-		awsClientProvider:     awsClientProvider,
 		vpcStatusChecker:      vpcStatusChecker,
 		stackManager:          stackManager,
 		stringGenerator:       stringGenerator,
@@ -84,15 +80,13 @@ func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, stat
 
 	d.logger.Step("destroying BOSH director and AWS stack")
 
-	cloudFormationClient, ec2Client := d.createAWSClients(state, globalFlags)
-
-	stack, err := d.stackManager.Describe(cloudFormationClient, state.Stack.Name)
+	stack, err := d.stackManager.Describe(state.Stack.Name)
 	if err != nil {
 		return state, err
 	}
 
 	var vpcID = stack.Outputs["VPCID"]
-	if err := d.vpcStatusChecker.ValidateSafeToDelete(ec2Client, vpcID); err != nil {
+	if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
 		return state, err
 	}
 
@@ -101,11 +95,11 @@ func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, stat
 		return state, err
 	}
 
-	if err := d.infrastructureManager.Delete(cloudFormationClient, state.Stack.Name); err != nil {
+	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
 		return state, err
 	}
 
-	err = d.keyPairDeleter.Delete(ec2Client, state.KeyPair.Name)
+	err = d.keyPairDeleter.Delete(state.KeyPair.Name)
 	if err != nil {
 		return state, err
 	}
@@ -125,21 +119,6 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	}
 
 	return config, nil
-}
-
-func (d Destroy) createAWSClients(state storage.State, globalFlags GlobalFlags) (cloudformation.Client, ec2.Client) {
-	awsConfig := aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	}
-
-	cloudFormationClient := d.awsClientProvider.CloudFormationClient(awsConfig)
-
-	ec2Client := d.awsClientProvider.EC2Client(awsConfig)
-
-	return cloudFormationClient, ec2Client
 }
 
 func (d Destroy) deleteBOSH(stack cloudformation.Stack, state storage.State) (storage.State, error) {

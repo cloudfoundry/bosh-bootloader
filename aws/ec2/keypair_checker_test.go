@@ -20,7 +20,7 @@ var _ = Describe("KeyPairChecker", func() {
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		checker = ec2.NewKeyPairChecker()
+		checker = ec2.NewKeyPairChecker(ec2Client)
 	})
 
 	Describe("HasKeyPair", func() {
@@ -37,7 +37,7 @@ var _ = Describe("KeyPairChecker", func() {
 			})
 
 			It("returns true", func() {
-				present, err := checker.HasKeyPair(ec2Client, "some-key-name")
+				present, err := checker.HasKeyPair("some-key-name")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(present).To(BeTrue())
 
@@ -53,7 +53,7 @@ var _ = Describe("KeyPairChecker", func() {
 			It("returns false when the keypair name can not be found", func() {
 				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("InvalidKeyPair.NotFound")
 
-				present, err := checker.HasKeyPair(ec2Client, "some-key-name")
+				present, err := checker.HasKeyPair("some-key-name")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(present).To(BeFalse())
 			})
@@ -61,7 +61,7 @@ var _ = Describe("KeyPairChecker", func() {
 			It("returns false when the keypair name is empty", func() {
 				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("InvalidParameterValue: Invalid value '' for keyPairNames. It should not be blank")
 
-				present, err := checker.HasKeyPair(ec2Client, "")
+				present, err := checker.HasKeyPair("")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(present).To(BeFalse())
 			})
@@ -71,7 +71,7 @@ var _ = Describe("KeyPairChecker", func() {
 			It("returns an error when AWS communication fails", func() {
 				ec2Client.DescribeKeyPairsCall.Returns.Error = errors.New("something bad happened")
 
-				_, err := checker.HasKeyPair(ec2Client, "some-key-name")
+				_, err := checker.HasKeyPair("some-key-name")
 				Expect(err).To(MatchError("something bad happened"))
 			})
 		})

@@ -7,11 +7,11 @@ type KeyPairManager struct {
 }
 
 type keypairCreator interface {
-	Create(Client) (KeyPair, error)
+	Create() (KeyPair, error)
 }
 
 type keypairChecker interface {
-	HasKeyPair(client Client, keypairName string) (bool, error)
+	HasKeyPair(keypairName string) (bool, error)
 }
 
 type logger interface {
@@ -26,9 +26,9 @@ func NewKeyPairManager(creator keypairCreator, checker keypairChecker, logger lo
 	}
 }
 
-func (m KeyPairManager) Sync(ec2Client Client, keypair KeyPair) (KeyPair, error) {
+func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
 	hasLocalKeyPair := !keypair.IsEmpty()
-	hasRemoteKeyPair, err := m.checker.HasKeyPair(ec2Client, keypair.Name)
+	hasRemoteKeyPair, err := m.checker.HasKeyPair(keypair.Name)
 	if err != nil {
 		return KeyPair{}, err
 	}
@@ -36,7 +36,7 @@ func (m KeyPairManager) Sync(ec2Client Client, keypair KeyPair) (KeyPair, error)
 	if !hasLocalKeyPair || !hasRemoteKeyPair {
 		m.logger.Step("creating keypair")
 
-		keypair, err = m.creator.Create(ec2Client)
+		keypair, err = m.creator.Create()
 		if err != nil {
 			return KeyPair{}, err
 		}

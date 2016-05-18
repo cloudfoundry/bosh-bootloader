@@ -16,12 +16,10 @@ var _ = Describe("InfrastructureManager", func() {
 	var (
 		builder               *fakes.TemplateBuilder
 		stackManager          *fakes.StackManager
-		cloudFormationClient  *fakes.CloudFormationClient
 		infrastructureManager cloudformation.InfrastructureManager
 	)
 
 	BeforeEach(func() {
-		cloudFormationClient = &fakes.CloudFormationClient{}
 
 		builder = &fakes.TemplateBuilder{}
 		builder.BuildCall.Returns.Template = templates.Template{
@@ -40,7 +38,7 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		It("creates the underlying infrastructure and returns the stack", func() {
-			stack, err := infrastructureManager.Create("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", cloudFormationClient)
+			stack, err := infrastructureManager.Create("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
@@ -49,19 +47,16 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 
-			Expect(stackManager.CreateOrUpdateCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
 			}))
 
-			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
 			Expect(stackManager.WaitForCompletionCall.Receives.Action).To(Equal("applying cloudformation template"))
 
-			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 		})
 
@@ -69,21 +64,21 @@ var _ = Describe("InfrastructureManager", func() {
 			It("returns an error when stack can't be created or updated", func() {
 				stackManager.CreateOrUpdateCall.Returns.Error = errors.New("stack create or update failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "", cloudFormationClient)
+				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "")
 				Expect(err).To(MatchError("stack create or update failed"))
 			})
 
 			It("returns an error when waiting for stack completion fails", func() {
 				stackManager.WaitForCompletionCall.Returns.Error = errors.New("stack wait for completion failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "", cloudFormationClient)
+				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "")
 				Expect(err).To(MatchError("stack wait for completion failed"))
 			})
 
 			It("returns an error when describing the stack fails", func() {
 				stackManager.DescribeCall.Returns.Error = errors.New("stack describe failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "", cloudFormationClient)
+				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "")
 				Expect(err).To(MatchError("stack describe failed"))
 			})
 		})
@@ -95,7 +90,7 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		It("updates the stack and returns the stack", func() {
-			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", cloudFormationClient)
+			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
@@ -104,19 +99,16 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 
-			Expect(stackManager.UpdateCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.UpdateCall.Receives.Template).To(Equal(templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
 			}))
 
-			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
 			Expect(stackManager.WaitForCompletionCall.Receives.Action).To(Equal("applying cloudformation template"))
 
-			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
 		})
@@ -126,7 +118,7 @@ var _ = Describe("InfrastructureManager", func() {
 		It("returns true when the stack exists", func() {
 			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{}
 
-			exists, err := infrastructureManager.Exists("some-stack-name", cloudFormationClient)
+			exists, err := infrastructureManager.Exists("some-stack-name")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
@@ -135,7 +127,7 @@ var _ = Describe("InfrastructureManager", func() {
 		It("returns false when the stack does not exist", func() {
 			stackManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
 
-			exists, err := infrastructureManager.Exists("some-stack-name", cloudFormationClient)
+			exists, err := infrastructureManager.Exists("some-stack-name")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeFalse())
@@ -144,7 +136,7 @@ var _ = Describe("InfrastructureManager", func() {
 		Describe("failure cases", func() {
 			It("returns an error when the stack manager returns a different error", func() {
 				stackManager.DescribeCall.Returns.Error = errors.New("some other error")
-				_, err := infrastructureManager.Exists("some-stack-name", cloudFormationClient)
+				_, err := infrastructureManager.Exists("some-stack-name")
 				Expect(err).To(MatchError("some other error"))
 			})
 		})
@@ -152,13 +144,11 @@ var _ = Describe("InfrastructureManager", func() {
 
 	Describe("Delete", func() {
 		It("deletes the underlying infrastructure", func() {
-			err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+			err := infrastructureManager.Delete("some-stack-name")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(stackManager.DeleteCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
 
-			Expect(stackManager.WaitForCompletionCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
 			Expect(stackManager.WaitForCompletionCall.Receives.Action).To(Equal("deleting cloudformation stack"))
@@ -168,7 +158,7 @@ var _ = Describe("InfrastructureManager", func() {
 			It("returns without an error", func() {
 				stackManager.WaitForCompletionCall.Returns.Error = cloudformation.StackNotFound
 
-				err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+				err := infrastructureManager.Delete("some-stack-name")
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -178,7 +168,7 @@ var _ = Describe("InfrastructureManager", func() {
 				It("returns an error", func() {
 					stackManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
 
-					err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+					err := infrastructureManager.Delete("some-stack-name")
 					Expect(err).To(MatchError("failed to delete stack"))
 				})
 			})
@@ -186,7 +176,7 @@ var _ = Describe("InfrastructureManager", func() {
 				It("returns an error", func() {
 					stackManager.WaitForCompletionCall.Returns.Error = errors.New("wait for completion failed")
 
-					err := infrastructureManager.Delete(cloudFormationClient, "some-stack-name")
+					err := infrastructureManager.Delete("some-stack-name")
 					Expect(err).To(MatchError("wait for completion failed"))
 				})
 			})
@@ -206,11 +196,10 @@ var _ = Describe("InfrastructureManager", func() {
 
 			stackManager.DescribeCall.Returns.Stack = expectedStack
 
-			stack, err := infrastructureManager.Describe(cloudFormationClient, "some-stack-name")
+			stack, err := infrastructureManager.Describe("some-stack-name")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stack).To(Equal(expectedStack))
 
-			Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
 			Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 		})
 	})

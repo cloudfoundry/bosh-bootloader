@@ -12,14 +12,18 @@ import (
 var CertificateNotFound error = errors.New("certificate not found")
 var CertificateDescriptionFailure error = errors.New("failed to describe certificate")
 
-type CertificateDescriber struct{}
-
-func NewCertificateDescriber() CertificateDescriber {
-	return CertificateDescriber{}
+type CertificateDescriber struct {
+	iamClient Client
 }
 
-func (CertificateDescriber) Describe(certificateName string, iamClient Client) (Certificate, error) {
-	output, err := iamClient.GetServerCertificate(&awsiam.GetServerCertificateInput{
+func NewCertificateDescriber(iamClient Client) CertificateDescriber {
+	return CertificateDescriber{
+		iamClient: iamClient,
+	}
+}
+
+func (c CertificateDescriber) Describe(certificateName string) (Certificate, error) {
+	output, err := c.iamClient.GetServerCertificate(&awsiam.GetServerCertificateInput{
 		ServerCertificateName: aws.String(certificateName),
 	})
 

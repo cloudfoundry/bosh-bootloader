@@ -8,10 +8,13 @@ import (
 )
 
 type KeyPairChecker struct {
+	ec2Client Client
 }
 
-func NewKeyPairChecker() KeyPairChecker {
-	return KeyPairChecker{}
+func NewKeyPairChecker(ec2Client Client) KeyPairChecker {
+	return KeyPairChecker{
+		ec2Client: ec2Client,
+	}
 }
 
 type KeyPairInfo struct {
@@ -19,7 +22,7 @@ type KeyPairInfo struct {
 	Fingerprint string
 }
 
-func (KeyPairChecker) HasKeyPair(client Client, name string) (bool, error) {
+func (k KeyPairChecker) HasKeyPair(name string) (bool, error) {
 	if name == "" {
 		return false, nil
 	}
@@ -30,7 +33,7 @@ func (KeyPairChecker) HasKeyPair(client Client, name string) (bool, error) {
 		},
 	}
 
-	_, err := client.DescribeKeyPairs(params)
+	_, err := k.ec2Client.DescribeKeyPairs(params)
 	if err != nil {
 		if strings.Contains(err.Error(), "InvalidKeyPair.NotFound") {
 			return false, nil

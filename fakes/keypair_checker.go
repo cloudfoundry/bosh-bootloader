@@ -1,14 +1,11 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-
 type KeyPairChecker struct {
 	HasKeyPairCall struct {
 		CallCount int
-		Stub      func(ec2.Client, string) (bool, error)
+		Stub      func(string) (bool, error)
 		Recieves  struct {
-			Name   string
-			Client ec2.Client
+			Name string
 		}
 		Returns struct {
 			Present bool
@@ -17,13 +14,12 @@ type KeyPairChecker struct {
 	}
 }
 
-func (k *KeyPairChecker) HasKeyPair(client ec2.Client, name string) (bool, error) {
+func (k *KeyPairChecker) HasKeyPair(name string) (bool, error) {
 	k.HasKeyPairCall.CallCount++
-	k.HasKeyPairCall.Recieves.Client = client
 	k.HasKeyPairCall.Recieves.Name = name
 
 	if k.HasKeyPairCall.Stub != nil {
-		return k.HasKeyPairCall.Stub(client, name)
+		return k.HasKeyPairCall.Stub(name)
 	}
 
 	return k.HasKeyPairCall.Returns.Present,

@@ -6,7 +6,6 @@ type CertificateManager struct {
 	CreateOrUpdateCall struct {
 		CallCount int
 		Receives  struct {
-			IAMClient   iam.Client
 			Certificate string
 			Name        string
 			PrivateKey  string
@@ -20,7 +19,6 @@ type CertificateManager struct {
 	CreateCall struct {
 		CallCount int
 		Receives  struct {
-			IAMClient   iam.Client
 			Certificate string
 			PrivateKey  string
 		}
@@ -34,7 +32,6 @@ type CertificateManager struct {
 		CallCount int
 		Receives  struct {
 			CertificateName string
-			IAMClient       iam.Client
 		}
 		Returns struct {
 			Error error
@@ -43,10 +40,9 @@ type CertificateManager struct {
 
 	DescribeCall struct {
 		CallCount int
-		Stub      func(string, iam.Client) (iam.Certificate, error)
+		Stub      func(string) (iam.Certificate, error)
 		Receives  struct {
 			CertificateName string
-			IAMClient       iam.Client
 		}
 		Returns struct {
 			Certificate iam.Certificate
@@ -55,9 +51,8 @@ type CertificateManager struct {
 	}
 }
 
-func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string, iamClient iam.Client) (string, error) {
+func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string) (string, error) {
 	c.CreateOrUpdateCall.CallCount++
-	c.CreateOrUpdateCall.Receives.IAMClient = iamClient
 	c.CreateOrUpdateCall.Receives.Certificate = certificate
 	c.CreateOrUpdateCall.Receives.PrivateKey = privatekey
 	c.CreateOrUpdateCall.Receives.Name = name
@@ -65,29 +60,26 @@ func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string
 	return c.CreateOrUpdateCall.Returns.CertificateName, c.CreateOrUpdateCall.Returns.Error
 }
 
-func (c *CertificateManager) Create(certificate, privatekey string, iamClient iam.Client) (string, error) {
+func (c *CertificateManager) Create(certificate, privatekey string) (string, error) {
 	c.CreateCall.CallCount++
-	c.CreateCall.Receives.IAMClient = iamClient
 	c.CreateCall.Receives.Certificate = certificate
 	c.CreateCall.Receives.PrivateKey = privatekey
 
 	return c.CreateCall.Returns.CertificateName, c.CreateCall.Returns.Error
 }
 
-func (c *CertificateManager) Delete(certificateName string, iamClient iam.Client) error {
+func (c *CertificateManager) Delete(certificateName string) error {
 	c.DeleteCall.CallCount++
 	c.DeleteCall.Receives.CertificateName = certificateName
-	c.DeleteCall.Receives.IAMClient = iamClient
 	return c.DeleteCall.Returns.Error
 }
 
-func (c *CertificateManager) Describe(certificateName string, iamClient iam.Client) (iam.Certificate, error) {
+func (c *CertificateManager) Describe(certificateName string) (iam.Certificate, error) {
 	c.DescribeCall.CallCount++
 	c.DescribeCall.Receives.CertificateName = certificateName
-	c.DescribeCall.Receives.IAMClient = iamClient
 
 	if c.DescribeCall.Stub != nil {
-		return c.DescribeCall.Stub(certificateName, iamClient)
+		return c.DescribeCall.Stub(certificateName)
 	}
 
 	return c.DescribeCall.Returns.Certificate, c.DescribeCall.Returns.Error

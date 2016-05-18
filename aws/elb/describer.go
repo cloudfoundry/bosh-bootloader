@@ -5,14 +5,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 )
 
-type Describer struct{}
-
-func NewDescriber() Describer {
-	return Describer{}
+type Describer struct {
+	elbClient Client
 }
 
-func (d Describer) Describe(elbName string, client Client) ([]string, error) {
-	lbOutput, err := client.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{
+func NewDescriber(elbClient Client) Describer {
+	return Describer{
+		elbClient: elbClient,
+	}
+}
+
+func (d Describer) Describe(elbName string) ([]string, error) {
+	lbOutput, err := d.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{
 		LoadBalancerNames: []*string{aws.String(elbName)},
 	})
 	if err != nil {

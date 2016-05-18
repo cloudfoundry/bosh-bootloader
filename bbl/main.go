@@ -34,21 +34,57 @@ func main() {
 	stateStore := storage.NewStore()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
 
+	// Usage Command
+	usage := commands.NewUsage(os.Stdout)
+
+	commandLineParser := application.NewCommandLineParser()
+	awsCredentialValidator := application.NewAWSCredentialValidator()
+	configurationParser := application.NewConfigurationParser(commandLineParser, awsCredentialValidator, stateStore)
+	configuration, err := configurationParser.Parse(os.Args[1:])
+	if err != nil {
+		switch err := err.(type) {
+		default:
+			fail(err)
+		case application.InvalidFlagError:
+			usage.Print()
+			fail(err)
+		case application.InvalidCommandError:
+			usage.Print()
+			fail(err)
+		case application.CommandNotProvidedError:
+			usage.Print()
+			fail(err)
+		}
+	}
+
 	// Amazon
+	awsConfiguration := aws.Config{
+		AccessKeyID:      configuration.State.AWS.AccessKeyID,
+		SecretAccessKey:  configuration.State.AWS.SecretAccessKey,
+		Region:           configuration.State.AWS.Region,
+		EndpointOverride: configuration.Global.EndpointOverride,
+	}
+
 	awsClientProvider := aws.NewClientProvider()
-	vpcStatusChecker := ec2.NewVPCStatusChecker()
-	keyPairCreator := ec2.NewKeyPairCreator(uuidGenerator)
-	keyPairDeleter := ec2.NewKeyPairDeleter(logger)
-	keyPairChecker := ec2.NewKeyPairChecker()
+	elbClient := awsClientProvider.ELBClient(awsConfiguration)
+	cloudFormationClient := awsClientProvider.CloudFormationClient(awsConfiguration)
+	ec2Client := awsClientProvider.EC2Client(awsConfiguration)
+	iamClient := awsClientProvider.IAMClient(awsConfiguration)
+
+	vpcStatusChecker := ec2.NewVPCStatusChecker(ec2Client)
+	keyPairCreator := ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
+	keyPairDeleter := ec2.NewKeyPairDeleter(ec2Client, logger)
+	keyPairChecker := ec2.NewKeyPairChecker(ec2Client)
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
+	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(ec2Client)
 	templateBuilder := templates.NewTemplateBuilder(logger)
-	stackManager := cloudformation.NewStackManager(logger)
+	stackManager := cloudformation.NewStackManager(cloudFormationClient, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	elbDescriber := elb.NewDescriber()
-	certificateUploader := iam.NewCertificateUploader(uuidGenerator)
-	certificateDescriber := iam.NewCertificateDescriber()
-	certificateDeleter := iam.NewCertificateDeleter()
+	elbDescriber := elb.NewDescriber(elbClient)
+	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator)
+	certificateDescriber := iam.NewCertificateDescriber(iamClient)
+	certificateDeleter := iam.NewCertificateDeleter(iamClient)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	loadBalancerCertificateManager := iam.NewLoadBalancerCertificateManager(certificateManager)
 
@@ -81,25 +117,23 @@ func main() {
 	boshClientProvider := bosh.NewClientProvider()
 	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, boshCloudConfigGenerator)
-	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever()
 
 	// Commands
 	help := commands.NewUsage(os.Stdout)
 	version := commands.NewVersion(os.Stdout)
 	up := commands.NewUp(
-		infrastructureManager, keyPairSynchronizer, awsClientProvider, boshinitExecutor,
+		infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
 	)
 	destroy := commands.NewDestroy(
-		logger, os.Stdin, boshinitExecutor, awsClientProvider, vpcStatusChecker,
-		stackManager, stringGenerator, infrastructureManager, keyPairDeleter,
+		logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
+		stringGenerator, infrastructureManager, keyPairDeleter,
 	)
 	createLBs := commands.NewCreateLBs(
-		awsClientProvider, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigurator,
+		certificateManager, infrastructureManager, availabilityZoneRetriever,
+		boshClientProvider, cloudConfigurator,
 	)
-	updateLBs := commands.NewUpdateLBs(certificateManager, awsClientProvider, availabilityZoneRetriever, infrastructureManager)
-	usage := commands.NewUsage(os.Stdout)
+	updateLBs := commands.NewUpdateLBs(certificateManager, availabilityZoneRetriever, infrastructureManager)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})
@@ -113,25 +147,6 @@ func main() {
 		return state.KeyPair.PrivateKey
 	})
 
-	commandLineParser := application.NewCommandLineParser()
-	awsCredentialValidator := application.NewAWSCredentialValidator()
-	configurationParser := application.NewConfigurationParser(commandLineParser, awsCredentialValidator, stateStore)
-	configuration, err := configurationParser.Parse(os.Args[1:])
-	if err != nil {
-		switch err := err.(type) {
-		default:
-			fail(err)
-		case application.InvalidFlagError:
-			usage.Print()
-			fail(err)
-		case application.InvalidCommandError:
-			usage.Print()
-			fail(err)
-		case application.CommandNotProvidedError:
-			usage.Print()
-			fail(err)
-		}
-	}
 	app := application.New(application.CommandSet{
 		"help":    help,
 		"version": version,

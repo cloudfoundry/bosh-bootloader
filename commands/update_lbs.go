@@ -4,10 +4,6 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
@@ -19,17 +15,15 @@ type updateLBConfig struct {
 
 type UpdateLBs struct {
 	certificateManager        certificateManager
-	clientProvider            awsClientProvider
 	availabilityZoneRetriever availabilityZoneRetriever
 	infrastructureManager     infrastructureManager
 }
 
-func NewUpdateLBs(certificateManager certificateManager, clientProvider awsClientProvider,
-	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager) UpdateLBs {
+func NewUpdateLBs(certificateManager certificateManager, availabilityZoneRetriever availabilityZoneRetriever,
+	infrastructureManager infrastructureManager) UpdateLBs {
 
 	return UpdateLBs{
 		certificateManager:        certificateManager,
-		clientProvider:            clientProvider,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		infrastructureManager:     infrastructureManager,
 	}
@@ -41,37 +35,26 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 		return state, err
 	}
 
-	awsConfig := aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	}
-
-	cloudFormationClient := c.clientProvider.CloudFormationClient(awsConfig)
-	iamClient := c.clientProvider.IAMClient(awsConfig)
-	ec2Client := c.clientProvider.EC2Client(awsConfig)
-
-	if err := c.checkFastFails(state.Stack.Name, state.Stack.LBType, cloudFormationClient); err != nil {
+	if err := c.checkFastFails(state.Stack.Name, state.Stack.LBType); err != nil {
 		return state, err
 	}
 
-	if match, err := c.certificatesMatch(config.certPath, state.Stack.CertificateName, iamClient); err != nil {
+	if match, err := c.certificatesMatch(config.certPath, state.Stack.CertificateName); err != nil {
 		return state, err
 	} else if match {
 		return state, nil
 	}
 
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, iamClient)
+	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath)
 	if err != nil {
 		return state, err
 	}
 
-	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region, iamClient, cloudFormationClient, ec2Client); err != nil {
+	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region); err != nil {
 		return state, err
 	}
 
-	err = c.certificateManager.Delete(state.Stack.CertificateName, iamClient)
+	err = c.certificateManager.Delete(state.Stack.CertificateName)
 	if err != nil {
 		return state, err
 	}
@@ -81,13 +64,13 @@ func (c UpdateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, st
 	return state, nil
 }
 
-func (c UpdateLBs) certificatesMatch(certPath string, oldCertName string, client iam.Client) (bool, error) {
+func (c UpdateLBs) certificatesMatch(certPath string, oldCertName string) (bool, error) {
 	localCertificate, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		return false, err
 	}
 
-	remoteCertificate, err := c.certificateManager.Describe(oldCertName, client)
+	remoteCertificate, err := c.certificateManager.Describe(oldCertName)
 	if err != nil {
 		return false, err
 	}
@@ -110,18 +93,18 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	return config, nil
 }
 
-func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion string, iamClient iam.Client, cloudFormationClient cloudformation.Client, ec2Client ec2.Client) error {
-	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion, ec2Client)
+func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion string) error {
+	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
 	if err != nil {
 		return err
 	}
 
-	certificate, err := c.certificateManager.Describe(certificateName, iamClient)
+	certificate, err := c.certificateManager.Describe(certificateName)
 	if err != nil {
 		return err
 	}
 
-	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, cloudFormationClient)
+	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN)
 	if err != nil {
 		return err
 	}
@@ -129,8 +112,8 @@ func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stack
 	return nil
 }
 
-func (c UpdateLBs) checkFastFails(stackName string, lbType string, cloudFormationClient cloudformation.Client) error {
-	stackExists, err := c.infrastructureManager.Exists(stackName, cloudFormationClient)
+func (c UpdateLBs) checkFastFails(stackName string, lbType string) error {
+	stackExists, err := c.infrastructureManager.Exists(stackName)
 	if err != nil {
 		return err
 	}

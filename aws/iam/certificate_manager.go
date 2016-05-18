@@ -18,15 +18,15 @@ type Certificate struct {
 }
 
 type certificateUploader interface {
-	Upload(certificatePath, privateKeyPath string, iamClient Client) (string, error)
+	Upload(certificatePath, privateKeyPath string) (string, error)
 }
 
 type certificateDescriber interface {
-	Describe(certificateName string, iamClient Client) (Certificate, error)
+	Describe(certificateName string) (Certificate, error)
 }
 
 type certificateDeleter interface {
-	Delete(certificateName string, iamClient Client) error
+	Delete(certificateName string) error
 }
 
 func NewCertificateManager(certificateUploader certificateUploader, certificateDescriber certificateDescriber, certificateDeleter certificateDeleter) CertificateManager {
@@ -37,15 +37,15 @@ func NewCertificateManager(certificateUploader certificateUploader, certificateD
 	}
 }
 
-func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath string, iamClient Client) (string, error) {
+func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath string) (string, error) {
 	if name == "" {
-		return c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
+		return c.certificateUploader.Upload(certificatePath, privateKeyPath)
 	}
 
-	remoteCertificate, err := c.certificateDescriber.Describe(name, iamClient)
+	remoteCertificate, err := c.certificateDescriber.Describe(name)
 
 	if err == CertificateNotFound {
-		return c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
+		return c.certificateUploader.Upload(certificatePath, privateKeyPath)
 	}
 
 	if err != nil {
@@ -60,31 +60,31 @@ func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath
 	trimmedLocalCertificateBody := strings.TrimSpace(string(localCertificateBody))
 
 	if remoteCertificate.Body != trimmedLocalCertificateBody {
-		return c.overwriteCertificate(name, certificatePath, privateKeyPath, iamClient)
+		return c.overwriteCertificate(name, certificatePath, privateKeyPath)
 	}
 
 	return name, nil
 }
 
-func (c CertificateManager) Create(certificatePath, privateKeyPath string, iamClient Client) (string, error) {
-	return c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
+func (c CertificateManager) Create(certificatePath, privateKeyPath string) (string, error) {
+	return c.certificateUploader.Upload(certificatePath, privateKeyPath)
 }
 
-func (c CertificateManager) Delete(certificateName string, iamClient Client) error {
-	return c.certificateDeleter.Delete(certificateName, iamClient)
+func (c CertificateManager) Delete(certificateName string) error {
+	return c.certificateDeleter.Delete(certificateName)
 }
 
-func (c CertificateManager) Describe(certificateName string, iamClient Client) (Certificate, error) {
-	return c.certificateDescriber.Describe(certificateName, iamClient)
+func (c CertificateManager) Describe(certificateName string) (Certificate, error) {
+	return c.certificateDescriber.Describe(certificateName)
 }
 
-func (c CertificateManager) overwriteCertificate(name, certificatePath, privateKeyPath string, iamClient Client) (string, error) {
-	err := c.certificateDeleter.Delete(name, iamClient)
+func (c CertificateManager) overwriteCertificate(name, certificatePath, privateKeyPath string) (string, error) {
+	err := c.certificateDeleter.Delete(name)
 	if err != nil {
 		return "", err
 	}
 
-	certificateName, err := c.certificateUploader.Upload(certificatePath, privateKeyPath, iamClient)
+	certificateName, err := c.certificateUploader.Upload(certificatePath, privateKeyPath)
 	if err != nil {
 		return "", err
 	}

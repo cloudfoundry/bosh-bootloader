@@ -6,19 +6,21 @@ import (
 )
 
 type KeyPairDeleter struct {
+	client Client
 	logger logger
 }
 
-func NewKeyPairDeleter(logger logger) KeyPairDeleter {
+func NewKeyPairDeleter(client Client, logger logger) KeyPairDeleter {
 	return KeyPairDeleter{
+		client: client,
 		logger: logger,
 	}
 }
 
-func (d KeyPairDeleter) Delete(client Client, name string) error {
+func (d KeyPairDeleter) Delete(name string) error {
 	d.logger.Step("deleting keypair")
 
-	_, err := client.DeleteKeyPair(&ec2.DeleteKeyPairInput{
+	_, err := d.client.DeleteKeyPair(&ec2.DeleteKeyPairInput{
 		KeyName: aws.String(name),
 	})
 	if err != nil {

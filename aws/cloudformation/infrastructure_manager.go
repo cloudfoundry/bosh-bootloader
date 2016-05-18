@@ -11,11 +11,11 @@ type templateBuilder interface {
 }
 
 type stackManager interface {
-	CreateOrUpdate(client Client, stackName string, template templates.Template) error
-	Update(client Client, stackName string, template templates.Template) error
-	WaitForCompletion(client Client, stackName string, sleepInterval time.Duration, action string) error
-	Describe(client Client, stackName string) (Stack, error)
-	Delete(client Client, stackName string) error
+	CreateOrUpdate(stackName string, template templates.Template) error
+	Update(stackName string, template templates.Template) error
+	WaitForCompletion(stackName string, sleepInterval time.Duration, action string) error
+	Describe(stackName string) (Stack, error)
+	Delete(stackName string) error
 }
 
 type InfrastructureManager struct {
@@ -30,36 +30,36 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 	}
 }
 
-func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string, cloudFormationClient Client) (Stack, error) {
+func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string) (Stack, error) {
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
 
-	if err := m.stackManager.CreateOrUpdate(cloudFormationClient, stackName, template); err != nil {
+	if err := m.stackManager.CreateOrUpdate(stackName, template); err != nil {
 		return Stack{}, err
 	}
 
-	if err := m.stackManager.WaitForCompletion(cloudFormationClient, stackName, 15*time.Second, "applying cloudformation template"); err != nil {
+	if err := m.stackManager.WaitForCompletion(stackName, 15*time.Second, "applying cloudformation template"); err != nil {
 		return Stack{}, err
 	}
 
-	return m.stackManager.Describe(cloudFormationClient, stackName)
+	return m.stackManager.Describe(stackName)
 }
 
-func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string, cloudFormationClient Client) (Stack, error) {
+func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string) (Stack, error) {
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
 
-	if err := m.stackManager.Update(cloudFormationClient, stackName, template); err != nil {
+	if err := m.stackManager.Update(stackName, template); err != nil {
 		return Stack{}, err
 	}
 
-	if err := m.stackManager.WaitForCompletion(cloudFormationClient, stackName, 15*time.Second, "applying cloudformation template"); err != nil {
+	if err := m.stackManager.WaitForCompletion(stackName, 15*time.Second, "applying cloudformation template"); err != nil {
 		return Stack{}, err
 	}
 
-	return m.stackManager.Describe(cloudFormationClient, stackName)
+	return m.stackManager.Describe(stackName)
 }
 
-func (m InfrastructureManager) Exists(stackName string, cloudFormationClient Client) (bool, error) {
-	_, err := m.stackManager.Describe(cloudFormationClient, stackName)
+func (m InfrastructureManager) Exists(stackName string) (bool, error) {
+	_, err := m.stackManager.Describe(stackName)
 
 	switch err {
 	case nil:
@@ -71,17 +71,17 @@ func (m InfrastructureManager) Exists(stackName string, cloudFormationClient Cli
 	}
 }
 
-func (m InfrastructureManager) Describe(client Client, stackName string) (Stack, error) {
-	return m.stackManager.Describe(client, stackName)
+func (m InfrastructureManager) Describe(stackName string) (Stack, error) {
+	return m.stackManager.Describe(stackName)
 }
 
-func (m InfrastructureManager) Delete(client Client, stackName string) error {
-	err := m.stackManager.Delete(client, stackName)
+func (m InfrastructureManager) Delete(stackName string) error {
+	err := m.stackManager.Delete(stackName)
 	if err != nil {
 		return err
 	}
 
-	err = m.stackManager.WaitForCompletion(client, stackName, 15*time.Second, "deleting cloudformation stack")
+	err = m.stackManager.WaitForCompletion(stackName, 15*time.Second, "deleting cloudformation stack")
 	if err != nil && err != StackNotFound {
 		return err
 	}

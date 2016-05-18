@@ -22,7 +22,7 @@ type LoadBalancerCertificateManager struct {
 	}
 }
 
-func (l *LoadBalancerCertificateManager) Create(input iam.CertificateCreateInput, iamClient iam.Client) (iam.CertificateCreateOutput, error) {
+func (l *LoadBalancerCertificateManager) Create(input iam.CertificateCreateInput) (iam.CertificateCreateOutput, error) {
 	l.CreateCall.Receives.Input = input
 	return l.CreateCall.Returns.Output, l.CreateCall.Returns.Error
 }

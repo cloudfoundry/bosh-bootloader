@@ -14,11 +14,9 @@ var _ = Describe("KeyPairSynchronizer", func() {
 	var (
 		synchronizer   ec2.KeyPairSynchronizer
 		keyPairManager *fakes.KeyPairManager
-		ec2Client      *fakes.EC2Client
 	)
 
 	BeforeEach(func() {
-		ec2Client = &fakes.EC2Client{}
 		keyPairManager = &fakes.KeyPairManager{}
 		keyPairManager.SyncCall.Returns.KeyPair = ec2.KeyPair{
 			Name:       "updated-keypair-name",
@@ -34,10 +32,9 @@ var _ = Describe("KeyPairSynchronizer", func() {
 			Name:       "some-keypair-name",
 			PrivateKey: "some-private-key",
 			PublicKey:  "some-public-key",
-		}, ec2Client)
+		})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(keyPairManager.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
 		Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 			Name:       "some-keypair-name",
 			PrivateKey: "some-private-key",
@@ -56,7 +53,7 @@ var _ = Describe("KeyPairSynchronizer", func() {
 			It("returns an error", func() {
 				keyPairManager.SyncCall.Returns.Error = errors.New("failed to sync")
 
-				_, err := synchronizer.Sync(ec2.KeyPair{}, ec2Client)
+				_, err := synchronizer.Sync(ec2.KeyPair{})
 				Expect(err).To(MatchError("failed to sync"))
 			})
 		})

@@ -21,7 +21,7 @@ var _ = Describe("Describer", func() {
 
 	BeforeEach(func() {
 		elbClient = &fakes.ELBClient{}
-		describer = elb.NewDescriber()
+		describer = elb.NewDescriber(elbClient)
 	})
 
 	Describe("Describe", func() {
@@ -41,7 +41,7 @@ var _ = Describe("Describer", func() {
 				},
 			}
 
-			instances, err := describer.Describe("some-elb-name", elbClient)
+			instances, err := describer.Describe("some-elb-name")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(*elbClient.DescribeLoadBalancersCall.Receives.Input).To(Equal(
@@ -58,7 +58,7 @@ var _ = Describe("Describer", func() {
 			It("returns an error when the load balancer cannot be described", func() {
 				elbClient.DescribeLoadBalancersCall.Returns.Error = errors.New("something bad happened")
 
-				_, err := describer.Describe("some-elb-name", elbClient)
+				_, err := describer.Describe("some-elb-name")
 				Expect(err).To(MatchError("something bad happened"))
 			})
 		})

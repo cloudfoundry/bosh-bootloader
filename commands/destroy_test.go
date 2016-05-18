@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
@@ -23,25 +22,16 @@ var _ = Describe("Destroy", func() {
 		boshDeleter           *fakes.BOSHDeleter
 		stackManager          *fakes.StackManager
 		infrastructureManager *fakes.InfrastructureManager
-		cloudFormationClient  *fakes.CloudFormationClient
-		clientProvider        *fakes.ClientProvider
 		vpcStatusChecker      *fakes.VPCStatusChecker
 		stringGenerator       *fakes.StringGenerator
 		logger                *fakes.Logger
 		keyPairDeleter        *fakes.KeyPairDeleter
-		ec2Client             *fakes.EC2Client
 		stdin                 *bytes.Buffer
 	)
 
 	BeforeEach(func() {
 		stdin = bytes.NewBuffer([]byte{})
 		logger = &fakes.Logger{}
-
-		cloudFormationClient = &fakes.CloudFormationClient{}
-		ec2Client = &fakes.EC2Client{}
-		clientProvider = &fakes.ClientProvider{}
-		clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
-		clientProvider.EC2ClientCall.Returns.Client = ec2Client
 
 		vpcStatusChecker = &fakes.VPCStatusChecker{}
 		stackManager = &fakes.StackManager{}
@@ -50,7 +40,7 @@ var _ = Describe("Destroy", func() {
 		keyPairDeleter = &fakes.KeyPairDeleter{}
 		stringGenerator = &fakes.StringGenerator{}
 
-		destroy = commands.NewDestroy(logger, stdin, boshDeleter, clientProvider, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
+		destroy = commands.NewDestroy(logger, stdin, boshDeleter, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	})
 
 	Describe("Execute", func() {
@@ -149,7 +139,6 @@ var _ = Describe("Destroy", func() {
 				Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
 
 				Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
-				Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.Client).To(Equal(ec2Client))
 			})
 
 			It("invokes bosh-init delete", func() {
@@ -169,14 +158,6 @@ var _ = Describe("Destroy", func() {
 				_, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
-					AccessKeyID:      "some-access-key-id",
-					SecretAccessKey:  "some-secret-access-key",
-					Region:           "some-aws-region",
-					EndpointOverride: "some-endpoint",
-				}))
-
-				Expect(stackManager.DescribeCall.Receives.Client).To(Equal(cloudFormationClient))
 				Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
 				Expect(boshDeleter.DeleteCall.Receives.BOSHInitManifest).To(Equal("bosh-init-manifest"))
@@ -188,7 +169,6 @@ var _ = Describe("Destroy", func() {
 				_, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(infrastructureManager.DeleteCall.Receives.Client).To(Equal(cloudFormationClient))
 				Expect(infrastructureManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
 			})
 
@@ -196,14 +176,6 @@ var _ = Describe("Destroy", func() {
 				_, err := destroy.Execute(flags, []string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
-					AccessKeyID:      "some-access-key-id",
-					SecretAccessKey:  "some-secret-access-key",
-					Region:           "some-aws-region",
-					EndpointOverride: "some-endpoint",
-				}))
-
-				Expect(keyPairDeleter.DeleteCall.Receives.Client).To(Equal(ec2Client))
 				Expect(keyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
 			})
 

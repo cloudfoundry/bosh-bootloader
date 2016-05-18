@@ -9,7 +9,6 @@ type CertificateDescriber struct {
 		CallCount int
 		Receives  struct {
 			CertificateName string
-			IAMClient       iam.Client
 		}
 		Returns struct {
 			Certificate iam.Certificate
@@ -18,9 +17,8 @@ type CertificateDescriber struct {
 	}
 }
 
-func (c *CertificateDescriber) Describe(certificateName string, iamClient iam.Client) (iam.Certificate, error) {
+func (c *CertificateDescriber) Describe(certificateName string) (iam.Certificate, error) {
 	c.DescribeCall.CallCount++
 	c.DescribeCall.Receives.CertificateName = certificateName
-	c.DescribeCall.Receives.IAMClient = iamClient
 	return c.DescribeCall.Returns.Certificate, c.DescribeCall.Returns.Error
 }

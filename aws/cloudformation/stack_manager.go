@@ -20,33 +20,35 @@ type logger interface {
 }
 
 type StackManager struct {
-	logger logger
+	cloudFormationClient Client
+	logger               logger
 }
 
-func NewStackManager(logger logger) StackManager {
+func NewStackManager(cloudFormationClient Client, logger logger) StackManager {
 	return StackManager{
-		logger: logger,
+		cloudFormationClient: cloudFormationClient,
+		logger:               logger,
 	}
 }
 
-func (s StackManager) CreateOrUpdate(client Client, name string, template templates.Template) error {
-	_, err := s.Describe(client, name)
+func (s StackManager) CreateOrUpdate(name string, template templates.Template) error {
+	_, err := s.Describe(name)
 	switch err {
 	case StackNotFound:
-		return s.create(client, name, template)
+		return s.create(name, template)
 	case nil:
-		return s.Update(client, name, template)
+		return s.Update(name, template)
 	default:
 		return err
 	}
 }
 
-func (s StackManager) Describe(client Client, name string) (Stack, error) {
+func (s StackManager) Describe(name string) (Stack, error) {
 	if name == "" {
 		return Stack{}, StackNotFound
 	}
 
-	output, err := client.DescribeStacks(&cloudformation.DescribeStacksInput{
+	output, err := s.cloudFormationClient.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
 	if err != nil {
@@ -97,8 +99,8 @@ func (s StackManager) Describe(client Client, name string) (Stack, error) {
 	return Stack{}, StackNotFound
 }
 
-func (s StackManager) WaitForCompletion(client Client, name string, sleepInterval time.Duration, action string) error {
-	stack, err := s.Describe(client, name)
+func (s StackManager) WaitForCompletion(name string, sleepInterval time.Duration, action string) error {
+	stack, err := s.Describe(name)
 	if err != nil {
 		if err == StackNotFound {
 			s.logger.Step(fmt.Sprintf("finished %s", action))
@@ -126,16 +128,16 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 	default:
 		s.logger.Dot()
 		time.Sleep(sleepInterval)
-		return s.WaitForCompletion(client, name, sleepInterval, action)
+		return s.WaitForCompletion(name, sleepInterval, action)
 	}
 
 	return nil
 }
 
-func (s StackManager) Delete(client Client, name string) error {
+func (s StackManager) Delete(name string) error {
 	s.logger.Step("deleting cloudformation stack")
 
-	_, err := client.DeleteStack(&cloudformation.DeleteStackInput{
+	_, err := s.cloudFormationClient.DeleteStack(&cloudformation.DeleteStackInput{
 		StackName: &name,
 	})
 	if err != nil {
@@ -145,7 +147,7 @@ func (s StackManager) Delete(client Client, name string) error {
 	return nil
 }
 
-func (s StackManager) create(client Client, name string, template templates.Template) error {
+func (s StackManager) create(name string, template templates.Template) error {
 	s.logger.Step("creating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -159,7 +161,7 @@ func (s StackManager) create(client Client, name string, template templates.Temp
 		TemplateBody: aws.String(string(templateJson)),
 	}
 
-	_, err = client.CreateStack(params)
+	_, err = s.cloudFormationClient.CreateStack(params)
 	if err != nil {
 		return err
 	}
@@ -167,7 +169,7 @@ func (s StackManager) create(client Client, name string, template templates.Temp
 	return nil
 }
 
-func (s StackManager) Update(client Client, name string, template templates.Template) error {
+func (s StackManager) Update(name string, template templates.Template) error {
 	s.logger.Step("updating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -181,7 +183,7 @@ func (s StackManager) Update(client Client, name string, template templates.Temp
 		TemplateBody: aws.String(string(templateJson)),
 	}
 
-	_, err = client.UpdateStack(params)
+	_, err = s.cloudFormationClient.UpdateStack(params)
 	if err != nil {
 		switch err.(type) {
 		case awserr.RequestFailure:

@@ -10,7 +10,6 @@ import (
 type StackManager struct {
 	DescribeCall struct {
 		Receives struct {
-			Client    cloudformation.Client
 			StackName string
 		}
 		Returns struct {
@@ -23,7 +22,6 @@ type StackManager struct {
 		Receives struct {
 			StackName string
 			Template  templates.Template
-			Client    cloudformation.Client
 		}
 		Returns struct {
 			Error error
@@ -34,7 +32,6 @@ type StackManager struct {
 		Receives struct {
 			StackName string
 			Template  templates.Template
-			Client    cloudformation.Client
 		}
 		Returns struct {
 			Error error
@@ -43,7 +40,6 @@ type StackManager struct {
 
 	WaitForCompletionCall struct {
 		Receives struct {
-			Client        cloudformation.Client
 			StackName     string
 			SleepInterval time.Duration
 			Action        string
@@ -55,7 +51,6 @@ type StackManager struct {
 
 	DeleteCall struct {
 		Receives struct {
-			Client    cloudformation.Client
 			StackName string
 		}
 		Returns struct {
@@ -64,24 +59,21 @@ type StackManager struct {
 	}
 }
 
-func (m *StackManager) CreateOrUpdate(client cloudformation.Client, stackName string, template templates.Template) error {
-	m.CreateOrUpdateCall.Receives.Client = client
+func (m *StackManager) CreateOrUpdate(stackName string, template templates.Template) error {
 	m.CreateOrUpdateCall.Receives.StackName = stackName
 	m.CreateOrUpdateCall.Receives.Template = template
 
 	return m.CreateOrUpdateCall.Returns.Error
 }
 
-func (m *StackManager) Update(client cloudformation.Client, stackName string, template templates.Template) error {
-	m.UpdateCall.Receives.Client = client
+func (m *StackManager) Update(stackName string, template templates.Template) error {
 	m.UpdateCall.Receives.StackName = stackName
 	m.UpdateCall.Receives.Template = template
 
 	return m.UpdateCall.Returns.Error
 }
 
-func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName string, sleepInterval time.Duration, action string) error {
-	m.WaitForCompletionCall.Receives.Client = client
+func (m *StackManager) WaitForCompletion(stackName string, sleepInterval time.Duration, action string) error {
 	m.WaitForCompletionCall.Receives.StackName = stackName
 	m.WaitForCompletionCall.Receives.SleepInterval = sleepInterval
 	m.WaitForCompletionCall.Receives.Action = action
@@ -89,15 +81,13 @@ func (m *StackManager) WaitForCompletion(client cloudformation.Client, stackName
 	return m.WaitForCompletionCall.Returns.Error
 }
 
-func (m *StackManager) Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error) {
-	m.DescribeCall.Receives.Client = client
+func (m *StackManager) Describe(stackName string) (cloudformation.Stack, error) {
 	m.DescribeCall.Receives.StackName = stackName
 
 	return m.DescribeCall.Returns.Stack, m.DescribeCall.Returns.Error
 }
 
-func (m *StackManager) Delete(client cloudformation.Client, stackName string) error {
-	m.DeleteCall.Receives.Client = client
+func (m *StackManager) Delete(stackName string) error {
 	m.DeleteCall.Receives.StackName = stackName
 
 	return m.DeleteCall.Returns.Error

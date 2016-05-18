@@ -23,7 +23,7 @@ var _ = Describe("KeyPairCreator", func() {
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
 		uuidGenerator = &fakes.UUIDGenerator{}
-		keyPairCreator = ec2.NewKeyPairCreator(uuidGenerator)
+		keyPairCreator = ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
 	})
 
 	Describe("Create", func() {
@@ -35,7 +35,7 @@ var _ = Describe("KeyPairCreator", func() {
 			}
 			uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{{String: "guid"}}
 
-			keyPair, err := keyPairCreator.Create(ec2Client)
+			keyPair, err := keyPairCreator.Create()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(keyPair.Name).To(Equal("keypair-guid"))
@@ -53,9 +53,9 @@ var _ = Describe("KeyPairCreator", func() {
 				})
 
 				It("returns an error", func() {
-					keyPairCreator = ec2.NewKeyPairCreator(uuidGenerator)
+					keyPairCreator = ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
 
-					_, err := keyPairCreator.Create(ec2Client)
+					_, err := keyPairCreator.Create()
 					Expect(err).To(MatchError("failed to generate guid"))
 				})
 			})
@@ -67,7 +67,7 @@ var _ = Describe("KeyPairCreator", func() {
 				It("returns an error", func() {
 					ec2Client.CreateKeyPairCall.Returns.Error = errors.New("failed to create keypair")
 
-					_, err := keyPairCreator.Create(ec2Client)
+					_, err := keyPairCreator.Create()
 					Expect(err).To(MatchError("failed to create keypair"))
 				})
 			})

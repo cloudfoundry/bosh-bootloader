@@ -22,11 +22,11 @@ var _ = Describe("KeyPairDeleter", func() {
 	BeforeEach(func() {
 		client = &fakes.EC2Client{}
 		logger = &fakes.Logger{}
-		deleter = ec2.NewKeyPairDeleter(logger)
+		deleter = ec2.NewKeyPairDeleter(client, logger)
 	})
 
 	It("deletes the ec2 keypair", func() {
-		err := deleter.Delete(client, "some-key-pair-name")
+		err := deleter.Delete("some-key-pair-name")
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(client.DeleteKeyPairCall.Receives.Input).To(Equal(&awsec2.DeleteKeyPairInput{
@@ -41,7 +41,7 @@ var _ = Describe("KeyPairDeleter", func() {
 			It("returns an error", func() {
 				client.DeleteKeyPairCall.Returns.Error = errors.New("failed to delete keypair")
 
-				err := deleter.Delete(client, "some-key-pair-name")
+				err := deleter.Delete("some-key-pair-name")
 				Expect(err).To(MatchError("failed to delete keypair"))
 			})
 		})

@@ -13,13 +13,11 @@ import (
 
 var _ = Describe("LoadBalancerCertificateManager", func() {
 	var (
-		iamClient            *fakes.IAMClient
 		certificateManager   *fakes.CertificateManager
 		lbCertificateManager iam.LoadBalancerCertificateManager
 	)
 
 	BeforeEach(func() {
-		iamClient = &fakes.IAMClient{}
 		certificateManager = &fakes.CertificateManager{}
 		lbCertificateManager = iam.NewLoadBalancerCertificateManager(certificateManager)
 	})
@@ -37,7 +35,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 						DesiredLBType: "some-lb-type",
 						CertPath:      "some-cert-path",
 						KeyPath:       "some-key-path",
-					}, iamClient)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(certificateManager.CreateOrUpdateCall.Receives.Certificate).To(Equal("some-cert-path"))
@@ -54,7 +52,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 				It("does not upload a cert and key", func() {
 					_, err := lbCertificateManager.Create(iam.CertificateCreateInput{
 						DesiredLBType: "some-lb-type",
-					}, iamClient)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(certificateManager.CreateOrUpdateCall.CallCount).To(Equal(0))
@@ -69,7 +67,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 					DesiredLBType:          "none",
 					CertPath:               "some-cert-path",
 					KeyPath:                "some-key-path",
-				}, iamClient)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(output).To(Equal(iam.CertificateCreateOutput{
@@ -86,7 +84,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 						DesiredLBType:          "none",
 						CertPath:               "some-cert-path",
 						KeyPath:                "some-key-path",
-					}, iamClient)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(output).To(Equal(iam.CertificateCreateOutput{
@@ -107,7 +105,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 					DesiredLBType: "some-lb-type",
 					CertPath:      "some-cert-path",
 					KeyPath:       "some-key-path",
-				}, iamClient)
+				})
 				Expect(err).To(MatchError("failed to create certificate"))
 			})
 
@@ -119,7 +117,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 					DesiredLBType:          "none",
 					CertPath:               "some-cert-path",
 					KeyPath:                "some-key-path",
-				}, iamClient)
+				})
 				Expect(err).To(MatchError("failed to delete certificate"))
 			})
 
@@ -129,7 +127,7 @@ var _ = Describe("LoadBalancerCertificateManager", func() {
 				_, err := lbCertificateManager.Create(iam.CertificateCreateInput{
 					CurrentCertificateName: "some-non-existant-certificate",
 					CurrentLBType:          "some-lb-type",
-				}, iamClient)
+				})
 				Expect(err).To(MatchError("failed to describe certificate"))
 			})
 		})

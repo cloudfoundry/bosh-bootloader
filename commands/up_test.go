@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
@@ -25,11 +24,6 @@ var _ = Describe("Up", func() {
 			boshDeployer                   *fakes.BOSHDeployer
 			infrastructureManager          *fakes.InfrastructureManager
 			keyPairSynchronizer            *fakes.KeyPairSynchronizer
-			cloudFormationClient           *fakes.CloudFormationClient
-			ec2Client                      *fakes.EC2Client
-			elbClient                      *fakes.ELBClient
-			iamClient                      *fakes.IAMClient
-			clientProvider                 *fakes.ClientProvider
 			stringGenerator                *fakes.StringGenerator
 			cloudConfigurator              *fakes.BoshCloudConfigurator
 			availabilityZoneRetriever      *fakes.AvailabilityZoneRetriever
@@ -73,17 +67,6 @@ var _ = Describe("Up", func() {
 				BOSHInitManifest: "name: bosh",
 			}
 
-			cloudFormationClient = &fakes.CloudFormationClient{}
-			ec2Client = &fakes.EC2Client{}
-			elbClient = &fakes.ELBClient{}
-			iamClient = &fakes.IAMClient{}
-
-			clientProvider = &fakes.ClientProvider{}
-			clientProvider.CloudFormationClientCall.Returns.Client = cloudFormationClient
-			clientProvider.EC2ClientCall.Returns.Client = ec2Client
-			clientProvider.ELBClientCall.Returns.Client = elbClient
-			clientProvider.IAMClientCall.Returns.Client = iamClient
-
 			stringGenerator = &fakes.StringGenerator{}
 			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
 				return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
@@ -103,7 +86,7 @@ var _ = Describe("Up", func() {
 			}
 
 			command = commands.NewUp(
-				infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
+				infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
 			)
 
@@ -147,13 +130,6 @@ var _ = Describe("Up", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(clientProvider.EC2ClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-aws-region",
-				EndpointOverride: "some-endpoint",
-			}))
-			Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
 			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
 				PrivateKey: "some-private-key",
@@ -188,14 +164,6 @@ var _ = Describe("Up", func() {
 
 			_, err := command.Execute(globalFlags, []string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(clientProvider.CloudFormationClientCall.Receives.Config).To(Equal(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-aws-region",
-				EndpointOverride: "some-endpoint",
-			}))
-
 			Expect(stackNameWasGenerated).To(BeTrue())
 
 			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("bbl-aws-some-random-string"))
@@ -414,14 +382,13 @@ var _ = Describe("Up", func() {
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(keyPairSynchronizer.SyncCall.Receives.EC2Client).To(Equal(ec2Client))
 				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{}))
 			})
 		})
 
 		Describe("cloud configurator", func() {
 			BeforeEach(func() {
-				infrastructureManager.CreateCall.Stub = func(keyPairName string, numberOfAZs int, stackName string, lbType string, client cloudformation.Client) (cloudformation.Stack, error) {
+				infrastructureManager.CreateCall.Stub = func(keyPairName string, numberOfAZs int, stackName string, lbType string) (cloudformation.Stack, error) {
 					stack := cloudformation.Stack{
 						Name: "bbl-aws-some-random-string",
 						Outputs: map[string]string{
@@ -827,7 +794,6 @@ var _ = Describe("Up", func() {
 					},
 				})
 
-				Expect(infrastructureManager.ExistsCall.Receives.Client).To(Equal(cloudFormationClient))
 				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack-name"))
 
 				Expect(err).To(MatchError("Found BOSH data in state directory, " +
@@ -889,8 +855,8 @@ var _ = Describe("Up", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = commands.NewUp(
-					infrastructureManager, keyPairSynchronizer, clientProvider, boshDeployer,
-					stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager)
+					infrastructureManager, keyPairSynchronizer, boshDeployer, stringGenerator, cloudConfigurator,
+					availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager)
 
 				_, err := command.Execute(globalFlags, []string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))

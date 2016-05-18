@@ -29,7 +29,7 @@ var _ = Describe("StackManager", func() {
 	BeforeEach(func() {
 		cloudFormationClient = &fakes.CloudFormationClient{}
 		logger = &fakes.Logger{}
-		manager = cloudformation.NewStackManager(logger)
+		manager = cloudformation.NewStackManager(cloudFormationClient, logger)
 	})
 
 	Describe("Describe", func() {
@@ -44,7 +44,7 @@ var _ = Describe("StackManager", func() {
 					}},
 				}},
 			}
-			stack, err := manager.Describe(cloudFormationClient, "some-stack-name")
+			stack, err := manager.Describe("some-stack-name")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
@@ -63,13 +63,13 @@ var _ = Describe("StackManager", func() {
 			Context("when there is a response error", func() {
 				It("returns an error when the RequestFailure response is not a 'StackNotFound'", func() {
 					cloudFormationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("ValidationError", "something bad happened", errors.New("")), 400, "0")
-					_, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					_, err := manager.Describe("some-stack-name")
 					Expect(err).To(MatchError(ContainSubstring("something bad happened")))
 				})
 
 				It("returns an error when the response is an unknown error", func() {
 					cloudFormationClient.DescribeStacksCall.Returns.Error = errors.New("an unknown error occurred")
-					_, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					_, err := manager.Describe("some-stack-name")
 					Expect(err).To(MatchError(ContainSubstring("an unknown error occurred")))
 				})
 			})
@@ -89,7 +89,7 @@ var _ = Describe("StackManager", func() {
 						},
 					}
 
-					_, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					_, err := manager.Describe("some-stack-name")
 					Expect(err).To(MatchError("failed to parse outputs"))
 				})
 
@@ -113,7 +113,7 @@ var _ = Describe("StackManager", func() {
 						},
 					}
 
-					stack, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					stack, err := manager.Describe("some-stack-name")
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(stack.Outputs["first-key"]).To(Equal(""))
@@ -124,13 +124,13 @@ var _ = Describe("StackManager", func() {
 			It("returns a StackNotFound error when the stack doesn't exist", func() {
 				stackName := fmt.Sprintf("some-stack-name-%d", rand.Int())
 				cloudFormationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("ValidationError", fmt.Sprintf("Stack with id %s does not exist", stackName), errors.New("")), 400, "0")
-				_, err := manager.Describe(cloudFormationClient, stackName)
+				_, err := manager.Describe(stackName)
 				Expect(err).To(MatchError(cloudformation.StackNotFound))
 			})
 
 			It("returns a StackNotFound error when the stack name is empty", func() {
 				cloudFormationClient.DescribeStacksCall.Returns.Error = awserr.NewRequestFailure(awserr.New("", "", errors.New("")), 400, "0")
-				_, err := manager.Describe(cloudFormationClient, "")
+				_, err := manager.Describe("")
 				Expect(err).To(MatchError(cloudformation.StackNotFound))
 
 				Expect(cloudFormationClient.DescribeStacksCall.CallCount).To(Equal(0))
@@ -142,7 +142,7 @@ var _ = Describe("StackManager", func() {
 						Stacks: []*awscloudformation.Stack{},
 					}
 
-					_, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					_, err := manager.Describe("some-stack-name")
 					Expect(err).To(MatchError(cloudformation.StackNotFound))
 				})
 			})
@@ -160,7 +160,7 @@ var _ = Describe("StackManager", func() {
 							},
 						},
 					}
-					stack, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					stack, err := manager.Describe("some-stack-name")
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
@@ -187,7 +187,7 @@ var _ = Describe("StackManager", func() {
 							},
 						},
 					}
-					stack, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					stack, err := manager.Describe("some-stack-name")
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
@@ -214,7 +214,7 @@ var _ = Describe("StackManager", func() {
 							},
 						},
 					}
-					stack, err := manager.Describe(cloudFormationClient, "some-stack-name")
+					stack, err := manager.Describe("some-stack-name")
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
@@ -248,7 +248,7 @@ var _ = Describe("StackManager", func() {
 		})
 
 		It("updates the stack if the stack exists", func() {
-			err := manager.Update(cloudFormationClient, "some-stack-name", template)
+			err := manager.Update("some-stack-name", template)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
@@ -263,7 +263,7 @@ var _ = Describe("StackManager", func() {
 		It("does not return an error when no updates are to be performed", func() {
 			cloudFormationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("ValidationError", "No updates are to be performed.", errors.New("")), 400, "0")
 
-			err := manager.Update(cloudFormationClient, "some-stack-name", template)
+			err := manager.Update("some-stack-name", template)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -272,7 +272,7 @@ var _ = Describe("StackManager", func() {
 				It("returns error", func() {
 					cloudFormationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("ValidationError", "something bad happened", errors.New("")), 400, "0")
 
-					err := manager.Update(cloudFormationClient, "some-stack-name", template)
+					err := manager.Update("some-stack-name", template)
 					Expect(err).To(MatchError(ContainSubstring("something bad happened")))
 				})
 			})
@@ -281,7 +281,7 @@ var _ = Describe("StackManager", func() {
 				It("returns error", func() {
 					cloudFormationClient.UpdateStackCall.Returns.Error = errors.New("an unknown error has occurred")
 
-					err := manager.Update(cloudFormationClient, "some-stack-name", template)
+					err := manager.Update("some-stack-name", template)
 					Expect(err).To(MatchError("an unknown error has occurred"))
 				})
 			})
@@ -291,7 +291,7 @@ var _ = Describe("StackManager", func() {
 					stackName := fmt.Sprintf("some-stack-name-%d", rand.Int())
 					cloudFormationClient.UpdateStackCall.Returns.Error = awserr.NewRequestFailure(awserr.New("ValidationError", fmt.Sprintf("Stack [%s] does not exist", stackName), errors.New("")), 400, "0")
 
-					err := manager.Update(cloudFormationClient, stackName, template)
+					err := manager.Update(stackName, template)
 					Expect(err).To(Equal(cloudformation.StackNotFound))
 				})
 			})
@@ -334,7 +334,7 @@ var _ = Describe("StackManager", func() {
 			templateJson, err := json.Marshal(&template)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = manager.CreateOrUpdate(cloudFormationClient, "some-stack-name", template)
+			err = manager.CreateOrUpdate("some-stack-name", template)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
@@ -351,7 +351,7 @@ var _ = Describe("StackManager", func() {
 		})
 
 		It("updates the stack if the stack exists", func() {
-			err := manager.CreateOrUpdate(cloudFormationClient, "some-stack-name", template)
+			err := manager.CreateOrUpdate("some-stack-name", template)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.UpdateStackCall.CallCount).To(Equal(1))
@@ -362,7 +362,7 @@ var _ = Describe("StackManager", func() {
 			It("returns an error when the stack fails to update", func() {
 				cloudFormationClient.UpdateStackCall.Returns.Error = errors.New("error updating stack")
 
-				err := manager.CreateOrUpdate(cloudFormationClient, "some-stack-name", template)
+				err := manager.CreateOrUpdate("some-stack-name", template)
 				Expect(err).To(MatchError("error updating stack"))
 			})
 
@@ -373,7 +373,7 @@ var _ = Describe("StackManager", func() {
 					Description: "testing template",
 				}
 
-				err := manager.CreateOrUpdate(cloudFormationClient, "some-stack-name", template)
+				err := manager.CreateOrUpdate("some-stack-name", template)
 				Expect(err).To(MatchError("error describing stack"))
 			})
 
@@ -385,14 +385,14 @@ var _ = Describe("StackManager", func() {
 					Description: "testing template",
 				}
 
-				err := manager.CreateOrUpdate(cloudFormationClient, "some-stack-name", template)
+				err := manager.CreateOrUpdate("some-stack-name", template)
 				Expect(err).To(MatchError("error creating stack"))
 			})
 		})
 	})
 
 	Describe("WaitForCompletion", func() {
-		var stubDescribeStacksCall = func(startState string, endState string, cloudFormationClient *fakes.CloudFormationClient) {
+		var stubDescribeStacksCall = func(startState string, endState string) {
 			cloudFormationClient.DescribeStacksCall.Stub = func(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error) {
 				status := startState
 				if cloudFormationClient.DescribeStacksCall.CallCount > 2 {
@@ -411,9 +411,9 @@ var _ = Describe("StackManager", func() {
 		}
 
 		DescribeTable("waiting for a done state", func(startState, endState string, action string) {
-			stubDescribeStacksCall(startState, endState, cloudFormationClient)
+			stubDescribeStacksCall(startState, endState)
 
-			err := manager.WaitForCompletion(cloudFormationClient, "some-stack-name", 0*time.Millisecond, action)
+			err := manager.WaitForCompletion("some-stack-name", 0*time.Millisecond, action)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
@@ -435,9 +435,9 @@ var _ = Describe("StackManager", func() {
 		)
 
 		DescribeTable("waiting for a done state", func(startState, endState string, action string) {
-			stubDescribeStacksCall(startState, endState, cloudFormationClient)
+			stubDescribeStacksCall(startState, endState)
 
-			err := manager.WaitForCompletion(cloudFormationClient, "some-stack-name", 0*time.Millisecond, action)
+			err := manager.WaitForCompletion("some-stack-name", 0*time.Millisecond, action)
 			Expect(err).To(MatchError(`CloudFormation failure on stack 'some-stack-name'.
 Check the AWS console for error events related to this stack,
 and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues.`))
@@ -466,7 +466,7 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 			It("does not error", func() {
 				cloudFormationClient.DescribeStacksCall.Returns.Error = cloudformation.StackNotFound
 
-				err := manager.WaitForCompletion(cloudFormationClient, "some-stack-name", 0*time.Millisecond, "foo")
+				err := manager.WaitForCompletion("some-stack-name", 0*time.Millisecond, "foo")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger.StepCall.Receives.Message).To(Equal("finished foo"))
 			})
@@ -477,7 +477,7 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 				It("returns an error", func() {
 					cloudFormationClient.DescribeStacksCall.Returns.Error = errors.New("failed to describe stack")
 
-					err := manager.WaitForCompletion(cloudFormationClient, "some-stack-name", 0*time.Millisecond, "foo")
+					err := manager.WaitForCompletion("some-stack-name", 0*time.Millisecond, "foo")
 					Expect(err).To(MatchError("failed to describe stack"))
 				})
 			})
@@ -486,7 +486,7 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 
 	Describe("Delete", func() {
 		It("deletes the stack", func() {
-			err := manager.Delete(cloudFormationClient, "some-stack-name")
+			err := manager.Delete("some-stack-name")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.DeleteStackCall.Receives.Input).To(Equal(&awscloudformation.DeleteStackInput{
@@ -501,7 +501,7 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 				It("returns an error", func() {
 					cloudFormationClient.DeleteStackCall.Returns.Error = errors.New("failed to delete stack")
 
-					err := manager.Delete(cloudFormationClient, "some-stack-name")
+					err := manager.Delete("some-stack-name")
 					Expect(err).To(MatchError("failed to delete stack"))
 				})
 			})

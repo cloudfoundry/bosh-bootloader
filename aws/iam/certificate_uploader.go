@@ -13,14 +13,18 @@ type uuidGenerator interface {
 }
 
 type CertificateUploader struct {
+	iamClient     Client
 	uuidGenerator uuidGenerator
 }
 
-func NewCertificateUploader(uuidGenerator uuidGenerator) CertificateUploader {
-	return CertificateUploader{uuidGenerator: uuidGenerator}
+func NewCertificateUploader(iamClient Client, uuidGenerator uuidGenerator) CertificateUploader {
+	return CertificateUploader{
+		iamClient:     iamClient,
+		uuidGenerator: uuidGenerator,
+	}
 }
 
-func (c CertificateUploader) Upload(certificatePath, privateKeyPath string, iamClient Client) (string, error) {
+func (c CertificateUploader) Upload(certificatePath, privateKeyPath string) (string, error) {
 	certificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return "", err
@@ -38,7 +42,7 @@ func (c CertificateUploader) Upload(certificatePath, privateKeyPath string, iamC
 
 	newName := fmt.Sprintf("bbl-cert-%s", uuid)
 
-	_, err = iamClient.UploadServerCertificate(&awsiam.UploadServerCertificateInput{
+	_, err = c.iamClient.UploadServerCertificate(&awsiam.UploadServerCertificateInput{
 		CertificateBody:       aws.String(string(certificate)),
 		PrivateKey:            aws.String(string(privateKey)),
 		ServerCertificateName: aws.String(newName),

@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
@@ -15,23 +13,16 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-type awsClientProvider interface {
-	CloudFormationClient(aws.Config) cloudformation.Client
-	EC2Client(aws.Config) ec2.Client
-	ELBClient(aws.Config) elb.Client
-	IAMClient(aws.Config) iam.Client
-}
-
 type keyPairSynchronizer interface {
-	Sync(keypair ec2.KeyPair, ec2Client ec2.Client) (ec2.KeyPair, error)
+	Sync(keypair ec2.KeyPair) (ec2.KeyPair, error)
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, client cloudformation.Client) (cloudformation.Stack, error)
-	Update(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string, client cloudformation.Client) (cloudformation.Stack, error)
-	Exists(stackName string, client cloudformation.Client) (bool, error)
-	Delete(client cloudformation.Client, stackName string) error
-	Describe(client cloudformation.Client, stackName string) (cloudformation.Stack, error)
+	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string) (cloudformation.Stack, error)
+	Update(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string) (cloudformation.Stack, error)
+	Exists(stackName string) (bool, error)
+	Delete(stackName string) error
+	Describe(stackName string) (cloudformation.Stack, error)
 }
 
 type boshDeployer interface {
@@ -43,15 +34,15 @@ type cloudConfigurator interface {
 }
 
 type availabilityZoneRetriever interface {
-	Retrieve(region string, client ec2.Client) ([]string, error)
+	Retrieve(region string) ([]string, error)
 }
 
 type elbDescriber interface {
-	Describe(elbName string, client elb.Client) ([]string, error)
+	Describe(elbName string) ([]string, error)
 }
 
 type loadBalancerCertificateManager interface {
-	Create(input iam.CertificateCreateInput, client iam.Client) (iam.CertificateCreateOutput, error)
+	Create(input iam.CertificateCreateInput) (iam.CertificateCreateOutput, error)
 	IsValidLBType(lbType string) bool
 }
 
@@ -70,7 +61,6 @@ type upConfig struct {
 type Up struct {
 	infrastructureManager          infrastructureManager
 	keyPairSynchronizer            keyPairSynchronizer
-	awsClientProvider              awsClientProvider
 	boshDeployer                   boshDeployer
 	stringGenerator                stringGenerator
 	cloudConfigurator              cloudConfigurator
@@ -81,14 +71,13 @@ type Up struct {
 
 func NewUp(
 	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
-	awsClientProvider awsClientProvider, boshDeployer boshDeployer, stringGenerator stringGenerator,
+	boshDeployer boshDeployer, stringGenerator stringGenerator,
 	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	elbDescriber elbDescriber, loadBalancerCertificateManager loadBalancerCertificateManager) Up {
 
 	return Up{
 		infrastructureManager:          infrastructureManager,
 		keyPairSynchronizer:            keyPairSynchronizer,
-		awsClientProvider:              awsClientProvider,
 		boshDeployer:                   boshDeployer,
 		stringGenerator:                stringGenerator,
 		cloudConfigurator:              cloudConfigurator,
@@ -104,24 +93,10 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		return state, err
 	}
 
-	cloudFormationClient := u.awsClientProvider.CloudFormationClient(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	})
-
-	err = u.checkForFastFails(globalFlags, config, state, cloudFormationClient)
+	err = u.checkForFastFails(globalFlags, config, state)
 	if err != nil {
 		return state, err
 	}
-
-	iamClient := u.awsClientProvider.IAMClient(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	})
 
 	certOutput, err := u.loadBalancerCertificateManager.Create(iam.CertificateCreateInput{
 		CurrentLBType:          state.Stack.LBType,
@@ -129,24 +104,17 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		CurrentCertificateName: state.Stack.CertificateName,
 		CertPath:               config.certPath,
 		KeyPath:                config.keyPath,
-	}, iamClient)
+	})
 	if err != nil {
 		return state, err
 	}
 	state.Stack.CertificateName = certOutput.CertificateName
 
-	ec2Client := u.awsClientProvider.EC2Client(aws.Config{
-		AccessKeyID:      state.AWS.AccessKeyID,
-		SecretAccessKey:  state.AWS.SecretAccessKey,
-		Region:           state.AWS.Region,
-		EndpointOverride: globalFlags.EndpointOverride,
-	})
-
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
 		PublicKey:  state.KeyPair.PublicKey,
 		PrivateKey: state.KeyPair.PrivateKey,
-	}, ec2Client)
+	})
 	if err != nil {
 		return state, err
 	}
@@ -155,7 +123,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 	state.KeyPair.PublicKey = keyPair.PublicKey
 	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
-	availabilityZones, err := u.availabilityZoneRetriever.Retrieve(state.AWS.Region, ec2Client)
+	availabilityZones, err := u.availabilityZoneRetriever.Retrieve(state.AWS.Region)
 	if err != nil {
 		return state, err
 	}
@@ -167,7 +135,7 @@ func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state sto
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, certOutput.LBType, certOutput.CertificateARN, cloudFormationClient)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, certOutput.LBType, certOutput.CertificateARN)
 	if err != nil {
 		return state, err
 	}
@@ -236,12 +204,12 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	return config, nil
 }
 
-func (u Up) checkForFastFails(globalFlags GlobalFlags, config upConfig, state storage.State, cloudFormationClient cloudformation.Client) error {
+func (u Up) checkForFastFails(globalFlags GlobalFlags, config upConfig, state storage.State) error {
 	if !u.loadBalancerCertificateManager.IsValidLBType(config.lbType) {
 		return fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
 	}
 
-	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name, cloudFormationClient)
+	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name)
 	if err != nil {
 		return err
 	}
@@ -255,21 +223,14 @@ func (u Up) checkForFastFails(globalFlags GlobalFlags, config upConfig, state st
 	}
 
 	if stackExists && state.Stack.LBType != config.lbType {
-		elbClient := u.awsClientProvider.ELBClient(aws.Config{
-			AccessKeyID:      state.AWS.AccessKeyID,
-			SecretAccessKey:  state.AWS.SecretAccessKey,
-			Region:           state.AWS.Region,
-			EndpointOverride: globalFlags.EndpointOverride,
-		})
-
-		stack, err := u.infrastructureManager.Describe(cloudFormationClient, state.Stack.Name)
+		stack, err := u.infrastructureManager.Describe(state.Stack.Name)
 		if err != nil {
 			return err
 		}
 
 		for _, lbName := range []string{"ConcourseLoadBalancer", "CFSSHProxyLoadBalancer", "CFRouterLoadBalancer"} {
 			if id, ok := stack.Outputs[lbName]; ok {
-				instances, err := u.elbDescriber.Describe(id, elbClient)
+				instances, err := u.elbDescriber.Describe(id)
 				if err != nil {
 					return err
 				}

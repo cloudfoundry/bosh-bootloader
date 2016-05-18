@@ -20,7 +20,7 @@ var _ = Describe("AvailabilityZoneRetriever", func() {
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		availabilityZoneRetriever = ec2.NewAvailabilityZoneRetriever()
+		availabilityZoneRetriever = ec2.NewAvailabilityZoneRetriever(ec2Client)
 	})
 
 	It("fetches availability zones for a given region", func() {
@@ -33,7 +33,7 @@ var _ = Describe("AvailabilityZoneRetriever", func() {
 			},
 		}
 
-		azs, err := availabilityZoneRetriever.Retrieve("us-east-1", ec2Client)
+		azs, err := availabilityZoneRetriever.Retrieve("us-east-1")
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(azs).To(ConsistOf("us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"))
@@ -51,7 +51,7 @@ var _ = Describe("AvailabilityZoneRetriever", func() {
 				AvailabilityZones: []*awsec2.AvailabilityZone{nil},
 			}
 
-			_, err := availabilityZoneRetriever.Retrieve("us-east-1", ec2Client)
+			_, err := availabilityZoneRetriever.Retrieve("us-east-1")
 			Expect(err).To(MatchError("aws returned nil availability zone"))
 		})
 
@@ -60,13 +60,13 @@ var _ = Describe("AvailabilityZoneRetriever", func() {
 				AvailabilityZones: []*awsec2.AvailabilityZone{{ZoneName: nil}},
 			}
 
-			_, err := availabilityZoneRetriever.Retrieve("us-east-1", ec2Client)
+			_, err := availabilityZoneRetriever.Retrieve("us-east-1")
 			Expect(err).To(MatchError("aws returned availability zone with nil zone name"))
 		})
 
 		It("returns an error when describe availability zones fails", func() {
 			ec2Client.DescribeAvailabilityZonesCall.Returns.Error = errors.New("describe availability zones failed")
-			_, err := availabilityZoneRetriever.Retrieve("us-east-1", ec2Client)
+			_, err := availabilityZoneRetriever.Retrieve("us-east-1")
 			Expect(err).To(MatchError("describe availability zones failed"))
 		})
 	})

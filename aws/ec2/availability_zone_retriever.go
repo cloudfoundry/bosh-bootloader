@@ -7,14 +7,18 @@ import (
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type AvailabilityZoneRetriever struct{}
-
-func NewAvailabilityZoneRetriever() AvailabilityZoneRetriever {
-	return AvailabilityZoneRetriever{}
+type AvailabilityZoneRetriever struct {
+	client Client
 }
 
-func (r AvailabilityZoneRetriever) Retrieve(region string, client Client) ([]string, error) {
-	output, err := client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
+func NewAvailabilityZoneRetriever(client Client) AvailabilityZoneRetriever {
+	return AvailabilityZoneRetriever{
+		client: client,
+	}
+}
+
+func (r AvailabilityZoneRetriever) Retrieve(region string) ([]string, error) {
+	output, err := r.client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
 			Name:   goaws.String("region-name"),
 			Values: []*string{goaws.String(region)},

@@ -20,14 +20,14 @@ var _ = Describe("CertificateDeleter", func() {
 
 	BeforeEach(func() {
 		iamClient = &fakes.IAMClient{}
-		deleter = iam.NewCertificateDeleter()
+		deleter = iam.NewCertificateDeleter(iamClient)
 	})
 
 	Describe("Delete", func() {
 		It("deletes the certificates with the given name", func() {
 			iamClient.DeleteServerCertificateCall.Returns.Output = &awsiam.DeleteServerCertificateOutput{}
 
-			err := deleter.Delete("some-certificate", iamClient)
+			err := deleter.Delete("some-certificate")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(iamClient.DeleteServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
@@ -37,7 +37,7 @@ var _ = Describe("CertificateDeleter", func() {
 			It("returns an error when it fails to delete", func() {
 				iamClient.DeleteServerCertificateCall.Returns.Error = errors.New("failed to delete certificate")
 
-				err := deleter.Delete("some-certificate", iamClient)
+				err := deleter.Delete("some-certificate")
 				Expect(err).To(MatchError("failed to delete certificate"))
 			})
 		})
