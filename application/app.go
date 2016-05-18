@@ -49,9 +49,9 @@ func (a App) execute(configuration Configuration) (storage.State, error) {
 	globalFlags := commands.GlobalFlags{
 		StateDir:           configuration.Global.StateDir,
 		EndpointOverride:   configuration.Global.EndpointOverride,
-		AWSAccessKeyID:     configuration.Global.AWSAccessKeyID,
-		AWSSecretAccessKey: configuration.Global.AWSSecretAccessKey,
-		AWSRegion:          configuration.Global.AWSRegion,
+		AWSAccessKeyID:     configuration.State.AWS.AccessKeyID,
+		AWSSecretAccessKey: configuration.State.AWS.SecretAccessKey,
+		AWSRegion:          configuration.State.AWS.Region,
 	}
 
 	state, err := command.Execute(globalFlags, configuration.SubcommandFlags, configuration.State)

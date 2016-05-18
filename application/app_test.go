@@ -70,11 +70,15 @@ var _ = Describe("App", func() {
 						"--second-subcommand-flag", "second-value",
 					},
 					Global: application.GlobalConfiguration{
-						StateDir:           "some/state/dir",
-						EndpointOverride:   "some-endpoint-override",
-						AWSAccessKeyID:     "some-access-key-id",
-						AWSSecretAccessKey: "some-secret-access-key",
-						AWSRegion:          "some-region",
+						StateDir:         "some/state/dir",
+						EndpointOverride: "some-endpoint-override",
+					},
+					State: storage.State{
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key-id",
+							SecretAccessKey: "some-secret-access-key",
+							Region:          "some-region",
+						},
 					},
 				})
 
