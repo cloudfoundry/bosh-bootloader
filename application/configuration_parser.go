@@ -74,13 +74,14 @@ func (p ConfigurationParser) parseCommandLineArguments(configuration Configurati
 func (ConfigurationParser) parseGlobalFlags(globalConfiguration GlobalConfiguration, arguments []string) (GlobalConfiguration, []string, error) {
 	globalFlags := flags.New("global")
 
-	globalFlags.Bool(&globalConfiguration.Help, "h", "help", false)
-	globalFlags.Bool(&globalConfiguration.Version, "v", "version", false)
 	globalFlags.String(&globalConfiguration.EndpointOverride, "endpoint-override", "")
-	globalFlags.String(&globalConfiguration.AWSAccessKeyID, "aws-access-key-id", "")
-	globalFlags.String(&globalConfiguration.AWSSecretAccessKey, "aws-secret-access-key", "")
-	globalFlags.String(&globalConfiguration.AWSRegion, "aws-region", "")
 	globalFlags.String(&globalConfiguration.StateDir, "state-dir", "")
+
+	globalFlags.Bool(&globalConfiguration.help, "h", "help", false)
+	globalFlags.Bool(&globalConfiguration.version, "v", "version", false)
+	globalFlags.String(&globalConfiguration.awsAccessKeyID, "aws-access-key-id", "")
+	globalFlags.String(&globalConfiguration.awsSecretAccessKey, "aws-secret-access-key", "")
+	globalFlags.String(&globalConfiguration.awsRegion, "aws-region", "")
 
 	err := globalFlags.Parse(arguments)
 	if err != nil {
@@ -115,11 +116,11 @@ func (ConfigurationParser) setDefaultStateDirectory(configuration Configuration)
 }
 
 func (ConfigurationParser) convertFlagsToCommands(configuration Configuration) Configuration {
-	if configuration.Global.Version {
+	if configuration.Global.version {
 		configuration.Command = "version"
 	}
 
-	if configuration.Global.Help {
+	if configuration.Global.help {
 		configuration.Command = "help"
 	}
 
@@ -127,16 +128,16 @@ func (ConfigurationParser) convertFlagsToCommands(configuration Configuration) C
 }
 
 func (ConfigurationParser) overrideAWSCredentials(globalConfiguration GlobalConfiguration, awsState storage.AWS) storage.AWS {
-	if globalConfiguration.AWSAccessKeyID != "" {
-		awsState.AccessKeyID = globalConfiguration.AWSAccessKeyID
+	if globalConfiguration.awsAccessKeyID != "" {
+		awsState.AccessKeyID = globalConfiguration.awsAccessKeyID
 	}
 
-	if globalConfiguration.AWSSecretAccessKey != "" {
-		awsState.SecretAccessKey = globalConfiguration.AWSSecretAccessKey
+	if globalConfiguration.awsSecretAccessKey != "" {
+		awsState.SecretAccessKey = globalConfiguration.awsSecretAccessKey
 	}
 
-	if globalConfiguration.AWSRegion != "" {
-		awsState.Region = globalConfiguration.AWSRegion
+	if globalConfiguration.awsRegion != "" {
+		awsState.Region = globalConfiguration.awsRegion
 	}
 
 	return awsState

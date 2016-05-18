@@ -3,13 +3,14 @@ package application
 import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 type GlobalConfiguration struct {
-	Help               bool
-	Version            bool
-	EndpointOverride   string
-	AWSAccessKeyID     string
-	AWSSecretAccessKey string
-	AWSRegion          string
-	StateDir           string
+	EndpointOverride string
+	StateDir         string
+
+	help               bool
+	version            bool
+	awsAccessKeyID     string
+	awsSecretAccessKey string
+	awsRegion          string
 }
 
 type Configuration struct {

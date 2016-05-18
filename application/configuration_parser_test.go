@@ -35,15 +35,8 @@ var _ = Describe("ConfigurationParser", func() {
 			configuration, err := configurationParser.Parse(args)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(configuration.Global).To(Equal(application.GlobalConfiguration{
-				Help:               false,
-				Version:            false,
-				EndpointOverride:   "some-endpoint-override",
-				AWSAccessKeyID:     "some-access-key-id",
-				AWSSecretAccessKey: "some-secret-access-key",
-				AWSRegion:          "some-region",
-				StateDir:           "some/state/dir",
-			}))
+			Expect(configuration.Global.EndpointOverride).To(Equal("some-endpoint-override"))
+			Expect(configuration.Global.StateDir).To(Equal("some/state/dir"))
 		})
 
 		It("returns a configuration with correct command with subcommand flags based on arguments passed in", func() {
