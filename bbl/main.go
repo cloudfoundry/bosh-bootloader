@@ -44,8 +44,6 @@ func main() {
 		fail(err)
 	}
 
-	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
-
 	// Amazon
 	awsConfiguration := aws.Config{
 		AccessKeyID:      configuration.State.AWS.AccessKeyID,
@@ -54,12 +52,12 @@ func main() {
 		EndpointOverride: configuration.Global.EndpointOverride,
 	}
 
-	awsClientProvider := aws.NewClientProvider()
-	elbClient := awsClientProvider.ELBClient(awsConfiguration)
-	cloudFormationClient := awsClientProvider.CloudFormationClient(awsConfiguration)
-	ec2Client := awsClientProvider.EC2Client(awsConfiguration)
-	iamClient := awsClientProvider.IAMClient(awsConfiguration)
+	elbClient := elb.NewClient(awsConfiguration)
+	cloudFormationClient := cloudformation.NewClient(awsConfiguration)
+	ec2Client := ec2.NewClient(awsConfiguration)
+	iamClient := iam.NewClient(awsConfiguration)
 
+	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
 	vpcStatusChecker := ec2.NewVPCStatusChecker(ec2Client)
 	keyPairCreator := ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
 	keyPairDeleter := ec2.NewKeyPairDeleter(ec2Client, logger)

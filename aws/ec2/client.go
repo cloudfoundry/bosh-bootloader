@@ -1,12 +1,21 @@
 package ec2
 
-import "github.com/aws/aws-sdk-go/service/ec2"
+import (
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+)
 
 type Client interface {
-	ImportKeyPair(*ec2.ImportKeyPairInput) (*ec2.ImportKeyPairOutput, error)
-	DescribeKeyPairs(*ec2.DescribeKeyPairsInput) (*ec2.DescribeKeyPairsOutput, error)
-	CreateKeyPair(*ec2.CreateKeyPairInput) (*ec2.CreateKeyPairOutput, error)
-	DescribeAvailabilityZones(*ec2.DescribeAvailabilityZonesInput) (*ec2.DescribeAvailabilityZonesOutput, error)
-	DeleteKeyPair(*ec2.DeleteKeyPairInput) (*ec2.DeleteKeyPairOutput, error)
-	DescribeInstances(*ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error)
+	ImportKeyPair(*awsec2.ImportKeyPairInput) (*awsec2.ImportKeyPairOutput, error)
+	DescribeKeyPairs(*awsec2.DescribeKeyPairsInput) (*awsec2.DescribeKeyPairsOutput, error)
+	CreateKeyPair(*awsec2.CreateKeyPairInput) (*awsec2.CreateKeyPairOutput, error)
+	DescribeAvailabilityZones(*awsec2.DescribeAvailabilityZonesInput) (*awsec2.DescribeAvailabilityZonesOutput, error)
+	DeleteKeyPair(*awsec2.DeleteKeyPairInput) (*awsec2.DeleteKeyPairOutput, error)
+	DescribeInstances(*awsec2.DescribeInstancesInput) (*awsec2.DescribeInstancesOutput, error)
+}
+
+func NewClient(config aws.Config) Client {
+	return awsec2.New(session.New(config.ClientConfig()))
 }
