@@ -26,9 +26,7 @@ var _ = Describe("Update LBs", func() {
 	)
 
 	var updateLBs = func(certificatePath string, keyPath string, state storage.State) (storage.State, error) {
-		return command.Execute(commands.GlobalFlags{
-			EndpointOverride: "some-endpoint",
-		}, []string{
+		return command.Execute([]string{
 			"--cert", certificatePath,
 			"--key", keyPath,
 		}, state)
@@ -211,7 +209,7 @@ var _ = Describe("Update LBs", func() {
 			})
 
 			It("returns an error when invalid flags are provided", func() {
-				_, err := command.Execute(commands.GlobalFlags{}, []string{
+				_, err := command.Execute([]string{
 					"--invalid-flag",
 				}, incomingState)
 

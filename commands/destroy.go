@@ -59,7 +59,7 @@ func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, vpcStat
 	}
 }
 
-func (d Destroy) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
 	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err

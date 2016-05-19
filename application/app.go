@@ -45,15 +45,7 @@ func (a App) execute(configuration Configuration) (storage.State, error) {
 		return storage.State{}, errors.New("command not found")
 	}
 
-	globalFlags := commands.GlobalFlags{
-		StateDir:           configuration.Global.StateDir,
-		EndpointOverride:   configuration.Global.EndpointOverride,
-		AWSAccessKeyID:     configuration.State.AWS.AccessKeyID,
-		AWSSecretAccessKey: configuration.State.AWS.SecretAccessKey,
-		AWSRegion:          configuration.State.AWS.Region,
-	}
-
-	state, err := command.Execute(globalFlags, configuration.SubcommandFlags, configuration.State)
+	state, err := command.Execute(configuration.SubcommandFlags, configuration.State)
 	if err != nil {
 		return storage.State{}, err
 	}

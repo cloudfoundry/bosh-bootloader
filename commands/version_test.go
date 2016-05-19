@@ -23,13 +23,13 @@ var _ = Describe("Version", func() {
 
 	Describe("Execute", func() {
 		It("prints out the version information", func() {
-			_, err := version.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+			_, err := version.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout.String()).To(Equal("bbl 0.0.1\n"))
 		})
 
 		It("returns the given state without modification", func() {
-			state, err := version.Execute(commands.GlobalFlags{}, []string{}, storage.State{
+			state, err := version.Execute([]string{}, storage.State{
 				Version: 3,
 			})
 			Expect(err).NotTo(HaveOccurred())

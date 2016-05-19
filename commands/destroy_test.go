@@ -48,7 +48,7 @@ var _ = Describe("Destroy", func() {
 			func(response string, proceed bool) {
 				fmt.Fprintf(stdin, "%s\n", response)
 
-				_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+				_, err := destroy.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete your infrastructure? This operation cannot be undone!"))
@@ -73,7 +73,7 @@ var _ = Describe("Destroy", func() {
 
 		Context("when the --no-confirm flag is supplied", func() {
 			DescribeTable("destroys without prompting the user for confirmation", func(flag string) {
-				_, err := destroy.Execute(commands.GlobalFlags{}, []string{flag}, storage.State{})
+				_, err := destroy.Execute([]string{flag}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
@@ -87,14 +87,10 @@ var _ = Describe("Destroy", func() {
 		Describe("destroying the infrastructure", func() {
 			var (
 				state storage.State
-				flags commands.GlobalFlags
 			)
 
 			BeforeEach(func() {
 				stdin.Write([]byte("yes\n"))
-				flags = commands.GlobalFlags{
-					EndpointOverride: "some-endpoint",
-				}
 				state = storage.State{
 					AWS: storage.AWS{
 						AccessKeyID:     "some-access-key-id",
@@ -135,7 +131,7 @@ var _ = Describe("Destroy", func() {
 				}
 				vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
 
-				_, err := destroy.Execute(flags, []string{}, state)
+				_, err := destroy.Execute([]string{}, state)
 				Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
 
 				Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
@@ -155,7 +151,7 @@ var _ = Describe("Destroy", func() {
 					},
 				}
 
-				_, err := destroy.Execute(flags, []string{}, state)
+				_, err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
@@ -166,21 +162,21 @@ var _ = Describe("Destroy", func() {
 			})
 
 			It("deletes the stack", func() {
-				_, err := destroy.Execute(flags, []string{}, state)
+				_, err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(infrastructureManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
 			})
 
 			It("deletes the keypair", func() {
-				_, err := destroy.Execute(flags, []string{}, state)
+				_, err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
 			})
 
 			It("clears the state", func() {
-				state, err := destroy.Execute(flags, []string{}, state)
+				state, err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{}))
 			})
@@ -193,7 +189,7 @@ var _ = Describe("Destroy", func() {
 
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{"--invalid-flag"}, storage.State{})
+					_, err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
 				})
 			})
@@ -202,7 +198,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+					_, err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("BOSH Delete Failed"))
 				})
 			})
@@ -211,7 +207,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					stackManager.DescribeCall.Returns.Error = errors.New("cannot describe stack")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+					_, err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("cannot describe stack"))
 				})
 			})
@@ -220,7 +216,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+					_, err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to delete stack"))
 				})
 			})
@@ -229,7 +225,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					keyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete keypair")
 
-					_, err := destroy.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+					_, err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to delete keypair"))
 				})
 			})

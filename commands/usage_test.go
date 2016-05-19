@@ -24,7 +24,7 @@ var _ = Describe("Usage", func() {
 
 	Describe("Execute", func() {
 		It("prints out the usage information", func() {
-			_, err := usage.Execute(commands.GlobalFlags{}, []string{}, storage.State{})
+			_, err := usage.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout.String()).To(Equal(strings.TrimSpace(`
 Usage:
@@ -54,7 +54,7 @@ Commands:
 		})
 
 		It("returns the given state unmodified", func() {
-			state, err := usage.Execute(commands.GlobalFlags{}, []string{}, storage.State{
+			state, err := usage.Execute([]string{}, storage.State{
 				Version: 2,
 			})
 			Expect(err).NotTo(HaveOccurred())

@@ -29,7 +29,6 @@ var _ = Describe("Up", func() {
 			availabilityZoneRetriever      *fakes.AvailabilityZoneRetriever
 			elbDescriber                   *fakes.ELBDescriber
 			loadBalancerCertificateManager *fakes.LoadBalancerCertificateManager
-			globalFlags                    commands.GlobalFlags
 			boshInitCredentials            map[string]string
 		)
 
@@ -81,10 +80,6 @@ var _ = Describe("Up", func() {
 			loadBalancerCertificateManager = &fakes.LoadBalancerCertificateManager{}
 			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
 
-			globalFlags = commands.GlobalFlags{
-				EndpointOverride: "some-endpoint",
-			}
-
 			command = commands.NewUp(
 				infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
@@ -110,13 +105,13 @@ var _ = Describe("Up", func() {
 
 		It("checks if the lb type flag is valid", func() {
 			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
-			_, err := command.Execute(commands.GlobalFlags{}, []string{"--lb-type", "concourse"}, storage.State{})
+			_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
 			Expect(loadBalancerCertificateManager.IsValidLBTypeCall.Receives.LBType).To(Equal("concourse"))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("syncs the keypair", func() {
-			state, err := command.Execute(globalFlags, []string{}, storage.State{
+			state, err := command.Execute([]string{}, storage.State{
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
@@ -162,7 +157,7 @@ var _ = Describe("Up", func() {
 				return prefix + "some-random-string", nil
 			}
 
-			_, err := command.Execute(globalFlags, []string{}, incomingState)
+			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stackNameWasGenerated).To(BeTrue())
 
@@ -193,7 +188,7 @@ var _ = Describe("Up", func() {
 				},
 			}
 
-			_, err := command.Execute(globalFlags, []string{}, incomingState)
+			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
@@ -236,7 +231,7 @@ var _ = Describe("Up", func() {
 					"--key", "some-private-key-file",
 				}
 
-				_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+				_, err := command.Execute(subcommandArgs, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			})
@@ -251,7 +246,7 @@ var _ = Describe("Up", func() {
 						"--key", "some-private-key-file",
 					}
 
-					_, err := command.Execute(globalFlags, subcommandArgs, storage.State{})
+					_, err := command.Execute(subcommandArgs, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(loadBalancerCertificateManager.CreateCall.Receives.Input).To(Equal(iam.CertificateCreateInput{
@@ -274,7 +269,7 @@ var _ = Describe("Up", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 				infrastructureManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
 
-				_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, storage.State{})
+				_, err := command.Execute([]string{"--lb-type", "none"}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -291,7 +286,7 @@ var _ = Describe("Up", func() {
 					Outputs: map[string]string{"ConcourseLoadBalancer": "some-load-balancer"},
 				}
 
-				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, incomingState)
+				_, err := command.Execute([]string{"--lb-type", "concourse"}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(elbDescriber.DescribeCall.CallCount).To(Equal(0))
@@ -313,7 +308,7 @@ var _ = Describe("Up", func() {
 
 					elbDescriber.DescribeCall.Returns.Instances = []string{"some-instance-1", "some-instance-2"}
 
-					_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, incomingState)
+					_, err := command.Execute([]string{"--lb-type", "none"}, incomingState)
 					Expect(err).To(MatchError("Load balancer \"some-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
 				})
 			})
@@ -343,7 +338,7 @@ var _ = Describe("Up", func() {
 						return []string{}, nil
 					}
 
-					_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, incomingState)
+					_, err := command.Execute([]string{"--lb-type", "none"}, incomingState)
 					Expect(err).To(MatchError("Load balancer \"some-router-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
 				})
 
@@ -371,7 +366,7 @@ var _ = Describe("Up", func() {
 						return []string{}, nil
 					}
 
-					_, err := command.Execute(globalFlags, []string{"--lb-type", "none"}, incomingState)
+					_, err := command.Execute([]string{"--lb-type", "none"}, incomingState)
 					Expect(err).To(MatchError("Load balancer \"some-ssh-proxy-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
 				})
 			})
@@ -379,7 +374,7 @@ var _ = Describe("Up", func() {
 
 		Context("when there is no keypair", func() {
 			It("syncs with an empty keypair", func() {
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{}))
@@ -422,7 +417,7 @@ var _ = Describe("Up", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
-					_, err := command.Execute(globalFlags, []string{}, storage.State{})
+					_, err := command.Execute([]string{}, storage.State{})
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -451,7 +446,7 @@ var _ = Describe("Up", func() {
 						LBType:          "concourse",
 					}
 
-					_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -483,7 +478,7 @@ var _ = Describe("Up", func() {
 						LBType:          "cf",
 					}
 
-					_, err := command.Execute(globalFlags, []string{"--lb-type", "cf"}, storage.State{})
+					_, err := command.Execute([]string{"--lb-type", "cf"}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -524,7 +519,7 @@ var _ = Describe("Up", func() {
 						LBType: "cf",
 					}
 
-					state, err := command.Execute(globalFlags, []string{"--lb-type", ""}, storage.State{})
+					state, err := command.Execute([]string{"--lb-type", ""}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state.Stack.LBType).To(Equal("cf"))
@@ -540,7 +535,7 @@ var _ = Describe("Up", func() {
 						loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
 							CertificateName: "some-other-certificate-name",
 						}
-						state, err := command.Execute(globalFlags, []string{
+						state, err := command.Execute([]string{
 							"--lb-type", "concourse",
 							"--cert", "some-cert-path",
 							"--key", "some-key-path",
@@ -568,7 +563,7 @@ var _ = Describe("Up", func() {
 								PublicKey:  "some-public-key",
 							},
 						}
-						state, err := command.Execute(globalFlags, []string{}, incomingState)
+						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(state.KeyPair).To(Equal(incomingState.KeyPair))
 					})
@@ -576,7 +571,7 @@ var _ = Describe("Up", func() {
 
 				Context("when the keypair doesn't exist", func() {
 					It("returns the state with a new key pair", func() {
-						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.KeyPair).To(Equal(storage.KeyPair{
@@ -592,7 +587,7 @@ var _ = Describe("Up", func() {
 				Context("when the stack name doesn't exist", func() {
 					It("populates a new stack name", func() {
 						incomingState := storage.State{}
-						state, err := command.Execute(globalFlags, []string{}, incomingState)
+						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(state.Stack.Name).To(Equal("bbl-aws-some-random-string"))
 					})
@@ -605,7 +600,7 @@ var _ = Describe("Up", func() {
 								Name: "some-other-stack-name",
 							},
 						}
-						state, err := command.Execute(globalFlags, []string{}, incomingState)
+						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
 					})
@@ -619,7 +614,7 @@ var _ = Describe("Up", func() {
 
 				Context("boshinit manifest", func() {
 					It("writes the boshinit manifest", func() {
-						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.BOSH.Manifest).To(ContainSubstring("name: bosh"))
@@ -630,7 +625,7 @@ var _ = Describe("Up", func() {
 							BOSHInitManifest: "name: updated-bosh",
 						}
 
-						state, err := command.Execute(globalFlags, []string{}, storage.State{
+						state, err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
 								Manifest: "name: bosh",
 							},
@@ -644,7 +639,7 @@ var _ = Describe("Up", func() {
 
 				Context("bosh state", func() {
 					It("writes the bosh state", func() {
-						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
@@ -660,7 +655,7 @@ var _ = Describe("Up", func() {
 							},
 						}
 
-						state, err := command.Execute(globalFlags, []string{}, storage.State{
+						state, err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
 								Manifest: "name: bosh",
 								State: boshinit.State{
@@ -678,7 +673,7 @@ var _ = Describe("Up", func() {
 				})
 
 				It("writes the bosh director address", func() {
-					state, err := command.Execute(globalFlags, []string{}, storage.State{})
+					state, err := command.Execute([]string{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state.BOSH.DirectorAddress).To(ContainSubstring("some-bosh-url"))
@@ -686,7 +681,7 @@ var _ = Describe("Up", func() {
 
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
-						state, err := command.Execute(globalFlags, []string{}, storage.State{
+						state, err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
 								DirectorSSLCertificate: "some-certificate",
 								DirectorSSLPrivateKey:  "some-private-key",
@@ -700,7 +695,7 @@ var _ = Describe("Up", func() {
 
 				Context("when the bosh director ssl keypair doesn't exist", func() {
 					It("returns the state with a new key pair", func() {
-						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("updated-certificate"))
@@ -713,7 +708,7 @@ var _ = Describe("Up", func() {
 
 				Context("when there are no director credentials", func() {
 					It("deploys with randomized director credentials", func() {
-						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("user-some-random-string"))
@@ -730,7 +725,7 @@ var _ = Describe("Up", func() {
 								DirectorPassword: "some-director-password",
 							},
 						}
-						_, err := command.Execute(globalFlags, []string{}, incomingState)
+						_, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("some-director-username"))
@@ -744,14 +739,14 @@ var _ = Describe("Up", func() {
 							Credentials: boshInitCredentials,
 						}
 
-						state, err := command.Execute(globalFlags, []string{}, storage.State{})
+						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 					})
 
 					Context("when the bosh credentials exist in the state.json", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
-							state, err := command.Execute(globalFlags, []string{}, storage.State{
+							state, err := command.Execute([]string{}, storage.State{
 								BOSH: storage.BOSH{Credentials: boshInitCredentials},
 							})
 
@@ -767,14 +762,14 @@ var _ = Describe("Up", func() {
 		Context("failure cases", func() {
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--invalid-flag"}, storage.State{})
+					_, err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
 				})
 			})
 
 			It("returns an error when an unknown lb-type is supplied", func() {
 				loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = false
-				_, err := command.Execute(commands.GlobalFlags{}, []string{"--lb-type", "some-lb"}, storage.State{})
+				_, err := command.Execute([]string{"--lb-type", "some-lb"}, storage.State{})
 				Expect(loadBalancerCertificateManager.IsValidLBTypeCall.Receives.LBType).To(Equal("some-lb"))
 				Expect(err).To(MatchError("Unknown lb-type \"some-lb\", supported lb-types are: concourse, cf or none"))
 			})
@@ -782,7 +777,7 @@ var _ = Describe("Up", func() {
 			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{
+				_, err := command.Execute([]string{}, storage.State{
 					AWS: storage.AWS{
 						Region: "some-aws-region",
 					},
@@ -807,14 +802,14 @@ var _ = Describe("Up", func() {
 			It("returns an error when checking if the infrastructure exists fails", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("error checking if stack exists")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
 			It("returns an error when the certificate cannot be uploaded", func() {
 				loadBalancerCertificateManager.CreateCall.Returns.Error = errors.New("error uploading certificate")
 
-				_, err := command.Execute(globalFlags, []string{
+				_, err := command.Execute([]string{
 					"--lb-type", "cf",
 					"--cert", "some-cert",
 					"--key", "some-key",
@@ -825,7 +820,7 @@ var _ = Describe("Up", func() {
 			It("returns an error when the key pair fails to sync", func() {
 				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("error syncing key pair"))
 			})
 
@@ -833,21 +828,21 @@ var _ = Describe("Up", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = true
 				infrastructureManager.DescribeCall.Returns.Error = errors.New("infrastructure describe failed")
 
-				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
+				_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
 				Expect(err).To(MatchError("infrastructure describe failed"))
 			})
 
 			It("returns an error when infrastructure cannot be created", func() {
 				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
 			It("returns an error when the cloud config cannot be configured", func() {
 				cloudConfigurator.ConfigureCall.Returns.Error = errors.New("bosh cloud configuration failed")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("bosh cloud configuration failed"))
 			})
 
@@ -858,7 +853,7 @@ var _ = Describe("Up", func() {
 					infrastructureManager, keyPairSynchronizer, boshDeployer, stringGenerator, cloudConfigurator,
 					availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager)
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
 			})
 
@@ -870,7 +865,7 @@ var _ = Describe("Up", func() {
 
 					return "", nil
 				}
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot generate string"))
 			})
 
@@ -882,14 +877,14 @@ var _ = Describe("Up", func() {
 
 					return "", nil
 				}
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot generate string"))
 			})
 
 			It("returns an error when availability zones cannot be retrieved", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone could not be retrieved")
 
-				_, err := command.Execute(globalFlags, []string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
 			})
 
@@ -905,7 +900,7 @@ var _ = Describe("Up", func() {
 
 				elbDescriber.DescribeCall.Returns.Error = errors.New("elb cannot be described")
 
-				_, err := command.Execute(globalFlags, []string{"--lb-type", "concourse"}, storage.State{})
+				_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
 				Expect(err).To(MatchError("elb cannot be described"))
 			})
 		})

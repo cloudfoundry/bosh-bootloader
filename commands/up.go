@@ -87,13 +87,13 @@ func NewUp(
 	}
 }
 
-func (u Up) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err
 	}
 
-	err = u.checkForFastFails(globalFlags, config, state)
+	err = u.checkForFastFails(config, state)
 	if err != nil {
 		return state, err
 	}
@@ -204,7 +204,7 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	return config, nil
 }
 
-func (u Up) checkForFastFails(globalFlags GlobalFlags, config upConfig, state storage.State) error {
+func (u Up) checkForFastFails(config upConfig, state storage.State) error {
 	if !u.loadBalancerCertificateManager.IsValidLBType(config.lbType) {
 		return fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
 	}

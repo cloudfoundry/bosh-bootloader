@@ -1,16 +1,12 @@
 package fakes
 
-import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
-)
+import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 type Command struct {
 	ExecuteCall struct {
 		CallCount int
 		PassState bool
 		Receives  struct {
-			GlobalFlags     commands.GlobalFlags
 			State           storage.State
 			SubcommandFlags []string
 		}
@@ -21,9 +17,8 @@ type Command struct {
 	}
 }
 
-func (c *Command) Execute(globalFlags commands.GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+func (c *Command) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
 	c.ExecuteCall.CallCount++
-	c.ExecuteCall.Receives.GlobalFlags = globalFlags
 	c.ExecuteCall.Receives.State = state
 	c.ExecuteCall.Receives.SubcommandFlags = subcommandFlags
 

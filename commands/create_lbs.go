@@ -50,7 +50,7 @@ func NewCreateLBs(certificateManager certificateManager, infrastructureManager i
 	}
 }
 
-func (c CreateLBs) Execute(globalFlags GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
 	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err

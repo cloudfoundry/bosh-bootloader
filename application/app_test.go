@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
@@ -14,7 +13,7 @@ import (
 
 type setNewKeyPairName struct{}
 
-func (snkp setNewKeyPairName) Execute(flags commands.GlobalFlags, subcommandFlags []string, state storage.State) (storage.State, error) {
+func (snkp setNewKeyPairName) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
 	state.KeyPair = storage.KeyPair{
 		Name:       "some-new-keypair-name",
 		PublicKey:  state.KeyPair.PublicKey,
@@ -44,7 +43,7 @@ var _ = Describe("App", func() {
 		},
 			configuration,
 			stateStore,
-			func() { helpCmd.Execute(commands.GlobalFlags{}, []string{}, storage.State{}) })
+			func() { helpCmd.Execute([]string{}, storage.State{}) })
 	}
 
 	BeforeEach(func() {
@@ -88,14 +87,6 @@ var _ = Describe("App", func() {
 				Expect(someCmd.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{
 					"--first-subcommand-flag", "first-value",
 					"--second-subcommand-flag", "second-value",
-				}))
-
-				Expect(someCmd.ExecuteCall.Receives.GlobalFlags).To(Equal(commands.GlobalFlags{
-					StateDir:           "some/state/dir",
-					EndpointOverride:   "some-endpoint-override",
-					AWSAccessKeyID:     "some-access-key-id",
-					AWSSecretAccessKey: "some-secret-access-key",
-					AWSRegion:          "some-region",
 				}))
 			})
 

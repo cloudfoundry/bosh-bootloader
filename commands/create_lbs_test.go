@@ -64,13 +64,11 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		It("uploads a cert and key", func() {
-			_, err := command.Execute(commands.GlobalFlags{},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				storage.State{})
+			_, err := command.Execute([]string{
+				"--type", "concourse",
+				"--cert", "temp/some-cert.crt",
+				"--key", "temp/some-key.key",
+			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
@@ -83,13 +81,11 @@ var _ = Describe("Create LBs", func() {
 			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
 				ARN: "some-certificate-arn",
 			}
-			_, err := command.Execute(commands.GlobalFlags{},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
+			_, err := command.Execute([]string{
+				"--type", "concourse",
+				"--cert", "temp/some-cert.crt",
+				"--key", "temp/some-key.key",
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
@@ -108,13 +104,11 @@ var _ = Describe("Create LBs", func() {
 				Name: "some-stack",
 			}
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-			_, err := command.Execute(commands.GlobalFlags{},
-				[]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				},
-				incomingState)
+			_, err := command.Execute([]string{
+				"--type", "concourse",
+				"--cert", "temp/some-cert.crt",
+				"--key", "temp/some-key.key",
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshCloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
@@ -126,13 +120,11 @@ var _ = Describe("Create LBs", func() {
 
 		Context("invalid lb type", func() {
 			It("returns an error", func() {
-				_, err := command.Execute(commands.GlobalFlags{},
-					[]string{
-						"--type", "some-invalid-lb",
-						"--cert", "temp/some-cert.crt",
-						"--key", "temp/some-key.key",
-					},
-					storage.State{})
+				_, err := command.Execute([]string{
+					"--type", "some-invalid-lb",
+					"--cert", "temp/some-cert.crt",
+					"--key", "temp/some-key.key",
+				}, storage.State{})
 				Expect(err).To(MatchError("\"some-invalid-lb\" is not a valid lb type, valid lb types are: concourse and cf"))
 			})
 		})
@@ -141,12 +133,11 @@ var _ = Describe("Create LBs", func() {
 			It("returns an error when the stack does not exist", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 
-				_, err := command.Execute(commands.GlobalFlags{},
-					[]string{
-						"--type", "concourse",
-						"--cert", "temp/some-cert.crt",
-						"--key", "temp/some-key.key",
-					}, incomingState)
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "temp/some-cert.crt",
+					"--key", "temp/some-key.key",
+				}, incomingState)
 
 				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack"))
 
@@ -157,12 +148,11 @@ var _ = Describe("Create LBs", func() {
 				boshClient.InfoCall.Returns.Error = errors.New("director not found")
 				infrastructureManager.ExistsCall.Returns.Exists = true
 
-				_, err := command.Execute(commands.GlobalFlags{},
-					[]string{
-						"--type", "concourse",
-						"--cert", "temp/some-cert.crt",
-						"--key", "temp/some-key.key",
-					}, incomingState)
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "temp/some-cert.crt",
+					"--key", "temp/some-key.key",
+				}, incomingState)
 
 				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
 				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
@@ -177,13 +167,11 @@ var _ = Describe("Create LBs", func() {
 		Context("state manipulation", func() {
 			It("returns a state with new certificate name and lb type", func() {
 				certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
-				state, err := command.Execute(commands.GlobalFlags{},
-					[]string{
-						"--type", "concourse",
-						"--cert", "temp/some-cert.crt",
-						"--key", "temp/some-key.key",
-					},
-					storage.State{})
+				state, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "temp/some-cert.crt",
+					"--key", "temp/some-key.key",
+				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state.Stack.CertificateName).To(Equal("some-certificate-name"))
@@ -195,7 +183,7 @@ var _ = Describe("Create LBs", func() {
 		Context("failure cases", func() {
 			DescribeTable("returns an error when an lb already exists",
 				func(newLbType, oldLbType string) {
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", newLbType}, storage.State{
+					_, err := command.Execute([]string{"--type", newLbType}, storage.State{
 						Stack: storage.Stack{
 							LBType: oldLbType,
 						},
@@ -208,13 +196,13 @@ var _ = Describe("Create LBs", func() {
 
 			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
+				_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
 				Expect(err).To(MatchError("failed to check for stack"))
 			})
 
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--invalid-flag"}, storage.State{})
+					_, err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
 				})
 			})
@@ -223,7 +211,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve azs")
 
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
 					Expect(err).To(MatchError("failed to retrieve azs"))
 				})
 			})
@@ -232,7 +220,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update infrastructure")
 
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
 					Expect(err).To(MatchError("failed to update infrastructure"))
 				})
 			})
@@ -241,7 +229,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					certificateManager.CreateCall.Returns.Error = errors.New("failed to create cert")
 
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
 					Expect(err).To(MatchError("failed to create cert"))
 				})
 			})
@@ -250,7 +238,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					boshCloudConfigurator.ConfigureCall.Returns.Error = errors.New("failed to configure")
 
-					_, err := command.Execute(commands.GlobalFlags{}, []string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
 					Expect(err).To(MatchError("failed to configure"))
 				})
 			})
