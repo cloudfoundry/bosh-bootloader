@@ -13,14 +13,10 @@ import (
 
 type AWS struct {
 	stackManager         cloudformation.StackManager
-	cloudFormationClient cloudformation.Client
 	certificateDescriber iam.CertificateDescriber
-	iamClient            iam.Client
 }
 
 func NewAWS(configuration integration.Config) AWS {
-	stackManager := cloudformation.NewStackManager(application.NewLogger(os.Stdout))
-	certificateDescriber := iam.NewCertificateDescriber()
 	cloudFormationClient := aws.NewClientProvider().CloudFormationClient(aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
@@ -33,16 +29,17 @@ func NewAWS(configuration integration.Config) AWS {
 		Region:          configuration.AWSRegion,
 	})
 
+	stackManager := cloudformation.NewStackManager(cloudFormationClient, application.NewLogger(os.Stdout))
+	certificateDescriber := iam.NewCertificateDescriber(iamClient)
+
 	return AWS{
 		stackManager:         stackManager,
 		certificateDescriber: certificateDescriber,
-		cloudFormationClient: cloudFormationClient,
-		iamClient:            iamClient,
 	}
 }
 
 func (a AWS) StackExists(stackName string) bool {
-	_, err := a.stackManager.Describe(a.cloudFormationClient, stackName)
+	_, err := a.stackManager.Describe(stackName)
 
 	if err == cloudformation.StackNotFound {
 		return false
@@ -53,7 +50,7 @@ func (a AWS) StackExists(stackName string) bool {
 }
 
 func (a AWS) LoadBalancers(stackName string) []string {
-	stack, err := a.stackManager.Describe(a.cloudFormationClient, stackName)
+	stack, err := a.stackManager.Describe(stackName)
 	Expect(err).NotTo(HaveOccurred())
 
 	loadBalancers := []string{}
@@ -68,7 +65,7 @@ func (a AWS) LoadBalancers(stackName string) []string {
 }
 
 func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
-	certificate, err := a.certificateDescriber.Describe(certificateName, a.iamClient)
+	certificate, err := a.certificateDescriber.Describe(certificateName)
 	Expect(err).NotTo(HaveOccurred())
 
 	return certificate
