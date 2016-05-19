@@ -38,8 +38,7 @@ func main() {
 	usage := commands.NewUsage(os.Stdout)
 
 	commandLineParser := application.NewCommandLineParser()
-	awsCredentialValidator := application.NewAWSCredentialValidator()
-	configurationParser := application.NewConfigurationParser(commandLineParser, awsCredentialValidator, stateStore)
+	configurationParser := application.NewConfigurationParser(commandLineParser, stateStore)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
 		switch err := err.(type) {
@@ -48,14 +47,12 @@ func main() {
 		case application.InvalidFlagError:
 			usage.Print()
 			fail(err)
-		case application.InvalidCommandError:
-			usage.Print()
-			fail(err)
 		case application.CommandNotProvidedError:
 			usage.Print()
 			fail(err)
 		}
 	}
+	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
 
 	// Amazon
 	awsConfiguration := aws.Config{
@@ -122,18 +119,18 @@ func main() {
 	help := commands.NewUsage(os.Stdout)
 	version := commands.NewVersion(os.Stdout)
 	up := commands.NewUp(
-		infrastructureManager, keyPairSynchronizer, boshinitExecutor,
+		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
 	)
 	destroy := commands.NewDestroy(
-		logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
+		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, keyPairDeleter,
 	)
 	createLBs := commands.NewCreateLBs(
-		certificateManager, infrastructureManager, availabilityZoneRetriever,
+		awsCredentialValidator, certificateManager, infrastructureManager, availabilityZoneRetriever,
 		boshClientProvider, cloudConfigurator,
 	)
-	updateLBs := commands.NewUpdateLBs(certificateManager, availabilityZoneRetriever, infrastructureManager)
+	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})

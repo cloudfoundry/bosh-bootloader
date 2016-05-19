@@ -29,6 +29,7 @@ var _ = Describe("Up", func() {
 			availabilityZoneRetriever      *fakes.AvailabilityZoneRetriever
 			elbDescriber                   *fakes.ELBDescriber
 			loadBalancerCertificateManager *fakes.LoadBalancerCertificateManager
+			awsCredentialValidator         *fakes.AWSCredentialValidator
 			boshInitCredentials            map[string]string
 		)
 
@@ -80,8 +81,10 @@ var _ = Describe("Up", func() {
 			loadBalancerCertificateManager = &fakes.LoadBalancerCertificateManager{}
 			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
 
+			awsCredentialValidator = &fakes.AWSCredentialValidator{}
+
 			command = commands.NewUp(
-				infrastructureManager, keyPairSynchronizer, boshDeployer,
+				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
 			)
 
@@ -101,6 +104,12 @@ var _ = Describe("Up", func() {
 				"blobstoreAgentPassword":    "some-blobstore-agent-password",
 				"hmPassword":                "some-hm-password",
 			}
+		})
+
+		It("returns an error if aws credential validator fails", func() {
+			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
+			_, err := command.Execute([]string{}, storage.State{})
+			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
 		It("checks if the lb type flag is valid", func() {
@@ -850,7 +859,7 @@ var _ = Describe("Up", func() {
 				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 				command = commands.NewUp(
-					infrastructureManager, keyPairSynchronizer, boshDeployer, stringGenerator, cloudConfigurator,
+					awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer, stringGenerator, cloudConfigurator,
 					availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager)
 
 				_, err := command.Execute([]string{}, storage.State{})

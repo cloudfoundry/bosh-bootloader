@@ -23,6 +23,7 @@ var _ = Describe("Update LBs", func() {
 		certificateManager        *fakes.CertificateManager
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
+		awsCredentialValidator    *fakes.AWSCredentialValidator
 	)
 
 	var updateLBs = func(certificatePath string, keyPath string, state storage.State) (storage.State, error) {
@@ -38,6 +39,7 @@ var _ = Describe("Update LBs", func() {
 		certificateManager = &fakes.CertificateManager{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
+		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
 		availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
 		certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
@@ -66,10 +68,18 @@ var _ = Describe("Update LBs", func() {
 		err = ioutil.WriteFile(keyFile.Name(), []byte("some-key-contents"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
-		command = commands.NewUpdateLBs(certificateManager, availabilityZoneRetriever, infrastructureManager)
+		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager)
 	})
 
 	Describe("Execute", func() {
+		It("returns an error when aws credential validator fails", func() {
+			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
+
+			_, err := command.Execute([]string{}, storage.State{})
+
+			Expect(err).To(MatchError("aws credentials validator failed"))
+		})
+
 		It("creates the new certificate and private key", func() {
 			updateLBs(certFile.Name(), keyFile.Name(), storage.State{
 				Stack: storage.Stack{

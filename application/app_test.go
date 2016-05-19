@@ -128,10 +128,11 @@ var _ = Describe("App", func() {
 			Context("when an unknown command is provided", func() {
 				It("returns an error", func() {
 					app = NewAppWithConfiguration(application.Configuration{
-						Command: "unknown-command",
+						Command: "some-unknown-command",
 					})
 					err := app.Run()
-					Expect(err).To(MatchError("command not found"))
+					Expect(err).To(MatchError("unknown command: some-unknown-command"))
+					Expect(helpCmd.ExecuteCall.CallCount).To(Equal(1))
 				})
 			})
 

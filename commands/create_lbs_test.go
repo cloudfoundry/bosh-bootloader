@@ -25,6 +25,7 @@ var _ = Describe("Create LBs", func() {
 			boshClientProvider        *fakes.BOSHClientProvider
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			boshCloudConfigurator     *fakes.BoshCloudConfigurator
+			awsCredentialValidator    *fakes.AWSCredentialValidator
 			incomingState             storage.State
 		)
 
@@ -35,6 +36,7 @@ var _ = Describe("Create LBs", func() {
 			boshCloudConfigurator = &fakes.BoshCloudConfigurator{}
 			boshClient = &fakes.BOSHClient{}
 			boshClientProvider = &fakes.BOSHClientProvider{}
+			awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -59,8 +61,14 @@ var _ = Describe("Create LBs", func() {
 				},
 			}
 
-			command = commands.NewCreateLBs(certificateManager, infrastructureManager,
+			command = commands.NewCreateLBs(awsCredentialValidator, certificateManager, infrastructureManager,
 				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator)
+		})
+
+		It("returns an error if aws credential validator fails", func() {
+			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
+			_, err := command.Execute([]string{}, storage.State{})
+			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
 		It("uploads a cert and key", func() {

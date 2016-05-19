@@ -18,15 +18,16 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy               commands.Destroy
-		boshDeleter           *fakes.BOSHDeleter
-		stackManager          *fakes.StackManager
-		infrastructureManager *fakes.InfrastructureManager
-		vpcStatusChecker      *fakes.VPCStatusChecker
-		stringGenerator       *fakes.StringGenerator
-		logger                *fakes.Logger
-		keyPairDeleter        *fakes.KeyPairDeleter
-		stdin                 *bytes.Buffer
+		destroy                commands.Destroy
+		boshDeleter            *fakes.BOSHDeleter
+		stackManager           *fakes.StackManager
+		infrastructureManager  *fakes.InfrastructureManager
+		vpcStatusChecker       *fakes.VPCStatusChecker
+		stringGenerator        *fakes.StringGenerator
+		logger                 *fakes.Logger
+		keyPairDeleter         *fakes.KeyPairDeleter
+		awsCredentialValidator *fakes.AWSCredentialValidator
+		stdin                  *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -39,11 +40,20 @@ var _ = Describe("Destroy", func() {
 		boshDeleter = &fakes.BOSHDeleter{}
 		keyPairDeleter = &fakes.KeyPairDeleter{}
 		stringGenerator = &fakes.StringGenerator{}
+		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
-		destroy = commands.NewDestroy(logger, stdin, boshDeleter, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
+		destroy = commands.NewDestroy(awsCredentialValidator, logger, stdin, boshDeleter, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
 	})
 
 	Describe("Execute", func() {
+		It("returns an error when aws credential validator fails", func() {
+			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
+
+			_, err := destroy.Execute([]string{}, storage.State{})
+
+			Expect(err).To(MatchError("aws credentials validator failed"))
+		})
+
 		DescribeTable("prompting the user for confirmation",
 			func(response string, proceed bool) {
 				fmt.Fprintf(stdin, "%s\n", response)

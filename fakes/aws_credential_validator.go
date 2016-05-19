@@ -14,10 +14,7 @@ type AWSCredentialValidator struct {
 	}
 }
 
-func (a *AWSCredentialValidator) Validate(accessKeyID string, secretAccessKey string, region string) error {
+func (a *AWSCredentialValidator) Validate() error {
 	a.ValidateCall.CallCount++
-	a.ValidateCall.Receives.AccessKeyID = accessKeyID
-	a.ValidateCall.Receives.SecretAccessKey = secretAccessKey
-	a.ValidateCall.Receives.Region = region
 	return a.ValidateCall.Returns.Error
 }

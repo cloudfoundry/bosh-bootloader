@@ -16,6 +16,7 @@ type CreateLBs struct {
 	boshClientProvider        boshClientProvider
 	availabilityZoneRetriever availabilityZoneRetriever
 	boshCloudConfigurator     boshCloudConfigurator
+	awsCredentialValidator    awsCredentialValidator
 }
 
 type lbConfig struct {
@@ -38,19 +39,25 @@ type boshCloudConfigurator interface {
 	Configure(stack cloudformation.Stack, azs []string, client bosh.Client) error
 }
 
-func NewCreateLBs(certificateManager certificateManager, infrastructureManager infrastructureManager,
-	availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
-	boshCloudConfigurator boshCloudConfigurator) CreateLBs {
+func NewCreateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
+	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
+	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator) CreateLBs {
 	return CreateLBs{
 		certificateManager:        certificateManager,
 		infrastructureManager:     infrastructureManager,
 		boshClientProvider:        boshClientProvider,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		boshCloudConfigurator:     boshCloudConfigurator,
+		awsCredentialValidator:    awsCredentialValidator,
 	}
 }
 
 func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+	err := c.awsCredentialValidator.Validate()
+	if err != nil {
+		return state, err
+	}
+
 	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err

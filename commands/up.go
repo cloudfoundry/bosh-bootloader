@@ -46,6 +46,10 @@ type loadBalancerCertificateManager interface {
 	IsValidLBType(lbType string) bool
 }
 
+type awsCredentialValidator interface {
+	Validate() error
+}
+
 type logger interface {
 	Step(string)
 	Println(string)
@@ -59,6 +63,7 @@ type upConfig struct {
 }
 
 type Up struct {
+	awsCredentialValidator         awsCredentialValidator
 	infrastructureManager          infrastructureManager
 	keyPairSynchronizer            keyPairSynchronizer
 	boshDeployer                   boshDeployer
@@ -70,12 +75,13 @@ type Up struct {
 }
 
 func NewUp(
-	infrastructureManager infrastructureManager, keyPairSynchronizer keyPairSynchronizer,
-	boshDeployer boshDeployer, stringGenerator stringGenerator,
+	awsCredentialValidator awsCredentialValidator, infrastructureManager infrastructureManager,
+	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	elbDescriber elbDescriber, loadBalancerCertificateManager loadBalancerCertificateManager) Up {
 
 	return Up{
+		awsCredentialValidator:         awsCredentialValidator,
 		infrastructureManager:          infrastructureManager,
 		keyPairSynchronizer:            keyPairSynchronizer,
 		boshDeployer:                   boshDeployer,
@@ -88,6 +94,11 @@ func NewUp(
 }
 
 func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+	err := u.awsCredentialValidator.Validate()
+	if err != nil {
+		return state, err
+	}
+
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err

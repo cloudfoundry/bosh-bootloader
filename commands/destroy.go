@@ -12,14 +12,15 @@ import (
 )
 
 type Destroy struct {
-	logger                logger
-	stdin                 io.Reader
-	boshDeleter           boshDeleter
-	vpcStatusChecker      vpcStatusChecker
-	stackManager          stackManager
-	stringGenerator       stringGenerator
-	infrastructureManager infrastructureManager
-	keyPairDeleter        keyPairDeleter
+	awsCredentialValidator awsCredentialValidator
+	logger                 logger
+	stdin                  io.Reader
+	boshDeleter            boshDeleter
+	vpcStatusChecker       vpcStatusChecker
+	stackManager           stackManager
+	stringGenerator        stringGenerator
+	infrastructureManager  infrastructureManager
+	keyPairDeleter         keyPairDeleter
 }
 
 type destroyConfig struct {
@@ -46,20 +47,26 @@ type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewDestroy(logger logger, stdin io.Reader, boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
+func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, stdin io.Reader, boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
 	return Destroy{
-		logger:                logger,
-		stdin:                 stdin,
-		boshDeleter:           boshDeleter,
-		vpcStatusChecker:      vpcStatusChecker,
-		stackManager:          stackManager,
-		stringGenerator:       stringGenerator,
-		infrastructureManager: infrastructureManager,
-		keyPairDeleter:        keyPairDeleter,
+		awsCredentialValidator: awsCredentialValidator,
+		logger:                 logger,
+		stdin:                  stdin,
+		boshDeleter:            boshDeleter,
+		vpcStatusChecker:       vpcStatusChecker,
+		stackManager:           stackManager,
+		stringGenerator:        stringGenerator,
+		infrastructureManager:  infrastructureManager,
+		keyPairDeleter:         keyPairDeleter,
 	}
 }
 
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+	err := d.awsCredentialValidator.Validate()
+	if err != nil {
+		return state, err
+	}
+
 	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return state, err

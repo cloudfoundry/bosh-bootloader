@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -13,16 +12,14 @@ import (
 
 var _ = Describe("ConfigurationParser", func() {
 	var (
-		stateStore             *fakes.StateStore
-		commandLineParser      *fakes.CommandLineParser
-		awsCredentialValidator *fakes.AWSCredentialValidator
-		configurationParser    application.ConfigurationParser
+		stateStore          *fakes.StateStore
+		commandLineParser   *fakes.CommandLineParser
+		configurationParser application.ConfigurationParser
 	)
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
 		commandLineParser = &fakes.CommandLineParser{}
-		awsCredentialValidator = &fakes.AWSCredentialValidator{}
-		configurationParser = application.NewConfigurationParser(commandLineParser, awsCredentialValidator, stateStore)
+		configurationParser = application.NewConfigurationParser(commandLineParser, stateStore)
 	})
 
 	Describe("Parse", func() {
@@ -47,70 +44,6 @@ var _ = Describe("ConfigurationParser", func() {
 			}))
 
 			Expect(commandLineParser.ParseCall.Receives.Arguments).To(Equal([]string{"unsupported-deploy-bosh-on-aws-for-concourse"}))
-		})
-
-		Describe("command validation", func() {
-			Context("when an unknown command is provided", func() {
-				It("returns an error", func() {
-					commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-						Command: "unknown-command",
-					}
-					_, err := configurationParser.Parse([]string{"unknown-command"})
-					Expect(err).To(Equal(application.NewInvalidCommandError(errors.New("unknown command: unknown-command"))))
-				})
-			})
-
-			Context("when nothing is provided", func() {
-				It("returns an error", func() {
-					commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-						Command: "",
-					}
-					_, err := configurationParser.Parse([]string{})
-					Expect(err).To(Equal(application.NewInvalidCommandError(errors.New("unknown command: [EMPTY]"))))
-				})
-			})
-		})
-
-		Describe("credential validation", func() {
-			DescribeTable("when credential validation is not required", func(command string) {
-				commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-					Command: command,
-				}
-				_, err := configurationParser.Parse([]string{command})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
-			},
-				Entry("does not validate credentials for help", "help"),
-				Entry("does not validate credentials for version", "version"),
-				Entry("does not validate credentials for director-address", "director-address"),
-				Entry("does not validate credentials for director-username", "director-username"),
-				Entry("does not validate credentials for director-password", "director-password"),
-				Entry("does not validate credentials for ssh-key", "ssh-key"),
-			)
-
-			DescribeTable("when credential validation is required", func(command string) {
-				commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-					AWSAccessKeyID:     "some-access-key-id",
-					AWSSecretAccessKey: "some-secret-access-key",
-					AWSRegion:          "some-region",
-					Command:            command,
-				}
-				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("credential validation failed")
-
-				_, err := configurationParser.Parse([]string{command})
-				Expect(err).To(MatchError("credential validation failed"))
-
-				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(1))
-				Expect(awsCredentialValidator.ValidateCall.Receives.AccessKeyID).To(Equal("some-access-key-id"))
-				Expect(awsCredentialValidator.ValidateCall.Receives.SecretAccessKey).To(Equal("some-secret-access-key"))
-				Expect(awsCredentialValidator.ValidateCall.Receives.Region).To(Equal("some-region"))
-			},
-				Entry("validates credentials for unsupported-deploy-bosh-on-aws-for-concourse", "unsupported-deploy-bosh-on-aws-for-concourse"),
-				Entry("validates credentials for destroy", "destroy"),
-				Entry("validates credentials for unsupported-create-lbs", "unsupported-create-lbs"),
-				Entry("validates credentials for unsupported-update-lbs", "unsupported-update-lbs"),
-			)
 		})
 
 		Describe("state management", func() {
