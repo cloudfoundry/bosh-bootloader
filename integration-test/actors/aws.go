@@ -17,13 +17,13 @@ type AWS struct {
 }
 
 func NewAWS(configuration integration.Config) AWS {
-	cloudFormationClient := aws.NewClientProvider().CloudFormationClient(aws.Config{
+	cloudFormationClient := cloudformation.NewClient(aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
 		Region:          configuration.AWSRegion,
 	})
 
-	iamClient := aws.NewClientProvider().IAMClient(aws.Config{
+	iamClient := iam.NewClient(aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
 		Region:          configuration.AWSRegion,
