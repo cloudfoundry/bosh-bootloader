@@ -1,6 +1,7 @@
 package application
 
 import (
+	"errors"
 	"os"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -22,10 +23,13 @@ type CommandLineConfiguration struct {
 }
 
 type CommandLineParser struct {
+	usage func()
 }
 
-func NewCommandLineParser() CommandLineParser {
-	return CommandLineParser{}
+func NewCommandLineParser(usage func()) CommandLineParser {
+	return CommandLineParser{
+		usage: usage,
+	}
 }
 
 func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, error) {
@@ -60,7 +64,7 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 	return commandLineConfiguration, nil
 }
 
-func (CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLineConfiguration, arguments []string) (CommandLineConfiguration, []string, error) {
+func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLineConfiguration, arguments []string) (CommandLineConfiguration, []string, error) {
 	globalFlags := flags.New("global")
 
 	globalFlags.String(&commandLineConfiguration.EndpointOverride, "endpoint-override", "")
@@ -74,15 +78,17 @@ func (CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLineCo
 
 	err := globalFlags.Parse(arguments)
 	if err != nil {
-		return CommandLineConfiguration{}, []string{}, NewInvalidFlagError(err)
+		c.usage()
+		return CommandLineConfiguration{}, []string{}, err
 	}
 
 	return commandLineConfiguration, globalFlags.Args(), nil
 }
 
-func (CommandLineParser) parseCommandAndSubcommandFlags(commandLineConfiguration CommandLineConfiguration, remainingArguments []string) (CommandLineConfiguration, error) {
+func (c CommandLineParser) parseCommandAndSubcommandFlags(commandLineConfiguration CommandLineConfiguration, remainingArguments []string) (CommandLineConfiguration, error) {
 	if len(remainingArguments) == 0 {
-		return CommandLineConfiguration{}, NewCommandNotProvidedError()
+		c.usage()
+		return CommandLineConfiguration{}, errors.New("unknown command: [EMPTY]")
 	}
 
 	commandLineConfiguration.Command = remainingArguments[0]

@@ -37,21 +37,13 @@ func main() {
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
 
-	commandLineParser := application.NewCommandLineParser()
+	commandLineParser := application.NewCommandLineParser(usage.Print)
 	configurationParser := application.NewConfigurationParser(commandLineParser, stateStore)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
-		switch err := err.(type) {
-		default:
-			fail(err)
-		case application.InvalidFlagError:
-			usage.Print()
-			fail(err)
-		case application.CommandNotProvidedError:
-			usage.Print()
-			fail(err)
-		}
+		fail(err)
 	}
+
 	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
 
 	// Amazon

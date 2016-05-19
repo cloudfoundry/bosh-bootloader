@@ -10,10 +10,17 @@ import (
 )
 
 var _ = Describe("CommandLineParser", func() {
-	var commandLineParser application.CommandLineParser
+	var (
+		commandLineParser application.CommandLineParser
+		usageCallCount    int
+	)
 
 	BeforeEach(func() {
-		commandLineParser = application.NewCommandLineParser()
+		usageCallCount = 0
+		usageFunc := func() {
+			usageCallCount++
+		}
+		commandLineParser = application.NewCommandLineParser(usageFunc)
 	})
 
 	Describe("Parse", func() {
@@ -88,20 +95,21 @@ var _ = Describe("CommandLineParser", func() {
 		)
 
 		Context("failure cases", func() {
-			It("returns a custom error when it fails to parse flags", func() {
+			It("returns an error and prints usage when an invalid flag is provided", func() {
 				_, err := commandLineParser.Parse([]string{
 					"--invalid-flag",
 					"some-command",
 				})
 
-				Expect(err).To(Equal(application.NewInvalidFlagError(
-					errors.New("flag provided but not defined: -invalid-flag"),
-				)))
+				Expect(err).To(Equal(errors.New("flag provided but not defined: -invalid-flag")))
+				Expect(usageCallCount).To(Equal(1))
 			})
 
-			It("returns an error when the command is not passed in", func() {
+			It("returns an error and prints usage when command is not provided", func() {
 				_, err := commandLineParser.Parse([]string{})
-				Expect(err).To(MatchError(application.NewCommandNotProvidedError()))
+
+				Expect(err).To(Equal(errors.New("unknown command: [EMPTY]")))
+				Expect(usageCallCount).To(Equal(1))
 			})
 
 			It("returns an error when it cannot get working directory", func() {
