@@ -16,11 +16,14 @@ var _ = Describe("CertificateDeleter", func() {
 	var (
 		iamClient *fakes.IAMClient
 		deleter   iam.CertificateDeleter
+		logger    *fakes.Logger
 	)
 
 	BeforeEach(func() {
 		iamClient = &fakes.IAMClient{}
-		deleter = iam.NewCertificateDeleter(iamClient)
+		logger = &fakes.Logger{}
+
+		deleter = iam.NewCertificateDeleter(iamClient, logger)
 	})
 
 	Describe("Delete", func() {
@@ -31,6 +34,8 @@ var _ = Describe("CertificateDeleter", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(iamClient.DeleteServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
+
+			Expect(logger.StepCall.Receives.Message).To(Equal("deleting certificate"))
 		})
 
 		Context("failure cases", func() {

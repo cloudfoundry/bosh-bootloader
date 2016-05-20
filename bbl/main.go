@@ -71,7 +71,7 @@ func main() {
 	elbDescriber := elb.NewDescriber(elbClient)
 	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator)
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
-	certificateDeleter := iam.NewCertificateDeleter(iamClient)
+	certificateDeleter := iam.NewCertificateDeleter(iamClient, logger)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	loadBalancerCertificateManager := iam.NewLoadBalancerCertificateManager(certificateManager)
 
@@ -114,7 +114,7 @@ func main() {
 	)
 	destroy := commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
-		stringGenerator, infrastructureManager, keyPairDeleter,
+		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter,
 	)
 	createLBs := commands.NewCreateLBs(
 		awsCredentialValidator, certificateManager, infrastructureManager, availabilityZoneRetriever,

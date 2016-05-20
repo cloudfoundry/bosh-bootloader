@@ -21,6 +21,7 @@ type Destroy struct {
 	stringGenerator        stringGenerator
 	infrastructureManager  infrastructureManager
 	keyPairDeleter         keyPairDeleter
+	certificateDeleter     certificateDeleter
 }
 
 type destroyConfig struct {
@@ -47,7 +48,14 @@ type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, stdin io.Reader, boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager, stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter) Destroy {
+type certificateDeleter interface {
+	Delete(certificateName string) error
+}
+
+func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, stdin io.Reader,
+	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
+	stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter,
+	certificateDeleter certificateDeleter) Destroy {
 	return Destroy{
 		awsCredentialValidator: awsCredentialValidator,
 		logger:                 logger,
@@ -58,6 +66,7 @@ func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, st
 		stringGenerator:        stringGenerator,
 		infrastructureManager:  infrastructureManager,
 		keyPairDeleter:         keyPairDeleter,
+		certificateDeleter:     certificateDeleter,
 	}
 }
 
@@ -104,6 +113,13 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage
 
 	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
 		return state, err
+	}
+
+	if state.Stack.CertificateName != "" {
+		err = d.certificateDeleter.Delete(state.Stack.CertificateName)
+		if err != nil {
+			return state, err
+		}
 	}
 
 	err = d.keyPairDeleter.Delete(state.KeyPair.Name)

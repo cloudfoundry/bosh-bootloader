@@ -26,6 +26,7 @@ var _ = Describe("Destroy", func() {
 		stringGenerator        *fakes.StringGenerator
 		logger                 *fakes.Logger
 		keyPairDeleter         *fakes.KeyPairDeleter
+		certificateDeleter     *fakes.CertificateDeleter
 		awsCredentialValidator *fakes.AWSCredentialValidator
 		stdin                  *bytes.Buffer
 	)
@@ -39,10 +40,13 @@ var _ = Describe("Destroy", func() {
 		infrastructureManager = &fakes.InfrastructureManager{}
 		boshDeleter = &fakes.BOSHDeleter{}
 		keyPairDeleter = &fakes.KeyPairDeleter{}
+		certificateDeleter = &fakes.CertificateDeleter{}
 		stringGenerator = &fakes.StringGenerator{}
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
-		destroy = commands.NewDestroy(awsCredentialValidator, logger, stdin, boshDeleter, vpcStatusChecker, stackManager, stringGenerator, infrastructureManager, keyPairDeleter)
+		destroy = commands.NewDestroy(awsCredentialValidator, logger, stdin, boshDeleter,
+			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
+			keyPairDeleter, certificateDeleter)
 	})
 
 	Describe("Execute", func() {
@@ -126,7 +130,8 @@ var _ = Describe("Destroy", func() {
 						Manifest:               "bosh-init-manifest",
 					},
 					Stack: storage.Stack{
-						Name: "some-stack-name",
+						Name:            "some-stack-name",
+						CertificateName: "some-certificate-name",
 					},
 				}
 			})
@@ -176,6 +181,21 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(infrastructureManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
+			})
+
+			It("deletes the certificate", func() {
+				_, err := destroy.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(certificateDeleter.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+			})
+
+			It("doesn't call delete certificate if there is no certificate to delete", func() {
+				state.Stack.CertificateName = ""
+				_, err := destroy.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(certificateDeleter.DeleteCall.CallCount).To(Equal(0))
 			})
 
 			It("deletes the keypair", func() {
@@ -237,6 +257,18 @@ var _ = Describe("Destroy", func() {
 
 					_, err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to delete keypair"))
+				})
+			})
+
+			Context("when the certificate cannot be deleted", func() {
+				It("returns an error", func() {
+					certificateDeleter.DeleteCall.Returns.Error = errors.New("failed to delete certificate")
+
+					_, err := destroy.Execute([]string{}, storage.State{
+						Stack: storage.Stack{
+							CertificateName: "some-certificate",
+						}})
+					Expect(err).To(MatchError("failed to delete certificate"))
 				})
 			})
 		})

@@ -140,7 +140,7 @@ var _ = Describe("destroy", func() {
 		})
 	})
 
-	Context("when the bosh director, cloudformation stack, and ec2 keypair exists", func() {
+	Context("when the bosh director, cloudformation stack, certificate, and ec2 keypair exists", func() {
 		var (
 			fakeAWS        *awsbackend.Backend
 			fakeAWSServer  *httptest.Server
@@ -159,6 +159,9 @@ var _ = Describe("destroy", func() {
 			fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 			fakeAWS.Stacks.Set(awsbackend.Stack{
 				Name: "some-stack-name",
+			})
+			fakeAWS.Certificates.Set(awsbackend.Certificate{
+				Name: "some-certificate-name",
 			})
 			fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
 				Name: "some-keypair-name",
@@ -179,7 +182,8 @@ var _ = Describe("destroy", func() {
 
 			buf, err := json.Marshal(storage.State{
 				Stack: storage.Stack{
-					Name: "some-stack-name",
+					Name:            "some-stack-name",
+					CertificateName: "some-certificate-name",
 				},
 				BOSH: storage.BOSH{
 					State: boshinit.State{
@@ -202,6 +206,15 @@ var _ = Describe("destroy", func() {
 		It("deletes the stack", func() {
 			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
 			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting cloudformation stack"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+
+			_, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeFalse())
+		})
+
+		It("deletes the certificate", func() {
+			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting certificate"))
 			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
 
 			_, ok := fakeAWS.Stacks.Get("some-stack-name")
