@@ -157,207 +157,128 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		})
 	})
 
-	Describe("ConcourseSecurityGroup", func() {
-		It("returns a template", func() {
-			securityGroup := builder.ConcourseSecurityGroup()
+	Context("when building security groups for load balancers", func() {
+		var (
+			loadBalancerTemplate templates.Template
+		)
 
-			Expect(securityGroup.Resources).To(HaveLen(1))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("ConcourseSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: templates.SecurityGroup{
-					VpcId:               templates.Ref{"VPC"},
-					GroupDescription:    "Concourse",
-					SecurityGroupEgress: []templates.SecurityGroupEgress{},
-					SecurityGroupIngress: []templates.SecurityGroupIngress{
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "80",
-							ToPort:     "80",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "2222",
-							ToPort:     "2222",
-						},
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "443",
-							ToPort:     "443",
+		BeforeEach(func() {
+			loadBalancerTemplate = templates.Template{
+				Resources: map[string]templates.Resource{
+					"some-load-balancer": {
+						DependsOn: "VPCGatewayAttachment",
+						Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
+						Properties: templates.ElasticLoadBalancingLoadBalancer{
+							Listeners: []templates.Listener{
+								{
+									Protocol:         "tcp",
+									LoadBalancerPort: "1000",
+									InstanceProtocol: "tcp",
+									InstancePort:     "2222",
+								},
+								{
+									Protocol:         "http",
+									LoadBalancerPort: "80",
+									InstanceProtocol: "http",
+									InstancePort:     "8080",
+								},
+								{
+									Protocol:         "ssl",
+									LoadBalancerPort: "443",
+									InstanceProtocol: "tcp",
+									InstancePort:     "8080",
+								},
+							},
 						},
 					},
 				},
-			}))
+			}
 		})
-	})
 
-	Describe("ConcourseInternalSecurityGroup", func() {
-		It("returns a template", func() {
-			securityGroup := builder.ConcourseInternalSecurityGroup()
+		Describe("LBSecurityGroup", func() {
+			It("returns a load balancer security group based on load balancer template", func() {
+				securityGroup := builder.LBSecurityGroup("some-security-group", "some-group-description",
+					"some-load-balancer", loadBalancerTemplate)
 
-			Expect(securityGroup.Resources).To(HaveLen(1))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("ConcourseInternalSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: templates.SecurityGroup{
-					VpcId:            templates.Ref{"VPC"},
-					GroupDescription: "ConcourseInternal",
-					SecurityGroupEgress: []templates.SecurityGroupEgress{
-						{
-							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "8080",
-							ToPort:                "8080",
-						},
-						{
-							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
+				Expect(securityGroup.Resources).To(HaveLen(1))
+				Expect(securityGroup.Resources).To(HaveKeyWithValue("some-security-group", templates.Resource{
+					Type: "AWS::EC2::SecurityGroup",
+					Properties: templates.SecurityGroup{
+						VpcId:               templates.Ref{"VPC"},
+						GroupDescription:    "some-group-description",
+						SecurityGroupEgress: []templates.SecurityGroupEgress{},
+						SecurityGroupIngress: []templates.SecurityGroupIngress{
+							{
+								CidrIp:     "0.0.0.0/0",
+								IpProtocol: "tcp",
+								FromPort:   "1000",
+								ToPort:     "1000",
+							},
+							{
+								CidrIp:     "0.0.0.0/0",
+								IpProtocol: "tcp",
+								FromPort:   "80",
+								ToPort:     "80",
+							},
+							{
+								CidrIp:     "0.0.0.0/0",
+								IpProtocol: "tcp",
+								FromPort:   "443",
+								ToPort:     "443",
+							},
 						},
 					},
-					SecurityGroupIngress: []templates.SecurityGroupIngress{
-						{
-							SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "8080",
-							ToPort:                "8080",
-						},
-						{
-							SourceSecurityGroupId: templates.Ref{"ConcourseSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
-				},
-			}))
-
-			Expect(securityGroup.Outputs).To(HaveLen(1))
-			Expect(securityGroup.Outputs).To(HaveKeyWithValue("ConcourseInternalSecurityGroup", templates.Output{
-				Value: templates.Ref{"ConcourseInternalSecurityGroup"},
-			}))
+				}))
+			})
 		})
-	})
 
-	Describe("CFRouterInternalSecurityGroup", func() {
-		It("returns a template", func() {
-			securityGroup := builder.CFRouterInternalSecurityGroup()
+		Describe("LBInternalSecurityGroup", func() {
+			It("returns a load balancer internal security group based on load balancer template", func() {
+				securityGroup := builder.LBInternalSecurityGroup("some-internal-security-group", "some-security-group",
+					"some-group-description", "some-load-balancer", loadBalancerTemplate)
 
-			Expect(securityGroup.Resources).To(HaveLen(1))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFRouterInternalSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: templates.SecurityGroup{
-					VpcId:            templates.Ref{"VPC"},
-					GroupDescription: "CFRouterInternal",
-					SecurityGroupEgress: []templates.SecurityGroupEgress{
-						{
-							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "80",
-							ToPort:                "80",
+				Expect(securityGroup.Resources).To(HaveLen(1))
+				Expect(securityGroup.Resources).To(HaveKeyWithValue("some-internal-security-group", templates.Resource{
+					Type: "AWS::EC2::SecurityGroup",
+					Properties: templates.SecurityGroup{
+						VpcId:            templates.Ref{"VPC"},
+						GroupDescription: "some-group-description",
+						SecurityGroupEgress: []templates.SecurityGroupEgress{
+							{
+								SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
+								IpProtocol:            "tcp",
+								FromPort:              "2222",
+								ToPort:                "2222",
+							},
+							{
+								SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
+								IpProtocol:            "tcp",
+								FromPort:              "8080",
+								ToPort:                "8080",
+							},
+						},
+						SecurityGroupIngress: []templates.SecurityGroupIngress{
+							{
+								SourceSecurityGroupId: templates.Ref{"some-security-group"},
+								IpProtocol:            "tcp",
+								FromPort:              "2222",
+								ToPort:                "2222",
+							},
+							{
+								SourceSecurityGroupId: templates.Ref{"some-security-group"},
+								IpProtocol:            "tcp",
+								FromPort:              "8080",
+								ToPort:                "8080",
+							},
 						},
 					},
-					SecurityGroupIngress: []templates.SecurityGroupIngress{
-						{
-							SourceSecurityGroupId: templates.Ref{"CFRouterSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "80",
-							ToPort:                "80",
-						},
-					},
-				},
-			}))
+				}))
 
-			Expect(securityGroup.Outputs).To(HaveLen(1))
-			Expect(securityGroup.Outputs).To(HaveKeyWithValue("CFRouterInternalSecurityGroup", templates.Output{
-				Value: templates.Ref{"CFRouterInternalSecurityGroup"},
-			}))
-		})
-	})
-
-	Describe("CFSSHProxyInternalSecurityGroup", func() {
-		It("returns a template", func() {
-			securityGroup := builder.CFSSHProxyInternalSecurityGroup()
-
-			Expect(securityGroup.Resources).To(HaveLen(1))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFSSHProxyInternalSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: templates.SecurityGroup{
-					VpcId:            templates.Ref{"VPC"},
-					GroupDescription: "CFSSHProxyInternal",
-					SecurityGroupEgress: []templates.SecurityGroupEgress{
-						{
-							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
-					SecurityGroupIngress: []templates.SecurityGroupIngress{
-						{
-							SourceSecurityGroupId: templates.Ref{"CFSSHProxySecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
-				},
-			}))
-
-			Expect(securityGroup.Outputs).To(HaveLen(1))
-			Expect(securityGroup.Outputs).To(HaveKeyWithValue("CFSSHProxyInternalSecurityGroup", templates.Output{
-				Value: templates.Ref{"CFSSHProxyInternalSecurityGroup"},
-			}))
-		})
-	})
-
-	Describe("CFRouterSecurityGroup", func() {
-		It("returns a template containing the router security group", func() {
-			securityGroup := builder.CFRouterSecurityGroup()
-
-			Expect(securityGroup.Resources).To(HaveLen(1))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFRouterSecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: templates.SecurityGroup{
-					VpcId:               templates.Ref{"VPC"},
-					GroupDescription:    "Router",
-					SecurityGroupEgress: []templates.SecurityGroupEgress{},
-					SecurityGroupIngress: []templates.SecurityGroupIngress{
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "80",
-							ToPort:     "80",
-						},
-					},
-				},
-			}))
-		})
-	})
-
-	Describe("CFSSHProxySecurityGroup", func() {
-		It("returns a template containing the cf ssh proxy security group", func() {
-			securityGroup := builder.CFSSHProxySecurityGroup()
-
-			Expect(securityGroup.Resources).To(HaveLen(1))
-			Expect(securityGroup.Resources).To(HaveKeyWithValue("CFSSHProxySecurityGroup", templates.Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: templates.SecurityGroup{
-					VpcId:               templates.Ref{"VPC"},
-					GroupDescription:    "CFSSHProxy",
-					SecurityGroupEgress: []templates.SecurityGroupEgress{},
-					SecurityGroupIngress: []templates.SecurityGroupIngress{
-						{
-							CidrIp:     "0.0.0.0/0",
-							IpProtocol: "tcp",
-							FromPort:   "2222",
-							ToPort:     "2222",
-						},
-					},
-				},
-			}))
+				Expect(securityGroup.Outputs).To(HaveLen(1))
+				Expect(securityGroup.Outputs).To(HaveKeyWithValue("some-internal-security-group", templates.Output{
+					Value: templates.Ref{"some-internal-security-group"},
+				}))
+			})
 		})
 	})
 })

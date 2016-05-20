@@ -6,121 +6,83 @@ func NewSecurityGroupTemplateBuilder() SecurityGroupTemplateBuilder {
 	return SecurityGroupTemplateBuilder{}
 }
 
-func (s SecurityGroupTemplateBuilder) ConcourseInternalSecurityGroup() Template {
+func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securityGroupDescription,
+	loadBalancerName string, template Template) Template {
+	securityGroupIngress := []SecurityGroupIngress{}
+
+	properties := template.Resources[loadBalancerName].Properties.(ElasticLoadBalancingLoadBalancer)
+
+	for _, listener := range properties.Listeners {
+		securityGroupIngress = append(securityGroupIngress, s.securityGroupIngress(
+			"0.0.0.0/0",
+			s.determineSecurityGroupProtocol(listener.Protocol),
+			listener.LoadBalancerPort,
+			listener.LoadBalancerPort,
+			nil,
+		))
+	}
+
 	return Template{
 		Resources: map[string]Resource{
-			"ConcourseInternalSecurityGroup": Resource{
+			securityGroupName: Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: SecurityGroup{
-					VpcId:            Ref{"VPC"},
-					GroupDescription: "ConcourseInternal",
-					SecurityGroupEgress: []SecurityGroupEgress{
-						{
-							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "8080",
-							ToPort:                "8080",
-						},
-						{
-							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
-					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "8080",
-							ToPort:                "8080",
-						},
-						{
-							SourceSecurityGroupId: Ref{"ConcourseSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
+					VpcId:                Ref{"VPC"},
+					GroupDescription:     securityGroupDescription,
+					SecurityGroupEgress:  []SecurityGroupEgress{},
+					SecurityGroupIngress: securityGroupIngress,
 				},
-			},
-		},
-		Outputs: map[string]Output{
-			"ConcourseInternalSecurityGroup": Output{
-				Value: Ref{"ConcourseInternalSecurityGroup"},
 			},
 		},
 	}
 }
 
-func (s SecurityGroupTemplateBuilder) CFRouterInternalSecurityGroup() Template {
-	return Template{
-		Resources: map[string]Resource{
-			"CFRouterInternalSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: SecurityGroup{
-					VpcId:            Ref{"VPC"},
-					GroupDescription: "CFRouterInternal",
-					SecurityGroupEgress: []SecurityGroupEgress{
-						{
-							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "80",
-							ToPort:                "80",
-						},
-					},
-					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							SourceSecurityGroupId: Ref{"CFRouterSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "80",
-							ToPort:                "80",
-						},
-					},
-				},
-			},
-		},
-		Outputs: map[string]Output{
-			"CFRouterInternalSecurityGroup": Output{
-				Value: Ref{"CFRouterInternalSecurityGroup"},
-			},
-		},
-	}
-}
+func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName, lbSecurityGroupName,
+	securityGroupDescription, loadBalancerName string, template Template) Template {
 
-func (s SecurityGroupTemplateBuilder) CFSSHProxyInternalSecurityGroup() Template {
+	securityGroupEgress := []SecurityGroupEgress{}
+	securityGroupIngress := []SecurityGroupIngress{}
+	securityGroupPorts := map[string]bool{}
+
+	properties := template.Resources[loadBalancerName].Properties.(ElasticLoadBalancingLoadBalancer)
+	for _, listener := range properties.Listeners {
+		if !securityGroupPorts[listener.InstancePort] {
+			securityGroupIngress = append(securityGroupIngress, SecurityGroupIngress{
+				SourceSecurityGroupId: Ref{lbSecurityGroupName},
+				IpProtocol:            s.determineSecurityGroupProtocol(listener.Protocol),
+				FromPort:              listener.InstancePort,
+				ToPort:                listener.InstancePort,
+			})
+			securityGroupEgress = append(securityGroupEgress, SecurityGroupEgress{
+				SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
+				IpProtocol:            s.determineSecurityGroupProtocol(listener.Protocol),
+				FromPort:              listener.InstancePort,
+				ToPort:                listener.InstancePort,
+			})
+
+			securityGroupPorts[listener.InstancePort] = true
+		}
+	}
+
 	return Template{
 		Resources: map[string]Resource{
-			"CFSSHProxyInternalSecurityGroup": Resource{
+			securityGroupName: Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: SecurityGroup{
-					VpcId:            Ref{"VPC"},
-					GroupDescription: "CFSSHProxyInternal",
-					SecurityGroupEgress: []SecurityGroupEgress{
-						{
-							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
-					SecurityGroupIngress: []SecurityGroupIngress{
-						{
-							SourceSecurityGroupId: Ref{"CFSSHProxySecurityGroup"},
-							IpProtocol:            "tcp",
-							FromPort:              "2222",
-							ToPort:                "2222",
-						},
-					},
+					VpcId:                Ref{"VPC"},
+					GroupDescription:     securityGroupDescription,
+					SecurityGroupEgress:  securityGroupEgress,
+					SecurityGroupIngress: securityGroupIngress,
 				},
 			},
 		},
 		Outputs: map[string]Output{
-			"CFSSHProxyInternalSecurityGroup": Output{
-				Value: Ref{"CFSSHProxyInternalSecurityGroup"},
+			securityGroupName: Output{
+				Value: Ref{securityGroupName},
 			},
 		},
 	}
+
 }
 
 func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
@@ -182,62 +144,6 @@ func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 	}
 }
 
-func (s SecurityGroupTemplateBuilder) ConcourseSecurityGroup() Template {
-	return Template{
-		Resources: map[string]Resource{
-			"ConcourseSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: SecurityGroup{
-					VpcId:               Ref{"VPC"},
-					GroupDescription:    "Concourse",
-					SecurityGroupEgress: []SecurityGroupEgress{},
-					SecurityGroupIngress: []SecurityGroupIngress{
-						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
-						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
-						s.securityGroupIngress("0.0.0.0/0", "tcp", "443", "443", nil),
-					},
-				},
-			},
-		},
-	}
-}
-
-func (s SecurityGroupTemplateBuilder) CFRouterSecurityGroup() Template {
-	return Template{
-		Resources: map[string]Resource{
-			"CFRouterSecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: SecurityGroup{
-					VpcId:               Ref{"VPC"},
-					GroupDescription:    "Router",
-					SecurityGroupEgress: []SecurityGroupEgress{},
-					SecurityGroupIngress: []SecurityGroupIngress{
-						s.securityGroupIngress("0.0.0.0/0", "tcp", "80", "80", nil),
-					},
-				},
-			},
-		},
-	}
-}
-
-func (s SecurityGroupTemplateBuilder) CFSSHProxySecurityGroup() Template {
-	return Template{
-		Resources: map[string]Resource{
-			"CFSSHProxySecurityGroup": Resource{
-				Type: "AWS::EC2::SecurityGroup",
-				Properties: SecurityGroup{
-					VpcId:               Ref{"VPC"},
-					GroupDescription:    "CFSSHProxy",
-					SecurityGroupEgress: []SecurityGroupEgress{},
-					SecurityGroupIngress: []SecurityGroupIngress{
-						s.securityGroupIngress("0.0.0.0/0", "tcp", "2222", "2222", nil),
-					},
-				},
-			},
-		},
-	}
-}
-
 func (SecurityGroupTemplateBuilder) internalSecurityGroupIngress(sourceSecurityGroupId, ipProtocol string) Resource {
 	return Resource{
 		Type: "AWS::EC2::SecurityGroupIngress",
@@ -261,5 +167,16 @@ func (SecurityGroupTemplateBuilder) securityGroupIngress(
 		FromPort:              fromPort,
 		ToPort:                toPort,
 		SourceSecurityGroupId: sourceSecurityGroupId,
+	}
+}
+
+func (SecurityGroupTemplateBuilder) determineSecurityGroupProtocol(listenerProtocol string) string {
+	switch listenerProtocol {
+	case "ssl":
+		return "tcp"
+	case "http":
+		return "tcp"
+	default:
+		return listenerProtocol
 	}
 }

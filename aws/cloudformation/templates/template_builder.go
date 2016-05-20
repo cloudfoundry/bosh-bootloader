@@ -46,26 +46,30 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 
 	if lbType == "concourse" {
 		template.Description = "Infrastructure for a BOSH deployment with a Concourse ELB."
+
+		lbTemplate := loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones, lbCertificateARN)
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
-			securityGroupTemplateBuilder.ConcourseSecurityGroup(),
-			securityGroupTemplateBuilder.ConcourseInternalSecurityGroup(),
-			loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones, lbCertificateARN),
+			lbTemplate,
+			securityGroupTemplateBuilder.LBSecurityGroup("ConcourseSecurityGroup", "Concourse", "ConcourseLoadBalancer", lbTemplate),
+			securityGroupTemplateBuilder.LBInternalSecurityGroup("ConcourseInternalSecurityGroup", "ConcourseSecurityGroup", "ConcourseInternal", "ConcourseLoadBalancer", lbTemplate),
 		)
 	}
 
 	if lbType == "cf" {
 		template.Description = "Infrastructure for a BOSH deployment with a CloudFoundry ELB."
+		routerLBTemplate := loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones)
+		sshLBTemplate := loadBalancerTemplateBuilder.CFSSHProxyLoadBalancer(numberOfAvailabilityZones)
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
 
-			securityGroupTemplateBuilder.CFRouterSecurityGroup(),
-			securityGroupTemplateBuilder.CFRouterInternalSecurityGroup(),
-			loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones),
+			routerLBTemplate,
+			securityGroupTemplateBuilder.LBSecurityGroup("CFRouterSecurityGroup", "Router", "CFRouterLoadBalancer", routerLBTemplate),
+			securityGroupTemplateBuilder.LBInternalSecurityGroup("CFRouterInternalSecurityGroup", "CFRouterSecurityGroup", "CFRouterInternal", "CFRouterLoadBalancer", routerLBTemplate),
 
-			securityGroupTemplateBuilder.CFSSHProxySecurityGroup(),
-			securityGroupTemplateBuilder.CFSSHProxyInternalSecurityGroup(),
-			loadBalancerTemplateBuilder.CFSSHProxyLoadBalancer(numberOfAvailabilityZones),
+			sshLBTemplate,
+			securityGroupTemplateBuilder.LBSecurityGroup("CFSSHProxySecurityGroup", "CFSSHProxy", "CFSSHProxyLoadBalancer", sshLBTemplate),
+			securityGroupTemplateBuilder.LBInternalSecurityGroup("CFSSHProxyInternalSecurityGroup", "CFSSHProxySecurityGroup", "CFSSHProxyInternal", "CFSSHProxyLoadBalancer", sshLBTemplate),
 		)
 	}
 
