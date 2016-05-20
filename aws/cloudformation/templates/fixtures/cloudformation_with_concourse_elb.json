@@ -250,18 +250,30 @@
         "GroupDescription": "ConcourseInternal",
         "SecurityGroupEgress": [
           {
-            "FromPort": "0",
+            "FromPort": "8080",
             "IpProtocol": "tcp",
             "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-            "ToPort": "65535"
+            "ToPort": "8080"
+          },
+          {
+            "FromPort": "2222",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+            "ToPort": "2222"
           }
         ],
         "SecurityGroupIngress": [
           {
-            "FromPort": "0",
+            "FromPort": "8080",
             "IpProtocol": "tcp",
             "SourceSecurityGroupId": {"Ref": "ConcourseSecurityGroup"},
-            "ToPort": "65535"
+            "ToPort": "8080"
+          },
+          {
+            "FromPort": "2222",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {"Ref": "ConcourseSecurityGroup"},
+            "ToPort": "2222"
           }
         ],
         "VpcId": {"Ref": "VPC"}

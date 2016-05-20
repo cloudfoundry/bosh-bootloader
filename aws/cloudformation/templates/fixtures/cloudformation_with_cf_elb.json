@@ -259,18 +259,18 @@
                 "GroupDescription": "CFRouterInternal",
                 "SecurityGroupEgress": [
                     {
-                        "FromPort": "0",
+                        "FromPort": "80",
                         "IpProtocol": "tcp",
                         "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                        "ToPort": "65535"
+                        "ToPort": "80"
                     }
                 ],
                 "SecurityGroupIngress": [
                     {
-                        "FromPort": "0",
+                        "FromPort": "80",
                         "IpProtocol": "tcp",
                         "SourceSecurityGroupId": {"Ref": "CFRouterSecurityGroup"},
-                        "ToPort": "65535"
+                        "ToPort": "80"
                     }
                 ],
                 "VpcId": {"Ref": "VPC"}
@@ -327,20 +327,20 @@
                 "GroupDescription": "CFSSHProxyInternal",
                 "SecurityGroupEgress": [
                     {
-                        "FromPort": "0",
+                        "FromPort": "2222",
                         "IpProtocol": "tcp",
                         "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                        "ToPort": "65535"
+                        "ToPort": "2222"
                     }
                 ],
                 "SecurityGroupIngress": [
                     {
-                        "FromPort": "0",
+                        "FromPort": "2222",
                         "IpProtocol": "tcp",
                         "SourceSecurityGroupId": {
                             "Ref": "CFSSHProxySecurityGroup"
                         },
-                        "ToPort": "65535"
+                        "ToPort": "2222"
                     }
                 ],
                 "VpcId": {"Ref": "VPC"}
