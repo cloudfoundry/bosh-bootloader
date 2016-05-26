@@ -31,7 +31,7 @@ var _ = Describe("load balancer tests", func() {
 		aws = actors.NewAWS(configuration)
 		state = integration.NewState(stateDirectory)
 
-		certBody, err = ioutil.ReadFile("bbl-certs/bbl.crt")
+		certBody, err = ioutil.ReadFile("bbl-certs/bbl-intermediate.crt")
 		Expect(err).NotTo(HaveOccurred())
 
 		newCertBody, err = ioutil.ReadFile("bbl-certs/new-bbl.crt")
@@ -65,5 +65,4 @@ var _ = Describe("load balancer tests", func() {
 			bbl.Destroy()
 		})
 	})
-
 })

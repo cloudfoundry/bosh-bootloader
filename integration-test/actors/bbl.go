@@ -77,9 +77,9 @@ func (b BBL) CreateLB(loadBalancerType string) {
 		"--state-dir", b.stateDirectory,
 		"unsupported-create-lbs",
 		"--type", loadBalancerType,
-		"--cert", "bbl-certs/bbl.crt",
-		"--key", "bbl-certs/bbl.key",
-		"--chain", "bbl-certs/bbl-chain.crt",
+		"--cert", "bbl-certs/bbl-intermediate.crt",
+		"--key", "bbl-certs/bbl-intermediate.key",
+		"--chain", "bbl-certs/bbl.crt",
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)
