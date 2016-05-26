@@ -83,6 +83,18 @@ var _ = Describe("Create LBs", func() {
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
 		})
 
+		It("uploads a cert and key with chain", func() {
+			_, err := command.Execute([]string{
+				"--type", "concourse",
+				"--cert", "temp/some-cert.crt",
+				"--key", "temp/some-key.key",
+				"--chain", "temp/some-chain.crt",
+			}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(certificateManager.CreateCall.Receives.Chain).To(Equal("temp/some-chain.crt"))
+		})
+
 		It("creates a load balancer in cloudformation with certificate", func() {
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
 			certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"

@@ -20,6 +20,7 @@ var _ = Describe("CertificateManager", func() {
 		manager              iam.CertificateManager
 		certificateFile      *os.File
 		privateKeyFile       *os.File
+		chainFile            *os.File
 	)
 
 	BeforeEach(func() {
@@ -35,6 +36,8 @@ var _ = Describe("CertificateManager", func() {
 		privateKeyFile, err = ioutil.TempFile("", "")
 		Expect(err).NotTo(HaveOccurred())
 
+		chainFile, err = ioutil.TempFile("", "")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("CreateOrUpdate", func() {
@@ -183,12 +186,13 @@ var _ = Describe("CertificateManager", func() {
 		It("creates the given certificate", func() {
 			certificateUploader.UploadCall.Returns.CertificateName = "some-new-certificate"
 
-			certificateName, err := manager.Create(certificateFile.Name(), privateKeyFile.Name())
+			certificateName, err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateUploader.UploadCall.CallCount).To(Equal(1))
 			Expect(certificateUploader.UploadCall.Receives.CertificatePath).To(Equal(certificateFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.PrivateKeyPath).To(Equal(privateKeyFile.Name()))
+			Expect(certificateUploader.UploadCall.Receives.ChainPath).To(Equal(chainFile.Name()))
 
 			Expect(certificateName).To(Equal("some-new-certificate"))
 		})
@@ -198,7 +202,7 @@ var _ = Describe("CertificateManager", func() {
 				It("returns an error", func() {
 					certificateUploader.UploadCall.Returns.Error = errors.New("upload failed")
 
-					_, err := manager.Create(certificateFile.Name(), privateKeyFile.Name())
+					_, err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
 					Expect(err).To(MatchError("upload failed"))
 				})
 			})

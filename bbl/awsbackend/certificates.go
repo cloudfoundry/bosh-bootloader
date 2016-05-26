@@ -6,6 +6,7 @@ type Certificate struct {
 	Name            string
 	CertificateBody string
 	PrivateKey      string
+	Chain           string
 }
 
 type Certificates struct {

@@ -18,7 +18,7 @@ type Certificate struct {
 }
 
 type certificateUploader interface {
-	Upload(certificatePath, privateKeyPath string) (string, error)
+	Upload(certificatePath, privateKeyPath, chainPath string) (string, error)
 }
 
 type certificateDescriber interface {
@@ -39,13 +39,13 @@ func NewCertificateManager(certificateUploader certificateUploader, certificateD
 
 func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath string) (string, error) {
 	if name == "" {
-		return c.certificateUploader.Upload(certificatePath, privateKeyPath)
+		return c.certificateUploader.Upload(certificatePath, privateKeyPath, "")
 	}
 
 	remoteCertificate, err := c.certificateDescriber.Describe(name)
 
 	if err == CertificateNotFound {
-		return c.certificateUploader.Upload(certificatePath, privateKeyPath)
+		return c.certificateUploader.Upload(certificatePath, privateKeyPath, "")
 	}
 
 	if err != nil {
@@ -66,8 +66,8 @@ func (c CertificateManager) CreateOrUpdate(name, certificatePath, privateKeyPath
 	return name, nil
 }
 
-func (c CertificateManager) Create(certificatePath, privateKeyPath string) (string, error) {
-	return c.certificateUploader.Upload(certificatePath, privateKeyPath)
+func (c CertificateManager) Create(certificatePath, privateKeyPath, chainPath string) (string, error) {
+	return c.certificateUploader.Upload(certificatePath, privateKeyPath, chainPath)
 }
 
 func (c CertificateManager) Delete(certificateName string) error {
@@ -84,7 +84,7 @@ func (c CertificateManager) overwriteCertificate(name, certificatePath, privateK
 		return "", err
 	}
 
-	certificateName, err := c.certificateUploader.Upload(certificatePath, privateKeyPath)
+	certificateName, err := c.certificateUploader.Upload(certificatePath, privateKeyPath, "")
 	if err != nil {
 		return "", err
 	}

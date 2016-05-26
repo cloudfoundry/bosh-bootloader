@@ -24,7 +24,7 @@ func NewCertificateUploader(iamClient Client, uuidGenerator uuidGenerator) Certi
 	}
 }
 
-func (c CertificateUploader) Upload(certificatePath, privateKeyPath string) (string, error) {
+func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath string) (string, error) {
 	certificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return "", err
@@ -33,6 +33,15 @@ func (c CertificateUploader) Upload(certificatePath, privateKeyPath string) (str
 	privateKey, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
 		return "", err
+	}
+
+	var chain *string
+	if chainPath != "" {
+		chainContents, err := ioutil.ReadFile(chainPath)
+		chain = aws.String(string(chainContents))
+		if err != nil {
+			return "", err
+		}
 	}
 
 	uuid, err := c.uuidGenerator.Generate()
@@ -45,6 +54,7 @@ func (c CertificateUploader) Upload(certificatePath, privateKeyPath string) (str
 	_, err = c.iamClient.UploadServerCertificate(&awsiam.UploadServerCertificateInput{
 		CertificateBody:       aws.String(string(certificate)),
 		PrivateKey:            aws.String(string(privateKey)),
+		CertificateChain:      chain,
 		ServerCertificateName: aws.String(newName),
 	})
 	if err != nil {

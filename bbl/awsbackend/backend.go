@@ -333,6 +333,7 @@ func (b *Backend) UploadServerCertificate(input *iam.UploadServerCertificateInpu
 			Name:            certificateName,
 			CertificateBody: aws.StringValue(input.CertificateBody),
 			PrivateKey:      aws.StringValue(input.PrivateKey),
+			Chain:           aws.StringValue(input.CertificateChain),
 		})
 		return nil, nil
 	}

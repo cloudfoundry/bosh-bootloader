@@ -21,6 +21,7 @@ type CertificateManager struct {
 		Receives  struct {
 			Certificate string
 			PrivateKey  string
+			Chain       string
 		}
 		Returns struct {
 			CertificateName string
@@ -60,10 +61,11 @@ func (c *CertificateManager) CreateOrUpdate(name, certificate, privatekey string
 	return c.CreateOrUpdateCall.Returns.CertificateName, c.CreateOrUpdateCall.Returns.Error
 }
 
-func (c *CertificateManager) Create(certificate, privatekey string) (string, error) {
+func (c *CertificateManager) Create(certificate, privatekey, chain string) (string, error) {
 	c.CreateCall.CallCount++
 	c.CreateCall.Receives.Certificate = certificate
 	c.CreateCall.Receives.PrivateKey = privatekey
+	c.CreateCall.Receives.Chain = chain
 
 	return c.CreateCall.Returns.CertificateName, c.CreateCall.Returns.Error
 }

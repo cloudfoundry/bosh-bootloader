@@ -28,6 +28,7 @@ var _ = Describe("load balancers", func() {
 		fakeBOSH       *fakeBOSHDirector
 		lbCert         []byte
 		lbKey          []byte
+		lbChain        []byte
 		tempDirectory  string
 	)
 
@@ -64,10 +65,12 @@ var _ = Describe("load balancers", func() {
 		lbKey, err = ioutil.ReadFile("fixtures/lb-key.pem")
 		Expect(err).NotTo(HaveOccurred())
 
+		lbChain, err = ioutil.ReadFile("fixtures/lb-chain.pem")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("create-lbs", func() {
-		DescribeTable("creates lbs with the specified cert and key attached",
+		DescribeTable("creates lbs with the specified cert, key, and chain attached",
 			func(lbType, fixtureLocation string) {
 				contents, err := ioutil.ReadFile(fixtureLocation)
 				Expect(err).NotTo(HaveOccurred())
@@ -78,6 +81,7 @@ var _ = Describe("load balancers", func() {
 				Expect(certificates).To(HaveLen(1))
 				Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
 				Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
+				Expect(certificates[0].Chain).To(Equal(string(lbChain)))
 				Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 
 				stdout := session.Out.Contents()
@@ -226,6 +230,7 @@ func createLBs(endpointOverrideURL string, stateDir string, lbType string, exitC
 		"--type", lbType,
 		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
 		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
+		"--chain", filepath.Join(dir, "fixtures", "lb-chain.pem"),
 	}
 
 	return executeCommand(args, exitCode)

@@ -79,6 +79,7 @@ func (b BBL) CreateLB(loadBalancerType string) {
 		"--type", loadBalancerType,
 		"--cert", "bbl-certs/bbl.crt",
 		"--key", "bbl-certs/bbl.key",
+		"--chain", "bbl-certs/bbl-chain.crt",
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)

@@ -52,7 +52,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, nil
 	}
 
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath)
+	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, "")
 	if err != nil {
 		return state, err
 	}

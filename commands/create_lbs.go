@@ -20,13 +20,14 @@ type CreateLBs struct {
 }
 
 type lbConfig struct {
-	lbType   string
-	certPath string
-	keyPath  string
+	lbType    string
+	certPath  string
+	keyPath   string
+	chainPath string
 }
 
 type certificateManager interface {
-	Create(certificate, privateKey string) (string, error)
+	Create(certificate, privateKey, chain string) (string, error)
 	Describe(certificateName string) (iam.Certificate, error)
 	Delete(certificateName string) error
 }
@@ -69,7 +70,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath)
+	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err
 	}
@@ -91,6 +92,7 @@ func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
 	lbFlags.String(&config.lbType, "type", "")
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
+	lbFlags.String(&config.chainPath, "chain", "")
 
 	err := lbFlags.Parse(subcommandFlags)
 	if err != nil {
