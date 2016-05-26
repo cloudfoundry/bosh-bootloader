@@ -58,7 +58,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 
 	if lbType == "cf" {
 		template.Description = "Infrastructure for a BOSH deployment with a CloudFoundry ELB."
-		routerLBTemplate := loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones)
+		routerLBTemplate := loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones, lbCertificateARN)
 		sshLBTemplate := loadBalancerTemplateBuilder.CFSSHProxyLoadBalancer(numberOfAvailabilityZones)
 		template.Merge(
 			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),

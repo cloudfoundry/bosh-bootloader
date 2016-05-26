@@ -183,6 +183,12 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 									InstancePort:     "8080",
 								},
 								{
+									Protocol:         "https",
+									LoadBalancerPort: "4443",
+									InstanceProtocol: "tcp",
+									InstancePort:     "8080",
+								},
+								{
 									Protocol:         "ssl",
 									LoadBalancerPort: "443",
 									InstanceProtocol: "tcp",
@@ -219,6 +225,12 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 								IpProtocol: "tcp",
 								FromPort:   "80",
 								ToPort:     "80",
+							},
+							{
+								CidrIp:     "0.0.0.0/0",
+								IpProtocol: "tcp",
+								FromPort:   "4443",
+								ToPort:     "4443",
 							},
 							{
 								CidrIp:     "0.0.0.0/0",

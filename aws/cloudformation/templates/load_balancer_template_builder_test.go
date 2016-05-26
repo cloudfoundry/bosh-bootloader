@@ -16,7 +16,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 	Describe("CFRouterLoadBalancer", func() {
 		It("returns a template containing the cf load balancer", func() {
-			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2)
+			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2, "some-certificate-arn")
 
 			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveLen(2))
 			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFRouterLoadBalancer", templates.Output{
@@ -55,6 +55,20 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 							LoadBalancerPort: "80",
 							InstanceProtocol: "http",
 							InstancePort:     "80",
+						},
+						{
+							Protocol:         "https",
+							LoadBalancerPort: "443",
+							InstanceProtocol: "http",
+							InstancePort:     "80",
+							SSLCertificateID: "some-certificate-arn",
+						},
+						{
+							Protocol:         "ssl",
+							LoadBalancerPort: "4443",
+							InstanceProtocol: "tcp",
+							InstancePort:     "80",
+							SSLCertificateID: "some-certificate-arn",
 						},
 					},
 				},
@@ -162,7 +176,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 							LoadBalancerPort: "443",
 							InstanceProtocol: "tcp",
 							InstancePort:     "8080",
-							SSLCertificateId: "some-certificate-arn",
+							SSLCertificateID: "some-certificate-arn",
 						},
 					},
 				},

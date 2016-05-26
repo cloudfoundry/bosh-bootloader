@@ -294,7 +294,21 @@
                         "InstanceProtocol": "http",
                         "LoadBalancerPort": "80",
                         "Protocol": "http"
-                    }
+                    },
+					{
+						"InstancePort": "80",
+						"InstanceProtocol": "http",
+						"LoadBalancerPort": "443",
+						"Protocol": "https",
+						"SSLCertificateId": "some-certificate-arn"
+					},
+					{
+						"InstancePort": "80",
+						"InstanceProtocol": "tcp",
+						"LoadBalancerPort": "4443",
+						"Protocol": "ssl",
+						"SSLCertificateId": "some-certificate-arn"
+					}
                 ],
                 "SecurityGroups": [{"Ref": "CFRouterSecurityGroup"}],
                 "Subnets": [
@@ -316,6 +330,18 @@
                         "FromPort": "80",
                         "IpProtocol": "tcp",
                         "ToPort": "80"
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "443",
+                        "IpProtocol": "tcp",
+                        "ToPort": "443"
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "4443",
+                        "IpProtocol": "tcp",
+                        "ToPort": "4443"
                     }
                 ],
                 "VpcId": {"Ref": "VPC"}

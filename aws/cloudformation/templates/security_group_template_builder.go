@@ -174,7 +174,7 @@ func (SecurityGroupTemplateBuilder) determineSecurityGroupProtocol(listenerProto
 	switch listenerProtocol {
 	case "ssl":
 		return "tcp"
-	case "http":
+	case "http", "https":
 		return "tcp"
 	default:
 		return listenerProtocol
