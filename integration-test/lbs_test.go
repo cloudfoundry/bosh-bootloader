@@ -64,7 +64,7 @@ var _ = Describe("load balancer tests", func() {
 
 			session := bbl.LBs()
 			stdout := session.Out.Contents()
-			Expect(stdout).To(MatchRegexp(`[a-zA-z0-9\-]+: http:\/\/[a-zA-z0-9\-]+.com`))
+			Expect(stdout).To(MatchRegexp(`[a-zA-z0-9\-]+: [a-zA-z0-9\-\.]+.com`))
 
 			bbl.Destroy()
 		})
