@@ -62,6 +62,10 @@ var _ = Describe("load balancer tests", func() {
 			Expect(aws.LoadBalancers(stackName)).To(Equal([]string{"ConcourseLoadBalancer"}))
 			Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(newCertBody))))
 
+			session := bbl.LBs()
+			stdout := session.Out.Contents()
+			Expect(stdout).To(MatchRegexp(`[a-zA-z0-9\-]+: http:\/\/[a-zA-z0-9\-]+.com`))
+
 			bbl.Destroy()
 		})
 	})

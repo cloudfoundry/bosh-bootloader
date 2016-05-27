@@ -40,24 +40,12 @@ var _ = Describe("load balancers", func() {
 
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
-		fakeAWS.Stacks.Set(awsbackend.Stack{
-			Name: "some-stack-name",
-		})
 
 		var err error
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		writeStateJson(storage.State{
-			Stack: storage.Stack{
-				Name: "some-stack-name",
-			},
-			BOSH: storage.BOSH{
-				DirectorUsername: "admin",
-				DirectorPassword: "admin",
-				DirectorAddress:  fakeBOSHServer.URL,
-			},
-		}, tempDirectory)
+		deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 		lbCert, err = ioutil.ReadFile("fixtures/lb-cert.pem")
 		Expect(err).NotTo(HaveOccurred())
@@ -117,7 +105,9 @@ var _ = Describe("load balancers", func() {
 
 			Context("when the environment has not been provisioned", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
-					fakeAWS.Stacks.Delete("some-stack-name")
+					state := readStateJson(tempDirectory)
+
+					fakeAWS.Stacks.Delete(state.Stack.Name)
 					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
 					stderr := session.Err.Contents()
 
@@ -160,6 +150,10 @@ var _ = Describe("load balancers", func() {
 				},
 			}, tempDirectory)
 
+			fakeAWS.Stacks.Set(awsbackend.Stack{
+				Name: "some-stack-name",
+			})
+
 			fakeAWS.Certificates.Set(awsbackend.Certificate{
 				Name:            "bbl-cert-old-certificate",
 				CertificateBody: "some-old-certificate-body",
@@ -200,7 +194,32 @@ var _ = Describe("load balancers", func() {
 			})
 		})
 	})
+
+	Describe("lbs", func() {
+		It("prints out the currently attached lb names and urls", func() {
+			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0)
+
+			session := lbs(fakeAWSServer.URL, tempDirectory, 0)
+			stdout := session.Out.Contents()
+
+			Expect(stdout).To(ContainSubstring("some-cf-router-lb: some-cf-router-lb-url"))
+			Expect(stdout).To(ContainSubstring("ssh-proxy-lb: some-cf-ssh-proxy-lb-url"))
+		})
+	})
 })
+
+func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Session {
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
+		"--aws-access-key-id", "some-access-key-id",
+		"--aws-secret-access-key", "some-secret-access-key",
+		"--aws-region", "some-region",
+		"--state-dir", stateDir,
+		"unsupported-lbs",
+	}
+
+	return executeCommand(args, exitCode)
+}
 
 func updateLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, exitCode int) *gexec.Session {
 	args := []string{
