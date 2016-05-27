@@ -11,6 +11,7 @@ import (
 )
 
 type CreateLBs struct {
+	logger                    logger
 	certificateManager        certificateManager
 	infrastructureManager     infrastructureManager
 	boshClientProvider        boshClientProvider
@@ -41,10 +42,11 @@ type boshCloudConfigurator interface {
 	Configure(stack cloudformation.Stack, azs []string, client bosh.Client) error
 }
 
-func NewCreateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
+func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
 	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator) CreateLBs {
 	return CreateLBs{
+		logger:                    logger,
 		certificateManager:        certificateManager,
 		infrastructureManager:     infrastructureManager,
 		boshClientProvider:        boshClientProvider,
@@ -66,6 +68,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	}
 
 	if config.skipIfExists && state.Stack.LBType != "" {
+		c.logger.Println(fmt.Sprintf("lb type %q exists, skipping...", state.Stack.LBType))
 		return state, nil
 	}
 

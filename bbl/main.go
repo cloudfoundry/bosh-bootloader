@@ -117,8 +117,8 @@ func main() {
 		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter,
 	)
 	createLBs := commands.NewCreateLBs(
-		awsCredentialValidator, certificateManager, infrastructureManager, availabilityZoneRetriever,
-		boshClientProvider, cloudConfigurator,
+		logger, awsCredentialValidator, certificateManager, infrastructureManager,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigurator,
 	)
 	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager)
 	lbs := commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)

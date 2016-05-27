@@ -26,6 +26,7 @@ var _ = Describe("Create LBs", func() {
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			boshCloudConfigurator     *fakes.BoshCloudConfigurator
 			awsCredentialValidator    *fakes.AWSCredentialValidator
+			logger                    *fakes.Logger
 			incomingState             storage.State
 		)
 
@@ -37,6 +38,7 @@ var _ = Describe("Create LBs", func() {
 			boshClient = &fakes.BOSHClient{}
 			boshClientProvider = &fakes.BOSHClientProvider{}
 			awsCredentialValidator = &fakes.AWSCredentialValidator{}
+			logger = &fakes.Logger{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -61,7 +63,7 @@ var _ = Describe("Create LBs", func() {
 				},
 			}
 
-			command = commands.NewCreateLBs(awsCredentialValidator, certificateManager, infrastructureManager,
+			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
 				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator)
 		})
 
@@ -151,6 +153,8 @@ var _ = Describe("Create LBs", func() {
 
 				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
 				Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`lb type "cf" exists, skipping...`))
 			})
 
 			It("creates the lb if lb does not exist", func() {

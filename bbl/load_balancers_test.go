@@ -90,12 +90,15 @@ var _ = Describe("load balancers", func() {
 
 			originalCertificate := certificates[0]
 
-			createLBsSkipIfExists(fakeAWSServer.URL, tempDirectory, "cf", 0)
+			session := createLBsSkipIfExists(fakeAWSServer.URL, tempDirectory, "cf", 0)
 
 			certificates = fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
 
 			Expect(certificates[0].Name).To(Equal(originalCertificate.Name))
+
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring(`lb type "cf" exists, skipping...`))
 		})
 
 		Context("failure cases", func() {
