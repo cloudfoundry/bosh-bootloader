@@ -46,16 +46,6 @@ var _ = Describe("up and destroy", func() {
 		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
 		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeTrue())
 
-		bbl.Up("cf")
-		Expect(state.Checksum()).NotTo(Equal(originalStateChecksum))
-		Expect(aws.LoadBalancers(stackName)).To(ConsistOf("CFRouterLoadBalancer", "CFSSHProxyLoadBalancer"))
-
-		bbl.Up("")
-		Expect(aws.LoadBalancers(stackName)).To(ConsistOf("CFRouterLoadBalancer", "CFSSHProxyLoadBalancer"))
-
-		bbl.Up("concourse")
-		Expect(aws.LoadBalancers(stackName)).To(ConsistOf("ConcourseLoadBalancer"))
-
 		bbl.Destroy()
 		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeFalse())
 		Expect(aws.StackExists(stackName)).To(BeFalse())
