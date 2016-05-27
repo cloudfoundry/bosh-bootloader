@@ -49,15 +49,15 @@ func (a AWS) StackExists(stackName string) bool {
 	return true
 }
 
-func (a AWS) LoadBalancers(stackName string) []string {
+func (a AWS) LoadBalancers(stackName string) map[string]string {
 	stack, err := a.stackManager.Describe(stackName)
 	Expect(err).NotTo(HaveOccurred())
 
-	loadBalancers := []string{}
+	loadBalancers := map[string]string{}
 
 	for _, loadBalancer := range []string{"CFRouterLoadBalancer", "CFSSHProxyLoadBalancer", "ConcourseLoadBalancer"} {
 		if stack.Outputs[loadBalancer] != "" {
-			loadBalancers = append(loadBalancers, loadBalancer)
+			loadBalancers[loadBalancer] = stack.Outputs[loadBalancer]
 		}
 	}
 
