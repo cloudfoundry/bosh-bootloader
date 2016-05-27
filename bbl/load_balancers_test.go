@@ -82,6 +82,22 @@ var _ = Describe("load balancers", func() {
 			Entry("it attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 		)
 
+		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
+			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0)
+
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(1))
+
+			originalCertificate := certificates[0]
+
+			createLBsSkipIfExists(fakeAWSServer.URL, tempDirectory, "cf", 0)
+
+			certificates = fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(1))
+
+			Expect(certificates[0].Name).To(Equal(originalCertificate.Name))
+		})
+
 		Context("failure cases", func() {
 			Context("when an lb already exists", func() {
 				BeforeEach(func() {
@@ -231,6 +247,26 @@ func updateLBs(endpointOverrideURL string, stateDir string, certName string, key
 		"unsupported-update-lbs",
 		"--cert", certName,
 		"--key", keyName,
+	}
+
+	return executeCommand(args, exitCode)
+}
+
+func createLBsSkipIfExists(endpointOverrideURL string, stateDir string, lbType string, exitCode int) *gexec.Session {
+	dir, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
+		"--aws-access-key-id", "some-access-key-id",
+		"--aws-secret-access-key", "some-secret-access-key",
+		"--aws-region", "some-region",
+		"--state-dir", stateDir,
+		"unsupported-create-lbs",
+		"--skip-if-exists",
+		"--type", lbType,
+		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
+		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
+		"--chain", filepath.Join(dir, "fixtures", "lb-chain.pem"),
 	}
 
 	return executeCommand(args, exitCode)

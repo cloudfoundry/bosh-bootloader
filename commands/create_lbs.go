@@ -20,10 +20,11 @@ type CreateLBs struct {
 }
 
 type lbConfig struct {
-	lbType    string
-	certPath  string
-	keyPath   string
-	chainPath string
+	lbType       string
+	certPath     string
+	keyPath      string
+	chainPath    string
+	skipIfExists bool
 }
 
 type certificateManager interface {
@@ -64,6 +65,10 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
+	if config.skipIfExists && state.Stack.LBType != "" {
+		return state, nil
+	}
+
 	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 
 	if err := c.checkFastFails(config.lbType, state.Stack.LBType, state.Stack.Name, boshClient); err != nil {
@@ -93,6 +98,7 @@ func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
+	lbFlags.Bool(&config.skipIfExists, "skip-if-exists", "", false)
 
 	err := lbFlags.Parse(subcommandFlags)
 	if err != nil {

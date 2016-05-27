@@ -138,6 +138,35 @@ var _ = Describe("Create LBs", func() {
 			Expect(boshCloudConfigurator.ConfigureCall.Receives.Client).To(Equal(boshClient))
 		})
 
+		Context("when --skip-if-exists is provided", func() {
+			It("no-ops when lb exists", func() {
+				incomingState.Stack.LBType = "cf"
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "temp/some-cert.crt",
+					"--key", "temp/some-key.key",
+					"--skip-if-exists",
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
+				Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+			})
+
+			It("creates the lb if lb does not exist", func() {
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "temp/some-cert.crt",
+					"--key", "temp/some-key.key",
+					"--skip-if-exists",
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
+				Expect(certificateManager.CreateCall.CallCount).To(Equal(1))
+			})
+		})
+
 		Context("invalid lb type", func() {
 			It("returns an error", func() {
 				_, err := command.Execute([]string{
