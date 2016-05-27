@@ -202,8 +202,8 @@ var _ = Describe("load balancers", func() {
 			session := lbs(fakeAWSServer.URL, tempDirectory, 0)
 			stdout := session.Out.Contents()
 
-			Expect(stdout).To(ContainSubstring("some-cf-router-lb: some-cf-router-lb-url"))
-			Expect(stdout).To(ContainSubstring("ssh-proxy-lb: some-cf-ssh-proxy-lb-url"))
+			Expect(stdout).To(ContainSubstring("CF Router LB: some-cf-router-lb [some-cf-router-lb-url]"))
+			Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-cf-ssh-proxy-lb [some-cf-ssh-proxy-lb-url]"))
 		})
 	})
 })

@@ -53,8 +53,8 @@ var _ = Describe("LBs", func() {
 
 			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-			Expect(stdout.String()).To(ContainSubstring("some-lb-name: http://some.lb.url"))
-			Expect(stdout.String()).To(ContainSubstring("some-other-lb-name: http://some.other.lb.url"))
+			Expect(stdout.String()).To(ContainSubstring("CF Router LB: some-lb-name [http://some.lb.url]"))
+			Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-other-lb-name [http://some.other.lb.url]"))
 		})
 
 		It("prints LB names and URLs for lb type concourse", func() {
@@ -81,7 +81,7 @@ var _ = Describe("LBs", func() {
 
 			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-			Expect(stdout.String()).To(ContainSubstring("some-lb-name: http://some.lb.url"))
+			Expect(stdout.String()).To(ContainSubstring("Concourse LB: some-lb-name [http://some.lb.url]"))
 		})
 
 		It("returns error when lb type is not cf or concourse", func() {

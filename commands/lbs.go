@@ -33,12 +33,13 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) (storage.Sta
 		return state, err
 	}
 
-	if state.Stack.LBType == "cf" {
-		fmt.Fprintf(c.stdout, "%s: %s\n", stack.Outputs["CFRouterLoadBalancer"], stack.Outputs["CFRouterLoadBalancerURL"])
-		fmt.Fprintf(c.stdout, "%s: %s\n", stack.Outputs["CFSSHProxyLoadBalancer"], stack.Outputs["CFSSHProxyLoadBalancerURL"])
-	} else if state.Stack.LBType == "concourse" {
-		fmt.Fprintf(c.stdout, "%s: %s\n", stack.Outputs["ConcourseLoadBalancer"], stack.Outputs["ConcourseLoadBalancerURL"])
-	} else {
+	switch state.Stack.LBType {
+	case "cf":
+		fmt.Fprintf(c.stdout, "CF Router LB: %s [%s]\n", stack.Outputs["CFRouterLoadBalancer"], stack.Outputs["CFRouterLoadBalancerURL"])
+		fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s [%s]\n", stack.Outputs["CFSSHProxyLoadBalancer"], stack.Outputs["CFSSHProxyLoadBalancerURL"])
+	case "concourse":
+		fmt.Fprintf(c.stdout, "Concourse LB: %s [%s]\n", stack.Outputs["ConcourseLoadBalancer"], stack.Outputs["ConcourseLoadBalancerURL"])
+	default:
 		return state, errors.New("no lbs found")
 	}
 
