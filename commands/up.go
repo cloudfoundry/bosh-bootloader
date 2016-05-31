@@ -7,7 +7,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -27,10 +26,6 @@ type infrastructureManager interface {
 
 type boshDeployer interface {
 	Deploy(boshinit.DeployInput) (boshinit.DeployOutput, error)
-}
-
-type cloudConfigurator interface {
-	Configure(stack cloudformation.Stack, azs []string, boshClient bosh.Client) error
 }
 
 type availabilityZoneRetriever interface {
@@ -68,17 +63,20 @@ type Up struct {
 	keyPairSynchronizer            keyPairSynchronizer
 	boshDeployer                   boshDeployer
 	stringGenerator                stringGenerator
-	cloudConfigurator              cloudConfigurator
+	boshCloudConfigurator          boshCloudConfigurator
 	availabilityZoneRetriever      availabilityZoneRetriever
 	elbDescriber                   elbDescriber
 	loadBalancerCertificateManager loadBalancerCertificateManager
+	cloudConfigManager             cloudConfigManager
+	boshClientProvider             boshClientProvider
 }
 
 func NewUp(
 	awsCredentialValidator awsCredentialValidator, infrastructureManager infrastructureManager,
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
-	cloudConfigurator cloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
-	elbDescriber elbDescriber, loadBalancerCertificateManager loadBalancerCertificateManager) Up {
+	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
+	elbDescriber elbDescriber, loadBalancerCertificateManager loadBalancerCertificateManager,
+	cloudConfigManager cloudConfigManager, boshClientProvider boshClientProvider) Up {
 
 	return Up{
 		awsCredentialValidator:         awsCredentialValidator,
@@ -86,10 +84,12 @@ func NewUp(
 		keyPairSynchronizer:            keyPairSynchronizer,
 		boshDeployer:                   boshDeployer,
 		stringGenerator:                stringGenerator,
-		cloudConfigurator:              cloudConfigurator,
+		boshCloudConfigurator:          boshCloudConfigurator,
 		availabilityZoneRetriever:      availabilityZoneRetriever,
 		elbDescriber:                   elbDescriber,
 		loadBalancerCertificateManager: loadBalancerCertificateManager,
+		cloudConfigManager:             cloudConfigManager,
+		boshClientProvider:             boshClientProvider,
 	}
 }
 
@@ -186,12 +186,12 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 	state.BOSH.State = deployOutput.BOSHInitState
 	state.BOSH.Manifest = deployOutput.BOSHInitManifest
 
-	boshClient := bosh.NewClient(
-		stack.Outputs["BOSHURL"],
-		deployInput.DirectorUsername,
-		deployInput.DirectorPassword,
-	)
-	err = u.cloudConfigurator.Configure(stack, availabilityZones, boshClient)
+	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+		state.BOSH.DirectorPassword)
+
+	cloudConfigInput := u.boshCloudConfigurator.Configure(stack, availabilityZones)
+
+	err = u.cloudConfigManager.Update(cloudConfigInput, boshClient)
 	if err != nil {
 		return state, err
 	}

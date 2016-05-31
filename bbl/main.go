@@ -102,8 +102,9 @@ func main() {
 
 	// BOSH
 	boshClientProvider := bosh.NewClientProvider()
-	boshCloudConfigGenerator := bosh.NewCloudConfigGenerator()
-	cloudConfigurator := bosh.NewCloudConfigurator(logger, boshCloudConfigGenerator)
+	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
+	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
+	cloudConfigManager := bosh.NewCloudConfigManager(logger, cloudConfigGenerator)
 
 	// Commands
 	help := commands.NewUsage(os.Stdout)
@@ -111,6 +112,7 @@ func main() {
 	up := commands.NewUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
+		cloudConfigManager, boshClientProvider,
 	)
 	destroy := commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
@@ -118,9 +120,13 @@ func main() {
 	)
 	createLBs := commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigurator,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager,
 	)
 	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager)
+	deleteLBs := commands.NewDeleteLBs(
+		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
+		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider,
+	)
 	lbs := commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
 		return state.BOSH.DirectorAddress
@@ -146,6 +152,7 @@ func main() {
 		"ssh-key":                sshKey,
 		"unsupported-create-lbs": createLBs,
 		"unsupported-update-lbs": updateLBs,
+		"unsupported-delete-lbs": deleteLBs,
 		"unsupported-lbs":        lbs,
 	}, configuration, stateStore, usage.Print)
 

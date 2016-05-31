@@ -18,6 +18,7 @@ type CreateLBs struct {
 	availabilityZoneRetriever availabilityZoneRetriever
 	boshCloudConfigurator     boshCloudConfigurator
 	awsCredentialValidator    awsCredentialValidator
+	cloudConfigManager        cloudConfigManager
 }
 
 type lbConfig struct {
@@ -39,12 +40,13 @@ type boshClientProvider interface {
 }
 
 type boshCloudConfigurator interface {
-	Configure(stack cloudformation.Stack, azs []string, client bosh.Client) error
+	Configure(stack cloudformation.Stack, azs []string) bosh.CloudConfigInput
 }
 
 func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
-	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator) CreateLBs {
+	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator,
+	cloudConfigManager cloudConfigManager) CreateLBs {
 	return CreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -53,6 +55,7 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		boshCloudConfigurator:     boshCloudConfigurator,
 		awsCredentialValidator:    awsCredentialValidator,
+		cloudConfigManager:        cloudConfigManager,
 	}
 }
 
@@ -160,7 +163,9 @@ func (c CreateLBs) updateStackAndBOSH(
 		return err
 	}
 
-	err = c.boshCloudConfigurator.Configure(stack, availabilityZones, boshClient)
+	cloudConfigInput := c.boshCloudConfigurator.Configure(stack, availabilityZones)
+
+	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
 	if err != nil {
 		return err
 	}

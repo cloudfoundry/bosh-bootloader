@@ -72,6 +72,7 @@ func (c *CloudConfigGenerator) generateNetworks() error {
 	}
 
 	networksGenerator := NewNetworksGenerator(c.input.Subnets, azAssociations)
+
 	var err error
 	c.cloudConfig.Networks, err = networksGenerator.Generate()
 	if err != nil {

@@ -3,7 +3,6 @@ package bosh
 import (
 	"fmt"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 )
 
@@ -17,10 +16,6 @@ type logger interface {
 	Println(string)
 }
 
-type cloudConfigGenerator interface {
-	Generate(CloudConfigInput) (CloudConfig, error)
-}
-
 func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudConfigurator {
 	return CloudConfigurator{
 		logger:    logger,
@@ -28,7 +23,7 @@ func NewCloudConfigurator(logger logger, generator cloudConfigGenerator) CloudCo
 	}
 }
 
-func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, boshClient Client) error {
+func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string) CloudConfigInput {
 	var subnets []SubnetInput
 	for az := range azs {
 		az++
@@ -46,23 +41,7 @@ func (c CloudConfigurator) Configure(stack cloudformation.Stack, azs []string, b
 		LBs:     c.populateLBs(stack),
 	}
 
-	c.logger.Step("generating cloud config")
-	cloudConfig, err := c.generator.Generate(cloudConfigInput)
-	if err != nil {
-		return err
-	}
-
-	yaml, err := candiedyaml.Marshal(cloudConfig)
-	if err != nil {
-		return err
-	}
-
-	c.logger.Step("applying cloud config")
-	if err := boshClient.UpdateCloudConfig(yaml); err != nil {
-		return err
-	}
-
-	return nil
+	return cloudConfigInput
 }
 
 func (CloudConfigurator) populateLBs(stack cloudformation.Stack) []LoadBalancerExtension {

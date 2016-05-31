@@ -214,6 +214,52 @@ var _ = Describe("load balancers", func() {
 		})
 	})
 
+	Describe("delete-lbs", func() {
+		It("deletes the load balancer", func() {
+			cloudformationNoELB, err := ioutil.ReadFile("fixtures/cloudformation-no-elb.json")
+			Expect(err).NotTo(HaveOccurred())
+
+			cloudConfigFixture, err := ioutil.ReadFile("fixtures/cloud-config-no-elb.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			writeStateJson(storage.State{
+				Stack: storage.Stack{
+					Name:            "some-stack-name",
+					LBType:          "cf",
+					CertificateName: "bbl-cert-old-certificate",
+				},
+				BOSH: storage.BOSH{
+					DirectorUsername: "admin",
+					DirectorPassword: "admin",
+					DirectorAddress:  fakeBOSHServer.URL,
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-keypair-name",
+				},
+			}, tempDirectory)
+
+			fakeAWS.Stacks.Set(awsbackend.Stack{
+				Name: "some-stack-name",
+			})
+
+			fakeAWS.Certificates.Set(awsbackend.Certificate{
+				Name: "bbl-cert-old-certificate",
+			})
+
+			deleteLBs(fakeAWSServer.URL, tempDirectory, 0)
+
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(0))
+
+			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeTrue())
+			Expect(stack.WasUpdated).To(BeTrue())
+			Expect(stack.Template).To(MatchJSON(string(cloudformationNoELB)))
+
+			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(cloudConfigFixture)))
+		})
+	})
+
 	Describe("lbs", func() {
 		It("prints out the currently attached lb names and urls", func() {
 			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0)
@@ -235,6 +281,19 @@ func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Sessi
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"unsupported-lbs",
+	}
+
+	return executeCommand(args, exitCode)
+}
+
+func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Session {
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
+		"--aws-access-key-id", "some-access-key-id",
+		"--aws-secret-access-key", "some-secret-access-key",
+		"--aws-region", "some-region",
+		"--state-dir", stateDir,
+		"unsupported-delete-lbs",
 	}
 
 	return executeCommand(args, exitCode)

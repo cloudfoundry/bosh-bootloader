@@ -6,6 +6,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -27,6 +28,7 @@ var _ = Describe("Create LBs", func() {
 			boshCloudConfigurator     *fakes.BoshCloudConfigurator
 			awsCredentialValidator    *fakes.AWSCredentialValidator
 			logger                    *fakes.Logger
+			cloudConfigManager        *fakes.CloudConfigManager
 			incomingState             storage.State
 		)
 
@@ -39,6 +41,7 @@ var _ = Describe("Create LBs", func() {
 			boshClientProvider = &fakes.BOSHClientProvider{}
 			awsCredentialValidator = &fakes.AWSCredentialValidator{}
 			logger = &fakes.Logger{}
+			cloudConfigManager = &fakes.CloudConfigManager{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -64,7 +67,7 @@ var _ = Describe("Create LBs", func() {
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator)
+				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager)
 		})
 
 		It("returns an error if aws credential validator fails", func() {
@@ -126,6 +129,10 @@ var _ = Describe("Create LBs", func() {
 				Name: "some-stack",
 			}
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
+			boshCloudConfigurator.ConfigureCall.Returns.CloudConfigInput = bosh.CloudConfigInput{
+				AZs: []string{"a", "b", "c"},
+			}
+
 			_, err := command.Execute([]string{
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
@@ -137,7 +144,10 @@ var _ = Describe("Create LBs", func() {
 				Name: "some-stack",
 			}))
 			Expect(boshCloudConfigurator.ConfigureCall.Receives.AZs).To(Equal([]string{"a", "b", "c"}))
-			Expect(boshCloudConfigurator.ConfigureCall.Receives.Client).To(Equal(boshClient))
+
+			Expect(cloudConfigManager.UpdateCall.Receives.CloudConfigInput).To(Equal(bosh.CloudConfigInput{
+				AZs: []string{"a", "b", "c"},
+			}))
 		})
 
 		Context("when --skip-if-exists is provided", func() {
@@ -287,12 +297,12 @@ var _ = Describe("Create LBs", func() {
 				})
 			})
 
-			Context("when bosh cloud configurator fails to configure", func() {
+			Context("when cloud config manager update fails", func() {
 				It("returns an error", func() {
-					boshCloudConfigurator.ConfigureCall.Returns.Error = errors.New("failed to configure")
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
 
 					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
-					Expect(err).To(MatchError("failed to configure"))
+					Expect(err).To(MatchError("failed to update cloud config"))
 				})
 			})
 		})

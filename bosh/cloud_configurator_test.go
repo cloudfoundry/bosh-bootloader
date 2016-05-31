@@ -1,9 +1,6 @@
 package bosh_test
 
 import (
-	"errors"
-
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -59,14 +56,10 @@ var _ = Describe("CloudConfigurator", func() {
 			azs = []string{"us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"}
 		})
 
-		It("generates a bosh cloud config", func() {
-			err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
-			Expect(err).NotTo(HaveOccurred())
+		It("returns a cloud config input", func() {
+			cloudConfigInput := cloudConfigurator.Configure(cloudFormationStack, azs)
 
-			Expect(logger.StepCall.Receives.Message).To(Equal("applying cloud config"))
-			Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
-
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(bosh.CloudConfigInput{
+			Expect(cloudConfigInput).To(Equal(bosh.CloudConfigInput{
 				AZs: []string{
 					"us-east-1a",
 					"us-east-1b",
@@ -102,34 +95,13 @@ var _ = Describe("CloudConfigurator", func() {
 				LBs: []bosh.LoadBalancerExtension{},
 			}))
 		})
-
-		It("applies the generated cloud config", func() {
-			err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logger.StepCall.Receives.Message).To(Equal("applying cloud config"))
-
-			yaml, err := candiedyaml.Marshal(bosh.CloudConfig{
-				VMTypes: []bosh.VMType{
-					{
-						Name: "some-vm-type",
-					},
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
-			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal(yaml))
-		})
-
 		Context("vm extensions", func() {
 			Context("when there is no lb", func() {
 				It("generates a cloud config with no lb vm extension", func() {
 					cloudFormationStack.Outputs["ConcourseLoadBalancer"] = ""
-					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
-					Expect(err).NotTo(HaveOccurred())
+					cloudConfigInput := cloudConfigurator.Configure(cloudFormationStack, azs)
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(HaveLen(0))
+					Expect(cloudConfigInput.LBs).To(HaveLen(0))
 				})
 			})
 
@@ -139,10 +111,9 @@ var _ = Describe("CloudConfigurator", func() {
 					cloudFormationStack.Outputs["ConcourseInternalSecurityGroup"] = "some-concourse-internal-security-group"
 					cloudFormationStack.Outputs["InternalSecurityGroup"] = "some-internal-security-group"
 
-					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
-					Expect(err).NotTo(HaveOccurred())
+					cloudConfigInput := cloudConfigurator.Configure(cloudFormationStack, azs)
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(Equal([]bosh.LoadBalancerExtension{{
+					Expect(cloudConfigInput.LBs).To(Equal([]bosh.LoadBalancerExtension{{
 						Name:    "lb",
 						ELBName: "some-lb",
 						SecurityGroups: []string{
@@ -161,10 +132,9 @@ var _ = Describe("CloudConfigurator", func() {
 					cloudFormationStack.Outputs["CFRouterInternalSecurityGroup"] = "some-cf-router-internal-security-group"
 					cloudFormationStack.Outputs["CFSSHProxyInternalSecurityGroup"] = "some-cf-ssh-proxy-internal-security-group"
 
-					err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
-					Expect(err).NotTo(HaveOccurred())
+					cloudConfigInput := cloudConfigurator.Configure(cloudFormationStack, azs)
 
-					Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LBs).To(Equal([]bosh.LoadBalancerExtension{
+					Expect(cloudConfigInput.LBs).To(Equal([]bosh.LoadBalancerExtension{
 						{
 							Name:    "router-lb",
 							ELBName: "some-cf-router-load-balancer",
@@ -183,21 +153,6 @@ var _ = Describe("CloudConfigurator", func() {
 						},
 					}))
 				})
-			})
-		})
-
-		Context("failure cases", func() {
-			It("returns an error when cloud config cannot be applied", func() {
-				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to apply")
-				err := cloudConfigurator.Configure(cloudFormationStack, azs, boshClient)
-				Expect(err).To(MatchError("failed to apply"))
-			})
-
-			It("returns an error when cloud config cannot be generated", func() {
-				cloudConfigGenerator.GenerateCall.Returns.Error = errors.New("cloud config generator failed")
-				err := cloudConfigurator.Configure(cloudformation.Stack{}, []string{}, boshClient)
-
-				Expect(err).To(MatchError("cloud config generator failed"))
 			})
 		})
 	})

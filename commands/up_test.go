@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -30,6 +31,9 @@ var _ = Describe("Up", func() {
 			elbDescriber                   *fakes.ELBDescriber
 			loadBalancerCertificateManager *fakes.LoadBalancerCertificateManager
 			awsCredentialValidator         *fakes.AWSCredentialValidator
+			cloudConfigManager             *fakes.CloudConfigManager
+			boshClientProvider             *fakes.BOSHClientProvider
+			boshClient                     *fakes.BOSHClient
 			boshInitCredentials            map[string]string
 		)
 
@@ -73,6 +77,7 @@ var _ = Describe("Up", func() {
 			}
 
 			cloudConfigurator = &fakes.BoshCloudConfigurator{}
+			cloudConfigManager = &fakes.CloudConfigManager{}
 
 			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 
@@ -83,9 +88,15 @@ var _ = Describe("Up", func() {
 
 			awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
+			boshClient = &fakes.BOSHClient{}
+			boshClientProvider = &fakes.BOSHClientProvider{}
+
+			boshClientProvider.ClientCall.Returns.Client = boshClient
+
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber,
+				loadBalancerCertificateManager, cloudConfigManager, boshClientProvider,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -420,6 +431,23 @@ var _ = Describe("Up", func() {
 
 					return stack, nil
 				}
+			})
+
+			It("upload the cloud config to the director", func() {
+				cloudConfigInput := bosh.CloudConfigInput{
+					AZs: []string{"az1", "az2", "az3"},
+				}
+
+				cloudConfigurator.ConfigureCall.Returns.CloudConfigInput = cloudConfigInput
+				_, err := command.Execute([]string{}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-bosh-url"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("user-some-random-string"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("p-some-random-string"))
+
+				Expect(cloudConfigManager.UpdateCall.Receives.CloudConfigInput).To(Equal(cloudConfigInput))
+				Expect(cloudConfigManager.UpdateCall.Receives.BOSHClient).To(Equal(boshClient))
 			})
 
 			Context("when no load balancer has been requested", func() {
@@ -776,6 +804,12 @@ var _ = Describe("Up", func() {
 				})
 			})
 
+			It("returns an error when the cloud config cannot be uploaded", func() {
+				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
+				_, err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to update"))
+			})
+
 			It("returns an error when an unknown lb-type is supplied", func() {
 				loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = false
 				_, err := command.Execute([]string{"--lb-type", "some-lb"}, storage.State{})
@@ -848,19 +882,8 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
-			It("returns an error when the cloud config cannot be configured", func() {
-				cloudConfigurator.ConfigureCall.Returns.Error = errors.New("bosh cloud configuration failed")
-
-				_, err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("bosh cloud configuration failed"))
-			})
-
 			It("returns an error when bosh cannot be deployed", func() {
-				boshDeployer := &fakes.BOSHDeployer{}
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
-				command = commands.NewUp(
-					awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer, stringGenerator, cloudConfigurator,
-					availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager)
 
 				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
