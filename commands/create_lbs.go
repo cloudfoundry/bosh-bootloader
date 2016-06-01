@@ -70,7 +70,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	if config.skipIfExists && state.Stack.LBType != "" {
+	if config.skipIfExists && (state.Stack.LBType != "" && state.Stack.LBType != "none") {
 		c.logger.Println(fmt.Sprintf("lb type %q exists, skipping...", state.Stack.LBType))
 		return state, nil
 	}

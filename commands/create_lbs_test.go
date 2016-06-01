@@ -167,18 +167,23 @@ var _ = Describe("Create LBs", func() {
 				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`lb type "cf" exists, skipping...`))
 			})
 
-			It("creates the lb if lb does not exist", func() {
-				_, err := command.Execute([]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-					"--skip-if-exists",
-				}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
+			DescribeTable("creates the lb if the lb does not exist",
+				func(currentLBType string) {
+					incomingState.Stack.LBType = currentLBType
+					_, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "temp/some-cert.crt",
+						"--key", "temp/some-key.key",
+						"--skip-if-exists",
+					}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
-				Expect(certificateManager.CreateCall.CallCount).To(Equal(1))
-			})
+					Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
+					Expect(certificateManager.CreateCall.CallCount).To(Equal(1))
+				},
+				Entry("when the current lb-type is 'none'", "none"),
+				Entry("when the current lb-type is ''", ""),
+			)
 		})
 
 		Context("invalid lb type", func() {
