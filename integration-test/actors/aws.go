@@ -66,7 +66,9 @@ func (a AWS) LoadBalancers(stackName string) map[string]string {
 
 func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
 	certificate, err := a.certificateDescriber.Describe(certificateName)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil && err != iam.CertificateNotFound {
+		Expect(err).NotTo(HaveOccurred())
+	}
 
 	return certificate
 }

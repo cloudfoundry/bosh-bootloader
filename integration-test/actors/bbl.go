@@ -116,6 +116,19 @@ func (b BBL) UpdateLB(certPath, keyPath string) {
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
+func (b BBL) DeleteLB() {
+	args := []string{
+		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
+		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
+		"--aws-region", b.configuration.AWSRegion,
+		"--state-dir", b.stateDirectory,
+		"unsupported-delete-lbs",
+	}
+
+	session := b.execute(args, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+}
+
 func (b BBL) fetchValue(value string) string {
 	args := []string{
 		"--state-dir", b.stateDirectory,
