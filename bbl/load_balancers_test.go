@@ -203,8 +203,25 @@ var _ = Describe("load balancers", func() {
 			})
 
 			Context("when bbl environment is not up", func() {
-				It("exits 1", func() {
+				It("exits 1 when the cloudformation stack does not exist", func() {
 					writeStateJson(storage.State{}, tempDirectory)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+				})
+
+				It("exits 1 when the BOSH director does not exist", func() {
+					fakeAWS.Stacks.Set(awsbackend.Stack{
+						Name: "some-stack-name",
+					})
+
+					writeStateJson(storage.State{
+						Stack: storage.Stack{
+							Name: "some-stack-name",
+						},
+					}, tempDirectory)
+
 					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
 					stderr := session.Err.Contents()
 
@@ -257,6 +274,37 @@ var _ = Describe("load balancers", func() {
 			Expect(stack.Template).To(MatchJSON(string(cloudformationNoELB)))
 
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(cloudConfigFixture)))
+		})
+
+		Context("failure cases", func() {
+			Context("when the environment has not been provisioned", func() {
+				It("exits 1 when the cloudformation stack does not exist", func() {
+					state := readStateJson(tempDirectory)
+
+					fakeAWS.Stacks.Delete(state.Stack.Name)
+					session := deleteLBs(fakeAWSServer.URL, tempDirectory, 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+				})
+
+				It("exits 1 when the BOSH director does not exist", func() {
+					fakeAWS.Stacks.Set(awsbackend.Stack{
+						Name: "some-stack-name",
+					})
+
+					writeStateJson(storage.State{
+						Stack: storage.Stack{
+							Name: "some-stack-name",
+						},
+					}, tempDirectory)
+
+					session := deleteLBs(fakeAWSServer.URL, tempDirectory, 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+				})
+			})
 		})
 	})
 

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"io/ioutil"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
@@ -18,16 +17,18 @@ type UpdateLBs struct {
 	availabilityZoneRetriever availabilityZoneRetriever
 	infrastructureManager     infrastructureManager
 	awsCredentialValidator    awsCredentialValidator
+	boshClientProvider        boshClientProvider
 }
 
 func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager, availabilityZoneRetriever availabilityZoneRetriever,
-	infrastructureManager infrastructureManager) UpdateLBs {
+	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider) UpdateLBs {
 
 	return UpdateLBs{
 		awsCredentialValidator:    awsCredentialValidator,
 		certificateManager:        certificateManager,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		infrastructureManager:     infrastructureManager,
+		boshClientProvider:        boshClientProvider,
 	}
 }
 
@@ -42,7 +43,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	if err := c.checkFastFails(state.Stack.Name, state.Stack.LBType); err != nil {
+	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
 		return state, err
 	}
 
@@ -114,23 +115,6 @@ func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stack
 	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (c UpdateLBs) checkFastFails(stackName string, lbType string) error {
-	stackExists, err := c.infrastructureManager.Exists(stackName)
-	if err != nil {
-		return err
-	}
-
-	if !stackExists {
-		return BBLNotFound
-	}
-
-	if lbType != "concourse" && lbType != "cf" {
-		return errors.New("no load balancer has been found for this bbl environment")
 	}
 
 	return nil

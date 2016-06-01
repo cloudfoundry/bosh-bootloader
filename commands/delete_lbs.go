@@ -43,6 +43,10 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
+	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
+		return state, err
+	}
+
 	azs, err := c.availabilityZoneRetriever.Retrieve(state.AWS.Region)
 	if err != nil {
 		return state, err

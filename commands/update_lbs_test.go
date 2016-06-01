@@ -24,6 +24,8 @@ var _ = Describe("Update LBs", func() {
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
 		awsCredentialValidator    *fakes.AWSCredentialValidator
+		boshClientProvider        *fakes.BOSHClientProvider
+		boshClient                *fakes.BOSHClient
 	)
 
 	var updateLBs = func(certificatePath string, keyPath string, state storage.State) (storage.State, error) {
@@ -41,6 +43,10 @@ var _ = Describe("Update LBs", func() {
 		infrastructureManager = &fakes.InfrastructureManager{}
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
+		boshClient = &fakes.BOSHClient{}
+		boshClientProvider = &fakes.BOSHClientProvider{}
+		boshClientProvider.ClientCall.Returns.Client = boshClient
+
 		availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
 		certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
 		certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
@@ -53,6 +59,11 @@ var _ = Describe("Update LBs", func() {
 			Stack: storage.Stack{
 				LBType:          "concourse",
 				CertificateName: "some-certificate-name",
+			},
+			BOSH: storage.BOSH{
+				DirectorAddress:  "some-director-address",
+				DirectorUsername: "some-director-username",
+				DirectorPassword: "some-director-password",
 			},
 		}
 
@@ -68,18 +79,11 @@ var _ = Describe("Update LBs", func() {
 		err = ioutil.WriteFile(keyFile.Name(), []byte("some-key-contents"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
-		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager)
+		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
+			availabilityZoneRetriever, infrastructureManager, boshClientProvider)
 	})
 
 	Describe("Execute", func() {
-		It("returns an error when aws credential validator fails", func() {
-			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
-
-			_, err := command.Execute([]string{}, storage.State{})
-
-			Expect(err).To(MatchError("aws credentials validator failed"))
-		})
-
 		It("creates the new certificate and private key", func() {
 			updateLBs(certFile.Name(), keyFile.Name(), storage.State{
 				Stack: storage.Stack{
@@ -134,10 +138,35 @@ var _ = Describe("Update LBs", func() {
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
 		})
 
-		It("returns an error if the user hasn't bbl up'd yet", func() {
-			infrastructureManager.ExistsCall.Returns.Exists = false
+		It("checks if the bosh director exists", func() {
 			_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
-			Expect(err).To(MatchError(commands.BBLNotFound))
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+
+			Expect(boshClient.InfoCall.CallCount).To(Equal(1))
+		})
+
+		Context("if the user hasn't bbl'd up yet", func() {
+			It("returns an error if the stack does not exist", func() {
+				infrastructureManager.ExistsCall.Returns.Exists = false
+				_, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{})
+				Expect(err).To(MatchError(commands.BBLNotFound))
+			})
+
+			It("returns an error if the bosh director does not exist", func() {
+				boshClient.InfoCall.Returns.Error = errors.New("director not found")
+
+				_, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+					Stack: storage.Stack{
+						LBType:          "concourse",
+						CertificateName: "some-certificate-name",
+					},
+				})
+				Expect(err).To(MatchError(commands.BBLNotFound))
+			})
 		})
 
 		It("returns an error if there is no lb", func() {
@@ -146,7 +175,7 @@ var _ = Describe("Update LBs", func() {
 					LBType: "none",
 				},
 			})
-			Expect(err).To(MatchError("no load balancer has been found for this bbl environment"))
+			Expect(err).To(MatchError(commands.LBNotFound))
 		})
 
 		It("does not update the certificate if the provided certificate is the same", func() {
@@ -179,6 +208,14 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		Describe("failure cases", func() {
+			It("returns an error when aws credential validator fails", func() {
+				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
+
+				_, err := command.Execute([]string{}, storage.State{})
+
+				Expect(err).To(MatchError("aws credentials validator failed"))
+			})
+
 			It("returns an error when the original certificate cannot be described", func() {
 				certificateManager.DescribeCall.Stub = func(certificateName string) (iam.Certificate, error) {
 					if certificateName == "some-certificate-name" {
