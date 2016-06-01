@@ -77,7 +77,7 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	state.Stack.LBType = ""
+	state.Stack.LBType = "none"
 	state.Stack.CertificateName = ""
 
 	return state, nil

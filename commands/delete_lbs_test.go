@@ -167,7 +167,9 @@ var _ = Describe("Delete LBs", func() {
 
 				Expect(state).To(Equal(storage.State{
 					Stack: storage.Stack{
-						Name: "some-stack",
+						Name:            "some-stack",
+						LBType:          "none",
+						CertificateName: "",
 					},
 				}))
 			})
