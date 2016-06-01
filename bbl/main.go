@@ -122,7 +122,9 @@ func main() {
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager,
 	)
-	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager, boshClientProvider)
+	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
+		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger,
+	)
 	deleteLBs := commands.NewDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider,

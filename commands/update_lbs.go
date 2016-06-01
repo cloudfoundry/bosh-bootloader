@@ -2,6 +2,7 @@ package commands
 
 import (
 	"io/ioutil"
+	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -18,10 +19,11 @@ type UpdateLBs struct {
 	infrastructureManager     infrastructureManager
 	awsCredentialValidator    awsCredentialValidator
 	boshClientProvider        boshClientProvider
+	logger                    logger
 }
 
 func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager, availabilityZoneRetriever availabilityZoneRetriever,
-	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider) UpdateLBs {
+	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider, logger logger) UpdateLBs {
 
 	return UpdateLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -29,6 +31,7 @@ func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateMana
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		infrastructureManager:     infrastructureManager,
 		boshClientProvider:        boshClientProvider,
+		logger:                    logger,
 	}
 }
 
@@ -50,6 +53,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	if match, err := c.certificatesMatch(config.certPath, state.Stack.CertificateName); err != nil {
 		return state, err
 	} else if match {
+		c.logger.Println("no updates are to be performed")
 		return state, nil
 	}
 
@@ -83,7 +87,7 @@ func (c UpdateLBs) certificatesMatch(certPath string, oldCertName string) (bool,
 		return false, err
 	}
 
-	return string(localCertificate) == remoteCertificate.Body, nil
+	return strings.TrimSpace(string(localCertificate)) == strings.TrimSpace(remoteCertificate.Body), nil
 }
 
 func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {

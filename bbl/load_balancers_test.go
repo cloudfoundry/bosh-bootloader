@@ -192,6 +192,40 @@ var _ = Describe("load balancers", func() {
 			Expect(stack.WasUpdated).To(BeTrue())
 		})
 
+		It("does nothing if the certificate is unchanged", func() {
+			writeStateJson(storage.State{
+				Stack: storage.Stack{
+					Name:            "some-stack-name",
+					LBType:          "cf",
+					CertificateName: "bbl-cert-certificate",
+				},
+				BOSH: storage.BOSH{
+					DirectorUsername: "admin",
+					DirectorPassword: "admin",
+					DirectorAddress:  fakeBOSHServer.URL,
+				},
+			}, tempDirectory)
+
+			fakeAWS.Stacks.Set(awsbackend.Stack{
+				Name: "some-stack-name",
+			})
+
+			fakeAWS.Certificates.Set(awsbackend.Certificate{
+				Name:            "bbl-cert-certificate",
+				CertificateBody: "some-certificate-body",
+				PrivateKey:      "some-private-key",
+			})
+
+			session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-certificate-body"), temporaryFileContaining("some-private-key"), 0)
+			stdout := session.Out.Contents()
+
+			Expect(stdout).To(ContainSubstring("no updates are to be performed"))
+
+			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeTrue())
+			Expect(stack.WasUpdated).To(BeFalse())
+		})
+
 		Context("failure cases", func() {
 			Context("when an lb type does not exist", func() {
 				It("exits 1", func() {

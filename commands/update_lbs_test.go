@@ -26,6 +26,7 @@ var _ = Describe("Update LBs", func() {
 		awsCredentialValidator    *fakes.AWSCredentialValidator
 		boshClientProvider        *fakes.BOSHClientProvider
 		boshClient                *fakes.BOSHClient
+		logger                    *fakes.Logger
 	)
 
 	var updateLBs = func(certificatePath string, keyPath string, state storage.State) (storage.State, error) {
@@ -42,6 +43,7 @@ var _ = Describe("Update LBs", func() {
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
+		logger = &fakes.Logger{}
 
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
@@ -80,7 +82,7 @@ var _ = Describe("Update LBs", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
-			availabilityZoneRetriever, infrastructureManager, boshClientProvider)
+			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger)
 	})
 
 	Describe("Execute", func() {
@@ -180,11 +182,12 @@ var _ = Describe("Update LBs", func() {
 
 		It("does not update the certificate if the provided certificate is the same", func() {
 			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
-				Body: "some-certificate-contents",
+				Body: "\nsome-certificate-contents\n",
 			}
 
 			_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(logger.PrintlnCall.Receives.Message).To(Equal("no updates are to be performed"))
 
 			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 			Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
