@@ -10,13 +10,13 @@ func (r ReleaseManifestBuilder) Build() []Release {
 	return []Release{
 		{
 			Name: "bosh",
-			URL:  "https://bosh.io/d/github.com/cloudfoundry/bosh?v=256",
-			SHA1: "71701e862c0f4862cb77719d5f3e4f7451da355c",
+			URL:  "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-256.2-on-ubuntu-trusty-stemcell-3232.4.tgz",
+			SHA1: "bc941575cb8ed25404364fde7c3ff141cecc33eb",
 		},
 		{
 			Name: "bosh-aws-cpi",
-			URL:  "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=51",
-			SHA1: "7856e0d1db7d679786fedd3dcb419b802da0434b",
+			URL:  "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=52",
+			SHA1: "dc4a0cca3b33dce291e4fbeb9e9948b6a7be3324",
 		},
 	}
 }
