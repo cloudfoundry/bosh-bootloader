@@ -261,14 +261,16 @@
                     {
                         "FromPort": "80",
                         "IpProtocol": "tcp",
-                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"}
+                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+                        "ToPort": "80"
                     }
                 ],
                 "SecurityGroupIngress": [
                     {
                         "FromPort": "80",
                         "IpProtocol": "tcp",
-                        "SourceSecurityGroupId": {"Ref": "CFRouterSecurityGroup"}
+                        "SourceSecurityGroupId": {"Ref": "CFRouterSecurityGroup"},
+                        "ToPort": "80"
                     }
                 ],
                 "VpcId": {"Ref": "VPC"}
@@ -293,20 +295,20 @@
                         "LoadBalancerPort": "80",
                         "Protocol": "http"
                     },
-                    {
-                        "InstancePort": "80",
-                        "InstanceProtocol": "http",
-                        "LoadBalancerPort": "443",
-                        "Protocol": "https",
-                        "SSLCertificateId": "some-certificate-arn"
-                    },
-                    {
-                        "InstancePort": "80",
-                        "InstanceProtocol": "tcp",
-                        "LoadBalancerPort": "4443",
-                        "Protocol": "ssl",
-                        "SSLCertificateId": "some-certificate-arn"
-                    }
+					{
+						"InstancePort": "80",
+						"InstanceProtocol": "http",
+						"LoadBalancerPort": "443",
+						"Protocol": "https",
+						"SSLCertificateId": "some-certificate-arn"
+					},
+					{
+						"InstancePort": "80",
+						"InstanceProtocol": "tcp",
+						"LoadBalancerPort": "4443",
+						"Protocol": "ssl",
+						"SSLCertificateId": "some-certificate-arn"
+					}
                 ],
                 "SecurityGroups": [{"Ref": "CFRouterSecurityGroup"}],
                 "Subnets": [
@@ -353,7 +355,8 @@
                     {
                         "FromPort": "2222",
                         "IpProtocol": "tcp",
-                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"}
+                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+                        "ToPort": "2222"
                     }
                 ],
                 "SecurityGroupIngress": [
@@ -362,7 +365,8 @@
                         "IpProtocol": "tcp",
                         "SourceSecurityGroupId": {
                             "Ref": "CFSSHProxySecurityGroup"
-                        }
+                        },
+                        "ToPort": "2222"
                     }
                 ],
                 "VpcId": {"Ref": "VPC"}
