@@ -20,8 +20,56 @@ func NewDiskTypesGenerator() DiskTypesGenerator {
 func (DiskTypesGenerator) Generate() []DiskType {
 	return []DiskType{
 		{
-			Name:     "default",
+			Name:     "1GB",
 			DiskSize: 1024,
+			CloudProperties: DiskTypeCloudProperties{
+				Type:      "gp2",
+				Encrypted: true,
+			},
+		},
+		{
+			Name:     "5GB",
+			DiskSize: 5120,
+			CloudProperties: DiskTypeCloudProperties{
+				Type:      "gp2",
+				Encrypted: true,
+			},
+		},
+		{
+			Name:     "10GB",
+			DiskSize: 10240,
+			CloudProperties: DiskTypeCloudProperties{
+				Type:      "gp2",
+				Encrypted: true,
+			},
+		},
+		{
+			Name:     "50GB",
+			DiskSize: 51200,
+			CloudProperties: DiskTypeCloudProperties{
+				Type:      "gp2",
+				Encrypted: true,
+			},
+		},
+		{
+			Name:     "100GB",
+			DiskSize: 102400,
+			CloudProperties: DiskTypeCloudProperties{
+				Type:      "gp2",
+				Encrypted: true,
+			},
+		},
+		{
+			Name:     "500GB",
+			DiskSize: 512000,
+			CloudProperties: DiskTypeCloudProperties{
+				Type:      "gp2",
+				Encrypted: true,
+			},
+		},
+		{
+			Name:     "1TB",
+			DiskSize: 1048576,
 			CloudProperties: DiskTypeCloudProperties{
 				Type:      "gp2",
 				Encrypted: true,

@@ -15,8 +15,56 @@ var _ = Describe("DiskTypesGenerator", func() {
 
 			Expect(diskTypes).To(ConsistOf(
 				bosh.DiskType{
-					Name:     "default",
+					Name:     "1GB",
 					DiskSize: 1024,
+					CloudProperties: bosh.DiskTypeCloudProperties{
+						Type:      "gp2",
+						Encrypted: true,
+					},
+				},
+				bosh.DiskType{
+					Name:     "5GB",
+					DiskSize: 5120,
+					CloudProperties: bosh.DiskTypeCloudProperties{
+						Type:      "gp2",
+						Encrypted: true,
+					},
+				},
+				bosh.DiskType{
+					Name:     "10GB",
+					DiskSize: 10240,
+					CloudProperties: bosh.DiskTypeCloudProperties{
+						Type:      "gp2",
+						Encrypted: true,
+					},
+				},
+				bosh.DiskType{
+					Name:     "50GB",
+					DiskSize: 51200,
+					CloudProperties: bosh.DiskTypeCloudProperties{
+						Type:      "gp2",
+						Encrypted: true,
+					},
+				},
+				bosh.DiskType{
+					Name:     "100GB",
+					DiskSize: 102400,
+					CloudProperties: bosh.DiskTypeCloudProperties{
+						Type:      "gp2",
+						Encrypted: true,
+					},
+				},
+				bosh.DiskType{
+					Name:     "500GB",
+					DiskSize: 512000,
+					CloudProperties: bosh.DiskTypeCloudProperties{
+						Type:      "gp2",
+						Encrypted: true,
+					},
+				},
+				bosh.DiskType{
+					Name:     "1TB",
+					DiskSize: 1048576,
 					CloudProperties: bosh.DiskTypeCloudProperties{
 						Type:      "gp2",
 						Encrypted: true,

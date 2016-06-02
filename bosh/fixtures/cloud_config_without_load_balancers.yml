@@ -97,10 +97,39 @@ networks:
       security_groups:
       - some-security-group-3
 
-
 disk_types:
-- name: default
+- name: 1GB
   disk_size: 1024
+  cloud_properties:
+    type: gp2
+    encrypted: true
+- name: 5GB
+  disk_size: 5120
+  cloud_properties:
+    type: gp2
+    encrypted: true
+- name: 10GB
+  disk_size: 10240
+  cloud_properties:
+    type: gp2
+    encrypted: true
+- name: 50GB
+  disk_size: 51200
+  cloud_properties:
+    type: gp2
+    encrypted: true
+- name: 100GB
+  disk_size: 102400
+  cloud_properties:
+    type: gp2
+    encrypted: true
+- name: 500GB
+  disk_size: 512000
+  cloud_properties:
+    type: gp2
+    encrypted: true
+- name: 1TB
+  disk_size: 1048576
   cloud_properties:
     type: gp2
     encrypted: true
