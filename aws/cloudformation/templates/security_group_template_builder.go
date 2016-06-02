@@ -51,13 +51,11 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 				SourceSecurityGroupId: Ref{lbSecurityGroupName},
 				IpProtocol:            s.determineSecurityGroupProtocol(listener.Protocol),
 				FromPort:              listener.InstancePort,
-				ToPort:                listener.InstancePort,
 			})
 			securityGroupEgress = append(securityGroupEgress, SecurityGroupEgress{
 				SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
 				IpProtocol:            s.determineSecurityGroupProtocol(listener.Protocol),
 				FromPort:              listener.InstancePort,
-				ToPort:                listener.InstancePort,
 			})
 
 			securityGroupPorts[listener.InstancePort] = true

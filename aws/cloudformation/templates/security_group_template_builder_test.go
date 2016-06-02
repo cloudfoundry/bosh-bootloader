@@ -260,13 +260,11 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 								SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
 								IpProtocol:            "tcp",
 								FromPort:              "2222",
-								ToPort:                "2222",
 							},
 							{
 								SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
 								IpProtocol:            "tcp",
 								FromPort:              "8080",
-								ToPort:                "8080",
 							},
 						},
 						SecurityGroupIngress: []templates.SecurityGroupIngress{
@@ -274,13 +272,11 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 								SourceSecurityGroupId: templates.Ref{"some-security-group"},
 								IpProtocol:            "tcp",
 								FromPort:              "2222",
-								ToPort:                "2222",
 							},
 							{
 								SourceSecurityGroupId: templates.Ref{"some-security-group"},
 								IpProtocol:            "tcp",
 								FromPort:              "8080",
-								ToPort:                "8080",
 							},
 						},
 					},
