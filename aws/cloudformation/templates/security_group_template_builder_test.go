@@ -253,22 +253,9 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 				Expect(securityGroup.Resources).To(HaveKeyWithValue("some-internal-security-group", templates.Resource{
 					Type: "AWS::EC2::SecurityGroup",
 					Properties: templates.SecurityGroup{
-						VpcId:            templates.Ref{"VPC"},
-						GroupDescription: "some-group-description",
-						SecurityGroupEgress: []templates.SecurityGroupEgress{
-							{
-								SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
-								IpProtocol:            "tcp",
-								FromPort:              "2222",
-								ToPort:                "2222",
-							},
-							{
-								SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
-								IpProtocol:            "tcp",
-								FromPort:              "8080",
-								ToPort:                "8080",
-							},
-						},
+						VpcId:               templates.Ref{"VPC"},
+						GroupDescription:    "some-group-description",
+						SecurityGroupEgress: []templates.SecurityGroupEgress{},
 						SecurityGroupIngress: []templates.SecurityGroupIngress{
 							{
 								SourceSecurityGroupId: templates.Ref{"some-security-group"},

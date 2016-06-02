@@ -248,20 +248,7 @@
     "ConcourseInternalSecurityGroup": {
       "Properties": {
         "GroupDescription": "ConcourseInternal",
-        "SecurityGroupEgress": [
-          {
-            "FromPort": "8080",
-            "IpProtocol": "tcp",
-            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-            "ToPort": "8080"
-          },
-          {
-            "FromPort": "2222",
-            "IpProtocol": "tcp",
-            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-            "ToPort": "2222"
-          }
-        ],
+        "SecurityGroupEgress": [],
         "SecurityGroupIngress": [
           {
             "FromPort": "8080",

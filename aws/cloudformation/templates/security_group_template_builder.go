@@ -40,7 +40,6 @@ func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securit
 func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName, lbSecurityGroupName,
 	securityGroupDescription, loadBalancerName string, template Template) Template {
 
-	securityGroupEgress := []SecurityGroupEgress{}
 	securityGroupIngress := []SecurityGroupIngress{}
 	securityGroupPorts := map[string]bool{}
 
@@ -49,12 +48,6 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 		if !securityGroupPorts[listener.InstancePort] {
 			securityGroupIngress = append(securityGroupIngress, SecurityGroupIngress{
 				SourceSecurityGroupId: Ref{lbSecurityGroupName},
-				IpProtocol:            s.determineSecurityGroupProtocol(listener.Protocol),
-				FromPort:              listener.InstancePort,
-				ToPort:                listener.InstancePort,
-			})
-			securityGroupEgress = append(securityGroupEgress, SecurityGroupEgress{
-				SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
 				IpProtocol:            s.determineSecurityGroupProtocol(listener.Protocol),
 				FromPort:              listener.InstancePort,
 				ToPort:                listener.InstancePort,
@@ -71,7 +64,7 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 				Properties: SecurityGroup{
 					VpcId:                Ref{"VPC"},
 					GroupDescription:     securityGroupDescription,
-					SecurityGroupEgress:  securityGroupEgress,
+					SecurityGroupEgress:  []SecurityGroupEgress{},
 					SecurityGroupIngress: securityGroupIngress,
 				},
 			},
