@@ -34,9 +34,7 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 		return CloudConfig{}, err
 	}
 
-	if len(c.input.LBs) > 0 {
-		c.generateVMExtensions()
-	}
+	c.generateVMExtensions()
 
 	return c.cloudConfig, nil
 }

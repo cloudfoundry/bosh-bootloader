@@ -140,3 +140,35 @@ compilation:
   az: z1
   reuse_compilation_vms: true
   vm_type: c3.large
+
+vm_extensions:
+- name: 5GB_ephemeral_disk
+  cloud_properties:
+    ephemeral_disk:
+      size: 5120
+      type: gp2
+- name: 10GB_ephemeral_disk
+  cloud_properties:
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+- name: 50GB_ephemeral_disk
+  cloud_properties:
+    ephemeral_disk:
+      size: 51200
+      type: gp2
+- name: 100GB_ephemeral_disk
+  cloud_properties:
+    ephemeral_disk:
+      size: 102400
+      type: gp2
+- name: 500GB_ephemeral_disk
+  cloud_properties:
+    ephemeral_disk:
+      size: 512000
+      type: gp2
+- name: 1TB_ephemeral_disk
+  cloud_properties:
+    ephemeral_disk:
+      size: 1048576
+      type: gp2
