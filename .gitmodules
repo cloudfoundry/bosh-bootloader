@@ -19,3 +19,6 @@
 [submodule "vendor/github.com/onsi/gomega"]
 	path = vendor/github.com/onsi/gomega
 	url = https://github.com/onsi/gomega
+[submodule "vendor/github.com/pivotal-cf-experimental/bosh-test"]
+	path = vendor/github.com/pivotal-cf-experimental/bosh-test
+	url = https://github.com/pivotal-cf-experimental/bosh-test.git

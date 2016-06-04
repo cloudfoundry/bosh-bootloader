@@ -55,7 +55,7 @@ func (a AWS) LoadBalancers(stackName string) map[string]string {
 
 	loadBalancers := map[string]string{}
 
-	for _, loadBalancer := range []string{"CFRouterLoadBalancer", "CFSSHProxyLoadBalancer", "ConcourseLoadBalancer"} {
+	for _, loadBalancer := range []string{"CFRouterLoadBalancer", "CFSSHProxyLoadBalancer", "ConcourseLoadBalancer", "ConcourseLoadBalancerURL"} {
 		if stack.Outputs[loadBalancer] != "" {
 			loadBalancers[loadBalancer] = stack.Outputs[loadBalancer]
 		}
