@@ -362,7 +362,7 @@ func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Sessi
 		"--aws-secret-access-key", "some-secret-access-key",
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
-		"unsupported-lbs",
+		"lbs",
 	}
 
 	return executeCommand(args, exitCode)

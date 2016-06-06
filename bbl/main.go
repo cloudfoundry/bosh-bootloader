@@ -155,7 +155,7 @@ func main() {
 		"unsupported-create-lbs": createLBs,
 		"unsupported-update-lbs": updateLBs,
 		"unsupported-delete-lbs": deleteLBs,
-		"unsupported-lbs":        lbs,
+		"lbs": lbs,
 	}, configuration, stateStore, usage.Print)
 
 	err = app.Run()

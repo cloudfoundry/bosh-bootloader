@@ -92,7 +92,7 @@ func (b BBL) LBs() *gexec.Session {
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
-		"unsupported-lbs",
+		"lbs",
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)
