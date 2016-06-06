@@ -15,16 +15,20 @@ type uuidGenerator interface {
 type CertificateUploader struct {
 	iamClient     Client
 	uuidGenerator uuidGenerator
+	logger        logger
 }
 
-func NewCertificateUploader(iamClient Client, uuidGenerator uuidGenerator) CertificateUploader {
+func NewCertificateUploader(iamClient Client, uuidGenerator uuidGenerator, logger logger) CertificateUploader {
 	return CertificateUploader{
 		iamClient:     iamClient,
 		uuidGenerator: uuidGenerator,
+		logger:        logger,
 	}
 }
 
 func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath string) (string, error) {
+	c.logger.Step("uploading certificate")
+
 	certificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return "", err

@@ -18,6 +18,7 @@ var _ = Describe("CertificateUploader", func() {
 	var (
 		iamClient       *fakes.IAMClient
 		uuidGenerator   *fakes.UUIDGenerator
+		logger          *fakes.Logger
 		uploader        iam.CertificateUploader
 		certificateFile *os.File
 		privateKeyFile  *os.File
@@ -28,7 +29,8 @@ var _ = Describe("CertificateUploader", func() {
 		var err error
 		iamClient = &fakes.IAMClient{}
 		uuidGenerator = &fakes.UUIDGenerator{}
-		uploader = iam.NewCertificateUploader(iamClient, uuidGenerator)
+		logger = &fakes.Logger{}
+		uploader = iam.NewCertificateUploader(iamClient, uuidGenerator, logger)
 
 		certificateFile, err = ioutil.TempFile("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -103,6 +105,13 @@ var _ = Describe("CertificateUploader", func() {
 					ServerCertificateName: aws.String("bbl-cert-abcd"),
 				},
 			))
+		})
+
+		It("logs uploading certificate", func() {
+			_, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.StepCall.Receives.Message).To(Equal("uploading certificate"))
 		})
 
 		Context("failure cases", func() {

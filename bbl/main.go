@@ -69,7 +69,7 @@ func main() {
 	stackManager := cloudformation.NewStackManager(cloudFormationClient, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 	elbDescriber := elb.NewDescriber(elbClient)
-	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator)
+	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator, logger)
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
 	certificateDeleter := iam.NewCertificateDeleter(iamClient, logger)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)

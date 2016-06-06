@@ -63,7 +63,7 @@ var _ = Describe("load balancers", func() {
 				contents, err := ioutil.ReadFile(fixtureLocation)
 				Expect(err).NotTo(HaveOccurred())
 
-				session := createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0)
+				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0)
 
 				certificates := fakeAWS.Certificates.All()
 				Expect(certificates).To(HaveLen(1))
@@ -72,15 +72,21 @@ var _ = Describe("load balancers", func() {
 				Expect(certificates[0].Chain).To(Equal(string(lbChain)))
 				Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 
-				stdout := session.Out.Contents()
-				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 			},
 			Entry("it attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
 			Entry("it attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 		)
+
+		It("logs all the steps", func() {
+			session := createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring("step: uploading certificate"))
+			Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+			Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
+			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+		})
 
 		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
 			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0)
