@@ -38,7 +38,7 @@ var _ = Describe("bosh deployment tests", func() {
 	It("is able to deploy concourse", func() {
 		bbl.Up("")
 
-		bbl.CreateLB("concourse")
+		bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "")
 
 		buf, err := ioutil.ReadFile("fixtures/concourse.yml")
 		Expect(err).NotTo(HaveOccurred())
