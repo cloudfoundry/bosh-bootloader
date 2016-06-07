@@ -9,8 +9,9 @@ import (
 )
 
 type updateLBConfig struct {
-	certPath string
-	keyPath  string
+	certPath  string
+	keyPath   string
+	chainPath string
 }
 
 type UpdateLBs struct {
@@ -57,7 +58,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, nil
 	}
 
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, "")
+	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err
 	}
@@ -96,6 +97,7 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	config := updateLBConfig{}
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
+	lbFlags.String(&config.chainPath, "chain", "")
 
 	err := lbFlags.Parse(subcommandFlags)
 	if err != nil {

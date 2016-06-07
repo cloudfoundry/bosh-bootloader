@@ -161,7 +161,7 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("update-lbs", func() {
-		It("updates the load balancer with the given key and cert", func() {
+		It("updates the load balancer with the given cert, key and chain", func() {
 			writeStateJson(storage.State{
 				Stack: storage.Stack{
 					Name:            "some-stack-name",
@@ -185,10 +185,12 @@ var _ = Describe("load balancers", func() {
 				PrivateKey:      "some-old-private-key",
 			})
 
-			updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 0)
+			updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"),
+				temporaryFileContaining("some-new-private-key"), temporaryFileContaining("some-chain"), 0)
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
+			Expect(certificates[0].Chain).To(Equal("some-chain"))
 			Expect(certificates[0].CertificateBody).To(Equal("some-new-certificate-body"))
 			Expect(certificates[0].PrivateKey).To(Equal("some-new-private-key"))
 			Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
@@ -222,7 +224,7 @@ var _ = Describe("load balancers", func() {
 				PrivateKey:      "some-private-key",
 			})
 
-			session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-certificate-body"), temporaryFileContaining("some-private-key"), 0)
+			session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-certificate-body"), temporaryFileContaining("some-private-key"), "", 0)
 			stdout := session.Out.Contents()
 
 			Expect(stdout).To(ContainSubstring("no updates are to be performed"))
@@ -235,7 +237,7 @@ var _ = Describe("load balancers", func() {
 		Context("failure cases", func() {
 			Context("when an lb type does not exist", func() {
 				It("exits 1", func() {
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), "", 1)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
@@ -245,7 +247,7 @@ var _ = Describe("load balancers", func() {
 			Context("when bbl environment is not up", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
 					writeStateJson(storage.State{}, tempDirectory)
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), "", 1)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -262,7 +264,7 @@ var _ = Describe("load balancers", func() {
 						},
 					}, tempDirectory)
 
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), 1)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, temporaryFileContaining("some-new-certificate-body"), temporaryFileContaining("some-new-private-key"), "", 1)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -387,7 +389,7 @@ func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int) *gexec
 	return executeCommand(args, exitCode)
 }
 
-func updateLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, exitCode int) *gexec.Session {
+func updateLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, chainName string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
 		"--aws-access-key-id", "some-access-key-id",
@@ -397,6 +399,7 @@ func updateLBs(endpointOverrideURL string, stateDir string, certName string, key
 		"unsupported-update-lbs",
 		"--cert", certName,
 		"--key", keyName,
+		"--chain", chainName,
 	}
 
 	return executeCommand(args, exitCode)

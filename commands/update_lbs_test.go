@@ -18,8 +18,9 @@ var _ = Describe("Update LBs", func() {
 	var (
 		command                   commands.UpdateLBs
 		incomingState             storage.State
-		certFile                  *os.File
-		keyFile                   *os.File
+		certFilePath              string
+		keyFilePath               string
+		chainFilePath             string
 		certificateManager        *fakes.CertificateManager
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
@@ -29,16 +30,25 @@ var _ = Describe("Update LBs", func() {
 		logger                    *fakes.Logger
 	)
 
-	var updateLBs = func(certificatePath string, keyPath string, state storage.State) (storage.State, error) {
+	var updateLBs = func(certificatePath, keyPath, chainPath string, state storage.State) (storage.State, error) {
 		return command.Execute([]string{
 			"--cert", certificatePath,
 			"--key", keyPath,
+			"--chain", chainPath,
 		}, state)
 	}
 
-	BeforeEach(func() {
-		var err error
+	var temporaryFileContaining = func(fileContents string) string {
+		temporaryFile, err := ioutil.TempFile("", "")
+		Expect(err).NotTo(HaveOccurred())
 
+		err = ioutil.WriteFile(temporaryFile.Name(), []byte(fileContents), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		return temporaryFile.Name()
+	}
+
+	BeforeEach(func() {
 		certificateManager = &fakes.CertificateManager{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
@@ -52,7 +62,8 @@ var _ = Describe("Update LBs", func() {
 		availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
 		certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
 		certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
-			ARN: "some-certificate-arn",
+			Body: "some-old-certificate-contents",
+			ARN:  "some-certificate-arn",
 		}
 
 		infrastructureManager.ExistsCall.Returns.Exists = true
@@ -69,27 +80,20 @@ var _ = Describe("Update LBs", func() {
 			},
 		}
 
-		certFile, err = ioutil.TempFile("", "")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = ioutil.WriteFile(certFile.Name(), []byte("some-certificate-contents"), os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
-
-		keyFile, err = ioutil.TempFile("", "")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = ioutil.WriteFile(keyFile.Name(), []byte("some-key-contents"), os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
+		certFilePath = temporaryFileContaining("some-certificate-contents")
+		keyFilePath = temporaryFileContaining("some-key-contents")
+		chainFilePath = temporaryFileContaining("some-chain-contents")
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger)
 	})
 
 	Describe("Execute", func() {
-		It("creates the new certificate and private key", func() {
-			updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+		It("creates the new certificate with private key", func() {
+			updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
-					LBType: "cf",
+					LBType:          "cf",
+					CertificateName: "some-old-certificate-name",
 				},
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
@@ -98,12 +102,32 @@ var _ = Describe("Update LBs", func() {
 				},
 			})
 
-			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFile.Name()))
-			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFile.Name()))
+			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFilePath))
+			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFilePath))
+		})
+
+		Context("when uploading with a chain", func() {
+			It("creates the new certificate with private key and chain", func() {
+				updateLBs(certFilePath, keyFilePath, chainFilePath, storage.State{
+					Stack: storage.Stack{
+						LBType:          "cf",
+						CertificateName: "some-old-certificate-name",
+					},
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+				})
+
+				Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFilePath))
+				Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFilePath))
+				Expect(certificateManager.CreateCall.Receives.Chain).To(Equal(chainFilePath))
+			})
 		})
 
 		It("updates cloudformation with the new certificate", func() {
-			updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+			updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
 					Name:   "some-stack",
 					LBType: "concourse",
@@ -130,7 +154,7 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		It("deletes the existing certificate and private key", func() {
-			updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+			updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
 					LBType:          "cf",
 					CertificateName: "some-certificate-name",
@@ -141,7 +165,7 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		It("checks if the bosh director exists", func() {
-			_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+			_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
@@ -154,14 +178,14 @@ var _ = Describe("Update LBs", func() {
 		Context("if the user hasn't bbl'd up yet", func() {
 			It("returns an error if the stack does not exist", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{})
+				_, err := updateLBs(certFilePath, keyFilePath, "", storage.State{})
 				Expect(err).To(MatchError(commands.BBLNotFound))
 			})
 
 			It("returns an error if the bosh director does not exist", func() {
 				boshClient.InfoCall.Returns.Error = errors.New("director not found")
 
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+				_, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 					Stack: storage.Stack{
 						LBType:          "concourse",
 						CertificateName: "some-certificate-name",
@@ -172,7 +196,7 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		It("returns an error if there is no lb", func() {
-			_, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+			_, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
 					LBType: "none",
 				},
@@ -185,7 +209,7 @@ var _ = Describe("Update LBs", func() {
 				Body: "\nsome-certificate-contents\n",
 			}
 
-			_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+			_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.PrintlnCall.Receives.Message).To(Equal("no updates are to be performed"))
 
@@ -198,7 +222,7 @@ var _ = Describe("Update LBs", func() {
 			It("updates the state with the new certificate name", func() {
 				certificateManager.CreateCall.Returns.CertificateName = "some-new-certificate-name"
 
-				state, err := updateLBs(certFile.Name(), keyFile.Name(), storage.State{
+				state, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 					Stack: storage.Stack{
 						LBType:          "cf",
 						CertificateName: "some-certificate-name",
@@ -228,7 +252,7 @@ var _ = Describe("Update LBs", func() {
 					return iam.Certificate{}, nil
 				}
 
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("old certificate failed to describe"))
 			})
 
@@ -243,18 +267,18 @@ var _ = Describe("Update LBs", func() {
 					return iam.Certificate{}, nil
 				}
 
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("new certificate failed to describe"))
 			})
 
 			It("returns an error when the certificate file cannot be read", func() {
-				_, err := updateLBs("some-fake-file", keyFile.Name(), incomingState)
+				_, err := updateLBs("some-fake-file", keyFilePath, "", incomingState)
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
 			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("failed to check for stack"))
 			})
 
@@ -268,25 +292,25 @@ var _ = Describe("Update LBs", func() {
 
 			It("returns an error when infrastructure update fails", func() {
 				infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update stack")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("failed to update stack"))
 			})
 
 			It("returns an error when availability zone retriever fails", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("az retrieve failed")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("az retrieve failed"))
 			})
 
 			It("returns an error when certificate creation fails", func() {
 				certificateManager.CreateCall.Returns.Error = errors.New("certificate creation failed")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("certificate creation failed"))
 			})
 
 			It("returns an error when certificate deletion fails", func() {
 				certificateManager.DeleteCall.Returns.Error = errors.New("certificate deletion failed")
-				_, err := updateLBs(certFile.Name(), keyFile.Name(), incomingState)
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("certificate deletion failed"))
 			})
 		})

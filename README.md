@@ -74,7 +74,7 @@ Commands:
   help                                                                                                        "print usage"
   ssh-key                                                                                                     "print the ssh private key"
   unsupported-create-lbs --type=<concourse,cf> --cert=<path> --key=<path> [--chain=<path>] [--skip-if-exists] "attaches a load balancer with the supplied certificate, key, and optional chain"
-  unsupported-update-lbs --cert=<path> --key=<path>                                                           "updates a load balancer with the supplied certificate and key"
+  unsupported-update-lbs --cert=<path> --key=<path> [--chain=<path>]                                          "updates a load balancer with the supplied certificate, key, and optional chain"
   unsupported-delete-lbs                                                                                      "deletes the attached load balancer"
   lbs                                                                                                         "prints any attached load balancers"
   unsupported-deploy-bosh-on-aws-for-concourse [--lb-type=concourse,cf,none]                                  "deploys a BOSH Director on AWS"
