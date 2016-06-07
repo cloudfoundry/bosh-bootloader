@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry/multierror"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
@@ -245,13 +246,30 @@ var _ = Describe("Create LBs", func() {
 				Expect(state.Stack.CertificateName).To(Equal("some-certificate-name"))
 				Expect(state.Stack.LBType).To(Equal("concourse"))
 			})
+		})
 
+		Context("required args", func() {
+			Context("when cert and key are not provided", func() {
+				It("returns an error", func() {
+					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+
+					expectedErr := multierror.NewMultiError("unsupported-create-lbs")
+					expectedErr.Add(errors.New("--cert is required"))
+					expectedErr.Add(errors.New("--key is required"))
+
+					Expect(err).To(Equal(expectedErr))
+				})
+			})
 		})
 
 		Context("failure cases", func() {
 			DescribeTable("returns an error when an lb already exists",
 				func(newLbType, oldLbType string) {
-					_, err := command.Execute([]string{"--type", newLbType}, storage.State{
+					_, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "/path/to/cert",
+						"--key", "/path/to/key",
+					}, storage.State{
 						Stack: storage.Stack{
 							LBType: oldLbType,
 						},
@@ -264,7 +282,11 @@ var _ = Describe("Create LBs", func() {
 
 			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "/path/to/cert",
+					"--key", "/path/to/key",
+				}, storage.State{})
 				Expect(err).To(MatchError("failed to check for stack"))
 			})
 
@@ -279,7 +301,11 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve azs")
 
-					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "/path/to/cert",
+						"--key", "/path/to/key",
+					}, storage.State{})
 					Expect(err).To(MatchError("failed to retrieve azs"))
 				})
 			})
@@ -288,7 +314,11 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update infrastructure")
 
-					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "/path/to/cert",
+						"--key", "/path/to/key",
+					}, storage.State{})
 					Expect(err).To(MatchError("failed to update infrastructure"))
 				})
 			})
@@ -297,7 +327,11 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					certificateManager.CreateCall.Returns.Error = errors.New("failed to create cert")
 
-					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "/path/to/cert",
+						"--key", "/path/to/key",
+					}, storage.State{})
 					Expect(err).To(MatchError("failed to create cert"))
 				})
 			})
@@ -306,7 +340,11 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
 
-					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "/path/to/cert",
+						"--key", "/path/to/key",
+					}, storage.State{})
 					Expect(err).To(MatchError("failed to update cloud config"))
 				})
 			})

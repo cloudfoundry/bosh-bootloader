@@ -1,14 +1,18 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry/multierror"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
+
+const CREATE_LBS_COMMAND = "unsupported-create-lbs"
 
 type CreateLBs struct {
 	logger                    logger
@@ -66,6 +70,11 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	}
 
 	config, err := c.parseFlags(subcommandFlags)
+	if err != nil {
+		return state, err
+	}
+
+	err = c.validateFlags(config)
 	if err != nil {
 		return state, err
 	}
@@ -158,6 +167,22 @@ func (c CreateLBs) updateStackAndBOSH(
 	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c CreateLBs) validateFlags(config lbConfig) error {
+	validateErrors := multierror.NewMultiError(CREATE_LBS_COMMAND)
+	if config.certPath == "" {
+		validateErrors.Add(errors.New("--cert is required"))
+	}
+	if config.certPath == "" {
+		validateErrors.Add(errors.New("--key is required"))
+	}
+
+	if validateErrors.Length() > 0 {
+		return validateErrors
 	}
 
 	return nil

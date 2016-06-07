@@ -22,3 +22,6 @@
 [submodule "vendor/github.com/pivotal-cf-experimental/bosh-test"]
 	path = vendor/github.com/pivotal-cf-experimental/bosh-test
 	url = https://github.com/pivotal-cf-experimental/bosh-test.git
+[submodule "vendor/github.com/cloudfoundry/multierror"]
+	path = vendor/github.com/cloudfoundry/multierror
+	url = git@github.com:cloudfoundry/multierror
