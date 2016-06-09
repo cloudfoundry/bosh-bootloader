@@ -87,6 +87,7 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
+	c.logger.Step("deleting certificate")
 	err = c.certificateManager.Delete(state.Stack.CertificateName)
 	if err != nil {
 		return state, err

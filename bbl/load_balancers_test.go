@@ -369,6 +369,18 @@ var _ = Describe("load balancers", func() {
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(cloudConfigFixture)))
 		})
 
+		It("logs all the steps", func() {
+			createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
+			session := deleteLBs(fakeAWSServer.URL, tempDirectory, 0, false)
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+			Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+			Expect(stdout).To(ContainSubstring("step: updating cloudformation stack"))
+			Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
+			Expect(stdout).To(ContainSubstring("step: deleting certificate"))
+		})
+
 		It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(0))

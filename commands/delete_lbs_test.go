@@ -118,6 +118,8 @@ var _ = Describe("Delete LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal(""))
 
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate"))
+
+			Expect(logger.StepCall.Messages).To(ContainElement("deleting certificate"))
 		})
 
 		It("checks if the bosh director exists", func() {
