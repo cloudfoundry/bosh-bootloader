@@ -39,8 +39,8 @@ func (b BBL) Up(loadBalancerType string) {
 
 	if loadBalancerType == "cf" || loadBalancerType == "concourse" {
 		args = append(args, []string{
-			"--cert", "bbl-certs/bbl.crt",
-			"--key", "bbl-certs/bbl.key",
+			"--cert", "fixtures/bbl.crt",
+			"--key", "fixtures/bbl.key",
 		}...)
 	}
 

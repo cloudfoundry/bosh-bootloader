@@ -33,10 +33,10 @@ var _ = Describe("load balancer tests", func() {
 		aws = actors.NewAWS(configuration)
 		state = integration.NewState(stateDirectory)
 
-		certBody, err = ioutil.ReadFile("fixtures/bbl-intermediate.crt")
+		certBody, err = ioutil.ReadFile("fixtures/bbl.crt")
 		Expect(err).NotTo(HaveOccurred())
 
-		newCertBody, err = ioutil.ReadFile("fixtures/new-bbl.crt")
+		newCertBody, err = ioutil.ReadFile("fixtures/other-bbl.crt")
 		Expect(err).NotTo(HaveOccurred())
 
 	})
@@ -56,12 +56,12 @@ var _ = Describe("load balancer tests", func() {
 			Expect(aws.StackExists(stackName)).To(BeTrue())
 			Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
 
-			bbl.CreateLB("concourse", "fixtures/bbl-intermediate.crt", "fixtures/bbl-intermediate.key", "fixtures/bbl.crt")
+			bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "fixtures/bbl-chain.crt")
 
 			Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
 			Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(certBody))))
 
-			bbl.UpdateLB("fixtures/new-bbl.crt", "fixtures/new-bbl.key")
+			bbl.UpdateLB("fixtures/other-bbl.crt", "fixtures/other-bbl.key")
 			Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
 
 			certificateName := state.CertificateName()
