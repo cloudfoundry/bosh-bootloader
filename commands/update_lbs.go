@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"io/ioutil"
 	"strings"
 
@@ -51,7 +52,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	if match, err := c.certificatesMatch(config.certPath, state.Stack.CertificateName); err != nil {
+	if match, err := c.checkCertificateAndChain(config.certPath, config.chainPath, state.Stack.CertificateName); err != nil {
 		return state, err
 	} else if match {
 		c.logger.Println("no updates are to be performed")
@@ -77,7 +78,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	return state, nil
 }
 
-func (c UpdateLBs) certificatesMatch(certPath string, oldCertName string) (bool, error) {
+func (c UpdateLBs) checkCertificateAndChain(certPath string, chainPath string, oldCertName string) (bool, error) {
 	localCertificate, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		return false, err
@@ -88,7 +89,22 @@ func (c UpdateLBs) certificatesMatch(certPath string, oldCertName string) (bool,
 		return false, err
 	}
 
-	return strings.TrimSpace(string(localCertificate)) == strings.TrimSpace(remoteCertificate.Body), nil
+	if strings.TrimSpace(string(localCertificate)) != strings.TrimSpace(remoteCertificate.Body) {
+		return false, nil
+	}
+
+	if chainPath != "" {
+		localChain, err := ioutil.ReadFile(chainPath)
+		if err != nil {
+			return false, err
+		}
+
+		if strings.TrimSpace(string(localChain)) != strings.TrimSpace(remoteCertificate.Chain) {
+			return false, errors.New("you cannot change the chain after the lb has been created, please delete and re-create the lb with the chain")
+		}
+	}
+
+	return true, nil
 }
 
 func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {

@@ -41,8 +41,9 @@ func (c CertificateDescriber) Describe(certificateName string) (Certificate, err
 	}
 
 	return Certificate{
-		Name: aws.StringValue(output.ServerCertificate.ServerCertificateMetadata.ServerCertificateName),
-		Body: aws.StringValue(output.ServerCertificate.CertificateBody),
-		ARN:  aws.StringValue(output.ServerCertificate.ServerCertificateMetadata.Arn),
+		Name:  aws.StringValue(output.ServerCertificate.ServerCertificateMetadata.ServerCertificateName),
+		ARN:   aws.StringValue(output.ServerCertificate.ServerCertificateMetadata.Arn),
+		Body:  aws.StringValue(output.ServerCertificate.CertificateBody),
+		Chain: aws.StringValue(output.ServerCertificate.CertificateChain),
 	}, nil
 }

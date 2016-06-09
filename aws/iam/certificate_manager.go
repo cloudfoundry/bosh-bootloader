@@ -12,9 +12,10 @@ type CertificateManager struct {
 }
 
 type Certificate struct {
-	Name string
-	Body string
-	ARN  string
+	Name  string
+	Body  string
+	ARN   string
+	Chain string
 }
 
 type certificateUploader interface {

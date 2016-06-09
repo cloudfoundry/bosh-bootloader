@@ -206,12 +206,26 @@ var _ = Describe("Update LBs", func() {
 
 		It("does not update the certificate if the provided certificate is the same", func() {
 			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
+				Body:  "\nsome-certificate-contents\n",
+				Chain: "\nsome-chain-contents\n",
+			}
+
+			_, err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logger.PrintlnCall.Receives.Message).To(Equal("no updates are to be performed"))
+
+			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+			Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
+			Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
+		})
+
+		It("returns an error if the certificate is the same and the chain has changed", func() {
+			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
 				Body: "\nsome-certificate-contents\n",
 			}
 
-			_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(logger.PrintlnCall.Receives.Message).To(Equal("no updates are to be performed"))
+			_, err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
+			Expect(err).To(MatchError("you cannot change the chain after the lb has been created, please delete and re-create the lb with the chain"))
 
 			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 			Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
@@ -235,6 +249,21 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		Describe("failure cases", func() {
+			It("returns an error when the chain file cannot be opened", func() {
+				certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
+					Body: "some-certificate-contents",
+				}
+
+				_, err := updateLBs(certFilePath, keyFilePath, "/some/fake/path", storage.State{
+					Stack: storage.Stack{
+						LBType:          "cf",
+						CertificateName: "some-certificate-name",
+					},
+				})
+
+				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			})
+
 			It("returns an error when aws credential validator fails", func() {
 				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
 

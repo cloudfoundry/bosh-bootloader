@@ -29,7 +29,8 @@ var _ = Describe("CertificateDescriber", func() {
 		It("describes the certificate with the given name", func() {
 			iamClient.GetServerCertificateCall.Returns.Output = &awsiam.GetServerCertificateOutput{
 				ServerCertificate: &awsiam.ServerCertificate{
-					CertificateBody: aws.String("some-certificate-body"),
+					CertificateBody:  aws.String("some-certificate-body"),
+					CertificateChain: aws.String("some-chain-body"),
 					ServerCertificateMetadata: &awsiam.ServerCertificateMetadata{
 						Path:                  aws.String("some-certificate-path"),
 						Arn:                   aws.String("some-certificate-arn"),
@@ -45,6 +46,7 @@ var _ = Describe("CertificateDescriber", func() {
 			Expect(iamClient.GetServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
 			Expect(certificate.Name).To(Equal("some-certificate"))
 			Expect(certificate.Body).To(Equal("some-certificate-body"))
+			Expect(certificate.Chain).To(Equal("some-chain-body"))
 			Expect(certificate.ARN).To(Equal("some-certificate-arn"))
 		})
 
@@ -94,5 +96,4 @@ var _ = Describe("CertificateDescriber", func() {
 			})
 		})
 	})
-
 })
