@@ -9,6 +9,8 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const UPDATE_LBS_COMMAND = "unsupported-update-lbs"
+
 type updateLBConfig struct {
 	certPath  string
 	keyPath   string
@@ -22,10 +24,11 @@ type UpdateLBs struct {
 	awsCredentialValidator    awsCredentialValidator
 	boshClientProvider        boshClientProvider
 	logger                    logger
+	certificateValidator      certificateValidator
 }
 
 func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager, availabilityZoneRetriever availabilityZoneRetriever,
-	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider, logger logger) UpdateLBs {
+	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider, logger logger, certificateValidator certificateValidator) UpdateLBs {
 
 	return UpdateLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -34,6 +37,7 @@ func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateMana
 		infrastructureManager:     infrastructureManager,
 		boshClientProvider:        boshClientProvider,
 		logger:                    logger,
+		certificateValidator:      certificateValidator,
 	}
 }
 
@@ -44,6 +48,11 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	}
 
 	config, err := c.parseFlags(subcommandFlags)
+	if err != nil {
+		return state, err
+	}
+
+	err = c.certificateValidator.Validate(UPDATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err
 	}

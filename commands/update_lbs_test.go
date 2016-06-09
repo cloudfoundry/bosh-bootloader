@@ -22,6 +22,7 @@ var _ = Describe("Update LBs", func() {
 		keyFilePath               string
 		chainFilePath             string
 		certificateManager        *fakes.CertificateManager
+		certificateValidator      *fakes.CertificateValidator
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
 		awsCredentialValidator    *fakes.AWSCredentialValidator
@@ -50,6 +51,7 @@ var _ = Describe("Update LBs", func() {
 
 	BeforeEach(func() {
 		certificateManager = &fakes.CertificateManager{}
+		certificateValidator = &fakes.CertificateValidator{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
@@ -85,7 +87,7 @@ var _ = Describe("Update LBs", func() {
 		chainFilePath = temporaryFileContaining("some-chain-contents")
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
-			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger)
+			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator)
 	})
 
 	Describe("Execute", func() {
@@ -230,6 +232,28 @@ var _ = Describe("Update LBs", func() {
 			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 			Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
 			Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
+		})
+
+		It("returns an error when the certificate validator fails", func() {
+			certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
+			_, err := command.Execute([]string{
+				"--cert", "/path/to/cert",
+				"--key", "/path/to/key",
+				"--chain", "/path/to/chain",
+			}, storage.State{
+				Stack: storage.Stack{
+					LBType: "concourse",
+				},
+			})
+
+			Expect(err).To(MatchError("failed to validate"))
+			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("unsupported-update-lbs"))
+			Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
+			Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
+			Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))
+
+			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+			Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
 		})
 
 		Describe("state manipulation", func() {
