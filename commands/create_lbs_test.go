@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/multierror"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
@@ -30,6 +29,7 @@ var _ = Describe("Create LBs", func() {
 			awsCredentialValidator    *fakes.AWSCredentialValidator
 			logger                    *fakes.Logger
 			cloudConfigManager        *fakes.CloudConfigManager
+			certificateValidator      *fakes.CertificateValidator
 			incomingState             storage.State
 		)
 
@@ -43,6 +43,7 @@ var _ = Describe("Create LBs", func() {
 			awsCredentialValidator = &fakes.AWSCredentialValidator{}
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
+			certificateValidator = &fakes.CertificateValidator{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -68,7 +69,7 @@ var _ = Describe("Create LBs", func() {
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager)
+				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator)
 		})
 
 		It("returns an error if aws credential validator fails", func() {
@@ -99,6 +100,11 @@ var _ = Describe("Create LBs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateManager.CreateCall.Receives.Chain).To(Equal("temp/some-chain.crt"))
+
+			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("unsupported-create-lbs"))
+			Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("temp/some-cert.crt"))
+			Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("temp/some-key.key"))
+			Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("temp/some-chain.crt"))
 		})
 
 		It("creates a load balancer in cloudformation with certificate", func() {
@@ -249,16 +255,21 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		Context("required args", func() {
-			Context("when cert and key are not provided", func() {
-				It("returns an error", func() {
-					_, err := command.Execute([]string{"--type", "concourse"}, storage.State{})
+			It("returns an error when certificate validator fails for cert and key", func() {
+				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "/path/to/cert",
+					"--key", "/path/to/key",
+				}, storage.State{})
 
-					expectedErr := multierror.NewMultiError("unsupported-create-lbs")
-					expectedErr.Add(errors.New("--cert is required"))
-					expectedErr.Add(errors.New("--key is required"))
+				Expect(err).To(MatchError("failed to validate"))
+				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("unsupported-create-lbs"))
+				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
+				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
+				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal(""))
 
-					Expect(err).To(Equal(expectedErr))
-				})
+				Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 			})
 		})
 

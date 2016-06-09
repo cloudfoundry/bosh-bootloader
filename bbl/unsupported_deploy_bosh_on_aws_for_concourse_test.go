@@ -222,10 +222,10 @@ var _ = Describe("bbl", func() {
 
 					certificates := fakeAWS.Certificates.All()
 
-					lbCert, err := ioutil.ReadFile("fixtures/lb-cert.pem")
+					lbCert, err := ioutil.ReadFile("fixtures/bbl.crt")
 					Expect(err).NotTo(HaveOccurred())
 
-					lbKey, err := ioutil.ReadFile("fixtures/lb-key.pem")
+					lbKey, err := ioutil.ReadFile("fixtures/bbl.key")
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(certificates).To(HaveLen(1))
@@ -270,10 +270,10 @@ var _ = Describe("bbl", func() {
 
 					certificates := fakeAWS.Certificates.All()
 
-					lbCert, err := ioutil.ReadFile("fixtures/lb-cert.pem")
+					lbCert, err := ioutil.ReadFile("fixtures/bbl.crt")
 					Expect(err).NotTo(HaveOccurred())
 
-					lbKey, err := ioutil.ReadFile("fixtures/lb-key.pem")
+					lbKey, err := ioutil.ReadFile("fixtures/bbl.key")
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(certificates).To(HaveLen(1))
@@ -355,8 +355,8 @@ func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory
 		"--state-dir", tempDirectory,
 		"unsupported-deploy-bosh-on-aws-for-concourse",
 		"--lb-type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
-		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
+		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
+		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
 	}
 
 	return executeCommand(args, exitCode)

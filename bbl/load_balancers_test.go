@@ -47,13 +47,13 @@ var _ = Describe("load balancers", func() {
 
 		deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
-		lbCert, err = ioutil.ReadFile("fixtures/lb-cert.pem")
+		lbCert, err = ioutil.ReadFile("fixtures/bbl.crt")
 		Expect(err).NotTo(HaveOccurred())
 
-		lbKey, err = ioutil.ReadFile("fixtures/lb-key.pem")
+		lbKey, err = ioutil.ReadFile("fixtures/bbl.key")
 		Expect(err).NotTo(HaveOccurred())
 
-		lbChain, err = ioutil.ReadFile("fixtures/lb-chain.pem")
+		lbChain, err = ioutil.ReadFile("fixtures/bbl-chain.crt")
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -417,9 +417,9 @@ func createLBsSkipIfExists(endpointOverrideURL string, stateDir string, lbType s
 		"unsupported-create-lbs",
 		"--skip-if-exists",
 		"--type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
-		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
-		"--chain", filepath.Join(dir, "fixtures", "lb-chain.pem"),
+		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
+		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
+		"--chain", filepath.Join(dir, "fixtures", "bbl-chain.crt"),
 	}
 
 	return executeCommand(args, exitCode)
@@ -436,9 +436,9 @@ func createLBs(endpointOverrideURL string, stateDir string, lbType string, exitC
 		"--state-dir", stateDir,
 		"unsupported-create-lbs",
 		"--type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "lb-cert.pem"),
-		"--key", filepath.Join(dir, "fixtures", "lb-key.pem"),
-		"--chain", filepath.Join(dir, "fixtures", "lb-chain.pem"),
+		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
+		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
+		"--chain", filepath.Join(dir, "fixtures", "bbl-chain.crt"),
 	}
 
 	return executeCommand(args, exitCode)

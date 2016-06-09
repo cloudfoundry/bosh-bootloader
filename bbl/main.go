@@ -73,6 +73,7 @@ func main() {
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
 	certificateDeleter := iam.NewCertificateDeleter(iamClient, logger)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
+	certificateValidator := iam.NewCertificateValidator()
 	loadBalancerCertificateManager := iam.NewLoadBalancerCertificateManager(certificateManager)
 
 	// bosh-init
@@ -120,7 +121,7 @@ func main() {
 	)
 	createLBs := commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
 	)
 	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger,

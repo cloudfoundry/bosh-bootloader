@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/multierror"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
@@ -23,6 +21,7 @@ type CreateLBs struct {
 	boshCloudConfigurator     boshCloudConfigurator
 	awsCredentialValidator    awsCredentialValidator
 	cloudConfigManager        cloudConfigManager
+	certificateValidator      certificateValidator
 }
 
 type lbConfig struct {
@@ -47,10 +46,14 @@ type boshCloudConfigurator interface {
 	Configure(stack cloudformation.Stack, azs []string) bosh.CloudConfigInput
 }
 
+type certificateValidator interface {
+	Validate(command, certPath, keyPath, chainPath string) error
+}
+
 func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
 	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator,
-	cloudConfigManager cloudConfigManager) CreateLBs {
+	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator) CreateLBs {
 	return CreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -60,6 +63,7 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 		boshCloudConfigurator:     boshCloudConfigurator,
 		awsCredentialValidator:    awsCredentialValidator,
 		cloudConfigManager:        cloudConfigManager,
+		certificateValidator:      certificateValidator,
 	}
 }
 
@@ -74,7 +78,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	err = c.validateFlags(config)
+	err = c.certificateValidator.Validate(CREATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err
 	}
@@ -167,22 +171,6 @@ func (c CreateLBs) updateStackAndBOSH(
 	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (c CreateLBs) validateFlags(config lbConfig) error {
-	validateErrors := multierror.NewMultiError(CREATE_LBS_COMMAND)
-	if config.certPath == "" {
-		validateErrors.Add(errors.New("--cert is required"))
-	}
-	if config.certPath == "" {
-		validateErrors.Add(errors.New("--key is required"))
-	}
-
-	if validateErrors.Length() > 0 {
-		return validateErrors
 	}
 
 	return nil
