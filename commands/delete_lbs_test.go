@@ -3,19 +3,20 @@ package commands_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Delete LBs", func() {
 	var (
-		deleteLBs                 commands.DeleteLBs
+		command                   commands.DeleteLBs
 		awsCredentialValidator    *fakes.AWSCredentialValidator
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		certificateManager        *fakes.CertificateManager
@@ -63,7 +64,7 @@ var _ = Describe("Delete LBs", func() {
 
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
-		deleteLBs = commands.NewDeleteLBs(awsCredentialValidator, availabilityZoneRetriever,
+		command = commands.NewDeleteLBs(awsCredentialValidator, availabilityZoneRetriever,
 			certificateManager, infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider)
 	})
 
@@ -82,7 +83,7 @@ var _ = Describe("Delete LBs", func() {
 				},
 			}
 
-			_, err := deleteLBs.Execute([]string{}, incomingState)
+			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
@@ -102,7 +103,7 @@ var _ = Describe("Delete LBs", func() {
 
 		It("delete lbs from cloudformation and deletes certificate", func() {
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-			_, err := deleteLBs.Execute([]string{}, incomingState)
+			_, err := command.Execute([]string{}, incomingState)
 
 			Expect(err).NotTo(HaveOccurred())
 
@@ -120,7 +121,7 @@ var _ = Describe("Delete LBs", func() {
 		})
 
 		It("checks if the bosh director exists", func() {
-			_, err := deleteLBs.Execute([]string{}, incomingState)
+			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
@@ -133,20 +134,20 @@ var _ = Describe("Delete LBs", func() {
 		Context("if the user hasn't bbl'd up yet", func() {
 			It("returns an error if the stack does not exist", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
-				_, err := deleteLBs.Execute([]string{}, storage.State{})
+				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError(commands.BBLNotFound))
 			})
 
 			It("returns an error if the bosh director does not exist", func() {
 				boshClient.InfoCall.Returns.Error = errors.New("director not found")
 
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError(commands.BBLNotFound))
 			})
 		})
 
 		It("returns an error if there is no lb", func() {
-			_, err := deleteLBs.Execute([]string{}, storage.State{
+			_, err := command.Execute([]string{}, storage.State{
 				Stack: storage.Stack{
 					LBType: "none",
 				},
@@ -156,7 +157,7 @@ var _ = Describe("Delete LBs", func() {
 
 		Context("state management", func() {
 			It("returns a state with no lb type nor certificate", func() {
-				state, err := deleteLBs.Execute([]string{}, storage.State{
+				state, err := command.Execute([]string{}, storage.State{
 					Stack: storage.Stack{
 						Name:            "some-stack",
 						LBType:          "cf",
@@ -175,40 +176,74 @@ var _ = Describe("Delete LBs", func() {
 			})
 		})
 
+		Context("when --skip-if-missing is provided", func() {
+			It("no-ops when lb does not exist", func() {
+				_, err := command.Execute([]string{
+					"--skip-if-missing",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
+				Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
+
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
+			})
+
+			DescribeTable("deletes the lb if the lb exists",
+				func(currentLBType string) {
+					incomingState.Stack.LBType = currentLBType
+					_, err := command.Execute([]string{
+						"--skip-if-missing",
+					}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
+					Expect(certificateManager.DeleteCall.CallCount).To(Equal(1))
+				},
+				Entry("when the current lb-type is 'cf'", "cf"),
+				Entry("when the current lb-type is 'concourse'", "concourse"),
+			)
+		})
+
 		Context("failure cases", func() {
+			It("returns an error when an unknown flag is provided", func() {
+				_, err := command.Execute([]string{"--unknown-flag"}, incomingState)
+				Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
+			})
+
 			It("returns an error when aws credential validator fails to validate", func() {
 				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("validate failed")
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("validate failed"))
 			})
 
 			It("return an error when availability zone retriever fails to retrieve", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("retrieve failed")
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("retrieve failed"))
 			})
 
 			It("return an error when infrastructure manager fails to describe", func() {
 				infrastructureManager.DescribeCall.Returns.Error = errors.New("describe failed")
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("describe failed"))
 			})
 
 			It("return an error when cloud config manager fails to update", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("update failed")
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("update failed"))
 			})
 
 			It("return an error when infrastructure manager fails to update", func() {
 				infrastructureManager.UpdateCall.Returns.Error = errors.New("update failed")
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("update failed"))
 			})
 
 			It("return an error when certificate manager fails to delete", func() {
 				certificateManager.DeleteCall.Returns.Error = errors.New("delete failed")
-				_, err := deleteLBs.Execute([]string{}, incomingState)
+				_, err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("delete failed"))
 			})
 		})

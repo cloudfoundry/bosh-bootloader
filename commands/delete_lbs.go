@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -18,6 +19,10 @@ type DeleteLBs struct {
 
 type cloudConfigManager interface {
 	Update(cloudConfigInput bosh.CloudConfigInput, boshClient bosh.Client) error
+}
+
+type deleteLBsConfig struct {
+	skipIfMissing bool
 }
 
 func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
@@ -41,6 +46,16 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	err := c.awsCredentialValidator.Validate()
 	if err != nil {
 		return state, err
+	}
+
+	config, err := c.parseFlags(subcommandFlags)
+	if err != nil {
+		return state, err
+	}
+
+	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
+		c.logger.Println("no lb type exists, skipping...")
+		return state, nil
 	}
 
 	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
@@ -81,4 +96,18 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	state.Stack.CertificateName = ""
 
 	return state, nil
+}
+
+func (DeleteLBs) parseFlags(subcommandFlags []string) (deleteLBsConfig, error) {
+	lbFlags := flags.New("delete-lbs")
+
+	config := deleteLBsConfig{}
+	lbFlags.Bool(&config.skipIfMissing, "skip-if-missing", "", false)
+
+	err := lbFlags.Parse(subcommandFlags)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
 }

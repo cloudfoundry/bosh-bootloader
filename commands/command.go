@@ -31,9 +31,13 @@ func checkBBLAndLB(state storage.State, boshClientProvider boshClientProvider, i
 		return err
 	}
 
-	if state.Stack.LBType != "concourse" && state.Stack.LBType != "cf" {
+	if !lbExists(state.Stack.LBType) {
 		return LBNotFound
 	}
 
 	return nil
+}
+
+func lbExists(lbType string) bool {
+	return lbType == "concourse" || lbType == "cf"
 }

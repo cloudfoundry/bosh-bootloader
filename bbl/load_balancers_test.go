@@ -345,7 +345,7 @@ var _ = Describe("load balancers", func() {
 				Name: "bbl-cert-old-certificate",
 			})
 
-			deleteLBs(fakeAWSServer.URL, tempDirectory, 0)
+			deleteLBs(fakeAWSServer.URL, tempDirectory, 0, false)
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(0))
@@ -358,13 +358,26 @@ var _ = Describe("load balancers", func() {
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(cloudConfigFixture)))
 		})
 
+		It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(0))
+
+			session := deleteLBs(fakeAWSServer.URL, tempDirectory, 0, true)
+
+			certificates = fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(0))
+
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring(`no lb type exists, skipping...`))
+		})
+
 		Context("failure cases", func() {
 			Context("when the environment has not been provisioned", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
 					state := readStateJson(tempDirectory)
 
 					fakeAWS.Stacks.Delete(state.Stack.Name)
-					session := deleteLBs(fakeAWSServer.URL, tempDirectory, 1)
+					session := deleteLBs(fakeAWSServer.URL, tempDirectory, 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -381,7 +394,7 @@ var _ = Describe("load balancers", func() {
 						},
 					}, tempDirectory)
 
-					session := deleteLBs(fakeAWSServer.URL, tempDirectory, 1)
+					session := deleteLBs(fakeAWSServer.URL, tempDirectory, 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -416,7 +429,7 @@ func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Sessi
 	return executeCommand(args, exitCode)
 }
 
-func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Session {
+func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int, skipIfMissing bool) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
 		"--aws-access-key-id", "some-access-key-id",
@@ -424,6 +437,10 @@ func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int) *gexec
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"unsupported-delete-lbs",
+	}
+
+	if skipIfMissing {
+		args = append(args, "--skip-if-missing")
 	}
 
 	return executeCommand(args, exitCode)

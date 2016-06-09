@@ -115,7 +115,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 	}
 
 	var certificateARN string
-	if state.Stack.LBType == "concourse" || state.Stack.LBType == "cf" {
+	if lbExists(state.Stack.LBType) {
 		certificate, err := u.certificateDescriber.Describe(state.Stack.CertificateName)
 		if err != nil {
 			return state, err

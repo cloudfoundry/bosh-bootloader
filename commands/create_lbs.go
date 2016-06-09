@@ -83,7 +83,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	if config.skipIfExists && (state.Stack.LBType != "" && state.Stack.LBType != "none") {
+	if config.skipIfExists && lbExists(state.Stack.LBType) {
 		c.logger.Println(fmt.Sprintf("lb type %q exists, skipping...", state.Stack.LBType))
 		return state, nil
 	}
@@ -128,13 +128,7 @@ func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
 }
 
 func (CreateLBs) isValidLBType(lbType string) bool {
-	for _, v := range []string{"concourse", "cf"} {
-		if lbType == v {
-			return true
-		}
-	}
-
-	return false
+	return lbType == "concourse" || lbType == "cf"
 }
 
 func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client) error {
@@ -142,7 +136,7 @@ func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackN
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", newLBType)
 	}
 
-	if currentLBType == "concourse" || currentLBType == "cf" {
+	if lbExists(currentLBType) {
 		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
 	}
 

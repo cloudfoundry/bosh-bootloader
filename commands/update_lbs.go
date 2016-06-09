@@ -58,8 +58,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	lbExists := state.Stack.LBType == "cf" || state.Stack.LBType == "concourse"
-	if config.skipIfMissing && !lbExists {
+	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
 		c.logger.Println("no lb type exists, skipping...")
 		return state, nil
 	}
