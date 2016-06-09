@@ -39,9 +39,17 @@ var _ = Describe("CertificateValidator", func() {
 			otherCertFilePath = "fixtures/other-bbl.crt"
 			otherKeyFilePath = "fixtures/other-bbl.key"
 
-			certNonPEMFilePath = "fixtures/bbl-non-pem.crt"
-			keyNonPEMFilePath = "fixtures/bbl-non-pem.key"
-			chainNonPEMFilePath = "fixtures/bbl-non-pem-chain.key"
+			createTempFile := func() string {
+				file, err := ioutil.TempFile("", "")
+				Expect(err).NotTo(HaveOccurred())
+				defer file.Close()
+
+				return file.Name()
+			}
+
+			certNonPEMFilePath = createTempFile()
+			keyNonPEMFilePath = createTempFile()
+			chainNonPEMFilePath = createTempFile()
 
 			iam.ResetStat()
 			iam.ResetReadAll()
