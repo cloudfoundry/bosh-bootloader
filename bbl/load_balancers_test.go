@@ -90,7 +90,7 @@ var _ = Describe("load balancers", func() {
 				contents, err := ioutil.ReadFile(fixtureLocation)
 				Expect(err).NotTo(HaveOccurred())
 
-				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0)
+				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0, false)
 
 				certificates := fakeAWS.Certificates.All()
 				Expect(certificates).To(HaveLen(1))
@@ -106,7 +106,7 @@ var _ = Describe("load balancers", func() {
 		)
 
 		It("logs all the steps", func() {
-			session := createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+			session := createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
 			stdout := session.Out.Contents()
 			Expect(stdout).To(ContainSubstring("step: uploading certificate"))
 			Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
@@ -116,14 +116,14 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0)
+			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0, false)
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
 
 			originalCertificate := certificates[0]
 
-			session := createLBsSkipIfExists(fakeAWSServer.URL, tempDirectory, "cf", 0)
+			session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0, true)
 
 			certificates = fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
@@ -137,11 +137,11 @@ var _ = Describe("load balancers", func() {
 		Context("failure cases", func() {
 			Context("when an lb already exists", func() {
 				BeforeEach(func() {
-					createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+					createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
 				})
 
 				It("exits 1", func() {
-					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
+					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
@@ -149,7 +149,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			It("exits 1 when an unknown lb-type is supplied", func() {
-				session := createLBs(fakeAWSServer.URL, tempDirectory, "some-fake-lb-type", 1)
+				session := createLBs(fakeAWSServer.URL, tempDirectory, "some-fake-lb-type", 1, false)
 				stderr := session.Err.Contents()
 
 				Expect(stderr).To(ContainSubstring("\"some-fake-lb-type\" is not a valid lb type, valid lb types are: concourse and cf"))
@@ -160,7 +160,7 @@ var _ = Describe("load balancers", func() {
 					state := readStateJson(tempDirectory)
 
 					fakeAWS.Stacks.Delete(state.Stack.Name)
-					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
+					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -178,7 +178,7 @@ var _ = Describe("load balancers", func() {
 						},
 					}, tempDirectory)
 
-					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1)
+					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -213,7 +213,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath,
-				otherLBKeyPath, otherLBChainPath, 0)
+				otherLBKeyPath, otherLBChainPath, 0, false)
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
@@ -251,7 +251,7 @@ var _ = Describe("load balancers", func() {
 				PrivateKey:      string(lbKey),
 			})
 
-			session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0)
+			session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, false)
 			stdout := session.Out.Contents()
 
 			Expect(stdout).To(ContainSubstring("no updates are to be performed"))
@@ -261,10 +261,23 @@ var _ = Describe("load balancers", func() {
 			Expect(stack.WasUpdated).To(BeFalse())
 		})
 
+		It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(0))
+
+			session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, true)
+
+			certificates = fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(0))
+
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring(`no lb type exists, skipping...`))
+		})
+
 		Context("failure cases", func() {
 			Context("when an lb type does not exist", func() {
 				It("exits 1", func() {
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
@@ -274,7 +287,7 @@ var _ = Describe("load balancers", func() {
 			Context("when bbl environment is not up", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
 					writeStateJson(storage.State{}, tempDirectory)
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -291,7 +304,7 @@ var _ = Describe("load balancers", func() {
 						},
 					}, tempDirectory)
 
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1)
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -379,7 +392,7 @@ var _ = Describe("load balancers", func() {
 
 	Describe("lbs", func() {
 		It("prints out the currently attached lb names and urls", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0)
+			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0, false)
 
 			session := lbs(fakeAWSServer.URL, tempDirectory, 0)
 			stdout := session.Out.Contents()
@@ -416,7 +429,7 @@ func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int) *gexec
 	return executeCommand(args, exitCode)
 }
 
-func updateLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, chainName string, exitCode int) *gexec.Session {
+func updateLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, chainName string, exitCode int, skipIfMissing bool) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
 		"--aws-access-key-id", "some-access-key-id",
@@ -429,10 +442,14 @@ func updateLBs(endpointOverrideURL string, stateDir string, certName string, key
 		"--chain", chainName,
 	}
 
+	if skipIfMissing {
+		args = append(args, "--skip-if-missing")
+	}
+
 	return executeCommand(args, exitCode)
 }
 
-func createLBsSkipIfExists(endpointOverrideURL string, stateDir string, lbType string, exitCode int) *gexec.Session {
+func createLBs(endpointOverrideURL string, stateDir string, lbType string, exitCode int, skipIfExists bool) *gexec.Session {
 	dir, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
 	args := []string{
@@ -442,30 +459,14 @@ func createLBsSkipIfExists(endpointOverrideURL string, stateDir string, lbType s
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"unsupported-create-lbs",
-		"--skip-if-exists",
 		"--type", lbType,
 		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
 		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
 		"--chain", filepath.Join(dir, "fixtures", "bbl-chain.crt"),
 	}
 
-	return executeCommand(args, exitCode)
-}
-
-func createLBs(endpointOverrideURL string, stateDir string, lbType string, exitCode int) *gexec.Session {
-	dir, err := os.Getwd()
-	Expect(err).NotTo(HaveOccurred())
-	args := []string{
-		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
-		"--aws-access-key-id", "some-access-key-id",
-		"--aws-secret-access-key", "some-secret-access-key",
-		"--aws-region", "some-region",
-		"--state-dir", stateDir,
-		"unsupported-create-lbs",
-		"--type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
-		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
-		"--chain", filepath.Join(dir, "fixtures", "bbl-chain.crt"),
+	if skipIfExists {
+		args = append(args, "--skip-if-exists")
 	}
 
 	return executeCommand(args, exitCode)

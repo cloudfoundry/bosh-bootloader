@@ -11,6 +11,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -254,6 +255,39 @@ var _ = Describe("Update LBs", func() {
 
 			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 			Expect(certificateManager.DeleteCall.CallCount).To(Equal(0))
+		})
+
+		Context("when --skip-if-missing is provided", func() {
+			It("no-ops when lb does not exist", func() {
+				_, err := command.Execute([]string{
+					"--cert", certFilePath,
+					"--key", keyFilePath,
+					"--skip-if-missing",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
+				Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
+			})
+
+			DescribeTable("updates the lb if the lb exists",
+				func(currentLBType string) {
+					incomingState.Stack.LBType = currentLBType
+					_, err := command.Execute([]string{
+						"--cert", certFilePath,
+						"--key", keyFilePath,
+						"--skip-if-missing",
+					}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
+					Expect(certificateManager.CreateCall.CallCount).To(Equal(1))
+				},
+				Entry("when the current lb-type is 'cf'", "cf"),
+				Entry("when the current lb-type is 'concourse'", "concourse"),
+			)
 		})
 
 		Describe("state manipulation", func() {

@@ -218,7 +218,7 @@ var _ = Describe("bbl", func() {
 		Context("when an load balancer is attached", func() {
 			It("attaches certificate to the load balancer", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
-				createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+				createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
 
 				state := readStateJson(tempDirectory)
 
@@ -254,7 +254,7 @@ var _ = Describe("bbl", func() {
 
 			session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 			if lbType != "" {
-				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0)
+				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0, false)
 			}
 			stdout := session.Out.Contents()
 

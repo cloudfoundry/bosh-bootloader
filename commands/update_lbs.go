@@ -12,9 +12,10 @@ import (
 const UPDATE_LBS_COMMAND = "unsupported-update-lbs"
 
 type updateLBConfig struct {
-	certPath  string
-	keyPath   string
-	chainPath string
+	certPath      string
+	keyPath       string
+	chainPath     string
+	skipIfMissing bool
 }
 
 type UpdateLBs struct {
@@ -55,6 +56,12 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	err = c.certificateValidator.Validate(UPDATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err
+	}
+
+	lbExists := state.Stack.LBType == "cf" || state.Stack.LBType == "concourse"
+	if config.skipIfMissing && !lbExists {
+		c.logger.Println("no lb type exists, skipping...")
+		return state, nil
 	}
 
 	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
@@ -123,6 +130,7 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
+	lbFlags.Bool(&config.skipIfMissing, "skip-if-missing", "", false)
 
 	err := lbFlags.Parse(subcommandFlags)
 	if err != nil {
