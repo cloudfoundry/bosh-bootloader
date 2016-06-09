@@ -215,102 +215,36 @@ var _ = Describe("bbl", func() {
 			})
 		})
 
-		Context("when lb-type has been specified", func() {
-			Context("when cert and key have been specified", func() {
-				It("uploads a cert and key", func() {
-					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
+		Context("when an load balancer is attached", func() {
+			It("attaches certificate to the load balancer", func() {
+				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0)
 
-					certificates := fakeAWS.Certificates.All()
+				state := readStateJson(tempDirectory)
 
-					lbCert, err := ioutil.ReadFile("fixtures/bbl.crt")
-					Expect(err).NotTo(HaveOccurred())
+				stack, ok := fakeAWS.Stacks.Get(state.Stack.Name)
+				Expect(ok).To(BeTrue())
 
-					lbKey, err := ioutil.ReadFile("fixtures/bbl.key")
-					Expect(err).NotTo(HaveOccurred())
+				type listener struct {
+					SSLCertificateId string
+				}
 
-					Expect(certificates).To(HaveLen(1))
-					Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
-					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
-					Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
-				})
-
-				It("attaches cert and key to the load balancer", func() {
-					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
-
-					state := readStateJson(tempDirectory)
-
-					stack, ok := fakeAWS.Stacks.Get(state.Stack.Name)
-					Expect(ok).To(BeTrue())
-
-					type listener struct {
-						SSLCertificateId string
-					}
-
-					var template struct {
-						Resources struct {
-							ConcourseLoadBalancer struct {
-								Properties struct {
-									Listeners []listener
-								}
+				var template struct {
+					Resources struct {
+						ConcourseLoadBalancer struct {
+							Properties struct {
+								Listeners []listener
 							}
 						}
 					}
+				}
 
-					err := json.Unmarshal([]byte(stack.Template), &template)
-					Expect(err).NotTo(HaveOccurred())
+				err := json.Unmarshal([]byte(stack.Template), &template)
+				Expect(err).NotTo(HaveOccurred())
 
-					Expect(template.Resources.ConcourseLoadBalancer.Properties.Listeners).To(ContainElement(listener{
-						SSLCertificateId: "some-certificate-arn",
-					}))
-				})
-
-				It("doesn't upload a cert and key twice", func() {
-					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
-					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
-
-					certificates := fakeAWS.Certificates.All()
-
-					lbCert, err := ioutil.ReadFile("fixtures/bbl.crt")
-					Expect(err).NotTo(HaveOccurred())
-
-					lbKey, err := ioutil.ReadFile("fixtures/bbl.key")
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(certificates).To(HaveLen(1))
-					Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
-					Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
-					Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
-				})
-
-				Context("when running again with load balancer type none", func() {
-					It("should delete previous cert and key on aws", func() {
-						deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
-
-						certificates := fakeAWS.Certificates.All()
-						Expect(certificates).To(HaveLen(1))
-
-						deployBOSHOnAWSForConcourseWithoutCertAndKey(fakeAWSServer.URL, tempDirectory, "none", 0)
-
-						certificates = fakeAWS.Certificates.All()
-						Expect(certificates).To(HaveLen(0))
-					})
-				})
-			})
-
-			Context("when running again with a different load balancer", func() {
-				It("fails fast if there are instances associated with the existing load balancer", func() {
-					deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "concourse", 0)
-
-					fakeAWS.LoadBalancers.Set(awsbackend.LoadBalancer{
-						Name:      "some-concourse-lb",
-						Instances: []string{"some-instance-1", "some-instance-2"},
-					})
-
-					session := deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, "none", 1)
-
-					stderr := session.Err.Contents()
-					Expect(stderr).To(ContainSubstring("Load balancer \"some-concourse-lb\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
-				})
+				Expect(template.Resources.ConcourseLoadBalancer.Properties.Listeners).To(ContainElement(listener{
+					SSLCertificateId: "some-certificate-arn",
+				}))
 			})
 		})
 
@@ -318,7 +252,10 @@ var _ = Describe("bbl", func() {
 			contents, err := ioutil.ReadFile(fixtureLocation)
 			Expect(err).NotTo(HaveOccurred())
 
-			session := deployBOSHOnAWSForConcourseWithLoadBalancer(fakeAWSServer.URL, tempDirectory, lbType, 0)
+			session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+			if lbType != "" {
+				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0)
+			}
 			stdout := session.Out.Contents()
 
 			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
@@ -339,42 +276,9 @@ var _ = Describe("bbl", func() {
 			Entry("generates a cloud config with no lb type", "", "fixtures/cloud-config-no-elb.yml"),
 			Entry("generates a cloud config with cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
 			Entry("generates a cloud config with concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
-			Entry("generates a cloud config with none lb type", "none", "fixtures/cloud-config-no-elb.yml"),
 		)
 	})
 })
-
-func deployBOSHOnAWSForConcourseWithLoadBalancer(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
-	dir, err := os.Getwd()
-	Expect(err).NotTo(HaveOccurred())
-	args := []string{
-		fmt.Sprintf("--endpoint-override=%s", serverURL),
-		"--aws-access-key-id", "some-access-key",
-		"--aws-secret-access-key", "some-access-secret",
-		"--aws-region", "some-region",
-		"--state-dir", tempDirectory,
-		"unsupported-deploy-bosh-on-aws-for-concourse",
-		"--lb-type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
-		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
-	}
-
-	return executeCommand(args, exitCode)
-}
-
-func deployBOSHOnAWSForConcourseWithoutCertAndKey(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
-	args := []string{
-		fmt.Sprintf("--endpoint-override=%s", serverURL),
-		"--aws-access-key-id", "some-access-key",
-		"--aws-secret-access-key", "some-access-secret",
-		"--aws-region", "some-region",
-		"--state-dir", tempDirectory,
-		"unsupported-deploy-bosh-on-aws-for-concourse",
-		"--lb-type", lbType,
-	}
-
-	return executeCommand(args, exitCode)
-}
 
 func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
@@ -384,6 +288,24 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCod
 		"--aws-region", "some-region",
 		"--state-dir", tempDirectory,
 		"unsupported-deploy-bosh-on-aws-for-concourse",
+	}
+
+	return executeCommand(args, exitCode)
+}
+
+func createLB(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
+	dir, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", serverURL),
+		"--aws-access-key-id", "some-access-key",
+		"--aws-secret-access-key", "some-access-secret",
+		"--aws-region", "some-region",
+		"--state-dir", tempDirectory,
+		"unsupported-create-lbs",
+		"--type", lbType,
+		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
+		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
 	}
 
 	return executeCommand(args, exitCode)

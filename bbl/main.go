@@ -15,7 +15,6 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/elb"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
@@ -52,7 +51,6 @@ func main() {
 		EndpointOverride: configuration.Global.EndpointOverride,
 	}
 
-	elbClient := elb.NewClient(awsConfiguration)
 	cloudFormationClient := cloudformation.NewClient(awsConfiguration)
 	ec2Client := ec2.NewClient(awsConfiguration)
 	iamClient := iam.NewClient(awsConfiguration)
@@ -68,13 +66,11 @@ func main() {
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(cloudFormationClient, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	elbDescriber := elb.NewDescriber(elbClient)
 	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator, logger)
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
 	certificateDeleter := iam.NewCertificateDeleter(iamClient, logger)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	certificateValidator := iam.NewCertificateValidator()
-	loadBalancerCertificateManager := iam.NewLoadBalancerCertificateManager(certificateManager)
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -112,7 +108,7 @@ func main() {
 	version := commands.NewVersion(os.Stdout)
 	up := commands.NewUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
-		stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber, loadBalancerCertificateManager,
+		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider,
 	)
 	destroy := commands.NewDestroy(

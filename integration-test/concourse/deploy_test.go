@@ -36,7 +36,7 @@ var _ = Describe("bosh deployment tests", func() {
 	})
 
 	It("is able to deploy concourse", func() {
-		bbl.Up("")
+		bbl.Up()
 
 		bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "")
 

@@ -16,6 +16,7 @@ var _ = Describe("load balancer tests", func() {
 	var (
 		bbl         actors.BBL
 		aws         actors.AWS
+		bosh        actors.BOSH
 		state       integration.State
 		certBody    []byte
 		newCertBody []byte
@@ -31,6 +32,7 @@ var _ = Describe("load balancer tests", func() {
 
 		bbl = actors.NewBBL(stateDirectory, pathToBBL, configuration)
 		aws = actors.NewAWS(configuration)
+		bosh = actors.NewBOSH()
 		state = integration.NewState(stateDirectory)
 
 		certBody, err = ioutil.ReadFile("fixtures/bbl.crt")
@@ -41,41 +43,39 @@ var _ = Describe("load balancer tests", func() {
 
 	})
 
-	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			bbl.Destroy()
-		}
-	})
+	It("creates, updates and deletes an LB with the specified cert and key", func() {
+		bbl.Up()
 
-	Context("when bbl up has already created a BOSH director", func() {
-		It("creates, updates and deletes an LB with the specified cert and key", func() {
-			bbl.Up("")
+		stackName := state.StackName()
+		directorAddress := bbl.DirectorAddress()
+		directorUsername := bbl.DirectorUsername()
+		directorPassword := bbl.DirectorPassword()
 
-			stackName := state.StackName()
+		Expect(aws.StackExists(stackName)).To(BeTrue())
+		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
+		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeTrue())
 
-			Expect(aws.StackExists(stackName)).To(BeTrue())
-			Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
+		bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "fixtures/bbl-chain.crt")
 
-			bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "fixtures/bbl-chain.crt")
+		Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
+		Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(certBody))))
 
-			Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
-			Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(certBody))))
+		bbl.UpdateLB("fixtures/other-bbl.crt", "fixtures/other-bbl.key")
+		Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
 
-			bbl.UpdateLB("fixtures/other-bbl.crt", "fixtures/other-bbl.key")
-			Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
+		certificateName := state.CertificateName()
+		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(newCertBody))))
 
-			certificateName := state.CertificateName()
-			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(newCertBody))))
+		session := bbl.LBs()
+		stdout := session.Out.Contents()
+		Expect(stdout).To(ContainSubstring(fmt.Sprintf("Concourse LB: %s", aws.LoadBalancers(stackName)["ConcourseLoadBalancer"])))
 
-			session := bbl.LBs()
-			stdout := session.Out.Contents()
-			Expect(stdout).To(ContainSubstring(fmt.Sprintf("Concourse LB: %s", aws.LoadBalancers(stackName)["ConcourseLoadBalancer"])))
+		bbl.DeleteLB()
+		Expect(aws.LoadBalancers(stackName)).NotTo(HaveKey("ConcourseLoadBalancer"))
+		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(BeEmpty())
 
-			bbl.DeleteLB()
-			Expect(aws.LoadBalancers(stackName)).NotTo(HaveKey("ConcourseLoadBalancer"))
-			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(BeEmpty())
-
-			bbl.Destroy()
-		})
+		bbl.Destroy()
+		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeFalse())
+		Expect(aws.StackExists(stackName)).To(BeFalse())
 	})
 })

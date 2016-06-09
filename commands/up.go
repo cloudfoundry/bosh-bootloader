@@ -2,13 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -32,15 +30,6 @@ type availabilityZoneRetriever interface {
 	Retrieve(region string) ([]string, error)
 }
 
-type elbDescriber interface {
-	Describe(elbName string) ([]string, error)
-}
-
-type loadBalancerCertificateManager interface {
-	Create(input iam.CertificateCreateInput) (iam.CertificateCreateOutput, error)
-	IsValidLBType(lbType string) bool
-}
-
 type awsCredentialValidator interface {
 	Validate() error
 }
@@ -51,45 +40,41 @@ type logger interface {
 	Prompt(string)
 }
 
-type upConfig struct {
-	lbType   string
-	certPath string
-	keyPath  string
+type certificateDescriber interface {
+	Describe(certificateName string) (iam.Certificate, error)
 }
 
 type Up struct {
-	awsCredentialValidator         awsCredentialValidator
-	infrastructureManager          infrastructureManager
-	keyPairSynchronizer            keyPairSynchronizer
-	boshDeployer                   boshDeployer
-	stringGenerator                stringGenerator
-	boshCloudConfigurator          boshCloudConfigurator
-	availabilityZoneRetriever      availabilityZoneRetriever
-	elbDescriber                   elbDescriber
-	loadBalancerCertificateManager loadBalancerCertificateManager
-	cloudConfigManager             cloudConfigManager
-	boshClientProvider             boshClientProvider
+	awsCredentialValidator    awsCredentialValidator
+	infrastructureManager     infrastructureManager
+	keyPairSynchronizer       keyPairSynchronizer
+	boshDeployer              boshDeployer
+	stringGenerator           stringGenerator
+	boshCloudConfigurator     boshCloudConfigurator
+	availabilityZoneRetriever availabilityZoneRetriever
+	certificateDescriber      certificateDescriber
+	cloudConfigManager        cloudConfigManager
+	boshClientProvider        boshClientProvider
 }
 
 func NewUp(
 	awsCredentialValidator awsCredentialValidator, infrastructureManager infrastructureManager,
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
-	elbDescriber elbDescriber, loadBalancerCertificateManager loadBalancerCertificateManager,
+	certificateDescriber certificateDescriber,
 	cloudConfigManager cloudConfigManager, boshClientProvider boshClientProvider) Up {
 
 	return Up{
-		awsCredentialValidator:         awsCredentialValidator,
-		infrastructureManager:          infrastructureManager,
-		keyPairSynchronizer:            keyPairSynchronizer,
-		boshDeployer:                   boshDeployer,
-		stringGenerator:                stringGenerator,
-		boshCloudConfigurator:          boshCloudConfigurator,
-		availabilityZoneRetriever:      availabilityZoneRetriever,
-		elbDescriber:                   elbDescriber,
-		loadBalancerCertificateManager: loadBalancerCertificateManager,
-		cloudConfigManager:             cloudConfigManager,
-		boshClientProvider:             boshClientProvider,
+		awsCredentialValidator:    awsCredentialValidator,
+		infrastructureManager:     infrastructureManager,
+		keyPairSynchronizer:       keyPairSynchronizer,
+		boshDeployer:              boshDeployer,
+		stringGenerator:           stringGenerator,
+		boshCloudConfigurator:     boshCloudConfigurator,
+		availabilityZoneRetriever: availabilityZoneRetriever,
+		certificateDescriber:      certificateDescriber,
+		cloudConfigManager:        cloudConfigManager,
+		boshClientProvider:        boshClientProvider,
 	}
 }
 
@@ -99,27 +84,10 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 		return state, err
 	}
 
-	config, err := u.parseFlags(subcommandFlags)
+	err = u.checkForFastFails(state)
 	if err != nil {
 		return state, err
 	}
-
-	err = u.checkForFastFails(config, state)
-	if err != nil {
-		return state, err
-	}
-
-	certOutput, err := u.loadBalancerCertificateManager.Create(iam.CertificateCreateInput{
-		CurrentLBType:          state.Stack.LBType,
-		DesiredLBType:          config.lbType,
-		CurrentCertificateName: state.Stack.CertificateName,
-		CertPath:               config.certPath,
-		KeyPath:                config.keyPath,
-	})
-	if err != nil {
-		return state, err
-	}
-	state.Stack.CertificateName = certOutput.CertificateName
 
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
@@ -146,11 +114,19 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 		}
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, certOutput.LBType, certOutput.CertificateARN)
+	var certificateARN string
+	if state.Stack.LBType == "concourse" || state.Stack.LBType == "cf" {
+		certificate, err := u.certificateDescriber.Describe(state.Stack.CertificateName)
+		if err != nil {
+			return state, err
+		}
+		certificateARN = certificate.ARN
+	}
+
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN)
 	if err != nil {
 		return state, err
 	}
-	state.Stack.LBType = certOutput.LBType
 
 	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
 		AWSRegion:        state.AWS.Region,
@@ -199,27 +175,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 	return state, nil
 }
 
-func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
-	upFlags := flags.New("unsupported-deploy-bosh-on-aws-for-concourse")
-
-	config := upConfig{}
-	upFlags.String(&config.lbType, "lb-type", "")
-	upFlags.String(&config.certPath, "cert", "")
-	upFlags.String(&config.keyPath, "key", "")
-
-	err := upFlags.Parse(subcommandFlags)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
-}
-
-func (u Up) checkForFastFails(config upConfig, state storage.State) error {
-	if !u.loadBalancerCertificateManager.IsValidLBType(config.lbType) {
-		return fmt.Errorf("Unknown lb-type %q, supported lb-types are: concourse, cf or none", config.lbType)
-	}
-
+func (u Up) checkForFastFails(state storage.State) error {
 	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name)
 	if err != nil {
 		return err
@@ -231,26 +187,6 @@ func (u Up) checkForFastFails(config upConfig, state storage.State) error {
 				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
 				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
 			state.Stack.Name, state.AWS.Region)
-	}
-
-	if stackExists && state.Stack.LBType != config.lbType {
-		stack, err := u.infrastructureManager.Describe(state.Stack.Name)
-		if err != nil {
-			return err
-		}
-
-		for _, lbName := range []string{"ConcourseLoadBalancer", "CFSSHProxyLoadBalancer", "CFRouterLoadBalancer"} {
-			if id, ok := stack.Outputs[lbName]; ok {
-				instances, err := u.elbDescriber.Describe(id)
-				if err != nil {
-					return err
-				}
-
-				if len(instances) > 0 {
-					return fmt.Errorf("Load balancer %q cannot be deleted since it has attached instances: %s", id, strings.Join(instances, ", "))
-				}
-			}
-		}
 	}
 
 	return nil

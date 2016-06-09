@@ -27,23 +27,14 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 	}
 }
 
-func (b BBL) Up(loadBalancerType string) {
+func (b BBL) Up() {
 	args := []string{
 		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"unsupported-deploy-bosh-on-aws-for-concourse",
-		"--lb-type", loadBalancerType,
 	}
-
-	if loadBalancerType == "cf" || loadBalancerType == "concourse" {
-		args = append(args, []string{
-			"--cert", "fixtures/bbl.crt",
-			"--key", "fixtures/bbl.key",
-		}...)
-	}
-
 	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }

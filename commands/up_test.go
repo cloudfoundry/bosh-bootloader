@@ -21,20 +21,19 @@ import (
 var _ = Describe("Up", func() {
 	Describe("Execute", func() {
 		var (
-			command                        commands.Up
-			boshDeployer                   *fakes.BOSHDeployer
-			infrastructureManager          *fakes.InfrastructureManager
-			keyPairSynchronizer            *fakes.KeyPairSynchronizer
-			stringGenerator                *fakes.StringGenerator
-			cloudConfigurator              *fakes.BoshCloudConfigurator
-			availabilityZoneRetriever      *fakes.AvailabilityZoneRetriever
-			elbDescriber                   *fakes.ELBDescriber
-			loadBalancerCertificateManager *fakes.LoadBalancerCertificateManager
-			awsCredentialValidator         *fakes.AWSCredentialValidator
-			cloudConfigManager             *fakes.CloudConfigManager
-			boshClientProvider             *fakes.BOSHClientProvider
-			boshClient                     *fakes.BOSHClient
-			boshInitCredentials            map[string]string
+			command                   commands.Up
+			boshDeployer              *fakes.BOSHDeployer
+			infrastructureManager     *fakes.InfrastructureManager
+			keyPairSynchronizer       *fakes.KeyPairSynchronizer
+			stringGenerator           *fakes.StringGenerator
+			cloudConfigurator         *fakes.BoshCloudConfigurator
+			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
+			certificateDescriber      *fakes.CertificateDescriber
+			awsCredentialValidator    *fakes.AWSCredentialValidator
+			cloudConfigManager        *fakes.CloudConfigManager
+			boshClientProvider        *fakes.BOSHClientProvider
+			boshClient                *fakes.BOSHClient
+			boshInitCredentials       map[string]string
 		)
 
 		BeforeEach(func() {
@@ -81,10 +80,7 @@ var _ = Describe("Up", func() {
 
 			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 
-			elbDescriber = &fakes.ELBDescriber{}
-
-			loadBalancerCertificateManager = &fakes.LoadBalancerCertificateManager{}
-			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
+			certificateDescriber = &fakes.CertificateDescriber{}
 
 			awsCredentialValidator = &fakes.AWSCredentialValidator{}
 
@@ -95,8 +91,8 @@ var _ = Describe("Up", func() {
 
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever, elbDescriber,
-				loadBalancerCertificateManager, cloudConfigManager, boshClientProvider,
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever,
+				certificateDescriber, cloudConfigManager, boshClientProvider,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -121,13 +117,6 @@ var _ = Describe("Up", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
 			_, err := command.Execute([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
-		})
-
-		It("checks if the lb type flag is valid", func() {
-			loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = true
-			_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
-			Expect(loadBalancerCertificateManager.IsValidLBTypeCall.Receives.LBType).To(Equal("concourse"))
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("syncs the keypair", func() {
@@ -238,157 +227,24 @@ var _ = Describe("Up", func() {
 			}))
 		})
 
-		Context("when there is an lb type and lb certificate", func() {
+		Context("when there is an lb", func() {
 			It("attaches the lb certificate to the lb type in cloudformation", func() {
-				loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
-					CertificateName: "some-certificate-name",
-					CertificateARN:  "some-certificate-arn",
+				certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{
+					Name: "some-certificate-name",
+					ARN:  "some-certificate-arn",
+					Body: "some-certificate-body",
 				}
 
-				subcommandArgs := []string{
-					"--lb-type", "concourse",
-					"--cert", "some-certificate-file",
-					"--key", "some-private-key-file",
-				}
-
-				_, err := command.Execute(subcommandArgs, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			})
-		})
-
-		Context("when specifying an lb type that is not \"none\"", func() {
-			Context("when cert and key are provided", func() {
-				It("uploads the given cert and key", func() {
-					subcommandArgs := []string{
-						"--lb-type", "concourse",
-						"--cert", "some-certificate-file",
-						"--key", "some-private-key-file",
-					}
-
-					_, err := command.Execute(subcommandArgs, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(loadBalancerCertificateManager.CreateCall.Receives.Input).To(Equal(iam.CertificateCreateInput{
-						CurrentCertificateName: "",
-						CurrentLBType:          "",
-						DesiredLBType:          "concourse",
-						CertPath:               "some-certificate-file",
-						KeyPath:                "some-private-key-file",
-					}))
-				})
-			})
-		})
-
-		Context("when there are instances attached to an lb", func() {
-			BeforeEach(func() {
-				infrastructureManager.ExistsCall.Returns.Exists = true
-			})
-
-			It("should not check for ELBs if the stack does not exist", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = false
-				infrastructureManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
-
-				_, err := command.Execute([]string{"--lb-type", "none"}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("should not verify instances if the lb type has not changed", func() {
-				incomingState := storage.State{
+				_, err := command.Execute([]string{}, storage.State{
 					Stack: storage.Stack{
-						Name:   "some-stack-name",
-						LBType: "concourse",
+						Name:            "some-stack-name",
+						LBType:          "concourse",
+						CertificateName: "some-certificate-name",
 					},
-				}
-
-				infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-					Name:    "some-stack-name",
-					Outputs: map[string]string{"ConcourseLoadBalancer": "some-load-balancer"},
-				}
-
-				_, err := command.Execute([]string{"--lb-type", "concourse"}, incomingState)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(elbDescriber.DescribeCall.CallCount).To(Equal(0))
-			})
-
-			Context("concourse", func() {
-				It("should fast fail when ConcourseLoadBalancer has instances", func() {
-					incomingState := storage.State{
-						Stack: storage.Stack{
-							Name:   "some-stack-name",
-							LBType: "concourse",
-						},
-					}
-
-					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-						Name:    "some-stack-name",
-						Outputs: map[string]string{"ConcourseLoadBalancer": "some-load-balancer"},
-					}
-
-					elbDescriber.DescribeCall.Returns.Instances = []string{"some-instance-1", "some-instance-2"}
-
-					_, err := command.Execute([]string{"--lb-type", "none"}, incomingState)
-					Expect(err).To(MatchError("Load balancer \"some-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
-				})
-			})
-
-			Context("cf", func() {
-				It("should fast fail when CFRouterLoadBalancer has instances", func() {
-					incomingState := storage.State{
-						Stack: storage.Stack{
-							Name:   "some-stack-name",
-							LBType: "cf",
-						},
-					}
-
-					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-						Name: "some-stack-name",
-						Outputs: map[string]string{
-							"CFRouterLoadBalancer":   "some-router-load-balancer",
-							"CFSSHProxyLoadBalancer": "some-ssh-proxy-load-balancer",
-						},
-					}
-
-					elbDescriber.DescribeCall.Stub = func(lbName string) ([]string, error) {
-						if lbName == "some-router-load-balancer" {
-							return []string{"some-instance-1", "some-instance-2"}, nil
-						}
-
-						return []string{}, nil
-					}
-
-					_, err := command.Execute([]string{"--lb-type", "none"}, incomingState)
-					Expect(err).To(MatchError("Load balancer \"some-router-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
-				})
-
-				It("should fast fail when CFSSHProxyLoadBalancer has instances", func() {
-					incomingState := storage.State{
-						Stack: storage.Stack{
-							Name:   "some-stack-name",
-							LBType: "cf",
-						},
-					}
-
-					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-						Name: "some-stack-name",
-						Outputs: map[string]string{
-							"CFRouterLoadBalancer":   "some-router-load-balancer",
-							"CFSSHProxyLoadBalancer": "some-ssh-proxy-load-balancer",
-						},
-					}
-
-					elbDescriber.DescribeCall.Stub = func(lbName string) ([]string, error) {
-						if lbName == "some-ssh-proxy-load-balancer" {
-							return []string{"some-instance-1", "some-instance-2"}, nil
-						}
-
-						return []string{}, nil
-					}
-
-					_, err := command.Execute([]string{"--lb-type", "none"}, incomingState)
-					Expect(err).To(MatchError("Load balancer \"some-ssh-proxy-load-balancer\" cannot be deleted since it has attached instances: some-instance-1, some-instance-2"))
-				})
+				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			})
 		})
 
@@ -471,19 +327,25 @@ var _ = Describe("Up", func() {
 						},
 					}))
 					Expect(cloudConfigurator.ConfigureCall.Receives.AZs).To(ConsistOf("some-retrieved-az"))
+					Expect(certificateDescriber.DescribeCall.CallCount).To(Equal(0))
 				})
 			})
 
 			Context("when the load balancer type is concourse", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
-					loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
-						CertificateName: "some-certificate-name",
-						CertificateARN:  "some-certificate-arn",
-						LBType:          "concourse",
+					certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{
+						Name: "some-certificate-name",
+						ARN:  "some-certificate-arn",
+						Body: "some-certificate-body",
 					}
 
-					_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
+					_, err := command.Execute([]string{}, storage.State{
+						Stack: storage.Stack{
+							LBType:          "concourse",
+							CertificateName: "some-certificate-name",
+						},
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -509,13 +371,18 @@ var _ = Describe("Up", func() {
 			Context("when the load balancer type is cf", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
-					loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
-						CertificateName: "some-certificate-name",
-						CertificateARN:  "some-certificate-arn",
-						LBType:          "cf",
+					certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{
+						Name: "some-certificate-name",
+						ARN:  "some-certificate-arn",
+						Body: "some-certificate-body",
 					}
 
-					_, err := command.Execute([]string{"--lb-type", "cf"}, storage.State{})
+					_, err := command.Execute([]string{}, storage.State{
+						Stack: storage.Stack{
+							LBType:          "cf",
+							CertificateName: "some-certificate-name",
+						},
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -548,46 +415,6 @@ var _ = Describe("Up", func() {
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				}
-			})
-
-			Context("lb type", func() {
-				It("populates the lb type from the load balancer certificate manager", func() {
-					loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
-						LBType: "cf",
-					}
-
-					state, err := command.Execute([]string{"--lb-type", ""}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(state.Stack.LBType).To(Equal("cf"))
-				})
-
-				Context("when the cert and key changes", func() {
-					It("saves certificate name in state when certificate manager updates certificate", func() {
-						incomingState := storage.State{
-							Stack: storage.Stack{
-								CertificateName: "some-certificate-name",
-							},
-						}
-						loadBalancerCertificateManager.CreateCall.Returns.Output = iam.CertificateCreateOutput{
-							CertificateName: "some-other-certificate-name",
-						}
-						state, err := command.Execute([]string{
-							"--lb-type", "concourse",
-							"--cert", "some-cert-path",
-							"--key", "some-key-path",
-						}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(state.Stack.CertificateName).To(Equal("some-other-certificate-name"))
-						Expect(loadBalancerCertificateManager.CreateCall.Receives.Input).To(Equal(iam.CertificateCreateInput{
-							CurrentCertificateName: "some-certificate-name",
-							DesiredLBType:          "concourse",
-							CertPath:               "some-cert-path",
-							KeyPath:                "some-key-path",
-						}))
-					})
-				})
 			})
 
 			Context("aws keypair", func() {
@@ -797,24 +624,20 @@ var _ = Describe("Up", func() {
 		})
 
 		Context("failure cases", func() {
-			Context("when an invalid command line flag is supplied", func() {
-				It("returns an error", func() {
-					_, err := command.Execute([]string{"--invalid-flag"}, storage.State{})
-					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+			It("returns an error when the certificate cannot be described", func() {
+				certificateDescriber.DescribeCall.Returns.Error = errors.New("failed to describe")
+				_, err := command.Execute([]string{}, storage.State{
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
 				})
+				Expect(err).To(MatchError("failed to describe"))
 			})
 
 			It("returns an error when the cloud config cannot be uploaded", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
 				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to update"))
-			})
-
-			It("returns an error when an unknown lb-type is supplied", func() {
-				loadBalancerCertificateManager.IsValidLBTypeCall.Returns.Result = false
-				_, err := command.Execute([]string{"--lb-type", "some-lb"}, storage.State{})
-				Expect(loadBalancerCertificateManager.IsValidLBTypeCall.Receives.LBType).To(Equal("some-lb"))
-				Expect(err).To(MatchError("Unknown lb-type \"some-lb\", supported lb-types are: concourse, cf or none"))
 			})
 
 			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
@@ -849,30 +672,11 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
-			It("returns an error when the certificate cannot be uploaded", func() {
-				loadBalancerCertificateManager.CreateCall.Returns.Error = errors.New("error uploading certificate")
-
-				_, err := command.Execute([]string{
-					"--lb-type", "cf",
-					"--cert", "some-cert",
-					"--key", "some-key",
-				}, storage.State{})
-				Expect(err).To(MatchError("error uploading certificate"))
-			})
-
 			It("returns an error when the key pair fails to sync", func() {
 				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
 				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("error syncing key pair"))
-			})
-
-			It("returns an error when infrastructure cannot be described", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = true
-				infrastructureManager.DescribeCall.Returns.Error = errors.New("infrastructure describe failed")
-
-				_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
-				Expect(err).To(MatchError("infrastructure describe failed"))
 			})
 
 			It("returns an error when infrastructure cannot be created", func() {
@@ -918,22 +722,6 @@ var _ = Describe("Up", func() {
 
 				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
-			})
-
-			It("returns an error when an elb cannot be described", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = true
-				infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-					Name: "some-stack-name",
-					Outputs: map[string]string{
-						"CFRouterLoadBalancer":   "some-router-load-balancer",
-						"CFSSHProxyLoadBalancer": "some-ssh-proxy-load-balancer",
-					},
-				}
-
-				elbDescriber.DescribeCall.Returns.Error = errors.New("elb cannot be described")
-
-				_, err := command.Execute([]string{"--lb-type", "concourse"}, storage.State{})
-				Expect(err).To(MatchError("elb cannot be described"))
 			})
 		})
 	})
