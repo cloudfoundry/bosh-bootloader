@@ -6,6 +6,7 @@ type Logger struct {
 		Receives  struct {
 			Message string
 		}
+		Messages []string
 	}
 
 	DotCall struct {
@@ -31,6 +32,7 @@ type Logger struct {
 func (l *Logger) Step(message string) {
 	l.StepCall.CallCount++
 	l.StepCall.Receives.Message = message
+	l.StepCall.Messages = append(l.StepCall.Messages, message)
 }
 
 func (l *Logger) Dot() {

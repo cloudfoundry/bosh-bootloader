@@ -116,6 +116,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage
 	}
 
 	if state.Stack.CertificateName != "" {
+		d.logger.Step("deleting certificate")
 		err = d.certificateDeleter.Delete(state.Stack.CertificateName)
 		if err != nil {
 			return state, err

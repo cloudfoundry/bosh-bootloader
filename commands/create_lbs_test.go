@@ -88,6 +88,7 @@ var _ = Describe("Create LBs", func() {
 
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
+			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
 		})
 
 		It("uploads a cert and key with chain", func() {

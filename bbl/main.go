@@ -66,9 +66,9 @@ func main() {
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(cloudFormationClient, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator, logger)
+	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator)
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
-	certificateDeleter := iam.NewCertificateDeleter(iamClient, logger)
+	certificateDeleter := iam.NewCertificateDeleter(iamClient)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	certificateValidator := iam.NewCertificateValidator()
 

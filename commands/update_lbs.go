@@ -74,6 +74,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, nil
 	}
 
+	c.logger.Step("uploading new certificate")
 	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err
@@ -83,6 +84,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
+	c.logger.Step("deleting old certificate")
 	err = c.certificateManager.Delete(state.Stack.CertificateName)
 	if err != nil {
 		return state, err

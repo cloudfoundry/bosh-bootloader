@@ -188,6 +188,7 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(certificateDeleter.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+				Expect(logger.StepCall.Messages).To(ContainElement("deleting certificate"))
 			})
 
 			It("doesn't call delete certificate if there is no certificate to delete", func() {

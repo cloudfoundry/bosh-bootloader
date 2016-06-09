@@ -18,7 +18,6 @@ var _ = Describe("CertificateUploader", func() {
 	var (
 		iamClient       *fakes.IAMClient
 		uuidGenerator   *fakes.UUIDGenerator
-		logger          *fakes.Logger
 		uploader        iam.CertificateUploader
 		certificateFile *os.File
 		privateKeyFile  *os.File
@@ -29,8 +28,7 @@ var _ = Describe("CertificateUploader", func() {
 		var err error
 		iamClient = &fakes.IAMClient{}
 		uuidGenerator = &fakes.UUIDGenerator{}
-		logger = &fakes.Logger{}
-		uploader = iam.NewCertificateUploader(iamClient, uuidGenerator, logger)
+		uploader = iam.NewCertificateUploader(iamClient, uuidGenerator)
 
 		certificateFile, err = ioutil.TempFile("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -110,8 +108,6 @@ var _ = Describe("CertificateUploader", func() {
 		It("logs uploading certificate", func() {
 			_, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logger.StepCall.Receives.Message).To(Equal("uploading certificate"))
 		})
 
 		Context("failure cases", func() {

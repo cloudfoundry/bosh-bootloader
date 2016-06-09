@@ -94,6 +94,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
+	c.logger.Step("uploading certificate")
 	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return state, err

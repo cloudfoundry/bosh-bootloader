@@ -105,6 +105,7 @@ var _ = Describe("Update LBs", func() {
 				},
 			})
 
+			Expect(logger.StepCall.Messages).To(ContainElement("uploading new certificate"))
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFilePath))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFilePath))
 		})
@@ -164,6 +165,7 @@ var _ = Describe("Update LBs", func() {
 				},
 			})
 
+			Expect(logger.StepCall.Messages).To(ContainElement("deleting old certificate"))
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate-name"))
 		})
 

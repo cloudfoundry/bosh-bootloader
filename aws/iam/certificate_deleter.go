@@ -7,23 +7,19 @@ import (
 
 type CertificateDeleter struct {
 	iamClient Client
-	logger    logger
 }
 
 type logger interface {
 	Step(message string)
 }
 
-func NewCertificateDeleter(iamClient Client, logger logger) CertificateDeleter {
+func NewCertificateDeleter(iamClient Client) CertificateDeleter {
 	return CertificateDeleter{
 		iamClient: iamClient,
-		logger:    logger,
 	}
 }
 
 func (c CertificateDeleter) Delete(certificateName string) error {
-	c.logger.Step("deleting certificate")
-
 	_, err := c.iamClient.DeleteServerCertificate(&awsiam.DeleteServerCertificateInput{
 		ServerCertificateName: aws.String(certificateName),
 	})
