@@ -57,17 +57,29 @@ var _ = Describe("bosh deployment tests", func() {
 		info, err := boshClient.Info()
 		Expect(err).NotTo(HaveOccurred())
 
+		err = downloadAndUploadRelease(boshClient, "https://bosh.io/d/github.com/concourse/concourse")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = downloadAndUploadRelease(boshClient, "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-linux-release")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = downloadAndUploadStemcell(boshClient, "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent")
+		Expect(err).NotTo(HaveOccurred())
+
+		stemcell, err := boshClient.Stemcell("bosh-aws-xen-hvm-ubuntu-trusty-go_agent")
+		Expect(err).NotTo(HaveOccurred())
+
+		concourseRelease, err := boshClient.Release("concourse")
+		Expect(err).NotTo(HaveOccurred())
+
+		gardenLinuxRelease, err := boshClient.Release("garden-linux")
+		Expect(err).NotTo(HaveOccurred())
+
 		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_DIRECTOR_UUID", info.UUID, -1)
 		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_EXTERNAL_URL", lbURL, -1)
-
-		err = downloadAndUploadRelease(boshClient, "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-concourse-1.2.0-on-ubuntu-trusty-stemcell-3232.4.tgz")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = downloadAndUploadRelease(boshClient, "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-garden-linux-0.337.0-on-ubuntu-trusty-stemcell-3232.4.tgz")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = downloadAndUploadStemcell(boshClient, "https://bosh.io/d/stemcells/bosh-aws-xen-ubuntu-trusty-go_agent?v=3232.4")
-		Expect(err).NotTo(HaveOccurred())
+		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_STEMCELL_VERSION", stemcell.Latest(), -1)
+		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_CONCOURSE_VERSION", concourseRelease.Latest(), -1)
+		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_GARDEN_LINUX_VERSION", gardenLinuxRelease.Latest(), -1)
 
 		boshClient.Deploy([]byte(concourseManifest))
 
@@ -111,6 +123,7 @@ func downloadAndUploadRelease(boshClient bosh.Client, release string) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = boshClient.UploadRelease(bosh.NewSizeReader(file, size))
 	return err
 }

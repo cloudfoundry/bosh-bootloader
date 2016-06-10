@@ -5,14 +5,14 @@ director_uuid: REPLACE_ME_DIRECTOR_UUID
 
 releases:
 - name: concourse
-  version: 1.2.0
+  version: REPLACE_ME_CONCOURSE_VERSION
 - name: garden-linux
-  version: 0.337.0
+  version: REPLACE_ME_GARDEN_LINUX_VERSION
 
 stemcells:
 - alias: trusty
   os: ubuntu-trusty
-  version: 3232.4
+  version: REPLACE_ME_STEMCELL_VERSION
 
 instance_groups:
 - name: web
