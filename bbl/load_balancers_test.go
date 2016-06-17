@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -26,12 +26,6 @@ var _ = Describe("load balancers", func() {
 		fakeAWSServer    *httptest.Server
 		fakeBOSHServer   *httptest.Server
 		fakeBOSH         *fakeBOSHDirector
-		lbCert           []byte
-		lbKey            []byte
-		lbChain          []byte
-		otherLBCert      []byte
-		otherLBKey       []byte
-		otherLBChain     []byte
 		tempDirectory    string
 		lbCertPath       string
 		lbChainPath      string
@@ -56,32 +50,23 @@ var _ = Describe("load balancers", func() {
 
 		deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
-		lbCertPath = "fixtures/bbl.crt"
-		lbChainPath = "fixtures/bbl-chain.crt"
-		lbKeyPath = "fixtures/bbl.key"
-
-		otherLBCertPath = "fixtures/other-bbl.crt"
-		otherLBChainPath = "fixtures/other-bbl-chain.crt"
-		otherLBKeyPath = "fixtures/other-bbl.key"
-
-		lbCert, err = ioutil.ReadFile(lbCertPath)
+		lbCertPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
 
-		lbKey, err = ioutil.ReadFile(lbKeyPath)
+		lbChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		lbChain, err = ioutil.ReadFile(lbChainPath)
+		lbKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
 
-		otherLBCert, err = ioutil.ReadFile(otherLBCertPath)
+		otherLBCertPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
 
-		otherLBKey, err = ioutil.ReadFile(otherLBKeyPath)
+		otherLBChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		otherLBChain, err = ioutil.ReadFile(otherLBChainPath)
+		otherLBKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
-
 	})
 
 	Describe("create-lbs", func() {
@@ -90,23 +75,23 @@ var _ = Describe("load balancers", func() {
 				contents, err := ioutil.ReadFile(fixtureLocation)
 				Expect(err).NotTo(HaveOccurred())
 
-				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0, false)
+				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, lbType, 0, false)
 
 				certificates := fakeAWS.Certificates.All()
 				Expect(certificates).To(HaveLen(1))
-				Expect(certificates[0].CertificateBody).To(Equal(string(lbCert)))
-				Expect(certificates[0].PrivateKey).To(Equal(string(lbKey)))
-				Expect(certificates[0].Chain).To(Equal(string(lbChain)))
+				Expect(certificates[0].CertificateBody).To(Equal(testhelpers.BBL_CERT))
+				Expect(certificates[0].PrivateKey).To(Equal(testhelpers.BBL_KEY))
+				Expect(certificates[0].Chain).To(Equal(testhelpers.BBL_CHAIN))
 				Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 			},
-			Entry("it attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
-			Entry("it attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
+			Entry("attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
+			Entry("attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 		)
 
 		It("logs all the steps", func() {
-			session := createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
+			session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 			stdout := session.Out.Contents()
 			Expect(stdout).To(ContainSubstring("step: uploading certificate"))
 			Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
@@ -116,14 +101,14 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0, false)
+			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
 
 			originalCertificate := certificates[0]
 
-			session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0, true)
+			session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, true)
 
 			certificates = fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
@@ -137,11 +122,11 @@ var _ = Describe("load balancers", func() {
 		Context("failure cases", func() {
 			Context("when an lb already exists", func() {
 				BeforeEach(func() {
-					createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
+					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 				})
 
 				It("exits 1", func() {
-					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1, false)
+					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
@@ -149,7 +134,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			It("exits 1 when an unknown lb-type is supplied", func() {
-				session := createLBs(fakeAWSServer.URL, tempDirectory, "some-fake-lb-type", 1, false)
+				session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "some-fake-lb-type", 1, false)
 				stderr := session.Err.Contents()
 
 				Expect(stderr).To(ContainSubstring("\"some-fake-lb-type\" is not a valid lb type, valid lb types are: concourse and cf"))
@@ -160,7 +145,7 @@ var _ = Describe("load balancers", func() {
 					state := readStateJson(tempDirectory)
 
 					fakeAWS.Stacks.Delete(state.Stack.Name)
-					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1, false)
+					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -178,7 +163,7 @@ var _ = Describe("load balancers", func() {
 						},
 					}, tempDirectory)
 
-					session := createLBs(fakeAWSServer.URL, tempDirectory, "cf", 1, false)
+					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
@@ -217,9 +202,9 @@ var _ = Describe("load balancers", func() {
 
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(1))
-			Expect(certificates[0].Chain).To(Equal(string(otherLBChain)))
-			Expect(certificates[0].CertificateBody).To(Equal(string(otherLBCert)))
-			Expect(certificates[0].PrivateKey).To(Equal(string(otherLBKey)))
+			Expect(certificates[0].Chain).To(Equal(testhelpers.OTHER_BBL_CHAIN))
+			Expect(certificates[0].CertificateBody).To(Equal(testhelpers.OTHER_BBL_CERT))
+			Expect(certificates[0].PrivateKey).To(Equal(testhelpers.OTHER_BBL_KEY))
 			Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 
 			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
@@ -247,8 +232,8 @@ var _ = Describe("load balancers", func() {
 
 			fakeAWS.Certificates.Set(awsbackend.Certificate{
 				Name:            "bbl-cert-certificate",
-				CertificateBody: string(lbCert),
-				PrivateKey:      string(lbKey),
+				CertificateBody: testhelpers.BBL_CERT,
+				PrivateKey:      testhelpers.BBL_KEY,
 			})
 
 			session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, false)
@@ -262,7 +247,7 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("logs all the steps", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
+			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 			session := updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath, otherLBKeyPath, "", 0, false)
 			stdout := session.Out.Contents()
 			Expect(stdout).To(ContainSubstring("step: uploading new certificate"))
@@ -370,7 +355,7 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("logs all the steps", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
+			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 			session := deleteLBs(fakeAWSServer.URL, tempDirectory, 0, false)
 			stdout := session.Out.Contents()
 			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
@@ -428,7 +413,7 @@ var _ = Describe("load balancers", func() {
 
 	Describe("lbs", func() {
 		It("prints out the currently attached lb names and urls", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, "cf", 0, false)
+			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
 			session := lbs(fakeAWSServer.URL, tempDirectory, 0)
 			stdout := session.Out.Contents()
@@ -489,9 +474,7 @@ func updateLBs(endpointOverrideURL string, stateDir string, certName string, key
 	return executeCommand(args, exitCode)
 }
 
-func createLBs(endpointOverrideURL string, stateDir string, lbType string, exitCode int, skipIfExists bool) *gexec.Session {
-	dir, err := os.Getwd()
-	Expect(err).NotTo(HaveOccurred())
+func createLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, chainName string, lbType string, exitCode int, skipIfExists bool) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
 		"--aws-access-key-id", "some-access-key-id",
@@ -500,9 +483,9 @@ func createLBs(endpointOverrideURL string, stateDir string, lbType string, exitC
 		"--state-dir", stateDir,
 		"unsupported-create-lbs",
 		"--type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
-		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
-		"--chain", filepath.Join(dir, "fixtures", "bbl-chain.crt"),
+		"--cert", certName,
+		"--key", keyName,
+		"--chain", chainName,
 	}
 
 	if skipIfExists {

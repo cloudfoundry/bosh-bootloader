@@ -17,6 +17,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -34,7 +35,6 @@ var _ = Describe("destroy", func() {
 			fakeBOSH       *fakeBOSHDirector
 			fakeBOSHServer *httptest.Server
 			tempDirectory  string
-			privateKey     string
 		)
 
 		BeforeEach(func() {
@@ -60,14 +60,10 @@ var _ = Describe("destroy", func() {
 			tempDirectory, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			contents, err := ioutil.ReadFile("fixtures/key.pem")
-			Expect(err).NotTo(HaveOccurred())
-			privateKey = string(contents)
-
 			buf, err := json.Marshal(storage.State{
 				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
-					PrivateKey: privateKey,
+					PrivateKey: testhelpers.BBL_KEY,
 				},
 				Stack: storage.Stack{
 					Name: "some-stack-name",
@@ -147,7 +143,6 @@ var _ = Describe("destroy", func() {
 			fakeBOSH       *fakeBOSHDirector
 			fakeBOSHServer *httptest.Server
 			tempDirectory  string
-			privateKey     string
 		)
 
 		BeforeEach(func() {
@@ -175,10 +170,6 @@ var _ = Describe("destroy", func() {
 			var err error
 			tempDirectory, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
-
-			contents, err := ioutil.ReadFile("fixtures/key.pem")
-			Expect(err).NotTo(HaveOccurred())
-			privateKey = string(contents)
 
 			buf, err := json.Marshal(storage.State{
 				Stack: storage.Stack{

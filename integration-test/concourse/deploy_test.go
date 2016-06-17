@@ -8,6 +8,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 
 	. "github.com/onsi/ginkgo"
@@ -46,7 +47,13 @@ var _ = Describe("bosh deployment tests", func() {
 	It("is able to deploy concourse", func() {
 		bbl.Up()
 
-		bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "")
+		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+		Expect(err).NotTo(HaveOccurred())
+
+		bbl.CreateLB("concourse", certPath, keyPath, "")
 
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
@@ -55,7 +62,7 @@ var _ = Describe("bosh deployment tests", func() {
 			AllowInsecureSSL: true,
 		})
 
-		err := downloadAndUploadRelease(boshClient, ConcourseReleaseURL)
+		err = downloadAndUploadRelease(boshClient, ConcourseReleaseURL)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = downloadAndUploadRelease(boshClient, GardenReleaseURL)

@@ -14,6 +14,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -73,7 +74,9 @@ var _ = Describe("bbl", func() {
 		fakeBOSHServer *httptest.Server
 		fakeBOSH       *fakeBOSHDirector
 		tempDirectory  string
-		privateKey     string
+		lbCertPath     string
+		lbChainPath    string
+		lbKeyPath      string
 	)
 
 	BeforeEach(func() {
@@ -89,9 +92,14 @@ var _ = Describe("bbl", func() {
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		contents, err := ioutil.ReadFile("fixtures/key.pem")
+		lbCertPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
-		privateKey = string(contents)
+
+		lbChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+		Expect(err).NotTo(HaveOccurred())
+
+		lbKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("unsupported-deploy-bosh-on-aws-for-concourse", func() {
@@ -186,7 +194,7 @@ var _ = Describe("bbl", func() {
 				buf, err := json.Marshal(storage.State{
 					KeyPair: storage.KeyPair{
 						Name:       "some-keypair-name",
-						PrivateKey: privateKey,
+						PrivateKey: testhelpers.BBL_KEY,
 					},
 					Stack: storage.Stack{
 						Name: "some-stack-name",
@@ -218,7 +226,7 @@ var _ = Describe("bbl", func() {
 		Context("when an load balancer is attached", func() {
 			It("attaches certificate to the load balancer", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
-				createLBs(fakeAWSServer.URL, tempDirectory, "concourse", 0, false)
+				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 
 				state := readStateJson(tempDirectory)
 
@@ -254,7 +262,7 @@ var _ = Describe("bbl", func() {
 
 			session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 			if lbType != "" {
-				createLBs(fakeAWSServer.URL, tempDirectory, lbType, 0, false)
+				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, lbType, 0, false)
 			}
 			stdout := session.Out.Contents()
 
@@ -293,9 +301,7 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCod
 	return executeCommand(args, exitCode)
 }
 
-func createLB(serverURL string, tempDirectory string, lbType string, exitCode int) *gexec.Session {
-	dir, err := os.Getwd()
-	Expect(err).NotTo(HaveOccurred())
+func createLB(serverURL string, tempDirectory string, lbType string, certPath string, keyPath string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--aws-access-key-id", "some-access-key",
@@ -304,8 +310,8 @@ func createLB(serverURL string, tempDirectory string, lbType string, exitCode in
 		"--state-dir", tempDirectory,
 		"unsupported-create-lbs",
 		"--type", lbType,
-		"--cert", filepath.Join(dir, "fixtures", "bbl.crt"),
-		"--key", filepath.Join(dir, "fixtures", "bbl.key"),
+		"--cert", certPath,
+		"--key", keyPath,
 	}
 
 	return executeCommand(args, exitCode)

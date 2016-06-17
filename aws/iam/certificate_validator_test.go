@@ -9,6 +9,7 @@ import (
 
 	"github.com/cloudfoundry/multierror"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,26 +31,34 @@ var _ = Describe("CertificateValidator", func() {
 		)
 
 		BeforeEach(func() {
+			var err error
 			certificateValidator = iam.NewCertificateValidator()
-			chainFilePath = "fixtures/bbl-chain.crt"
-			certFilePath = "fixtures/bbl.crt"
-			keyFilePath = "fixtures/bbl.key"
+			chainFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+			Expect(err).NotTo(HaveOccurred())
 
-			otherChainFilePath = "fixtures/other-bbl-chain.crt"
-			otherCertFilePath = "fixtures/other-bbl.crt"
-			otherKeyFilePath = "fixtures/other-bbl.key"
+			certFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
 
-			createTempFile := func() string {
-				file, err := ioutil.TempFile("", "")
-				Expect(err).NotTo(HaveOccurred())
-				defer file.Close()
+			keyFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
 
-				return file.Name()
-			}
+			otherChainFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
+			Expect(err).NotTo(HaveOccurred())
 
-			certNonPEMFilePath = createTempFile()
-			keyNonPEMFilePath = createTempFile()
-			chainNonPEMFilePath = createTempFile()
+			otherCertFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
+
+			otherKeyFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
+
+			certNonPEMFilePath, err = testhelpers.WriteContentsToTempFile("")
+			Expect(err).NotTo(HaveOccurred())
+
+			keyNonPEMFilePath, err = testhelpers.WriteContentsToTempFile("")
+			Expect(err).NotTo(HaveOccurred())
+
+			chainNonPEMFilePath, err = testhelpers.WriteContentsToTempFile("")
+			Expect(err).NotTo(HaveOccurred())
 
 			iam.ResetStat()
 			iam.ResetReadAll()

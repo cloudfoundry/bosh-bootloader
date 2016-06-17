@@ -7,6 +7,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,12 +15,10 @@ import (
 
 var _ = Describe("load balancer tests", func() {
 	var (
-		bbl         actors.BBL
-		aws         actors.AWS
-		bosh        actors.BOSH
-		state       integration.State
-		certBody    []byte
-		newCertBody []byte
+		bbl   actors.BBL
+		aws   actors.AWS
+		bosh  actors.BOSH
+		state integration.State
 	)
 
 	BeforeEach(func() {
@@ -35,12 +34,6 @@ var _ = Describe("load balancer tests", func() {
 		bosh = actors.NewBOSH()
 		state = integration.NewState(stateDirectory)
 
-		certBody, err = ioutil.ReadFile("fixtures/bbl.crt")
-		Expect(err).NotTo(HaveOccurred())
-
-		newCertBody, err = ioutil.ReadFile("fixtures/other-bbl.crt")
-		Expect(err).NotTo(HaveOccurred())
-
 	})
 
 	It("creates, updates and deletes an LB with the specified cert and key", func() {
@@ -55,16 +48,31 @@ var _ = Describe("load balancer tests", func() {
 		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
 		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeTrue())
 
-		bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "fixtures/bbl-chain.crt")
+		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+		Expect(err).NotTo(HaveOccurred())
+
+		chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+		Expect(err).NotTo(HaveOccurred())
+
+		otherCertPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
+		Expect(err).NotTo(HaveOccurred())
+
+		otherKeyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
+		Expect(err).NotTo(HaveOccurred())
+
+		bbl.CreateLB("concourse", certPath, keyPath, chainPath)
 
 		Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
-		Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(string(certBody))))
+		Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 
-		bbl.UpdateLB("fixtures/other-bbl.crt", "fixtures/other-bbl.key")
+		bbl.UpdateLB(otherCertPath, otherKeyPath)
 		Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
 
 		certificateName := state.CertificateName()
-		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(newCertBody))))
+		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 
 		session := bbl.LBs()
 		stdout := session.Out.Contents()
