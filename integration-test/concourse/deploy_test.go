@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
@@ -13,6 +12,15 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+)
+
+const (
+	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/develop/manifests/concourse.yml"
+	ConcourseReleaseURL         = "https://bosh.io/d/github.com/concourse/concourse"
+	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-runc-release"
+	GardenReleaseName           = "garden-runc"
+	StemcellURL                 = "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
+	StemcellName                = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
 )
 
 var _ = Describe("bosh deployment tests", func() {
@@ -40,11 +48,6 @@ var _ = Describe("bosh deployment tests", func() {
 
 		bbl.CreateLB("concourse", "fixtures/bbl.crt", "fixtures/bbl.key", "")
 
-		buf, err := ioutil.ReadFile("fixtures/concourse.yml")
-		Expect(err).NotTo(HaveOccurred())
-
-		concourseManifest := string(buf)
-
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
@@ -52,34 +55,41 @@ var _ = Describe("bosh deployment tests", func() {
 			AllowInsecureSSL: true,
 		})
 
-		lbURL := fmt.Sprintf("http://%s", aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"])
+		err := downloadAndUploadRelease(boshClient, ConcourseReleaseURL)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = downloadAndUploadRelease(boshClient, GardenReleaseURL)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = downloadAndUploadStemcell(boshClient, StemcellURL)
+		Expect(err).NotTo(HaveOccurred())
+
+		concourseExampleManifest, err := downloadConcourseExampleManifest()
+		Expect(err).NotTo(HaveOccurred())
 
 		info, err := boshClient.Info()
 		Expect(err).NotTo(HaveOccurred())
 
-		err = downloadAndUploadRelease(boshClient, "https://bosh.io/d/github.com/concourse/concourse")
-		Expect(err).NotTo(HaveOccurred())
+		lbURL := fmt.Sprintf("http://%s", aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"])
 
-		err = downloadAndUploadRelease(boshClient, "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-linux-release")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = downloadAndUploadStemcell(boshClient, "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent")
-		Expect(err).NotTo(HaveOccurred())
-
-		stemcell, err := boshClient.Stemcell("bosh-aws-xen-hvm-ubuntu-trusty-go_agent")
+		stemcell, err := boshClient.Stemcell(StemcellName)
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseRelease, err := boshClient.Release("concourse")
 		Expect(err).NotTo(HaveOccurred())
 
-		gardenLinuxRelease, err := boshClient.Release("garden-linux")
+		gardenRelease, err := boshClient.Release(GardenReleaseName)
 		Expect(err).NotTo(HaveOccurred())
 
-		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_DIRECTOR_UUID", info.UUID, -1)
-		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_EXTERNAL_URL", lbURL, -1)
-		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_STEMCELL_VERSION", stemcell.Latest(), -1)
-		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_CONCOURSE_VERSION", concourseRelease.Latest(), -1)
-		concourseManifest = strings.Replace(concourseManifest, "REPLACE_ME_GARDEN_LINUX_VERSION", gardenLinuxRelease.Latest(), -1)
+		concourseManifestInputs := concourseManifestInputs{
+			boshDirectorUUID:        info.UUID,
+			webExternalURL:          lbURL,
+			stemcellVersion:         stemcell.Latest(),
+			concourseReleaseVersion: concourseRelease.Latest(),
+			gardenReleaseVersion:    gardenRelease.Latest(),
+		}
+		concourseManifest, err := populateManifest(concourseExampleManifest, concourseManifestInputs)
+		Expect(err).NotTo(HaveOccurred())
 
 		boshClient.Deploy([]byte(concourseManifest))
 
@@ -126,6 +136,20 @@ func downloadAndUploadRelease(boshClient bosh.Client, release string) error {
 
 	_, err = boshClient.UploadRelease(bosh.NewSizeReader(file, size))
 	return err
+}
+
+func downloadConcourseExampleManifest() (string, error) {
+	resp, _, err := download(ConcourseExampleManifestURL)
+	if err != nil {
+		return "", err
+	}
+
+	rawRespBody, err := ioutil.ReadAll(resp)
+	if err != nil {
+		return "", err
+	}
+
+	return string(rawRespBody), nil
 }
 
 func download(location string) (io.Reader, int64, error) {
