@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
@@ -493,14 +492,4 @@ func createLBs(endpointOverrideURL string, stateDir string, certName string, key
 	}
 
 	return executeCommand(args, exitCode)
-}
-
-func temporaryFileContaining(fileContents string) string {
-	temporaryFile, err := ioutil.TempFile("", "")
-	Expect(err).NotTo(HaveOccurred())
-
-	err = ioutil.WriteFile(temporaryFile.Name(), []byte(fileContents), os.ModePerm)
-	Expect(err).NotTo(HaveOccurred())
-
-	return temporaryFile.Name()
 }

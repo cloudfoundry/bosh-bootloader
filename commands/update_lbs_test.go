@@ -2,13 +2,12 @@ package commands_test
 
 import (
 	"errors"
-	"io/ioutil"
-	"os"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -40,17 +39,9 @@ var _ = Describe("Update LBs", func() {
 		}, state)
 	}
 
-	var temporaryFileContaining = func(fileContents string) string {
-		temporaryFile, err := ioutil.TempFile("", "")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = ioutil.WriteFile(temporaryFile.Name(), []byte(fileContents), os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
-
-		return temporaryFile.Name()
-	}
-
 	BeforeEach(func() {
+		var err error
+
 		certificateManager = &fakes.CertificateManager{}
 		certificateValidator = &fakes.CertificateValidator{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
@@ -83,9 +74,14 @@ var _ = Describe("Update LBs", func() {
 			},
 		}
 
-		certFilePath = temporaryFileContaining("some-certificate-contents")
-		keyFilePath = temporaryFileContaining("some-key-contents")
-		chainFilePath = temporaryFileContaining("some-chain-contents")
+		certFilePath, err = testhelpers.WriteContentsToTempFile("some-certificate-contents")
+		Expect(err).NotTo(HaveOccurred())
+
+		keyFilePath, err = testhelpers.WriteContentsToTempFile("some-key-contents")
+		Expect(err).NotTo(HaveOccurred())
+
+		chainFilePath, err = testhelpers.WriteContentsToTempFile("some-chain-contents")
+		Expect(err).NotTo(HaveOccurred())
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator)
