@@ -33,15 +33,12 @@ var _ = Describe("bosh deployment tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		stateDirectory, err := ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
-
 		configuration, err := integration.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(stateDirectory, pathToBBL, configuration)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
 		aws = actors.NewAWS(configuration)
-		state = integration.NewState(stateDirectory)
+		state = integration.NewState(configuration.StateFileDir)
 	})
 
 	It("is able to deploy concourse", func() {

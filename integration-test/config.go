@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -12,7 +13,10 @@ type Config struct {
 	AWSAccessKeyID     string
 	AWSSecretAccessKey string
 	AWSRegion          string
+	StateFileDir       string
 }
+
+var tempDir func(string, string) (string, error) = ioutil.TempDir
 
 func LoadConfig() (Config, error) {
 	config, err := loadConfigJson()
@@ -30,6 +34,14 @@ func LoadConfig() (Config, error) {
 
 	if config.AWSRegion == "" {
 		return Config{}, errors.New("aws region is missing")
+	}
+
+	if config.StateFileDir == "" {
+		dir, err := tempDir("", "")
+		if err != nil {
+			return Config{}, err
+		}
+		config.StateFileDir = dir
 	}
 
 	return config, nil

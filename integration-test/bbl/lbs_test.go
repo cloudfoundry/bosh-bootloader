@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
@@ -23,16 +22,13 @@ var _ = Describe("load balancer tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		stateDirectory, err := ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
-
 		configuration, err := integration.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(stateDirectory, pathToBBL, configuration)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
 		aws = actors.NewAWS(configuration)
 		bosh = actors.NewBOSH()
-		state = integration.NewState(stateDirectory)
+		state = integration.NewState(configuration.StateFileDir)
 
 	})
 

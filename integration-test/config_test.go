@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -18,6 +19,8 @@ var _ = Describe("config", func() {
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
+
+		integration.ResetTempDir()
 	})
 
 	Describe("LoadConfig", func() {
@@ -44,6 +47,31 @@ var _ = Describe("config", func() {
 			configurationFilePath := writeConfigurationFile(`{
 				"AWSAccessKeyID": "some-aws-access-key-id",
 				"AWSSecretAccessKey": "some-aws-secret-access-key",
+				"AWSRegion": "some-region",
+				"StateFileDir": "/some/path"
+			}`)
+
+			os.Setenv("BIT_CONFIG", configurationFilePath)
+
+			config, err := integration.LoadConfig()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(config).To(Equal(integration.Config{
+				AWSAccessKeyID:     "some-aws-access-key-id",
+				AWSSecretAccessKey: "some-aws-secret-access-key",
+				AWSRegion:          "some-region",
+				StateFileDir:       "/some/path",
+			}))
+		})
+
+		It("returns a random path if no StateFileDir is specified", func() {
+			integration.SetTempDir(func(string, string) (string, error) {
+				return "/some/temp/dir", nil
+			})
+
+			configurationFilePath := writeConfigurationFile(`{
+				"AWSAccessKeyID": "some-aws-access-key-id",
+				"AWSSecretAccessKey": "some-aws-secret-access-key",
 				"AWSRegion": "some-region"
 			}`)
 
@@ -56,10 +84,27 @@ var _ = Describe("config", func() {
 				AWSAccessKeyID:     "some-aws-access-key-id",
 				AWSSecretAccessKey: "some-aws-secret-access-key",
 				AWSRegion:          "some-region",
+				StateFileDir:       "/some/temp/dir",
 			}))
 		})
 
 		Context("failure cases", func() {
+			It("returns an error if the temp dir cannot be created", func() {
+				integration.SetTempDir(func(string, string) (string, error) {
+					return "", errors.New("temp dir creation failed")
+				})
+
+				configurationFilePath := writeConfigurationFile(`{
+					"AWSAccessKeyID": "some-aws-access-key-id",
+					"AWSSecretAccessKey": "some-aws-secret-access-key",
+					"AWSRegion": "some-region"
+				}`)
+
+				os.Setenv("BIT_CONFIG", configurationFilePath)
+				_, err := integration.LoadConfig()
+				Expect(err).To(MatchError("temp dir creation failed"))
+			})
+
 			It("returns an error if aws access key id is missing", func() {
 				configurationFilePath := writeConfigurationFile(`{
 					"AWSSecretAccessKey": "some-aws-secret-access-key",
