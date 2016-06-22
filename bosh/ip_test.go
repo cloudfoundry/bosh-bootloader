@@ -47,6 +47,15 @@ var _ = Describe("IP", func() {
 		})
 	})
 
+	Describe("Subtract", func() {
+		It("returns an IP object that represents IP offsetted by -1", func() {
+			ip, err := bosh.ParseIP("10.0.16.2")
+			ip = ip.Subtract(1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ip.String()).To(Equal("10.0.16.1"))
+		})
+	})
+
 	Describe("String", func() {
 		It("returns a string representation of IP object", func() {
 			ip, err := bosh.ParseIP("10.0.16.1")

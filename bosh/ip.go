@@ -45,6 +45,12 @@ func (i IP) Add(offset int) IP {
 	}
 }
 
+func (i IP) Subtract(offset int) IP {
+	return IP{
+		ip: i.ip - offset,
+	}
+}
+
 func (i IP) String() string {
 	first := i.ip & 0xff000000 >> 24
 	second := i.ip & 0xff0000 >> 16

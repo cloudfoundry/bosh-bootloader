@@ -55,6 +55,8 @@ func (n NetworksGenerator) Generate() ([]Network, error) {
 		firstReserved := parsedCidr.GetFirstIP().Add(2).String()
 		secondReserved := parsedCidr.GetFirstIP().Add(3).String()
 		lastReserved := parsedCidr.GetLastIP().String()
+		lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
+		firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
 
 		networkSubnet := NetworkSubnet{
 			AZ:      n.azAssociations[subnet.AZ],
@@ -63,6 +65,9 @@ func (n NetworksGenerator) Generate() ([]Network, error) {
 			Reserved: []string{
 				fmt.Sprintf("%s-%s", firstReserved, secondReserved),
 				fmt.Sprintf("%s", lastReserved),
+			},
+			Static: []string{
+				fmt.Sprintf("%s-%s", firstStatic, lastStatic),
 			},
 			CloudProperties: SubnetCloudProperties{
 				Subnet:         subnet.Subnet,

@@ -50,6 +50,9 @@ var _ = Describe("NetworksGenerator", func() {
 								"10.0.16.2-10.0.16.3",
 								"10.0.31.255",
 							},
+							Static: []string{
+								"10.0.31.190-10.0.31.254",
+							},
 							CloudProperties: bosh.SubnetCloudProperties{
 								Subnet: "some-subnet-1",
 								SecurityGroups: []string{
@@ -65,6 +68,9 @@ var _ = Describe("NetworksGenerator", func() {
 								"10.0.32.2-10.0.32.3",
 								"10.0.47.255",
 							},
+							Static: []string{
+								"10.0.47.190-10.0.47.254",
+							},
 							CloudProperties: bosh.SubnetCloudProperties{
 								Subnet: "some-subnet-2",
 								SecurityGroups: []string{
@@ -79,6 +85,9 @@ var _ = Describe("NetworksGenerator", func() {
 							Reserved: []string{
 								"10.0.48.2-10.0.48.3",
 								"10.0.63.255",
+							},
+							Static: []string{
+								"10.0.63.190-10.0.63.254",
 							},
 							CloudProperties: bosh.SubnetCloudProperties{
 								Subnet: "some-subnet-3",
