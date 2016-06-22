@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/develop/manifests/concourse.yml"
+	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/master/manifests/concourse.yml"
 	ConcourseReleaseURL         = "https://bosh.io/d/github.com/concourse/concourse"
 	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-runc-release"
 	GardenReleaseName           = "garden-runc"
