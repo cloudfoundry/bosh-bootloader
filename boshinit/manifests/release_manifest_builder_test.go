@@ -21,8 +21,8 @@ var _ = Describe("ReleaseManifestBuilder", func() {
 			Expect(releases).To(ConsistOf([]manifests.Release{
 				{
 					Name: "bosh",
-					URL:  "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257-on-ubuntu-trusty-stemcell-3262.tgz",
-					SHA1: "fee9a89b044879ea5c9c17d239ee62c606c84a60",
+					URL:  "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257.1-on-ubuntu-trusty-stemcell-3262.tgz",
+					SHA1: "83393ce5d40590cdb0978292e42027571cb20e17",
 				},
 				{
 					Name: "bosh-aws-cpi",

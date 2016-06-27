@@ -3,8 +3,8 @@ name: bosh
 
 releases:
 - name: bosh
-  url: https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257-on-ubuntu-trusty-stemcell-3262.tgz
-  sha1: fee9a89b044879ea5c9c17d239ee62c606c84a60
+  url: https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257.1-on-ubuntu-trusty-stemcell-3262.tgz
+  sha1: 83393ce5d40590cdb0978292e42027571cb20e17
 - name: bosh-aws-cpi
   url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=53
   sha1: 3a5988bd2b6e951995fe030c75b07c5b922e2d59
