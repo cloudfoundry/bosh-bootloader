@@ -20,6 +20,9 @@ var _ = Describe("CompilationGenerator", func() {
 					AZ:                  "z1",
 					ReuseCompilationVMs: true,
 					VMType:              "c3.large",
+					VMExtensions: []string{
+						"100GB_ephemeral_disk",
+					},
 				},
 			))
 		})

@@ -81,7 +81,7 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.BasicAuthPassword = "admin"
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.ExternalURL = concourseManifestInputs.webExternalURL
 		case "worker":
-			concourseManifest.InstanceGroups[i].VMExtensions = []string{}
+			concourseManifest.InstanceGroups[i].VMExtensions = []string{"50GB_ephemeral_disk"}
 		case "db":
 			concourseManifest.InstanceGroups[i].PersistentDiskType = "1GB"
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.Databases[0].Role = "admin"

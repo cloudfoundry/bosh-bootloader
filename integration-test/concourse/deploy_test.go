@@ -95,11 +95,12 @@ var _ = Describe("bosh deployment tests", func() {
 		concourseManifest, err := populateManifest(concourseExampleManifest, concourseManifestInputs)
 		Expect(err).NotTo(HaveOccurred())
 
-		boshClient.Deploy([]byte(concourseManifest))
+		_, err = boshClient.Deploy([]byte(concourseManifest))
+		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
 			return boshClient.DeploymentVMs("concourse")
-		}, "10m", "10s").Should(ConsistOf([]bosh.VM{
+		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
 			{JobName: "worker", Index: 0, State: "running"},
 			{JobName: "db", Index: 0, State: "running"},
 			{JobName: "web", Index: 0, State: "running"},
