@@ -1,7 +1,7 @@
 # bosh-bootloader
 ---
 
-This is a command line utility for standing up a CloudFoundry or Concourse installation 
+This is a command line utility for standing up a Concourse or [CloudFoundry installation](README-cloudfoundry.md)
 on an IAAS of your choice. This CLI is currently under heavy development, and the
 initial goal is to support bootstrapping a CloudFoundry installation on AWS.
 
@@ -13,8 +13,9 @@ initial goal is to support bootstrapping a CloudFoundry installation on AWS.
 ### Install Dependencies
 
 The following should be installed on your local machine
-- Golang >= 1.5 (install with `brew install go`)
+- Golang >= 1.5 (install with `brew install go` for Mac OS X, download the binary or package for Linux)
 - bosh-init ([installation instructions](http://bosh.io/docs/install-bosh-init.html))
+- Ruby 2+ (check with `ruby -v`) and make sure you did `gem install bosh_cli`
 
 ### Install bosh-bootloader
 
