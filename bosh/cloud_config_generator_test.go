@@ -3,7 +3,8 @@ package bosh_test
 import (
 	"io/ioutil"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"gopkg.in/yaml.v2"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 
 	. "github.com/onsi/ginkgo"
@@ -56,7 +57,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 			buf, err := ioutil.ReadFile("fixtures/cloud_config_without_load_balancers.yml")
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := candiedyaml.Marshal(cloudConfig)
+			output, err := yaml.Marshal(cloudConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(output).To(MatchYAML(string(buf)))
@@ -112,7 +113,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 				buf, err := ioutil.ReadFile("fixtures/cloud_config_with_load_balancers.yml")
 				Expect(err).NotTo(HaveOccurred())
 
-				output, err := candiedyaml.Marshal(cloudConfig)
+				output, err := yaml.Marshal(cloudConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(output).To(MatchYAML(string(buf)))

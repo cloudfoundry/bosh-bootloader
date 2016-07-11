@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"gopkg.in/yaml.v2"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
@@ -274,7 +275,7 @@ var _ = Describe("ManifestBuilder", func() {
 			buf, err := ioutil.ReadFile("fixtures/manifest.yml")
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := candiedyaml.Marshal(manifest)
+			output, err := yaml.Marshal(manifest)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(output).To(MatchYAML(string(buf)))

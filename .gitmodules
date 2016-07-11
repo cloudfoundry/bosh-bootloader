@@ -10,9 +10,6 @@
 [submodule "vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
 	path = vendor/github.com/pivotal-cf-experimental/gomegamatchers
 	url = https://github.com/pivotal-cf-experimental/gomegamatchers
-[submodule "vendor/github.com/cloudfoundry-incubator/candiedyaml"]
-	path = vendor/github.com/cloudfoundry-incubator/candiedyaml
-	url = https://github.com/cloudfoundry-incubator/candiedyaml.git
 [submodule "vendor/github.com/onsi/ginkgo"]
 	path = vendor/github.com/onsi/ginkgo
 	url = https://github.com/onsi/ginkgo
@@ -25,3 +22,6 @@
 [submodule "vendor/github.com/cloudfoundry/multierror"]
 	path = vendor/github.com/cloudfoundry/multierror
 	url = https://github.com/cloudfoundry/multierror.git
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2

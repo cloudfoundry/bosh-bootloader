@@ -1,8 +1,8 @@
 package boshinit
 
 import (
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
+	"gopkg.in/yaml.v2"
 )
 
 type Executor struct {
@@ -64,13 +64,13 @@ func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 		return DeployOutput{}, err
 	}
 
-	yaml, err := candiedyaml.Marshal(manifest)
+	manifestYAML, err := yaml.Marshal(manifest)
 	if err != nil {
 		return DeployOutput{}, err
 	}
 
 	e.logger.Step("deploying bosh director")
-	state, err := e.deployCommand.Execute(yaml, input.EC2KeyPair.PrivateKey, input.State)
+	state, err := e.deployCommand.Execute(manifestYAML, input.EC2KeyPair.PrivateKey, input.State)
 	if err != nil {
 		return DeployOutput{}, err
 	}
@@ -79,6 +79,6 @@ func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 		BOSHInitState:      state,
 		DirectorSSLKeyPair: manifestProperties.SSLKeyPair,
 		Credentials:        manifestProperties.Credentials.ToMap(),
-		BOSHInitManifest:   string(yaml),
+		BOSHInitManifest:   string(manifestYAML),
 	}, nil
 }

@@ -1,6 +1,6 @@
 package bosh
 
-import "github.com/cloudfoundry-incubator/candiedyaml"
+import "gopkg.in/yaml.v2"
 
 type CloudConfigManager struct {
 	logger               logger
@@ -25,13 +25,13 @@ func (c CloudConfigManager) Update(input CloudConfigInput, boshClient Client) er
 		return err
 	}
 
-	yaml, err := candiedyaml.Marshal(cloudConfig)
+	manifestYAML, err := yaml.Marshal(cloudConfig)
 	if err != nil {
 		return err
 	}
 
 	c.logger.Step("applying cloud config")
-	if err := boshClient.UpdateCloudConfig(yaml); err != nil {
+	if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
 		return err
 	}
 

@@ -3,7 +3,8 @@ package bosh_test
 import (
 	"errors"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"gopkg.in/yaml.v2"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
 
@@ -77,7 +78,7 @@ var _ = Describe("CloudConfigManager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			//Expect(logger.StepCall.Receives.Message).To(Equal("generating cloud config"))
-			yaml, err := candiedyaml.Marshal(bosh.CloudConfig{
+			manifestYAML, err := yaml.Marshal(bosh.CloudConfig{
 				VMTypes: []bosh.VMType{
 					{
 						Name: "some-vm-type",
@@ -87,7 +88,7 @@ var _ = Describe("CloudConfigManager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
-			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal(yaml))
+			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal(manifestYAML))
 
 			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(cloudConfigInput))
 			//Expect(logger.StepCall.Receives.Message).To(Equal("applying cloud config"))
