@@ -1,6 +1,6 @@
 package integration_test
 
-import "github.com/cloudfoundry-incubator/candiedyaml"
+import "gopkg.in/yaml.v2"
 
 type concourseManifestInputs struct {
 	boshDirectorUUID        string
@@ -54,7 +54,7 @@ type job struct {
 
 func populateManifest(baseManifest string, concourseManifestInputs concourseManifestInputs) (string, error) {
 	var concourseManifest concourseManifest
-	err := candiedyaml.Unmarshal([]byte(baseManifest), &concourseManifest)
+	err := yaml.Unmarshal([]byte(baseManifest), &concourseManifest)
 	if err != nil {
 		return "", err
 	}
@@ -89,7 +89,7 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 		}
 	}
 
-	finalConcourseManifestYAML, err := candiedyaml.Marshal(concourseManifest)
+	finalConcourseManifestYAML, err := yaml.Marshal(concourseManifest)
 	if err != nil {
 		return "", err
 	}
