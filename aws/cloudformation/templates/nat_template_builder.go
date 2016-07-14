@@ -48,7 +48,7 @@ func (t NATTemplateBuilder) NAT() Template {
 			"NATInstance": Resource{
 				Type: "AWS::EC2::Instance",
 				Properties: Instance{
-					InstanceType:    "m4.large",
+					InstanceType:    "t2.medium",
 					SubnetId:        Ref{"BOSHSubnet"},
 					SourceDestCheck: false,
 					ImageId: map[string]interface{}{

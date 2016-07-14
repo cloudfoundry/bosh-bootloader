@@ -373,7 +373,7 @@
                 "ImageId": {
                     "Fn::FindInMap": ["AWSNATAMI", {"Ref": "AWS::Region"}, "AMI"]
                 },
-                "InstanceType": "m4.large",
+                "InstanceType": "t2.medium",
                 "KeyName": {"Ref": "SSHKeyPairName"},
                 "SecurityGroupIds": [{"Ref": "NATSecurityGroup"}],
                 "SourceDestCheck": false,
