@@ -59,7 +59,7 @@ var _ = Describe("NATTemplateBuilder", func() {
 			Expect(nat.Resources).To(HaveKeyWithValue("NATInstance", templates.Resource{
 				Type: "AWS::EC2::Instance",
 				Properties: templates.Instance{
-					InstanceType:    "m4.large",
+					InstanceType:    "t2.medium",
 					SubnetId:        templates.Ref{"BOSHSubnet"},
 					SourceDestCheck: false,
 					ImageId: map[string]interface{}{
