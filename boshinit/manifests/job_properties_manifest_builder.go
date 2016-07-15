@@ -44,36 +44,33 @@ func (j JobPropertiesManifestBuilder) NATS() NATSJobProperties {
 
 func (j JobPropertiesManifestBuilder) Postgres() PostgresProperties {
 	return PostgresProperties{
-		ListenAddress: "127.0.0.1",
-		Host:          "127.0.0.1",
-		User:          j.postgresUsername,
-		Password:      j.postgresPassword,
-		Database:      "bosh",
-		Adapter:       "postgres",
+		User:     j.postgresUsername,
+		Password: j.postgresPassword,
 	}
 }
 
 func (j JobPropertiesManifestBuilder) Registry() RegistryJobProperties {
+	postgres := j.Postgres()
 	return RegistryJobProperties{
-		Address:  "10.0.0.6",
 		Host:     "10.0.0.6",
+		Address:  "10.0.0.6",
 		Username: j.registryUsername,
 		Password: j.registryPassword,
-		Port:     25777,
-		DB:       j.Postgres(),
+		DB: RegistryPostgresProperties{
+			User:     postgres.User,
+			Password: postgres.Password,
+			Database: "bosh",
+		},
 		HTTP: HTTPProperties{
 			User:     j.registryUsername,
 			Password: j.registryPassword,
-			Port:     25777,
 		},
 	}
 }
 
 func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 	return BlobstoreJobProperties{
-		Address:  "10.0.0.6",
-		Port:     25250,
-		Provider: "dav",
+		Address: "10.0.0.6",
 		Director: Credentials{
 			User:     j.blobstoreDirectorUsername,
 			Password: j.blobstoreDirectorPassword,
@@ -94,7 +91,6 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 		EnablePostDeploy: true,
 		DB:               j.Postgres(),
 		UserManagement: UserManagementProperties{
-			Provider: "local",
 			Local: LocalProperties{
 				Users: []UserProperties{
 					{

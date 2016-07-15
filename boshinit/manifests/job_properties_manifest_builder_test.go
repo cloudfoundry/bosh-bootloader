@@ -69,12 +69,8 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		It("returns job properties for Postgres", func() {
 			postgres := jobPropertiesManifestBuilder.Postgres()
 			Expect(postgres).To(Equal(manifests.PostgresProperties{
-				ListenAddress: "127.0.0.1",
-				Host:          "127.0.0.1",
-				User:          postgresUsername,
-				Password:      postgresPassword,
-				Database:      "bosh",
-				Adapter:       "postgres",
+				User:     postgresUsername,
+				Password: postgresPassword,
 			}))
 		})
 	})
@@ -87,19 +83,14 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				Host:     "10.0.0.6",
 				Username: registryUsername,
 				Password: registryPassword,
-				Port:     25777,
-				DB: manifests.PostgresProperties{
-					ListenAddress: "127.0.0.1",
-					Host:          "127.0.0.1",
-					User:          postgresUsername,
-					Password:      postgresPassword,
-					Database:      "bosh",
-					Adapter:       "postgres",
+				DB: manifests.RegistryPostgresProperties{
+					User:     postgresUsername,
+					Password: postgresPassword,
+					Database: "bosh",
 				},
 				HTTP: manifests.HTTPProperties{
 					User:     registryUsername,
 					Password: registryPassword,
-					Port:     25777,
 				},
 			}))
 		})
@@ -109,9 +100,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 		It("returns job properties for Blobstore", func() {
 			blobstore := jobPropertiesManifestBuilder.Blobstore()
 			Expect(blobstore).To(Equal(manifests.BlobstoreJobProperties{
-				Address:  "10.0.0.6",
-				Port:     25250,
-				Provider: "dav",
+				Address: "10.0.0.6",
 				Director: manifests.Credentials{
 					User:     blobstoreDirectorUsername,
 					Password: blobstoreDirectorPassword,
@@ -141,15 +130,10 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				MaxThreads:       10,
 				EnablePostDeploy: true,
 				DB: manifests.PostgresProperties{
-					ListenAddress: "127.0.0.1",
-					Host:          "127.0.0.1",
-					User:          postgresUsername,
-					Password:      postgresPassword,
-					Database:      "bosh",
-					Adapter:       "postgres",
+					User:     postgresUsername,
+					Password: postgresPassword,
 				},
 				UserManagement: manifests.UserManagementProperties{
-					Provider: "local",
 					Local: manifests.LocalProperties{
 						Users: []manifests.UserProperties{
 							{

@@ -68,32 +68,22 @@ jobs:
       password: nats-some-random-string
 
     postgres:
-      listen_address: 127.0.0.1
-      host: 127.0.0.1
       user: postgres-user-some-random-string
       password: postgres-some-random-string
-      database: bosh
-      adapter: postgres
 
     registry:
-      address: 10.0.0.6
       host: 10.0.0.6
+      address: 10.0.0.6
       db:
-        listen_address: 127.0.0.1
-        host: 127.0.0.1
         user: postgres-user-some-random-string
         password: postgres-some-random-string
         database: bosh
-        adapter: postgres
-      http: {user: registry-user-some-random-string, password: registry-some-random-string, port: 25777}
+      http: {user: registry-user-some-random-string, password: registry-some-random-string}
       username: registry-user-some-random-string
       password: registry-some-random-string
-      port: 25777
 
     blobstore:
       address: 10.0.0.6
-      port: 25250
-      provider: dav
       director: {user: blobstore-director-user-some-random-string, password: blobstore-director-some-random-string}
       agent: {user: blobstore-agent-user-some-random-string, password: blobstore-agent-some-random-string}
 
@@ -101,17 +91,12 @@ jobs:
       address: 127.0.0.1
       name: my-bosh
       db:
-        listen_address: 127.0.0.1
-        host: 127.0.0.1
         user: postgres-user-some-random-string
         password: postgres-some-random-string
-        database: bosh
-        adapter: postgres
       cpi_job: aws_cpi
       max_threads: 10
       enable_post_deploy: true
       user_management:
-        provider: local
         local:
           users:
           - {name: bosh-username, password: bosh-password}
@@ -179,8 +164,6 @@ jobs:
 
     agent: {mbus: "nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"}
 
-    ntp: [0.pool.ntp.org, 1.pool.ntp.org]
-
 cloud_provider:
   template: {name: aws_cpi, release: bosh-aws-cpi}
 
@@ -201,4 +184,3 @@ cloud_provider:
       region: some-region
     agent: {mbus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868"}
     blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
-    ntp: [0.pool.ntp.org, 1.pool.ntp.org]
