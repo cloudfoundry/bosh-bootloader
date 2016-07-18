@@ -16,7 +16,3 @@ func (SharedPropertiesManifestBuilder) AWS(manifestProperties ManifestProperties
 		Region:                manifestProperties.Region,
 	}
 }
-
-func (SharedPropertiesManifestBuilder) NTP() []string {
-	return []string{"0.pool.ntp.org", "1.pool.ntp.org"}
-}

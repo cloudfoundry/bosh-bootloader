@@ -74,7 +74,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.NATS.User).To(Equal("nats-user-some-random-string"))
 			Expect(job.Properties.Postgres.User).To(Equal("postgres-user-some-random-string"))
 			Expect(job.Properties.Registry.Username).To(Equal("registry-user-some-random-string"))
-			Expect(job.Properties.Blobstore.Provider).To(Equal("dav"))
 			Expect(job.Properties.Director.Name).To(Equal("my-bosh"))
 			Expect(job.Properties.HM.ResurrectorEnabled).To(Equal(true))
 			Expect(job.Properties.AWS.AccessKeyId).To(Equal("some-access-key-id"))
@@ -82,7 +81,6 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.AWS.Region).To(Equal("some-region"))
 			Expect(job.Properties.AWS.DefaultKeyName).To(Equal("some-key-name"))
 			Expect(job.Properties.Agent.MBus).To(Equal("nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"))
-			Expect(job.Properties.NTP[0]).To(Equal("0.pool.ntp.org"))
 		})
 
 		It("returns manifest properties with new credentials", func() {

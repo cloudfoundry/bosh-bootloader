@@ -67,8 +67,6 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 						Provider: "local",
 						Path:     "/var/vcap/micro_bosh/data/cache",
 					},
-
-					NTP: []string{"0.pool.ntp.org", "1.pool.ntp.org"},
 				},
 			}))
 

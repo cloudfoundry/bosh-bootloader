@@ -9,7 +9,6 @@ type JobProperties struct {
 	HM        HMJobProperties        `yaml:"hm"`
 	AWS       AWSProperties          `yaml:"aws"`
 	Agent     AgentProperties        `yaml:"agent"`
-	NTP       []string               `yaml:"ntp"`
 }
 
 type NATSJobProperties struct {
@@ -19,19 +18,16 @@ type NATSJobProperties struct {
 }
 
 type RegistryJobProperties struct {
-	Address  string             `yaml:"address"`
-	Host     string             `yaml:"host"`
-	Username string             `yaml:"username"`
-	Password string             `yaml:"password"`
-	Port     int                `yaml:"port"`
-	DB       PostgresProperties `yaml:"db"`
-	HTTP     HTTPProperties     `yaml:"http"`
+	Host     string                     `yaml:"host"`
+	Address  string                     `yaml:"address"`
+	Username string                     `yaml:"username"`
+	Password string                     `yaml:"password"`
+	DB       RegistryPostgresProperties `yaml:"db"`
+	HTTP     HTTPProperties             `yaml:"http"`
 }
 
 type BlobstoreJobProperties struct {
 	Address  string      `yaml:"address"`
-	Port     int         `yaml:"port"`
-	Provider string      `yaml:"provider"`
 	Director Credentials `yaml:"director"`
 	Agent    Credentials `yaml:"agent"`
 }
@@ -62,8 +58,7 @@ type UserProperties struct {
 }
 
 type UserManagementProperties struct {
-	Provider string          `yaml:"provider"`
-	Local    LocalProperties `yaml:"local"`
+	Local LocalProperties `yaml:"local"`
 }
 
 type SSLProperties struct {
@@ -74,7 +69,6 @@ type SSLProperties struct {
 type HTTPProperties struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
-	Port     int    `yaml:"port"`
 }
 
 type Credentials struct {

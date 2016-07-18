@@ -67,8 +67,6 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 				Provider: "local",
 				Path:     "/var/vcap/micro_bosh/data/cache",
 			},
-
-			NTP: sharedPropertiesManifestBuilder.NTP(),
 		},
 	}, manifestProperties, nil
 }

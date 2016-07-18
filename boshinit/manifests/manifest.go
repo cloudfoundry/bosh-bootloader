@@ -121,7 +121,6 @@ type CloudProviderProperties struct {
 	AWS       AWSProperties       `yaml:"aws"`
 	Agent     AgentProperties     `yaml:"agent"`
 	Blobstore BlobstoreProperties `yaml:"blobstore"`
-	NTP       []string            `yaml:"ntp"`
 }
 
 type BlobstoreProperties struct {
@@ -142,10 +141,12 @@ type AgentProperties struct {
 }
 
 type PostgresProperties struct {
-	ListenAddress string `yaml:"listen_address"`
-	Host          string `yaml:"host"`
-	User          string `yaml:"user"`
-	Password      string `yaml:"password"`
-	Database      string `yaml:"database"`
-	Adapter       string `yaml:"adapter"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+}
+
+type RegistryPostgresProperties struct {
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
 }

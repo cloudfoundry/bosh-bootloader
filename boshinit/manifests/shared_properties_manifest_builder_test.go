@@ -33,13 +33,4 @@ var _ = Describe("SharedPropertiesManifestBuilder", func() {
 			}))
 		})
 	})
-
-	Describe("NTP", func() {
-		It("returns job properties for NTP", func() {
-			ntp := sharedPropertiesManifestBuilder.NTP()
-			Expect(ntp).To(ConsistOf(
-				[]string{"0.pool.ntp.org", "1.pool.ntp.org"},
-			))
-		})
-	})
 })

@@ -71,7 +71,6 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 				HM:        jobPropertiesManifestBuilder.HM(),
 				AWS:       sharedPropertiesManifestBuilder.AWS(manifestProperties),
 				Agent:     jobPropertiesManifestBuilder.Agent(),
-				NTP:       sharedPropertiesManifestBuilder.NTP(),
 			},
 		},
 	}, manifestProperties, nil
