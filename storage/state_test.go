@@ -48,6 +48,7 @@ var _ = Describe("Store", func() {
 					DirectorUsername:       "some-director-username",
 					DirectorPassword:       "some-director-password",
 					DirectorAddress:        "some-director-address",
+					DirectorSSLCA:          "some-bosh-ssl-ca",
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
 					State: map[string]interface{}{
@@ -97,6 +98,7 @@ var _ = Describe("Store", func() {
 					"directorUsername": "some-director-username",
 					"directorPassword": "some-director-password",
 					"directorAddress": "some-director-address",
+					"directorSSLCA": "some-bosh-ssl-ca",
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
 					"credentials": {
@@ -216,6 +218,7 @@ var _ = Describe("Store", func() {
 				},
 				"bosh": {
 					"directorAddress": "some-director-address",
+					"directorSSLCA": "some-bosh-ssl-ca",
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
 					"manifest": "name: bosh"
@@ -245,6 +248,7 @@ var _ = Describe("Store", func() {
 				},
 				BOSH: storage.BOSH{
 					DirectorAddress:        "some-director-address",
+					DirectorSSLCA:          "some-bosh-ssl-ca",
 					DirectorSSLCertificate: "some-bosh-ssl-certificate",
 					DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
 					Manifest:               "name: bosh",

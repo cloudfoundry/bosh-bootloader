@@ -87,6 +87,12 @@ var _ = Describe("KeyPairGenerator", func() {
 			keyPair, err := generator.Generate(ca, "127.0.0.1")
 			Expect(err).NotTo(HaveOccurred())
 
+			p, rest := pem.Decode(keyPair.CA)
+			Expect(p).NotTo(BeNil())
+			Expect(p.Bytes).To(Equal(ca))
+			Expect(p.Type).To(Equal("CA"))
+			Expect(rest).To(HaveLen(0))
+
 			tlsCert, err := tls.X509KeyPair(keyPair.Certificate, keyPair.PrivateKey)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(tlsCert.Certificate).To(HaveLen(1))

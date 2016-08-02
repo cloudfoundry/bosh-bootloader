@@ -61,6 +61,7 @@ var _ = Describe("Up", func() {
 			boshDeployer = &fakes.BOSHDeployer{}
 			boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 				DirectorSSLKeyPair: ssl.KeyPair{
+					CA:          []byte("updated-ca"),
 					Certificate: []byte("updated-certificate"),
 					PrivateKey:  []byte("updated-private-key"),
 				},
@@ -547,11 +548,14 @@ var _ = Describe("Up", func() {
 					It("returns the given state unmodified", func() {
 						state, err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
+								DirectorSSLCA:          "some-ca",
 								DirectorSSLCertificate: "some-certificate",
 								DirectorSSLPrivateKey:  "some-private-key",
 							},
 						})
 						Expect(err).NotTo(HaveOccurred())
+
+						Expect(state.BOSH.DirectorSSLCA).To(Equal("some-ca"))
 						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("some-certificate"))
 						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("some-private-key"))
 					})
@@ -562,6 +566,7 @@ var _ = Describe("Up", func() {
 						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
+						Expect(state.BOSH.DirectorSSLCA).To(Equal("updated-ca"))
 						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("updated-certificate"))
 						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("updated-private-key"))
 						Expect(state.BOSH.State).To(Equal(map[string]interface{}{

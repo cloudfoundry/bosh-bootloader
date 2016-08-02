@@ -6,6 +6,7 @@ type BOSH struct {
 	DirectorUsername       string                 `json:"directorUsername"`
 	DirectorPassword       string                 `json:"directorPassword"`
 	DirectorAddress        string                 `json:"directorAddress"`
+	DirectorSSLCA          string                 `json:"directorSSLCA"`
 	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
 	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
 	Credentials            map[string]string      `json:"credentials"`

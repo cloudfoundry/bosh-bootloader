@@ -59,6 +59,7 @@ func (g KeyPairGenerator) GenerateCA(commonName string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+
 	return cert, nil
 }
 
@@ -98,6 +99,10 @@ func (g KeyPairGenerator) Generate(ca []byte, commonName string) (KeyPair, error
 	}
 
 	return KeyPair{
+		CA: pem.EncodeToMemory(&pem.Block{
+			Type:  "CA",
+			Bytes: ca,
+		}),
 		Certificate: pem.EncodeToMemory(&pem.Block{
 			Type:  "CERTIFICATE",
 			Bytes: cert,

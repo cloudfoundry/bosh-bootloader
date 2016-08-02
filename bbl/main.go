@@ -139,6 +139,9 @@ func main() {
 	sshKey := commands.NewStateQuery(logger, "ssh key", func(state storage.State) string {
 		return state.KeyPair.PrivateKey
 	})
+	boshCACert := commands.NewStateQuery(logger, "bosh ca cert", func(state storage.State) string {
+		return state.BOSH.DirectorSSLCA
+	})
 
 	app := application.New(application.CommandSet{
 		"help":    help,
@@ -152,7 +155,8 @@ func main() {
 		commands.CREATE_LBS_COMMAND: createLBs,
 		"unsupported-update-lbs":    updateLBs,
 		"unsupported-delete-lbs":    deleteLBs,
-		"lbs": lbs,
+		"lbs":          lbs,
+		"bosh-ca-cert": boshCACert,
 	}, configuration, stateStore, usage.Print)
 
 	err = app.Run()

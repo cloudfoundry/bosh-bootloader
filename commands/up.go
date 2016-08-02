@@ -153,6 +153,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 			DirectorAddress:        stack.Outputs["BOSHURL"],
 			DirectorUsername:       deployInput.DirectorUsername,
 			DirectorPassword:       deployInput.DirectorPassword,
+			DirectorSSLCA:          string(deployOutput.DirectorSSLKeyPair.CA),
 			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
 			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
 			Credentials:            deployOutput.Credentials,

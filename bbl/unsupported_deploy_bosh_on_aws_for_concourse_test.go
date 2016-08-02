@@ -245,7 +245,7 @@ var _ = Describe("bbl", func() {
 			})
 		})
 
-		Context("when an load balancer is attached", func() {
+		Context("when a load balancer is attached", func() {
 			It("attaches certificate to the load balancer", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
