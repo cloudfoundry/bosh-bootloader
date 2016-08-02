@@ -28,11 +28,63 @@ var _ = Describe("KeyPairGenerator", func() {
 		}
 	})
 
-	Describe("Generate", func() {
-		It("generates an SSL certificate", func() {
-			generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, x509.CreateCertificate)
+	Describe("GenerateCA", func() {
+		It("generates an SSL CA certificate", func() {
+			generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, x509.CreateCertificate, x509.ParseCertificates)
 
-			keyPair, err := generator.Generate("127.0.0.1")
+			ca, err := generator.GenerateCA("BOSH Bootloader")
+			Expect(err).NotTo(HaveOccurred())
+
+			parsedCerts, err := x509.ParseCertificates(ca)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsedCerts).To(HaveLen(1))
+			parsedCert := parsedCerts[0]
+
+			err = parsedCert.VerifyHostname("BOSH Bootloader")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(parsedCert.IsCA).To(BeTrue())
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the rsa key cannot be generated", func() {
+				fakeGenerateKey := func(random io.Reader, bits int) (priv *rsa.PrivateKey, err error) {
+					return nil, errors.New("failed to generate a key")
+				}
+
+				generator := ssl.NewKeyPairGenerator(clock, fakeGenerateKey, x509.CreateCertificate, x509.ParseCertificates)
+				_, err := generator.GenerateCA("BOSH Bootloader")
+
+				Expect(err).To(MatchError("failed to generate a key"))
+			})
+
+			It("returns an error when the certificate cannot be created", func() {
+				fakeCreateCertificate := func(rand io.Reader, template, parent *x509.Certificate, pub, priv interface{}) (cert []byte, err error) {
+					return nil, errors.New("failed to generate a cert")
+				}
+
+				generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, fakeCreateCertificate, x509.ParseCertificates)
+				_, err := generator.GenerateCA("BOSH Bootloader")
+
+				Expect(err).To(MatchError("failed to generate a cert"))
+			})
+		})
+	})
+
+	Describe("Generate", func() {
+		var ca []byte
+		BeforeEach(func() {
+			var err error
+			generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, x509.CreateCertificate, x509.ParseCertificates)
+
+			ca, err = generator.GenerateCA("BOSH Bootloader")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("generates an SSL certificate signed by provided CA", func() {
+			generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, x509.CreateCertificate, x509.ParseCertificates)
+
+			keyPair, err := generator.Generate(ca, "127.0.0.1")
 			Expect(err).NotTo(HaveOccurred())
 
 			tlsCert, err := tls.X509KeyPair(keyPair.Certificate, keyPair.PrivateKey)
@@ -43,6 +95,8 @@ var _ = Describe("KeyPairGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(parsedCerts).To(HaveLen(1))
 			parsedCert := parsedCerts[0]
+
+			Expect(parsedCert.Issuer.CommonName).To(Equal("BOSH Bootloader"))
 
 			err = parsedCert.VerifyHostname("127.0.0.1")
 			Expect(err).NotTo(HaveOccurred())
@@ -65,8 +119,8 @@ var _ = Describe("KeyPairGenerator", func() {
 					return nil, errors.New("failed to generate a key")
 				}
 
-				generator := ssl.NewKeyPairGenerator(clock, fakeGenerateKey, x509.CreateCertificate)
-				_, err := generator.Generate("127.0.0.1")
+				generator := ssl.NewKeyPairGenerator(clock, fakeGenerateKey, x509.CreateCertificate, x509.ParseCertificates)
+				_, err := generator.Generate(ca, "127.0.0.1")
 
 				Expect(err).To(MatchError("failed to generate a key"))
 			})
@@ -76,10 +130,21 @@ var _ = Describe("KeyPairGenerator", func() {
 					return nil, errors.New("failed to generate a cert")
 				}
 
-				generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, fakeCreateCertificate)
-				_, err := generator.Generate("127.0.0.1")
+				generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, fakeCreateCertificate, x509.ParseCertificates)
+				_, err := generator.Generate(ca, "127.0.0.1")
 
 				Expect(err).To(MatchError("failed to generate a cert"))
+			})
+
+			It("returns an error when the certificate cannot be created", func() {
+				fakeParseCertificates := func(asn1Data []byte) ([]*x509.Certificate, error) {
+					return nil, errors.New("failed to parse ca cert")
+				}
+
+				generator := ssl.NewKeyPairGenerator(clock, rsa.GenerateKey, x509.CreateCertificate, fakeParseCertificates)
+				_, err := generator.Generate(ca, "127.0.0.1")
+
+				Expect(err).To(MatchError("failed to parse ca cert"))
 			})
 		})
 	})

@@ -40,6 +40,7 @@ var _ = Describe("ManifestBuilder", func() {
 			DirectorPassword: "bosh-password",
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
+			CACommonName:     "BOSH Bootloader",
 			ElasticIP:        "52.0.112.12",
 			AccessKeyID:      "some-access-key-id",
 			SecretAccessKey:  "some-secret-access-key",
@@ -55,6 +56,7 @@ var _ = Describe("ManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("builds the bosh-init manifest and updates the manifest properties", func() {
+			sslKeyPairGenerator.GenerateCACall.Returns.CA = []byte(ca)
 			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
 				Certificate: []byte(certificate),
 				PrivateKey:  []byte(privateKey),
@@ -86,6 +88,10 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("52.0.112.12"))
 			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus-user-some-random-string:mbus-some-random-string@52.0.112.12:6868"))
 
+			Expect(sslKeyPairGenerator.GenerateCACall.Receives.Name).To(Equal("BOSH Bootloader"))
+			Expect(sslKeyPairGenerator.GenerateCACall.CallCount).To(Equal(1))
+
+			Expect(sslKeyPairGenerator.GenerateCall.Receives.CA).To(Equal([]byte(ca)))
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
 
@@ -95,6 +101,7 @@ var _ = Describe("ManifestBuilder", func() {
 					DirectorPassword: "bosh-password",
 					SubnetID:         "subnet-12345",
 					AvailabilityZone: "some-az",
+					CACommonName:     "BOSH Bootloader",
 					ElasticIP:        "52.0.112.12",
 					AccessKeyID:      "some-access-key-id",
 					SecretAccessKey:  "some-secret-access-key",
@@ -205,6 +212,13 @@ var _ = Describe("ManifestBuilder", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when the ca certificate cannot be generated", func() {
+				sslKeyPairGenerator.GenerateCACall.Returns.Error = errors.New("failed to generate ca")
+
+				_, _, err := manifestBuilder.Build(manifestProperties)
+				Expect(err).To(MatchError("failed to generate ca"))
+			})
+
 			It("returns an error when the ssl key pair cannot be generated", func() {
 				sslKeyPairGenerator.GenerateCall.Returns.Error = errors.New("failed to generate key pair")
 
@@ -222,6 +236,7 @@ var _ = Describe("ManifestBuilder", func() {
 						DirectorPassword: "bosh-password",
 						SubnetID:         "subnet-12345",
 						AvailabilityZone: "some-az",
+						CACommonName:     "BOSH Bootloader",
 						ElasticIP:        "52.0.112.12",
 						AccessKeyID:      "some-access-key-id",
 						SecretAccessKey:  "some-secret-access-key",
@@ -246,6 +261,7 @@ var _ = Describe("ManifestBuilder", func() {
 						DirectorPassword: "bosh-password",
 						SubnetID:         "subnet-12345",
 						AvailabilityZone: "some-az",
+						CACommonName:     "BOSH Bootloader",
 						ElasticIP:        "52.0.112.12",
 						AccessKeyID:      "some-access-key-id",
 						SecretAccessKey:  "some-secret-access-key",

@@ -8,7 +8,8 @@ type logger interface {
 }
 
 type sslKeyPairGenerator interface {
-	Generate(commonName string) (ssl.KeyPair, error)
+	Generate(ca []byte, commonName string) (ssl.KeyPair, error)
+	GenerateCA(commonName string) ([]byte, error)
 }
 
 type stringGenerator interface {
@@ -28,6 +29,7 @@ type ManifestProperties struct {
 	DirectorPassword string
 	SubnetID         string
 	AvailabilityZone string
+	CACommonName     string
 	ElasticIP        string
 	AccessKeyID      string
 	SecretAccessKey  string
@@ -64,8 +66,13 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 	diskPoolsManifestBuilder := NewDiskPoolsManifestBuilder()
 	networksManifestBuilder := NewNetworksManifestBuilder()
 
+	ca, err := m.sslKeyPairGenerator.GenerateCA(manifestProperties.CACommonName)
+	if err != nil {
+		return Manifest{}, ManifestProperties{}, err
+	}
+
 	if !manifestProperties.SSLKeyPair.IsValidForIP(manifestProperties.ElasticIP) {
-		keyPair, err := m.sslKeyPairGenerator.Generate(manifestProperties.ElasticIP)
+		keyPair, err := m.sslKeyPairGenerator.Generate(ca, manifestProperties.ElasticIP)
 		if err != nil {
 			return Manifest{}, ManifestProperties{}, err
 		}

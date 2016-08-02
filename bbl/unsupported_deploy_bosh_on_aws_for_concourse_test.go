@@ -1,7 +1,9 @@
 package main_test
 
 import (
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +12,12 @@ import (
 	"path/filepath"
 	"sync"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
@@ -160,6 +165,23 @@ var _ = Describe("bbl", func() {
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+			})
+
+			It("signs bosh-init cert and key with a CA cert with BOSH Bootloader as the common name", func() {
+				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+
+				state := readStateJson(tempDirectory)
+
+				var manifest manifests.Manifest
+				err := yaml.Unmarshal([]byte(state.BOSH.Manifest), &manifest)
+				Expect(err).NotTo(HaveOccurred())
+
+				block, _ := pem.Decode([]byte(manifest.Jobs[0].Properties.Director.SSL.Cert))
+
+				cert, err := x509.ParseCertificate(block.Bytes)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cert.Issuer.CommonName).To(Equal("BOSH Bootloader"))
 			})
 
 			It("can invoke bosh-init idempotently", func() {

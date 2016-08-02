@@ -31,7 +31,7 @@ func main() {
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 	stateStore := storage.NewStore()
-	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate)
+	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate, x509.ParseCertificates)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)

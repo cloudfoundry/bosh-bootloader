@@ -74,6 +74,7 @@ var _ = Describe("Executor", func() {
 		manifestBuilder.BuildCall.Returns.Properties = manifests.ManifestProperties{
 			DirectorUsername: "admin",
 			DirectorPassword: "admin",
+			CACommonName:     "BOSH Bootloader",
 			ElasticIP:        "some-elastic-ip",
 			SSLKeyPair: ssl.KeyPair{
 				Certificate: []byte("updated-certificate"),
@@ -154,6 +155,7 @@ var _ = Describe("Executor", func() {
 				DirectorPassword: "some-password",
 				SubnetID:         "subnet-12345",
 				AvailabilityZone: "some-az",
+				CACommonName:     "BOSH Bootloader",
 				ElasticIP:        "some-elastic-ip",
 				AccessKeyID:      "some-access-key-id",
 				SecretAccessKey:  "some-secret-access-key",

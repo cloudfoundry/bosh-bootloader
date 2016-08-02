@@ -15,22 +15,54 @@ import (
 type clock func() time.Time
 type keyGenerator func(io.Reader, int) (*rsa.PrivateKey, error)
 type certCreator func(rand io.Reader, template, parent *x509.Certificate, pub, priv interface{}) ([]byte, error)
+type certParser func(asn1Data []byte) ([]*x509.Certificate, error)
 
 type KeyPairGenerator struct {
 	getTime           clock
 	generateKey       keyGenerator
 	createCertificate certCreator
+	parseCertificates certParser
 }
 
-func NewKeyPairGenerator(clock clock, keyGenerator keyGenerator, certCreator certCreator) KeyPairGenerator {
+func NewKeyPairGenerator(clock clock, keyGenerator keyGenerator, certCreator certCreator, certParser certParser) KeyPairGenerator {
 	return KeyPairGenerator{
 		getTime:           clock,
 		generateKey:       keyGenerator,
 		createCertificate: certCreator,
+		parseCertificates: certParser,
 	}
 }
 
-func (g KeyPairGenerator) Generate(commonName string) (KeyPair, error) {
+func (g KeyPairGenerator) GenerateCA(commonName string) ([]byte, error) {
+	now := g.getTime()
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1234),
+		Subject: pkix.Name{
+			Country:      []string{"USA"},
+			Organization: []string{"Cloud Foundry"},
+			CommonName:   commonName,
+		},
+		NotBefore:             now,
+		NotAfter:              now.AddDate(2, 0, 0),
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageKeyEncipherment,
+		BasicConstraintsValid: true,
+		IsCA: true,
+	}
+
+	privatekey, err := g.generateKey(rand.Reader, 2048)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	cert, err := g.createCertificate(rand.Reader, &template, &template, &privatekey.PublicKey, privatekey)
+	if err != nil {
+		return []byte{}, err
+	}
+	return cert, nil
+}
+
+func (g KeyPairGenerator) Generate(ca []byte, commonName string) (KeyPair, error) {
 	now := g.getTime()
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1234),
@@ -53,7 +85,14 @@ func (g KeyPairGenerator) Generate(commonName string) (KeyPair, error) {
 		return KeyPair{}, err
 	}
 
-	cert, err := g.createCertificate(rand.Reader, &template, &template, &privatekey.PublicKey, privatekey)
+	parsedCerts, err := g.parseCertificates(ca)
+	if err != nil {
+		return KeyPair{}, err
+	}
+
+	caCert := parsedCerts[0]
+
+	cert, err := g.createCertificate(rand.Reader, &template, caCert, &privatekey.PublicKey, privatekey)
 	if err != nil {
 		return KeyPair{}, err
 	}

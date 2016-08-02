@@ -5,11 +5,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	BOSH_BOOTLOADER_COMMON_NAME = "BOSH Bootloader"
+)
+
 type Executor struct {
 	manifestBuilder manifestBuilder
-	deployCommand   command
-	deleteCommand   command
-	logger          logger
+
+	deployCommand command
+	deleteCommand command
+	logger        logger
 }
 
 type logger interface {
@@ -51,6 +56,7 @@ func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 		DirectorPassword: input.DirectorPassword,
 		SubnetID:         input.InfrastructureConfiguration.SubnetID,
 		AvailabilityZone: input.InfrastructureConfiguration.AvailabilityZone,
+		CACommonName:     BOSH_BOOTLOADER_COMMON_NAME,
 		ElasticIP:        input.InfrastructureConfiguration.ElasticIP,
 		AccessKeyID:      input.InfrastructureConfiguration.AccessKeyID,
 		SecretAccessKey:  input.InfrastructureConfiguration.SecretAccessKey,
