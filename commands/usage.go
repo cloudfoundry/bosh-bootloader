@@ -23,18 +23,18 @@ Global Options:
 
 Commands:
   destroy [--no-confirm]                                                                                      "tears down a BOSH Director environment on AWS"
-  director-address                                                                                            "print the BOSH director address"
-  director-password                                                                                           "print the BOSH director password"
-  director-username                                                                                           "print the BOSH director username"
+  director-address                                                                                            "prints the BOSH director address"
+  director-username                                                                                           "prints the BOSH director username"
+  director-password                                                                                           "prints the BOSH director password"
   bosh-ca-cert                                                                                                "prints the BOSH director CA certificate"
-  help                                                                                                        "print usage"
+  help                                                                                                        "prints usage"
   lbs                                                                                                         "prints any attached load balancers"
-  ssh-key                                                                                                     "print the ssh private key"
+  ssh-key                                                                                                     "prints the ssh private key"
   unsupported-create-lbs --type=<concourse,cf> --cert=<path> --key=<path> [--chain=<path>] [--skip-if-exists] "attaches a load balancer with the supplied certificate, key, and optional chain"
   unsupported-update-lbs --cert=<path> --key=<path> [--chain=<path>] [--skip-if-missing]                      "updates a load balancer with the supplied certificate, key, and optional chain"
   unsupported-delete-lbs [--skip-if-missing]                                                                  "deletes the attached load balancer"
   unsupported-deploy-bosh-on-aws-for-concourse                                                                "deploys a BOSH Director on AWS"
-  version                                                                                                     "print version"
+  version                                                                                                     "prints version"
 `
 
 type Usage struct {
@@ -51,5 +51,5 @@ func (u Usage) Execute(subcommandFlags []string, state storage.State) (storage.S
 }
 
 func (u Usage) Print() {
-	fmt.Fprint(u.stdout, strings.TrimSpace(USAGE))
+	fmt.Fprint(u.stdout, strings.TrimLeft(USAGE, "\n"))
 }
