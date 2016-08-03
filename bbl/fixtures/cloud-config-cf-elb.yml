@@ -14,7 +14,7 @@ compilation:
   network: private
   reuse_compilation_vms: true
   vm_type: c3.large
-  workers: 3
+  workers: 6
   vm_extensions:
   - 100GB_ephemeral_disk
 

@@ -264,7 +264,7 @@ disk_types:
     encrypted: true
 
 compilation:
-  workers: 3
+  workers: 6
   network: private
   az: z1
   reuse_compilation_vms: true
