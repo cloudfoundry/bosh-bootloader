@@ -90,7 +90,7 @@ var _ = Describe("KeyPairGenerator", func() {
 			p, rest := pem.Decode(keyPair.CA)
 			Expect(p).NotTo(BeNil())
 			Expect(p.Bytes).To(Equal(ca))
-			Expect(p.Type).To(Equal("CA"))
+			Expect(p.Type).To(Equal("CERTIFICATE"))
 			Expect(rest).To(HaveLen(0))
 
 			tlsCert, err := tls.X509KeyPair(keyPair.Certificate, keyPair.PrivateKey)

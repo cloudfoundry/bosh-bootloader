@@ -44,8 +44,7 @@ func (g KeyPairGenerator) GenerateCA(commonName string) ([]byte, error) {
 		},
 		NotBefore:             now,
 		NotAfter:              now.AddDate(2, 0, 0),
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageKeyEncipherment,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 		IsCA: true,
 	}
@@ -100,7 +99,7 @@ func (g KeyPairGenerator) Generate(ca []byte, commonName string) (KeyPair, error
 
 	return KeyPair{
 		CA: pem.EncodeToMemory(&pem.Block{
-			Type:  "CA",
+			Type:  "CERTIFICATE",
 			Bytes: ca,
 		}),
 		Certificate: pem.EncodeToMemory(&pem.Block{
