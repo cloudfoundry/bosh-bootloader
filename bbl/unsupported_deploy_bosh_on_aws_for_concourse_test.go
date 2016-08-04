@@ -12,12 +12,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
@@ -172,15 +169,20 @@ var _ = Describe("bbl", func() {
 
 				state := readStateJson(tempDirectory)
 
-				var manifest manifests.Manifest
-				err := yaml.Unmarshal([]byte(state.BOSH.Manifest), &manifest)
+				caBlock, rest := pem.Decode([]byte(state.BOSH.DirectorSSLCA))
+				Expect(rest).To(HaveLen(0))
+				ca, err := x509.ParseCertificate(caBlock.Bytes)
 				Expect(err).NotTo(HaveOccurred())
 
-				block, _ := pem.Decode([]byte(manifest.Jobs[0].Properties.Director.SSL.Cert))
+				Expect(caBlock.Type).To(Equal("CERTIFICATE"))
+				Expect(ca.Subject.CommonName).To(Equal("BOSH Bootloader"))
 
-				cert, err := x509.ParseCertificate(block.Bytes)
+				certBlock, rest := pem.Decode([]byte(state.BOSH.DirectorSSLCertificate))
+				Expect(rest).To(HaveLen(0))
+				cert, err := x509.ParseCertificate(certBlock.Bytes)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(certBlock.Type).To(Equal("CERTIFICATE"))
 				Expect(cert.Issuer.CommonName).To(Equal("BOSH Bootloader"))
 			})
 
