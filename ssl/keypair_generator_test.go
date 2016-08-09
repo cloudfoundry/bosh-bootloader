@@ -31,13 +31,9 @@ var _ = Describe("KeyPairGenerator", func() {
 		privateKey *rsa.PrivateKey
 		publicKey  *rsa.PublicKey
 
-		ca         *certstrappkix.Certificate
-		csr        *certstrappkix.CertificateSigningRequest
-		signedCert *certstrappkix.Certificate
-		key        *certstrappkix.Key
-
-		exportedCA   []byte
-		exportedCert []byte
+		ca                *certstrappkix.Certificate
+		csr               *certstrappkix.CertificateSigningRequest
+		signedCertificate *certstrappkix.Certificate
 	)
 
 	BeforeEach(func() {
@@ -52,44 +48,24 @@ var _ = Describe("KeyPairGenerator", func() {
 		)
 
 		var err error
-		keyBlock, _ := pem.Decode([]byte(caPrivateKeyPEM))
-		caPrivateKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+		caPrivateKey, caPublicKey, err = decodeAndParsePrivateKey(caPrivateKeyPEM)
 		Expect(err).NotTo(HaveOccurred())
 
-		caPublicKey = &caPrivateKey.PublicKey
-		caKey := &certstrappkix.Key{
-			Private: caPrivateKey,
-			Public:  caPublicKey,
-		}
-
-		keyBlock, _ = pem.Decode([]byte(privateKeyPEM))
-		privateKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+		privateKey, publicKey, err = decodeAndParsePrivateKey(privateKeyPEM)
 		Expect(err).NotTo(HaveOccurred())
 
-		publicKey = &privateKey.PublicKey
-		key = &certstrappkix.Key{
-			Private: privateKey,
-			Public:  publicKey,
-		}
-
-		ca, err = certstrappkix.CreateCertificateAuthority(caKey, "Cloud Foundry", 2, "Cloud Foundry", "USA", "CA", "San Francisco", "BOSH Bootloader")
+		ca, err = certstrappkix.NewCertificateFromPEM([]byte(caPEM))
 		Expect(err).NotTo(HaveOccurred())
 
-		exportedCA, err = ca.Export()
+		csr, err = certstrappkix.NewCertificateSigningRequestFromPEM([]byte(csrPEM))
 		Expect(err).NotTo(HaveOccurred())
 
-		csr, err = certstrappkix.CreateCertificateSigningRequest(key, "Cloud Foundry", []net.IP{net.ParseIP("127.0.0.1")}, nil, "Cloud Foundry", "USA", "CA", "San Francisco", "127.0.0.1")
-		Expect(err).NotTo(HaveOccurred())
-
-		signedCert, err = certstrappkix.CreateCertificateHost(ca, caKey, csr, 2)
-		Expect(err).NotTo(HaveOccurred())
-
-		exportedCert, err = signedCert.Export()
+		signedCertificate, err = certstrappkix.NewCertificateFromPEM([]byte(certificatePEM))
 		Expect(err).NotTo(HaveOccurred())
 
 		fakeCertstrapPKIX.CreateCertificateAuthorityCall.Returns.Certificate = ca
 		fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Returns.CertificateSigningRequest = csr
-		fakeCertstrapPKIX.CreateCertificateHostCall.Returns.Certificate = signedCert
+		fakeCertstrapPKIX.CreateCertificateHostCall.Returns.Certificate = signedCertificate
 
 		fakePrivateKeyGenerator.GenerateKeyCall.Stub = func() (*rsa.PrivateKey, error) {
 			if fakePrivateKeyGenerator.GenerateKeyCall.CallCount == 0 {
@@ -141,8 +117,8 @@ var _ = Describe("KeyPairGenerator", func() {
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.Csr).To(Equal(csr))
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.Years).To(Equal(2))
 
-			Expect(generatedKeyPair.CA).To(Equal(exportedCA))
-			Expect(generatedKeyPair.Certificate).To(Equal(exportedCert))
+			Expect(strings.TrimSpace(string(generatedKeyPair.CA))).To(Equal(caPEM))
+			Expect(strings.TrimSpace(string(generatedKeyPair.Certificate))).To(Equal(certificatePEM))
 			Expect(strings.TrimSpace(string(generatedKeyPair.PrivateKey))).To(Equal(privateKeyPEM))
 		})
 
@@ -195,3 +171,13 @@ var _ = Describe("KeyPairGenerator", func() {
 		})
 	})
 })
+
+func decodeAndParsePrivateKey(privateKeyPEM string) (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	keyBlock, _ := pem.Decode([]byte(privateKeyPEM))
+	privateKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return privateKey, &privateKey.PublicKey, nil
+}
