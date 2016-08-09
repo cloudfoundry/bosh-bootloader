@@ -14,10 +14,11 @@ import (
 
 var _ = Describe("load balancer tests", func() {
 	var (
-		bbl   actors.BBL
-		aws   actors.AWS
-		bosh  actors.BOSH
-		state integration.State
+		bbl     actors.BBL
+		aws     actors.AWS
+		bosh    actors.BOSH
+		boshcli actors.BOSHCLI
+		state   integration.State
 	)
 
 	BeforeEach(func() {
@@ -28,6 +29,7 @@ var _ = Describe("load balancer tests", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
 		aws = actors.NewAWS(configuration)
 		bosh = actors.NewBOSH()
+		boshcli = actors.NewBOSHCLI()
 		state = integration.NewState(configuration.StateFileDir)
 
 	})
@@ -37,12 +39,11 @@ var _ = Describe("load balancer tests", func() {
 
 		stackName := state.StackName()
 		directorAddress := bbl.DirectorAddress()
-		directorUsername := bbl.DirectorUsername()
-		directorPassword := bbl.DirectorPassword()
+		caCertPath := bbl.SaveDirectorCA()
 
 		Expect(aws.StackExists(stackName)).To(BeTrue())
 		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
-		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeTrue())
+		Expect(boshcli.DirectorExists(directorAddress, caCertPath)).To(BeTrue())
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
@@ -79,7 +80,7 @@ var _ = Describe("load balancer tests", func() {
 		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(BeEmpty())
 
 		bbl.Destroy()
-		Expect(bosh.DirectorExists(directorAddress, directorUsername, directorPassword)).To(BeFalse())
+		Expect(boshcli.DirectorExists(directorAddress, caCertPath)).To(BeFalse())
 		Expect(aws.StackExists(stackName)).To(BeFalse())
 	})
 })

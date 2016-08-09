@@ -3,6 +3,7 @@ package actors
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -46,6 +47,23 @@ func (b BBL) Destroy() {
 		"--no-confirm",
 	}, os.Stdout, os.Stderr)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+}
+
+func (b BBL) SaveDirectorCA() string {
+	stdout := bytes.NewBuffer([]byte{})
+	session := b.execute([]string{
+		"--state-dir", b.stateDirectory,
+		"bosh-ca-cert",
+	}, stdout, os.Stderr)
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
+	file, err := ioutil.TempFile("", "")
+	defer file.Close()
+	Expect(err).NotTo(HaveOccurred())
+
+	file.Write(stdout.Bytes())
+
+	return file.Name()
 }
 
 func (b BBL) DirectorUsername() string {
