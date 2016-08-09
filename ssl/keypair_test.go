@@ -1,9 +1,10 @@
 package ssl_test
 
 import (
+	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 )
 
 var _ = Describe("KeyPair", func() {
@@ -33,8 +34,8 @@ var _ = Describe("KeyPair", func() {
 
 		It("returns false if the keypair is not empty", func() {
 			keyPair := ssl.KeyPair{
-				Certificate: []byte(certificate),
-				PrivateKey:  []byte(privateKey),
+				Certificate: []byte(certificatePEM),
+				PrivateKey:  []byte(privateKeyPEM),
 			}
 
 			Expect(keyPair.IsValidForIP("127.0.0.1")).To(BeFalse())
@@ -45,8 +46,8 @@ var _ = Describe("KeyPair", func() {
 			Context("when the cert cannot be decoded", func() {
 				It("returns false", func() {
 					keyPair := ssl.KeyPair{
-						Certificate: []byte(privateKey),
-						PrivateKey:  []byte(certificate),
+						Certificate: []byte(privateKeyPEM),
+						PrivateKey:  []byte(certificatePEM),
 					}
 
 					Expect(keyPair.IsValidForIP("52.0.112.12")).To(BeFalse())

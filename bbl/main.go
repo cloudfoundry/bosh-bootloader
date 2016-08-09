@@ -3,12 +3,10 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
@@ -23,6 +21,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/helpers"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/square/certstrap/pkix"
 )
 
 func main() {
@@ -31,7 +30,7 @@ func main() {
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 	stateStore := storage.NewStore()
-	sslKeyPairGenerator := ssl.NewKeyPairGenerator(time.Now, rsa.GenerateKey, x509.CreateCertificate, x509.ParseCertificates)
+	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost, pkix.NewCertificateFromPEM)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)

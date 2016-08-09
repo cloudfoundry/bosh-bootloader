@@ -164,26 +164,28 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 			})
 
-			It("signs bosh-init cert and key with a CA cert with BOSH Bootloader as the common name", func() {
+			It("signs bosh-init cert and key with the generated CA cert", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
-				caBlock, rest := pem.Decode([]byte(state.BOSH.DirectorSSLCA))
+				caCert := state.BOSH.DirectorSSLCA
+				cert := state.BOSH.DirectorSSLCertificate
+
+				rawCACertBlock, rest := pem.Decode([]byte(caCert))
 				Expect(rest).To(HaveLen(0))
-				ca, err := x509.ParseCertificate(caBlock.Bytes)
+
+				rawCertBlock, rest := pem.Decode([]byte(cert))
+				Expect(rest).To(HaveLen(0))
+
+				rawCACert, err := x509.ParseCertificate(rawCACertBlock.Bytes)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(caBlock.Type).To(Equal("CERTIFICATE"))
-				Expect(ca.Subject.CommonName).To(Equal("BOSH Bootloader"))
-
-				certBlock, rest := pem.Decode([]byte(state.BOSH.DirectorSSLCertificate))
-				Expect(rest).To(HaveLen(0))
-				cert, err := x509.ParseCertificate(certBlock.Bytes)
+				rawCert, err := x509.ParseCertificate(rawCertBlock.Bytes)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(certBlock.Type).To(Equal("CERTIFICATE"))
-				Expect(cert.Issuer.CommonName).To(Equal("BOSH Bootloader"))
+				err = rawCert.CheckSignatureFrom(rawCACert)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("can invoke bosh-init idempotently", func() {

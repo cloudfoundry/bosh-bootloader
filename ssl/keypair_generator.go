@@ -4,111 +4,129 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"io"
-	"math/big"
 	"net"
-	"time"
+
+	certstrappkix "github.com/square/certstrap/pkix"
 )
 
-type clock func() time.Time
 type keyGenerator func(io.Reader, int) (*rsa.PrivateKey, error)
-type certCreator func(rand io.Reader, template, parent *x509.Certificate, pub, priv interface{}) ([]byte, error)
-type certParser func(asn1Data []byte) ([]*x509.Certificate, error)
+type createCertificateAuthority func(key *certstrappkix.Key, organizationalUnit string, years int, organization string, country string, province string, locality string, commonName string) (*certstrappkix.Certificate, error)
+type createCertificateSigningRequest func(key *certstrappkix.Key, organizationalUnit string, ipList []net.IP, domainList []string, organization string, country string, province string, locality string, commonName string) (*certstrappkix.CertificateSigningRequest, error)
+type createCertificateHost func(crtAuth *certstrappkix.Certificate, keyAuth *certstrappkix.Key, csr *certstrappkix.CertificateSigningRequest, years int) (*certstrappkix.Certificate, error)
+type newCertificateFromPEM func(pemCertificate []byte) (*certstrappkix.Certificate, error)
 
 type KeyPairGenerator struct {
-	getTime           clock
-	generateKey       keyGenerator
-	createCertificate certCreator
-	parseCertificates certParser
+	generateKey                     keyGenerator
+	createCertificateAuthority      createCertificateAuthority
+	createCertificateSigningRequest createCertificateSigningRequest
+	createCertificateHost           createCertificateHost
+	newCertificateFromPEM           newCertificateFromPEM
 }
 
-func NewKeyPairGenerator(clock clock, keyGenerator keyGenerator, certCreator certCreator, certParser certParser) KeyPairGenerator {
+type CAData struct {
+	CA         []byte
+	PrivateKey []byte
+}
+
+func NewKeyPairGenerator(
+	keyGenerator keyGenerator,
+	createCertificateAuthority createCertificateAuthority,
+	createCertificateSigningRequest createCertificateSigningRequest,
+	createCertificateHost createCertificateHost,
+	newCertificateFromPEM newCertificateFromPEM,
+) KeyPairGenerator {
 	return KeyPairGenerator{
-		getTime:           clock,
-		generateKey:       keyGenerator,
-		createCertificate: certCreator,
-		parseCertificates: certParser,
+		generateKey:                     keyGenerator,
+		createCertificateAuthority:      createCertificateAuthority,
+		createCertificateSigningRequest: createCertificateSigningRequest,
+		createCertificateHost:           createCertificateHost,
+		newCertificateFromPEM:           newCertificateFromPEM,
 	}
 }
 
-func (g KeyPairGenerator) GenerateCA(commonName string) ([]byte, error) {
-	now := g.getTime()
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1234),
-		Subject: pkix.Name{
-			Country:      []string{"USA"},
-			Organization: []string{"Cloud Foundry"},
-			CommonName:   commonName,
-		},
-		NotBefore:             now,
-		NotAfter:              now.AddDate(2, 0, 0),
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		BasicConstraintsValid: true,
-		IsCA: true,
-	}
-
-	privatekey, err := g.generateKey(rand.Reader, 2048)
+func (g KeyPairGenerator) GenerateCA(commonName string) (CAData, error) {
+	privateKey, err := g.generateKey(rand.Reader, 2048)
 	if err != nil {
-		return []byte{}, err
+		return CAData{}, err
 	}
 
-	cert, err := g.createCertificate(rand.Reader, &template, &template, &privatekey.PublicKey, privatekey)
+	key := certstrappkix.NewKey(&privateKey.PublicKey, privateKey)
+
+	cert, err := g.createCertificateAuthority(key, "Cloud Foundry", 2, "Cloud Foundry", "USA", "CA", "San Francisco", commonName)
 	if err != nil {
-		return []byte{}, err
+		return CAData{}, err
 	}
 
-	return cert, nil
+	pemCertificate, err := cert.Export()
+	if err != nil {
+		return CAData{}, err
+	}
+
+	return CAData{
+		CA: pemCertificate,
+		PrivateKey: pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+		}),
+	}, nil
 }
 
-func (g KeyPairGenerator) Generate(ca []byte, commonName string) (KeyPair, error) {
-	now := g.getTime()
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1234),
-		Subject: pkix.Name{
-			Country:      []string{"USA"},
-			Organization: []string{"Cloud Foundry"},
-			CommonName:   commonName,
-		},
-		NotBefore:   now,
-		NotAfter:    now.AddDate(2, 0, 0),
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		KeyUsage:    x509.KeyUsageKeyEncipherment,
-		IPAddresses: []net.IP{
-			net.ParseIP(commonName),
-		},
-	}
-
-	privatekey, err := g.generateKey(rand.Reader, 2048)
+func (g KeyPairGenerator) Generate(caData CAData, commonName string) (KeyPair, error) {
+	privateKey, err := g.generateKey(rand.Reader, 2048)
 	if err != nil {
 		return KeyPair{}, err
 	}
 
-	parsedCerts, err := g.parseCertificates(ca)
+	certKey := certstrappkix.Key{
+		Private: privateKey,
+		Public:  &privateKey.PublicKey,
+	}
+
+	ipList := []net.IP{
+		net.ParseIP(commonName),
+	}
+
+	csr, err := g.createCertificateSigningRequest(&certKey, "Cloud Foundry", ipList, nil, "Cloud Foundry",
+		"USA", "CA", "San Francisco", commonName)
 	if err != nil {
 		return KeyPair{}, err
 	}
 
-	caCert := parsedCerts[0]
+	caCertificate, err := g.newCertificateFromPEM(caData.CA)
+	if err != nil {
+		return KeyPair{}, err
+	}
 
-	cert, err := g.createCertificate(rand.Reader, &template, caCert, &privatekey.PublicKey, privatekey)
+	caPrivateKeyDER, _ := pem.Decode(caData.PrivateKey)
+
+	decodedCAPrivateKey, err := x509.ParsePKCS1PrivateKey(caPrivateKeyDER.Bytes)
+	if err != nil {
+		return KeyPair{}, err
+	}
+
+	caKey := certstrappkix.Key{
+		Private: decodedCAPrivateKey,
+		Public:  &decodedCAPrivateKey.PublicKey,
+	}
+
+	signedCert, err := g.createCertificateHost(caCertificate, &caKey, csr, 2)
+	if err != nil {
+		return KeyPair{}, err
+	}
+
+	pemCertificate, err := signedCert.Export()
 	if err != nil {
 		return KeyPair{}, err
 	}
 
 	return KeyPair{
-		CA: pem.EncodeToMemory(&pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: ca,
-		}),
-		Certificate: pem.EncodeToMemory(&pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: cert,
-		}),
+		CA:          caData.CA,
+		Certificate: pemCertificate,
 		PrivateKey: pem.EncodeToMemory(&pem.Block{
 			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(privatekey),
+			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 		}),
 	}, nil
 }

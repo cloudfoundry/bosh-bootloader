@@ -56,7 +56,10 @@ var _ = Describe("ManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("builds the bosh-init manifest and updates the manifest properties", func() {
-			sslKeyPairGenerator.GenerateCACall.Returns.CA = []byte(ca)
+			sslKeyPairGenerator.GenerateCACall.Returns.CAData = ssl.CAData{
+				CA:         []byte(ca),
+				PrivateKey: []byte(privateKey),
+			}
 			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
 				Certificate: []byte(certificate),
 				PrivateKey:  []byte(privateKey),
@@ -91,7 +94,10 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(sslKeyPairGenerator.GenerateCACall.Receives.Name).To(Equal("BOSH Bootloader"))
 			Expect(sslKeyPairGenerator.GenerateCACall.CallCount).To(Equal(1))
 
-			Expect(sslKeyPairGenerator.GenerateCall.Receives.CA).To(Equal([]byte(ca)))
+			Expect(sslKeyPairGenerator.GenerateCall.Receives.CAData).To(Equal(ssl.CAData{
+				CA:         []byte(ca),
+				PrivateKey: []byte(privateKey),
+			}))
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.Name).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
 
