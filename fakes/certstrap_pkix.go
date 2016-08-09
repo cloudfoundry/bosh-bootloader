@@ -58,17 +58,6 @@ type CertstrapPKIX struct {
 			Error       error
 		}
 	}
-
-	NewCertificateFromPEMCall struct {
-		CallCount int
-		Receives  struct {
-			PEMCertificate []byte
-		}
-		Returns struct {
-			Certificate *certstrappkix.Certificate
-			Error       error
-		}
-	}
 }
 
 func (c *CertstrapPKIX) CreateCertificateAuthority(key *certstrappkix.Key, organizationalUnit string, years int, organization string, country string, province string, locality string, commonName string) (*certstrappkix.Certificate, error) {
@@ -110,12 +99,4 @@ func (c *CertstrapPKIX) CreateCertificateHost(crtAuth *certstrappkix.Certificate
 	c.CreateCertificateHostCall.Receives.Years = years
 
 	return c.CreateCertificateHostCall.Returns.Certificate, c.CreateCertificateHostCall.Returns.Error
-}
-
-func (c *CertstrapPKIX) NewCertificateFromPEM(pemCertificate []byte) (*certstrappkix.Certificate, error) {
-	c.NewCertificateFromPEMCall.CallCount++
-
-	c.NewCertificateFromPEMCall.Receives.PEMCertificate = pemCertificate
-
-	return c.NewCertificateFromPEMCall.Returns.Certificate, c.NewCertificateFromPEMCall.Returns.Error
 }

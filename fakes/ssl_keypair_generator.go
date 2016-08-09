@@ -12,34 +12,15 @@ type SSLKeyPairGenerator struct {
 		}
 
 		Receives struct {
-			CAData ssl.CAData
-			Name   string
-		}
-	}
-
-	GenerateCACall struct {
-		CallCount int
-
-		Returns struct {
-			CAData ssl.CAData
-			Error  error
-		}
-
-		Receives struct {
-			Name string
+			CACommonName   string
+			CertCommonName string
 		}
 	}
 }
 
-func (c *SSLKeyPairGenerator) Generate(caData ssl.CAData, name string) (ssl.KeyPair, error) {
+func (c *SSLKeyPairGenerator) Generate(caCommonName, certCommonName string) (ssl.KeyPair, error) {
 	c.GenerateCall.CallCount++
-	c.GenerateCall.Receives.CAData = caData
-	c.GenerateCall.Receives.Name = name
+	c.GenerateCall.Receives.CACommonName = caCommonName
+	c.GenerateCall.Receives.CertCommonName = certCommonName
 	return c.GenerateCall.Returns.KeyPair, c.GenerateCall.Returns.Error
-}
-
-func (c *SSLKeyPairGenerator) GenerateCA(name string) (ssl.CAData, error) {
-	c.GenerateCACall.CallCount++
-	c.GenerateCACall.Receives.Name = name
-	return c.GenerateCACall.Returns.CAData, c.GenerateCACall.Returns.Error
 }

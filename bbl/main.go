@@ -30,7 +30,7 @@ func main() {
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 	stateStore := storage.NewStore()
-	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost, pkix.NewCertificateFromPEM)
+	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)

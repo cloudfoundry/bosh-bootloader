@@ -49,7 +49,6 @@ var _ = Describe("KeyPairGenerator", func() {
 			fakeCertstrapPKIX.CreateCertificateAuthority,
 			fakeCertstrapPKIX.CreateCertificateSigningRequest,
 			fakeCertstrapPKIX.CreateCertificateHost,
-			fakeCertstrapPKIX.NewCertificateFromPEM,
 		)
 
 		var err error
@@ -91,24 +90,28 @@ var _ = Describe("KeyPairGenerator", func() {
 		fakeCertstrapPKIX.CreateCertificateAuthorityCall.Returns.Certificate = ca
 		fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Returns.CertificateSigningRequest = csr
 		fakeCertstrapPKIX.CreateCertificateHostCall.Returns.Certificate = signedCert
-		fakeCertstrapPKIX.NewCertificateFromPEMCall.Returns.Certificate = ca
+
+		fakePrivateKeyGenerator.GenerateKeyCall.Stub = func() (*rsa.PrivateKey, error) {
+			if fakePrivateKeyGenerator.GenerateKeyCall.CallCount == 0 {
+				return caPrivateKey, nil
+			}
+
+			return privateKey, nil
+		}
 	})
 
-	Describe("GenerateCA", func() {
-		BeforeEach(func() {
-			fakePrivateKeyGenerator.GenerateKeyCall.Returns.PrivateKey = caPrivateKey
-		})
-
-		It("generates an SSL CA certificate", func() {
-			generatedCA, err := generator.GenerateCA("BOSH Bootloader")
+	Describe("Generate", func() {
+		It("generates an SSL certificate signed by generated CA", func() {
+			generatedKeyPair, err := generator.Generate("BOSH Bootloader", "127.0.0.1")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(fakePrivateKeyGenerator.GenerateKeyCall.CallCount).To(Equal(1))
-			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives.Random).To(Equal(rand.Reader))
-			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives.Bits).To(Equal(2048))
+			Expect(fakePrivateKeyGenerator.GenerateKeyCall.CallCount).To(Equal(2))
+			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives[0].Random).To(Equal(rand.Reader))
+			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives[0].Bits).To(Equal(2048))
+			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives[1].Random).To(Equal(rand.Reader))
+			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives[1].Bits).To(Equal(2048))
 
 			Expect(fakeCertstrapPKIX.CreateCertificateAuthorityCall.CallCount).To(Equal(1))
-
 			Expect(fakeCertstrapPKIX.CreateCertificateAuthorityCall.Receives.Key.Private).To(Equal(caPrivateKey))
 			Expect(fakeCertstrapPKIX.CreateCertificateAuthorityCall.Receives.Key.Public).To(Equal(caPublicKey))
 			Expect(fakeCertstrapPKIX.CreateCertificateAuthorityCall.Receives.OrganizationalUnit).To(Equal("Cloud Foundry"))
@@ -119,47 +122,6 @@ var _ = Describe("KeyPairGenerator", func() {
 			Expect(fakeCertstrapPKIX.CreateCertificateAuthorityCall.Receives.Locality).To(Equal("San Francisco"))
 			Expect(fakeCertstrapPKIX.CreateCertificateAuthorityCall.Receives.CommonName).To(Equal("BOSH Bootloader"))
 
-			Expect(generatedCA.CA).To(Equal(exportedCA))
-			Expect(strings.TrimSpace(string(generatedCA.PrivateKey))).To(Equal(caPrivateKeyPEM))
-		})
-
-		Context("failure cases", func() {
-			It("errors when private key generation fails", func() {
-				fakePrivateKeyGenerator.GenerateKeyCall.Returns.Error = errors.New("private key generation failed")
-
-				_, err := generator.GenerateCA("BOSH Bootloader")
-				Expect(err).To(MatchError("private key generation failed"))
-			})
-
-			It("errors when create certificate authority fails", func() {
-				fakeCertstrapPKIX.CreateCertificateAuthorityCall.Returns.Error = errors.New("create certificate authority failed")
-
-				_, err := generator.GenerateCA("BOSH Bootloader")
-				Expect(err).To(MatchError("create certificate authority failed"))
-			})
-		})
-	})
-
-	Describe("Generate", func() {
-		var (
-			generatedCA ssl.CAData
-		)
-
-		BeforeEach(func() {
-			var err error
-			fakePrivateKeyGenerator.GenerateKeyCall.Returns.PrivateKey = caPrivateKey
-			generatedCA, err = generator.GenerateCA("BOSH Bootloader")
-			Expect(err).NotTo(HaveOccurred())
-
-			fakePrivateKeyGenerator.GenerateKeyCall.Returns.PrivateKey = privateKey
-		})
-
-		It("generates an SSL certificate signed by generated CA", func() {
-			generatedKeyPair, err := generator.Generate(generatedCA, "127.0.0.1")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakePrivateKeyGenerator.GenerateKeyCall.CallCount).To(Equal(2))
-			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives.Random).To(Equal(rand.Reader))
-			Expect(fakePrivateKeyGenerator.GenerateKeyCall.Receives.Bits).To(Equal(2048))
 			Expect(fakeCertstrapPKIX.CreateCertificateSigningRequestCall.CallCount).To(Equal(1))
 			Expect(fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Receives.Key.Private).To(Equal(privateKey))
 			Expect(fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Receives.Key.Public).To(Equal(publicKey))
@@ -173,64 +135,62 @@ var _ = Describe("KeyPairGenerator", func() {
 			Expect(fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Receives.CommonName).To(Equal("127.0.0.1"))
 
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.CallCount).To(Equal(1))
-
-			csr := fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Returns.CertificateSigningRequest
-
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.CrtAuth).To(Equal(ca))
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.KeyAuth.Private).To(Equal(caPrivateKey))
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.KeyAuth.Public).To(Equal(caPublicKey))
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.Csr).To(Equal(csr))
 			Expect(fakeCertstrapPKIX.CreateCertificateHostCall.Receives.Years).To(Equal(2))
 
-			Expect(generatedKeyPair.CA).To(Equal(generatedCA.CA))
+			Expect(generatedKeyPair.CA).To(Equal(exportedCA))
 			Expect(generatedKeyPair.Certificate).To(Equal(exportedCert))
-
-			pkeyDER, rest := pem.Decode(generatedKeyPair.PrivateKey)
-			Expect(rest).To(HaveLen(0))
-
-			decodedPrivateKey, err := x509.ParsePKCS1PrivateKey(pkeyDER.Bytes)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = decodedPrivateKey.Validate()
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(privateKey).To(Equal(decodedPrivateKey))
+			Expect(strings.TrimSpace(string(generatedKeyPair.PrivateKey))).To(Equal(privateKeyPEM))
 		})
 
 		Context("failure cases", func() {
-			It("errors when private key generation fails", func() {
-				fakePrivateKeyGenerator.GenerateKeyCall.Returns.Error = errors.New("private key generation failed")
+			Context("when private key generation fails for CA", func() {
+				It("returns error", func() {
+					fakePrivateKeyGenerator.GenerateKeyCall.Stub = func() (*rsa.PrivateKey, error) {
+						return nil, errors.New("private key generation failed for ca")
+					}
 
-				_, err := generator.Generate(generatedCA, "127.0.0.1")
-				Expect(err).To(MatchError("private key generation failed"))
+					_, err := generator.Generate("", "127.0.0.1")
+					Expect(err).To(MatchError("private key generation failed for ca"))
+				})
 			})
 
-			It("errors when createCertificateSigningRequest fails", func() {
+			Context("when private key generation fails for certificate", func() {
+				It("returns error", func() {
+					fakePrivateKeyGenerator.GenerateKeyCall.Stub = func() (*rsa.PrivateKey, error) {
+						if fakePrivateKeyGenerator.GenerateKeyCall.CallCount != 0 {
+							return nil, errors.New("private key generation failed for certificate")
+						}
+						return privateKey, nil
+					}
+
+					_, err := generator.Generate("", "127.0.0.1")
+					Expect(err).To(MatchError("private key generation failed for certificate"))
+				})
+			})
+
+			It("errors when create certificate authority fails", func() {
+				fakeCertstrapPKIX.CreateCertificateAuthorityCall.Returns.Error = errors.New("create certificate authority failed")
+
+				_, err := generator.Generate("", "127.0.0.1")
+				Expect(err).To(MatchError("create certificate authority failed"))
+			})
+
+			It("errors when create certificate signing request fails", func() {
 				fakeCertstrapPKIX.CreateCertificateSigningRequestCall.Returns.Error = errors.New("create certificate signing request failed")
 
-				_, err := generator.Generate(generatedCA, "127.0.0.1")
+				_, err := generator.Generate("", "127.0.0.1")
 				Expect(err).To(MatchError("create certificate signing request failed"))
-			})
-
-			It("errors when NewCertFromPem fails", func() {
-				fakeCertstrapPKIX.NewCertificateFromPEMCall.Returns.Error = errors.New("new certificate from pem failed")
-
-				_, err := generator.Generate(ssl.CAData{}, "127.0.0.1")
-				Expect(err).To(MatchError("new certificate from pem failed"))
 			})
 
 			It("errors when create certificate host fails", func() {
 				fakeCertstrapPKIX.CreateCertificateHostCall.Returns.Error = errors.New("could not generate certificate host")
 
-				_, err := generator.Generate(generatedCA, "127.0.0.1")
+				_, err := generator.Generate("", "127.0.0.1")
 				Expect(err).To(MatchError("could not generate certificate host"))
-			})
-
-			It("errors when create certificate host fails", func() {
-				_, err := generator.Generate(ssl.CAData{
-					PrivateKey: []byte("-----BEGIN RSA PRIVATE KEY-----\n-----END RSA PRIVATE KEY-----"),
-				}, "127.0.0.1")
-				Expect(err).To(MatchError(ContainSubstring("sequence truncated")))
 			})
 		})
 	})
