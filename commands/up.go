@@ -15,8 +15,8 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string) (cloudformation.Stack, error)
-	Update(keyPairName string, numberOfAZs int, stackName string, lbType string, lbCertificateARN string) (cloudformation.Stack, error)
+	Create(keyPairName string, numberOfAZs int, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
+	Update(keyPairName string, numberOfAZs int, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
 	Describe(stackName string) (cloudformation.Stack, error)
@@ -44,6 +44,10 @@ type certificateDescriber interface {
 	Describe(certificateName string) (iam.Certificate, error)
 }
 
+type envIDGenerator interface {
+	Generate() (string, error)
+}
+
 type Up struct {
 	awsCredentialValidator    awsCredentialValidator
 	infrastructureManager     infrastructureManager
@@ -55,14 +59,15 @@ type Up struct {
 	certificateDescriber      certificateDescriber
 	cloudConfigManager        cloudConfigManager
 	boshClientProvider        boshClientProvider
+	envIDGenerator            envIDGenerator
 }
 
 func NewUp(
 	awsCredentialValidator awsCredentialValidator, infrastructureManager infrastructureManager,
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
-	certificateDescriber certificateDescriber,
-	cloudConfigManager cloudConfigManager, boshClientProvider boshClientProvider) Up {
+	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
+	boshClientProvider boshClientProvider, envIDGenerator envIDGenerator) Up {
 
 	return Up{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -75,6 +80,7 @@ func NewUp(
 		certificateDescriber:      certificateDescriber,
 		cloudConfigManager:        cloudConfigManager,
 		boshClientProvider:        boshClientProvider,
+		envIDGenerator:            envIDGenerator,
 	}
 }
 
@@ -123,7 +129,14 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 		certificateARN = certificate.ARN
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN)
+	if state.EnvID == "" {
+		state.EnvID, err = u.envIDGenerator.Generate()
+		if err != nil {
+			return state, err
+		}
+	}
+
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
 		return state, err
 	}

@@ -60,6 +60,7 @@ var _ = Describe("Delete LBs", func() {
 			KeyPair: storage.KeyPair{
 				Name: "some-keypair",
 			},
+			EnvID: "some-env-id",
 		}
 
 		infrastructureManager.ExistsCall.Returns.Exists = true
@@ -116,6 +117,7 @@ var _ = Describe("Delete LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal(""))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal(""))
+			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
 
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate"))
 

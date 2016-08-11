@@ -30,6 +30,7 @@ type State struct {
 	KeyPair KeyPair `json:"keyPair,omitempty"`
 	BOSH    BOSH    `json:"bosh,omitempty"`
 	Stack   Stack   `json:"stack"`
+	EnvID   string  `json:"envID"`
 }
 
 type Store struct {

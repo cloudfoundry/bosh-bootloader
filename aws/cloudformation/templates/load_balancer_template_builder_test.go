@@ -16,7 +16,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 	Describe("CFRouterLoadBalancer", func() {
 		It("returns a template containing the cf load balancer", func() {
-			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2, "some-certificate-arn")
+			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2, "some-certificate-arn", "some-env-id")
 
 			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveLen(2))
 			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFRouterLoadBalancer", templates.Output{
@@ -37,6 +37,9 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 				Type:      "AWS::ElasticLoadBalancing::LoadBalancer",
 				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.ElasticLoadBalancingLoadBalancer{
+					Tags: []templates.Tag{
+						{Key: "bbl-env-id", Value: "some-env-id"},
+					},
 					CrossZone:      true,
 					Subnets:        []interface{}{templates.Ref{"LoadBalancerSubnet1"}, templates.Ref{"LoadBalancerSubnet2"}},
 					SecurityGroups: []interface{}{templates.Ref{"CFRouterSecurityGroup"}},
@@ -78,7 +81,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 	Describe("CFSSHProxyLoadBalancer", func() {
 		It("returns a template containing the cf ssh proxy load balancer", func() {
-			cfSSHProxyLoadBalancerTemplate := builder.CFSSHProxyLoadBalancer(2)
+			cfSSHProxyLoadBalancerTemplate := builder.CFSSHProxyLoadBalancer(2, "some-env-id")
 
 			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveLen(2))
 			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFSSHProxyLoadBalancer", templates.Output{
@@ -119,6 +122,12 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 							InstancePort:     "2222",
 						},
 					},
+					Tags: []templates.Tag{
+						{
+							Key:   "bbl-env-id",
+							Value: "some-env-id",
+						},
+					},
 				},
 			}))
 		})
@@ -126,7 +135,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 
 	Describe("ConcourseLoadBalancer", func() {
 		It("returns a template containing the concourse load balancer", func() {
-			concourseLoadBalancer := builder.ConcourseLoadBalancer(2, "some-certificate-arn")
+			concourseLoadBalancer := builder.ConcourseLoadBalancer(2, "some-certificate-arn", "some-env-id")
 
 			Expect(concourseLoadBalancer.Outputs).To(HaveLen(2))
 			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("ConcourseLoadBalancer", templates.Output{
@@ -177,6 +186,12 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 							InstanceProtocol: "tcp",
 							InstancePort:     "8080",
 							SSLCertificateID: "some-certificate-arn",
+						},
+					},
+					Tags: []templates.Tag{
+						{
+							Key:   "bbl-env-id",
+							Value: "some-env-id",
 						},
 					},
 				},

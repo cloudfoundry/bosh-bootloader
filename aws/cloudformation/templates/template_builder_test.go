@@ -26,7 +26,7 @@ var _ = Describe("TemplateBuilder", func() {
 	Describe("Build", func() {
 		Context("concourse elb template", func() {
 			It("builds a cloudformation template", func() {
-				template := builder.Build("keypair-name", 5, "concourse", "some-lb-certificate-arn")
+				template := builder.Build("keypair-name", 5, "concourse", "some-lb-certificate-arn", "")
 				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with a Concourse ELB."))
 
@@ -56,7 +56,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 		Context("cf elb template", func() {
 			It("builds a cloudformation template", func() {
-				template := builder.Build("keypair-name", 5, "cf", "")
+				template := builder.Build("keypair-name", 5, "cf", "", "")
 				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with a CloudFoundry ELB."))
 
@@ -89,7 +89,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 		Context("no elb template", func() {
 			It("builds a cloudformation template", func() {
-				template := builder.Build("keypair-name", 5, "", "")
+				template := builder.Build("keypair-name", 5, "", "", "")
 				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment."))
 
@@ -122,7 +122,7 @@ var _ = Describe("TemplateBuilder", func() {
 		})
 
 		It("logs that the cloudformation template is being generated", func() {
-			builder.Build("keypair-name", 0, "", "")
+			builder.Build("keypair-name", 0, "", "", "")
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating cloudformation template"))
 		})
@@ -130,7 +130,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 	Describe("template marshaling", func() {
 		DescribeTable("marshals template to JSON", func(lbType string, fixture string) {
-			template := builder.Build("keypair-name", 4, lbType, "some-certificate-arn")
+			template := builder.Build("keypair-name", 4, lbType, "some-certificate-arn", "bbl-env-lake-timestamp")
 
 			buf, err := ioutil.ReadFile("fixtures/" + fixture)
 			Expect(err).NotTo(HaveOccurred())

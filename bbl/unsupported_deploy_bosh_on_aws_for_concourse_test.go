@@ -225,6 +225,7 @@ var _ = Describe("bbl", func() {
 					Stack: storage.Stack{
 						Name: "some-stack-name",
 					},
+					EnvID: "bbl-env-lake-timestamp",
 				})
 				Expect(err).NotTo(HaveOccurred())
 

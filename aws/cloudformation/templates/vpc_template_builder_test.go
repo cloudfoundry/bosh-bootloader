@@ -16,7 +16,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 
 	Describe("VPC", func() {
 		It("returns a template with the VPC-related parameters", func() {
-			vpc := builder.VPC()
+			vpc := builder.VPC("some-env-id")
 
 			Expect(vpc.Parameters).To(HaveLen(1))
 			Expect(vpc.Parameters).To(HaveKeyWithValue("VPCCIDR", templates.Parameter{
@@ -27,7 +27,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 		})
 
 		It("returns a template with the VPC-related resources", func() {
-			vpc := builder.VPC()
+			vpc := builder.VPC("some-env-id")
 
 			Expect(vpc.Resources).To(HaveLen(3))
 			Expect(vpc.Resources).To(HaveKeyWithValue("VPC", templates.Resource{
@@ -36,8 +36,12 @@ var _ = Describe("VPCTemplateBuilder", func() {
 					CidrBlock: templates.Ref{"VPCCIDR"},
 					Tags: []templates.Tag{
 						{
-							Value: "bbl",
 							Key:   "Name",
+							Value: "bbl",
+						},
+						{
+							Key:   "bbl-env-id",
+							Value: "some-env-id",
 						},
 					},
 				},
@@ -57,7 +61,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 		})
 
 		It("returns a template with the VPC-related outputs", func() {
-			vpc := builder.VPC()
+			vpc := builder.VPC("")
 
 			Expect(vpc.Outputs).To(HaveKeyWithValue("VPCID", templates.Output{
 				Value: templates.Ref{Ref: "VPC"},

@@ -80,7 +80,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region); err != nil {
+	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region, state.EnvID); err != nil {
 		return state, err
 	}
 
@@ -141,7 +141,7 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	return config, nil
 }
 
-func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion string) error {
+func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion, envID string) error {
 	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stack
 		return err
 	}
 
-	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN)
+	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, envID)
 	if err != nil {
 		return err
 	}

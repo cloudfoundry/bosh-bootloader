@@ -28,6 +28,7 @@ func main() {
 	// Utilities
 	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
+	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 	stateStore := storage.NewStore()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
@@ -108,7 +109,7 @@ func main() {
 	up := commands.NewUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, boshClientProvider,
+		cloudConfigManager, boshClientProvider, envIDGenerator,
 	)
 	destroy := commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,

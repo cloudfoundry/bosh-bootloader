@@ -33,6 +33,7 @@ var _ = Describe("Up", func() {
 			cloudConfigManager        *fakes.CloudConfigManager
 			boshClientProvider        *fakes.BOSHClientProvider
 			boshClient                *fakes.BOSHClient
+			envIDGenerator            *fakes.EnvIDGenerator
 			boshInitCredentials       map[string]string
 		)
 
@@ -90,10 +91,12 @@ var _ = Describe("Up", func() {
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
+			envIDGenerator = &fakes.EnvIDGenerator{}
+
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
-				stringGenerator, cloudConfigurator, availabilityZoneRetriever,
-				certificateDescriber, cloudConfigManager, boshClientProvider,
+				stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
+				cloudConfigManager, boshClientProvider, envIDGenerator,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -148,6 +151,21 @@ var _ = Describe("Up", func() {
 			}))
 		})
 
+		It("generates an bbl-env-id", func() {
+			incomingState := storage.State{
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+			}
+
+			_, err := command.Execute([]string{}, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
+		})
+
 		It("creates/updates the stack with the given name", func() {
 			incomingState := storage.State{
 				AWS: storage.AWS{
@@ -167,6 +185,8 @@ var _ = Describe("Up", func() {
 				return prefix + "some-random-string", nil
 			}
 
+			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-timestamp"
+
 			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stackNameWasGenerated).To(BeTrue())
@@ -174,6 +194,7 @@ var _ = Describe("Up", func() {
 			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("bbl-aws-some-random-string"))
 			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
+			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-timestamp"))
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
 		})
 
@@ -260,7 +281,7 @@ var _ = Describe("Up", func() {
 
 		Describe("cloud configurator", func() {
 			BeforeEach(func() {
-				infrastructureManager.CreateCall.Stub = func(keyPairName string, numberOfAZs int, stackName string, lbType string) (cloudformation.Stack, error) {
+				infrastructureManager.CreateCall.Stub = func(keyPairName string, numberOfAZs int, stackName, lbType, envID string) (cloudformation.Stack, error) {
 					stack := cloudformation.Stack{
 						Name: "bbl-aws-some-random-string",
 						Outputs: map[string]string{
@@ -468,6 +489,30 @@ var _ = Describe("Up", func() {
 						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
+					})
+				})
+			})
+
+			Context("env id", func() {
+				Context("when the env id doesn't exist", func() {
+					It("populates a new bbl env id", func() {
+						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-timestamp"
+
+						state, err := command.Execute([]string{}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.EnvID).To(Equal("bbl-lake-timestamp"))
+					})
+				})
+
+				Context("when the env id exists", func() {
+					It("does not modify the state", func() {
+						incomingState := storage.State{
+							EnvID: "bbl-lake-timestamp",
+						}
+
+						state, err := command.Execute([]string{}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.EnvID).To(Equal("bbl-lake-timestamp"))
 					})
 				})
 			})
@@ -727,6 +772,13 @@ var _ = Describe("Up", func() {
 
 				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
+			})
+
+			It("returns an error when env id generator fails", func() {
+				envIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
+
+				_, err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("env id generation failed"))
 			})
 		})
 	})

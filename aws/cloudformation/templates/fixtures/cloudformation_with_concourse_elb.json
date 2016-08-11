@@ -137,7 +137,10 @@
       "Type": "AWS::EC2::Route"
     },
     "BOSHRouteTable": {
-      "Properties": {"VpcId": {"Ref": "VPC"}},
+      "Properties": {
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
+        "VpcId": {"Ref": "VPC"}
+      },
       "Type": "AWS::EC2::RouteTable"
     },
     "BOSHSecurityGroup": {
@@ -176,6 +179,7 @@
             "ToPort": "65535"
           }
         ],
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::SecurityGroup"
@@ -183,7 +187,10 @@
     "BOSHSubnet": {
       "Properties": {
         "CidrBlock": {"Ref": "BOSHSubnetCIDR"},
-        "Tags": [{"Key": "Name", "Value": "BOSH"}],
+        "Tags": [
+          {"Key": "Name", "Value": "BOSH"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -263,6 +270,7 @@
             "ToPort": "2222"
           }
         ],
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::SecurityGroup"
@@ -304,7 +312,8 @@
           {"Ref": "LoadBalancerSubnet2"},
           {"Ref": "LoadBalancerSubnet3"},
           {"Ref": "LoadBalancerSubnet4"}
-        ]
+        ],
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}]
       },
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer"
     },
@@ -332,6 +341,7 @@
             "ToPort": "443"
           }
         ],
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::SecurityGroup"
@@ -346,7 +356,10 @@
       "Type": "AWS::EC2::Route"
     },
     "InternalRouteTable": {
-      "Properties": {"VpcId": {"Ref": "VPC"}},
+      "Properties": {
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
+        "VpcId": {"Ref": "VPC"}
+      },
       "Type": "AWS::EC2::RouteTable"
     },
     "InternalSecurityGroup": {
@@ -363,6 +376,7 @@
             "ToPort": "-1"
           }
         ],
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::SecurityGroup"
@@ -373,6 +387,7 @@
         "GroupId": {"Ref": "InternalSecurityGroup"},
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "ToPort": "65535"
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
@@ -383,6 +398,7 @@
         "GroupId": {"Ref": "InternalSecurityGroup"},
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "ToPort": "65535"
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
@@ -393,6 +409,7 @@
         "GroupId": {"Ref": "InternalSecurityGroup"},
         "IpProtocol": "udp",
         "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "ToPort": "65535"
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
@@ -403,6 +420,7 @@
         "GroupId": {"Ref": "InternalSecurityGroup"},
         "IpProtocol": "udp",
         "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "ToPort": "65535"
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
@@ -413,7 +431,10 @@
           "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "InternalSubnet1CIDR"},
-        "Tags": [{"Key": "Name", "Value": "Internal1"}],
+        "Tags": [
+          {"Key": "Name", "Value": "Internal1"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -431,7 +452,10 @@
           "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "InternalSubnet2CIDR"},
-        "Tags": [{"Key": "Name", "Value": "Internal2"}],
+        "Tags": [
+          {"Key": "Name", "Value": "Internal2"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -449,7 +473,10 @@
           "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "InternalSubnet3CIDR"},
-        "Tags": [{"Key": "Name", "Value": "Internal3"}],
+        "Tags": [
+          {"Key": "Name", "Value": "Internal3"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -467,7 +494,10 @@
           "Fn::Select": ["3", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "InternalSubnet4CIDR"},
-        "Tags": [{"Key": "Name", "Value": "Internal4"}],
+        "Tags": [
+          {"Key": "Name", "Value": "Internal4"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -489,7 +519,12 @@
       "Type": "AWS::EC2::Route"
     },
     "LoadBalancerRouteTable": {
-      "Properties": {"VpcId": {"Ref": "VPC"}},
+      "Properties": {
+		  "VpcId": {"Ref": "VPC"},
+	      "Tags": [
+	        {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+	      ]
+	  },
       "Type": "AWS::EC2::RouteTable"
     },
     "LoadBalancerSubnet1": {
@@ -498,7 +533,10 @@
           "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "LoadBalancerSubnet1CIDR"},
-        "Tags": [{"Key": "Name", "Value": "LoadBalancer1"}],
+        "Tags": [
+          {"Key": "Name", "Value": "LoadBalancer1"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -516,7 +554,10 @@
           "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "LoadBalancerSubnet2CIDR"},
-        "Tags": [{"Key": "Name", "Value": "LoadBalancer2"}],
+        "Tags": [
+          {"Key": "Name", "Value": "LoadBalancer2"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -534,7 +575,10 @@
           "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "LoadBalancerSubnet3CIDR"},
-        "Tags": [{"Key": "Name", "Value": "LoadBalancer3"}],
+        "Tags": [
+          {"Key": "Name", "Value": "LoadBalancer3"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -552,7 +596,10 @@
           "Fn::Select": ["3", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
         },
         "CidrBlock": {"Ref": "LoadBalancerSubnet4CIDR"},
-        "Tags": [{"Key": "Name", "Value": "LoadBalancer4"}],
+        "Tags": [
+          {"Key": "Name", "Value": "LoadBalancer4"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::Subnet"
@@ -579,7 +626,10 @@
         "SecurityGroupIds": [{"Ref": "NATSecurityGroup"}],
         "SourceDestCheck": false,
         "SubnetId": {"Ref": "BOSHSubnet"},
-        "Tags": [{"Key": "Name", "Value": "NAT"}]
+        "Tags": [
+          {"Key": "Name", "Value": "NAT"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ]
       },
       "Type": "AWS::EC2::Instance"
     },
@@ -601,6 +651,7 @@
             "ToPort": "65535"
           }
         ],
+        "Tags": [{"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}],
         "VpcId": {"Ref": "VPC"}
       },
       "Type": "AWS::EC2::SecurityGroup"
@@ -608,7 +659,10 @@
     "VPC": {
       "Properties": {
         "CidrBlock": {"Ref": "VPCCIDR"},
-        "Tags": [{"Key": "Name", "Value": "bbl"}]
+        "Tags": [
+          {"Key": "Name", "Value": "bbl"},
+          {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
+        ]
       },
       "Type": "AWS::EC2::VPC"
     },

@@ -6,7 +6,7 @@ func NewBOSHSubnetTemplateBuilder() BOSHSubnetTemplateBuilder {
 	return BOSHSubnetTemplateBuilder{}
 }
 
-func (BOSHSubnetTemplateBuilder) BOSHSubnet() Template {
+func (BOSHSubnetTemplateBuilder) BOSHSubnet(envID string) Template {
 	return Template{
 		Parameters: map[string]Parameter{
 			"BOSHSubnetCIDR": Parameter{
@@ -26,6 +26,10 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet() Template {
 							Key:   "Name",
 							Value: "BOSH",
 						},
+						{
+							Key:   "bbl-env-id",
+							Value: envID,
+						},
 					},
 				},
 			},
@@ -33,6 +37,12 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet() Template {
 				Type: "AWS::EC2::RouteTable",
 				Properties: RouteTable{
 					VpcId: Ref{"VPC"},
+					Tags: []Tag{
+						{
+							Key:   "bbl-env-id",
+							Value: envID,
+						},
+					},
 				},
 			},
 			"BOSHRoute": Resource{

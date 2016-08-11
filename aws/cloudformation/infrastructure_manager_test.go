@@ -38,7 +38,7 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		It("creates the underlying infrastructure and returns the stack", func() {
-			stack, err := infrastructureManager.Create("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn")
+			stack, err := infrastructureManager.Create("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
@@ -46,6 +46,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.NumberOfAZs).To(Equal(2))
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
+			Expect(builder.BuildCall.Receives.EnvID).To(Equal("some-env-id"))
 
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(templates.Template{
@@ -64,21 +65,21 @@ var _ = Describe("InfrastructureManager", func() {
 			It("returns an error when stack can't be created or updated", func() {
 				stackManager.CreateOrUpdateCall.Returns.Error = errors.New("stack create or update failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "")
+				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "", "")
 				Expect(err).To(MatchError("stack create or update failed"))
 			})
 
 			It("returns an error when waiting for stack completion fails", func() {
 				stackManager.WaitForCompletionCall.Returns.Error = errors.New("stack wait for completion failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "")
+				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "", "")
 				Expect(err).To(MatchError("stack wait for completion failed"))
 			})
 
 			It("returns an error when describing the stack fails", func() {
 				stackManager.DescribeCall.Returns.Error = errors.New("stack describe failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "")
+				_, err := infrastructureManager.Create("some-key-pair-name", 0, "some-stack-name", "", "", "")
 				Expect(err).To(MatchError("stack describe failed"))
 			})
 		})
@@ -90,13 +91,14 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		It("updates the stack and returns the stack", func() {
-			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn")
+			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
 			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-key-pair-name"))
 			Expect(builder.BuildCall.Receives.NumberOfAZs).To(Equal(2))
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
+			Expect(builder.BuildCall.Receives.EnvID).To(Equal("some-env-id"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 
 			Expect(stackManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))

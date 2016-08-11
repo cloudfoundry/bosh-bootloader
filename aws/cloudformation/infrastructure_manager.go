@@ -7,7 +7,7 @@ import (
 )
 
 type templateBuilder interface {
-	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string) templates.Template
+	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string, envID string) templates.Template
 }
 
 type stackManager interface {
@@ -30,8 +30,9 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 	}
 }
 
-func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string) (Stack, error) {
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
+func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName,
+	lbType, lbCertificateARN, envID string) (Stack, error) {
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, envID)
 
 	if err := m.stackManager.CreateOrUpdate(stackName, template); err != nil {
 		return Stack{}, err
@@ -44,8 +45,9 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 	return m.stackManager.Describe(stackName)
 }
 
-func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName string, lbType string, lbCertificateARN string) (Stack, error) {
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
+func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName, lbType,
+	lbCertificateARN, envID string) (Stack, error) {
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, envID)
 
 	if err := m.stackManager.Update(stackName, template); err != nil {
 		return Stack{}, err

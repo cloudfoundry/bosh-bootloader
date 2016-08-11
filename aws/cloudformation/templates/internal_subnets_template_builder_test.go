@@ -19,7 +19,7 @@ var _ = Describe("InternalSubnetsTemplateBuilder", func() {
 
 	Describe("InternalSubnets", func() {
 		It("creates internal subnets for each availability zone", func() {
-			template := internalSubnetsTemplateBuilder.InternalSubnets(2)
+			template := internalSubnetsTemplateBuilder.InternalSubnets(2, "some-env-id")
 
 			Expect(template.Parameters).To(HaveLen(2))
 			Expect(template.Parameters["InternalSubnet1CIDR"].Default).To(Equal("10.0.16.0/20"))
@@ -52,6 +52,10 @@ func HasSubnetWithAvailabilityZoneIndex(template templates.Template, index int) 
 			{
 				Key:   "Name",
 				Value: tagName,
+			},
+			{
+				Key:   "bbl-env-id",
+				Value: "some-env-id",
 			},
 		},
 	})

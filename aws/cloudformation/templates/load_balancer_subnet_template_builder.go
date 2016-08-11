@@ -8,7 +8,7 @@ func NewLoadBalancerSubnetTemplateBuilder() LoadBalancerSubnetTemplateBuilder {
 	return LoadBalancerSubnetTemplateBuilder{}
 }
 
-func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetSuffix string, cidrBlock string) Template {
+func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetSuffix, cidrBlock, envID string) Template {
 	subnetName := fmt.Sprintf("LoadBalancerSubnet%s", subnetSuffix)
 	cidrName := fmt.Sprintf("%sCIDR", subnetName)
 	az := fmt.Sprintf("%d", azIndex)
@@ -42,6 +42,10 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetS
 							Key:   "Name",
 							Value: tag,
 						},
+						{
+							Key:   "bbl-env-id",
+							Value: envID,
+						},
 					},
 				},
 			},
@@ -49,6 +53,12 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetS
 				Type: "AWS::EC2::RouteTable",
 				Properties: RouteTable{
 					VpcId: Ref{"VPC"},
+					Tags: []Tag{
+						{
+							Key:   "bbl-env-id",
+							Value: envID,
+						},
+					},
 				},
 			},
 			"LoadBalancerRoute": Resource{

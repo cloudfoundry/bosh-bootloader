@@ -66,6 +66,7 @@ var _ = Describe("Create LBs", func() {
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
+				EnvID: "some-env-id",
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
@@ -130,6 +131,7 @@ var _ = Describe("Create LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
+			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
 		})
 
 		It("updates the cloud config with lb type", func() {

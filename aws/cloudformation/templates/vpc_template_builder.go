@@ -6,7 +6,7 @@ func NewVPCTemplateBuilder() VPCTemplateBuilder {
 	return VPCTemplateBuilder{}
 }
 
-func (t VPCTemplateBuilder) VPC() Template {
+func (t VPCTemplateBuilder) VPC(envID string) Template {
 	return Template{
 		Parameters: map[string]Parameter{
 			"VPCCIDR": Parameter{
@@ -23,8 +23,12 @@ func (t VPCTemplateBuilder) VPC() Template {
 					CidrBlock: Ref{"VPCCIDR"},
 					Tags: []Tag{
 						{
-							Value: "bbl",
 							Key:   "Name",
+							Value: "bbl",
+						},
+						{
+							Key:   "bbl-env-id",
+							Value: envID,
 						},
 					},
 				},

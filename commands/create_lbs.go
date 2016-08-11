@@ -103,7 +103,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	state.Stack.CertificateName = certificateName
 	state.Stack.LBType = config.lbType
 
-	if err := c.updateStackAndBOSH(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, boshClient); err != nil {
+	if err := c.updateStackAndBOSH(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, boshClient, state.EnvID); err != nil {
 		return state, err
 	}
 
@@ -146,7 +146,7 @@ func (c CreateLBs) checkFastFails(newLBType string, currentLBType string, stackN
 
 func (c CreateLBs) updateStackAndBOSH(
 	awsRegion string, certificateName string, keyPairName string, stackName string,
-	lbType string, boshClient bosh.Client,
+	lbType string, boshClient bosh.Client, envID string,
 ) error {
 
 	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
@@ -156,7 +156,7 @@ func (c CreateLBs) updateStackAndBOSH(
 
 	certificate, err := c.certificateManager.Describe(certificateName)
 
-	stack, err := c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN)
+	stack, err := c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, envID)
 	if err != nil {
 		return err
 	}

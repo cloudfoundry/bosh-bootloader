@@ -19,19 +19,19 @@ var _ = Describe("LoadBalancerSubnetsTemplateBuilder", func() {
 
 	Describe("LoadBalancerSubnets", func() {
 		It("creates load balancer subnets for each availability zone", func() {
-			template := loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(2)
+			template := loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(2, "some-env-id")
 
 			Expect(template.Parameters).To(HaveLen(2))
 			Expect(template.Parameters["LoadBalancerSubnet1CIDR"].Default).To(Equal("10.0.2.0/24"))
 			Expect(template.Parameters["LoadBalancerSubnet2CIDR"].Default).To(Equal("10.0.3.0/24"))
 
-			Expect(HasLBSubnetWithAvailabilityZoneIndex(template, 0)).To(BeTrue())
-			Expect(HasLBSubnetWithAvailabilityZoneIndex(template, 1)).To(BeTrue())
+			Expect(hasLBSubnetWithAvailabilityZoneIndex(template, 0)).To(BeTrue())
+			Expect(hasLBSubnetWithAvailabilityZoneIndex(template, 1)).To(BeTrue())
 		})
 	})
 })
 
-func HasLBSubnetWithAvailabilityZoneIndex(template templates.Template, index int) bool {
+func hasLBSubnetWithAvailabilityZoneIndex(template templates.Template, index int) bool {
 	azIndex := fmt.Sprintf("%d", index)
 	subnetName := fmt.Sprintf("LoadBalancerSubnet%d", index+1)
 	subnetCIDRName := fmt.Sprintf("%sCIDR", subnetName)
@@ -52,6 +52,10 @@ func HasLBSubnetWithAvailabilityZoneIndex(template templates.Template, index int
 			{
 				Key:   "Name",
 				Value: tagName,
+			},
+			{
+				Key:   "bbl-env-id",
+				Value: "some-env-id",
 			},
 		},
 	})

@@ -8,7 +8,7 @@ func NewInternalSubnetsTemplateBuilder() InternalSubnetsTemplateBuilder {
 	return InternalSubnetsTemplateBuilder{}
 }
 
-func (InternalSubnetsTemplateBuilder) InternalSubnets(numberOfAvailabilityZones int) Template {
+func (InternalSubnetsTemplateBuilder) InternalSubnets(numberOfAvailabilityZones int, envID string) Template {
 	internalSubnetTemplateBuilder := NewInternalSubnetTemplateBuilder()
 
 	template := Template{}
@@ -17,6 +17,7 @@ func (InternalSubnetsTemplateBuilder) InternalSubnets(numberOfAvailabilityZones 
 			index-1,
 			fmt.Sprintf("%d", index),
 			fmt.Sprintf("10.0.%d.0/20", 16*(index)),
+			envID,
 		))
 	}
 

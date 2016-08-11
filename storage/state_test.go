@@ -77,6 +77,7 @@ var _ = Describe("Store", func() {
 					LBType:          "some-lb-type",
 					CertificateName: "some-certificate-name",
 				},
+				EnvID: "some-env-id",
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -126,7 +127,8 @@ var _ = Describe("Store", func() {
 					"name": "some-stack-name",
 					"lbType": "some-lb-type",
 					"certificateName": "some-certificate-name"
-				}
+				},
+				"envID": "some-env-id"
 			}`))
 
 			fileInfo, err := os.Stat(filepath.Join(tempDir, "state.json"))

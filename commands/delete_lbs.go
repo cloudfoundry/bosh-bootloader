@@ -82,7 +82,7 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 		return state, err
 	}
 
-	_, err = c.infrastructureManager.Update(state.KeyPair.Name, len(azs), state.Stack.Name, "", "")
+	_, err = c.infrastructureManager.Update(state.KeyPair.Name, len(azs), state.Stack.Name, "", "", state.EnvID)
 	if err != nil {
 		return state, err
 	}
