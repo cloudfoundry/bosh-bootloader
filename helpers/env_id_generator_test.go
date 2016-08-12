@@ -17,7 +17,7 @@ var _ = Describe("EnvIDGenerator", func() {
 
 			envID, err := generator.Generate()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(envID).To(MatchRegexp(`bbl-env-[a-z]+-\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+			Expect(envID).To(MatchRegexp(`bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
 		})
 
 		Context("when there are errors", func() {
