@@ -27,7 +27,7 @@ func (t VPCTemplateBuilder) VPC(envID string) Template {
 							Value: "bbl",
 						},
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},

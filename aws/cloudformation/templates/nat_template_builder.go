@@ -30,7 +30,7 @@ func (t NATTemplateBuilder) NAT(envID string) Template {
 					GroupDescription: "NAT",
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -74,7 +74,7 @@ func (t NATTemplateBuilder) NAT(envID string) Template {
 							Value: "NAT",
 						},
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},

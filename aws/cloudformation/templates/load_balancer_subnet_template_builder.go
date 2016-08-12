@@ -43,7 +43,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetS
 							Value: tag,
 						},
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -55,7 +55,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(azIndex int, subnetS
 					VpcId: Ref{"VPC"},
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},

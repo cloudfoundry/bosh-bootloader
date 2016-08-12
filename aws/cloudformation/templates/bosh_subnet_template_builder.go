@@ -27,7 +27,7 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(envID string) Template {
 							Value: "BOSH",
 						},
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -39,7 +39,7 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(envID string) Template {
 					VpcId: Ref{"VPC"},
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},

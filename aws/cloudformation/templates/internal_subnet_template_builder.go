@@ -59,7 +59,7 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrB
 							Value: subnetTag,
 						},
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -71,7 +71,7 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrB
 					VpcId: Ref{"VPC"},
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},

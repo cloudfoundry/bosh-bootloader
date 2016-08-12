@@ -37,7 +37,7 @@ func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailability
 						},
 					},
 					Tags: []Tag{
-						{Key: "bbl-env-id", Value: envID},
+						{Key: bblTagKey, Value: envID},
 					},
 				},
 			},
@@ -89,7 +89,7 @@ func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZo
 					},
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -119,7 +119,7 @@ func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZ
 					},
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},

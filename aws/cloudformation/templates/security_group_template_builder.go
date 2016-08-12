@@ -33,7 +33,7 @@ func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securit
 					SecurityGroupIngress: securityGroupIngress,
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -74,7 +74,7 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 					SecurityGroupIngress: securityGroupIngress,
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -100,7 +100,7 @@ func (s SecurityGroupTemplateBuilder) InternalSecurityGroup(envID string) Templa
 					GroupDescription: "Internal",
 					Tags: []Tag{
 						{
-							Key:   "bbl-env-id",
+							Key:   bblTagKey,
 							Value: envID,
 						},
 					},
@@ -146,7 +146,7 @@ func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup(envID string) Template {
 						s.securityGroupIngress(nil, "tcp", "0", "65535", Ref{"InternalSecurityGroup"}),
 						s.securityGroupIngress(nil, "udp", "0", "65535", Ref{"InternalSecurityGroup"}),
 					},
-					Tags: []Tag{{Key: "bbl-env-id", Value: envID}},
+					Tags: []Tag{{Key: bblTagKey, Value: envID}},
 				},
 			},
 		},
@@ -167,7 +167,7 @@ func (SecurityGroupTemplateBuilder) internalSecurityGroupIngress(sourceSecurityG
 			ToPort:                "65535",
 			Tags: []Tag{
 				{
-					Key:   "bbl-env-id",
+					Key:   bblTagKey,
 					Value: envID,
 				},
 			},
