@@ -3,31 +3,37 @@ package actors
 import (
 	"os"
 
-	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
+
+	. "github.com/onsi/gomega"
+
+	awslib "github.com/aws/aws-sdk-go/aws"
+	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
+	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
 type AWS struct {
 	stackManager         cloudformation.StackManager
 	certificateDescriber iam.CertificateDescriber
+	ec2Client            ec2.Client
+	cloudFormationClient cloudformation.Client
 }
 
 func NewAWS(configuration integration.Config) AWS {
-	cloudFormationClient := cloudformation.NewClient(aws.Config{
+	awsConfig := aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,
 		Region:          configuration.AWSRegion,
-	})
+	}
 
-	iamClient := iam.NewClient(aws.Config{
-		AccessKeyID:     configuration.AWSAccessKeyID,
-		SecretAccessKey: configuration.AWSSecretAccessKey,
-		Region:          configuration.AWSRegion,
-	})
+	iamClient := iam.NewClient(awsConfig)
+	ec2Client := ec2.NewClient(awsConfig)
+	cloudFormationClient := cloudformation.NewClient(awsConfig)
 
 	stackManager := cloudformation.NewStackManager(cloudFormationClient, application.NewLogger(os.Stdout))
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
@@ -35,6 +41,8 @@ func NewAWS(configuration integration.Config) AWS {
 	return AWS{
 		stackManager:         stackManager,
 		certificateDescriber: certificateDescriber,
+		ec2Client:            ec2Client,
+		cloudFormationClient: cloudFormationClient,
 	}
 }
 
@@ -47,6 +55,17 @@ func (a AWS) StackExists(stackName string) bool {
 
 	Expect(err).NotTo(HaveOccurred())
 	return true
+}
+
+func (a AWS) GetPhysicalID(stackName, logicalID string) string {
+	params := &awscloudformation.DescribeStackResourceInput{
+		LogicalResourceId: awslib.String(logicalID),
+		StackName:         awslib.String(stackName),
+	}
+
+	describeStackResourceOutput, err := a.cloudFormationClient.DescribeStackResource(params)
+	Expect(err).NotTo(HaveOccurred())
+	return awslib.StringValue(describeStackResourceOutput.StackResourceDetail.PhysicalResourceId)
 }
 
 func (a AWS) LoadBalancers(stackName string) map[string]string {
@@ -71,4 +90,33 @@ func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
 	}
 
 	return certificate
+}
+
+func (a AWS) GetEC2InstanceTags(instanceID string) map[string]string {
+	describeInstanceInput := &awsec2.DescribeInstancesInput{
+		DryRun: awslib.Bool(false),
+		Filters: []*awsec2.Filter{
+			{
+				Name: awslib.String("instance-id"),
+				Values: []*string{
+					awslib.String(instanceID),
+				},
+			},
+		},
+		InstanceIds: []*string{
+			awslib.String(instanceID),
+		},
+	}
+	describeInstancesOutput, err := a.ec2Client.DescribeInstances(describeInstanceInput)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(describeInstancesOutput.Reservations).To(HaveLen(1))
+	Expect(describeInstancesOutput.Reservations[0].Instances).To(HaveLen(1))
+
+	instance := describeInstancesOutput.Reservations[0].Instances[0]
+
+	tags := make(map[string]string)
+	for _, tag := range instance.Tags {
+		tags[awslib.StringValue(tag.Key)] = awslib.StringValue(tag.Value)
+	}
+	return tags
 }

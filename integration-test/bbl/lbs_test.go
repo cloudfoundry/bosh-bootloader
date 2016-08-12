@@ -45,6 +45,12 @@ var _ = Describe("load balancer tests", func() {
 		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
 		Expect(boshcli.DirectorExists(directorAddress, caCertPath)).To(BeTrue())
 
+		natInstanceID := aws.GetPhysicalID(stackName, "NATInstance")
+		Expect(natInstanceID).NotTo(BeEmpty())
+
+		tags := aws.GetEC2InstanceTags(natInstanceID)
+		Expect(tags["bbl-env-id"]).To(MatchRegexp(`bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
 

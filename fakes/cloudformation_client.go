@@ -72,3 +72,7 @@ func (c *CloudFormationClient) DeleteStack(input *cloudformation.DeleteStackInpu
 	c.DeleteStackCall.Receives.Input = input
 	return c.DeleteStackCall.Returns.Output, c.DeleteStackCall.Returns.Error
 }
+
+func (c *CloudFormationClient) DescribeStackResource(input *cloudformation.DescribeStackResourceInput) (*cloudformation.DescribeStackResourceOutput, error) {
+	return nil, nil
+}
