@@ -45,6 +45,7 @@ Commands:
   director-username                                                                                           "prints the BOSH director username"
   director-password                                                                                           "prints the BOSH director password"
   bosh-ca-cert                                                                                                "prints the BOSH director CA certificate"
+  env-id                                                                                                      "prints the environment ID"
   help                                                                                                        "prints usage"
   lbs                                                                                                         "prints any attached load balancers"
   ssh-key                                                                                                     "prints the ssh private key"

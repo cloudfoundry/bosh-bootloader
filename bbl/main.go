@@ -142,6 +142,9 @@ func main() {
 	boshCACert := commands.NewStateQuery(logger, "bosh ca cert", func(state storage.State) string {
 		return state.BOSH.DirectorSSLCA
 	})
+	envID := commands.NewStateQuery(logger, "environment id", func(state storage.State) string {
+		return state.EnvID
+	})
 
 	app := application.New(application.CommandSet{
 		"help":    help,
@@ -157,6 +160,7 @@ func main() {
 		"unsupported-delete-lbs":    deleteLBs,
 		"lbs":          lbs,
 		"bosh-ca-cert": boshCACert,
+		"env-id":       envID,
 	}, configuration, stateStore, usage.Print)
 
 	err = app.Run()
