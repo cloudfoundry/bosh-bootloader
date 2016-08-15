@@ -1,444 +1,393 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Infrastructure for a BOSH deployment.",
-    "Mappings": {
-        "AWSNATAMI": {
-            "ap-northeast-1": {"AMI": "ami-f885ae96"},
-            "ap-northeast-2": {"AMI": "ami-4118d72f"},
-            "ap-southeast-1": {"AMI": "ami-e2fc3f81"},
-            "ap-southeast-2": {"AMI": "ami-e3217a80"},
-            "eu-central-1": {"AMI": "ami-0b322e67"},
-            "eu-west-1": {"AMI": "ami-c0993ab3"},
-            "sa-east-1": {"AMI": "ami-8631b5ea"},
-            "us-east-1": {"AMI": "ami-68115b02"},
-            "us-west-1": {"AMI": "ami-ef1a718f"},
-            "us-west-2": {"AMI": "ami-77a4b816"}
-        }
-    },
-    "Outputs": {
-        "BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
-        "BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}},
-        "BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
-        "BOSHSubnetAZ": {
-            "Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
-        },
-        "BOSHURL": {
-            "Value": {
-                "Fn::Join": ["", ["https://", {"Ref": "BOSHEIP"}, ":25555"]]
-            }
-        },
-        "BOSHUserAccessKey": {"Value": {"Ref": "BOSHUserAccessKey"}},
-        "BOSHUserSecretAccessKey": {
-            "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
-        },
-        "InternalSecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
-        "InternalSubnet1AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
-        },
-        "InternalSubnet1CIDR": {"Value": {"Ref": "InternalSubnet1CIDR"}},
-        "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
-        "InternalSubnet2AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet2", "AvailabilityZone"]}
-        },
-        "InternalSubnet2CIDR": {"Value": {"Ref": "InternalSubnet2CIDR"}},
-        "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
-        "InternalSubnet3AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet3", "AvailabilityZone"]}
-        },
-        "InternalSubnet3CIDR": {"Value": {"Ref": "InternalSubnet3CIDR"}},
-        "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
-        "VPCID": {"Value": {"Ref": "VPC"}}
-    },
-    "Parameters": {
-        "BOSHInboundCIDR": {
-            "Default": "0.0.0.0/0",
-            "Description": "CIDR to permit access to BOSH (e.g. 205.103.216.37/32 for your specific IP)",
-            "Type": "String"
-        },
-        "BOSHSubnetCIDR": {
-            "Default": "10.0.0.0/24",
-            "Description": "CIDR block for the BOSH subnet.",
-            "Type": "String"
-        },
-        "InternalSubnet1CIDR": {
-            "Default": "10.0.16.0/20",
-            "Description": "CIDR block for InternalSubnet1.",
-            "Type": "String"
-        },
-        "InternalSubnet2CIDR": {
-            "Default": "10.0.32.0/20",
-            "Description": "CIDR block for InternalSubnet2.",
-            "Type": "String"
-        },
-        "InternalSubnet3CIDR": {
-            "Default": "10.0.48.0/20",
-            "Description": "CIDR block for InternalSubnet3.",
-            "Type": "String"
-        },
-        "SSHKeyPairName": {
-            "Default": "some-keypair-name",
-            "Description": "SSH KeyPair to use for instances",
-            "Type": "AWS::EC2::KeyPair::KeyName"
-        },
-        "VPCCIDR": {
-            "Default": "10.0.0.0/16",
-            "Description": "CIDR block for the VPC.",
-            "Type": "String"
-        }
-    },
-    "Resources": {
-        "BOSHEIP": {
-            "DependsOn": "VPCGatewayAttachment",
-            "Properties": {"Domain": "vpc"},
-            "Type": "AWS::EC2::EIP"
-        },
-        "BOSHRoute": {
-            "DependsOn": "VPCGatewayAttachment",
-            "Properties": {
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "GatewayId": {"Ref": "VPCGatewayInternetGateway"},
-                "RouteTableId": {"Ref": "BOSHRouteTable"}
-            },
-            "Type": "AWS::EC2::Route"
-        },
-        "BOSHRouteTable": {
-            "Properties": {
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::RouteTable"
-        },
-        "BOSHSecurityGroup": {
-            "Properties": {
-                "GroupDescription": "BOSH",
-                "SecurityGroupEgress": [],
-                "SecurityGroupIngress": [
-                    {
-                        "CidrIp": {"Ref": "BOSHInboundCIDR"},
-                        "FromPort": "22",
-                        "IpProtocol": "tcp",
-                        "ToPort": "22"
-                    },
-                    {
-                        "CidrIp": {"Ref": "BOSHInboundCIDR"},
-                        "FromPort": "6868",
-                        "IpProtocol": "tcp",
-                        "ToPort": "6868"
-                    },
-                    {
-                        "CidrIp": {"Ref": "BOSHInboundCIDR"},
-                        "FromPort": "25555",
-                        "IpProtocol": "tcp",
-                        "ToPort": "25555"
-                    },
-                    {
-                        "FromPort": "0",
-                        "IpProtocol": "tcp",
-                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                        "ToPort": "65535"
-                    },
-                    {
-                        "FromPort": "0",
-                        "IpProtocol": "udp",
-                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                        "ToPort": "65535"
-                    }
-                ],
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "BOSHSubnet": {
-            "Properties": {
-                "CidrBlock": {"Ref": "BOSHSubnetCIDR"},
-                "Tags": [
-                    {"Key": "Name", "Value": "BOSH"},
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "BOSHSubnetRouteTableAssociation": {
-            "Properties": {
-                "RouteTableId": {"Ref": "BOSHRouteTable"},
-                "SubnetId": {"Ref": "BOSHSubnet"}
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "BOSHUser": {
-            "Properties": {
-                "Policies": [
-                    {
-                        "PolicyDocument": {
-                            "Statement": [
-                                {
-                                    "Action": [
-                                        "ec2:AssociateAddress",
-                                        "ec2:AttachVolume",
-                                        "ec2:CreateVolume",
-                                        "ec2:DeleteSnapshot",
-                                        "ec2:DeleteVolume",
-                                        "ec2:DescribeAddresses",
-                                        "ec2:DescribeImages",
-                                        "ec2:DescribeInstances",
-                                        "ec2:DescribeRegions",
-                                        "ec2:DescribeSecurityGroups",
-                                        "ec2:DescribeSnapshots",
-                                        "ec2:DescribeSubnets",
-                                        "ec2:DescribeVolumes",
-                                        "ec2:DetachVolume",
-                                        "ec2:CreateSnapshot",
-                                        "ec2:CreateTags",
-                                        "ec2:RunInstances",
-                                        "ec2:TerminateInstances",
-                                        "ec2:RegisterImage",
-                                        "ec2:DeregisterImage"
-                                    ],
-                                    "Effect": "Allow",
-                                    "Resource": "*"
-                                },
-                                {
-                                    "Action": ["elasticloadbalancing:*"],
-                                    "Effect": "Allow",
-                                    "Resource": "*"
-                                }
-                            ],
-                            "Version": "2012-10-17"
-                        },
-                        "PolicyName": "aws-cpi"
-                    }
-                ]
-            },
-            "Type": "AWS::IAM::User"
-        },
-        "BOSHUserAccessKey": {
-            "Properties": {"UserName": {"Ref": "BOSHUser"}},
-            "Type": "AWS::IAM::AccessKey"
-        },
-        "InternalRoute": {
-            "DependsOn": "NATInstance",
-            "Properties": {
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "InstanceId": {"Ref": "NATInstance"},
-                "RouteTableId": {"Ref": "InternalRouteTable"}
-            },
-            "Type": "AWS::EC2::Route"
-        },
-        "InternalRouteTable": {
-            "Properties": {
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::RouteTable"
-        },
-        "InternalSecurityGroup": {
-            "Properties": {
-                "GroupDescription": "Internal",
-                "SecurityGroupEgress": [],
-                "SecurityGroupIngress": [
-                    {"FromPort": "0", "IpProtocol": "tcp", "ToPort": "65535"},
-                    {"FromPort": "0", "IpProtocol": "udp", "ToPort": "65535"},
-                    {
-                        "CidrIp": "0.0.0.0/0",
-                        "FromPort": "-1",
-                        "IpProtocol": "icmp",
-                        "ToPort": "-1"
-                    }
-                ],
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "InternalSecurityGroupIngressTCPfromBOSH": {
-            "Properties": {
-                "FromPort": "0",
-                "GroupId": {"Ref": "InternalSecurityGroup"},
-                "IpProtocol": "tcp",
-                "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "ToPort": "65535"
-            },
-            "Type": "AWS::EC2::SecurityGroupIngress"
-        },
-        "InternalSecurityGroupIngressTCPfromSelf": {
-            "Properties": {
-                "FromPort": "0",
-                "GroupId": {"Ref": "InternalSecurityGroup"},
-                "IpProtocol": "tcp",
-                "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "ToPort": "65535"
-            },
-            "Type": "AWS::EC2::SecurityGroupIngress"
-        },
-        "InternalSecurityGroupIngressUDPfromBOSH": {
-            "Properties": {
-                "FromPort": "0",
-                "GroupId": {"Ref": "InternalSecurityGroup"},
-                "IpProtocol": "udp",
-                "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "ToPort": "65535"
-            },
-            "Type": "AWS::EC2::SecurityGroupIngress"
-        },
-        "InternalSecurityGroupIngressUDPfromSelf": {
-            "Properties": {
-                "FromPort": "0",
-                "GroupId": {"Ref": "InternalSecurityGroup"},
-                "IpProtocol": "udp",
-                "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "ToPort": "65535"
-            },
-            "Type": "AWS::EC2::SecurityGroupIngress"
-        },
-        "InternalSubnet1": {
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
-                "CidrBlock": {"Ref": "InternalSubnet1CIDR"},
-                "Tags": [
-                    {"Key": "Name", "Value": "Internal1"},
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "InternalSubnet1RouteTableAssociation": {
-            "Properties": {
-                "RouteTableId": {"Ref": "InternalRouteTable"},
-                "SubnetId": {"Ref": "InternalSubnet1"}
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "InternalSubnet2": {
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
-                "CidrBlock": {"Ref": "InternalSubnet2CIDR"},
-                "Tags": [
-                    {"Key": "Name", "Value": "Internal2"},
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "InternalSubnet2RouteTableAssociation": {
-            "Properties": {
-                "RouteTableId": {"Ref": "InternalRouteTable"},
-                "SubnetId": {"Ref": "InternalSubnet2"}
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "InternalSubnet3": {
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
-                "CidrBlock": {"Ref": "InternalSubnet3CIDR"},
-                "Tags": [
-                    {"Key": "Name", "Value": "Internal3"},
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "InternalSubnet3RouteTableAssociation": {
-            "Properties": {
-                "RouteTableId": {"Ref": "InternalRouteTable"},
-                "SubnetId": {"Ref": "InternalSubnet3"}
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "NATEIP": {
-            "DependsOn": "VPCGatewayAttachment",
-            "Properties": {"Domain": "vpc", "InstanceId": {"Ref": "NATInstance"}},
-            "Type": "AWS::EC2::EIP"
-        },
-        "NATInstance": {
-            "Properties": {
-                "ImageId": {
-                    "Fn::FindInMap": ["AWSNATAMI", {"Ref": "AWS::Region"}, "AMI"]
-                },
-                "InstanceType": "t2.medium",
-                "KeyName": {"Ref": "SSHKeyPairName"},
-                "SecurityGroupIds": [{"Ref": "NATSecurityGroup"}],
-                "SourceDestCheck": false,
-                "SubnetId": {"Ref": "BOSHSubnet"},
-                "Tags": [
-                    {"Key": "Name", "Value": "NAT"},
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ]
-            },
-            "Type": "AWS::EC2::Instance"
-        },
-        "NATSecurityGroup": {
-            "Properties": {
-                "GroupDescription": "NAT",
-                "SecurityGroupEgress": [],
-                "SecurityGroupIngress": [
-                    {
-                        "FromPort": "0",
-                        "IpProtocol": "tcp",
-                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                        "ToPort": "65535"
-                    },
-                    {
-                        "FromPort": "0",
-                        "IpProtocol": "udp",
-                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
-                        "ToPort": "65535"
-                    }
-                ],
-                "Tags": [
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ],
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "VPC": {
-            "Properties": {
-                "CidrBlock": {"Ref": "VPCCIDR"},
-                "Tags": [
-                    {"Key": "Name", "Value": "bbl"},
-                    {"Key": "bbl-env-id", "Value": "bbl-env-lake-timestamp"}
-                ]
-            },
-            "Type": "AWS::EC2::VPC"
-        },
-        "VPCGatewayAttachment": {
-            "Properties": {
-                "InternetGatewayId": {"Ref": "VPCGatewayInternetGateway"},
-                "VpcId": {"Ref": "VPC"}
-            },
-            "Type": "AWS::EC2::VPCGatewayAttachment"
-        },
-        "VPCGatewayInternetGateway": {"Type": "AWS::EC2::InternetGateway"}
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Infrastructure for a BOSH deployment.",
+  "Mappings": {
+    "AWSNATAMI": {
+      "ap-northeast-1": {"AMI": "ami-f885ae96"},
+      "ap-northeast-2": {"AMI": "ami-4118d72f"},
+      "ap-southeast-1": {"AMI": "ami-e2fc3f81"},
+      "ap-southeast-2": {"AMI": "ami-e3217a80"},
+      "eu-central-1": {"AMI": "ami-0b322e67"},
+      "eu-west-1": {"AMI": "ami-c0993ab3"},
+      "sa-east-1": {"AMI": "ami-8631b5ea"},
+      "us-east-1": {"AMI": "ami-68115b02"},
+      "us-west-1": {"AMI": "ami-ef1a718f"},
+      "us-west-2": {"AMI": "ami-77a4b816"}
     }
+  },
+  "Outputs": {
+    "BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
+    "BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}},
+    "BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
+    "BOSHSubnetAZ": {
+      "Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
+    },
+    "BOSHURL": {
+      "Value": {"Fn::Join": ["", ["https://", {"Ref": "BOSHEIP"}, ":25555"]]}
+    },
+    "BOSHUserAccessKey": {"Value": {"Ref": "BOSHUserAccessKey"}},
+    "BOSHUserSecretAccessKey": {
+      "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
+    },
+    "InternalSecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
+    "InternalSubnet1AZ": {
+      "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
+    },
+    "InternalSubnet1CIDR": {"Value": {"Ref": "InternalSubnet1CIDR"}},
+    "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
+    "InternalSubnet2AZ": {
+      "Value": {"Fn::GetAtt": ["InternalSubnet2", "AvailabilityZone"]}
+    },
+    "InternalSubnet2CIDR": {"Value": {"Ref": "InternalSubnet2CIDR"}},
+    "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
+    "InternalSubnet3AZ": {
+      "Value": {"Fn::GetAtt": ["InternalSubnet3", "AvailabilityZone"]}
+    },
+    "InternalSubnet3CIDR": {"Value": {"Ref": "InternalSubnet3CIDR"}},
+    "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
+    "VPCID": {"Value": {"Ref": "VPC"}}
+  },
+  "Parameters": {
+    "BOSHInboundCIDR": {
+      "Default": "0.0.0.0/0",
+      "Description": "CIDR to permit access to BOSH (e.g. 205.103.216.37/32 for your specific IP)",
+      "Type": "String"
+    },
+    "BOSHSubnetCIDR": {
+      "Default": "10.0.0.0/24",
+      "Description": "CIDR block for the BOSH subnet.",
+      "Type": "String"
+    },
+    "InternalSubnet1CIDR": {
+      "Default": "10.0.16.0/20",
+      "Description": "CIDR block for InternalSubnet1.",
+      "Type": "String"
+    },
+    "InternalSubnet2CIDR": {
+      "Default": "10.0.32.0/20",
+      "Description": "CIDR block for InternalSubnet2.",
+      "Type": "String"
+    },
+    "InternalSubnet3CIDR": {
+      "Default": "10.0.48.0/20",
+      "Description": "CIDR block for InternalSubnet3.",
+      "Type": "String"
+    },
+    "SSHKeyPairName": {
+      "Default": "some-keypair-name",
+      "Description": "SSH KeyPair to use for instances",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "VPCCIDR": {
+      "Default": "10.0.0.0/16",
+      "Description": "CIDR block for the VPC.",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "BOSHEIP": {
+      "DependsOn": "VPCGatewayAttachment",
+      "Properties": {"Domain": "vpc"},
+      "Type": "AWS::EC2::EIP"
+    },
+    "BOSHRoute": {
+      "DependsOn": "VPCGatewayAttachment",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {"Ref": "VPCGatewayInternetGateway"},
+        "RouteTableId": {"Ref": "BOSHRouteTable"}
+      },
+      "Type": "AWS::EC2::Route"
+    },
+    "BOSHRouteTable": {
+      "Properties": {"VpcId": {"Ref": "VPC"}},
+      "Type": "AWS::EC2::RouteTable"
+    },
+    "BOSHSecurityGroup": {
+      "Properties": {
+        "GroupDescription": "BOSH",
+        "SecurityGroupEgress": [],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": {"Ref": "BOSHInboundCIDR"},
+            "FromPort": "22",
+            "IpProtocol": "tcp",
+            "ToPort": "22"
+          },
+          {
+            "CidrIp": {"Ref": "BOSHInboundCIDR"},
+            "FromPort": "6868",
+            "IpProtocol": "tcp",
+            "ToPort": "6868"
+          },
+          {
+            "CidrIp": {"Ref": "BOSHInboundCIDR"},
+            "FromPort": "25555",
+            "IpProtocol": "tcp",
+            "ToPort": "25555"
+          },
+          {
+            "FromPort": "0",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+            "ToPort": "65535"
+          },
+          {
+            "FromPort": "0",
+            "IpProtocol": "udp",
+            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+            "ToPort": "65535"
+          }
+        ],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    "BOSHSubnet": {
+      "Properties": {
+        "CidrBlock": {"Ref": "BOSHSubnetCIDR"},
+        "Tags": [{"Key": "Name", "Value": "BOSH"}],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::Subnet"
+    },
+    "BOSHSubnetRouteTableAssociation": {
+      "Properties": {
+        "RouteTableId": {"Ref": "BOSHRouteTable"},
+        "SubnetId": {"Ref": "BOSHSubnet"}
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation"
+    },
+    "BOSHUser": {
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "ec2:AssociateAddress",
+                    "ec2:AttachVolume",
+                    "ec2:CreateVolume",
+                    "ec2:DeleteSnapshot",
+                    "ec2:DeleteVolume",
+                    "ec2:DescribeAddresses",
+                    "ec2:DescribeImages",
+                    "ec2:DescribeInstances",
+                    "ec2:DescribeRegions",
+                    "ec2:DescribeSecurityGroups",
+                    "ec2:DescribeSnapshots",
+                    "ec2:DescribeSubnets",
+                    "ec2:DescribeVolumes",
+                    "ec2:DetachVolume",
+                    "ec2:CreateSnapshot",
+                    "ec2:CreateTags",
+                    "ec2:RunInstances",
+                    "ec2:TerminateInstances",
+                    "ec2:RegisterImage",
+                    "ec2:DeregisterImage"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": ["elasticloadbalancing:*"],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ],
+              "Version": "2012-10-17"
+            },
+            "PolicyName": "aws-cpi"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::User"
+    },
+    "BOSHUserAccessKey": {
+      "Properties": {"UserName": {"Ref": "BOSHUser"}},
+      "Type": "AWS::IAM::AccessKey"
+    },
+    "InternalRoute": {
+      "DependsOn": "NATInstance",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "InstanceId": {"Ref": "NATInstance"},
+        "RouteTableId": {"Ref": "InternalRouteTable"}
+      },
+      "Type": "AWS::EC2::Route"
+    },
+    "InternalRouteTable": {
+      "Properties": {"VpcId": {"Ref": "VPC"}},
+      "Type": "AWS::EC2::RouteTable"
+    },
+    "InternalSecurityGroup": {
+      "Properties": {
+        "GroupDescription": "Internal",
+        "SecurityGroupEgress": [],
+        "SecurityGroupIngress": [
+          {"FromPort": "0", "IpProtocol": "tcp", "ToPort": "65535"},
+          {"FromPort": "0", "IpProtocol": "udp", "ToPort": "65535"},
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "-1",
+            "IpProtocol": "icmp",
+            "ToPort": "-1"
+          }
+        ],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    "InternalSecurityGroupIngressTCPfromBOSH": {
+      "Properties": {
+        "FromPort": "0",
+        "GroupId": {"Ref": "InternalSecurityGroup"},
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
+        "ToPort": "65535"
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "InternalSecurityGroupIngressTCPfromSelf": {
+      "Properties": {
+        "FromPort": "0",
+        "GroupId": {"Ref": "InternalSecurityGroup"},
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+        "ToPort": "65535"
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "InternalSecurityGroupIngressUDPfromBOSH": {
+      "Properties": {
+        "FromPort": "0",
+        "GroupId": {"Ref": "InternalSecurityGroup"},
+        "IpProtocol": "udp",
+        "SourceSecurityGroupId": {"Ref": "BOSHSecurityGroup"},
+        "ToPort": "65535"
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "InternalSecurityGroupIngressUDPfromSelf": {
+      "Properties": {
+        "FromPort": "0",
+        "GroupId": {"Ref": "InternalSecurityGroup"},
+        "IpProtocol": "udp",
+        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+        "ToPort": "65535"
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "InternalSubnet1": {
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
+        },
+        "CidrBlock": {"Ref": "InternalSubnet1CIDR"},
+        "Tags": [{"Key": "Name", "Value": "Internal1"}],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::Subnet"
+    },
+    "InternalSubnet1RouteTableAssociation": {
+      "Properties": {
+        "RouteTableId": {"Ref": "InternalRouteTable"},
+        "SubnetId": {"Ref": "InternalSubnet1"}
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation"
+    },
+    "InternalSubnet2": {
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
+        },
+        "CidrBlock": {"Ref": "InternalSubnet2CIDR"},
+        "Tags": [{"Key": "Name", "Value": "Internal2"}],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::Subnet"
+    },
+    "InternalSubnet2RouteTableAssociation": {
+      "Properties": {
+        "RouteTableId": {"Ref": "InternalRouteTable"},
+        "SubnetId": {"Ref": "InternalSubnet2"}
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation"
+    },
+    "InternalSubnet3": {
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
+        },
+        "CidrBlock": {"Ref": "InternalSubnet3CIDR"},
+        "Tags": [{"Key": "Name", "Value": "Internal3"}],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::Subnet"
+    },
+    "InternalSubnet3RouteTableAssociation": {
+      "Properties": {
+        "RouteTableId": {"Ref": "InternalRouteTable"},
+        "SubnetId": {"Ref": "InternalSubnet3"}
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation"
+    },
+    "NATEIP": {
+      "DependsOn": "VPCGatewayAttachment",
+      "Properties": {"Domain": "vpc", "InstanceId": {"Ref": "NATInstance"}},
+      "Type": "AWS::EC2::EIP"
+    },
+    "NATInstance": {
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": ["AWSNATAMI", {"Ref": "AWS::Region"}, "AMI"]
+        },
+        "InstanceType": "t2.medium",
+        "KeyName": {"Ref": "SSHKeyPairName"},
+        "SecurityGroupIds": [{"Ref": "NATSecurityGroup"}],
+        "SourceDestCheck": false,
+        "SubnetId": {"Ref": "BOSHSubnet"},
+        "Tags": [{"Key": "Name", "Value": "NAT"}]
+      },
+      "Type": "AWS::EC2::Instance"
+    },
+    "NATSecurityGroup": {
+      "Properties": {
+        "GroupDescription": "NAT",
+        "SecurityGroupEgress": [],
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "0",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+            "ToPort": "65535"
+          },
+          {
+            "FromPort": "0",
+            "IpProtocol": "udp",
+            "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+            "ToPort": "65535"
+          }
+        ],
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    "VPC": {
+      "Properties": {
+        "CidrBlock": {"Ref": "VPCCIDR"},
+        "Tags": [{"Key": "Name", "Value": "bbl"}]
+      },
+      "Type": "AWS::EC2::VPC"
+    },
+    "VPCGatewayAttachment": {
+      "Properties": {
+        "InternetGatewayId": {"Ref": "VPCGatewayInternetGateway"},
+        "VpcId": {"Ref": "VPC"}
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment"
+    },
+    "VPCGatewayInternetGateway": {"Type": "AWS::EC2::InternetGateway"}
+  }
 }

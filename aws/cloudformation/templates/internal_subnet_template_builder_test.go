@@ -15,7 +15,7 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 
 	Describe("InternalSubnet", func() {
 		It("returns a template with parameters for the internal subnet", func() {
-			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20", "some-env-id")
+			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
 
 			Expect(subnet.Parameters).To(HaveLen(1))
 			Expect(subnet.Parameters).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Parameter{
@@ -26,7 +26,7 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 		})
 
 		It("returns a template with resources for the internal subnet", func() {
-			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20", "some-env-id")
+			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
 
 			Expect(subnet.Resources).To(HaveLen(4))
 			Expect(subnet.Resources).To(HaveKeyWithValue("InternalSubnet1", templates.Resource{
@@ -47,10 +47,6 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 							Key:   "Name",
 							Value: "Internal1",
 						},
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
 					},
 				},
 			}))
@@ -59,12 +55,6 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 				Type: "AWS::EC2::RouteTable",
 				Properties: templates.RouteTable{
 					VpcId: templates.Ref{"VPC"},
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 
@@ -88,7 +78,7 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 		})
 
 		It("returns a template with outputs for the internal subnet", func() {
-			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20", "")
+			subnet := builder.InternalSubnet(0, "1", "10.0.16.0/20")
 
 			Expect(subnet.Outputs).To(HaveLen(3))
 			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1CIDR", templates.Output{

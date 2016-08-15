@@ -15,20 +15,14 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 
 	Describe("InternalSecurityGroup", func() {
 		It("returns a template containing all the fields for internal security group", func() {
-			securityGroup := builder.InternalSecurityGroup("some-env-id")
+			securityGroup := builder.InternalSecurityGroup()
 
 			Expect(securityGroup.Resources).To(HaveLen(5))
 			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
-					VpcId:            templates.Ref{"VPC"},
-					GroupDescription: "Internal",
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
+					VpcId:               templates.Ref{"VPC"},
+					GroupDescription:    "Internal",
 					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
@@ -59,12 +53,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 					IpProtocol:            "tcp",
 					FromPort:              "0",
 					ToPort:                "65535",
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 
@@ -76,12 +64,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 
@@ -93,12 +75,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 					IpProtocol:            "tcp",
 					FromPort:              "0",
 					ToPort:                "65535",
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 
@@ -110,12 +86,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 					IpProtocol:            "udp",
 					FromPort:              "0",
 					ToPort:                "65535",
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 
@@ -128,7 +98,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 
 	Describe("BOSHSecurityGroup", func() {
 		It("returns a template containing the bosh security group", func() {
-			securityGroup := builder.BOSHSecurityGroup("some-env-id")
+			securityGroup := builder.BOSHSecurityGroup()
 
 			Expect(securityGroup.Parameters).To(HaveLen(1))
 			Expect(securityGroup.Parameters).To(HaveKeyWithValue("BOSHInboundCIDR", templates.Parameter{
@@ -182,7 +152,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 							ToPort:                "65535",
 						},
 					},
-					Tags: []templates.Tag{{Key: "bbl-env-id", Value: "some-env-id"}},
 				},
 			}))
 		})
@@ -235,20 +204,14 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		Describe("LBSecurityGroup", func() {
 			It("returns a load balancer security group based on load balancer template", func() {
 				securityGroup := builder.LBSecurityGroup("some-security-group", "some-group-description",
-					"some-load-balancer", loadBalancerTemplate, "some-env-id")
+					"some-load-balancer", loadBalancerTemplate)
 
 				Expect(securityGroup.Resources).To(HaveLen(1))
 				Expect(securityGroup.Resources).To(HaveKeyWithValue("some-security-group", templates.Resource{
 					Type: "AWS::EC2::SecurityGroup",
 					Properties: templates.SecurityGroup{
-						VpcId:            templates.Ref{"VPC"},
-						GroupDescription: "some-group-description",
-						Tags: []templates.Tag{
-							{
-								Key:   "bbl-env-id",
-								Value: "some-env-id",
-							},
-						},
+						VpcId:               templates.Ref{"VPC"},
+						GroupDescription:    "some-group-description",
 						SecurityGroupEgress: []templates.SecurityGroupEgress{},
 						SecurityGroupIngress: []templates.SecurityGroupIngress{
 							{
@@ -284,7 +247,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 		Describe("LBInternalSecurityGroup", func() {
 			It("returns a load balancer internal security group based on load balancer template", func() {
 				securityGroup := builder.LBInternalSecurityGroup("some-internal-security-group", "some-security-group",
-					"some-group-description", "some-load-balancer", loadBalancerTemplate, "some-env-id")
+					"some-group-description", "some-load-balancer", loadBalancerTemplate)
 
 				Expect(securityGroup.Resources).To(HaveLen(1))
 				Expect(securityGroup.Resources).To(HaveKeyWithValue("some-internal-security-group", templates.Resource{
@@ -305,12 +268,6 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 								IpProtocol:            "tcp",
 								FromPort:              "8080",
 								ToPort:                "8080",
-							},
-						},
-						Tags: []templates.Tag{
-							{
-								Key:   "bbl-env-id",
-								Value: "some-env-id",
 							},
 						},
 					},

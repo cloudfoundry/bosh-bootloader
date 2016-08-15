@@ -103,7 +103,6 @@ type SecurityGroup struct {
 	GroupDescription     string                 `json:",omitempty"`
 	SecurityGroupIngress []SecurityGroupIngress `json:",omitempty"`
 	SecurityGroupEgress  []SecurityGroupEgress
-	Tags                 []Tag `json:",omitempty"`
 }
 
 type SecurityGroupEgress struct {
@@ -120,7 +119,6 @@ type SecurityGroupIngress struct {
 	IpProtocol            string      `json:",omitempty"`
 	FromPort              string      `json:",omitempty"`
 	ToPort                string      `json:",omitempty"`
-	Tags                  []Tag       `json:",omitempty"`
 }
 
 type SubnetRouteTableAssociation struct {
@@ -159,7 +157,6 @@ type Subnet struct {
 
 type RouteTable struct {
 	VpcId interface{} `json:",omitempty"`
-	Tags  []Tag       `json:",omitempty"`
 }
 
 type IAMUser struct {
@@ -202,7 +199,6 @@ type ElasticLoadBalancingLoadBalancer struct {
 	HealthCheck    HealthCheck   `json:"HealthCheck,omitempty"`
 	Listeners      []Listener    `json:"Listeners,omitempty"`
 	CrossZone      bool          `json:"CrossZone,omitempty"`
-	Tags           []Tag
 }
 
 type Listener struct {

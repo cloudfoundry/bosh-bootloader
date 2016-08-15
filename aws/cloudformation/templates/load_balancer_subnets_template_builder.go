@@ -8,7 +8,7 @@ func NewLoadBalancerSubnetsTemplateBuilder() LoadBalancerSubnetsTemplateBuilder 
 	return LoadBalancerSubnetsTemplateBuilder{}
 }
 
-func (LoadBalancerSubnetsTemplateBuilder) LoadBalancerSubnets(azCount int, envID string) Template {
+func (LoadBalancerSubnetsTemplateBuilder) LoadBalancerSubnets(azCount int) Template {
 	loadBalancerSubnetTemplateBuilder := NewLoadBalancerSubnetTemplateBuilder()
 
 	template := Template{}
@@ -17,7 +17,6 @@ func (LoadBalancerSubnetsTemplateBuilder) LoadBalancerSubnets(azCount int, envID
 			index-1,
 			fmt.Sprintf("%d", index),
 			fmt.Sprintf("10.0.%d.0/24", index+1),
-			envID,
 		))
 	}
 	return template

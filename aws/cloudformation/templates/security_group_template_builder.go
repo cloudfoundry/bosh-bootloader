@@ -7,7 +7,7 @@ func NewSecurityGroupTemplateBuilder() SecurityGroupTemplateBuilder {
 }
 
 func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securityGroupDescription,
-	loadBalancerName string, template Template, envID string) Template {
+	loadBalancerName string, template Template) Template {
 	securityGroupIngress := []SecurityGroupIngress{}
 
 	properties := template.Resources[loadBalancerName].Properties.(ElasticLoadBalancingLoadBalancer)
@@ -31,12 +31,6 @@ func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securit
 					GroupDescription:     securityGroupDescription,
 					SecurityGroupEgress:  []SecurityGroupEgress{},
 					SecurityGroupIngress: securityGroupIngress,
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
 				},
 			},
 		},
@@ -44,7 +38,7 @@ func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securit
 }
 
 func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName, lbSecurityGroupName,
-	securityGroupDescription, loadBalancerName string, template Template, envID string) Template {
+	securityGroupDescription, loadBalancerName string, template Template) Template {
 
 	securityGroupIngress := []SecurityGroupIngress{}
 	securityGroupPorts := map[string]bool{}
@@ -72,12 +66,6 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 					GroupDescription:     securityGroupDescription,
 					SecurityGroupEgress:  []SecurityGroupEgress{},
 					SecurityGroupIngress: securityGroupIngress,
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
 				},
 			},
 		},
@@ -90,20 +78,14 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 
 }
 
-func (s SecurityGroupTemplateBuilder) InternalSecurityGroup(envID string) Template {
+func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 	return Template{
 		Resources: map[string]Resource{
 			"InternalSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: SecurityGroup{
-					VpcId:            Ref{"VPC"},
-					GroupDescription: "Internal",
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
+					VpcId:               Ref{"VPC"},
+					GroupDescription:    "Internal",
 					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						s.securityGroupIngress(nil, "tcp", "0", "65535", nil),
@@ -112,10 +94,10 @@ func (s SecurityGroupTemplateBuilder) InternalSecurityGroup(envID string) Templa
 					},
 				},
 			},
-			"InternalSecurityGroupIngressTCPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "tcp", envID),
-			"InternalSecurityGroupIngressUDPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "udp", envID),
-			"InternalSecurityGroupIngressTCPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "tcp", envID),
-			"InternalSecurityGroupIngressUDPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "udp", envID),
+			"InternalSecurityGroupIngressTCPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "tcp"),
+			"InternalSecurityGroupIngressUDPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "udp"),
+			"InternalSecurityGroupIngressTCPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "tcp"),
+			"InternalSecurityGroupIngressUDPfromSelf": s.internalSecurityGroupIngress("InternalSecurityGroup", "udp"),
 		},
 		Outputs: map[string]Output{
 			"InternalSecurityGroup": {Value: Ref{"InternalSecurityGroup"}},
@@ -123,7 +105,7 @@ func (s SecurityGroupTemplateBuilder) InternalSecurityGroup(envID string) Templa
 	}
 }
 
-func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup(envID string) Template {
+func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 	return Template{
 		Parameters: map[string]Parameter{
 			"BOSHInboundCIDR": Parameter{
@@ -146,7 +128,6 @@ func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup(envID string) Template {
 						s.securityGroupIngress(nil, "tcp", "0", "65535", Ref{"InternalSecurityGroup"}),
 						s.securityGroupIngress(nil, "udp", "0", "65535", Ref{"InternalSecurityGroup"}),
 					},
-					Tags: []Tag{{Key: bblTagKey, Value: envID}},
 				},
 			},
 		},
@@ -156,7 +137,7 @@ func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup(envID string) Template {
 	}
 }
 
-func (SecurityGroupTemplateBuilder) internalSecurityGroupIngress(sourceSecurityGroupId, ipProtocol, envID string) Resource {
+func (SecurityGroupTemplateBuilder) internalSecurityGroupIngress(sourceSecurityGroupId, ipProtocol string) Resource {
 	return Resource{
 		Type: "AWS::EC2::SecurityGroupIngress",
 		Properties: SecurityGroupIngress{
@@ -165,12 +146,6 @@ func (SecurityGroupTemplateBuilder) internalSecurityGroupIngress(sourceSecurityG
 			IpProtocol:            ipProtocol,
 			FromPort:              "0",
 			ToPort:                "65535",
-			Tags: []Tag{
-				{
-					Key:   bblTagKey,
-					Value: envID,
-				},
-			},
 		},
 	}
 }

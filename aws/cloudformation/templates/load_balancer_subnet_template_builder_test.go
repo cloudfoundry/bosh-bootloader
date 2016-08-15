@@ -15,7 +15,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 
 	Describe("LoadBalancerSubnet", func() {
 		It("returns a template with all fields for the load balancer subnet", func() {
-			subnet := builder.LoadBalancerSubnet(0, "1", "10.0.2.0/24", "some-env-id")
+			subnet := builder.LoadBalancerSubnet(0, "1", "10.0.2.0/24")
 
 			Expect(subnet.Parameters).To(HaveLen(1))
 			Expect(subnet.Parameters).To(HaveKeyWithValue("LoadBalancerSubnet1CIDR", templates.Parameter{
@@ -43,10 +43,6 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 							Key:   "Name",
 							Value: "LoadBalancer1",
 						},
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
 					},
 				},
 			}))
@@ -55,12 +51,6 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 				Type: "AWS::EC2::RouteTable",
 				Properties: templates.RouteTable{
 					VpcId: templates.Ref{"VPC"},
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 
@@ -84,7 +74,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 		})
 
 		It("returns subnet with az 1", func() {
-			subnet := builder.LoadBalancerSubnet(1, "1", "10.0.3.0/24", "some-env-id")
+			subnet := builder.LoadBalancerSubnet(1, "1", "10.0.3.0/24")
 
 			Expect(subnet.Parameters).To(HaveLen(1))
 			Expect(subnet.Parameters).To(HaveKeyWithValue("LoadBalancerSubnet1CIDR", templates.Parameter{
@@ -110,10 +100,6 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 						{
 							Key:   "Name",
 							Value: "LoadBalancer1",
-						},
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
 						},
 					},
 				},

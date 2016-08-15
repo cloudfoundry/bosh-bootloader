@@ -8,7 +8,7 @@ func NewInternalSubnetTemplateBuilder() InternalSubnetTemplateBuilder {
 	return InternalSubnetTemplateBuilder{}
 }
 
-func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrBlock string, envID string) Template {
+func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrBlock string) Template {
 	subnetName := fmt.Sprintf("InternalSubnet%s", suffix)
 	subnetTag := fmt.Sprintf("Internal%s", suffix)
 	subnetCIDRName := fmt.Sprintf("%sCIDR", subnetName)
@@ -58,10 +58,6 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrB
 							Key:   "Name",
 							Value: subnetTag,
 						},
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
 					},
 				},
 			},
@@ -69,12 +65,6 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrB
 				Type: "AWS::EC2::RouteTable",
 				Properties: RouteTable{
 					VpcId: Ref{"VPC"},
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
 				},
 			},
 			"InternalRoute": {

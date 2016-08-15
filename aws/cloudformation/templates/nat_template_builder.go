@@ -6,7 +6,7 @@ func NewNATTemplateBuilder() NATTemplateBuilder {
 	return NATTemplateBuilder{}
 }
 
-func (t NATTemplateBuilder) NAT(envID string) Template {
+func (t NATTemplateBuilder) NAT() Template {
 	return Template{
 		Mappings: map[string]interface{}{
 			"AWSNATAMI": map[string]AMI{
@@ -26,14 +26,8 @@ func (t NATTemplateBuilder) NAT(envID string) Template {
 			"NATSecurityGroup": Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: SecurityGroup{
-					VpcId:            Ref{"VPC"},
-					GroupDescription: "NAT",
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
+					VpcId:               Ref{"VPC"},
+					GroupDescription:    "NAT",
 					SecurityGroupEgress: []SecurityGroupEgress{},
 					SecurityGroupIngress: []SecurityGroupIngress{
 						{
@@ -72,10 +66,6 @@ func (t NATTemplateBuilder) NAT(envID string) Template {
 						{
 							Key:   "Name",
 							Value: "NAT",
-						},
-						{
-							Key:   bblTagKey,
-							Value: envID,
 						},
 					},
 				},

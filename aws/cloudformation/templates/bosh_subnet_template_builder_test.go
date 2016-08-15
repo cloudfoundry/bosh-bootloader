@@ -15,7 +15,7 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 
 	Describe("BOSHSubnet", func() {
 		It("returns a template with all fields for the BOSH subnet", func() {
-			subnet := builder.BOSHSubnet("some-env-id")
+			subnet := builder.BOSHSubnet()
 
 			Expect(subnet.Resources).To(HaveLen(4))
 			Expect(subnet.Resources).To(HaveKeyWithValue("BOSHSubnet", templates.Resource{
@@ -28,10 +28,6 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 							Key:   "Name",
 							Value: "BOSH",
 						},
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
 					},
 				},
 			}))
@@ -40,12 +36,6 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 				Type: "AWS::EC2::RouteTable",
 				Properties: templates.RouteTable{
 					VpcId: templates.Ref{"VPC"},
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
 				},
 			}))
 

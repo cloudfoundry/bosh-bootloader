@@ -8,7 +8,7 @@ func NewLoadBalancerTemplateBuilder() LoadBalancerTemplateBuilder {
 	return LoadBalancerTemplateBuilder{}
 }
 
-func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailabilityZones int, envID string) Template {
+func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailabilityZones int) Template {
 	return Template{
 		Outputs: l.outputsFor("CFSSHProxyLoadBalancer"),
 		Resources: map[string]Resource{
@@ -36,16 +36,13 @@ func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailability
 							InstancePort:     "2222",
 						},
 					},
-					Tags: []Tag{
-						{Key: bblTagKey, Value: envID},
-					},
 				},
 			},
 		},
 	}
 }
 
-func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZones int, sslCertificateID, envID string) Template {
+func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZones int, sslCertificateID string) Template {
 	return Template{
 		Outputs: l.outputsFor("CFRouterLoadBalancer"),
 		Resources: map[string]Resource{
@@ -87,19 +84,13 @@ func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZo
 							SSLCertificateID: sslCertificateID,
 						},
 					},
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
 				},
 			},
 		},
 	}
 }
 
-func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZones int, sslCertificateID, envID string) Template {
+func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZones int, sslCertificateID string) Template {
 	return Template{
 		Outputs: l.outputsFor("ConcourseLoadBalancer"),
 		Resources: map[string]Resource{
@@ -117,12 +108,7 @@ func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZ
 						Timeout:            "5",
 						UnhealthyThreshold: "10",
 					},
-					Tags: []Tag{
-						{
-							Key:   bblTagKey,
-							Value: envID,
-						},
-					},
+
 					Listeners: []Listener{
 						{
 							Protocol:         "tcp",

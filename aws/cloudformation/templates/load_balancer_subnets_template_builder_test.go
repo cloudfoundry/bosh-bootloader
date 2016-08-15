@@ -19,7 +19,7 @@ var _ = Describe("LoadBalancerSubnetsTemplateBuilder", func() {
 
 	Describe("LoadBalancerSubnets", func() {
 		It("creates load balancer subnets for each availability zone", func() {
-			template := loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(2, "some-env-id")
+			template := loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(2)
 
 			Expect(template.Parameters).To(HaveLen(2))
 			Expect(template.Parameters["LoadBalancerSubnet1CIDR"].Default).To(Equal("10.0.2.0/24"))
@@ -52,10 +52,6 @@ func hasLBSubnetWithAvailabilityZoneIndex(template templates.Template, index int
 			{
 				Key:   "Name",
 				Value: tagName,
-			},
-			{
-				Key:   "bbl-env-id",
-				Value: "some-env-id",
 			},
 		},
 	})

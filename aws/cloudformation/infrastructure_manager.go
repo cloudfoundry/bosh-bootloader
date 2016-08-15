@@ -7,7 +7,7 @@ import (
 )
 
 type templateBuilder interface {
-	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string, envID string) templates.Template
+	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string) templates.Template
 }
 
 type stackManager interface {
@@ -32,7 +32,7 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 
 func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName,
 	lbType, lbCertificateARN, envID string) (Stack, error) {
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, envID)
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
 
 	if err := m.stackManager.CreateOrUpdate(stackName, template); err != nil {
 		return Stack{}, err
@@ -47,7 +47,7 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 
 func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName, lbType,
 	lbCertificateARN, envID string) (Stack, error) {
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, envID)
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
 
 	if err := m.stackManager.Update(stackName, template); err != nil {
 		return Stack{}, err

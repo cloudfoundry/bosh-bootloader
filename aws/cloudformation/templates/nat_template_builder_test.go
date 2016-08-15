@@ -16,7 +16,7 @@ var _ = Describe("NATTemplateBuilder", func() {
 
 	Describe("NAT", func() {
 		It("returns a template containing all of the NAT fields", func() {
-			nat := builder.NAT("some-env-id")
+			nat := builder.NAT()
 
 			Expect(nat.Mappings).To(HaveLen(1))
 			Expect(nat.Mappings).To(HaveKeyWithValue("AWSNATAMI", map[string]templates.AMI{
@@ -36,14 +36,8 @@ var _ = Describe("NATTemplateBuilder", func() {
 			Expect(nat.Resources).To(HaveKeyWithValue("NATSecurityGroup", templates.Resource{
 				Type: "AWS::EC2::SecurityGroup",
 				Properties: templates.SecurityGroup{
-					VpcId:            templates.Ref{"VPC"},
-					GroupDescription: "NAT",
-					Tags: []templates.Tag{
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
-						},
-					},
+					VpcId:               templates.Ref{"VPC"},
+					GroupDescription:    "NAT",
 					SecurityGroupEgress: []templates.SecurityGroupEgress{},
 					SecurityGroupIngress: []templates.SecurityGroupIngress{
 						{
@@ -83,10 +77,6 @@ var _ = Describe("NATTemplateBuilder", func() {
 						{
 							Key:   "Name",
 							Value: "NAT",
-						},
-						{
-							Key:   "bbl-env-id",
-							Value: "some-env-id",
 						},
 					},
 				},
