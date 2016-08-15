@@ -31,13 +31,13 @@ func NewStackManager(cloudFormationClient Client, logger logger) StackManager {
 	}
 }
 
-func (s StackManager) CreateOrUpdate(name string, template templates.Template) error {
+func (s StackManager) CreateOrUpdate(name string, template templates.Template, tags Tags) error {
 	_, err := s.Describe(name)
 	switch err {
 	case StackNotFound:
-		return s.create(name, template)
+		return s.create(name, template, tags)
 	case nil:
-		return s.Update(name, template)
+		return s.Update(name, template, tags)
 	default:
 		return err
 	}
@@ -147,7 +147,7 @@ func (s StackManager) Delete(name string) error {
 	return nil
 }
 
-func (s StackManager) create(name string, template templates.Template) error {
+func (s StackManager) create(name string, template templates.Template, tags Tags) error {
 	s.logger.Step("creating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -155,10 +155,13 @@ func (s StackManager) create(name string, template templates.Template) error {
 		return err
 	}
 
+	awsTags := tags.toAWSTags()
+
 	params := &cloudformation.CreateStackInput{
 		StackName:    aws.String(name),
 		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
+		Tags:         awsTags,
 	}
 
 	_, err = s.cloudFormationClient.CreateStack(params)
@@ -169,7 +172,7 @@ func (s StackManager) create(name string, template templates.Template) error {
 	return nil
 }
 
-func (s StackManager) Update(name string, template templates.Template) error {
+func (s StackManager) Update(name string, template templates.Template, tags Tags) error {
 	s.logger.Step("updating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -177,10 +180,13 @@ func (s StackManager) Update(name string, template templates.Template) error {
 		return err
 	}
 
+	awsTags := tags.toAWSTags()
+
 	params := &cloudformation.UpdateStackInput{
 		StackName:    aws.String(name),
 		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
+		Tags:         awsTags,
 	}
 
 	_, err = s.cloudFormationClient.UpdateStack(params)

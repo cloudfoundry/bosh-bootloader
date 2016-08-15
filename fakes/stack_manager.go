@@ -22,6 +22,7 @@ type StackManager struct {
 		Receives struct {
 			StackName string
 			Template  templates.Template
+			Tags      cloudformation.Tags
 		}
 		Returns struct {
 			Error error
@@ -32,6 +33,7 @@ type StackManager struct {
 		Receives struct {
 			StackName string
 			Template  templates.Template
+			Tags      cloudformation.Tags
 		}
 		Returns struct {
 			Error error
@@ -59,16 +61,18 @@ type StackManager struct {
 	}
 }
 
-func (m *StackManager) CreateOrUpdate(stackName string, template templates.Template) error {
+func (m *StackManager) CreateOrUpdate(stackName string, template templates.Template, tags cloudformation.Tags) error {
 	m.CreateOrUpdateCall.Receives.StackName = stackName
 	m.CreateOrUpdateCall.Receives.Template = template
+	m.CreateOrUpdateCall.Receives.Tags = tags
 
 	return m.CreateOrUpdateCall.Returns.Error
 }
 
-func (m *StackManager) Update(stackName string, template templates.Template) error {
+func (m *StackManager) Update(stackName string, template templates.Template, tags cloudformation.Tags) error {
 	m.UpdateCall.Receives.StackName = stackName
 	m.UpdateCall.Receives.Template = template
+	m.UpdateCall.Receives.Tags = tags
 
 	return m.UpdateCall.Returns.Error
 }

@@ -52,6 +52,12 @@ var _ = Describe("InfrastructureManager", func() {
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
 			}))
+			Expect(stackManager.CreateOrUpdateCall.Receives.Tags).To(Equal(cloudformation.Tags{
+				{
+					Key:   "bbl-env-id",
+					Value: "some-env-id",
+				},
+			}))
 
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.WaitForCompletionCall.Receives.SleepInterval).To(Equal(15 * time.Second))
@@ -103,6 +109,12 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(stackManager.UpdateCall.Receives.Template).To(Equal(templates.Template{
 				AWSTemplateFormatVersion: "some-template-version",
 				Description:              "some-description",
+			}))
+			Expect(stackManager.UpdateCall.Receives.Tags).To(Equal(cloudformation.Tags{
+				{
+					Key:   "bbl-env-id",
+					Value: "some-env-id",
+				},
 			}))
 
 			Expect(stackManager.WaitForCompletionCall.Receives.StackName).To(Equal("some-stack-name"))

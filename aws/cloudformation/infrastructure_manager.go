@@ -6,13 +6,15 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 )
 
+const bblTagKey = "bbl-env-id"
+
 type templateBuilder interface {
 	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string) templates.Template
 }
 
 type stackManager interface {
-	CreateOrUpdate(stackName string, template templates.Template) error
-	Update(stackName string, template templates.Template) error
+	CreateOrUpdate(stackName string, template templates.Template, tags Tags) error
+	Update(stackName string, template templates.Template, tags Tags) error
 	WaitForCompletion(stackName string, sleepInterval time.Duration, action string) error
 	Describe(stackName string) (Stack, error)
 	Delete(stackName string) error
@@ -33,8 +35,14 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName,
 	lbType, lbCertificateARN, envID string) (Stack, error) {
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
+	tags := Tags{
+		{
+			Key:   bblTagKey,
+			Value: envID,
+		},
+	}
 
-	if err := m.stackManager.CreateOrUpdate(stackName, template); err != nil {
+	if err := m.stackManager.CreateOrUpdate(stackName, template, tags); err != nil {
 		return Stack{}, err
 	}
 
@@ -49,7 +57,7 @@ func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZo
 	lbCertificateARN, envID string) (Stack, error) {
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
 
-	if err := m.stackManager.Update(stackName, template); err != nil {
+	if err := m.stackManager.Update(stackName, template, Tags{{Key: bblTagKey, Value: envID}}); err != nil {
 		return Stack{}, err
 	}
 
