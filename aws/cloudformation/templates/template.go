@@ -2,8 +2,6 @@ package templates
 
 import "encoding/json"
 
-const bblTagKey = "bbl-env-id"
-
 type AMI struct {
 	AMI string `json:",omitempty"`
 }
