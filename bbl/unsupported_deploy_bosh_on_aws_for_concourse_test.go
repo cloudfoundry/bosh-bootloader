@@ -116,6 +116,7 @@ var _ = Describe("bbl", func() {
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
 				Expect(ok).To(BeTrue())
+				Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
 
 				keyPairs := fakeAWS.KeyPairs.All()
 				Expect(keyPairs).To(HaveLen(1))

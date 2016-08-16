@@ -121,10 +121,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 	}
 
 	if state.Stack.Name == "" {
-		state.Stack.Name, err = u.stringGenerator.Generate("bbl-aws-", 5)
-		if err != nil {
-			return state, err
-		}
+		state.Stack.Name = fmt.Sprintf("stack-%s", state.EnvID)
 	}
 
 	var certificateARN string

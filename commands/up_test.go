@@ -178,20 +178,11 @@ var _ = Describe("Up", func() {
 			}
 
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
-			var stackNameWasGenerated bool
-
-			stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
-				if prefix == "bbl-aws-" {
-					stackNameWasGenerated = true
-				}
-				return prefix + "some-random-string", nil
-			}
 
 			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stackNameWasGenerated).To(BeTrue())
 
-			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("bbl-aws-some-random-string"))
+			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-timestamp"))
 			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
 			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-timestamp"))
@@ -464,7 +455,7 @@ var _ = Describe("Up", func() {
 						incomingState := storage.State{}
 						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.Stack.Name).To(Equal("bbl-aws-some-random-string"))
+						Expect(state.Stack.Name).To(Equal("stack-bbl-lake-timestamp"))
 					})
 				})
 
@@ -737,18 +728,6 @@ var _ = Describe("Up", func() {
 
 				_, err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
-			})
-
-			It("returns an error when it cannot generate a string for the stack name", func() {
-				stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
-					if prefix == "bbl-aws-" {
-						return "", errors.New("cannot generate string")
-					}
-
-					return "", nil
-				}
-				_, err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("cannot generate string"))
 			})
 
 			It("returns an error when it cannot generate a string for the bosh director credentials", func() {
