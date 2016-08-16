@@ -7,7 +7,7 @@ type KeyPairManager struct {
 }
 
 type keypairCreator interface {
-	Create() (KeyPair, error)
+	Create(envID string) (KeyPair, error)
 }
 
 type keypairChecker interface {
@@ -26,7 +26,7 @@ func NewKeyPairManager(creator keypairCreator, checker keypairChecker, logger lo
 	}
 }
 
-func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
+func (m KeyPairManager) Sync(keypair KeyPair, envID string) (KeyPair, error) {
 	hasLocalKeyPair := !keypair.IsEmpty()
 	hasRemoteKeyPair, err := m.checker.HasKeyPair(keypair.Name)
 	if err != nil {
@@ -36,7 +36,7 @@ func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
 	if !hasLocalKeyPair || !hasRemoteKeyPair {
 		m.logger.Step("creating keypair")
 
-		keypair, err = m.creator.Create()
+		keypair, err = m.creator.Create(envID)
 		if err != nil {
 			return KeyPair{}, err
 		}

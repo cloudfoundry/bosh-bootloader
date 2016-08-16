@@ -40,13 +40,15 @@ var _ = Describe("KeyPairManager", func() {
 					PrivateKey: "private",
 				}
 
-				keypair, err := manager.Sync(stateKeyPair)
+				keypair, err := manager.Sync(stateKeyPair, "some-env-id")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(keypair).To(Equal(ec2.KeyPair{
 					Name:       "my-keypair",
 					PublicKey:  "public",
 					PrivateKey: "private",
 				}))
+
+				Expect(creator.CreateCall.Receives.EnvID).To(Equal("some-env-id"))
 
 				Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
 				Expect(logger.StepCall.Receives.Message).To(Equal("creating keypair"))
@@ -57,7 +59,7 @@ var _ = Describe("KeyPairManager", func() {
 					It("returns an error", func() {
 						creator.CreateCall.Returns.Error = errors.New("failed to create key pair")
 
-						_, err := manager.Sync(stateKeyPair)
+						_, err := manager.Sync(stateKeyPair, "")
 						Expect(err).To(MatchError("failed to create key pair"))
 					})
 				})
@@ -67,7 +69,7 @@ var _ = Describe("KeyPairManager", func() {
 						checker.HasKeyPairCall.Stub = nil
 						checker.HasKeyPairCall.Returns.Error = errors.New("keypair retrieve failed")
 
-						_, err := manager.Sync(stateKeyPair)
+						_, err := manager.Sync(stateKeyPair, "")
 						Expect(err).To(MatchError("keypair retrieve failed"))
 					})
 				})
@@ -97,7 +99,7 @@ var _ = Describe("KeyPairManager", func() {
 					PrivateKey: "private",
 				}
 
-				keypair, err := manager.Sync(stateKeyPair)
+				keypair, err := manager.Sync(stateKeyPair, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(keypair).To(Equal(ec2.KeyPair{
 					Name:       "my-keypair",
@@ -113,7 +115,7 @@ var _ = Describe("KeyPairManager", func() {
 					It("returns an error", func() {
 						creator.CreateCall.Returns.Error = errors.New("failed to create key pair")
 
-						_, err := manager.Sync(stateKeyPair)
+						_, err := manager.Sync(stateKeyPair, "")
 						Expect(err).To(MatchError("failed to create key pair"))
 					})
 				})
@@ -123,7 +125,7 @@ var _ = Describe("KeyPairManager", func() {
 						checker.HasKeyPairCall.Stub = nil
 						checker.HasKeyPairCall.Returns.Error = errors.New("keypair retrieve failed")
 
-						_, err := manager.Sync(ec2.KeyPair{})
+						_, err := manager.Sync(ec2.KeyPair{}, "")
 						Expect(err).To(MatchError("keypair retrieve failed"))
 					})
 				})
@@ -141,7 +143,7 @@ var _ = Describe("KeyPairManager", func() {
 			})
 
 			It("logs that the existing keypair will be used", func() {
-				_, err := manager.Sync(stateKeyPair)
+				_, err := manager.Sync(stateKeyPair, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger.StepCall.Receives.Message).To(Equal("using existing keypair"))
 			})

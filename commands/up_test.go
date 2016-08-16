@@ -144,6 +144,7 @@ var _ = Describe("Up", func() {
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
 			}))
+			Expect(keyPairSynchronizer.SyncCall.Receives.EnvID).To(Equal("bbl-lake-timestamp"))
 
 			Expect(state.KeyPair).To(Equal(storage.KeyPair{
 				Name:       "some-keypair-name",

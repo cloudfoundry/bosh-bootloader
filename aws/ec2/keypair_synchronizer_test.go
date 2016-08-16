@@ -32,7 +32,7 @@ var _ = Describe("KeyPairSynchronizer", func() {
 			Name:       "some-keypair-name",
 			PrivateKey: "some-private-key",
 			PublicKey:  "some-public-key",
-		})
+		}, "some-env-id")
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
@@ -40,6 +40,8 @@ var _ = Describe("KeyPairSynchronizer", func() {
 			PrivateKey: "some-private-key",
 			PublicKey:  "some-public-key",
 		}))
+
+		Expect(keyPairManager.SyncCall.Receives.EnvID).To(Equal("some-env-id"))
 
 		Expect(keyPair).To(Equal(ec2.KeyPair{
 			Name:       "updated-keypair-name",
@@ -53,7 +55,7 @@ var _ = Describe("KeyPairSynchronizer", func() {
 			It("returns an error", func() {
 				keyPairManager.SyncCall.Returns.Error = errors.New("failed to sync")
 
-				_, err := synchronizer.Sync(ec2.KeyPair{})
+				_, err := synchronizer.Sync(ec2.KeyPair{}, "")
 				Expect(err).To(MatchError("failed to sync"))
 			})
 		})

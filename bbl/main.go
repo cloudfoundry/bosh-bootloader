@@ -57,7 +57,7 @@ func main() {
 
 	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
 	vpcStatusChecker := ec2.NewVPCStatusChecker(ec2Client)
-	keyPairCreator := ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
+	keyPairCreator := ec2.NewKeyPairCreator(ec2Client)
 	keyPairDeleter := ec2.NewKeyPairDeleter(ec2Client, logger)
 	keyPairChecker := ec2.NewKeyPairChecker(ec2Client)
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)

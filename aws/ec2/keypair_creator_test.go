@@ -2,7 +2,6 @@ package ec2_test
 
 import (
 	"errors"
-	"fmt"
 
 	goaws "github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
@@ -17,13 +16,11 @@ var _ = Describe("KeyPairCreator", func() {
 	var (
 		keyPairCreator ec2.KeyPairCreator
 		ec2Client      *fakes.EC2Client
-		uuidGenerator  *fakes.UUIDGenerator
 	)
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		uuidGenerator = &fakes.UUIDGenerator{}
-		keyPairCreator = ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
+		keyPairCreator = ec2.NewKeyPairCreator(ec2Client)
 	})
 
 	Describe("Create", func() {
@@ -33,41 +30,24 @@ var _ = Describe("KeyPairCreator", func() {
 				KeyMaterial:    goaws.String("some-private-key"),
 				KeyName:        goaws.String("keypair-guid"),
 			}
-			uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{{String: "guid"}}
 
-			keyPair, err := keyPairCreator.Create()
+			keyPair, err := keyPairCreator.Create("some-env-id")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(keyPair.Name).To(Equal("keypair-guid"))
+			Expect(keyPair.Name).To(Equal("keypair-some-env-id"))
 			Expect(keyPair.PrivateKey).To(Equal("some-private-key"))
 
 			Expect(ec2Client.CreateKeyPairCall.Receives.Input).To(Equal(&awsec2.CreateKeyPairInput{
-				KeyName: goaws.String("keypair-guid"),
+				KeyName: goaws.String("keypair-some-env-id"),
 			}))
 		})
 
 		Context("failure cases", func() {
-			Context("when a guid cannot be generated", func() {
-				BeforeEach(func() {
-					uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{{Error: fmt.Errorf("failed to generate guid")}}
-				})
-
-				It("returns an error", func() {
-					keyPairCreator = ec2.NewKeyPairCreator(ec2Client, uuidGenerator)
-
-					_, err := keyPairCreator.Create()
-					Expect(err).To(MatchError("failed to generate guid"))
-				})
-			})
-
 			Context("when the create keypair request fails", func() {
-				BeforeEach(func() {
-					uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{fakes.GenerateReturn{}}
-				})
 				It("returns an error", func() {
 					ec2Client.CreateKeyPairCall.Returns.Error = errors.New("failed to create keypair")
 
-					_, err := keyPairCreator.Create()
+					_, err := keyPairCreator.Create("")
 					Expect(err).To(MatchError("failed to create keypair"))
 				})
 			})

@@ -119,7 +119,7 @@ var _ = Describe("bbl", func() {
 
 				keyPairs := fakeAWS.KeyPairs.All()
 				Expect(keyPairs).To(HaveLen(1))
-				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
 			})
 
 			It("creates an IAM user", func() {

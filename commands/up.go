@@ -11,7 +11,7 @@ import (
 )
 
 type keyPairSynchronizer interface {
-	Sync(keypair ec2.KeyPair) (ec2.KeyPair, error)
+	Sync(keypair ec2.KeyPair, envID string) (ec2.KeyPair, error)
 }
 
 type infrastructureManager interface {
@@ -95,11 +95,18 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 		return state, err
 	}
 
+	if state.EnvID == "" {
+		state.EnvID, err = u.envIDGenerator.Generate()
+		if err != nil {
+			return state, err
+		}
+	}
+
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
 		PublicKey:  state.KeyPair.PublicKey,
 		PrivateKey: state.KeyPair.PrivateKey,
-	})
+	}, state.EnvID)
 	if err != nil {
 		return state, err
 	}
@@ -127,13 +134,6 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 			return state, err
 		}
 		certificateARN = certificate.ARN
-	}
-
-	if state.EnvID == "" {
-		state.EnvID, err = u.envIDGenerator.Generate()
-		if err != nil {
-			return state, err
-		}
 	}
 
 	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN, state.EnvID)

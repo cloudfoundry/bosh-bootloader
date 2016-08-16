@@ -6,6 +6,7 @@ type KeyPairManager struct {
 	SyncCall struct {
 		Receives struct {
 			KeyPair ec2.KeyPair
+			EnvID   string
 		}
 		Returns struct {
 			KeyPair ec2.KeyPair
@@ -14,8 +15,9 @@ type KeyPairManager struct {
 	}
 }
 
-func (k *KeyPairManager) Sync(keyPair ec2.KeyPair) (ec2.KeyPair, error) {
+func (k *KeyPairManager) Sync(keyPair ec2.KeyPair, envID string) (ec2.KeyPair, error) {
 	k.SyncCall.Receives.KeyPair = keyPair
+	k.SyncCall.Receives.EnvID = envID
 
 	return k.SyncCall.Returns.KeyPair, k.SyncCall.Returns.Error
 }

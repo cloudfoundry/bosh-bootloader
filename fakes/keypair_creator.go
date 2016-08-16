@@ -8,9 +8,13 @@ type KeyPairCreator struct {
 			KeyPair ec2.KeyPair
 			Error   error
 		}
+		Receives struct {
+			EnvID string
+		}
 	}
 }
 
-func (k *KeyPairCreator) Create() (ec2.KeyPair, error) {
+func (k *KeyPairCreator) Create(envID string) (ec2.KeyPair, error) {
+	k.CreateCall.Receives.EnvID = envID
 	return k.CreateCall.Returns.KeyPair, k.CreateCall.Returns.Error
 }
