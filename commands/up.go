@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
@@ -121,7 +122,8 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 	}
 
 	if state.Stack.Name == "" {
-		state.Stack.Name = fmt.Sprintf("stack-%s", state.EnvID)
+		stackEnvID := strings.Replace(state.EnvID, ":", "-", -1)
+		state.Stack.Name = fmt.Sprintf("stack-%s", stackEnvID)
 	}
 
 	var certificateARN string

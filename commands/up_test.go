@@ -92,7 +92,7 @@ var _ = Describe("Up", func() {
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
 			envIDGenerator = &fakes.EnvIDGenerator{}
-			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-timestamp"
+			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
@@ -144,7 +144,7 @@ var _ = Describe("Up", func() {
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
 			}))
-			Expect(keyPairSynchronizer.SyncCall.Receives.EnvID).To(Equal("bbl-lake-timestamp"))
+			Expect(keyPairSynchronizer.SyncCall.Receives.EnvID).To(Equal("bbl-lake-time:stamp"))
 
 			Expect(state.KeyPair).To(Equal(storage.KeyPair{
 				Name:       "some-keypair-name",
@@ -182,10 +182,10 @@ var _ = Describe("Up", func() {
 			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-timestamp"))
+			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-time-stamp"))
 			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
 			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
-			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-timestamp"))
+			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-time:stamp"))
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
 		})
 
@@ -207,7 +207,7 @@ var _ = Describe("Up", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
-				DirectorName:     "bosh-bbl-lake-timestamp",
+				DirectorName:     "bosh-bbl-lake-time:stamp",
 				DirectorUsername: "user-some-random-string",
 				DirectorPassword: "p-some-random-string",
 				State:            map[string]interface{}{},
@@ -455,7 +455,7 @@ var _ = Describe("Up", func() {
 						incomingState := storage.State{}
 						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.Stack.Name).To(Equal("stack-bbl-lake-timestamp"))
+						Expect(state.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
 					})
 				})
 
@@ -476,23 +476,23 @@ var _ = Describe("Up", func() {
 			Context("env id", func() {
 				Context("when the env id doesn't exist", func() {
 					It("populates a new bbl env id", func() {
-						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-timestamp"
+						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
 						state, err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.EnvID).To(Equal("bbl-lake-timestamp"))
+						Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
 					})
 				})
 
 				Context("when the env id exists", func() {
 					It("does not modify the state", func() {
 						incomingState := storage.State{
-							EnvID: "bbl-lake-timestamp",
+							EnvID: "bbl-lake-time:stamp",
 						}
 
 						state, err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.EnvID).To(Equal("bbl-lake-timestamp"))
+						Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
 					})
 				})
 			})
@@ -573,7 +573,7 @@ var _ = Describe("Up", func() {
 					state, err := command.Execute([]string{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(state.BOSH.DirectorName).To(ContainSubstring("bosh-bbl-lake-timestamp"))
+					Expect(state.BOSH.DirectorName).To(ContainSubstring("bosh-bbl-lake-time:stamp"))
 				})
 
 				Context("when the bosh director ssl keypair exists", func() {
