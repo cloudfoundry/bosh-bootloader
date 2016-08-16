@@ -24,6 +24,7 @@ type jobsManifestBuilder interface {
 }
 
 type ManifestProperties struct {
+	DirectorName     string
 	DirectorUsername string
 	DirectorPassword string
 	SubnetID         string

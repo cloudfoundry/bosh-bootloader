@@ -3,6 +3,7 @@ package storage
 import "reflect"
 
 type BOSH struct {
+	DirectorName           string                 `json:"directorName"`
 	DirectorUsername       string                 `json:"directorUsername"`
 	DirectorPassword       string                 `json:"directorPassword"`
 	DirectorAddress        string                 `json:"directorAddress"`

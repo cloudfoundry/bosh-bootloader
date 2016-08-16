@@ -45,6 +45,7 @@ var _ = Describe("Store", func() {
 					PublicKey:  "some-public",
 				},
 				BOSH: storage.BOSH{
+					DirectorName:           "some-director-name",
 					DirectorUsername:       "some-director-username",
 					DirectorPassword:       "some-director-password",
 					DirectorAddress:        "some-director-address",
@@ -96,6 +97,7 @@ var _ = Describe("Store", func() {
 					"publicKey": "some-public"
 				},
 				"bosh":{
+					"directorName": "some-director-name",
 					"directorUsername": "some-director-username",
 					"directorPassword": "some-director-password",
 					"directorAddress": "some-director-address",

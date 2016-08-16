@@ -52,6 +52,7 @@ func (e Executor) Delete(boshInitManifest string, boshInitState State, ec2Privat
 
 func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 	manifest, manifestProperties, err := e.manifestBuilder.Build(manifests.ManifestProperties{
+		DirectorName:     input.DirectorName,
 		DirectorUsername: input.DirectorUsername,
 		DirectorPassword: input.DirectorPassword,
 		SubnetID:         input.InfrastructureConfiguration.SubnetID,

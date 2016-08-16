@@ -36,6 +36,7 @@ var _ = Describe("ManifestBuilder", func() {
 
 		manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 		manifestProperties = manifests.ManifestProperties{
+			DirectorName:     "bosh-name",
 			DirectorUsername: "bosh-username",
 			DirectorPassword: "bosh-password",
 			SubnetID:         "subnet-12345",
@@ -80,6 +81,7 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
 			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("52.0.112.12"))
 			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
+			Expect(manifest.Jobs[0].Properties.Director.Name).To(Equal("bosh-name"))
 			Expect(manifest.Jobs[0].Properties.Director.SSL).To(Equal(manifests.SSLProperties{
 				Cert: certificate,
 				Key:  privateKey,
@@ -94,6 +96,7 @@ var _ = Describe("ManifestBuilder", func() {
 
 			Expect(manifestProperties).To(Equal(
 				manifests.ManifestProperties{
+					DirectorName:     "bosh-name",
 					DirectorUsername: "bosh-username",
 					DirectorPassword: "bosh-password",
 					SubnetID:         "subnet-12345",

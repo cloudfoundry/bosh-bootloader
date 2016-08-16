@@ -89,7 +89,7 @@ jobs:
 
     director:
       address: 127.0.0.1
-      name: my-bosh
+      name: bosh-name
       db:
         user: postgres-user-some-random-string
         password: postgres-some-random-string

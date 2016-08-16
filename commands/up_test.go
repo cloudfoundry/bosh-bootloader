@@ -92,6 +92,7 @@ var _ = Describe("Up", func() {
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
 			envIDGenerator = &fakes.EnvIDGenerator{}
+			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-timestamp"
 
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
@@ -185,8 +186,6 @@ var _ = Describe("Up", func() {
 				return prefix + "some-random-string", nil
 			}
 
-			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-timestamp"
-
 			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stackNameWasGenerated).To(BeTrue())
@@ -210,24 +209,16 @@ var _ = Describe("Up", func() {
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				BOSH: storage.BOSH{
-					DirectorSSLCertificate: "some-certificate",
-					DirectorSSLPrivateKey:  "some-private-key",
-					State: map[string]interface{}{
-						"key": "value",
-					},
-				},
 			}
 
 			_, err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
+				DirectorName:     "bosh-bbl-lake-timestamp",
 				DirectorUsername: "user-some-random-string",
 				DirectorPassword: "p-some-random-string",
-				State: boshinit.State{
-					"key": "value",
-				},
+				State:            map[string]interface{}{},
 				InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
 					AWSRegion:        "some-aws-region",
 					SubnetID:         "some-bosh-subnet",
@@ -237,10 +228,7 @@ var _ = Describe("Up", func() {
 					SecretAccessKey:  "some-bosh-user-secret-access-key",
 					SecurityGroup:    "some-bosh-security-group",
 				},
-				SSLKeyPair: ssl.KeyPair{
-					Certificate: []byte("some-certificate"),
-					PrivateKey:  []byte("some-private-key"),
-				},
+				SSLKeyPair: ssl.KeyPair{},
 				EC2KeyPair: ec2.KeyPair{
 					Name:       "some-keypair-name",
 					PublicKey:  "some-public-key",
@@ -587,6 +575,13 @@ var _ = Describe("Up", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state.BOSH.DirectorAddress).To(ContainSubstring("some-bosh-url"))
+				})
+
+				It("writes the bosh director name", func() {
+					state, err := command.Execute([]string{}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state.BOSH.DirectorName).To(ContainSubstring("bosh-bbl-lake-timestamp"))
 				})
 
 				Context("when the bosh director ssl keypair exists", func() {

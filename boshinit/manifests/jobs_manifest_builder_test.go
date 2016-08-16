@@ -33,6 +33,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("returns all jobs for manifest", func() {
 			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+				DirectorName:    "some-director-name",
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -74,7 +75,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.NATS.User).To(Equal("nats-user-some-random-string"))
 			Expect(job.Properties.Postgres.User).To(Equal("postgres-user-some-random-string"))
 			Expect(job.Properties.Registry.Username).To(Equal("registry-user-some-random-string"))
-			Expect(job.Properties.Director.Name).To(Equal("my-bosh"))
+			Expect(job.Properties.Director.Name).To(Equal("some-director-name"))
 			Expect(job.Properties.HM.ResurrectorEnabled).To(Equal(true))
 			Expect(job.Properties.AWS.AccessKeyId).To(Equal("some-access-key-id"))
 			Expect(job.Properties.AWS.SecretAccessKey).To(Equal("some-secret-access-key"))

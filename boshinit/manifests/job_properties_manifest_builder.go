@@ -85,7 +85,7 @@ func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProperties) DirectorJobProperties {
 	return DirectorJobProperties{
 		Address:          "127.0.0.1",
-		Name:             "my-bosh",
+		Name:             manifestProperties.DirectorName,
 		CPIJob:           "aws_cpi",
 		MaxThreads:       10,
 		EnablePostDeploy: true,

@@ -151,7 +151,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
 	}
 
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator)
+	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID)
 	if err != nil {
 		return state, err
 	}
@@ -163,6 +163,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 
 	if state.BOSH.IsEmpty() {
 		state.BOSH = storage.BOSH{
+			DirectorName:           deployInput.DirectorName,
 			DirectorAddress:        stack.Outputs["BOSHURL"],
 			DirectorUsername:       deployInput.DirectorUsername,
 			DirectorPassword:       deployInput.DirectorPassword,

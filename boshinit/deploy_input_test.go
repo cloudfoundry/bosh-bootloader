@@ -15,16 +15,16 @@ import (
 
 var _ = Describe("DeployInput", func() {
 	var (
-		fakeStringGenerator *fakes.StringGenerator
+		fakeStringGenerator         *fakes.StringGenerator
+		state                       storage.State
+		infrastructureConfiguration boshinit.InfrastructureConfiguration
+		envID                       string
 	)
 
 	Describe("NewDeployInput", func() {
 		BeforeEach(func() {
 			fakeStringGenerator = &fakes.StringGenerator{}
-		})
-
-		It("constructs a DeployInput given a state", func() {
-			state := storage.State{
+			state = storage.State{
 				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
@@ -39,12 +39,13 @@ var _ = Describe("DeployInput", func() {
 					State: map[string]interface{}{
 						"some-state-key": "some-state-value",
 					},
+					DirectorName:     "some-director-name",
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
 			}
 
-			infrastructureConfiguration := boshinit.InfrastructureConfiguration{
+			infrastructureConfiguration = boshinit.InfrastructureConfiguration{
 				AWSRegion:        "some-aws-region",
 				SubnetID:         "some-subnet-id",
 				AvailabilityZone: "some-az",
@@ -54,10 +55,15 @@ var _ = Describe("DeployInput", func() {
 				SecurityGroup:    "some-security-group",
 			}
 
-			deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator)
+			envID = "some-env-id"
+		})
+
+		It("constructs a DeployInput given a state", func() {
+			deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator, envID)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deployInput).To(Equal(boshinit.DeployInput{
+				DirectorName:     "some-director-name",
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
 				State: map[string]interface{}{
@@ -87,6 +93,16 @@ var _ = Describe("DeployInput", func() {
 			}))
 		})
 
+		Context("when existing state contains bosh state without director name", func() {
+			It("sets director name to my-bosh", func() {
+				state.BOSH.DirectorName = ""
+				deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator, envID)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(deployInput.DirectorName).To(Equal("my-bosh"))
+			})
+		})
+
 		It("does not modify the struct references in the state", func() {
 			state := storage.State{
 				AWS: storage.AWS{
@@ -106,12 +122,13 @@ var _ = Describe("DeployInput", func() {
 					State: map[string]interface{}{
 						"some-state-key": "some-state-value",
 					},
+					DirectorName:     "some-director-name",
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
 			}
 
-			_, err := boshinit.NewDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+			_, err := boshinit.NewDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, envID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(state).To(Equal(storage.State{
@@ -132,13 +149,14 @@ var _ = Describe("DeployInput", func() {
 					State: map[string]interface{}{
 						"some-state-key": "some-state-value",
 					},
+					DirectorName:     "some-director-name",
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
 			}))
 		})
 
-		It("handles empty state, generating director credentials if they don't exist", func() {
+		It("handles empty state, by assigning director name and generating credentials if they don't exist", func() {
 			fakeStringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
 				switch fakeStringGenerator.GenerateCall.CallCount {
 				case 0:
@@ -149,11 +167,12 @@ var _ = Describe("DeployInput", func() {
 					return "", errors.New("too many calls to password generator")
 				}
 			}
-			deployInput, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+			deployInput, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, envID)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deployInput).To(Equal(boshinit.DeployInput{
 				State:            map[string]interface{}{},
+				DirectorName:     "bosh-some-env-id",
 				DirectorUsername: "some-generated-username",
 				DirectorPassword: "some-generated-password",
 			}))
@@ -164,7 +183,7 @@ var _ = Describe("DeployInput", func() {
 		Describe("failure cases", func() {
 			It("returns an error when director username generation fails", func() {
 				fakeStringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate username")
-				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, "")
 
 				Expect(err).To(MatchError("failed to generate username"))
 			})
@@ -178,7 +197,7 @@ var _ = Describe("DeployInput", func() {
 						return "", errors.New("failed to generate password")
 					}
 				}
-				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator)
+				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, "")
 				Expect(err).To(MatchError("failed to generate password"))
 			})
 		})

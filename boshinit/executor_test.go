@@ -138,8 +138,9 @@ var _ = Describe("Executor", func() {
 	Describe("Deploy", func() {
 		It("deploys bosh and returns a bosh output", func() {
 			deployOutput, err := executor.Deploy(boshinit.DeployInput{
-				DirectorUsername: "some-director",
-				DirectorPassword: "some-password",
+				DirectorName:     "some-director-name",
+				DirectorUsername: "some-director-username",
+				DirectorPassword: "some-director-password",
 				State: boshinit.State{
 					"key": "value",
 				},
@@ -151,8 +152,9 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(manifests.ManifestProperties{
-				DirectorUsername: "some-director",
-				DirectorPassword: "some-password",
+				DirectorName:     "some-director-name",
+				DirectorUsername: "some-director-username",
+				DirectorPassword: "some-director-password",
 				SubnetID:         "subnet-12345",
 				AvailabilityZone: "some-az",
 				CACommonName:     "BOSH Bootloader",

@@ -29,9 +29,13 @@ var _ = Describe("fakeboshinit", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestData = []byte(`---
-name:
-  bosh-init
-`)
+name: bosh-init
+jobs:
+- name: bosh
+  properties:
+    director:
+      name: my-bosh
+  `)
 		})
 
 		It("reads and prints the bosh state", func() {
@@ -43,6 +47,31 @@ name:
 
 			session := runFakeBoshInit(pathToFake, tempDir)
 			Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {}`))
+		})
+
+		It("prints director name from bosh manifest", func() {
+			err := ioutil.WriteFile(filepath.Join(tempDir, "bosh.yml"), manifestData, os.FileMode(0644))
+			Expect(err).NotTo(HaveOccurred())
+
+			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
+			Expect(err).NotTo(HaveOccurred())
+
+			session := runFakeBoshInit(pathToFake, tempDir)
+			Expect(session.Out.Contents()).To(ContainSubstring(`bosh director name: my-bosh`))
+		})
+
+		It("prints no name for the bosh director if it doesn't exist", func() {
+			manifestData = []byte(`---
+name: bosh-init`)
+
+			err := ioutil.WriteFile(filepath.Join(tempDir, "bosh.yml"), manifestData, os.FileMode(0644))
+			Expect(err).NotTo(HaveOccurred())
+
+			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
+			Expect(err).NotTo(HaveOccurred())
+
+			session := runFakeBoshInit(pathToFake, tempDir)
+			Expect(session.Out.Contents()).To(ContainSubstring(`bosh director name:`))
 		})
 
 		It("skips deployment on a second deploy with same manifest and bosh state", func() {
@@ -68,8 +97,12 @@ name:
 			session := runFakeBoshInit(pathToFake, tempDir)
 
 			manifestData = []byte(`---
-name:
-  bosh-init-updated
+name: bosh-init-updated
+jobs:
+- name: bosh
+  properties:
+    director:
+      name: my-bosh
 `)
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh.yml"), manifestData, os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())

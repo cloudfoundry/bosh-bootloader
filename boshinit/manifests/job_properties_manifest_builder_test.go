@@ -116,6 +116,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	Describe("Director", func() {
 		It("returns job properties for Director", func() {
 			director := jobPropertiesManifestBuilder.Director(manifests.ManifestProperties{
+				DirectorName:     "my-bosh",
 				DirectorUsername: "bosh-username",
 				DirectorPassword: "bosh-password",
 				SSLKeyPair: ssl.KeyPair{

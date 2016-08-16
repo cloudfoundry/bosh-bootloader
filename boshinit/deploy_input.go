@@ -1,6 +1,8 @@
 package boshinit
 
 import (
+	"fmt"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
@@ -12,6 +14,7 @@ const PASSWORD_PREFIX = "p-"
 const PASSWORD_LENGTH = 15
 
 type DeployInput struct {
+	DirectorName                string
 	DirectorUsername            string
 	DirectorPassword            string
 	State                       State
@@ -42,7 +45,7 @@ type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewDeployInput(state storage.State, infrastructureConfiguration InfrastructureConfiguration, stringGenerator stringGenerator) (DeployInput, error) {
+func NewDeployInput(state storage.State, infrastructureConfiguration InfrastructureConfiguration, stringGenerator stringGenerator, envID string) (DeployInput, error) {
 	deployInput := DeployInput{
 		State: map[string]interface{}{},
 		InfrastructureConfiguration: infrastructureConfiguration,
@@ -57,12 +60,21 @@ func NewDeployInput(state storage.State, infrastructureConfiguration Infrastruct
 	}
 
 	if !state.BOSH.IsEmpty() {
+		deployInput.DirectorName = state.BOSH.DirectorName
 		deployInput.DirectorUsername = state.BOSH.DirectorUsername
 		deployInput.DirectorPassword = state.BOSH.DirectorPassword
 		deployInput.State = state.BOSH.State
 		deployInput.Credentials = state.BOSH.Credentials
 		deployInput.SSLKeyPair.Certificate = []byte(state.BOSH.DirectorSSLCertificate)
 		deployInput.SSLKeyPair.PrivateKey = []byte(state.BOSH.DirectorSSLPrivateKey)
+
+		if deployInput.DirectorName == "" {
+			deployInput.DirectorName = "my-bosh"
+		}
+	}
+
+	if deployInput.DirectorName == "" {
+		deployInput.DirectorName = fmt.Sprintf("bosh-%s", envID)
 	}
 
 	if deployInput.DirectorUsername == "" {

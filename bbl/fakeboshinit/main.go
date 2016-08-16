@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 func main() {
@@ -31,8 +33,10 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	fmt.Printf("bosh director name: %s\n", extractDirectorName(manifestContents))
 	newManifestChecksum := fmt.Sprintf("%x", md5.Sum(manifestContents))
-	stateContents := fmt.Sprintf(`{"key": "value", "md5checksum": "%s"}`, newManifestChecksum)
+	stateContents := fmt.Sprintf(`{"key": "value", "md5checksum": %q}`, newManifestChecksum)
 
 	err = ioutil.WriteFile("bosh-state.json", []byte(stateContents), os.FileMode(0644))
 	if err != nil {
@@ -43,4 +47,28 @@ func main() {
 	if oldManifestChecksum == newManifestChecksum {
 		fmt.Println("No new changes, skipping deployment...")
 	}
+}
+
+func extractDirectorName(manifestContents []byte) string {
+	var manifest struct {
+		Jobs []struct {
+			Properties struct {
+				Director struct {
+					Name string
+				}
+			}
+		}
+	}
+
+	err := yaml.Unmarshal(manifestContents, &manifest)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if len(manifest.Jobs) == 0 {
+		return ""
+	}
+
+	return manifest.Jobs[0].Properties.Director.Name
 }

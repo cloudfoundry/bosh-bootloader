@@ -164,6 +164,39 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 			})
 
+			It("names the bosh director with env id", func() {
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-bbl-"))
+			})
+
+			It("does not change the bosh director name when state exists", func() {
+				fakeAWS.Stacks.Set(awsbackend.Stack{
+					Name: "some-stack-name",
+				})
+				fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
+					Name: "some-keypair-name",
+				})
+
+				writeStateJson(storage.State{
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair-name",
+					},
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+					BOSH: storage.BOSH{
+						DirectorAddress: fakeBOSHServer.URL,
+					},
+				}, tempDirectory)
+				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: my-bosh"))
+			})
+
 			It("signs bosh-init cert and key with the generated CA cert", func() {
 				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
