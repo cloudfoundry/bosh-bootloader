@@ -18,11 +18,12 @@ var _ = Describe("BOSHIAMTemplateBuilder", func() {
 
 	Describe("BOSHIAMUser", func() {
 		It("returns a template for a BOSH IAM user", func() {
-			user := builder.BOSHIAMUser()
+			user := builder.BOSHIAMUser("some-user-name")
 			Expect(user.Resources).To(HaveLen(2))
 			Expect(user.Resources).To(HaveKeyWithValue("BOSHUser", templates.Resource{
 				Type: "AWS::IAM::User",
 				Properties: templates.IAMUser{
+					UserName: "some-user-name",
 					Policies: []templates.IAMPolicy{
 						{
 							PolicyName: "aws-cpi",

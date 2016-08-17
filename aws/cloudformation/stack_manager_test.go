@@ -261,7 +261,7 @@ var _ = Describe("StackManager", func() {
 
 			Expect(cloudFormationClient.UpdateStackCall.Receives.Input).To(Equal(&awscloudformation.UpdateStackInput{
 				StackName:    aws.String("some-stack-name"),
-				Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+				Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
 				TemplateBody: aws.String(string(templateJson)),
 				Tags: []*awscloudformation.Tag{
 					{
@@ -364,7 +364,7 @@ var _ = Describe("StackManager", func() {
 
 			Expect(cloudFormationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
 				StackName:    aws.String("some-stack-name"),
-				Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+				Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
 				TemplateBody: aws.String(string(templateJson)),
 				Tags: []*awscloudformation.Tag{
 					{

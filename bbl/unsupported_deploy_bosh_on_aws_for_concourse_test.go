@@ -145,6 +145,7 @@ var _ = Describe("bbl", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
+				Expect(template.Resources.BOSHUser.Properties.UserName).To(MatchRegexp(`bosh-iam-user-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
 			})
 
 			It("logs the steps and bosh-init manifest", func() {

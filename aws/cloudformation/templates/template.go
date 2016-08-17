@@ -159,6 +159,7 @@ type RouteTable struct {
 
 type IAMUser struct {
 	Policies []IAMPolicy
+	UserName string
 }
 
 type IAMPolicy struct {

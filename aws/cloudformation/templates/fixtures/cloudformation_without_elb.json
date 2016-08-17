@@ -172,6 +172,7 @@
         },
         "BOSHUser": {
             "Properties": {
+                "UserName": "bosh-iam-user-some-env-id",
                 "Policies": [
                     {
                         "PolicyDocument": {

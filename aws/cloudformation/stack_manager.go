@@ -159,7 +159,7 @@ func (s StackManager) create(name string, template templates.Template, tags Tags
 
 	params := &cloudformation.CreateStackInput{
 		StackName:    aws.String(name),
-		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+		Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
 		Tags:         awsTags,
 	}
@@ -184,7 +184,7 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 
 	params := &cloudformation.UpdateStackInput{
 		StackName:    aws.String(name),
-		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+		Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
 		Tags:         awsTags,
 	}

@@ -38,7 +38,8 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		It("creates the underlying infrastructure and returns the stack", func() {
-			stack, err := infrastructureManager.Create("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id")
+			stack, err := infrastructureManager.Create("some-key-pair-name", 2, "some-stack-name",
+				"some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
@@ -46,6 +47,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.NumberOfAZs).To(Equal(2))
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
+			Expect(builder.BuildCall.Receives.IAMUserName).To(Equal("bosh-iam-user-some-env-id-time-stamp"))
 
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(templates.Template{
@@ -55,7 +57,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(stackManager.CreateOrUpdateCall.Receives.Tags).To(Equal(cloudformation.Tags{
 				{
 					Key:   "bbl-env-id",
-					Value: "some-env-id",
+					Value: "some-env-id-time:stamp",
 				},
 			}))
 
@@ -96,7 +98,7 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		It("updates the stack and returns the stack", func() {
-			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id")
+			stack, err := infrastructureManager.Update("some-key-pair-name", 2, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
@@ -104,6 +106,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.NumberOfAZs).To(Equal(2))
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
+			Expect(builder.BuildCall.Receives.IAMUserName).To(Equal("bosh-iam-user-some-env-id-time-stamp"))
 
 			Expect(stackManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.UpdateCall.Receives.Template).To(Equal(templates.Template{
@@ -113,7 +116,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(stackManager.UpdateCall.Receives.Tags).To(Equal(cloudformation.Tags{
 				{
 					Key:   "bbl-env-id",
-					Value: "some-env-id",
+					Value: "some-env-id-time:stamp",
 				},
 			}))
 

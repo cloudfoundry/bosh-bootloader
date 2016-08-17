@@ -6,12 +6,13 @@ func NewBOSHIAMTemplateBuilder() BOSHIAMTemplateBuilder {
 	return BOSHIAMTemplateBuilder{}
 }
 
-func (t BOSHIAMTemplateBuilder) BOSHIAMUser() Template {
+func (t BOSHIAMTemplateBuilder) BOSHIAMUser(userName string) Template {
 	return Template{
 		Resources: map[string]Resource{
 			"BOSHUser": Resource{
 				Type: "AWS::IAM::User",
 				Properties: IAMUser{
+					UserName: userName,
 					Policies: []IAMPolicy{
 						{
 							PolicyName: "aws-cpi",

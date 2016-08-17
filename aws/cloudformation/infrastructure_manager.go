@@ -1,6 +1,8 @@
 package cloudformation
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
@@ -9,7 +11,7 @@ import (
 const bblTagKey = "bbl-env-id"
 
 type templateBuilder interface {
-	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string) templates.Template
+	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string, iamUserName string) templates.Template
 }
 
 type stackManager interface {
@@ -34,7 +36,8 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 
 func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName,
 	lbType, lbCertificateARN, envID string) (Stack, error) {
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
+	iamUserName := generateIAMUserName(envID)
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName)
 	tags := Tags{
 		{
 			Key:   bblTagKey,
@@ -55,7 +58,8 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 
 func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName, lbType,
 	lbCertificateARN, envID string) (Stack, error) {
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN)
+	iamUserName := generateIAMUserName(envID)
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName)
 
 	if err := m.stackManager.Update(stackName, template, Tags{{Key: bblTagKey, Value: envID}}); err != nil {
 		return Stack{}, err
@@ -97,4 +101,8 @@ func (m InfrastructureManager) Delete(stackName string) error {
 	}
 
 	return nil
+}
+
+func generateIAMUserName(envID string) string {
+	return fmt.Sprintf("bosh-iam-user-%s", strings.Replace(envID, ":", "-", -1))
 }
