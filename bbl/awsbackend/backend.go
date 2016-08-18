@@ -309,15 +309,13 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 	return stackOutput, nil
 }
 
-func (b *Backend) DescribeStackResources(input *cloudformation.DescribeStackResourcesInput) (*cloudformation.DescribeStackResourcesOutput, error) {
-	return &cloudformation.DescribeStackResourcesOutput{
-		StackResources: []*cloudformation.StackResource{
-			{
-				ResourceType:       aws.String("AWS::IAM::User"),
-				StackName:          aws.String("some-stack-name"),
-				PhysicalResourceId: aws.String("some-stack-name-BOSHUser-random"),
-				LogicalResourceId:  aws.String("BOSHUser"),
-			},
+func (b *Backend) DescribeStackResource(input *cloudformation.DescribeStackResourceInput) (*cloudformation.DescribeStackResourceOutput, error) {
+	return &cloudformation.DescribeStackResourceOutput{
+		StackResourceDetail: &cloudformation.StackResourceDetail{
+			ResourceType:       aws.String("AWS::IAM::User"),
+			StackName:          aws.String("some-stack-name"),
+			PhysicalResourceId: aws.String("some-stack-name-BOSHUser-random"),
+			LogicalResourceId:  aws.String("BOSHUser"),
 		},
 	}, nil
 }

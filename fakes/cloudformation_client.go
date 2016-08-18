@@ -45,12 +45,12 @@ type CloudFormationClient struct {
 		}
 	}
 
-	DescribeStackResourcesCall struct {
+	DescribeStackResourceCall struct {
 		Receives struct {
-			Input *cloudformation.DescribeStackResourcesInput
+			Input *cloudformation.DescribeStackResourceInput
 		}
 		Returns struct {
-			Output *cloudformation.DescribeStackResourcesOutput
+			Output *cloudformation.DescribeStackResourceOutput
 			Error  error
 		}
 	}
@@ -83,8 +83,8 @@ func (c *CloudFormationClient) DeleteStack(input *cloudformation.DeleteStackInpu
 	return c.DeleteStackCall.Returns.Output, c.DeleteStackCall.Returns.Error
 }
 
-func (c *CloudFormationClient) DescribeStackResources(input *cloudformation.DescribeStackResourcesInput) (*cloudformation.DescribeStackResourcesOutput, error) {
-	c.DescribeStackResourcesCall.Receives.Input = input
-	return c.DescribeStackResourcesCall.Returns.Output, c.DescribeStackResourcesCall.Returns.Error
+func (c *CloudFormationClient) DescribeStackResource(input *cloudformation.DescribeStackResourceInput) (*cloudformation.DescribeStackResourceOutput, error) {
+	c.DescribeStackResourceCall.Receives.Input = input
+	return c.DescribeStackResourceCall.Returns.Output, c.DescribeStackResourceCall.Returns.Error
 
 }

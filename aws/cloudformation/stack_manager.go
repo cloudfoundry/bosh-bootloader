@@ -215,15 +215,12 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 }
 
 func (s StackManager) GetPhysicalIDForResource(stackName string, logicalResourceID string) (string, error) {
-	describeStackResourcesOutput, err := s.cloudFormationClient.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
+	describeStackResourceOutput, err := s.cloudFormationClient.DescribeStackResource(&cloudformation.DescribeStackResourceInput{
 		StackName:         aws.String(stackName),
 		LogicalResourceId: aws.String(logicalResourceID),
 	})
 	if err != nil {
 		return "", err
 	}
-	if len(describeStackResourcesOutput.StackResources) == 0 {
-		return "", fmt.Errorf("cannot find resource with logical id: %q in stack %q", logicalResourceID, stackName)
-	}
-	return aws.StringValue(describeStackResourcesOutput.StackResources[0].PhysicalResourceId), nil
+	return aws.StringValue(describeStackResourceOutput.StackResourceDetail.PhysicalResourceId), nil
 }

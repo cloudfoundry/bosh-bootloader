@@ -12,7 +12,7 @@ type Client interface {
 	UpdateStack(input *awscloudformation.UpdateStackInput) (*awscloudformation.UpdateStackOutput, error)
 	DescribeStacks(input *awscloudformation.DescribeStacksInput) (*awscloudformation.DescribeStacksOutput, error)
 	DeleteStack(input *awscloudformation.DeleteStackInput) (*awscloudformation.DeleteStackOutput, error)
-	DescribeStackResources(input *awscloudformation.DescribeStackResourcesInput) (*awscloudformation.DescribeStackResourcesOutput, error)
+	DescribeStackResource(input *awscloudformation.DescribeStackResourceInput) (*awscloudformation.DescribeStackResourceOutput, error)
 }
 
 func NewClient(config aws.Config) Client {
