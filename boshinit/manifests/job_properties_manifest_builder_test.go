@@ -125,11 +125,12 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 				},
 			})
 			Expect(director).To(Equal(manifests.DirectorJobProperties{
-				Address:          "127.0.0.1",
-				Name:             "my-bosh",
-				CPIJob:           "aws_cpi",
-				MaxThreads:       10,
-				EnablePostDeploy: true,
+				Address:                     "127.0.0.1",
+				Name:                        "my-bosh",
+				CPIJob:                      "aws_cpi",
+				Workers:                     11,
+				EnableDedicatedStatusWorker: true,
+				EnablePostDeploy:            true,
 				DB: manifests.PostgresProperties{
 					User:     postgresUsername,
 					Password: postgresPassword,

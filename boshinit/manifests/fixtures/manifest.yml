@@ -94,7 +94,8 @@ jobs:
         user: postgres-user-some-random-string
         password: postgres-some-random-string
       cpi_job: aws_cpi
-      max_threads: 10
+      enable_dedicated_status_worker: true
+      workers: 11
       enable_post_deploy: true
       user_management:
         local:

@@ -84,12 +84,13 @@ func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 
 func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProperties) DirectorJobProperties {
 	return DirectorJobProperties{
-		Address:          "127.0.0.1",
-		Name:             manifestProperties.DirectorName,
-		CPIJob:           "aws_cpi",
-		MaxThreads:       10,
-		EnablePostDeploy: true,
-		DB:               j.Postgres(),
+		Address:                     "127.0.0.1",
+		Name:                        manifestProperties.DirectorName,
+		CPIJob:                      "aws_cpi",
+		EnablePostDeploy:            true,
+		Workers:                     11,
+		EnableDedicatedStatusWorker: true,
+		DB: j.Postgres(),
 		UserManagement: UserManagementProperties{
 			Local: LocalProperties{
 				Users: []UserProperties{
