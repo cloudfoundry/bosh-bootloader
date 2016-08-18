@@ -13,7 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	awslib "github.com/aws/aws-sdk-go/aws"
-	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -58,14 +57,9 @@ func (a AWS) StackExists(stackName string) bool {
 }
 
 func (a AWS) GetPhysicalID(stackName, logicalID string) string {
-	params := &awscloudformation.DescribeStackResourceInput{
-		LogicalResourceId: awslib.String(logicalID),
-		StackName:         awslib.String(stackName),
-	}
-
-	describeStackResourceOutput, err := a.cloudFormationClient.DescribeStackResource(params)
+	physicalID, err := a.stackManager.GetPhysicalIDForResource(stackName, logicalID)
 	Expect(err).NotTo(HaveOccurred())
-	return awslib.StringValue(describeStackResourceOutput.StackResourceDetail.PhysicalResourceId)
+	return physicalID
 }
 
 func (a AWS) LoadBalancers(stackName string) map[string]string {
