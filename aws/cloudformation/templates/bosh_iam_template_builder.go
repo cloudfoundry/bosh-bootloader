@@ -1,9 +1,18 @@
 package templates
 
+import "strings"
+
 type BOSHIAMTemplateBuilder struct{}
 
 func NewBOSHIAMTemplateBuilder() BOSHIAMTemplateBuilder {
 	return BOSHIAMTemplateBuilder{}
+}
+
+func getUserName(userName string) string {
+	if strings.HasPrefix(userName, "bosh-iam-user-") {
+		return userName
+	}
+	return ""
 }
 
 func (t BOSHIAMTemplateBuilder) BOSHIAMUser(userName string) Template {
@@ -12,7 +21,7 @@ func (t BOSHIAMTemplateBuilder) BOSHIAMUser(userName string) Template {
 			"BOSHUser": Resource{
 				Type: "AWS::IAM::User",
 				Properties: IAMUser{
-					UserName: userName,
+					UserName: getUserName(userName),
 					Policies: []IAMPolicy{
 						{
 							PolicyName: "aws-cpi",

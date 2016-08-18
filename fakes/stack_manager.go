@@ -16,6 +16,7 @@ type StackManager struct {
 			Stack cloudformation.Stack
 			Error error
 		}
+		Stub func(string) (cloudformation.Stack, error)
 	}
 
 	CreateOrUpdateCall struct {
@@ -59,6 +60,17 @@ type StackManager struct {
 			Error error
 		}
 	}
+
+	GetPhysicalIDForResourceCall struct {
+		Receives struct {
+			StackName         string
+			LogicalResourceID string
+		}
+		Returns struct {
+			PhysicalResourceID string
+			Error              error
+		}
+	}
 }
 
 func (m *StackManager) CreateOrUpdate(stackName string, template templates.Template, tags cloudformation.Tags) error {
@@ -88,6 +100,10 @@ func (m *StackManager) WaitForCompletion(stackName string, sleepInterval time.Du
 func (m *StackManager) Describe(stackName string) (cloudformation.Stack, error) {
 	m.DescribeCall.Receives.StackName = stackName
 
+	if m.DescribeCall.Stub != nil {
+		return m.DescribeCall.Stub(stackName)
+	}
+
 	return m.DescribeCall.Returns.Stack, m.DescribeCall.Returns.Error
 }
 
@@ -95,4 +111,11 @@ func (m *StackManager) Delete(stackName string) error {
 	m.DeleteCall.Receives.StackName = stackName
 
 	return m.DeleteCall.Returns.Error
+}
+
+func (m *StackManager) GetPhysicalIDForResource(stackName string, logicalResourceID string) (string, error) {
+	m.GetPhysicalIDForResourceCall.Receives.StackName = stackName
+	m.GetPhysicalIDForResourceCall.Receives.LogicalResourceID = logicalResourceID
+
+	return m.GetPhysicalIDForResourceCall.Returns.PhysicalResourceID, m.GetPhysicalIDForResourceCall.Returns.Error
 }

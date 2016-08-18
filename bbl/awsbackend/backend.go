@@ -309,6 +309,19 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 	return stackOutput, nil
 }
 
+func (b *Backend) DescribeStackResources(input *cloudformation.DescribeStackResourcesInput) (*cloudformation.DescribeStackResourcesOutput, error) {
+	return &cloudformation.DescribeStackResourcesOutput{
+		StackResources: []*cloudformation.StackResource{
+			{
+				ResourceType:       aws.String("AWS::IAM::User"),
+				StackName:          aws.String("some-stack-name"),
+				PhysicalResourceId: aws.String("some-stack-name-BOSHUser-random"),
+				LogicalResourceId:  aws.String("BOSHUser"),
+			},
+		},
+	}, nil
+}
+
 func (b *Backend) GetServerCertificate(input *iam.GetServerCertificateInput) (*iam.GetServerCertificateOutput, error) {
 	certificateName := aws.StringValue(input.ServerCertificateName)
 

@@ -148,6 +148,54 @@ var _ = Describe("bbl", func() {
 				Expect(template.Resources.BOSHUser.Properties.UserName).To(MatchRegexp(`bosh-iam-user-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
 			})
 
+			It("does not change the iam user name when state exists", func() {
+				fakeAWS.Stacks.Set(awsbackend.Stack{
+					Name: "some-stack-name",
+				})
+				fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
+					Name: "some-keypair-name",
+				})
+
+				writeStateJson(storage.State{
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair-name",
+					},
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+					BOSH: storage.BOSH{
+						DirectorAddress: fakeBOSHServer.URL,
+					},
+				}, tempDirectory)
+				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+
+				state := readStateJson(tempDirectory)
+
+				var ok bool
+				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+				Expect(ok).To(BeTrue())
+
+				var template struct {
+					Resources struct {
+						BOSHUser struct {
+							Properties templates.IAMUser
+							Type       string
+						}
+					}
+				}
+
+				err := json.Unmarshal([]byte(stack.Template), &template)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
+				Expect(template.Resources.BOSHUser.Properties.UserName).To(BeEmpty())
+			})
+
 			It("logs the steps and bosh-init manifest", func() {
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 

@@ -20,6 +20,7 @@ type stackManager interface {
 	WaitForCompletion(stackName string, sleepInterval time.Duration, action string) error
 	Describe(stackName string) (Stack, error)
 	Delete(stackName string) error
+	GetPhysicalIDForResource(stackName string, logicalResourceID string) (string, error)
 }
 
 type InfrastructureManager struct {
@@ -36,7 +37,21 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 
 func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName,
 	lbType, lbCertificateARN, envID string) (Stack, error) {
+
 	iamUserName := generateIAMUserName(envID)
+
+	stackExists, err := m.Exists(stackName)
+	if err != nil {
+		return Stack{}, err
+	}
+
+	if stackExists {
+		iamUserName, err = m.stackManager.GetPhysicalIDForResource(stackName, "BOSHUser")
+		if err != nil {
+			return Stack{}, err
+		}
+	}
+
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName)
 	tags := Tags{
 		{
@@ -58,7 +73,12 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 
 func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName, lbType,
 	lbCertificateARN, envID string) (Stack, error) {
-	iamUserName := generateIAMUserName(envID)
+
+	iamUserName, err := m.stackManager.GetPhysicalIDForResource(stackName, "BOSHUser")
+	if err != nil {
+		return Stack{}, err
+	}
+
 	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName)
 
 	if err := m.stackManager.Update(stackName, template, Tags{{Key: bblTagKey, Value: envID}}); err != nil {

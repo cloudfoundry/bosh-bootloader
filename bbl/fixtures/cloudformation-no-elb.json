@@ -160,7 +160,6 @@
     },
     "BOSHUser": {
       "Properties": {
-        "UserName": "bosh-iam-user-bbl-env-lake-timestamp",
         "Policies": [
           {
             "PolicyDocument": {

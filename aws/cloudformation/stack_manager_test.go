@@ -534,4 +534,41 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 			})
 		})
 	})
+
+	Describe("GetPhysicalIDForResource", func() {
+		It("gets the physical resource id for the given stack resource", func() {
+			cloudFormationClient.DescribeStackResourcesCall.Returns.Output = &awscloudformation.DescribeStackResourcesOutput{
+				StackResources: []*awscloudformation.StackResource{
+					{
+						PhysicalResourceId: aws.String("some-physical-resource-id"),
+					},
+				},
+			}
+			physicalID, err := manager.GetPhysicalIDForResource("some-stack-name", "some-logical-resource-id")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cloudFormationClient.DescribeStackResourcesCall.Receives.Input).To(Equal(&awscloudformation.DescribeStackResourcesInput{
+				StackName:         aws.String("some-stack-name"),
+				LogicalResourceId: aws.String("some-logical-resource-id"),
+			}))
+			Expect(physicalID).To(Equal("some-physical-resource-id"))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error in case the DescribeStackResource Call fails", func() {
+				cloudFormationClient.DescribeStackResourcesCall.Returns.Error = errors.New("DescribeStackResources Call Failed")
+
+				_, err := manager.GetPhysicalIDForResource("some-stack-name", "some-logical-resource-id")
+				Expect(err).To(MatchError("DescribeStackResources Call Failed"))
+			})
+
+			It("returns an error when the resource does not exist", func() {
+				cloudFormationClient.DescribeStackResourcesCall.Returns.Output = &awscloudformation.DescribeStackResourcesOutput{
+					StackResources: []*awscloudformation.StackResource{},
+				}
+				_, err := manager.GetPhysicalIDForResource("some-stack-name", "some-logical-resource-id")
+				Expect(err).To(MatchError(`cannot find resource with logical id: "some-logical-resource-id" in stack "some-stack-name"`))
+			})
+		})
+	})
 })

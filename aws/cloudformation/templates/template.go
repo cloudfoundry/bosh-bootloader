@@ -159,7 +159,7 @@ type RouteTable struct {
 
 type IAMUser struct {
 	Policies []IAMPolicy
-	UserName string
+	UserName string `json:",omitempty"`
 }
 
 type IAMPolicy struct {
