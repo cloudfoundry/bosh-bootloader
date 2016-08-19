@@ -22,6 +22,7 @@ type CreateLBs struct {
 	awsCredentialValidator    awsCredentialValidator
 	cloudConfigManager        cloudConfigManager
 	certificateValidator      certificateValidator
+	guidGenerator             guidGenerator
 }
 
 type lbConfig struct {
@@ -33,7 +34,7 @@ type lbConfig struct {
 }
 
 type certificateManager interface {
-	Create(certificate, privateKey, chain string) (string, error)
+	Create(certificate, privateKey, chain, certificateName string) error
 	Describe(certificateName string) (iam.Certificate, error)
 	Delete(certificateName string) error
 }
@@ -50,10 +51,14 @@ type certificateValidator interface {
 	Validate(command, certPath, keyPath, chainPath string) error
 }
 
+type guidGenerator interface {
+	Generate() (string, error)
+}
+
 func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
 	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator,
-	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator) CreateLBs {
+	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator, guidGenerator guidGenerator) CreateLBs {
 	return CreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -64,6 +69,7 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 		awsCredentialValidator:    awsCredentialValidator,
 		cloudConfigManager:        cloudConfigManager,
 		certificateValidator:      certificateValidator,
+		guidGenerator:             guidGenerator,
 	}
 }
 
@@ -95,7 +101,20 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	}
 
 	c.logger.Step("uploading certificate")
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath)
+	guid, err := c.guidGenerator.Generate()
+	if err != nil {
+		return state, err
+	}
+
+	var certificateName string
+
+	if state.EnvID == "" {
+		certificateName = fmt.Sprintf("%s-elb-cert-%s", config.lbType, guid)
+	} else {
+		certificateName = fmt.Sprintf("%s-elb-cert-%s-%s", config.lbType, guid, state.EnvID)
+	}
+
+	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)
 	if err != nil {
 		return state, err
 	}

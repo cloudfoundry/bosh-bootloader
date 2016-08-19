@@ -30,6 +30,7 @@ var _ = Describe("Create LBs", func() {
 			logger                    *fakes.Logger
 			cloudConfigManager        *fakes.CloudConfigManager
 			certificateValidator      *fakes.CertificateValidator
+			guidGenerator             *fakes.GuidGenerator
 			incomingState             storage.State
 		)
 
@@ -44,10 +45,13 @@ var _ = Describe("Create LBs", func() {
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			certificateValidator = &fakes.CertificateValidator{}
+			guidGenerator = &fakes.GuidGenerator{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
 			infrastructureManager.ExistsCall.Returns.Exists = true
+
+			guidGenerator.GenerateCall.Returns.Output = "abcd"
 
 			incomingState = storage.State{
 				Stack: storage.Stack{
@@ -70,7 +74,7 @@ var _ = Describe("Create LBs", func() {
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator)
+				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator, guidGenerator)
 		})
 
 		It("returns an error if aws credential validator fails", func() {
@@ -84,12 +88,14 @@ var _ = Describe("Create LBs", func() {
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
 				"--key", "temp/some-key.key",
-			}, storage.State{})
+			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
+			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id"))
 			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
+
 		})
 
 		It("uploads a cert and key with chain", func() {
@@ -111,7 +117,6 @@ var _ = Describe("Create LBs", func() {
 
 		It("creates a load balancer in cloudformation with certificate", func() {
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-			certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
 			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
 				ARN: "some-certificate-arn",
 			}
@@ -124,7 +129,7 @@ var _ = Describe("Create LBs", func() {
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id"))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
@@ -132,6 +137,24 @@ var _ = Describe("Create LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
+		})
+
+		It("names the loadbalancer without EnvID when EnvID is not set", func() {
+			incomingState.EnvID = ""
+
+			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
+			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
+				ARN: "some-certificate-arn",
+			}
+			_, err := command.Execute([]string{
+				"--type", "concourse",
+				"--cert", "temp/some-cert.crt",
+				"--key", "temp/some-key.key",
+			}, incomingState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd"))
+
 		})
 
 		It("updates the cloud config with lb type", func() {
@@ -244,7 +267,6 @@ var _ = Describe("Create LBs", func() {
 
 		Context("state manipulation", func() {
 			It("returns a state with new certificate name and lb type", func() {
-				certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
 				state, err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "temp/some-cert.crt",
@@ -252,7 +274,7 @@ var _ = Describe("Create LBs", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(state.Stack.CertificateName).To(Equal("some-certificate-name"))
+				Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd"))
 				Expect(state.Stack.LBType).To(Equal("concourse"))
 			})
 		})
@@ -361,6 +383,16 @@ var _ = Describe("Create LBs", func() {
 					}, storage.State{})
 					Expect(err).To(MatchError("failed to update cloud config"))
 				})
+			})
+
+			It("returns an error when a GUID cannot be generated", func() {
+				guidGenerator.GenerateCall.Returns.Error = errors.New("Out of entropy in the universe")
+				_, err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "/path/to/cert",
+					"--key", "/path/to/key",
+				}, storage.State{})
+				Expect(err).To(MatchError("Out of entropy in the universe"))
 			})
 		})
 	})

@@ -66,7 +66,7 @@ func main() {
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(cloudFormationClient, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	certificateUploader := iam.NewCertificateUploader(iamClient, uuidGenerator)
+	certificateUploader := iam.NewCertificateUploader(iamClient)
 	certificateDescriber := iam.NewCertificateDescriber(iamClient)
 	certificateDeleter := iam.NewCertificateDeleter(iamClient)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
@@ -118,9 +118,10 @@ func main() {
 	createLBs := commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
+		uuidGenerator,
 	)
 	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
-		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator,
+		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 	)
 	deleteLBs := commands.NewDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,

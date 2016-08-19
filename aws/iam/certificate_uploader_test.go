@@ -17,7 +17,6 @@ import (
 var _ = Describe("CertificateUploader", func() {
 	var (
 		iamClient       *fakes.IAMClient
-		uuidGenerator   *fakes.UUIDGenerator
 		uploader        iam.CertificateUploader
 		certificateFile *os.File
 		privateKeyFile  *os.File
@@ -27,8 +26,7 @@ var _ = Describe("CertificateUploader", func() {
 	BeforeEach(func() {
 		var err error
 		iamClient = &fakes.IAMClient{}
-		uuidGenerator = &fakes.UUIDGenerator{}
-		uploader = iam.NewCertificateUploader(iamClient, uuidGenerator)
+		uploader = iam.NewCertificateUploader(iamClient)
 
 		certificateFile, err = ioutil.TempFile("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -38,12 +36,6 @@ var _ = Describe("CertificateUploader", func() {
 
 		chainFile, err = ioutil.TempFile("", "")
 		Expect(err).NotTo(HaveOccurred())
-
-		uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{
-			{
-				String: "abcd",
-			},
-		}
 
 	})
 
@@ -66,15 +58,14 @@ var _ = Describe("CertificateUploader", func() {
 				},
 			}
 
-			certificateName, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "")
+			err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "", "test-certificate")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(certificateName).To(Equal("bbl-cert-abcd"))
 
 			Expect(iamClient.UploadServerCertificateCall.Receives.Input).To(Equal(
 				&awsiam.UploadServerCertificateInput{
 					CertificateBody:       aws.String("some-certificate-body"),
 					PrivateKey:            aws.String("some-private-key-body"),
-					ServerCertificateName: aws.String("bbl-cert-abcd"),
+					ServerCertificateName: aws.String("test-certificate"),
 				},
 			))
 		})
@@ -88,11 +79,11 @@ var _ = Describe("CertificateUploader", func() {
 					Arn:                   aws.String("arn:aws:iam::some-arn:server-certificate/some-certificate"),
 					Path:                  aws.String("/"),
 					ServerCertificateId:   aws.String("some-certificate-id"),
-					ServerCertificateName: aws.String("test-certificate"),
+					ServerCertificateName: aws.String("bbl-cert-abcd"),
 				},
 			}
 
-			_, err = uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
+			err = uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name(), "bbl-cert-abcd")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(iamClient.UploadServerCertificateCall.Receives.Input).To(Equal(
@@ -106,40 +97,30 @@ var _ = Describe("CertificateUploader", func() {
 		})
 
 		It("logs uploading certificate", func() {
-			_, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
+			err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name(), "")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when the certificate path does not exist", func() {
-				_, err := uploader.Upload("/some/fake/path", privateKeyFile.Name(), "")
+				err := uploader.Upload("/some/fake/path", privateKeyFile.Name(), "", "")
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
 			It("returns an error when the private key path does not exist", func() {
-				_, err := uploader.Upload(certificateFile.Name(), "/some/fake/path", "")
+				err := uploader.Upload(certificateFile.Name(), "/some/fake/path", "", "")
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
 			It("returns an error when the chain path does not exist and was specified", func() {
-				_, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "/some/fake/chain/path")
+				err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "/some/fake/chain/path", "")
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
 			It("returns an error when the certificate fails to upload", func() {
 				iamClient.UploadServerCertificateCall.Returns.Error = errors.New("failed to upload certificate")
-				_, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "")
+				err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "", "")
 				Expect(err).To(MatchError("failed to upload certificate"))
-			})
-
-			It("returns an error when the uuid generator fails", func() {
-				uuidGenerator.GenerateCall.Returns = []fakes.GenerateReturn{
-					{
-						Error: errors.New("failed to generate uuid"),
-					},
-				}
-				_, err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "")
-				Expect(err).To(MatchError("failed to generate uuid"))
 			})
 		})
 	})

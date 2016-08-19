@@ -14,7 +14,7 @@ type Certificate struct {
 }
 
 type certificateUploader interface {
-	Upload(certificatePath, privateKeyPath, chainPath string) (string, error)
+	Upload(certificatePath, privateKeyPath, chainPath, certificateName string) error
 }
 
 type certificateDescriber interface {
@@ -33,8 +33,8 @@ func NewCertificateManager(certificateUploader certificateUploader, certificateD
 	}
 }
 
-func (c CertificateManager) Create(certificatePath, privateKeyPath, chainPath string) (string, error) {
-	return c.certificateUploader.Upload(certificatePath, privateKeyPath, chainPath)
+func (c CertificateManager) Create(certificatePath, privateKeyPath, chainPath, certificateName string) error {
+	return c.certificateUploader.Upload(certificatePath, privateKeyPath, chainPath, certificateName)
 }
 
 func (c CertificateManager) Delete(certificateName string) error {

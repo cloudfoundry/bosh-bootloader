@@ -81,7 +81,7 @@ var _ = Describe("load balancers", func() {
 				Expect(certificates[0].CertificateBody).To(Equal(testhelpers.BBL_CERT))
 				Expect(certificates[0].PrivateKey).To(Equal(testhelpers.BBL_KEY))
 				Expect(certificates[0].Chain).To(Equal(testhelpers.BBL_CHAIN))
-				Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+				Expect(certificates[0].Name).To(MatchRegexp(fmt.Sprintf(`%s-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`, lbType)))
 
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 			},
@@ -204,7 +204,7 @@ var _ = Describe("load balancers", func() {
 			Expect(certificates[0].Chain).To(Equal(testhelpers.OTHER_BBL_CHAIN))
 			Expect(certificates[0].CertificateBody).To(Equal(testhelpers.OTHER_BBL_CERT))
 			Expect(certificates[0].PrivateKey).To(Equal(testhelpers.OTHER_BBL_KEY))
-			Expect(certificates[0].Name).To(MatchRegexp(`bbl-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+			Expect(certificates[0].Name).To(MatchRegexp(`cf-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
 
 			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
 			Expect(ok).To(BeTrue())

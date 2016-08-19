@@ -1,38 +1,31 @@
 package iam
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 )
 
-type uuidGenerator interface {
-	Generate() (string, error)
-}
-
 type CertificateUploader struct {
-	iamClient     Client
-	uuidGenerator uuidGenerator
+	iamClient Client
 }
 
-func NewCertificateUploader(iamClient Client, uuidGenerator uuidGenerator) CertificateUploader {
+func NewCertificateUploader(iamClient Client) CertificateUploader {
 	return CertificateUploader{
-		iamClient:     iamClient,
-		uuidGenerator: uuidGenerator,
+		iamClient: iamClient,
 	}
 }
 
-func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath string) (string, error) {
+func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath, certificateName string) error {
 	certificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	privateKey, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	var chain *string
@@ -40,25 +33,18 @@ func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath s
 		chainContents, err := ioutil.ReadFile(chainPath)
 		chain = aws.String(string(chainContents))
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
-
-	uuid, err := c.uuidGenerator.Generate()
-	if err != nil {
-		return "", err
-	}
-
-	newName := fmt.Sprintf("bbl-cert-%s", uuid)
 
 	_, err = c.iamClient.UploadServerCertificate(&awsiam.UploadServerCertificateInput{
 		CertificateBody:       aws.String(string(certificate)),
 		PrivateKey:            aws.String(string(privateKey)),
 		CertificateChain:      chain,
-		ServerCertificateName: aws.String(newName),
+		ServerCertificateName: aws.String(certificateName),
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
-	return newName, nil
+	return nil
 }

@@ -29,6 +29,7 @@ var _ = Describe("Update LBs", func() {
 		boshClientProvider        *fakes.BOSHClientProvider
 		boshClient                *fakes.BOSHClient
 		logger                    *fakes.Logger
+		guidGenerator             *fakes.GuidGenerator
 	)
 
 	var updateLBs = func(certificatePath, keyPath, chainPath string, state storage.State) (storage.State, error) {
@@ -48,18 +49,19 @@ var _ = Describe("Update LBs", func() {
 		infrastructureManager = &fakes.InfrastructureManager{}
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 		logger = &fakes.Logger{}
+		guidGenerator = &fakes.GuidGenerator{}
 
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
 		availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-		certificateManager.CreateCall.Returns.CertificateName = "some-certificate-name"
 		certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
 			Body: "some-old-certificate-contents",
 			ARN:  "some-certificate-arn",
 		}
 
+		guidGenerator.GenerateCall.Returns.Output = "abcd"
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
 		incomingState = storage.State{
@@ -84,7 +86,7 @@ var _ = Describe("Update LBs", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
-			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator)
+			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, guidGenerator)
 	})
 
 	Describe("Execute", func() {
@@ -104,6 +106,7 @@ var _ = Describe("Update LBs", func() {
 			Expect(logger.StepCall.Messages).To(ContainElement("uploading new certificate"))
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal(certFilePath))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal(keyFilePath))
+			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("cf-elb-cert-abcd"))
 		})
 
 		Context("when uploading with a chain", func() {
@@ -145,7 +148,7 @@ var _ = Describe("Update LBs", func() {
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("some-certificate-name"))
+			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id"))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
@@ -153,6 +156,26 @@ var _ = Describe("Update LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
+		})
+
+		It("names the loadbalancer without EnvID when EnvID is not set", func() {
+			updateLBs(certFilePath, keyFilePath, "", storage.State{
+				Stack: storage.Stack{
+					Name:   "some-stack",
+					LBType: "concourse",
+				},
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-key-pair",
+				},
+				EnvID: "",
+			})
+
+			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd"))
 		})
 
 		It("deletes the existing certificate and private key", func() {
@@ -292,17 +315,16 @@ var _ = Describe("Update LBs", func() {
 
 		Describe("state manipulation", func() {
 			It("updates the state with the new certificate name", func() {
-				certificateManager.CreateCall.Returns.CertificateName = "some-new-certificate-name"
-
 				state, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 					Stack: storage.Stack{
 						LBType:          "cf",
 						CertificateName: "some-certificate-name",
 					},
+					EnvID: "some-env",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(state.Stack.CertificateName).To(Equal("some-new-certificate-name"))
+				Expect(state.Stack.CertificateName).To(Equal("cf-elb-cert-abcd-some-env"))
 			})
 		})
 
@@ -344,10 +366,8 @@ var _ = Describe("Update LBs", func() {
 			})
 
 			It("returns an error when new certificate cannot be described", func() {
-				certificateManager.CreateCall.Returns.CertificateName = "some-new-certificate-name"
-
 				certificateManager.DescribeCall.Stub = func(certificateName string) (iam.Certificate, error) {
-					if certificateName == "some-new-certificate-name" {
+					if certificateName == "concourse-elb-cert-abcd" {
 						return iam.Certificate{}, errors.New("new certificate failed to describe")
 					}
 
@@ -399,6 +419,12 @@ var _ = Describe("Update LBs", func() {
 				certificateManager.DeleteCall.Returns.Error = errors.New("certificate deletion failed")
 				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("certificate deletion failed"))
+			})
+
+			It("returns an error when a GUID cannot be generated", func() {
+				guidGenerator.GenerateCall.Returns.Error = errors.New("Out of entropy in the universe")
+				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				Expect(err).To(MatchError("Out of entropy in the universe"))
 			})
 		})
 	})

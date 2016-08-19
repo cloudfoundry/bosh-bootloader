@@ -42,17 +42,15 @@ var _ = Describe("CertificateManager", func() {
 
 	Describe("Create", func() {
 		It("creates the given certificate", func() {
-			certificateUploader.UploadCall.Returns.CertificateName = "some-new-certificate"
-
-			certificateName, err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
+			certificateName := "certificate-name"
+			err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name(), certificateName)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateUploader.UploadCall.CallCount).To(Equal(1))
 			Expect(certificateUploader.UploadCall.Receives.CertificatePath).To(Equal(certificateFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.PrivateKeyPath).To(Equal(privateKeyFile.Name()))
 			Expect(certificateUploader.UploadCall.Receives.ChainPath).To(Equal(chainFile.Name()))
-
-			Expect(certificateName).To(Equal("some-new-certificate"))
+			Expect(certificateUploader.UploadCall.Receives.CertificateName).To(Equal("certificate-name"))
 		})
 
 		Context("failure cases", func() {
@@ -60,7 +58,7 @@ var _ = Describe("CertificateManager", func() {
 				It("returns an error", func() {
 					certificateUploader.UploadCall.Returns.Error = errors.New("upload failed")
 
-					_, err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name())
+					err := manager.Create(certificateFile.Name(), privateKeyFile.Name(), chainFile.Name(), "cert-name")
 					Expect(err).To(MatchError("upload failed"))
 				})
 			})

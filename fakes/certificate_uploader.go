@@ -7,18 +7,19 @@ type CertificateUploader struct {
 			CertificatePath string
 			PrivateKeyPath  string
 			ChainPath       string
+			CertificateName string
 		}
 		Returns struct {
-			CertificateName string
-			Error           error
+			Error error
 		}
 	}
 }
 
-func (c *CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath string) (string, error) {
+func (c *CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath, certificateName string) error {
 	c.UploadCall.CallCount++
 	c.UploadCall.Receives.CertificatePath = certificatePath
 	c.UploadCall.Receives.PrivateKeyPath = privateKeyPath
 	c.UploadCall.Receives.ChainPath = chainPath
-	return c.UploadCall.Returns.CertificateName, c.UploadCall.Returns.Error
+	c.UploadCall.Receives.CertificateName = certificateName
+	return c.UploadCall.Returns.Error
 }

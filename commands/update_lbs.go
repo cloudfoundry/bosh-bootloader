@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -26,10 +27,11 @@ type UpdateLBs struct {
 	boshClientProvider        boshClientProvider
 	logger                    logger
 	certificateValidator      certificateValidator
+	guidGenerator             guidGenerator
 }
 
 func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager, availabilityZoneRetriever availabilityZoneRetriever,
-	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider, logger logger, certificateValidator certificateValidator) UpdateLBs {
+	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider, logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator) UpdateLBs {
 
 	return UpdateLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -39,6 +41,7 @@ func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateMana
 		boshClientProvider:        boshClientProvider,
 		logger:                    logger,
 		certificateValidator:      certificateValidator,
+		guidGenerator:             guidGenerator,
 	}
 }
 
@@ -75,7 +78,21 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	}
 
 	c.logger.Step("uploading new certificate")
-	certificateName, err := c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath)
+
+	guid, err := c.guidGenerator.Generate()
+	if err != nil {
+		return state, err
+	}
+
+	var certificateName string
+
+	if state.EnvID == "" {
+		certificateName = fmt.Sprintf("%s-elb-cert-%s", state.Stack.LBType, guid)
+	} else {
+		certificateName = fmt.Sprintf("%s-elb-cert-%s-%s", state.Stack.LBType, guid, state.EnvID)
+	}
+
+	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)
 	if err != nil {
 		return state, err
 	}
