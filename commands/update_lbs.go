@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -79,17 +78,9 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 
 	c.logger.Step("uploading new certificate")
 
-	guid, err := c.guidGenerator.Generate()
+	certificateName, err := certificateNameFor(state.Stack.LBType, c.guidGenerator, state.EnvID)
 	if err != nil {
 		return state, err
-	}
-
-	var certificateName string
-
-	if state.EnvID == "" {
-		certificateName = fmt.Sprintf("%s-elb-cert-%s", state.Stack.LBType, guid)
-	} else {
-		certificateName = fmt.Sprintf("%s-elb-cert-%s-%s", state.Stack.LBType, guid, state.EnvID)
 	}
 
 	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)

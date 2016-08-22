@@ -1,7 +1,9 @@
 package iam
 
 import (
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
@@ -18,6 +20,10 @@ func NewCertificateUploader(iamClient Client) CertificateUploader {
 }
 
 func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath, certificateName string) error {
+	if strings.ContainsAny(certificateName, ":") {
+		return fmt.Errorf("%q is an invalid certificate name, it must not contain %q", certificateName, ":")
+	}
+
 	certificate, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return err

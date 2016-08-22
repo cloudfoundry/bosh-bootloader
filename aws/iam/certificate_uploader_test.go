@@ -102,6 +102,11 @@ var _ = Describe("CertificateUploader", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when the certificate name contains invalid characters", func() {
+				err := uploader.Upload(certificateFile.Name(), privateKeyFile.Name(), "", "some:invalid:name")
+				Expect(err).To(MatchError(`"some:invalid:name" is an invalid certificate name, it must not contain ":"`))
+			})
+
 			It("returns an error when the certificate path does not exist", func() {
 				err := uploader.Upload("/some/fake/path", privateKeyFile.Name(), "", "")
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))

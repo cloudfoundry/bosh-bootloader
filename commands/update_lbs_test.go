@@ -143,19 +143,19 @@ var _ = Describe("Update LBs", func() {
 				KeyPair: storage.KeyPair{
 					Name: "some-key-pair",
 				},
-				EnvID: "some-env-id",
+				EnvID: "some-env-id:timestamp",
 			})
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id"))
+			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
+			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id:timestamp"))
 		})
 
 		It("names the loadbalancer without EnvID when EnvID is not set", func() {
@@ -320,11 +320,11 @@ var _ = Describe("Update LBs", func() {
 						LBType:          "cf",
 						CertificateName: "some-certificate-name",
 					},
-					EnvID: "some-env",
+					EnvID: "some-env:timestamp",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(state.Stack.CertificateName).To(Equal("cf-elb-cert-abcd-some-env"))
+				Expect(state.Stack.CertificateName).To(Equal("cf-elb-cert-abcd-some-env-timestamp"))
 			})
 		})
 

@@ -70,7 +70,7 @@ var _ = Describe("Create LBs", func() {
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
-				EnvID: "some-env-id",
+				EnvID: "some-env-id:timestamp",
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
@@ -93,7 +93,7 @@ var _ = Describe("Create LBs", func() {
 
 			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
-			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id"))
+			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
 
 		})
@@ -129,14 +129,14 @@ var _ = Describe("Create LBs", func() {
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id"))
+			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
 			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
+			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id:timestamp"))
 		})
 
 		It("names the loadbalancer without EnvID when EnvID is not set", func() {
@@ -266,16 +266,34 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		Context("state manipulation", func() {
-			It("returns a state with new certificate name and lb type", func() {
-				state, err := command.Execute([]string{
-					"--type", "concourse",
-					"--cert", "temp/some-cert.crt",
-					"--key", "temp/some-key.key",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
+			Context("when the env id does not exist", func() {
+				It("returns a state with new certificate name and lb type", func() {
+					state, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "temp/some-cert.crt",
+						"--key", "temp/some-key.key",
+					}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd"))
-				Expect(state.Stack.LBType).To(Equal("concourse"))
+					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd"))
+					Expect(state.Stack.LBType).To(Equal("concourse"))
+				})
+			})
+
+			Context("when the env id exists", func() {
+				It("returns a state with new certificate name and lb type", func() {
+					state, err := command.Execute([]string{
+						"--type", "concourse",
+						"--cert", "temp/some-cert.crt",
+						"--key", "temp/some-key.key",
+					}, storage.State{
+						EnvID: "some-env-id:timestamp",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
+					Expect(state.Stack.LBType).To(Equal("concourse"))
+				})
 			})
 		})
 

@@ -101,17 +101,10 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (stora
 	}
 
 	c.logger.Step("uploading certificate")
-	guid, err := c.guidGenerator.Generate()
+
+	certificateName, err := certificateNameFor(config.lbType, c.guidGenerator, state.EnvID)
 	if err != nil {
 		return state, err
-	}
-
-	var certificateName string
-
-	if state.EnvID == "" {
-		certificateName = fmt.Sprintf("%s-elb-cert-%s", config.lbType, guid)
-	} else {
-		certificateName = fmt.Sprintf("%s-elb-cert-%s-%s", config.lbType, guid, state.EnvID)
 	}
 
 	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)
