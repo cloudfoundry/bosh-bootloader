@@ -57,6 +57,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 			Expect(builder.BuildCall.Receives.IAMUserName).To(Equal("bosh-iam-user-some-env-id-time-stamp"))
+			Expect(builder.BuildCall.Receives.EnvID).To(Equal("some-env-id-time:stamp"))
 
 			Expect(stackManager.CreateOrUpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.CreateOrUpdateCall.Receives.Template).To(Equal(templates.Template{
@@ -161,6 +162,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 			Expect(builder.BuildCall.Receives.IAMUserName).To(Equal("some-bosh-user-id"))
+			Expect(builder.BuildCall.Receives.EnvID).To(Equal("some-env-id-time:stamp"))
 
 			Expect(stackManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.UpdateCall.Receives.Template).To(Equal(templates.Template{

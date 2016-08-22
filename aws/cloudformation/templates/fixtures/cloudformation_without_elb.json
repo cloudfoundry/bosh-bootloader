@@ -172,7 +172,6 @@
         },
         "BOSHUser": {
             "Properties": {
-                "UserName": "bosh-iam-user-some-env-id",
                 "Policies": [
                     {
                         "PolicyDocument": {
@@ -213,7 +212,8 @@
                         },
                         "PolicyName": "aws-cpi"
                     }
-                ]
+                ],
+                "UserName": "bosh-iam-user-some-env-id"
             },
             "Type": "AWS::IAM::User"
         },
@@ -408,7 +408,7 @@
         "VPC": {
             "Properties": {
                 "CidrBlock": {"Ref": "VPCCIDR"},
-                "Tags": [{"Key": "Name", "Value": "bbl"}]
+                "Tags": [{"Key": "Name", "Value": "vpc-bbl-env-id"}]
             },
             "Type": "AWS::EC2::VPC"
         },

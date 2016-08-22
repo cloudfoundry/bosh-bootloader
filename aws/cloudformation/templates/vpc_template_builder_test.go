@@ -1,6 +1,9 @@
 package templates_test
 
 import (
+	"fmt"
+	"math/rand"
+
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 
 	. "github.com/onsi/ginkgo"
@@ -16,7 +19,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 
 	Describe("VPC", func() {
 		It("returns a template with the VPC-related parameters", func() {
-			vpc := builder.VPC()
+			vpc := builder.VPC("")
 
 			Expect(vpc.Parameters).To(HaveLen(1))
 			Expect(vpc.Parameters).To(HaveKeyWithValue("VPCCIDR", templates.Parameter{
@@ -27,7 +30,8 @@ var _ = Describe("VPCTemplateBuilder", func() {
 		})
 
 		It("returns a template with the VPC-related resources", func() {
-			vpc := builder.VPC()
+			envID := fmt.Sprintf("some-env-id-%v", rand.Int())
+			vpc := builder.VPC(envID)
 
 			Expect(vpc.Resources).To(HaveLen(3))
 			Expect(vpc.Resources).To(HaveKeyWithValue("VPC", templates.Resource{
@@ -36,7 +40,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 					CidrBlock: templates.Ref{"VPCCIDR"},
 					Tags: []templates.Tag{
 						{
-							Value: "bbl",
+							Value: fmt.Sprintf("vpc-%s", envID),
 							Key:   "Name",
 						},
 					},
@@ -57,7 +61,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 		})
 
 		It("returns a template with the VPC-related outputs", func() {
-			vpc := builder.VPC()
+			vpc := builder.VPC("")
 
 			Expect(vpc.Outputs).To(HaveKeyWithValue("VPCID", templates.Output{
 				Value: templates.Ref{Ref: "VPC"},

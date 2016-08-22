@@ -11,7 +11,7 @@ import (
 const bblTagKey = "bbl-env-id"
 
 type templateBuilder interface {
-	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string, iamUserName string) templates.Template
+	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string, iamUserName string, envID string) templates.Template
 }
 
 type stackManager interface {
@@ -52,7 +52,7 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 		}
 	}
 
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName)
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName, envID)
 	tags := Tags{
 		{
 			Key:   bblTagKey,
@@ -79,7 +79,7 @@ func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZo
 		return Stack{}, err
 	}
 
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName)
+	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName, envID)
 
 	if err := m.stackManager.Update(stackName, template, Tags{{Key: bblTagKey, Value: envID}}); err != nil {
 		return Stack{}, err

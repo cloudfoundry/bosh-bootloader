@@ -1,12 +1,14 @@
 package templates
 
+import "fmt"
+
 type VPCTemplateBuilder struct{}
 
 func NewVPCTemplateBuilder() VPCTemplateBuilder {
 	return VPCTemplateBuilder{}
 }
 
-func (t VPCTemplateBuilder) VPC() Template {
+func (t VPCTemplateBuilder) VPC(envID string) Template {
 	return Template{
 		Parameters: map[string]Parameter{
 			"VPCCIDR": Parameter{
@@ -23,7 +25,7 @@ func (t VPCTemplateBuilder) VPC() Template {
 					CidrBlock: Ref{"VPCCIDR"},
 					Tags: []Tag{
 						{
-							Value: "bbl",
+							Value: fmt.Sprintf("vpc-%s", envID),
 							Key:   "Name",
 						},
 					},

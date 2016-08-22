@@ -377,7 +377,7 @@
     "VPC": {
       "Properties": {
         "CidrBlock": {"Ref": "VPCCIDR"},
-        "Tags": [{"Key": "Name", "Value": "bbl"}]
+        "Tags": [{"Key": "Name", "Value": "vpc-bbl-env-lake-timestamp"}]
       },
       "Type": "AWS::EC2::VPC"
     },
