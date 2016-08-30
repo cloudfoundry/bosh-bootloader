@@ -374,7 +374,8 @@ var _ = Describe("StackManager", func() {
 				},
 			}))
 
-			Expect(logger.StepCall.Receives.Message).To(Equal("creating cloudformation stack"))
+			Expect(logger.StepCall.Receives.Message).To(Equal("creating cloudformation stack: %q"))
+			Expect(logger.StepCall.Receives.Arguments[0]).To(Equal("some-stack-name"))
 		})
 
 		It("updates the stack if the stack exists", func() {

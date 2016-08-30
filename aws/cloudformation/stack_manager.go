@@ -148,7 +148,7 @@ func (s StackManager) Delete(name string) error {
 }
 
 func (s StackManager) create(name string, template templates.Template, tags Tags) error {
-	s.logger.Step("creating cloudformation stack")
+	s.logger.Step("creating cloudformation stack: %q", name)
 
 	templateJson, err := json.Marshal(&template)
 	if err != nil {
