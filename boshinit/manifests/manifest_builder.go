@@ -3,7 +3,7 @@ package manifests
 import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
 
 type logger interface {
-	Step(message string)
+	Step(message string, a ...interface{})
 	Println(string)
 }
 

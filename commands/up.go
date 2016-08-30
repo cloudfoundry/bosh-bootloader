@@ -36,7 +36,7 @@ type awsCredentialValidator interface {
 }
 
 type logger interface {
-	Step(string)
+	Step(string, ...interface{})
 	Println(string)
 	Prompt(string)
 }

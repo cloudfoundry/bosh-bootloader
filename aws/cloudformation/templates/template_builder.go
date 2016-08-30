@@ -1,7 +1,7 @@
 package templates
 
 type logger interface {
-	Step(message string)
+	Step(message string, a ...interface{})
 	Dot()
 }
 

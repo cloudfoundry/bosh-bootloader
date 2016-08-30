@@ -31,7 +31,7 @@ var _ = Describe("KeyPairCreator", func() {
 				KeyName:        goaws.String("keypair-guid"),
 			}
 
-			keyPair, err := keyPairCreator.Create("some-env-id")
+			keyPair, err := keyPairCreator.Create("keypair-some-env-id")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(keyPair.Name).To(Equal("keypair-some-env-id"))

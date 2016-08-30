@@ -15,7 +15,7 @@ import (
 var StackNotFound error = errors.New("stack not found")
 
 type logger interface {
-	Step(message string)
+	Step(message string, a ...interface{})
 	Dot()
 }
 

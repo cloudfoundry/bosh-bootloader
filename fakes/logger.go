@@ -4,7 +4,8 @@ type Logger struct {
 	StepCall struct {
 		CallCount int
 		Receives  struct {
-			Message string
+			Message   string
+			Arguments []interface{}
 		}
 		Messages []string
 	}
@@ -29,9 +30,10 @@ type Logger struct {
 	}
 }
 
-func (l *Logger) Step(message string) {
+func (l *Logger) Step(message string, a ...interface{}) {
 	l.StepCall.CallCount++
 	l.StepCall.Receives.Message = message
+	l.StepCall.Receives.Arguments = a
 	l.StepCall.Messages = append(l.StepCall.Messages, message)
 }
 

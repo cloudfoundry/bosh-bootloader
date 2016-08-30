@@ -48,10 +48,11 @@ var _ = Describe("KeyPairManager", func() {
 					PrivateKey: "private",
 				}))
 
-				Expect(creator.CreateCall.Receives.EnvID).To(Equal("some-env-id"))
+				Expect(creator.CreateCall.Receives.KeyPairName).To(Equal("keypair-some-env-id"))
 
 				Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
-				Expect(logger.StepCall.Receives.Message).To(Equal("creating keypair"))
+				Expect(logger.StepCall.Receives.Message).To(Equal("creating keypair: %s"))
+				Expect(logger.StepCall.Receives.Arguments[0]).To(Equal("keypair-some-env-id"))
 			})
 
 			Context("error cases", func() {

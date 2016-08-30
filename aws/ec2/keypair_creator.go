@@ -1,10 +1,6 @@
 package ec2
 
-import (
-	"fmt"
-
-	"github.com/aws/aws-sdk-go/service/ec2"
-)
+import "github.com/aws/aws-sdk-go/service/ec2"
 
 type guidGenerator interface {
 	Generate() (string, error)
@@ -20,9 +16,7 @@ func NewKeyPairCreator(ec2Client Client) KeyPairCreator {
 	}
 }
 
-func (c KeyPairCreator) Create(envID string) (KeyPair, error) {
-
-	keyPairName := fmt.Sprintf("keypair-%s", envID)
+func (c KeyPairCreator) Create(keyPairName string) (KeyPair, error) {
 
 	output, err := c.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
 		KeyName: &keyPairName,

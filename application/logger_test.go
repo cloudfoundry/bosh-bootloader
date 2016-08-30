@@ -2,6 +2,8 @@ package application_test
 
 import (
 	"bytes"
+	"fmt"
+	"math/rand"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 
@@ -25,6 +27,12 @@ var _ = Describe("Logger", func() {
 			logger.Step("creating key pair")
 
 			Expect(buffer.String()).To(Equal("step: creating key pair\n"))
+		})
+
+		It("prints the step message with dynamic values", func() {
+			randomInt := rand.Int()
+			logger.Step("Random variable is: %d", randomInt)
+			Expect(buffer.String()).To(Equal(fmt.Sprintf("step: Random variable is: %d\n", randomInt)))
 		})
 	})
 

@@ -12,7 +12,7 @@ type CloudConfigurator struct {
 }
 
 type logger interface {
-	Step(message string)
+	Step(message string, a ...interface{})
 	Println(string)
 }
 

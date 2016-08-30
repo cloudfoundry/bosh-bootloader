@@ -26,9 +26,9 @@ func (l *Logger) clear() {
 	l.newline = true
 }
 
-func (l *Logger) Step(message string) {
+func (l *Logger) Step(message string, a ...interface{}) {
 	l.clear()
-	fmt.Fprintf(l.writer, "step: %s\n", message)
+	fmt.Fprintf(l.writer, "step: %s\n", fmt.Sprintf(message, a...))
 	l.newline = true
 }
 
