@@ -28,6 +28,10 @@ func New(commands CommandSet, configuration Configuration, stateStore stateStore
 func (a App) Run() error {
 	newState, err := a.execute(a.configuration)
 	if err != nil {
+		errWritingConfig := a.stateStore.Set(a.configuration.Global.StateDir, newState)
+		if errWritingConfig != nil {
+			return fmt.Errorf("%q command failed with %q, and the state failed to save with error %q", a.configuration.Command, err.Error(), errWritingConfig.Error())
+		}
 		return err
 	}
 
@@ -48,7 +52,7 @@ func (a App) execute(configuration Configuration) (storage.State, error) {
 
 	state, err := command.Execute(configuration.SubcommandFlags, configuration.State)
 	if err != nil {
-		return storage.State{}, err
+		return state, err
 	}
 
 	return state, nil
