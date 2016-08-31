@@ -114,7 +114,7 @@ var _ = Describe("bosh deployment tests", func() {
 		body, err := ioutil.ReadAll(resp.Body)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(string(body)).To(ContainSubstring("Log In - Concourse"))
+		Expect(string(body)).To(ContainSubstring("no pipelines configured"))
 
 		err = boshClient.DeleteDeployment("concourse")
 		Expect(err).NotTo(HaveOccurred())
