@@ -1,10 +1,13 @@
 package integration_test
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
@@ -16,7 +19,7 @@ import (
 )
 
 const (
-	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/15c7654a0641b3195e63816c17d723afc2a8bf81/manifests/concourse.yml"
+	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/master/docs/setting-up/installing.any"
 	ConcourseReleaseURL         = "https://bosh.io/d/github.com/concourse/concourse"
 	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-runc-release"
 	GardenReleaseName           = "garden-runc"
@@ -149,12 +152,53 @@ func downloadConcourseExampleManifest() (string, error) {
 		return "", err
 	}
 
-	rawRespBody, err := ioutil.ReadAll(resp)
-	if err != nil {
-		return "", err
+	var lines []string
+	scanner := bufio.NewScanner(resp)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	startIndexOfYamlCode := -1
+	endIndexOfYamlCode := -1
+
+	for index, line := range lines {
+		startMatched, startErr := regexp.MatchString(`^\s*\\codeblock{yaml}{$`, line)
+		endMatched, endErr := regexp.MatchString(`^\s*}$`, line)
+		if endErr != nil {
+			return "", endErr
+		}
+
+		if startErr != nil {
+			panic(startErr)
+		}
+
+		if startMatched && startIndexOfYamlCode < 0 {
+			startIndexOfYamlCode = index + 1
+		}
+		if endMatched && endIndexOfYamlCode < 0 && startIndexOfYamlCode > 0 {
+			endIndexOfYamlCode = index
+		}
 	}
 
-	return string(rawRespBody), nil
+	yamlDocument := lines[startIndexOfYamlCode:endIndexOfYamlCode]
+
+	re := regexp.MustCompile(`^(\s*)---`)
+	results := re.FindAllStringSubmatch(yamlDocument[0], -1)
+	indentation := results[0][1]
+	for index, line := range yamlDocument {
+		indentationRegexp := regexp.MustCompile(fmt.Sprintf(`^%s`, indentation))
+		escapesRegexp := regexp.MustCompile(`\\([{}])`)
+		tlsRegexp := regexp.MustCompile("^.*(tls_key|tls_cert).*$")
+
+		line = indentationRegexp.ReplaceAllString(line, "")
+		line = escapesRegexp.ReplaceAllString(line, "$1")
+		line = tlsRegexp.ReplaceAllString(line, "")
+
+		yamlDocument[index] = line
+
+	}
+
+	yamlString := strings.Join(yamlDocument, "\n")
+	return yamlString, nil
 }
 
 func download(location string) (io.Reader, int64, error) {
