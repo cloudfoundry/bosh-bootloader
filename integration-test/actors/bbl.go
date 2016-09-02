@@ -40,6 +40,18 @@ func (b BBL) Up() {
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }
 
+func (b BBL) UpWithInvalidAWSCredentials() {
+	args := []string{
+		"--aws-access-key-id", "some-bad-access-key-id",
+		"--aws-secret-access-key", "some-bad-secret-access-key",
+		"--aws-region", b.configuration.AWSRegion,
+		"--state-dir", b.stateDirectory,
+		"unsupported-deploy-bosh-on-aws-for-concourse",
+	}
+	session := b.execute(args, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Seconds).Should(gexec.Exit(1))
+}
+
 func (b BBL) Destroy() {
 	session := b.execute([]string{
 		"--state-dir", b.stateDirectory,
@@ -76,6 +88,10 @@ func (b BBL) DirectorPassword() string {
 
 func (b BBL) DirectorAddress() string {
 	return b.fetchValue("director-address")
+}
+
+func (b BBL) EnvID() string {
+	return b.fetchValue("env-id")
 }
 
 func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) {

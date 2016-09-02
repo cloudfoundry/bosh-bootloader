@@ -114,3 +114,17 @@ func (a AWS) GetEC2InstanceTags(instanceID string) map[string]string {
 	}
 	return tags
 }
+
+func (a AWS) DescribeKeyPairs(keypairName string) []*awsec2.KeyPairInfo {
+	params := &awsec2.DescribeKeyPairsInput{
+		Filters: []*awsec2.Filter{{}},
+		KeyNames: []*string{
+			awslib.String(keypairName),
+		},
+	}
+
+	keypairOutput, err := a.ec2Client.DescribeKeyPairs(params)
+	Expect(err).NotTo(HaveOccurred())
+
+	return keypairOutput.KeyPairs
+}
