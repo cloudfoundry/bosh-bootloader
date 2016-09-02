@@ -30,18 +30,19 @@ func main() {
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
-	stateStore := storage.NewStore()
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
 
 	commandLineParser := application.NewCommandLineParser(usage.Print)
-	configurationParser := application.NewConfigurationParser(commandLineParser, stateStore)
+	configurationParser := application.NewConfigurationParser(commandLineParser)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
 		fail(err)
 	}
+
+	stateStore := storage.NewStore(configuration.Global.StateDir)
 
 	// Amazon
 	awsConfiguration := aws.Config{
@@ -109,23 +110,23 @@ func main() {
 	up := commands.NewUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, boshClientProvider, envIDGenerator,
+		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
 	)
 	destroy := commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
-		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter,
+		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore,
 	)
 	createLBs := commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
-		uuidGenerator,
+		uuidGenerator, stateStore,
 	)
 	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
-	)
+		stateStore)
 	deleteLBs := commands.NewDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
-		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider,
+		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
 	)
 	lbs := commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
 	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {

@@ -22,15 +22,15 @@ func NewLBs(awsCredentialValidator awsCredentialValidator, infrastructureManager
 	}
 }
 
-func (c LBs) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 	err := c.awsCredentialValidator.Validate()
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	stack, err := c.infrastructureManager.Describe(state.Stack.Name)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	switch state.Stack.LBType {
@@ -40,8 +40,8 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) (storage.Sta
 	case "concourse":
 		fmt.Fprintf(c.stdout, "Concourse LB: %s [%s]\n", stack.Outputs["ConcourseLoadBalancer"], stack.Outputs["ConcourseLoadBalancerURL"])
 	default:
-		return state, errors.New("no lbs found")
+		return errors.New("no lbs found")
 	}
 
-	return state, nil
+	return nil
 }

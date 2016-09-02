@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 type CommandSet map[string]commands.Command
@@ -26,16 +25,7 @@ func New(commands CommandSet, configuration Configuration, stateStore stateStore
 }
 
 func (a App) Run() error {
-	newState, err := a.execute(a.configuration)
-	if err != nil {
-		errWritingConfig := a.stateStore.Set(a.configuration.Global.StateDir, newState)
-		if errWritingConfig != nil {
-			return fmt.Errorf("%q command failed with %q, and the state failed to save with error %q", a.configuration.Command, err.Error(), errWritingConfig.Error())
-		}
-		return err
-	}
-
-	err = a.stateStore.Set(a.configuration.Global.StateDir, newState)
+	err := a.execute()
 	if err != nil {
 		return err
 	}
@@ -43,17 +33,17 @@ func (a App) Run() error {
 	return nil
 }
 
-func (a App) execute(configuration Configuration) (storage.State, error) {
-	command, ok := a.commands[configuration.Command]
+func (a App) execute() error {
+	command, ok := a.commands[a.configuration.Command]
 	if !ok {
 		a.usage()
-		return storage.State{}, fmt.Errorf("unknown command: %s", configuration.Command)
+		return fmt.Errorf("unknown command: %s", a.configuration.Command)
 	}
 
-	state, err := command.Execute(configuration.SubcommandFlags, configuration.State)
+	err := command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
 	if err != nil {
-		return state, err
+		return err
 	}
 
-	return state, nil
+	return nil
 }

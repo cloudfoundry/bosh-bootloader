@@ -22,6 +22,7 @@ type Destroy struct {
 	infrastructureManager  infrastructureManager
 	keyPairDeleter         keyPairDeleter
 	certificateDeleter     certificateDeleter
+	stateStore             stateStore
 }
 
 type destroyConfig struct {
@@ -55,7 +56,7 @@ type certificateDeleter interface {
 func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, stdin io.Reader,
 	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter,
-	certificateDeleter certificateDeleter) Destroy {
+	certificateDeleter certificateDeleter, stateStore stateStore) Destroy {
 	return Destroy{
 		awsCredentialValidator: awsCredentialValidator,
 		logger:                 logger,
@@ -67,18 +68,19 @@ func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, st
 		infrastructureManager:  infrastructureManager,
 		keyPairDeleter:         keyPairDeleter,
 		certificateDeleter:     certificateDeleter,
+		stateStore:             stateStore,
 	}
 }
 
-func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	err := d.awsCredentialValidator.Validate()
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if !config.NoConfirm {
@@ -90,7 +92,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage
 		proceed = strings.ToLower(proceed)
 		if proceed != "yes" && proceed != "y" {
 			d.logger.Step("exiting")
-			return state, nil
+			return nil
 		}
 	}
 
@@ -98,37 +100,42 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) (storage
 
 	stack, err := d.stackManager.Describe(state.Stack.Name)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	var vpcID = stack.Outputs["VPCID"]
 	if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
-		return state, err
+		return err
 	}
 
 	state, err = d.deleteBOSH(stack, state)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
-		return state, err
+		return err
 	}
 
 	if state.Stack.CertificateName != "" {
 		d.logger.Step("deleting certificate")
 		err = d.certificateDeleter.Delete(state.Stack.CertificateName)
 		if err != nil {
-			return state, err
+			return err
 		}
 	}
 
 	err = d.keyPairDeleter.Delete(state.KeyPair.Name)
 	if err != nil {
-		return state, err
+		return err
 	}
 
-	return storage.State{}, nil
+	err = d.stateStore.Set(storage.State{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {

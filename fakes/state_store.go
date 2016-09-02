@@ -6,7 +6,6 @@ type StateStore struct {
 	SetCall struct {
 		CallCount int
 		Receives  struct {
-			Dir   string
 			State storage.State
 		}
 		Returns struct {
@@ -26,9 +25,8 @@ type StateStore struct {
 	}
 }
 
-func (s *StateStore) Set(dir string, state storage.State) error {
+func (s *StateStore) Set(state storage.State) error {
 	s.SetCall.CallCount++
-	s.SetCall.Receives.Dir = dir
 	s.SetCall.Receives.State = state
 
 	return s.SetCall.Returns.Error

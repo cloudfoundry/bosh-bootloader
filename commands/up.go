@@ -12,7 +12,7 @@ import (
 )
 
 type keyPairSynchronizer interface {
-	Sync(keypair ec2.KeyPair, envID string) (ec2.KeyPair, error)
+	Sync(keypair ec2.KeyPair) (ec2.KeyPair, error)
 }
 
 type infrastructureManager interface {
@@ -41,6 +41,10 @@ type logger interface {
 	Prompt(string)
 }
 
+type stateStore interface {
+	Set(state storage.State) error
+}
+
 type certificateDescriber interface {
 	Describe(certificateName string) (iam.Certificate, error)
 }
@@ -61,6 +65,7 @@ type Up struct {
 	cloudConfigManager        cloudConfigManager
 	boshClientProvider        boshClientProvider
 	envIDGenerator            envIDGenerator
+	stateStore                stateStore
 }
 
 func NewUp(
@@ -68,7 +73,7 @@ func NewUp(
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, envIDGenerator envIDGenerator) Up {
+	boshClientProvider boshClientProvider, envIDGenerator envIDGenerator, stateStore stateStore) Up {
 
 	return Up{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -82,43 +87,51 @@ func NewUp(
 		cloudConfigManager:        cloudConfigManager,
 		boshClientProvider:        boshClientProvider,
 		envIDGenerator:            envIDGenerator,
+		stateStore:                stateStore,
 	}
 }
 
-func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	err := u.awsCredentialValidator.Validate()
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	err = u.checkForFastFails(state)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if state.EnvID == "" {
 		state.EnvID, err = u.envIDGenerator.Generate()
 		if err != nil {
-			return state, err
+			return err
 		}
+	}
+
+	if state.KeyPair.Name == "" {
+		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
+	}
+	err = u.stateStore.Set(state)
+	if err != nil {
+		panic(err)
 	}
 
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
 		Name:       state.KeyPair.Name,
 		PublicKey:  state.KeyPair.PublicKey,
 		PrivateKey: state.KeyPair.PrivateKey,
-	}, state.EnvID)
+	})
 	if err != nil {
-		return state, err
+		return err
 	}
 
-	state.KeyPair.Name = keyPair.Name
 	state.KeyPair.PublicKey = keyPair.PublicKey
 	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
 	availabilityZones, err := u.availabilityZoneRetriever.Retrieve(state.AWS.Region)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if state.Stack.Name == "" {
@@ -130,14 +143,14 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 	if lbExists(state.Stack.LBType) {
 		certificate, err := u.certificateDescriber.Describe(state.Stack.CertificateName)
 		if err != nil {
-			return state, err
+			return err
 		}
 		certificateARN = certificate.ARN
 	}
 
 	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
@@ -152,12 +165,12 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 
 	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if state.BOSH.IsEmpty() {
@@ -183,10 +196,15 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) (storage.Stat
 
 	err = u.cloudConfigManager.Update(cloudConfigInput, boshClient)
 	if err != nil {
-		return state, err
+		return err
 	}
 
-	return state, nil
+	err = u.stateStore.Set(state)
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
 }
 
 func (u Up) checkForFastFails(state storage.State) error {

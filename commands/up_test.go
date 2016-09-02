@@ -35,12 +35,13 @@ var _ = Describe("Up", func() {
 			boshClient                *fakes.BOSHClient
 			envIDGenerator            *fakes.EnvIDGenerator
 			boshInitCredentials       map[string]string
+			stateStore                *fakes.StateStore
 		)
 
 		BeforeEach(func() {
 			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
 			keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
-				Name:       "some-keypair-name",
+				Name:       "keypair-bbl-lake-time:stamp",
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
 			}
@@ -94,10 +95,12 @@ var _ = Describe("Up", func() {
 			envIDGenerator = &fakes.EnvIDGenerator{}
 			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
+			stateStore = &fakes.StateStore{}
+
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-				cloudConfigManager, boshClientProvider, envIDGenerator,
+				cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -118,14 +121,14 @@ var _ = Describe("Up", func() {
 			}
 		})
 
-		It("returns an error if aws credential validator fails", func() {
+		It("returns an error when aws credential validator fails", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
-			_, err := command.Execute([]string{}, storage.State{})
+			err := command.Execute([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
 		It("syncs the keypair", func() {
-			state, err := command.Execute([]string{}, storage.State{
+			err := command.Execute([]string{}, storage.State{
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
@@ -144,9 +147,9 @@ var _ = Describe("Up", func() {
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
 			}))
-			Expect(keyPairSynchronizer.SyncCall.Receives.EnvID).To(Equal("bbl-lake-time:stamp"))
 
-			Expect(state.KeyPair).To(Equal(storage.KeyPair{
+			actualState := stateStore.SetCall.Receives.State
+			Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
 				Name:       "some-keypair-name",
 				PublicKey:  "some-public-key",
 				PrivateKey: "some-private-key",
@@ -162,7 +165,7 @@ var _ = Describe("Up", func() {
 				},
 			}
 
-			_, err := command.Execute([]string{}, incomingState)
+			err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
@@ -179,11 +182,11 @@ var _ = Describe("Up", func() {
 
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
-			_, err := command.Execute([]string{}, incomingState)
+			err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-time-stamp"))
-			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("some-keypair-name"))
+			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("keypair-bbl-lake-time:stamp"))
 			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
 			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-time:stamp"))
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
@@ -203,7 +206,7 @@ var _ = Describe("Up", func() {
 				},
 			}
 
-			_, err := command.Execute([]string{}, incomingState)
+			err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
@@ -237,7 +240,7 @@ var _ = Describe("Up", func() {
 					Body: "some-certificate-body",
 				}
 
-				_, err := command.Execute([]string{}, storage.State{
+				err := command.Execute([]string{}, storage.State{
 					Stack: storage.Stack{
 						Name:            "some-stack-name",
 						LBType:          "concourse",
@@ -247,15 +250,6 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			})
-		})
-
-		Context("when there is no keypair", func() {
-			It("syncs with an empty keypair", func() {
-				_, err := command.Execute([]string{}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{}))
 			})
 		})
 
@@ -297,7 +291,7 @@ var _ = Describe("Up", func() {
 				}
 
 				cloudConfigurator.ConfigureCall.Returns.CloudConfigInput = cloudConfigInput
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-bosh-url"))
@@ -312,7 +306,7 @@ var _ = Describe("Up", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
-					_, err := command.Execute([]string{}, storage.State{})
+					err := command.Execute([]string{}, storage.State{})
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -342,7 +336,7 @@ var _ = Describe("Up", func() {
 						Body: "some-certificate-body",
 					}
 
-					_, err := command.Execute([]string{}, storage.State{
+					err := command.Execute([]string{}, storage.State{
 						Stack: storage.Stack{
 							LBType:          "concourse",
 							CertificateName: "some-certificate-name",
@@ -379,7 +373,7 @@ var _ = Describe("Up", func() {
 						Body: "some-certificate-body",
 					}
 
-					_, err := command.Execute([]string{}, storage.State{
+					err := command.Execute([]string{}, storage.State{
 						Stack: storage.Stack{
 							LBType:          "cf",
 							CertificateName: "some-certificate-name",
@@ -411,37 +405,54 @@ var _ = Describe("Up", func() {
 		})
 
 		Describe("state manipulation", func() {
-			BeforeEach(func() {
-				keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				}
-			})
-
 			Context("aws keypair", func() {
 				Context("when the keypair exists", func() {
-					It("returns the given state unmodified", func() {
+					It("saves the given state unmodified", func() {
+						keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
+							Name:       "some-existing-keypair",
+							PrivateKey: "some-private-key",
+							PublicKey:  "some-public-key",
+						}
+
 						incomingState := storage.State{
 							KeyPair: storage.KeyPair{
-								Name:       "some-keypair-name",
+								Name:       "some-existing-keypair",
 								PrivateKey: "some-private-key",
 								PublicKey:  "some-public-key",
 							},
 						}
-						state, err := command.Execute([]string{}, incomingState)
+
+						err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.KeyPair).To(Equal(incomingState.KeyPair))
+
+						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
+							Name:       "some-existing-keypair",
+							PrivateKey: "some-private-key",
+							PublicKey:  "some-public-key",
+						}))
+
+						Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(incomingState.KeyPair))
 					})
 				})
 
 				Context("when the keypair doesn't exist", func() {
-					It("returns the state with a new key pair", func() {
-						state, err := command.Execute([]string{}, storage.State{})
+					It("saves the state with a new key pair", func() {
+						keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
+							Name:       "keypair-bbl-lake-time:stamp",
+							PrivateKey: "some-private-key",
+							PublicKey:  "some-public-key",
+						}
+
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(state.KeyPair).To(Equal(storage.KeyPair{
-							Name:       "some-keypair-name",
+						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
+							Name: "keypair-bbl-lake-time:stamp",
+						}))
+
+						actualState := stateStore.SetCall.Receives.State
+						Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
+							Name:       "keypair-bbl-lake-time:stamp",
 							PrivateKey: "some-private-key",
 							PublicKey:  "some-public-key",
 						}))
@@ -453,8 +464,10 @@ var _ = Describe("Up", func() {
 				Context("when the stack name doesn't exist", func() {
 					It("populates a new stack name", func() {
 						incomingState := storage.State{}
-						state, err := command.Execute([]string{}, incomingState)
+						err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
+
+						state := stateStore.SetCall.Receives.State
 						Expect(state.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
 					})
 				})
@@ -466,8 +479,10 @@ var _ = Describe("Up", func() {
 								Name: "some-other-stack-name",
 							},
 						}
-						state, err := command.Execute([]string{}, incomingState)
+						err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
+
+						state := stateStore.SetCall.Receives.State
 						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
 					})
 				})
@@ -478,9 +493,10 @@ var _ = Describe("Up", func() {
 					It("populates a new bbl env id", func() {
 						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
-						state, err := command.Execute([]string{}, storage.State{})
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
+
+						Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("bbl-lake-time:stamp"))
 					})
 				})
 
@@ -490,8 +506,10 @@ var _ = Describe("Up", func() {
 							EnvID: "bbl-lake-time:stamp",
 						}
 
-						state, err := command.Execute([]string{}, incomingState)
+						err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
+
+						state := stateStore.SetCall.Receives.State
 						Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
 					})
 				})
@@ -504,9 +522,10 @@ var _ = Describe("Up", func() {
 
 				Context("boshinit manifest", func() {
 					It("writes the boshinit manifest", func() {
-						state, err := command.Execute([]string{}, storage.State{})
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.Manifest).To(ContainSubstring("name: bosh"))
 					})
 
@@ -515,13 +534,14 @@ var _ = Describe("Up", func() {
 							BOSHInitManifest: "name: updated-bosh",
 						}
 
-						state, err := command.Execute([]string{}, storage.State{
+						err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
 								Manifest: "name: bosh",
 							},
 						})
-
 						Expect(err).NotTo(HaveOccurred())
+
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.Manifest).To(ContainSubstring("name: updated-bosh"))
 
 					})
@@ -529,9 +549,10 @@ var _ = Describe("Up", func() {
 
 				Context("bosh state", func() {
 					It("writes the bosh state", func() {
-						state, err := command.Execute([]string{}, storage.State{})
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
 							"updated-key": "updated-value",
 						}))
@@ -545,7 +566,7 @@ var _ = Describe("Up", func() {
 							},
 						}
 
-						state, err := command.Execute([]string{}, storage.State{
+						err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
 								Manifest: "name: bosh",
 								State: boshinit.State{
@@ -553,8 +574,9 @@ var _ = Describe("Up", func() {
 								},
 							},
 						})
-
 						Expect(err).NotTo(HaveOccurred())
+
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
 							"some-key":       "some-value",
 							"some-other-key": "some-other-value",
@@ -563,22 +585,24 @@ var _ = Describe("Up", func() {
 				})
 
 				It("writes the bosh director address", func() {
-					state, err := command.Execute([]string{}, storage.State{})
+					err := command.Execute([]string{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
+					state := stateStore.SetCall.Receives.State
 					Expect(state.BOSH.DirectorAddress).To(ContainSubstring("some-bosh-url"))
 				})
 
 				It("writes the bosh director name", func() {
-					state, err := command.Execute([]string{}, storage.State{})
+					err := command.Execute([]string{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
+					state := stateStore.SetCall.Receives.State
 					Expect(state.BOSH.DirectorName).To(ContainSubstring("bosh-bbl-lake-time:stamp"))
 				})
 
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
-						state, err := command.Execute([]string{}, storage.State{
+						err := command.Execute([]string{}, storage.State{
 							BOSH: storage.BOSH{
 								DirectorSSLCA:          "some-ca",
 								DirectorSSLCertificate: "some-certificate",
@@ -587,6 +611,7 @@ var _ = Describe("Up", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.DirectorSSLCA).To(Equal("some-ca"))
 						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("some-certificate"))
 						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("some-private-key"))
@@ -595,9 +620,10 @@ var _ = Describe("Up", func() {
 
 				Context("when the bosh director ssl keypair doesn't exist", func() {
 					It("returns the state with a new key pair", func() {
-						state, err := command.Execute([]string{}, storage.State{})
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.DirectorSSLCA).To(Equal("updated-ca"))
 						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("updated-certificate"))
 						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("updated-private-key"))
@@ -609,9 +635,10 @@ var _ = Describe("Up", func() {
 
 				Context("when there are no director credentials", func() {
 					It("deploys with randomized director credentials", func() {
-						state, err := command.Execute([]string{}, storage.State{})
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
+						state := stateStore.SetCall.Receives.State
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("user-some-random-string"))
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorPassword).To(Equal("p-some-random-string"))
 						Expect(state.BOSH.DirectorPassword).To(Equal("p-some-random-string"))
@@ -626,7 +653,7 @@ var _ = Describe("Up", func() {
 								DirectorPassword: "some-director-password",
 							},
 						}
-						_, err := command.Execute([]string{}, incomingState)
+						err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("some-director-username"))
@@ -640,18 +667,24 @@ var _ = Describe("Up", func() {
 							Credentials: boshInitCredentials,
 						}
 
-						state, err := command.Execute([]string{}, storage.State{})
+						err := command.Execute([]string{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
+
+						state := stateStore.SetCall.Receives.State
 						Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 					})
 
 					Context("when the bosh credentials exist in the state.json", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
-							state, err := command.Execute([]string{}, storage.State{
+							boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
+								Credentials: boshInitCredentials,
+							}
+							err := command.Execute([]string{}, storage.State{
 								BOSH: storage.BOSH{Credentials: boshInitCredentials},
 							})
-
 							Expect(err).NotTo(HaveOccurred())
+
+							state := stateStore.SetCall.Receives.State
 							Expect(boshDeployer.DeployCall.Receives.Input.Credentials).To(Equal(boshInitCredentials))
 							Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 						})
@@ -663,7 +696,7 @@ var _ = Describe("Up", func() {
 		Context("failure cases", func() {
 			It("returns an error when the certificate cannot be described", func() {
 				certificateDescriber.DescribeCall.Returns.Error = errors.New("failed to describe")
-				_, err := command.Execute([]string{}, storage.State{
+				err := command.Execute([]string{}, storage.State{
 					Stack: storage.Stack{
 						LBType: "concourse",
 					},
@@ -673,14 +706,14 @@ var _ = Describe("Up", func() {
 
 			It("returns an error when the cloud config cannot be uploaded", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to update"))
 			})
 
 			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 
-				_, err := command.Execute([]string{}, storage.State{
+				err := command.Execute([]string{}, storage.State{
 					AWS: storage.AWS{
 						Region: "some-aws-region",
 					},
@@ -705,28 +738,30 @@ var _ = Describe("Up", func() {
 			It("returns an error when checking if the infrastructure exists fails", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("error checking if stack exists")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
 			It("returns an error when the key pair fails to sync", func() {
 				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("error syncing key pair"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
 			})
 
 			It("returns an error when infrastructure cannot be created", func() {
 				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
 			})
 
@@ -738,21 +773,21 @@ var _ = Describe("Up", func() {
 
 					return "", nil
 				}
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("cannot generate string"))
 			})
 
 			It("returns an error when availability zones cannot be retrieved", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone could not be retrieved")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
 			})
 
 			It("returns an error when env id generator fails", func() {
 				envIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("env id generation failed"))
 			})
 		})

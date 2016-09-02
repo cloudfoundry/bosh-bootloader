@@ -20,10 +20,11 @@ var _ = Describe("Store", func() {
 	)
 
 	BeforeEach(func() {
-		store = storage.NewStore()
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
+
+		store = storage.NewStore(tempDir)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -33,7 +34,7 @@ var _ = Describe("Store", func() {
 
 	Describe("Set", func() {
 		It("stores the state into a file", func() {
-			err := store.Set(tempDir, storage.State{
+			err := store.Set(storage.State{
 				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
@@ -143,7 +144,7 @@ var _ = Describe("Store", func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte("{}"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = store.Set(tempDir, storage.State{})
+				err = store.Set(storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = os.Stat(filepath.Join(tempDir, "state.json"))
@@ -152,7 +153,7 @@ var _ = Describe("Store", func() {
 
 			Context("when the state.json file does not exist", func() {
 				It("does nothing", func() {
-					err := store.Set(tempDir, storage.State{})
+					err := store.Set(storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					_, err = os.Stat(filepath.Join(tempDir, "state.json"))
@@ -166,7 +167,7 @@ var _ = Describe("Store", func() {
 						err := os.Chmod(tempDir, 0000)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = store.Set(tempDir, storage.State{})
+						err = store.Set(storage.State{})
 						Expect(err).To(MatchError(ContainSubstring("permission denied")))
 					})
 				})
@@ -175,7 +176,8 @@ var _ = Describe("Store", func() {
 
 		Context("failure cases", func() {
 			It("fails when the directory does not exist", func() {
-				err := store.Set("some-fake-directory", storage.State{})
+				store = storage.NewStore("non-valid-dir")
+				err := store.Set(storage.State{})
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
@@ -183,7 +185,7 @@ var _ = Describe("Store", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = store.Set(tempDir, storage.State{
+				err = store.Set(storage.State{
 					Stack: storage.Stack{
 						Name: "some-stack-name",
 					},
@@ -196,7 +198,7 @@ var _ = Describe("Store", func() {
 					return errors.New("failed to encode")
 				})
 
-				err := store.Set(tempDir, storage.State{
+				err := store.Set(storage.State{
 					Stack: storage.Stack{
 						Name: "some-stack-name",
 					},
@@ -206,7 +208,7 @@ var _ = Describe("Store", func() {
 		})
 	})
 
-	Describe("Get", func() {
+	Describe("GetState", func() {
 		It("returns the stored state information", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
 				"version": 1,
@@ -235,7 +237,7 @@ var _ = Describe("Store", func() {
 			}`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-			state, err := store.Get(tempDir)
+			state, err := storage.GetState(tempDir)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(state).To(Equal(storage.State{
@@ -267,7 +269,7 @@ var _ = Describe("Store", func() {
 
 		Context("when the state.json file doesn't exist", func() {
 			It("returns an empty state object", func() {
-				state, err := store.Get(tempDir)
+				state, err := storage.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{}))
@@ -276,7 +278,7 @@ var _ = Describe("Store", func() {
 
 		Context("failure cases", func() {
 			It("fails when the directory does not exist", func() {
-				_, err := store.Get("some-fake-directory")
+				_, err := storage.GetState("some-fake-directory")
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
@@ -284,7 +286,7 @@ var _ = Describe("Store", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = store.Get(tempDir)
+				_, err = storage.GetState(tempDir)
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 
@@ -292,7 +294,7 @@ var _ = Describe("Store", func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`%%%%`), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = store.Get(tempDir)
+				_, err = storage.GetState(tempDir)
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
 			})
 		})

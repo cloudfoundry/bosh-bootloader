@@ -40,7 +40,7 @@ var _ = Describe("LBs", func() {
 
 			lbsCommand := commands.NewLBs(awsCredentialValidator, infrastructureManager, stdout)
 
-			_, err := lbsCommand.Execute([]string{}, storage.State{
+			err := lbsCommand.Execute([]string{}, storage.State{
 				Stack: storage.Stack{
 					LBType: "cf",
 					Name:   "some-stack-name",
@@ -68,7 +68,7 @@ var _ = Describe("LBs", func() {
 
 			lbsCommand := commands.NewLBs(awsCredentialValidator, infrastructureManager, stdout)
 
-			_, err := lbsCommand.Execute([]string{}, storage.State{
+			err := lbsCommand.Execute([]string{}, storage.State{
 				Stack: storage.Stack{
 					LBType: "concourse",
 					Name:   "some-stack-name",
@@ -87,7 +87,7 @@ var _ = Describe("LBs", func() {
 		It("returns error when lb type is not cf or concourse", func() {
 			lbsCommand := commands.NewLBs(awsCredentialValidator, infrastructureManager, stdout)
 
-			_, err := lbsCommand.Execute([]string{}, storage.State{
+			err := lbsCommand.Execute([]string{}, storage.State{
 				Stack: storage.Stack{
 					LBType: "",
 				},
@@ -102,7 +102,7 @@ var _ = Describe("LBs", func() {
 					awsCredentialValidator.ValidateCall.Returns.Error = errors.New("validator failed")
 
 					lbsCommand := commands.NewLBs(awsCredentialValidator, infrastructureManager, stdout)
-					_, err := lbsCommand.Execute([]string{}, storage.State{})
+					err := lbsCommand.Execute([]string{}, storage.State{})
 
 					Expect(err).To(MatchError("validator failed"))
 				})
@@ -113,7 +113,7 @@ var _ = Describe("LBs", func() {
 					infrastructureManager.DescribeCall.Returns.Error = errors.New("infrastructure manager failed")
 
 					lbsCommand := commands.NewLBs(awsCredentialValidator, infrastructureManager, stdout)
-					_, err := lbsCommand.Execute([]string{}, storage.State{})
+					err := lbsCommand.Execute([]string{}, storage.State{})
 
 					Expect(err).To(MatchError("infrastructure manager failed"))
 				})

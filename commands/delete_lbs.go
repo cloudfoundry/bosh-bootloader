@@ -15,6 +15,7 @@ type DeleteLBs struct {
 	boshCloudConfigurator     boshCloudConfigurator
 	cloudConfigManager        cloudConfigManager
 	boshClientProvider        boshClientProvider
+	stateStore                stateStore
 }
 
 type cloudConfigManager interface {
@@ -28,7 +29,7 @@ type deleteLBsConfig struct {
 func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
 	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider,
+	boshClientProvider boshClientProvider, stateStore stateStore,
 ) DeleteLBs {
 	return DeleteLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -39,37 +40,38 @@ func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZon
 		boshCloudConfigurator:     boshCloudConfigurator,
 		cloudConfigManager:        cloudConfigManager,
 		boshClientProvider:        boshClientProvider,
+		stateStore:                stateStore,
 	}
 }
 
-func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) error {
 	err := c.awsCredentialValidator.Validate()
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
 		c.logger.Println("no lb type exists, skipping...")
-		return state, nil
+		return nil
 	}
 
 	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
-		return state, err
+		return err
 	}
 
 	azs, err := c.availabilityZoneRetriever.Retrieve(state.AWS.Region)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	stack, err := c.infrastructureManager.Describe(state.Stack.Name)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	cloudConfigInput := c.boshCloudConfigurator.Configure(stack, azs)
@@ -79,24 +81,29 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) (stora
 
 	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	_, err = c.infrastructureManager.Update(state.KeyPair.Name, len(azs), state.Stack.Name, "", "", state.EnvID)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	c.logger.Step("deleting certificate")
 	err = c.certificateManager.Delete(state.Stack.CertificateName)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	state.Stack.LBType = "none"
 	state.Stack.CertificateName = ""
 
-	return state, nil
+	err = c.stateStore.Set(state)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (DeleteLBs) parseFlags(subcommandFlags []string) (deleteLBsConfig, error) {

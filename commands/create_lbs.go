@@ -23,6 +23,7 @@ type CreateLBs struct {
 	cloudConfigManager        cloudConfigManager
 	certificateValidator      certificateValidator
 	guidGenerator             guidGenerator
+	stateStore                stateStore
 }
 
 type lbConfig struct {
@@ -56,9 +57,9 @@ type guidGenerator interface {
 }
 
 func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
-	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
-	boshClientProvider boshClientProvider, boshCloudConfigurator boshCloudConfigurator,
-	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator, guidGenerator guidGenerator) CreateLBs {
+	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
+	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
+	guidGenerator guidGenerator, stateStore stateStore) CreateLBs {
 	return CreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -70,56 +71,62 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 		cloudConfigManager:        cloudConfigManager,
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
+		stateStore:                stateStore,
 	}
 }
 
-func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) error {
 	err := c.awsCredentialValidator.Validate()
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	err = c.certificateValidator.Validate(CREATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if config.skipIfExists && lbExists(state.Stack.LBType) {
 		c.logger.Println(fmt.Sprintf("lb type %q exists, skipping...", state.Stack.LBType))
-		return state, nil
+		return nil
 	}
 
 	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 
 	if err := c.checkFastFails(config.lbType, state.Stack.LBType, state.Stack.Name, boshClient); err != nil {
-		return state, err
+		return err
 	}
 
 	c.logger.Step("uploading certificate")
 
 	certificateName, err := certificateNameFor(config.lbType, c.guidGenerator, state.EnvID)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	state.Stack.CertificateName = certificateName
 	state.Stack.LBType = config.lbType
 
 	if err := c.updateStackAndBOSH(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, config.lbType, boshClient, state.EnvID); err != nil {
-		return state, err
+		return err
 	}
 
-	return state, nil
+	err = c.stateStore.Set(state)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {

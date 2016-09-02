@@ -22,12 +22,12 @@ func NewStateQuery(logger logger, propertyName string, getProperty getPropertyFu
 	}
 }
 
-func (s StateQuery) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error {
 	propertyValue := s.getProperty(state)
 	if propertyValue == "" {
-		return state, fmt.Errorf("Could not retrieve %s, please make sure you are targeting the proper state dir.", s.propertyName)
+		return fmt.Errorf("Could not retrieve %s, please make sure you are targeting the proper state dir.", s.propertyName)
 	}
 
 	s.logger.Println(propertyValue)
-	return state, nil
+	return nil
 }

@@ -2,24 +2,23 @@ package application
 
 import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 
+var getState func(string) (storage.State, error) = storage.GetState
+
 type commandLineParser interface {
 	Parse(arguments []string) (CommandLineConfiguration, error)
 }
 
 type stateStore interface {
-	Get(stateDirectory string) (storage.State, error)
-	Set(stateDirectory string, state storage.State) error
+	Set(state storage.State) error
 }
 
 type ConfigurationParser struct {
 	commandLineParser commandLineParser
-	stateStore        stateStore
 }
 
-func NewConfigurationParser(commandLineParser commandLineParser, stateStore stateStore) ConfigurationParser {
+func NewConfigurationParser(commandLineParser commandLineParser) ConfigurationParser {
 	return ConfigurationParser{
 		commandLineParser: commandLineParser,
-		stateStore:        stateStore,
 	}
 }
 
@@ -39,7 +38,7 @@ func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
 		State:           storage.State{},
 	}
 
-	configuration.State, err = p.stateStore.Get(configuration.Global.StateDir)
+	configuration.State, err = getState(configuration.Global.StateDir)
 	if err != nil {
 		return Configuration{}, err
 	}

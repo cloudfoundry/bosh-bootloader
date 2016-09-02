@@ -9,7 +9,7 @@ import (
 )
 
 type Command interface {
-	Execute(subcommandFlags []string, state storage.State) (storage.State, error)
+	Execute(subcommandFlags []string, state storage.State) error
 }
 
 func bblExists(stackName string, infrastructureManager infrastructureManager, boshClient bosh.Client) error {

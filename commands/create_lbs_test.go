@@ -31,6 +31,7 @@ var _ = Describe("Create LBs", func() {
 			cloudConfigManager        *fakes.CloudConfigManager
 			certificateValidator      *fakes.CertificateValidator
 			guidGenerator             *fakes.GuidGenerator
+			stateStore                *fakes.StateStore
 			incomingState             storage.State
 		)
 
@@ -46,6 +47,7 @@ var _ = Describe("Create LBs", func() {
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			certificateValidator = &fakes.CertificateValidator{}
 			guidGenerator = &fakes.GuidGenerator{}
+			stateStore = &fakes.StateStore{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -74,17 +76,18 @@ var _ = Describe("Create LBs", func() {
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator, guidGenerator)
+				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator, guidGenerator,
+				stateStore)
 		})
 
 		It("returns an error if aws credential validator fails", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
-			_, err := command.Execute([]string{}, storage.State{})
+			err := command.Execute([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
 		It("uploads a cert and key", func() {
-			_, err := command.Execute([]string{
+			err := command.Execute([]string{
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
 				"--key", "temp/some-key.key",
@@ -99,7 +102,7 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		It("uploads a cert and key with chain", func() {
-			_, err := command.Execute([]string{
+			err := command.Execute([]string{
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
 				"--key", "temp/some-key.key",
@@ -120,7 +123,8 @@ var _ = Describe("Create LBs", func() {
 			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
 				ARN: "some-certificate-arn",
 			}
-			_, err := command.Execute([]string{
+
+			err := command.Execute([]string{
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
 				"--key", "temp/some-key.key",
@@ -146,7 +150,8 @@ var _ = Describe("Create LBs", func() {
 			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
 				ARN: "some-certificate-arn",
 			}
-			_, err := command.Execute([]string{
+
+			err := command.Execute([]string{
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
 				"--key", "temp/some-key.key",
@@ -166,7 +171,7 @@ var _ = Describe("Create LBs", func() {
 				AZs: []string{"a", "b", "c"},
 			}
 
-			_, err := command.Execute([]string{
+			err := command.Execute([]string{
 				"--type", "concourse",
 				"--cert", "temp/some-cert.crt",
 				"--key", "temp/some-key.key",
@@ -186,7 +191,7 @@ var _ = Describe("Create LBs", func() {
 		Context("when --skip-if-exists is provided", func() {
 			It("no-ops when lb exists", func() {
 				incomingState.Stack.LBType = "cf"
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "temp/some-cert.crt",
 					"--key", "temp/some-key.key",
@@ -203,7 +208,7 @@ var _ = Describe("Create LBs", func() {
 			DescribeTable("creates the lb if the lb does not exist",
 				func(currentLBType string) {
 					incomingState.Stack.LBType = currentLBType
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "temp/some-cert.crt",
 						"--key", "temp/some-key.key",
@@ -221,7 +226,7 @@ var _ = Describe("Create LBs", func() {
 
 		Context("invalid lb type", func() {
 			It("returns an error", func() {
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "some-invalid-lb",
 					"--cert", "temp/some-cert.crt",
 					"--key", "temp/some-key.key",
@@ -234,7 +239,7 @@ var _ = Describe("Create LBs", func() {
 			It("returns an error when the stack does not exist", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "temp/some-cert.crt",
 					"--key", "temp/some-key.key",
@@ -249,7 +254,7 @@ var _ = Describe("Create LBs", func() {
 				boshClient.InfoCall.Returns.Error = errors.New("director not found")
 				infrastructureManager.ExistsCall.Returns.Exists = true
 
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "temp/some-cert.crt",
 					"--key", "temp/some-key.key",
@@ -267,22 +272,24 @@ var _ = Describe("Create LBs", func() {
 
 		Context("state manipulation", func() {
 			Context("when the env id does not exist", func() {
-				It("returns a state with new certificate name and lb type", func() {
-					state, err := command.Execute([]string{
+				It("saves state with new certificate name and lb type", func() {
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "temp/some-cert.crt",
 						"--key", "temp/some-key.key",
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
+					state := stateStore.SetCall.Receives.State
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd"))
 					Expect(state.Stack.LBType).To(Equal("concourse"))
 				})
 			})
 
 			Context("when the env id exists", func() {
-				It("returns a state with new certificate name and lb type", func() {
-					state, err := command.Execute([]string{
+				It("saves state with new certificate name and lb type", func() {
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "temp/some-cert.crt",
 						"--key", "temp/some-key.key",
@@ -291,6 +298,8 @@ var _ = Describe("Create LBs", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
+					state := stateStore.SetCall.Receives.State
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 					Expect(state.Stack.LBType).To(Equal("concourse"))
 				})
@@ -300,7 +309,7 @@ var _ = Describe("Create LBs", func() {
 		Context("required args", func() {
 			It("returns an error when certificate validator fails for cert and key", func() {
 				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "/path/to/cert",
 					"--key", "/path/to/key",
@@ -319,7 +328,7 @@ var _ = Describe("Create LBs", func() {
 		Context("failure cases", func() {
 			DescribeTable("returns an error when an lb already exists",
 				func(newLbType, oldLbType string) {
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "/path/to/cert",
 						"--key", "/path/to/key",
@@ -336,7 +345,7 @@ var _ = Describe("Create LBs", func() {
 
 			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "/path/to/cert",
 					"--key", "/path/to/key",
@@ -346,7 +355,7 @@ var _ = Describe("Create LBs", func() {
 
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
-					_, err := command.Execute([]string{"--invalid-flag"}, storage.State{})
+					err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
 				})
 			})
@@ -355,7 +364,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve azs")
 
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "/path/to/cert",
 						"--key", "/path/to/key",
@@ -368,7 +377,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update infrastructure")
 
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "/path/to/cert",
 						"--key", "/path/to/key",
@@ -381,7 +390,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					certificateManager.CreateCall.Returns.Error = errors.New("failed to create cert")
 
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "/path/to/cert",
 						"--key", "/path/to/key",
@@ -394,7 +403,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
 
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--type", "concourse",
 						"--cert", "/path/to/cert",
 						"--key", "/path/to/key",
@@ -405,12 +414,22 @@ var _ = Describe("Create LBs", func() {
 
 			It("returns an error when a GUID cannot be generated", func() {
 				guidGenerator.GenerateCall.Returns.Error = errors.New("Out of entropy in the universe")
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "/path/to/cert",
 					"--key", "/path/to/key",
 				}, storage.State{})
 				Expect(err).To(MatchError("Out of entropy in the universe"))
+			})
+
+			It("returns an error when the state fails to save", func() {
+				stateStore.SetCall.Returns.Error = errors.New("failed to save state")
+				err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "/path/to/cert",
+					"--key", "/path/to/key",
+				}, storage.State{})
+				Expect(err).To(MatchError("failed to save state"))
 			})
 		})
 	})

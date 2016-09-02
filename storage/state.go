@@ -34,23 +34,25 @@ type State struct {
 }
 
 type Store struct {
-	version int
+	version  int
+	storeDir string
 }
 
-func NewStore() Store {
+func NewStore(dir string) Store {
 	return Store{
-		version: 1,
+		version:  1,
+		storeDir: dir,
 	}
 }
 
-func (s Store) Set(dir string, state State) error {
-	_, err := os.Stat(dir)
+func (s Store) Set(state State) error {
+	_, err := os.Stat(s.storeDir)
 	if err != nil {
 		return err
 	}
 
 	if reflect.DeepEqual(state, State{}) {
-		err := os.Remove(filepath.Join(dir, "state.json"))
+		err := os.Remove(filepath.Join(s.storeDir, "state.json"))
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
@@ -58,7 +60,7 @@ func (s Store) Set(dir string, state State) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(filepath.Join(dir, "state.json"), os.O_RDWR|os.O_CREATE, OS_READ_WRITE_MODE)
+	file, err := os.OpenFile(filepath.Join(s.storeDir, "state.json"), os.O_RDWR|os.O_CREATE, OS_READ_WRITE_MODE)
 	if err != nil {
 		return err
 	}
@@ -72,7 +74,7 @@ func (s Store) Set(dir string, state State) error {
 	return nil
 }
 
-func (Store) Get(dir string) (State, error) {
+func GetState(dir string) (State, error) {
 	state := State{}
 
 	_, err := os.Stat(dir)

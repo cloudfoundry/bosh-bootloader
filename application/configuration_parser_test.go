@@ -12,18 +12,25 @@ import (
 
 var _ = Describe("ConfigurationParser", func() {
 	var (
-		stateStore          *fakes.StateStore
 		commandLineParser   *fakes.CommandLineParser
 		configurationParser application.ConfigurationParser
 	)
 	BeforeEach(func() {
-		stateStore = &fakes.StateStore{}
 		commandLineParser = &fakes.CommandLineParser{}
-		configurationParser = application.NewConfigurationParser(commandLineParser, stateStore)
+		configurationParser = application.NewConfigurationParser(commandLineParser)
+
+		application.SetGetState(func(dir string) (storage.State, error) {
+			return storage.State{Version: 1}, nil
+		})
+	})
+
+	AfterEach(func() {
+		application.ResetGetState()
 	})
 
 	Describe("Parse", func() {
 		It("returns a configuration based on arguments provided", func() {
+
 			commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
 				AWSAccessKeyID:     "access-key-id-from-flag",
 				AWSSecretAccessKey: "secret-access-key-from-flag",
@@ -48,9 +55,6 @@ var _ = Describe("ConfigurationParser", func() {
 
 		Describe("state management", func() {
 			It("returns a configuration with the state from the state store", func() {
-				stateStore.GetCall.Returns.State = storage.State{
-					Version: 1,
-				}
 				commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
 					AWSAccessKeyID:     "access-key-id-from-flag",
 					AWSSecretAccessKey: "secret-access-key-from-flag",
@@ -61,7 +65,6 @@ var _ = Describe("ConfigurationParser", func() {
 				configuration, err := configurationParser.Parse([]string{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stateStore.GetCall.Receives.Dir).To(Equal("some/state/dir"))
 				Expect(configuration.State).To(Equal(storage.State{
 					Version: 1,
 					AWS: storage.AWS{
@@ -78,14 +81,6 @@ var _ = Describe("ConfigurationParser", func() {
 					AWSSecretAccessKey: "secret-access-key-from-flag",
 					AWSRegion:          "region-from-flag",
 					Command:            "unsupported-deploy-bosh-on-aws-for-concourse",
-				}
-
-				stateStore.GetCall.Returns.State = storage.State{
-					AWS: storage.AWS{
-						AccessKeyID:     "access-key-id-from-state",
-						SecretAccessKey: "secret-access-key-from-state",
-						Region:          "region-from-state",
-					},
 				}
 
 				configuration, err := configurationParser.Parse([]string{})
@@ -108,7 +103,10 @@ var _ = Describe("ConfigurationParser", func() {
 			})
 
 			It("returns an error when the state cannot be read", func() {
-				stateStore.GetCall.Returns.Error = errors.New("failed to read state")
+				application.SetGetState(func(dir string) (storage.State, error) {
+					return storage.State{}, errors.New("failed to read state")
+				})
+
 				_, err := configurationParser.Parse([]string{"some-command"})
 
 				Expect(err).To(MatchError("failed to read state"))

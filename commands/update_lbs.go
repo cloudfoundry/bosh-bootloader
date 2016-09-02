@@ -27,10 +27,12 @@ type UpdateLBs struct {
 	logger                    logger
 	certificateValidator      certificateValidator
 	guidGenerator             guidGenerator
+	stateStore                stateStore
 }
 
-func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager, availabilityZoneRetriever availabilityZoneRetriever,
-	infrastructureManager infrastructureManager, boshClientProvider boshClientProvider, logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator) UpdateLBs {
+func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
+	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager, boshClientProvider boshClientProvider,
+	logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator, stateStore stateStore) UpdateLBs {
 
 	return UpdateLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -41,66 +43,72 @@ func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateMana
 		logger:                    logger,
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
+		stateStore:                stateStore,
 	}
 }
 
-func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error {
 	err := c.awsCredentialValidator.Validate()
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	err = c.certificateValidator.Validate(UPDATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
 		c.logger.Println("no lb type exists, skipping...")
-		return state, nil
+		return nil
 	}
 
 	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
-		return state, err
+		return err
 	}
 
 	if match, err := c.checkCertificateAndChain(config.certPath, config.chainPath, state.Stack.CertificateName); err != nil {
-		return state, err
+		return err
 	} else if match {
 		c.logger.Println("no updates are to be performed")
-		return state, nil
+		return nil
 	}
 
 	c.logger.Step("uploading new certificate")
 
 	certificateName, err := certificateNameFor(state.Stack.LBType, c.guidGenerator, state.EnvID)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region, state.EnvID); err != nil {
-		return state, err
+		return err
 	}
 
 	c.logger.Step("deleting old certificate")
 	err = c.certificateManager.Delete(state.Stack.CertificateName)
 	if err != nil {
-		return state, err
+		return err
 	}
 
 	state.Stack.CertificateName = certificateName
 
-	return state, nil
+	err = c.stateStore.Set(state)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c UpdateLBs) checkCertificateAndChain(certPath string, chainPath string, oldCertName string) (bool, error) {

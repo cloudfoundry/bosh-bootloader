@@ -24,7 +24,7 @@ var _ = Describe("Usage", func() {
 
 	Describe("Execute", func() {
 		It("prints out the usage information", func() {
-			_, err := usage.Execute([]string{}, storage.State{})
+			err := usage.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout.String()).To(Equal(strings.TrimLeft(`
 Usage:
@@ -55,16 +55,6 @@ Commands:
   unsupported-deploy-bosh-on-aws-for-concourse                                                                "deploys a BOSH Director on AWS"
   version                                                                                                     "prints version"
 `, "\n")))
-		})
-
-		It("returns the given state unmodified", func() {
-			state, err := usage.Execute([]string{}, storage.State{
-				Version: 2,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(state).To(Equal(storage.State{
-				Version: 2,
-			}))
 		})
 	})
 })

@@ -1,7 +1,5 @@
 package ec2
 
-import "fmt"
-
 type KeyPairManager struct {
 	creator keypairCreator
 	checker keypairChecker
@@ -9,7 +7,7 @@ type KeyPairManager struct {
 }
 
 type keypairCreator interface {
-	Create(envID string) (KeyPair, error)
+	Create(keyPairName string) (KeyPair, error)
 }
 
 type keypairChecker interface {
@@ -28,16 +26,16 @@ func NewKeyPairManager(creator keypairCreator, checker keypairChecker, logger lo
 	}
 }
 
-func (m KeyPairManager) Sync(keypair KeyPair, envID string) (KeyPair, error) {
-	hasLocalKeyPair := !keypair.IsEmpty()
+func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
+	hasLocalKeyPair := len(keypair.PublicKey) != 0 || len(keypair.PrivateKey) != 0
 	hasRemoteKeyPair, err := m.checker.HasKeyPair(keypair.Name)
 	if err != nil {
 		return KeyPair{}, err
 	}
 
 	if !hasLocalKeyPair || !hasRemoteKeyPair {
-		keyPairName := fmt.Sprintf("keypair-%s", envID)
-		m.logger.Step("creating keypair: %s", keyPairName)
+		keyPairName := keypair.Name
+		m.logger.Step("creating keypair: `%s`", keyPairName)
 
 		keypair, err = m.creator.Create(keyPairName)
 		if err != nil {

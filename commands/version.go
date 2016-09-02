@@ -17,7 +17,7 @@ func NewVersion(stdout io.Writer) Version {
 	return Version{stdout}
 }
 
-func (v Version) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (v Version) Execute(subcommandFlags []string, state storage.State) error {
 	fmt.Fprintln(v.stdout, VERSION)
-	return state, nil
+	return nil
 }

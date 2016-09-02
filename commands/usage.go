@@ -46,9 +46,9 @@ func NewUsage(stdout io.Writer) Usage {
 	return Usage{stdout}
 }
 
-func (u Usage) Execute(subcommandFlags []string, state storage.State) (storage.State, error) {
+func (u Usage) Execute(subcommandFlags []string, state storage.State) error {
 	u.Print()
-	return state, nil
+	return nil
 }
 
 func (u Usage) Print() {

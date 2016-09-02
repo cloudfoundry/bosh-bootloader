@@ -33,26 +33,10 @@ var _ = Describe("StateQuery", func() {
 				},
 			}
 
-			_, err := command.Execute([]string{}, state)
+			err := command.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-director-address"))
-		})
-
-		It("returns the given state unmodified", func() {
-			incomingState := storage.State{
-				BOSH: storage.BOSH{
-					DirectorAddress: "some-director-address",
-				},
-			}
-
-			command := commands.NewStateQuery(fakeLogger, "director address", func(state storage.State) string {
-				return incomingState.BOSH.DirectorAddress
-			})
-
-			state, err := command.Execute([]string{}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(state).To(Equal(incomingState))
 		})
 
 		It("returns an error when the state value is empty", func() {
@@ -60,7 +44,7 @@ var _ = Describe("StateQuery", func() {
 			command := commands.NewStateQuery(fakeLogger, propertyName, func(state storage.State) string {
 				return ""
 			})
-			_, err := command.Execute([]string{}, storage.State{
+			err := command.Execute([]string{}, storage.State{
 				BOSH: storage.BOSH{},
 			})
 			Expect(err).To(MatchError(fmt.Sprintf("Could not retrieve %s, please make sure you are targeting the proper state dir.", propertyName)))

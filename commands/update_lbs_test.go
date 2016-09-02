@@ -30,9 +30,10 @@ var _ = Describe("Update LBs", func() {
 		boshClient                *fakes.BOSHClient
 		logger                    *fakes.Logger
 		guidGenerator             *fakes.GuidGenerator
+		stateStore                *fakes.StateStore
 	)
 
-	var updateLBs = func(certificatePath, keyPath, chainPath string, state storage.State) (storage.State, error) {
+	var updateLBs = func(certificatePath, keyPath, chainPath string, state storage.State) error {
 		return command.Execute([]string{
 			"--cert", certificatePath,
 			"--key", keyPath,
@@ -50,7 +51,7 @@ var _ = Describe("Update LBs", func() {
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 		logger = &fakes.Logger{}
 		guidGenerator = &fakes.GuidGenerator{}
-
+		stateStore = &fakes.StateStore{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClientProvider.ClientCall.Returns.Client = boshClient
@@ -86,7 +87,8 @@ var _ = Describe("Update LBs", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
-			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, guidGenerator)
+			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, guidGenerator,
+			stateStore)
 	})
 
 	Describe("Execute", func() {
@@ -191,7 +193,7 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		It("checks if the bosh director exists", func() {
-			_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+			err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
@@ -204,14 +206,14 @@ var _ = Describe("Update LBs", func() {
 		Context("if the user hasn't bbl'd up yet", func() {
 			It("returns an error if the stack does not exist", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
-				_, err := updateLBs(certFilePath, keyFilePath, "", storage.State{})
+				err := updateLBs(certFilePath, keyFilePath, "", storage.State{})
 				Expect(err).To(MatchError(commands.BBLNotFound))
 			})
 
 			It("returns an error if the bosh director does not exist", func() {
 				boshClient.InfoCall.Returns.Error = errors.New("director not found")
 
-				_, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
+				err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 					Stack: storage.Stack{
 						LBType:          "concourse",
 						CertificateName: "some-certificate-name",
@@ -222,7 +224,7 @@ var _ = Describe("Update LBs", func() {
 		})
 
 		It("returns an error if there is no lb", func() {
-			_, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
+			err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
 					LBType: "none",
 				},
@@ -236,7 +238,7 @@ var _ = Describe("Update LBs", func() {
 				Chain: "\nsome-chain-contents\n",
 			}
 
-			_, err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
+			err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.PrintlnCall.Receives.Message).To(Equal("no updates are to be performed"))
 
@@ -250,7 +252,7 @@ var _ = Describe("Update LBs", func() {
 				Body: "\nsome-certificate-contents\n",
 			}
 
-			_, err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
+			err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
 			Expect(err).To(MatchError("you cannot change the chain after the lb has been created, please delete and re-create the lb with the chain"))
 
 			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
@@ -260,7 +262,7 @@ var _ = Describe("Update LBs", func() {
 
 		It("returns an error when the certificate validator fails", func() {
 			certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
-			_, err := command.Execute([]string{
+			err := command.Execute([]string{
 				"--cert", "/path/to/cert",
 				"--key", "/path/to/key",
 				"--chain", "/path/to/chain",
@@ -282,7 +284,7 @@ var _ = Describe("Update LBs", func() {
 
 		Context("when --skip-if-missing is provided", func() {
 			It("no-ops when lb does not exist", func() {
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--cert", certFilePath,
 					"--key", keyFilePath,
 					"--skip-if-missing",
@@ -298,7 +300,7 @@ var _ = Describe("Update LBs", func() {
 			DescribeTable("updates the lb if the lb exists",
 				func(currentLBType string) {
 					incomingState.Stack.LBType = currentLBType
-					_, err := command.Execute([]string{
+					err := command.Execute([]string{
 						"--cert", certFilePath,
 						"--key", keyFilePath,
 						"--skip-if-missing",
@@ -315,7 +317,7 @@ var _ = Describe("Update LBs", func() {
 
 		Describe("state manipulation", func() {
 			It("updates the state with the new certificate name", func() {
-				state, err := updateLBs(certFilePath, keyFilePath, "", storage.State{
+				err := updateLBs(certFilePath, keyFilePath, "", storage.State{
 					Stack: storage.Stack{
 						LBType:          "cf",
 						CertificateName: "some-certificate-name",
@@ -324,6 +326,8 @@ var _ = Describe("Update LBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
+				state := stateStore.SetCall.Receives.State
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
 				Expect(state.Stack.CertificateName).To(Equal("cf-elb-cert-abcd-some-env-timestamp"))
 			})
 		})
@@ -334,7 +338,7 @@ var _ = Describe("Update LBs", func() {
 					Body: "some-certificate-contents",
 				}
 
-				_, err := updateLBs(certFilePath, keyFilePath, "/some/fake/path", storage.State{
+				err := updateLBs(certFilePath, keyFilePath, "/some/fake/path", storage.State{
 					Stack: storage.Stack{
 						LBType:          "cf",
 						CertificateName: "some-certificate-name",
@@ -347,7 +351,7 @@ var _ = Describe("Update LBs", func() {
 			It("returns an error when aws credential validator fails", func() {
 				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
 
-				_, err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 
 				Expect(err).To(MatchError("aws credentials validator failed"))
 			})
@@ -361,7 +365,7 @@ var _ = Describe("Update LBs", func() {
 					return iam.Certificate{}, nil
 				}
 
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("old certificate failed to describe"))
 			})
 
@@ -374,23 +378,23 @@ var _ = Describe("Update LBs", func() {
 					return iam.Certificate{}, nil
 				}
 
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("new certificate failed to describe"))
 			})
 
 			It("returns an error when the certificate file cannot be read", func() {
-				_, err := updateLBs("some-fake-file", keyFilePath, "", incomingState)
+				err := updateLBs("some-fake-file", keyFilePath, "", incomingState)
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
 			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("failed to check for stack"))
 			})
 
 			It("returns an error when invalid flags are provided", func() {
-				_, err := command.Execute([]string{
+				err := command.Execute([]string{
 					"--invalid-flag",
 				}, incomingState)
 
@@ -399,32 +403,38 @@ var _ = Describe("Update LBs", func() {
 
 			It("returns an error when infrastructure update fails", func() {
 				infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update stack")
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("failed to update stack"))
 			})
 
 			It("returns an error when availability zone retriever fails", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("az retrieve failed")
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("az retrieve failed"))
 			})
 
 			It("returns an error when certificate creation fails", func() {
 				certificateManager.CreateCall.Returns.Error = errors.New("certificate creation failed")
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("certificate creation failed"))
 			})
 
 			It("returns an error when certificate deletion fails", func() {
 				certificateManager.DeleteCall.Returns.Error = errors.New("certificate deletion failed")
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("certificate deletion failed"))
 			})
 
 			It("returns an error when a GUID cannot be generated", func() {
 				guidGenerator.GenerateCall.Returns.Error = errors.New("Out of entropy in the universe")
-				_, err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("Out of entropy in the universe"))
+			})
+
+			It("returns an error when state cannot be set", func() {
+				stateStore.SetCall.Returns.Error = errors.New("failed to set state")
+				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				Expect(err).To(MatchError("failed to set state"))
 			})
 		})
 	})
