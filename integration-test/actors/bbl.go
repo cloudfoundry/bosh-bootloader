@@ -49,7 +49,7 @@ func (b BBL) UpWithInvalidAWSCredentials() {
 		"unsupported-deploy-bosh-on-aws-for-concourse",
 	}
 	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Seconds).Should(gexec.Exit(1))
+	Eventually(session, 10*time.Second).Should(gexec.Exit(1))
 }
 
 func (b BBL) Destroy() {
