@@ -47,7 +47,8 @@ var _ = Describe("keypair reentrant", func() {
 
 			Expect(keyPairs).To(HaveLen(1))
 			Expect(*keyPairs[0].KeyName).To(Equal(expectedKeyName))
+
+			bbl.Destroy()
 		})
 	})
-
 })
