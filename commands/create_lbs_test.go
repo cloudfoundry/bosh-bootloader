@@ -423,7 +423,7 @@ var _ = Describe("Create LBs", func() {
 			})
 
 			It("returns an error when the state fails to save", func() {
-				stateStore.SetCall.Returns.Error = errors.New("failed to save state")
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
 				err := command.Execute([]string{
 					"--type", "concourse",
 					"--cert", "/path/to/cert",

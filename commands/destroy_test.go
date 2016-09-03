@@ -279,7 +279,7 @@ var _ = Describe("Destroy", func() {
 
 			Context("when the state fails to be set", func() {
 				It("return an error", func() {
-					stateStore.SetCall.Returns.Error = errors.New("failed to set state")
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
 
 					err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to set state"))

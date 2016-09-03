@@ -432,7 +432,7 @@ var _ = Describe("Update LBs", func() {
 			})
 
 			It("returns an error when state cannot be set", func() {
-				stateStore.SetCall.Returns.Error = errors.New("failed to set state")
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
 				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
 				Expect(err).To(MatchError("failed to set state"))
 			})

@@ -790,6 +790,20 @@ var _ = Describe("Up", func() {
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("env id generation failed"))
 			})
+
+			It("returns an error when state store fails to set the state before syncing the keypair", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to set state"))
+			})
+
+			It("returns an error when state store fails to set the state before method exits", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to set state"))
+			})
 		})
 	})
 })

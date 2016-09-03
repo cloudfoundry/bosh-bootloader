@@ -256,10 +256,9 @@ var _ = Describe("Delete LBs", func() {
 			})
 
 			It("returns an error when the state fails to be saved", func() {
-				stateStore.SetCall.Returns.Error = errors.New("state failed to save")
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
 				err := command.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("state failed to save"))
-
+				Expect(err).To(MatchError("failed to save state"))
 			})
 		})
 	})

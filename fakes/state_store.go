@@ -8,9 +8,7 @@ type StateStore struct {
 		Receives  struct {
 			State storage.State
 		}
-		Returns struct {
-			Error error
-		}
+		Returns []SetCallReturn
 	}
 
 	GetCall struct {
@@ -25,16 +23,16 @@ type StateStore struct {
 	}
 }
 
+type SetCallReturn struct {
+	Error error
+}
+
 func (s *StateStore) Set(state storage.State) error {
 	s.SetCall.CallCount++
 	s.SetCall.Receives.State = state
 
-	return s.SetCall.Returns.Error
-}
-
-func (s *StateStore) Get(dir string) (storage.State, error) {
-	s.GetCall.Receives.Dir = dir
-	s.GetCall.CallCount++
-
-	return s.GetCall.Returns.State, s.GetCall.Returns.Error
+	if len(s.SetCall.Returns) < s.SetCall.CallCount {
+		s.SetCall.Returns = append(s.SetCall.Returns, SetCallReturn{})
+	}
+	return s.SetCall.Returns[s.SetCall.CallCount-1].Error
 }

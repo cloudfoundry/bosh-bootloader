@@ -112,9 +112,10 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	if state.KeyPair.Name == "" {
 		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
 	}
+
 	err = u.stateStore.Set(state)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
@@ -201,7 +202,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 
 	err = u.stateStore.Set(state)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return nil
