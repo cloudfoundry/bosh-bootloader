@@ -113,8 +113,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
 	}
 
-	err = u.stateStore.Set(state)
-	if err != nil {
+	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
@@ -138,6 +137,10 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	if state.Stack.Name == "" {
 		stackEnvID := strings.Replace(state.EnvID, ":", "-", -1)
 		state.Stack.Name = fmt.Sprintf("stack-%s", stackEnvID)
+
+		if err := u.stateStore.Set(state); err != nil {
+			return err
+		}
 	}
 
 	var certificateARN string

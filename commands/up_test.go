@@ -404,6 +404,26 @@ var _ = Describe("Up", func() {
 			})
 		})
 
+		Describe("reentrant", func() {
+			It("saves the keypair name and returns an error when the key pair fails to sync", func() {
+				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("error syncing key pair"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
+			})
+
+			It("saves the stack name and returns an error when the cloudformation fails", func() {
+				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("infrastructure creation failed"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
+			})
+		})
+
 		Describe("state manipulation", func() {
 			Context("aws keypair", func() {
 				Context("when the keypair exists", func() {
@@ -742,15 +762,6 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
-			It("returns an error when the key pair fails to sync", func() {
-				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
-
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("error syncing key pair"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
-			})
-
 			It("returns an error when infrastructure cannot be created", func() {
 				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
@@ -793,6 +804,13 @@ var _ = Describe("Up", func() {
 
 			It("returns an error when state store fails to set the state before syncing the keypair", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to set state"))
+			})
+
+			It("returns an error when state store fails to set the state before syncing the keypair", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{nil}, {errors.New("failed to set state")}}
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
