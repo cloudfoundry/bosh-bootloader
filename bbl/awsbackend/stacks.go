@@ -1,6 +1,10 @@
 package awsbackend
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/rosenhouse/awsfaker"
+)
 
 type Stack struct {
 	Name       string
@@ -11,6 +15,12 @@ type Stack struct {
 type Stacks struct {
 	mutex sync.Mutex
 	store map[string]Stack
+
+	createStack struct {
+		returns struct {
+			err *awsfaker.ErrorResponse
+		}
+	}
 }
 
 func NewStacks() *Stacks {
@@ -39,4 +49,18 @@ func (s *Stacks) Delete(name string) {
 	defer s.mutex.Unlock()
 
 	delete(s.store, name)
+}
+
+func (s *Stacks) SetCreateStackReturnError(err *awsfaker.ErrorResponse) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.createStack.returns.err = err
+}
+
+func (s *Stacks) CreateStackReturnError() *awsfaker.ErrorResponse {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return s.createStack.returns.err
 }

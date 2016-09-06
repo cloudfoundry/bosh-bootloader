@@ -42,6 +42,10 @@ func (b *Backend) CreateKeyPair(input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPa
 
 	b.KeyPairs.Set(keyPair)
 
+	if err := b.KeyPairs.CreateKeyPairReturnError(); err != nil {
+		return nil, err
+	}
+
 	return &ec2.CreateKeyPairOutput{
 		KeyName: aws.String(keyPair.Name),
 	}, nil
@@ -110,6 +114,10 @@ func (b *Backend) CreateStack(input *cloudformation.CreateStackInput) (*cloudfor
 		Template: *input.TemplateBody,
 	}
 	b.Stacks.Set(stack)
+
+	if err := b.Stacks.CreateStackReturnError(); err != nil {
+		return nil, err
+	}
 
 	return &cloudformation.CreateStackOutput{}, nil
 }

@@ -395,7 +395,50 @@ var _ = Describe("bbl", func() {
 			Entry("generates a cloud config with cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
 			Entry("generates a cloud config with concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 		)
+
+		Describe("reentrant", func() {
+			Context("when the keypair fails to create", func() {
+				It("saves the keypair name to the state", func() {
+					fakeAWS.KeyPairs.SetCreateKeyPairReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to create keypair",
+					})
+					session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					stdout := session.Out.Contents()
+					stderr := session.Err.Contents()
+
+					Expect(stdout).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+					Expect(stderr).To(ContainSubstring("failed to create keypair"))
+
+					state := readStateJson(tempDirectory)
+
+					Expect(state.KeyPair.Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+				})
+			})
+
+			Context("when the stack fails to create", func() {
+				It("saves the stack name to the state", func() {
+					fakeAWS.Stacks.SetCreateStackReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to create stack",
+					})
+					session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					stdout := session.Out.Contents()
+					stderr := session.Err.Contents()
+
+					Expect(stdout).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+					Expect(stderr).To(ContainSubstring("failed to create stack"))
+
+					state := readStateJson(tempDirectory)
+
+					Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+				})
+			})
+		})
 	})
+
 })
 
 func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
