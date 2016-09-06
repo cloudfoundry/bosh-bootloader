@@ -35,7 +35,7 @@ func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
 
 	if !hasLocalKeyPair || !hasRemoteKeyPair {
 		keyPairName := keypair.Name
-		m.logger.Step("creating keypair: `%s`", keyPairName)
+		m.logger.Step("creating keypair: %q", keyPairName)
 
 		keypair, err = m.creator.Create(keyPairName)
 		if err != nil {

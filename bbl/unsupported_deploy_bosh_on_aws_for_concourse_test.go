@@ -200,7 +200,7 @@ var _ = Describe("bbl", func() {
 				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
-				Expect(stdout).To(ContainSubstring("step: creating keypair: `keypair-bbl-env-"))
+				Expect(stdout).To(ContainSubstring("step: creating keypair: \"keypair-bbl-env-"))
 				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
@@ -408,7 +408,7 @@ var _ = Describe("bbl", func() {
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
-					Expect(stdout).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+					Expect(stdout).To(MatchRegexp(`step: creating keypair: "keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z"`))
 					Expect(stderr).To(ContainSubstring("failed to create keypair"))
 
 					state := readStateJson(tempDirectory)
@@ -428,7 +428,7 @@ var _ = Describe("bbl", func() {
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
-					Expect(stdout).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+					Expect(stdout).To(MatchRegexp(`step: creating cloudformation stack: "stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z"`))
 					Expect(stderr).To(ContainSubstring("failed to create stack"))
 
 					state := readStateJson(tempDirectory)
