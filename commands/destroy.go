@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
@@ -96,8 +97,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	d.logger.Step("destroying BOSH director and AWS stack")
-
 	stack, err := d.stackManager.Describe(state.Stack.Name)
 	if err != nil {
 		return err
@@ -108,11 +107,17 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
+	d.logger.Step("destroying BOSH director")
 	state, err = d.deleteBOSH(stack, state)
 	if err != nil {
 		return err
 	}
 
+	if err := d.stateStore.Set(state); err != nil {
+		return err
+	}
+
+	d.logger.Step("destroying AWS stack")
 	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
 		return err
 	}
@@ -153,9 +158,17 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 }
 
 func (d Destroy) deleteBOSH(stack cloudformation.Stack, state storage.State) (storage.State, error) {
+	emptyBOSH := storage.BOSH{}
+	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
+		d.logger.Println("no BOSH director, skipping...")
+		return state, nil
+	}
+
 	if err := d.boshDeleter.Delete(state.BOSH.Manifest, state.BOSH.State, state.KeyPair.PrivateKey); err != nil {
 		return state, err
 	}
+
+	state.BOSH = storage.BOSH{}
 
 	return state, nil
 }

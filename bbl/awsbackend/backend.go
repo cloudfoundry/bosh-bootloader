@@ -148,6 +148,10 @@ func (b *Backend) UpdateStack(input *cloudformation.UpdateStackInput) (*cloudfor
 }
 
 func (b *Backend) DeleteStack(input *cloudformation.DeleteStackInput) (*cloudformation.DeleteStackOutput, error) {
+	if err := b.Stacks.DeleteStackReturnError(); err != nil {
+		return nil, err
+	}
+
 	name := *input.StackName
 	b.Stacks.Delete(name)
 

@@ -21,6 +21,12 @@ type Stacks struct {
 			err *awsfaker.ErrorResponse
 		}
 	}
+
+	deleteStack struct {
+		returns struct {
+			err *awsfaker.ErrorResponse
+		}
+	}
 }
 
 func NewStacks() *Stacks {
@@ -63,4 +69,18 @@ func (s *Stacks) CreateStackReturnError() *awsfaker.ErrorResponse {
 	defer s.mutex.Unlock()
 
 	return s.createStack.returns.err
+}
+
+func (s *Stacks) SetDeleteStackReturnError(err *awsfaker.ErrorResponse) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.deleteStack.returns.err = err
+}
+
+func (s *Stacks) DeleteStackReturnError() *awsfaker.ErrorResponse {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return s.deleteStack.returns.err
 }

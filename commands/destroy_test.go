@@ -64,13 +64,18 @@ var _ = Describe("Destroy", func() {
 			func(response string, proceed bool) {
 				fmt.Fprintf(stdin, "%s\n", response)
 
-				err := destroy.Execute([]string{}, storage.State{})
+				err := destroy.Execute([]string{}, storage.State{
+					BOSH: storage.BOSH{
+						DirectorName: "some-director",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete your infrastructure? This operation cannot be undone!"))
 
 				if proceed {
-					Expect(logger.StepCall.Receives.Message).To(Equal("destroying BOSH director and AWS stack"))
+					Expect(logger.StepCall.Messages).To(ContainElement("destroying BOSH director"))
+					Expect(logger.StepCall.Messages).To(ContainElement("destroying AWS stack"))
 					Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
 				} else {
 					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
@@ -89,7 +94,11 @@ var _ = Describe("Destroy", func() {
 
 		Context("when the --no-confirm flag is supplied", func() {
 			DescribeTable("destroys without prompting the user for confirmation", func(flag string) {
-				err := destroy.Execute([]string{flag}, storage.State{})
+				err := destroy.Execute([]string{flag}, storage.State{
+					BOSH: storage.BOSH{
+						DirectorName: "some-director",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
@@ -212,8 +221,49 @@ var _ = Describe("Destroy", func() {
 				err := destroy.Execute([]string{}, state)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
 				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{}))
+			})
+
+			Context("reentrance", func() {
+				Context("when the stack fails to delete", func() {
+					It("removes the bosh properties from state and returns an error", func() {
+						infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
+
+						err := destroy.Execute([]string{}, state)
+						Expect(err).To(MatchError("failed to delete stack"))
+
+						Expect(stateStore.SetCall.CallCount).To(Equal(1))
+						Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							AWS: storage.AWS{
+								AccessKeyID:     "some-access-key-id",
+								SecretAccessKey: "some-secret-access-key",
+								Region:          "some-aws-region",
+							},
+							KeyPair: storage.KeyPair{
+								Name:       "some-ec2-key-pair-name",
+								PrivateKey: "some-private-key",
+								PublicKey:  "some-public-key",
+							},
+							BOSH: storage.BOSH{},
+							Stack: storage.Stack{
+								Name:            "some-stack-name",
+								CertificateName: "some-certificate-name",
+							},
+						}))
+					})
+				})
+
+				Context("when there is no bosh to delete", func() {
+					It("does not attempt to delete the bosh", func() {
+						state.BOSH = storage.BOSH{}
+						err := destroy.Execute([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
+						Expect(boshDeleter.DeleteCall.CallCount).To(Equal(0))
+					})
+				})
 			})
 		})
 
@@ -233,7 +283,11 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
 
-					err := destroy.Execute([]string{}, storage.State{})
+					err := destroy.Execute([]string{}, storage.State{
+						BOSH: storage.BOSH{
+							DirectorName: "some-director",
+						},
+					})
 					Expect(err).To(MatchError("BOSH Delete Failed"))
 				})
 			})
@@ -277,9 +331,18 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
+			Context("when state store fails to set the state before syncing the keypair", func() {
+				It("returns an error", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+
+					err := destroy.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("failed to set state"))
+				})
+			})
+
 			Context("when the state fails to be set", func() {
 				It("return an error", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
 
 					err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to set state"))

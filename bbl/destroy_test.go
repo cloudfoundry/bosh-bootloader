@@ -114,7 +114,7 @@ var _ = Describe("destroy", func() {
 				}
 
 				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("step: destroying BOSH director and AWS stack"))
+			}, "10s", "10s").Should(ContainSubstring("step: destroying BOSH director"))
 
 			Eventually(cmd.Wait).Should(Succeed())
 		})
@@ -226,6 +226,46 @@ var _ = Describe("destroy", func() {
 
 			_, err := os.Stat(filepath.Join(tempDirectory, "state.json"))
 			Expect(os.IsNotExist(err)).To(BeTrue())
+		})
+
+		Context("reentrance", func() {
+			Context("when destroy fails to delete the stack", func() {
+				It("removes bosh properties from the state", func() {
+					fakeAWS.Stacks.SetDeleteStackReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to delete stack",
+					})
+					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
+					Expect(session.Out.Contents()).To(ContainSubstring("step: destroying bosh director"))
+					Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init delete bosh.yml]"))
+					Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value"}`))
+					Expect(session.Out.Contents()).To(ContainSubstring("step: deleting cloudformation stack"))
+
+					Expect(session.Out.Contents()).NotTo(ContainSubstring("step: finished deleting cloudformation stack"))
+					state := readStateJson(tempDirectory)
+
+					Expect(state.BOSH).To(Equal(storage.BOSH{}))
+				})
+			})
+
+			Context("when no bosh director exists", func() {
+				It("skips deleting bosh director", func() {
+					fakeAWS.Stacks.SetDeleteStackReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to delete stack",
+					})
+					destroy(fakeAWSServer.URL, tempDirectory, 1)
+
+					fakeAWS.Stacks.SetDeleteStackReturnError(nil)
+					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+					Expect(session.Out.Contents()).To(ContainSubstring("no BOSH director, skipping..."))
+					Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+
+					Expect(session.Out.Contents()).NotTo(ContainSubstring("step: destroying bosh director"))
+				})
+			})
 		})
 	})
 })
