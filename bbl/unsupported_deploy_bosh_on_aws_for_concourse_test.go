@@ -27,8 +27,9 @@ import (
 )
 
 type fakeBOSHDirector struct {
-	mutex       sync.Mutex
-	cloudConfig []byte
+	mutex           sync.Mutex
+	cloudConfig     []byte
+	cloudConfigFail bool
 }
 
 func (b *fakeBOSHDirector) SetCloudConfig(cloudConfig []byte) {
@@ -45,6 +46,20 @@ func (b *fakeBOSHDirector) GetCloudConfig() []byte {
 	return b.cloudConfig
 }
 
+func (b *fakeBOSHDirector) SetCloudConfigEndpointFail(fail bool) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	b.cloudConfigFail = fail
+}
+
+func (b *fakeBOSHDirector) GetCloudConfigEndpointFail() bool {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	return b.cloudConfigFail
+}
+
 func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	switch request.URL.Path {
 	case "/info":
@@ -56,6 +71,10 @@ func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request
 
 		return
 	case "/cloud_configs":
+		if b.GetCloudConfigEndpointFail() {
+			responseWriter.WriteHeader(0)
+			return
+		}
 		buf, err := ioutil.ReadAll(request.Body)
 		if err != nil {
 			panic(err)
@@ -489,6 +508,24 @@ var _ = Describe("bbl", func() {
 
 						Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
 					})
+				})
+			})
+
+			Context("when bosh cloud config fails to update", func() {
+				It("saves the bosh properties to the state", func() {
+					fakeBOSH.SetCloudConfigEndpointFail(true)
+					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					state := readStateJson(tempDirectory)
+
+					Expect(state.BOSH.DirectorName).To(MatchRegexp(`bosh-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+
+					originalBOSHState := state.BOSH
+
+					fakeBOSH.SetCloudConfigEndpointFail(false)
+					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+					state = readStateJson(tempDirectory)
+
+					Expect(state.BOSH).To(Equal(originalBOSHState))
 				})
 			})
 		})

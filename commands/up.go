@@ -193,6 +193,11 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	state.BOSH.State = deployOutput.BOSHInitState
 	state.BOSH.Manifest = deployOutput.BOSHInitManifest
 
+	err = u.stateStore.Set(state)
+	if err != nil {
+		return err
+	}
+
 	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 		state.BOSH.DirectorPassword)
 

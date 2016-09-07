@@ -436,6 +436,29 @@ var _ = Describe("Up", func() {
 					Expect(stateStore.SetCall.Receives.State.KeyPair.PublicKey).To(Equal("some-public-key"))
 				})
 			})
+
+			Context("when the bosh cloud config fails", func() {
+				It("saves the bosh properties and returns an error", func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("cloud config update failed")
+
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("cloud config update failed"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
+						DirectorName:           "bosh-bbl-lake-time:stamp",
+						DirectorUsername:       "user-some-random-string",
+						DirectorPassword:       "p-some-random-string",
+						DirectorAddress:        "some-bosh-url",
+						DirectorSSLCA:          "updated-ca",
+						DirectorSSLCertificate: "updated-certificate",
+						DirectorSSLPrivateKey:  "updated-private-key",
+						State: boshinit.State{
+							"updated-key": "updated-value",
+						},
+						Manifest: "name: bosh",
+					}))
+				})
+			})
 		})
 
 		Describe("state manipulation", func() {
@@ -823,15 +846,22 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
-			It("returns an error when state store fails to set the state before syncing the keypair", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{nil}, {errors.New("failed to set state")}}
+			It("returns an error when state store fails to set the state before creating the stack", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to set state"))
+			})
+
+			It("returns an error when state store fails to set the state before updating the cloud config", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when state store fails to set the state before method exits", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("failed to set state")}}
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
