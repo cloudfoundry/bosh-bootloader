@@ -250,7 +250,7 @@ var _ = Describe("destroy", func() {
 			})
 
 			Context("when no bosh director exists", func() {
-				It("skips deleting bosh director", func() {
+				BeforeEach(func() {
 					fakeAWS.Stacks.SetDeleteStackReturnError(&awsfaker.ErrorResponse{
 						HTTPStatusCode:  http.StatusBadRequest,
 						AWSErrorCode:    "InvalidRequest",
@@ -259,11 +259,63 @@ var _ = Describe("destroy", func() {
 					destroy(fakeAWSServer.URL, tempDirectory, 1)
 
 					fakeAWS.Stacks.SetDeleteStackReturnError(nil)
+				})
+
+				It("skips deleting bosh director", func() {
 					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
 					Expect(session.Out.Contents()).To(ContainSubstring("no BOSH director, skipping..."))
 					Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
 
 					Expect(session.Out.Contents()).NotTo(ContainSubstring("step: destroying bosh director"))
+				})
+			})
+
+			Context("when destroy fails to delete the keypair", func() {
+				It("removes the stack from the state", func() {
+					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to delete keypair",
+					})
+					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
+					Expect(session.Out.Contents()).To(ContainSubstring("step: deleting cloudformation stack"))
+					Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+					Expect(session.Out.Contents()).To(ContainSubstring("step: deleting keypair"))
+					state := readStateJson(tempDirectory)
+
+					Expect(state.Stack.Name).To(Equal(""))
+					Expect(state.Stack.LBType).To(Equal(""))
+				})
+
+				It("removes the certificate from the state", func() {
+					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to delete keypair",
+					})
+					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
+					Expect(session.Out.Contents()).To(ContainSubstring("step: deleting certificate"))
+					state := readStateJson(tempDirectory)
+
+					Expect(state.Stack.CertificateName).To(Equal(""))
+				})
+			})
+
+			Context("when no stack exists", func() {
+				BeforeEach(func() {
+					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to delete keypair",
+					})
+					destroy(fakeAWSServer.URL, tempDirectory, 1)
+
+					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(nil)
+				})
+
+				It("skips deleting aws stack", func() {
+					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+					Expect(session.Out.Contents()).To(ContainSubstring("no AWS stack, skipping..."))
 				})
 			})
 		})

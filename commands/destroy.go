@@ -97,14 +97,22 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
+	stackExists := true
 	stack, err := d.stackManager.Describe(state.Stack.Name)
-	if err != nil {
+	switch err {
+	case cloudformation.StackNotFound:
+		stackExists = false
+	case nil:
+		break
+	default:
 		return err
 	}
 
-	var vpcID = stack.Outputs["VPCID"]
-	if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
-		return err
+	if stackExists {
+		var vpcID = stack.Outputs["VPCID"]
+		if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
+			return err
+		}
 	}
 
 	d.logger.Step("destroying BOSH director")
@@ -118,7 +126,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	d.logger.Step("destroying AWS stack")
-	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
+	state, err = d.deleteStack(stack, state)
+	if err != nil {
+		return err
+	}
+
+	if err := d.stateStore.Set(state); err != nil {
 		return err
 	}
 
@@ -126,6 +139,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		d.logger.Step("deleting certificate")
 		err = d.certificateDeleter.Delete(state.Stack.CertificateName)
 		if err != nil {
+			return err
+		}
+
+		state.Stack.CertificateName = ""
+
+		if err := d.stateStore.Set(state); err != nil {
 			return err
 		}
 	}
@@ -169,6 +188,22 @@ func (d Destroy) deleteBOSH(stack cloudformation.Stack, state storage.State) (st
 	}
 
 	state.BOSH = storage.BOSH{}
+
+	return state, nil
+}
+
+func (d Destroy) deleteStack(stack cloudformation.Stack, state storage.State) (storage.State, error) {
+	if state.Stack.Name == "" {
+		d.logger.Println("no AWS stack, skipping...")
+		return state, nil
+	}
+
+	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
+		return state, err
+	}
+
+	state.Stack.Name = ""
+	state.Stack.LBType = ""
 
 	return state, nil
 }

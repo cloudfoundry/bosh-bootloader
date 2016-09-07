@@ -142,6 +142,7 @@ var _ = Describe("Destroy", func() {
 					},
 					Stack: storage.Stack{
 						Name:            "some-stack-name",
+						LBType:          "some-lb-type",
 						CertificateName: "some-certificate-name",
 					},
 				}
@@ -221,7 +222,7 @@ var _ = Describe("Destroy", func() {
 				err := destroy.Execute([]string{}, state)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
 				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{}))
 			})
 
@@ -248,6 +249,7 @@ var _ = Describe("Destroy", func() {
 							BOSH: storage.BOSH{},
 							Stack: storage.Stack{
 								Name:            "some-stack-name",
+								LBType:          "some-lb-type",
 								CertificateName: "some-certificate-name",
 							},
 						}))
@@ -262,6 +264,87 @@ var _ = Describe("Destroy", func() {
 
 						Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
 						Expect(boshDeleter.DeleteCall.CallCount).To(Equal(0))
+					})
+				})
+
+				Context("when the certificate fails to delete", func() {
+					It("removes the stack from the state and returns an error", func() {
+						certificateDeleter.DeleteCall.Returns.Error = errors.New("failed to delete certificate")
+
+						err := destroy.Execute([]string{}, state)
+						Expect(err).To(MatchError("failed to delete certificate"))
+
+						Expect(stateStore.SetCall.CallCount).To(Equal(2))
+						Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							AWS: storage.AWS{
+								AccessKeyID:     "some-access-key-id",
+								SecretAccessKey: "some-secret-access-key",
+								Region:          "some-aws-region",
+							},
+							KeyPair: storage.KeyPair{
+								Name:       "some-ec2-key-pair-name",
+								PrivateKey: "some-private-key",
+								PublicKey:  "some-public-key",
+							},
+							BOSH: storage.BOSH{},
+							Stack: storage.Stack{
+								Name:            "",
+								LBType:          "",
+								CertificateName: "some-certificate-name",
+							},
+						}))
+					})
+				})
+
+				Context("when the keypair fails to delete", func() {
+					It("removes the certificate from the state and returns an error", func() {
+						keyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete keypair")
+
+						err := destroy.Execute([]string{}, state)
+						Expect(err).To(MatchError("failed to delete keypair"))
+
+						Expect(stateStore.SetCall.CallCount).To(Equal(3))
+						Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							AWS: storage.AWS{
+								AccessKeyID:     "some-access-key-id",
+								SecretAccessKey: "some-secret-access-key",
+								Region:          "some-aws-region",
+							},
+							KeyPair: storage.KeyPair{
+								Name:       "some-ec2-key-pair-name",
+								PrivateKey: "some-private-key",
+								PublicKey:  "some-public-key",
+							},
+							BOSH: storage.BOSH{},
+							Stack: storage.Stack{
+								Name:            "",
+								LBType:          "",
+								CertificateName: "",
+							},
+						}))
+					})
+				})
+
+				Context("when there is no stack to delete", func() {
+					BeforeEach(func() {
+						stackManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
+					})
+
+					It("does not validate the vpc", func() {
+						state.Stack = storage.Stack{}
+						err := destroy.Execute([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+					})
+
+					It("does not attempt to delete the stack", func() {
+						state.Stack = storage.Stack{}
+						err := destroy.Execute([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(logger.PrintlnCall.Receives.Message).To(Equal("no AWS stack, skipping..."))
+						Expect(infrastructureManager.DeleteCall.CallCount).To(Equal(0))
 					})
 				})
 			})
@@ -305,7 +388,11 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					infrastructureManager.DeleteCall.Returns.Error = errors.New("failed to delete stack")
 
-					err := destroy.Execute([]string{}, storage.State{})
+					err := destroy.Execute([]string{}, storage.State{
+						Stack: storage.Stack{
+							Name: "some-stack-name",
+						},
+					})
 					Expect(err).To(MatchError("failed to delete stack"))
 				})
 			})
@@ -331,7 +418,7 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
-			Context("when state store fails to set the state before syncing the keypair", func() {
+			Context("when state store fails to set the state before destroying infrastructure", func() {
 				It("returns an error", func() {
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
 
@@ -340,9 +427,31 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
+			Context("when state store fails to set the state before destroying certificate", func() {
+				It("returns an error", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+
+					err := destroy.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("failed to set state"))
+				})
+			})
+
+			Context("when state store fails to set the state before destroying keypair", func() {
+				It("returns an error", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
+
+					err := destroy.Execute([]string{}, storage.State{
+						Stack: storage.Stack{
+							CertificateName: "some-certificate-name",
+						},
+					})
+					Expect(err).To(MatchError("failed to set state"))
+				})
+			})
+
 			Context("when the state fails to be set", func() {
 				It("return an error", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
 
 					err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to set state"))

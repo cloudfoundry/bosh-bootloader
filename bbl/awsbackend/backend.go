@@ -58,6 +58,10 @@ func (b *Backend) CreateKeyPair(input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPa
 }
 
 func (b *Backend) DeleteKeyPair(input *ec2.DeleteKeyPairInput) (*ec2.DeleteKeyPairOutput, error) {
+	if err := b.KeyPairs.DeleteKeyPairReturnError(); err != nil {
+		return nil, err
+	}
+
 	b.KeyPairs.Delete(*input.KeyName)
 
 	return &ec2.DeleteKeyPairOutput{}, nil

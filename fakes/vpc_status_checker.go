@@ -2,7 +2,8 @@ package fakes
 
 type VPCStatusChecker struct {
 	ValidateSafeToDeleteCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			VPCID string
 		}
 		Returns struct {
@@ -12,6 +13,7 @@ type VPCStatusChecker struct {
 }
 
 func (v *VPCStatusChecker) ValidateSafeToDelete(vpcID string) error {
+	v.ValidateSafeToDeleteCall.CallCount++
 	v.ValidateSafeToDeleteCall.Receives.VPCID = vpcID
 	return v.ValidateSafeToDeleteCall.Returns.Error
 }

@@ -60,7 +60,7 @@ func (s Store) Set(state State) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(filepath.Join(s.storeDir, "state.json"), os.O_RDWR|os.O_CREATE, OS_READ_WRITE_MODE)
+	file, err := os.OpenFile(filepath.Join(s.storeDir, "state.json"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, OS_READ_WRITE_MODE)
 	if err != nil {
 		return err
 	}

@@ -47,7 +47,8 @@ type InfrastructureManager struct {
 	}
 
 	DeleteCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			StackName string
 		}
 		Returns struct {
@@ -100,6 +101,7 @@ func (m *InfrastructureManager) Exists(stackName string) (bool, error) {
 }
 
 func (m *InfrastructureManager) Delete(stackName string) error {
+	m.DeleteCall.CallCount++
 	m.DeleteCall.Receives.StackName = stackName
 
 	return m.DeleteCall.Returns.Error

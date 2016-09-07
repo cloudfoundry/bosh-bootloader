@@ -19,6 +19,12 @@ type KeyPairs struct {
 			err *awsfaker.ErrorResponse
 		}
 	}
+
+	deleteKeyPair struct {
+		returns struct {
+			err *awsfaker.ErrorResponse
+		}
+	}
 }
 
 func NewKeyPairs() *KeyPairs {
@@ -66,4 +72,15 @@ func (k *KeyPairs) SetCreateKeyPairReturnError(err *awsfaker.ErrorResponse) {
 
 func (k *KeyPairs) CreateKeyPairReturnError() *awsfaker.ErrorResponse {
 	return k.createKeyPair.returns.err
+}
+
+func (k *KeyPairs) SetDeleteKeyPairReturnError(err *awsfaker.ErrorResponse) {
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
+
+	k.deleteKeyPair.returns.err = err
+}
+
+func (k *KeyPairs) DeleteKeyPairReturnError() *awsfaker.ErrorResponse {
+	return k.deleteKeyPair.returns.err
 }
