@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -23,6 +24,9 @@ type Backend struct {
 	Instances       *Instances
 	Certificates    *Certificates
 	boshDirectorURL string
+
+	CreateKeyPairCallCount int64
+	CreateStackCallCount   int64
 }
 
 func New(boshDirectorURL string) *Backend {
@@ -40,7 +44,7 @@ func (b *Backend) CreateKeyPair(input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPa
 	keyPair := KeyPair{
 		Name: *input.KeyName,
 	}
-
+	atomic.AddInt64(&b.CreateKeyPairCallCount, 1)
 	b.KeyPairs.Set(keyPair)
 
 	if err := b.KeyPairs.CreateKeyPairReturnError(); err != nil {
@@ -115,6 +119,7 @@ func (b *Backend) CreateStack(input *cloudformation.CreateStackInput) (*cloudfor
 		Name:     *input.StackName,
 		Template: *input.TemplateBody,
 	}
+	atomic.AddInt64(&b.CreateStackCallCount, 1)
 	b.Stacks.Set(stack)
 
 	if err := b.Stacks.CreateStackReturnError(); err != nil {

@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/onsi/gomega/gexec"
@@ -448,7 +449,7 @@ var _ = Describe("bbl", func() {
 					Expect(state.KeyPair.PrivateKey).To(ContainSubstring(testhelpers.PRIVATE_KEY))
 				})
 
-				It("reuses the private key on subsequent calls", func() {
+				It("does not create a new key pair on second call", func() {
 					fakeAWS.Stacks.SetCreateStackReturnError(&awsfaker.ErrorResponse{
 						HTTPStatusCode:  http.StatusBadRequest,
 						AWSErrorCode:    "InvalidRequest",
@@ -459,7 +460,35 @@ var _ = Describe("bbl", func() {
 					fakeAWS.Stacks.SetCreateStackReturnError(nil)
 					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
 
-					Expect(fakeAWS.KeyPairs.All()).To(HaveLen(1))
+					Expect(fakeAWS.CreateKeyPairCallCount).To(Equal(int64(1)))
+				})
+			})
+
+			Context("when bosh init fails to create", func() {
+				It("does not re-provision stack", func() {
+					originalPath := os.Getenv("PATH")
+
+					By("rebuilding bosh-init with fail fast flag", func() {
+						pathToFakeBOSHInit, err := gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit",
+							"-ldflags",
+							"-X main.FailFast=true")
+						Expect(err).NotTo(HaveOccurred())
+
+						pathToBOSHInit = filepath.Join(filepath.Dir(pathToFakeBOSHInit), "bosh-init")
+						err = os.Rename(pathToFakeBOSHInit, pathToBOSHInit)
+						Expect(err).NotTo(HaveOccurred())
+
+						os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
+					})
+
+					By("running up twice and checking if it created one stack", func() {
+						deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+
+						os.Setenv("PATH", originalPath)
+						deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+
+						Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
+					})
 				})
 			})
 		})

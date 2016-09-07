@@ -10,8 +10,17 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+var (
+	FailFast = "false"
+)
+
 func main() {
 	fmt.Printf("bosh-init was called with %+v\n", os.Args)
+
+	if FailFast == "true" {
+		fmt.Fprintln(os.Stderr, "failing fast...")
+		os.Exit(1)
+	}
 
 	contents, err := ioutil.ReadFile("bosh-state.json")
 	if err != nil {

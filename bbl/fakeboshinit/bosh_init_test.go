@@ -38,6 +38,17 @@ jobs:
   `)
 		})
 
+		It("fails fast if compiled with FailFast flag", func() {
+			var err error
+			pathToFake, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit",
+				"-ldflags",
+				"-X main.FailFast=true")
+			Expect(err).NotTo(HaveOccurred())
+
+			session := runFakeBoshInit(pathToFake, tempDir, 1)
+			Expect(session.Err.Contents()).To(ContainSubstring(`failing fast`))
+		})
+
 		It("reads and prints the bosh state", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDir, "bosh.yml"), manifestData, os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
@@ -45,7 +56,7 @@ jobs:
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
-			session := runFakeBoshInit(pathToFake, tempDir)
+			session := runFakeBoshInit(pathToFake, tempDir, 0)
 			Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {}`))
 		})
 
@@ -56,7 +67,7 @@ jobs:
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
-			session := runFakeBoshInit(pathToFake, tempDir)
+			session := runFakeBoshInit(pathToFake, tempDir, 0)
 			Expect(session.Out.Contents()).To(ContainSubstring(`bosh director name: my-bosh`))
 		})
 
@@ -70,7 +81,7 @@ name: bosh-init`)
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
-			session := runFakeBoshInit(pathToFake, tempDir)
+			session := runFakeBoshInit(pathToFake, tempDir, 0)
 			Expect(session.Out.Contents()).To(ContainSubstring(`bosh director name:`))
 		})
 
@@ -81,8 +92,8 @@ name: bosh-init`)
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
-			session := runFakeBoshInit(pathToFake, tempDir)
-			session = runFakeBoshInit(pathToFake, tempDir)
+			session := runFakeBoshInit(pathToFake, tempDir, 0)
+			session = runFakeBoshInit(pathToFake, tempDir, 0)
 
 			Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
 		})
@@ -94,7 +105,7 @@ name: bosh-init`)
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh-state.json"), []byte("{}"), os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
-			session := runFakeBoshInit(pathToFake, tempDir)
+			session := runFakeBoshInit(pathToFake, tempDir, 0)
 
 			manifestData = []byte(`---
 name: bosh-init-updated
@@ -107,14 +118,14 @@ jobs:
 			err = ioutil.WriteFile(filepath.Join(tempDir, "bosh.yml"), manifestData, os.FileMode(0644))
 			Expect(err).NotTo(HaveOccurred())
 
-			session = runFakeBoshInit(pathToFake, tempDir)
+			session = runFakeBoshInit(pathToFake, tempDir, 0)
 
 			Expect(session.Out.Contents()).NotTo(ContainSubstring("No new changes, skipping deployment..."))
 		})
 	})
 })
 
-func runFakeBoshInit(pathToFake, tempDir string) *gexec.Session {
+func runFakeBoshInit(pathToFake, tempDir string, exitCode int) *gexec.Session {
 	cmd := &exec.Cmd{
 		Path: pathToFake,
 		Args: []string{
@@ -128,7 +139,7 @@ func runFakeBoshInit(pathToFake, tempDir string) *gexec.Session {
 	}
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
-	Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
 
 	return session
 }
