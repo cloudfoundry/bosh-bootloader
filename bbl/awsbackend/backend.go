@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 )
 
@@ -47,7 +48,8 @@ func (b *Backend) CreateKeyPair(input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPa
 	}
 
 	return &ec2.CreateKeyPairOutput{
-		KeyName: aws.String(keyPair.Name),
+		KeyName:     aws.String(keyPair.Name),
+		KeyMaterial: aws.String(testhelpers.PRIVATE_KEY),
 	}, nil
 }
 

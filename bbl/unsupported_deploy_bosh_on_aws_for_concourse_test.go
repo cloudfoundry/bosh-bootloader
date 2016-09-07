@@ -435,6 +435,32 @@ var _ = Describe("bbl", func() {
 
 					Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
 				})
+
+				It("saves the private key to the state", func() {
+					fakeAWS.Stacks.SetCreateStackReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to create stack",
+					})
+					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					state := readStateJson(tempDirectory)
+
+					Expect(state.KeyPair.PrivateKey).To(ContainSubstring(testhelpers.PRIVATE_KEY))
+				})
+
+				It("reuses the private key on subsequent calls", func() {
+					fakeAWS.Stacks.SetCreateStackReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to create stack",
+					})
+					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+
+					fakeAWS.Stacks.SetCreateStackReturnError(nil)
+					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+
+					Expect(fakeAWS.KeyPairs.All()).To(HaveLen(1))
+				})
 			})
 		})
 	})

@@ -405,22 +405,36 @@ var _ = Describe("Up", func() {
 		})
 
 		Describe("reentrant", func() {
-			It("saves the keypair name and returns an error when the key pair fails to sync", func() {
-				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
+			Context("when the key pair fails to sync", func() {
+				It("saves the keypair name and returns an error", func() {
+					keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("error syncing key pair"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("error syncing key pair"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
+				})
 			})
 
-			It("saves the stack name and returns an error when the cloudformation fails", func() {
-				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
+			Context("when the cloudformation fails", func() {
+				It("saves the stack name and returns an error", func() {
+					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("infrastructure creation failed"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("infrastructure creation failed"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
+				})
+
+				It("saves the private/public key and returns an error", func() {
+					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
+
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("infrastructure creation failed"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
+					Expect(stateStore.SetCall.Receives.State.KeyPair.PublicKey).To(Equal("some-public-key"))
+				})
 			})
 		})
 

@@ -7,7 +7,8 @@ import (
 )
 
 type KeyPair struct {
-	Name string
+	Name       string
+	PrivateKey string
 }
 
 type KeyPairs struct {
