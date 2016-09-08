@@ -129,6 +129,10 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	state.KeyPair.PublicKey = keyPair.PublicKey
 	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
+	if err := u.stateStore.Set(state); err != nil {
+		return err
+	}
+
 	availabilityZones, err := u.availabilityZoneRetriever.Retrieve(state.AWS.Region)
 	if err != nil {
 		return err

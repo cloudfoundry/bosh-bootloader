@@ -416,13 +416,25 @@ var _ = Describe("Up", func() {
 				})
 			})
 
+			Context("when the availability zone retriever fails", func() {
+				It("saves the public/private key and returns an error", func() {
+					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone retrieve failed")
+
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("availability zone retrieve failed"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
+					Expect(stateStore.SetCall.Receives.State.KeyPair.PublicKey).To(Equal("some-public-key"))
+				})
+			})
+
 			Context("when the cloudformation fails", func() {
 				It("saves the stack name and returns an error", func() {
 					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("infrastructure creation failed"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
 				})
 
@@ -431,7 +443,7 @@ var _ = Describe("Up", func() {
 
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("infrastructure creation failed"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.PublicKey).To(Equal("some-public-key"))
 				})
@@ -443,7 +455,7 @@ var _ = Describe("Up", func() {
 
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("cloud config update failed"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 					Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
 						DirectorName:           "bosh-bbl-lake-time:stamp",
 						DirectorUsername:       "user-some-random-string",
@@ -846,22 +858,29 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
-			It("returns an error when state store fails to set the state before creating the stack", func() {
+			It("returns an error when state store fails to set the state before retrieving availability zones", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
-			It("returns an error when state store fails to set the state before updating the cloud config", func() {
+			It("returns an error when state store fails to set the state before creating the stack", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
-			It("returns an error when state store fails to set the state before method exits", func() {
+			It("returns an error when state store fails to set the state before updating the cloud config", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("failed to set state")}}
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to set state"))
+			})
+
+			It("returns an error when state store fails to set the state before method exits", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("failed to set state")}}
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
