@@ -28,6 +28,8 @@ func NewKeyPairManager(creator keypairCreator, checker keypairChecker, logger lo
 
 func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
 	hasLocalKeyPair := len(keypair.PublicKey) != 0 || len(keypair.PrivateKey) != 0
+
+	m.logger.Step("checking if keypair %q exists", keypair.Name)
 	hasRemoteKeyPair, err := m.checker.HasKeyPair(keypair.Name)
 	if err != nil {
 		return KeyPair{}, err
@@ -35,7 +37,7 @@ func (m KeyPairManager) Sync(keypair KeyPair) (KeyPair, error) {
 
 	if !hasLocalKeyPair || !hasRemoteKeyPair {
 		keyPairName := keypair.Name
-		m.logger.Step("creating keypair: %q", keyPairName)
+		m.logger.Step("creating keypair")
 
 		keypair, err = m.creator.Create(keyPairName)
 		if err != nil {

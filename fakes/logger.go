@@ -1,5 +1,7 @@
 package fakes
 
+import "fmt"
+
 type Logger struct {
 	StepCall struct {
 		CallCount int
@@ -34,7 +36,8 @@ func (l *Logger) Step(message string, a ...interface{}) {
 	l.StepCall.CallCount++
 	l.StepCall.Receives.Message = message
 	l.StepCall.Receives.Arguments = a
-	l.StepCall.Messages = append(l.StepCall.Messages, message)
+
+	l.StepCall.Messages = append(l.StepCall.Messages, fmt.Sprintf(message, a...))
 }
 
 func (l *Logger) Dot() {

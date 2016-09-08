@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("KeyPairManager", func() {
@@ -25,6 +26,17 @@ var _ = Describe("KeyPairManager", func() {
 			checker = &fakes.KeyPairChecker{}
 			logger = &fakes.Logger{}
 			manager = ec2.NewKeyPairManager(creator, checker, logger)
+		})
+
+		It("checks if keypair already exists", func() {
+			stateKeyPair = ec2.KeyPair{Name: "keypair-some-env-id"}
+
+			_, err := manager.Sync(stateKeyPair)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
+
+			Expect(logger.StepCall.Messages).To(ContainElement(`checking if keypair "keypair-some-env-id" exists`))
 		})
 
 		Context("no keypair in state file", func() {
@@ -49,10 +61,10 @@ var _ = Describe("KeyPairManager", func() {
 				}))
 
 				Expect(creator.CreateCall.Receives.KeyPairName).To(Equal("keypair-some-env-id"))
-
-				Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
-				Expect(logger.StepCall.Receives.Message).To(Equal("creating keypair: %q"))
-				Expect(logger.StepCall.Receives.Arguments[0]).To(Equal("keypair-some-env-id"))
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					`checking if keypair "keypair-some-env-id" exists`,
+					"creating keypair",
+				}))
 			})
 
 			Context("error cases", func() {
@@ -146,7 +158,11 @@ var _ = Describe("KeyPairManager", func() {
 			It("logs that the existing keypair will be used", func() {
 				_, err := manager.Sync(stateKeyPair)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.StepCall.Receives.Message).To(Equal("using existing keypair"))
+
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					`checking if keypair "my-keypair" exists`,
+					"using existing keypair",
+				}))
 			})
 		})
 	})
