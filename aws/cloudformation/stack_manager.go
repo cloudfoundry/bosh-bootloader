@@ -32,6 +32,8 @@ func NewStackManager(cloudFormationClient Client, logger logger) StackManager {
 }
 
 func (s StackManager) CreateOrUpdate(name string, template templates.Template, tags Tags) error {
+	s.logger.Step("checking if cloudformation stack %q exists", name)
+
 	_, err := s.Describe(name)
 	switch err {
 	case StackNotFound:
@@ -148,7 +150,7 @@ func (s StackManager) Delete(name string) error {
 }
 
 func (s StackManager) create(name string, template templates.Template, tags Tags) error {
-	s.logger.Step("creating cloudformation stack: %q", name)
+	s.logger.Step("creating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
 	if err != nil {

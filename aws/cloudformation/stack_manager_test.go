@@ -17,6 +17,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("StackManager", func() {
@@ -338,6 +339,16 @@ var _ = Describe("StackManager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		It("checks if the stack exists", func() {
+			err := manager.CreateOrUpdate("some-stack-name", templates.Template{}, cloudformation.Tags{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
+				StackName: aws.String("some-stack-name"),
+			}))
+			Expect(logger.StepCall.Messages).To(ContainElement(`checking if cloudformation stack "some-stack-name" exists`))
+		})
+
 		It("creates a stack if the stack does not exist", func() {
 			cloudFormationClient.DescribeStacksCall.Returns.Error = cloudformation.StackNotFound
 
@@ -358,10 +369,6 @@ var _ = Describe("StackManager", func() {
 			err = manager.CreateOrUpdate("some-stack-name", template, tags)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
-				StackName: aws.String("some-stack-name"),
-			}))
-
 			Expect(cloudFormationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
 				StackName:    aws.String("some-stack-name"),
 				Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
@@ -374,8 +381,10 @@ var _ = Describe("StackManager", func() {
 				},
 			}))
 
-			Expect(logger.StepCall.Receives.Message).To(Equal("creating cloudformation stack: %q"))
-			Expect(logger.StepCall.Receives.Arguments[0]).To(Equal("some-stack-name"))
+			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				`checking if cloudformation stack "some-stack-name" exists`,
+				"creating cloudformation stack",
+			}))
 		})
 
 		It("updates the stack if the stack exists", func() {
@@ -383,7 +392,10 @@ var _ = Describe("StackManager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.UpdateStackCall.CallCount).To(Equal(1))
-			Expect(logger.StepCall.Receives.Message).To(Equal("updating cloudformation stack"))
+			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				`checking if cloudformation stack "some-stack-name" exists`,
+				"updating cloudformation stack",
+			}))
 		})
 
 		Context("failure cases", func() {
