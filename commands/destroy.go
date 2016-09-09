@@ -115,7 +115,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	d.logger.Step("destroying BOSH director")
 	state, err = d.deleteBOSH(stack, state)
 	if err != nil {
 		return err

@@ -68,6 +68,9 @@ var _ = Describe("destroy", func() {
 				Stack: storage.Stack{
 					Name: "some-stack-name",
 				},
+				BOSH: storage.BOSH{
+					DirectorName: "some-bosh-director-name",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -114,7 +117,7 @@ var _ = Describe("destroy", func() {
 				}
 
 				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("step: destroying BOSH director"))
+			}, "10s", "10s").Should(ContainSubstring("step: destroying bosh director"))
 
 			Eventually(cmd.Wait).Should(Succeed())
 		})
