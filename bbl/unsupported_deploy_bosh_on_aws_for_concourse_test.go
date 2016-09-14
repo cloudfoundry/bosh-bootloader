@@ -124,7 +124,7 @@ var _ = Describe("bbl", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Describe("unsupported-deploy-bosh-on-aws-for-concourse", func() {
+	Describe("up", func() {
 		Context("when the cloudformation stack does not exist", func() {
 			var stack awsbackend.Stack
 
@@ -404,7 +404,7 @@ var _ = Describe("bbl", func() {
 				args := []string{
 					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
 					"--state-dir", tempDirectory,
-					"unsupported-deploy-bosh-on-aws-for-concourse",
+					"up",
 				}
 
 				executeCommand(args, 0)
@@ -542,7 +542,7 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCod
 		"--aws-secret-access-key", "some-access-secret",
 		"--aws-region", "some-region",
 		"--state-dir", tempDirectory,
-		"unsupported-deploy-bosh-on-aws-for-concourse",
+		"up",
 	}
 
 	return executeCommand(args, exitCode)
@@ -555,7 +555,7 @@ func createLB(serverURL string, tempDirectory string, lbType string, certPath st
 		"--aws-secret-access-key", "some-access-secret",
 		"--aws-region", "some-region",
 		"--state-dir", tempDirectory,
-		"unsupported-create-lbs",
+		"create-lbs",
 		"--type", lbType,
 		"--cert", certPath,
 		"--key", keyPath,

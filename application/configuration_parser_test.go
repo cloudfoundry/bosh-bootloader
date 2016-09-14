@@ -35,22 +35,22 @@ var _ = Describe("ConfigurationParser", func() {
 				AWSAccessKeyID:     "access-key-id-from-flag",
 				AWSSecretAccessKey: "secret-access-key-from-flag",
 				AWSRegion:          "region-from-flag",
-				Command:            "unsupported-deploy-bosh-on-aws-for-concourse",
+				Command:            "up",
 				SubcommandFlags:    []string{"--some-flag", "some-value"},
 				StateDir:           "some/state/dir",
 				EndpointOverride:   "some-endpoint-override",
 			}
-			configuration, err := configurationParser.Parse([]string{"unsupported-deploy-bosh-on-aws-for-concourse"})
+			configuration, err := configurationParser.Parse([]string{"up"})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(configuration.Command).To(Equal("unsupported-deploy-bosh-on-aws-for-concourse"))
+			Expect(configuration.Command).To(Equal("up"))
 			Expect(configuration.SubcommandFlags).To(Equal([]string{"--some-flag", "some-value"}))
 			Expect(configuration.Global).To(Equal(application.GlobalConfiguration{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "some/state/dir",
 			}))
 
-			Expect(commandLineParser.ParseCall.Receives.Arguments).To(Equal([]string{"unsupported-deploy-bosh-on-aws-for-concourse"}))
+			Expect(commandLineParser.ParseCall.Receives.Arguments).To(Equal([]string{"up"}))
 		})
 
 		Describe("state management", func() {
@@ -80,7 +80,7 @@ var _ = Describe("ConfigurationParser", func() {
 					AWSAccessKeyID:     "access-key-id-from-flag",
 					AWSSecretAccessKey: "secret-access-key-from-flag",
 					AWSRegion:          "region-from-flag",
-					Command:            "unsupported-deploy-bosh-on-aws-for-concourse",
+					Command:            "up",
 				}
 
 				configuration, err := configurationParser.Parse([]string{})

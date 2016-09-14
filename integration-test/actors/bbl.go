@@ -34,7 +34,7 @@ func (b BBL) Up() {
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
-		"unsupported-deploy-bosh-on-aws-for-concourse",
+		"up",
 	}
 	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
@@ -46,7 +46,7 @@ func (b BBL) UpWithInvalidAWSCredentials() {
 		"--aws-secret-access-key", "some-bad-secret-access-key",
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
-		"unsupported-deploy-bosh-on-aws-for-concourse",
+		"up",
 	}
 	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 10*time.Second).Should(gexec.Exit(1))
@@ -100,7 +100,7 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
-		"unsupported-create-lbs",
+		"create-lbs",
 		"--type", loadBalancerType,
 		"--cert", cert,
 		"--key", key,
@@ -132,7 +132,7 @@ func (b BBL) UpdateLB(certPath, keyPath string) {
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
-		"unsupported-update-lbs",
+		"update-lbs",
 		"--cert", certPath,
 		"--key", keyPath,
 	}
@@ -147,7 +147,7 @@ func (b BBL) DeleteLB() {
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
-		"unsupported-delete-lbs",
+		"delete-lbs",
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)

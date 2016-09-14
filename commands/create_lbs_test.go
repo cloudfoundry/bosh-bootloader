@@ -112,7 +112,7 @@ var _ = Describe("Create LBs", func() {
 
 			Expect(certificateManager.CreateCall.Receives.Chain).To(Equal("temp/some-chain.crt"))
 
-			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("unsupported-create-lbs"))
+			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
 			Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("temp/some-cert.crt"))
 			Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("temp/some-key.key"))
 			Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("temp/some-chain.crt"))
@@ -316,7 +316,7 @@ var _ = Describe("Create LBs", func() {
 				}, storage.State{})
 
 				Expect(err).To(MatchError("failed to validate"))
-				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("unsupported-create-lbs"))
+				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
 				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
 				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
 				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal(""))

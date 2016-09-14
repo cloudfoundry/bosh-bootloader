@@ -31,10 +31,10 @@ Commands:
   help                                                                                                        "prints usage"
   lbs                                                                                                         "prints any attached load balancers"
   ssh-key                                                                                                     "prints the ssh private key"
-  unsupported-create-lbs --type=<concourse,cf> --cert=<path> --key=<path> [--chain=<path>] [--skip-if-exists] "attaches a load balancer with the supplied certificate, key, and optional chain"
-  unsupported-update-lbs --cert=<path> --key=<path> [--chain=<path>] [--skip-if-missing]                      "updates a load balancer with the supplied certificate, key, and optional chain"
-  unsupported-delete-lbs [--skip-if-missing]                                                                  "deletes the attached load balancer"
-  unsupported-deploy-bosh-on-aws-for-concourse                                                                "deploys a BOSH Director on AWS"
+  create-lbs --type=<concourse,cf> --cert=<path> --key=<path> [--chain=<path>] [--skip-if-exists]             "attaches a load balancer with the supplied certificate, key, and optional chain"
+  update-lbs --cert=<path> --key=<path> [--chain=<path>] [--skip-if-missing]                                  "updates a load balancer with the supplied certificate, key, and optional chain"
+  delete-lbs [--skip-if-missing]                                                                              "deletes the attached load balancer"
+  up                                                                                                          "deploys a BOSH Director on AWS"
   version                                                                                                     "prints version"
 `
 

@@ -273,7 +273,7 @@ var _ = Describe("Update LBs", func() {
 			})
 
 			Expect(err).To(MatchError("failed to validate"))
-			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("unsupported-update-lbs"))
+			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("update-lbs"))
 			Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
 			Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
 			Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))

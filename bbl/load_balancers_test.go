@@ -444,7 +444,7 @@ func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int, skipIf
 		"--aws-secret-access-key", "some-secret-access-key",
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
-		"unsupported-delete-lbs",
+		"delete-lbs",
 	}
 
 	if skipIfMissing {
@@ -461,7 +461,7 @@ func updateLBs(endpointOverrideURL string, stateDir string, certName string, key
 		"--aws-secret-access-key", "some-secret-access-key",
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
-		"unsupported-update-lbs",
+		"update-lbs",
 		"--cert", certName,
 		"--key", keyName,
 		"--chain", chainName,
@@ -481,7 +481,7 @@ func createLBs(endpointOverrideURL string, stateDir string, certName string, key
 		"--aws-secret-access-key", "some-secret-access-key",
 		"--aws-region", "some-region",
 		"--state-dir", stateDir,
-		"unsupported-create-lbs",
+		"create-lbs",
 		"--type", lbType,
 		"--cert", certName,
 		"--key", keyName,

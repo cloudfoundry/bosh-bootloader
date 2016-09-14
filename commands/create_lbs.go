@@ -10,7 +10,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-const CREATE_LBS_COMMAND = "unsupported-create-lbs"
+const CREATE_LBS_COMMAND = "create-lbs"
 
 type CreateLBs struct {
 	logger                    logger

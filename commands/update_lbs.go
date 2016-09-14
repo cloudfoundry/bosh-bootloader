@@ -9,7 +9,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-const UPDATE_LBS_COMMAND = "unsupported-update-lbs"
+const UPDATE_LBS_COMMAND = "update-lbs"
 
 type updateLBConfig struct {
 	certPath      string

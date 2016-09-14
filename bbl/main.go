@@ -149,17 +149,17 @@ func main() {
 	})
 
 	app := application.New(application.CommandSet{
-		"help":    help,
-		"version": version,
-		"unsupported-deploy-bosh-on-aws-for-concourse": up,
+		"help":                      help,
+		"version":                   version,
+		"up":                        up,
 		"destroy":                   destroy,
 		"director-address":          directorAddress,
 		"director-username":         directorUsername,
 		"director-password":         directorPassword,
 		"ssh-key":                   sshKey,
 		commands.CREATE_LBS_COMMAND: createLBs,
-		"unsupported-update-lbs":    updateLBs,
-		"unsupported-delete-lbs":    deleteLBs,
+		"update-lbs":    updateLBs,
+		"delete-lbs":    deleteLBs,
 		"lbs":          lbs,
 		"bosh-ca-cert": boshCACert,
 		"env-id":       envID,

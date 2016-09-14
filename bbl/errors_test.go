@@ -10,7 +10,7 @@ import (
 
 var _ = Describe("bbl", func() {
 	It("prints an error when configuration parsing fails", func() {
-		session, err := gexec.Start(exec.Command(pathToBBL, "--state-dir", "invalid/state/dir", "unsupported-deploy-bosh-on-aws-for-concourse"), GinkgoWriter, GinkgoWriter)
+		session, err := gexec.Start(exec.Command(pathToBBL, "--state-dir", "invalid/state/dir", "up"), GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(session).Should(gexec.Exit(1))
@@ -18,7 +18,7 @@ var _ = Describe("bbl", func() {
 	})
 
 	It("prints an error when an unknown flag is provided", func() {
-		session, err := gexec.Start(exec.Command(pathToBBL, "--some-unknown-flag", "unsupported-deploy-bosh-on-aws-for-concourse"), GinkgoWriter, GinkgoWriter)
+		session, err := gexec.Start(exec.Command(pathToBBL, "--some-unknown-flag", "up"), GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(session).Should(gexec.Exit(1))
