@@ -27,9 +27,6 @@ var _ = Describe("CommandLineParser", func() {
 		It("returns a command line configuration with correct global flags based on arguments passed in", func() {
 			args := []string{
 				"--endpoint-override", "some-endpoint-override",
-				"--aws-access-key-id", "some-access-key-id",
-				"--aws-secret-access-key", "some-secret-access-key",
-				"--aws-region", "some-region",
 				"--state-dir", "some/state/dir",
 				"some-command",
 				"--subcommand-flag", "some-value",
@@ -39,9 +36,6 @@ var _ = Describe("CommandLineParser", func() {
 
 			Expect(commandLineConfiguration.EndpointOverride).To(Equal("some-endpoint-override"))
 			Expect(commandLineConfiguration.StateDir).To(Equal("some/state/dir"))
-			Expect(commandLineConfiguration.AWSAccessKeyID).To(Equal("some-access-key-id"))
-			Expect(commandLineConfiguration.AWSSecretAccessKey).To(Equal("some-secret-access-key"))
-			Expect(commandLineConfiguration.AWSRegion).To(Equal("some-region"))
 		})
 
 		It("returns a command line configuration with correct command with subcommand flags based on arguments passed in", func() {

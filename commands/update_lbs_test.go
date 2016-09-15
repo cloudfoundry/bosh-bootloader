@@ -399,6 +399,7 @@ var _ = Describe("Update LBs", func() {
 				}, incomingState)
 
 				Expect(err).To(MatchError(ContainSubstring("flag provided but not defined")))
+				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
 			})
 
 			It("returns an error when infrastructure update fails", func() {

@@ -74,12 +74,12 @@ func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, st
 }
 
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
-	err := d.awsCredentialValidator.Validate()
+	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
 	}
 
-	config, err := d.parseFlags(subcommandFlags)
+	err = d.awsCredentialValidator.Validate()
 	if err != nil {
 		return err
 	}

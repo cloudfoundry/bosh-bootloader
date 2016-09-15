@@ -14,13 +14,16 @@ import (
 
 var _ = Describe("KeyPairChecker", func() {
 	var (
-		ec2Client *fakes.EC2Client
-		checker   ec2.KeyPairChecker
+		ec2Client         *fakes.EC2Client
+		checker           ec2.KeyPairChecker
+		ec2ClientProvider *fakes.ClientProvider
 	)
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		checker = ec2.NewKeyPairChecker(ec2Client)
+		ec2ClientProvider = &fakes.ClientProvider{}
+		ec2ClientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
+		checker = ec2.NewKeyPairChecker(ec2ClientProvider)
 	})
 
 	Describe("HasKeyPair", func() {
@@ -40,6 +43,7 @@ var _ = Describe("KeyPairChecker", func() {
 				present, err := checker.HasKeyPair("some-key-name")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(present).To(BeTrue())
+				Expect(ec2ClientProvider.GetEC2ClientCall.CallCount).To(Equal(1))
 
 				Expect(ec2Client.DescribeKeyPairsCall.Receives.Input).To(Equal(&awsec2.DescribeKeyPairsInput{
 					KeyNames: []*string{

@@ -7,18 +7,18 @@ type guidGenerator interface {
 }
 
 type KeyPairCreator struct {
-	ec2Client Client
+	ec2ClientProvider ec2ClientProvider
 }
 
-func NewKeyPairCreator(ec2Client Client) KeyPairCreator {
+func NewKeyPairCreator(ec2ClientProvider ec2ClientProvider) KeyPairCreator {
 	return KeyPairCreator{
-		ec2Client: ec2Client,
+		ec2ClientProvider: ec2ClientProvider,
 	}
 }
 
 func (c KeyPairCreator) Create(keyPairName string) (KeyPair, error) {
 
-	output, err := c.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
+	output, err := c.ec2ClientProvider.GetEC2Client().CreateKeyPair(&ec2.CreateKeyPairInput{
 		KeyName: &keyPairName,
 	})
 	if err != nil {

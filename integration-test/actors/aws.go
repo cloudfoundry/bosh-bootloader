@@ -5,6 +5,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/clientmanager"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
@@ -30,18 +31,17 @@ func NewAWS(configuration integration.Config) AWS {
 		Region:          configuration.AWSRegion,
 	}
 
-	iamClient := iam.NewClient(awsConfig)
-	ec2Client := ec2.NewClient(awsConfig)
-	cloudFormationClient := cloudformation.NewClient(awsConfig)
+	clientProvider := &clientmanager.ClientProvider{}
+	clientProvider.SetConfig(awsConfig)
 
-	stackManager := cloudformation.NewStackManager(cloudFormationClient, application.NewLogger(os.Stdout))
-	certificateDescriber := iam.NewCertificateDescriber(iamClient)
+	stackManager := cloudformation.NewStackManager(clientProvider, application.NewLogger(os.Stdout))
+	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
 
 	return AWS{
 		stackManager:         stackManager,
 		certificateDescriber: certificateDescriber,
-		ec2Client:            ec2Client,
-		cloudFormationClient: cloudFormationClient,
+		ec2Client:            clientProvider.GetEC2Client(),
+		cloudFormationClient: clientProvider.GetCloudFormationClient(),
 	}
 }
 

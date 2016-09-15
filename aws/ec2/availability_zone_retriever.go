@@ -8,17 +8,17 @@ import (
 )
 
 type AvailabilityZoneRetriever struct {
-	client Client
+	ec2ClientProvider ec2ClientProvider
 }
 
-func NewAvailabilityZoneRetriever(client Client) AvailabilityZoneRetriever {
+func NewAvailabilityZoneRetriever(ec2ClientProvider ec2ClientProvider) AvailabilityZoneRetriever {
 	return AvailabilityZoneRetriever{
-		client: client,
+		ec2ClientProvider: ec2ClientProvider,
 	}
 }
 
 func (r AvailabilityZoneRetriever) Retrieve(region string) ([]string, error) {
-	output, err := r.client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
+	output, err := r.ec2ClientProvider.GetEC2Client().DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
 			Name:   goaws.String("region-name"),
 			Values: []*string{goaws.String(region)},

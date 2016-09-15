@@ -357,6 +357,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+					Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
 				})
 			})
 

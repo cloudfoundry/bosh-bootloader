@@ -16,11 +16,14 @@ var _ = Describe("AvailabilityZoneRetriever", func() {
 	var (
 		availabilityZoneRetriever ec2.AvailabilityZoneRetriever
 		ec2Client                 *fakes.EC2Client
+		ec2ClientProvider         *fakes.ClientProvider
 	)
 
 	BeforeEach(func() {
 		ec2Client = &fakes.EC2Client{}
-		availabilityZoneRetriever = ec2.NewAvailabilityZoneRetriever(ec2Client)
+		ec2ClientProvider = &fakes.ClientProvider{}
+		ec2ClientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
+		availabilityZoneRetriever = ec2.NewAvailabilityZoneRetriever(ec2ClientProvider)
 	})
 
 	It("fetches availability zones for a given region", func() {

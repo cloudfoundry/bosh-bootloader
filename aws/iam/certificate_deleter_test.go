@@ -14,14 +14,17 @@ import (
 
 var _ = Describe("CertificateDeleter", func() {
 	var (
-		iamClient *fakes.IAMClient
-		deleter   iam.CertificateDeleter
+		iamClient         *fakes.IAMClient
+		iamClientProvider *fakes.ClientProvider
+		deleter           iam.CertificateDeleter
 	)
 
 	BeforeEach(func() {
 		iamClient = &fakes.IAMClient{}
+		iamClientProvider = &fakes.ClientProvider{}
+		iamClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
 
-		deleter = iam.NewCertificateDeleter(iamClient)
+		deleter = iam.NewCertificateDeleter(iamClientProvider)
 	})
 
 	Describe("Delete", func() {

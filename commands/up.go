@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
@@ -53,6 +55,10 @@ type envIDGenerator interface {
 	Generate() (string, error)
 }
 
+type configProvider interface {
+	SetConfig(config aws.Config)
+}
+
 type Up struct {
 	awsCredentialValidator    awsCredentialValidator
 	infrastructureManager     infrastructureManager
@@ -66,6 +72,13 @@ type Up struct {
 	boshClientProvider        boshClientProvider
 	envIDGenerator            envIDGenerator
 	stateStore                stateStore
+	configProvider            configProvider
+}
+
+type upConfig struct {
+	awsAccessKeyID     string
+	awsSecretAccessKey string
+	awsRegion          string
 }
 
 func NewUp(
@@ -73,7 +86,8 @@ func NewUp(
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, envIDGenerator envIDGenerator, stateStore stateStore) Up {
+	boshClientProvider boshClientProvider, envIDGenerator envIDGenerator, stateStore stateStore,
+	configProvider configProvider) Up {
 
 	return Up{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -88,13 +102,34 @@ func NewUp(
 		boshClientProvider:        boshClientProvider,
 		envIDGenerator:            envIDGenerator,
 		stateStore:                stateStore,
+		configProvider:            configProvider,
 	}
 }
 
 func (u Up) Execute(subcommandFlags []string, state storage.State) error {
-	err := u.awsCredentialValidator.Validate()
+
+	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
+	}
+
+	if config.awsAccessKeyID != "" || config.awsSecretAccessKey != "" || config.awsRegion != "" {
+		state.AWS.AccessKeyID = config.awsAccessKeyID
+		state.AWS.SecretAccessKey = config.awsSecretAccessKey
+		state.AWS.Region = config.awsRegion
+		if err := u.stateStore.Set(state); err != nil {
+			return err
+		}
+		u.configProvider.SetConfig(aws.Config{
+			AccessKeyID:     config.awsAccessKeyID,
+			SecretAccessKey: config.awsSecretAccessKey,
+			Region:          config.awsRegion,
+		})
+	} else {
+		err := u.awsCredentialValidator.Validate()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = u.checkForFastFails(state)
@@ -235,4 +270,20 @@ func (u Up) checkForFastFails(state storage.State) error {
 	}
 
 	return nil
+}
+
+func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
+	upFlags := flags.New("up")
+
+	config := upConfig{}
+	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", "")
+	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", "")
+	upFlags.String(&config.awsRegion, "aws-region", "")
+
+	err := upFlags.Parse(subcommandFlags)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
 }

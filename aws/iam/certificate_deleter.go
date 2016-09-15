@@ -6,21 +6,21 @@ import (
 )
 
 type CertificateDeleter struct {
-	iamClient Client
+	iamClientProvider iamClientProvider
 }
 
 type logger interface {
 	Step(message string)
 }
 
-func NewCertificateDeleter(iamClient Client) CertificateDeleter {
+func NewCertificateDeleter(iamClientProvider iamClientProvider) CertificateDeleter {
 	return CertificateDeleter{
-		iamClient: iamClient,
+		iamClientProvider: iamClientProvider,
 	}
 }
 
 func (c CertificateDeleter) Delete(certificateName string) error {
-	_, err := c.iamClient.DeleteServerCertificate(&awsiam.DeleteServerCertificateInput{
+	_, err := c.iamClientProvider.GetIAMClient().DeleteServerCertificate(&awsiam.DeleteServerCertificateInput{
 		ServerCertificateName: aws.String(certificateName),
 	})
 	return err

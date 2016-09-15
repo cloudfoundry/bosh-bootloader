@@ -8,18 +8,22 @@ import (
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type VPCStatusChecker struct {
-	ec2Client Client
+type ec2ClientProvider interface {
+	GetEC2Client() Client
 }
 
-func NewVPCStatusChecker(ec2Client Client) VPCStatusChecker {
+type VPCStatusChecker struct {
+	ec2ClientProvider ec2ClientProvider
+}
+
+func NewVPCStatusChecker(ec2ClientProvider ec2ClientProvider) VPCStatusChecker {
 	return VPCStatusChecker{
-		ec2Client: ec2Client,
+		ec2ClientProvider: ec2ClientProvider,
 	}
 }
 
 func (v VPCStatusChecker) ValidateSafeToDelete(vpcID string) error {
-	output, err := v.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
+	output, err := v.ec2ClientProvider.GetEC2Client().DescribeInstances(&awsec2.DescribeInstancesInput{
 		Filters: []*awsec2.Filter{{
 			Name:   aws.String("vpc-id"),
 			Values: []*string{aws.String(vpcID)},

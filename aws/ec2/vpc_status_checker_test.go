@@ -17,11 +17,14 @@ var _ = Describe("VPCStatusChecker", func() {
 	var (
 		vpcStatusChecker ec2.VPCStatusChecker
 		ec2Client        *fakes.EC2Client
+		clientProvider   *fakes.ClientProvider
 	)
 
 	BeforeEach(func() {
+		clientProvider = &fakes.ClientProvider{}
 		ec2Client = &fakes.EC2Client{}
-		vpcStatusChecker = ec2.NewVPCStatusChecker(ec2Client)
+		clientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
+		vpcStatusChecker = ec2.NewVPCStatusChecker(clientProvider)
 	})
 
 	Describe("ValidateSafeToDelete", func() {

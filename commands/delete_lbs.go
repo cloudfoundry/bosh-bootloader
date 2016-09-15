@@ -45,12 +45,12 @@ func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZon
 }
 
 func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) error {
-	err := c.awsCredentialValidator.Validate()
+	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
 	}
 
-	config, err := c.parseFlags(subcommandFlags)
+	err = c.awsCredentialValidator.Validate()
 	if err != nil {
 		return err
 	}

@@ -30,11 +30,11 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 
 func (b BBL) Up() {
 	args := []string{
+		"--state-dir", b.stateDirectory,
+		"up",
 		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
-		"--state-dir", b.stateDirectory,
-		"up",
 	}
 	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
@@ -42,11 +42,11 @@ func (b BBL) Up() {
 
 func (b BBL) UpWithInvalidAWSCredentials() {
 	args := []string{
+		"--state-dir", b.stateDirectory,
+		"up",
 		"--aws-access-key-id", "some-bad-access-key-id",
 		"--aws-secret-access-key", "some-bad-secret-access-key",
 		"--aws-region", b.configuration.AWSRegion,
-		"--state-dir", b.stateDirectory,
-		"up",
 	}
 	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 10*time.Second).Should(gexec.Exit(1))
@@ -96,9 +96,6 @@ func (b BBL) EnvID() string {
 
 func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) {
 	args := []string{
-		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
-		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
-		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"create-lbs",
 		"--type", loadBalancerType,
@@ -113,9 +110,6 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 
 func (b BBL) LBs() *gexec.Session {
 	args := []string{
-		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
-		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
-		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"lbs",
 	}
@@ -128,9 +122,6 @@ func (b BBL) LBs() *gexec.Session {
 
 func (b BBL) UpdateLB(certPath, keyPath string) {
 	args := []string{
-		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
-		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
-		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"update-lbs",
 		"--cert", certPath,
@@ -143,9 +134,6 @@ func (b BBL) UpdateLB(certPath, keyPath string) {
 
 func (b BBL) DeleteLB() {
 	args := []string{
-		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
-		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
-		"--aws-region", b.configuration.AWSRegion,
 		"--state-dir", b.stateDirectory,
 		"delete-lbs",
 	}

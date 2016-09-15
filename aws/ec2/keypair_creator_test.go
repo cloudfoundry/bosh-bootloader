@@ -16,11 +16,14 @@ var _ = Describe("KeyPairCreator", func() {
 	var (
 		keyPairCreator ec2.KeyPairCreator
 		ec2Client      *fakes.EC2Client
+		clientProvider *fakes.ClientProvider
 	)
 
 	BeforeEach(func() {
+		clientProvider = &fakes.ClientProvider{}
 		ec2Client = &fakes.EC2Client{}
-		keyPairCreator = ec2.NewKeyPairCreator(ec2Client)
+		clientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
+		keyPairCreator = ec2.NewKeyPairCreator(clientProvider)
 	})
 
 	Describe("Create", func() {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/clientmanager"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
@@ -52,24 +53,23 @@ func main() {
 		EndpointOverride: configuration.Global.EndpointOverride,
 	}
 
-	cloudFormationClient := cloudformation.NewClient(awsConfiguration)
-	ec2Client := ec2.NewClient(awsConfiguration)
-	iamClient := iam.NewClient(awsConfiguration)
+	clientProvider := &clientmanager.ClientProvider{}
+	clientProvider.SetConfig(awsConfiguration)
 
 	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
-	vpcStatusChecker := ec2.NewVPCStatusChecker(ec2Client)
-	keyPairCreator := ec2.NewKeyPairCreator(ec2Client)
-	keyPairDeleter := ec2.NewKeyPairDeleter(ec2Client, logger)
-	keyPairChecker := ec2.NewKeyPairChecker(ec2Client)
+	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
+	keyPairCreator := ec2.NewKeyPairCreator(clientProvider)
+	keyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
+	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
 	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
-	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(ec2Client)
+	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
-	stackManager := cloudformation.NewStackManager(cloudFormationClient, logger)
+	stackManager := cloudformation.NewStackManager(clientProvider, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	certificateUploader := iam.NewCertificateUploader(iamClient)
-	certificateDescriber := iam.NewCertificateDescriber(iamClient)
-	certificateDeleter := iam.NewCertificateDeleter(iamClient)
+	certificateUploader := iam.NewCertificateUploader(clientProvider)
+	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
+	certificateDeleter := iam.NewCertificateDeleter(clientProvider)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	certificateValidator := iam.NewCertificateValidator()
 
@@ -111,6 +111,7 @@ func main() {
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
+		clientProvider,
 	)
 	destroy := commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
@@ -158,11 +159,11 @@ func main() {
 		"director-password":         directorPassword,
 		"ssh-key":                   sshKey,
 		commands.CREATE_LBS_COMMAND: createLBs,
-		"update-lbs":    updateLBs,
-		"delete-lbs":    deleteLBs,
-		"lbs":          lbs,
-		"bosh-ca-cert": boshCACert,
-		"env-id":       envID,
+		"update-lbs":                updateLBs,
+		"delete-lbs":                deleteLBs,
+		"lbs":                       lbs,
+		"bosh-ca-cert":              boshCACert,
+		"env-id":                    envID,
 	}, configuration, stateStore, usage.Print)
 
 	err = app.Run()

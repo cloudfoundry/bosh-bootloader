@@ -76,12 +76,12 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 }
 
 func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) error {
-	err := c.awsCredentialValidator.Validate()
+	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
 	}
 
-	config, err := c.parseFlags(subcommandFlags)
+	err = c.awsCredentialValidator.Validate()
 	if err != nil {
 		return err
 	}

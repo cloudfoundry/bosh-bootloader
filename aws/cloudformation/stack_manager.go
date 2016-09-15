@@ -19,15 +19,19 @@ type logger interface {
 	Dot()
 }
 
-type StackManager struct {
-	cloudFormationClient Client
-	logger               logger
+type cloudFormationClientProvider interface {
+	GetCloudFormationClient() Client
 }
 
-func NewStackManager(cloudFormationClient Client, logger logger) StackManager {
+type StackManager struct {
+	cloudFormationClientProvider cloudFormationClientProvider
+	logger                       logger
+}
+
+func NewStackManager(cloudFormationClientProvider cloudFormationClientProvider, logger logger) StackManager {
 	return StackManager{
-		cloudFormationClient: cloudFormationClient,
-		logger:               logger,
+		cloudFormationClientProvider: cloudFormationClientProvider,
+		logger: logger,
 	}
 }
 
@@ -45,12 +49,16 @@ func (s StackManager) CreateOrUpdate(name string, template templates.Template, t
 	}
 }
 
+func (s StackManager) cloudFormationClient() Client {
+	return s.cloudFormationClientProvider.GetCloudFormationClient()
+}
+
 func (s StackManager) Describe(name string) (Stack, error) {
 	if name == "" {
 		return Stack{}, StackNotFound
 	}
 
-	output, err := s.cloudFormationClient.DescribeStacks(&cloudformation.DescribeStacksInput{
+	output, err := s.cloudFormationClient().DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
 	if err != nil {
@@ -139,7 +147,7 @@ and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bo
 func (s StackManager) Delete(name string) error {
 	s.logger.Step("deleting cloudformation stack")
 
-	_, err := s.cloudFormationClient.DeleteStack(&cloudformation.DeleteStackInput{
+	_, err := s.cloudFormationClient().DeleteStack(&cloudformation.DeleteStackInput{
 		StackName: &name,
 	})
 	if err != nil {
@@ -166,7 +174,7 @@ func (s StackManager) create(name string, template templates.Template, tags Tags
 		Tags:         awsTags,
 	}
 
-	_, err = s.cloudFormationClient.CreateStack(params)
+	_, err = s.cloudFormationClient().CreateStack(params)
 	if err != nil {
 		return err
 	}
@@ -191,7 +199,7 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 		Tags:         awsTags,
 	}
 
-	_, err = s.cloudFormationClient.UpdateStack(params)
+	_, err = s.cloudFormationClient().UpdateStack(params)
 	if err != nil {
 		switch err.(type) {
 		case awserr.RequestFailure:
@@ -217,7 +225,7 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 }
 
 func (s StackManager) GetPhysicalIDForResource(stackName string, logicalResourceID string) (string, error) {
-	describeStackResourceOutput, err := s.cloudFormationClient.DescribeStackResource(&cloudformation.DescribeStackResourceInput{
+	describeStackResourceOutput, err := s.cloudFormationClient().DescribeStackResource(&cloudformation.DescribeStackResourceInput{
 		StackName:         aws.String(stackName),
 		LogicalResourceId: aws.String(logicalResourceID),
 	})

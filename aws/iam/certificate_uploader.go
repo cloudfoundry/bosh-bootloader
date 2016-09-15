@@ -10,12 +10,12 @@ import (
 )
 
 type CertificateUploader struct {
-	iamClient Client
+	iamClientProvider iamClientProvider
 }
 
-func NewCertificateUploader(iamClient Client) CertificateUploader {
+func NewCertificateUploader(iamClientProvider iamClientProvider) CertificateUploader {
 	return CertificateUploader{
-		iamClient: iamClient,
+		iamClientProvider: iamClientProvider,
 	}
 }
 
@@ -43,7 +43,7 @@ func (c CertificateUploader) Upload(certificatePath, privateKeyPath, chainPath, 
 		}
 	}
 
-	_, err = c.iamClient.UploadServerCertificate(&awsiam.UploadServerCertificateInput{
+	_, err = c.iamClientProvider.GetIAMClient().UploadServerCertificate(&awsiam.UploadServerCertificateInput{
 		CertificateBody:       aws.String(string(certificate)),
 		PrivateKey:            aws.String(string(privateKey)),
 		CertificateChain:      chain,

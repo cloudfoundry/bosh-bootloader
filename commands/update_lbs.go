@@ -48,12 +48,12 @@ func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateMana
 }
 
 func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error {
-	err := c.awsCredentialValidator.Validate()
+	config, err := c.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
 	}
 
-	config, err := c.parseFlags(subcommandFlags)
+	err = c.awsCredentialValidator.Validate()
 	if err != nil {
 		return err
 	}

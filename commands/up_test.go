@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
@@ -36,6 +37,7 @@ var _ = Describe("Up", func() {
 			envIDGenerator            *fakes.EnvIDGenerator
 			boshInitCredentials       map[string]string
 			stateStore                *fakes.StateStore
+			clientProvider            *fakes.ClientProvider
 		)
 
 		BeforeEach(func() {
@@ -96,11 +98,13 @@ var _ = Describe("Up", func() {
 			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
 			stateStore = &fakes.StateStore{}
+			clientProvider = &fakes.ClientProvider{}
 
 			command = commands.NewUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 				cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
+				clientProvider,
 			)
 
 			boshInitCredentials = map[string]string{
@@ -127,6 +131,34 @@ var _ = Describe("Up", func() {
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
+		It("honors the cli flags", func() {
+			err := command.Execute([]string{
+				"--aws-access-key-id", "new-aws-access-key-id",
+				"--aws-secret-access-key", "new-aws-secret-access-key",
+				"--aws-region", "new-aws-region",
+			}, storage.State{
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+				KeyPair: storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
+			Expect(clientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
+				Region:          "new-aws-region",
+				SecretAccessKey: "new-aws-secret-access-key",
+				AccessKeyID:     "new-aws-access-key-id",
+			}))
+			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+		})
+
 		It("syncs the keypair", func() {
 			err := command.Execute([]string{}, storage.State{
 				AWS: storage.AWS{
@@ -141,6 +173,8 @@ var _ = Describe("Up", func() {
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(0))
+			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(1))
 
 			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
@@ -474,6 +508,91 @@ var _ = Describe("Up", func() {
 		})
 
 		Describe("state manipulation", func() {
+			Context("aws credentials", func() {
+				Context("when the credentials do not exist", func() {
+					It("saves the credentials", func() {
+						err := command.Execute([]string{
+							"--aws-access-key-id", "some-aws-access-key-id",
+							"--aws-secret-access-key", "some-aws-secret-access-key",
+							"--aws-region", "some-aws-region",
+						}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(storage.AWS{
+							AccessKeyID:     "some-aws-access-key-id",
+							SecretAccessKey: "some-aws-secret-access-key",
+							Region:          "some-aws-region",
+						}))
+					})
+
+					Context("failure cases", func() {
+						It("returns an error when saving the state fails", func() {
+							stateStore.SetCall.Returns = []fakes.SetCallReturn{
+								{
+									Error: errors.New("saving the state failed"),
+								},
+							}
+							err := command.Execute([]string{
+								"--aws-access-key-id", "some-aws-access-key-id",
+								"--aws-secret-access-key", "some-aws-secret-access-key",
+								"--aws-region", "some-aws-region",
+							}, storage.State{})
+							Expect(err).To(MatchError("saving the state failed"))
+						})
+
+						It("returns an error when parsing the flags fail", func() {
+							err := command.Execute([]string{
+								"--aws-access-key-id", "some-aws-access-key-id",
+								"--aws-secret-access-key", "some-aws-secret-access-key",
+								"--unknown-flag", "some-value",
+								"--aws-region", "some-aws-region",
+							}, storage.State{})
+							Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
+
+						})
+					})
+				})
+				Context("when the credentials do exist", func() {
+					It("overrides the credentials when they're passed in", func() {
+						err := command.Execute([]string{
+							"--aws-access-key-id", "new-aws-access-key-id",
+							"--aws-secret-access-key", "new-aws-secret-access-key",
+							"--aws-region", "new-aws-region",
+						}, storage.State{
+							AWS: storage.AWS{
+								AccessKeyID:     "old-aws-access-key-id",
+								SecretAccessKey: "old-aws-secret-access-key",
+								Region:          "old-aws-region",
+							},
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(storage.AWS{
+							AccessKeyID:     "new-aws-access-key-id",
+							SecretAccessKey: "new-aws-secret-access-key",
+							Region:          "new-aws-region",
+						}))
+					})
+
+					It("does not override the credentials when they're not passed in", func() {
+						err := command.Execute([]string{}, storage.State{
+							AWS: storage.AWS{
+								AccessKeyID:     "aws-access-key-id",
+								SecretAccessKey: "aws-secret-access-key",
+								Region:          "aws-region",
+							},
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(storage.AWS{
+							AccessKeyID:     "aws-access-key-id",
+							SecretAccessKey: "aws-secret-access-key",
+							Region:          "aws-region",
+						}))
+					})
+				})
+			})
+
 			Context("aws keypair", func() {
 				Context("when the keypair exists", func() {
 					It("saves the given state unmodified", func() {

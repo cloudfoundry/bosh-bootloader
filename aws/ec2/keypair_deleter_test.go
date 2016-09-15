@@ -14,15 +14,18 @@ import (
 
 var _ = Describe("KeyPairDeleter", func() {
 	var (
-		deleter ec2.KeyPairDeleter
-		client  *fakes.EC2Client
-		logger  *fakes.Logger
+		deleter           ec2.KeyPairDeleter
+		client            *fakes.EC2Client
+		ec2ClientProvider *fakes.ClientProvider
+		logger            *fakes.Logger
 	)
 
 	BeforeEach(func() {
+		ec2ClientProvider = &fakes.ClientProvider{}
 		client = &fakes.EC2Client{}
 		logger = &fakes.Logger{}
-		deleter = ec2.NewKeyPairDeleter(client, logger)
+		ec2ClientProvider.GetEC2ClientCall.Returns.EC2Client = client
+		deleter = ec2.NewKeyPairDeleter(ec2ClientProvider, logger)
 	})
 
 	It("deletes the ec2 keypair", func() {

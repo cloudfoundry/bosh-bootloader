@@ -217,6 +217,7 @@ var _ = Describe("Delete LBs", func() {
 			It("returns an error when an unknown flag is provided", func() {
 				err := command.Execute([]string{"--unknown-flag"}, incomingState)
 				Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
+				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
 			})
 
 			It("returns an error when aws credential validator fails to validate", func() {
