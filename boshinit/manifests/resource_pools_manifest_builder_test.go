@@ -29,7 +29,7 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 					CloudProperties: manifests.ResourcePoolCloudProperties{
 						InstanceType: "m3.xlarge",
 						EphemeralDisk: manifests.EphemeralDisk{
-							Size: 80 * 1024,
+							Size: 25000,
 							Type: "gp2",
 						},
 						AvailabilityZone: "some-az",

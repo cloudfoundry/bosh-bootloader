@@ -17,12 +17,12 @@ resource_pools:
     sha1: f04361747243dadc6e13ce74f5044b46931fb00a
   cloud_properties:
     instance_type: m3.xlarge
-    ephemeral_disk: {size: 81_920, type: gp2}
+    ephemeral_disk: {size: 25000, type: gp2}
     availability_zone: some-az
 
 disk_pools:
 - name: disks
-  disk_size: 20_000
+  disk_size: 81_920
   cloud_properties:
     type: gp2
     encrypted: true

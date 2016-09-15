@@ -21,7 +21,7 @@ var _ = Describe("DiskPoolsManifestBuilder", func() {
 			Expect(diskPools).To(ConsistOf([]manifests.DiskPool{
 				{
 					Name:     "disks",
-					DiskSize: 20000,
+					DiskSize: 80 * 1024,
 					CloudProperties: manifests.DiskPoolsCloudProperties{
 						Type:      "gp2",
 						Encrypted: true,
