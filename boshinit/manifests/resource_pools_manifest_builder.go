@@ -18,7 +18,7 @@ func (r ResourcePoolsManifestBuilder) Build(manifestProperties ManifestPropertie
 			CloudProperties: ResourcePoolCloudProperties{
 				InstanceType: "m3.xlarge",
 				EphemeralDisk: EphemeralDisk{
-					Size: 25000,
+					Size: 80 * 1024,
 					Type: "gp2",
 				},
 				AvailabilityZone: manifestProperties.AvailabilityZone,
