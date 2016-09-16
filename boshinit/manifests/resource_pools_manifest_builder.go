@@ -12,8 +12,8 @@ func (r ResourcePoolsManifestBuilder) Build(manifestProperties ManifestPropertie
 			Name:    "vms",
 			Network: "private",
 			Stemcell: Stemcell{
-				URL:  "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262",
-				SHA1: "f04361747243dadc6e13ce74f5044b46931fb00a",
+				URL:  "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.12",
+				SHA1: "90e9825b814da801e1aff7b02508fdada8e155cb",
 			},
 			CloudProperties: ResourcePoolCloudProperties{
 				InstanceType: "m3.xlarge",

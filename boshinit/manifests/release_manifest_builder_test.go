@@ -21,13 +21,13 @@ var _ = Describe("ReleaseManifestBuilder", func() {
 			Expect(releases).To(ConsistOf([]manifests.Release{
 				{
 					Name: "bosh",
-					URL:  "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257.1-on-ubuntu-trusty-stemcell-3262.tgz",
-					SHA1: "83393ce5d40590cdb0978292e42027571cb20e17",
+					URL:  "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257.9-on-ubuntu-trusty-stemcell-3262.12.tgz",
+					SHA1: "68125b0e36f599c79f10f8809d328a6dea7e2cd3",
 				},
 				{
 					Name: "bosh-aws-cpi",
-					URL:  "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=53",
-					SHA1: "3a5988bd2b6e951995fe030c75b07c5b922e2d59",
+					URL:  "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=60",
+					SHA1: "8e40a9ff892204007889037f094a1b0d23777058",
 				},
 			}))
 		})

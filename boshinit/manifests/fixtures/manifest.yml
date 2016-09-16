@@ -3,18 +3,18 @@ name: bosh
 
 releases:
 - name: bosh
-  url: https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257.1-on-ubuntu-trusty-stemcell-3262.tgz
-  sha1: 83393ce5d40590cdb0978292e42027571cb20e17
+  url: https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-257.9-on-ubuntu-trusty-stemcell-3262.12.tgz
+  sha1: 68125b0e36f599c79f10f8809d328a6dea7e2cd3
 - name: bosh-aws-cpi
-  url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=53
-  sha1: 3a5988bd2b6e951995fe030c75b07c5b922e2d59
+  url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=60
+  sha1: 8e40a9ff892204007889037f094a1b0d23777058
 
 resource_pools:
 - name: vms
   network: private
   stemcell:
-    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262
-    sha1: f04361747243dadc6e13ce74f5044b46931fb00a
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.12
+    sha1: 90e9825b814da801e1aff7b02508fdada8e155cb
   cloud_properties:
     instance_type: m3.xlarge
     ephemeral_disk: {size: 25000, type: gp2}
