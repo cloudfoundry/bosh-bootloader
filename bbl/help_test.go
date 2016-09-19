@@ -57,63 +57,44 @@ var _ = Describe("bbl", func() {
 		})
 	})
 
-	DescribeTable("help command", func(command, expectedDescription string) {
-		args := []string{
-			"help",
-			command,
-		}
+	Context("command specific help", func() {
+		DescribeTable("when passing --help flag or help command", func(command, expectedDescription string, args []string) {
+			cmd := exec.Command(pathToBBL, args...)
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Eventually(session.Out.Contents()).Should(ContainSubstring(fmt.Sprintf("bbl [GLOBAL OPTIONS] %s [OPTIONS]", command)))
+			Eventually(session.Out.Contents()).Should(ContainSubstring(expectedDescription))
+		},
+			Entry("Up", "up", "--aws-access-key-id", []string{"help", "up"}),
+			Entry("Up", "up", "--aws-access-key-id", []string{"up", "--help"}),
+			Entry("Destroy", "destroy", "--no-confirm", []string{"help", "destroy"}),
+			Entry("Destroy", "destroy", "--no-confirm", []string{"destroy", "--help"}),
+			Entry("Create LBs", "create-lbs", "Attaches a load balancer", []string{"help", "create-lbs"}),
+			Entry("Create LBs", "create-lbs", "Attaches a load balancer", []string{"create-lbs", "--help"}),
+			Entry("Update LBs", "update-lbs", "Updates a load balancer", []string{"help", "update-lbs"}),
+			Entry("Update LBs", "update-lbs", "Updates a load balancer", []string{"update-lbs", "--help"}),
+			Entry("Delete LBs", "delete-lbs", "Deletes the load balancers", []string{"help", "delete-lbs"}),
+			Entry("Delete LBs", "delete-lbs", "Deletes the load balancers", []string{"delete-lbs", "--help"}),
+			Entry("Version", "version", "Prints version", []string{"help", "version"}),
+			Entry("Version", "version", "Prints version", []string{"version", "--help"}),
+			Entry("Director Address", "director-address", "Prints the BOSH director address", []string{"help", "director-address"}),
+			Entry("Director Address", "director-address", "Prints the BOSH director address", []string{"director-address", "--help"}),
+			Entry("Director Username", "director-username", "Prints the BOSH director username", []string{"help", "director-username"}),
+			Entry("Director Username", "director-username", "Prints the BOSH director username", []string{"director-username", "--help"}),
+			Entry("Director Password", "director-password", "Prints the BOSH director password", []string{"help", "director-password"}),
+			Entry("Director Password", "director-password", "Prints the BOSH director password", []string{"director-password", "--help"}),
+			Entry("BOSH CA Cert", "bosh-ca-cert", "Prints the BOSH director CA certificate", []string{"help", "bosh-ca-cert"}),
+			Entry("BOSH CA Cert", "bosh-ca-cert", "Prints the BOSH director CA certificate", []string{"bosh-ca-cert", "--help"}),
+			Entry("ENV ID", "env-id", "environment ID", []string{"help", "env-id"}),
+			Entry("ENV ID", "env-id", "environment ID", []string{"env-id", "--help"}),
+			Entry("Help", "help", "Prints helpful message for the given command", []string{"help", "help"}),
+			Entry("Help", "help", "Prints helpful message for the given command", []string{"help", "--help"}),
+			Entry("LBs", "lbs", "Prints any attached load balancers", []string{"help", "lbs"}),
+			Entry("LBs", "lbs", "Prints any attached load balancers", []string{"lbs", "--help"}),
+			Entry("SSH Key", "ssh-key", "Prints the SSH private key", []string{"help", "ssh-key"}),
+			Entry("SSH Key", "ssh-key", "Prints the SSH private key", []string{"ssh-key", "--help"}),
+		)
+	})
 
-		cmd := exec.Command(pathToBBL, args...)
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Eventually(session.Out.Contents()).Should(ContainSubstring(fmt.Sprintf("bbl [GLOBAL OPTIONS] %s [OPTIONS]", command)))
-		Eventually(session.Out.Contents()).Should(ContainSubstring(expectedDescription))
-	},
-		Entry("Up", "up", "--aws-access-key-id"),
-		Entry("Destroy", "destroy", "--no-confirm"),
-		Entry("Create LBs", "create-lbs", "Attaches a load balancer"),
-		Entry("Update LBs", "update-lbs", "Updates a load balancer"),
-		Entry("Delete LBs", "delete-lbs", "Deletes the load balancers"),
-		Entry("Version", "version", "Prints version"),
-		Entry("Director Address", "director-address", "Prints the BOSH director address"),
-		Entry("Director Username", "director-username", "Prints the BOSH director username"),
-		Entry("Director Username", "director-username", "Prints the BOSH director username"),
-		Entry("Director Password", "director-password", "Prints the BOSH director password"),
-		Entry("BOSH CA Cert", "bosh-ca-cert", "Prints the BOSH director CA certificate"),
-		Entry("ENV ID", "env-id", "environment ID"),
-		Entry("Help", "help", "Prints helpful message for the given command"),
-		Entry("LBs", "lbs", "Lists attached load balancers"),
-		Entry("SSH Key", "ssh-key", "Prints the SSH private key"),
-	)
-
-	DescribeTable("command --help", func(command, expectedDescription string) {
-		args := []string{
-			command,
-			"--help",
-		}
-
-		cmd := exec.Command(pathToBBL, args...)
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Eventually(session.Out.Contents()).Should(ContainSubstring(fmt.Sprintf("bbl [GLOBAL OPTIONS] %s [OPTIONS]", command)))
-		Eventually(session.Out.Contents()).Should(ContainSubstring(expectedDescription))
-	},
-		Entry("Up", "up", "--aws-access-key-id"),
-		Entry("Destroy", "destroy", "--no-confirm"),
-		Entry("Create LBs", "create-lbs", "Attaches a load balancer"),
-		Entry("Update LBs", "update-lbs", "Updates a load balancer"),
-		Entry("Delete LBs", "delete-lbs", "Deletes the load balancers"),
-		Entry("Version", "version", "Prints version"),
-		Entry("Director Address", "director-address", "Prints the BOSH director address"),
-		Entry("Director Username", "director-username", "Prints the BOSH director username"),
-		Entry("Director Username", "director-username", "Prints the BOSH director username"),
-		Entry("Director Password", "director-password", "Prints the BOSH director password"),
-		Entry("BOSH CA Cert", "bosh-ca-cert", "Prints the BOSH director CA certificate"),
-		Entry("ENV ID", "env-id", "environment ID"),
-		Entry("Help", "help", "Prints helpful message for the given command"),
-		Entry("LBs", "lbs", "Lists attached load balancers"),
-		Entry("SSH Key", "ssh-key", "Prints the SSH private key"),
-	)
 })
