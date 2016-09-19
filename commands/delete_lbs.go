@@ -6,6 +6,10 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const (
+	DeleteLBsCommand = "delete-lbs"
+)
+
 type DeleteLBs struct {
 	awsCredentialValidator    awsCredentialValidator
 	availabilityZoneRetriever availabilityZoneRetriever

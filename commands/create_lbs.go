@@ -10,7 +10,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-const CREATE_LBS_COMMAND = "create-lbs"
+const CreateLBsCommand = "create-lbs"
 
 type CreateLBs struct {
 	logger                    logger
@@ -86,7 +86,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	err = c.certificateValidator.Validate(CREATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
+	err = c.certificateValidator.Validate(CreateLBsCommand, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return err
 	}

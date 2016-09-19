@@ -9,7 +9,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-const UPDATE_LBS_COMMAND = "update-lbs"
+const UpdateLBsCommand = "update-lbs"
 
 type updateLBConfig struct {
 	certPath      string
@@ -58,7 +58,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	err = c.certificateValidator.Validate(UPDATE_LBS_COMMAND, config.certPath, config.keyPath, config.chainPath)
+	err = c.certificateValidator.Validate(UpdateLBsCommand, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return err
 	}

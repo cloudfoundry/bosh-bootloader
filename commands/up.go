@@ -13,6 +13,10 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const (
+	UpCommand = "up"
+)
+
 type keyPairSynchronizer interface {
 	Sync(keypair ec2.KeyPair) (ec2.KeyPair, error)
 }

@@ -150,20 +150,20 @@ func main() {
 	})
 
 	app := application.New(application.CommandSet{
-		"help":                           help,
-		"version":                        version,
-		"up":                             up,
-		"destroy":                        destroy,
+		commands.HelpCommand:             help,
+		commands.VersionCommand:          version,
+		commands.UpCommand:               up,
+		commands.DestroyCommand:          destroy,
 		commands.DirectorAddressCommand:  directorAddress,
 		commands.DirectorUsernameCommand: directorUsername,
 		commands.DirectorPasswordCommand: directorPassword,
 		commands.SSHKeyCommand:           sshKey,
-		commands.CREATE_LBS_COMMAND:      createLBs,
-		"update-lbs":                     updateLBs,
-		"delete-lbs":                     deleteLBs,
-		"lbs":                            lbs,
-		commands.BOSHCACertCommand: boshCACert,
-		commands.EnvIDCommand:      envID,
+		commands.CreateLBsCommand:        createLBs,
+		commands.UpdateLBsCommand:        updateLBs,
+		commands.DeleteLBsCommand:        deleteLBs,
+		commands.LBsCommand:              lbs,
+		commands.BOSHCACertCommand:       boshCACert,
+		commands.EnvIDCommand:            envID,
 	}, configuration, stateStore, usage)
 
 	err = app.Run()

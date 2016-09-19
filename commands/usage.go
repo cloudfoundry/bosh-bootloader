@@ -9,7 +9,9 @@ import (
 )
 
 const (
-	GLOBAL_USAGE = `
+	HelpCommand = "help"
+
+	UsageHeader = `
 Usage:
   bbl [GLOBAL OPTIONS] %s [OPTIONS]
 
@@ -20,12 +22,12 @@ Global Options:
   --state-dir             "Directory that stores the state.json"
 %s
 `
-	COMMAND_USAGE = `
+	CommandUsage = `
 [%s command options]
   %s`
 )
 
-const USAGE = `
+const GlobalUsage = `
 Commands:
   destroy [--no-confirm]                                                                                               "tears down a BOSH Director environment on AWS"
   director-address                                                                                                     "prints the BOSH director address"
@@ -56,12 +58,12 @@ func (u Usage) Execute(subcommandFlags []string, state storage.State) error {
 }
 
 func (u Usage) Print() {
-	content := fmt.Sprintf(GLOBAL_USAGE, "COMMAND", USAGE)
+	content := fmt.Sprintf(UsageHeader, "COMMAND", GlobalUsage)
 	fmt.Fprint(u.stdout, strings.TrimLeft(content, "\n"))
 }
 
 func (u Usage) PrintCommandUsage(command, message string) {
-	commandUsage := fmt.Sprintf(COMMAND_USAGE, command, message)
-	content := fmt.Sprintf(GLOBAL_USAGE, command, commandUsage)
+	commandUsage := fmt.Sprintf(CommandUsage, command, message)
+	content := fmt.Sprintf(UsageHeader, command, commandUsage)
 	fmt.Fprint(u.stdout, strings.TrimLeft(content, "\n"))
 }

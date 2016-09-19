@@ -8,6 +8,10 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const (
+	LBsCommand = "lbs"
+)
+
 type LBs struct {
 	awsCredentialValidator awsCredentialValidator
 	infrastructureManager  infrastructureManager
@@ -45,4 +49,3 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 
 	return nil
 }
-

@@ -12,6 +12,10 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const (
+	DestroyCommand = "destroy"
+)
+
 type Destroy struct {
 	awsCredentialValidator awsCredentialValidator
 	logger                 logger
