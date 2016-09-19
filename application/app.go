@@ -54,7 +54,7 @@ func (a App) execute() error {
 		return err
 	}
 
-	if a.configuration.SubcommandFlags.ContainsAny("--help", "-help", "-h") {
+	if a.configuration.SubcommandFlags.ContainsAny("--help", "-h") {
 		a.usage.PrintCommandUsage(a.configuration.Command, command.Usage())
 		return nil
 	}

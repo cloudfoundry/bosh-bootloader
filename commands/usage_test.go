@@ -34,7 +34,7 @@ Global Options:
   --help    [-h] "print usage"
   --version [-v] "print version"
 
-  --state-dir             "Directory that stores the state.json"
+  --state-dir    "directory that stores the state.json"
 
 Commands:
   destroy [--no-confirm]                                                                                               "tears down a BOSH Director environment on AWS"
@@ -65,7 +65,7 @@ Global Options:
   --help    [-h] "print usage"
   --version [-v] "print version"
 
-  --state-dir             "Directory that stores the state.json"
+  --state-dir    "directory that stores the state.json"
 
 [my-command command options]
   some message

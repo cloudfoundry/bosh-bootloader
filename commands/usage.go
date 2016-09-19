@@ -19,7 +19,7 @@ Global Options:
   --help    [-h] "print usage"
   --version [-v] "print version"
 
-  --state-dir             "Directory that stores the state.json"
+  --state-dir    "directory that stores the state.json"
 %s
 `
 	CommandUsage = `

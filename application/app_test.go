@@ -114,7 +114,6 @@ var _ = Describe("App", func() {
 				Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
 			},
 				Entry("when --help is provided", "--help"),
-				Entry("when -help is provided", "-help"),
 				Entry("when -h is provided", "-h"),
 			)
 		})
