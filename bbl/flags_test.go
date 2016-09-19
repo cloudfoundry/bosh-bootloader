@@ -10,21 +10,6 @@ import (
 )
 
 var _ = Describe("flags test", func() {
-	Context("help", func() {
-		It("prints out the help and ignores any sub-commands passed to it", func() {
-			args := []string{
-				"--help",
-				"some-invalid-command",
-			}
-			cmd := exec.Command(pathToBBL, args...)
-			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
-			Eventually(session).Should(gexec.Exit(0))
-			Eventually(session.Out.Contents()).Should(ContainSubstring("bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]"))
-			Eventually(session.Out.Contents()).ShouldNot(ContainSubstring("some-invalid-command"))
-		})
-	})
-
 	Context("Up", func() {
 		Context("failure cases", func() {
 			It("exits with non-zero status when invalid flags are passed", func() {

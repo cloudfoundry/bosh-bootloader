@@ -14,6 +14,12 @@ type Command struct {
 			Error error
 		}
 	}
+	UsageCall struct {
+		CallCount int
+		Returns   struct {
+			Usage string
+		}
+	}
 }
 
 func (c *Command) Execute(subcommandFlags []string, state storage.State) error {
@@ -22,4 +28,9 @@ func (c *Command) Execute(subcommandFlags []string, state storage.State) error {
 	c.ExecuteCall.Receives.SubcommandFlags = subcommandFlags
 
 	return c.ExecuteCall.Returns.Error
+}
+
+func (c *Command) Usage() string {
+	c.UsageCall.CallCount++
+	return c.UsageCall.Returns.Usage
 }

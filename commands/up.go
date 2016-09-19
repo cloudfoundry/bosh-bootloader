@@ -107,7 +107,6 @@ func NewUp(
 }
 
 func (u Up) Execute(subcommandFlags []string, state storage.State) error {
-
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return err

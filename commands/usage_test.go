@@ -54,4 +54,22 @@ Commands:
 `, "\n")))
 		})
 	})
+
+	Describe("PrintCommandUsage", func() {
+		It("prints the usage for given command", func() {
+			usage.PrintCommandUsage("my-command", "some message")
+			Expect(stdout.String()).To(Equal(strings.TrimLeft(`Usage:
+  bbl [GLOBAL OPTIONS] my-command [OPTIONS]
+
+Global Options:
+  --help    [-h] "print usage"
+  --version [-v] "print version"
+
+  --state-dir             "Directory that stores the state.json"
+
+[my-command command options]
+  some message
+`, "\n")))
+		})
+	})
 })

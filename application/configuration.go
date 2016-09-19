@@ -7,9 +7,22 @@ type GlobalConfiguration struct {
 	StateDir         string
 }
 
+type StringSlice []string
+
+func (s StringSlice) ContainsAny(targets ...string) bool {
+	for _, target := range targets {
+		for _, element := range s {
+			if element == target {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 type Configuration struct {
 	Global          GlobalConfiguration
 	Command         string
-	SubcommandFlags []string
+	SubcommandFlags StringSlice
 	State           storage.State
 }

@@ -6,6 +6,22 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
+const (
+	EnvIDCommand            = "env-id"
+	SSHKeyCommand           = "ssh-key"
+	DirectorUsernameCommand = "director-username"
+	DirectorPasswordCommand = "director-password"
+	DirectorAddressCommand  = "director-address"
+	BOSHCACertCommand       = "bosh-ca-cert"
+
+	EnvIDPropertyName            = "environment id"
+	SSHKeyPropertyName           = "ssh key"
+	DirectorUsernamePropertyName = "director username"
+	DirectorPasswordPropertyName = "director password"
+	DirectorAddressPropertyName  = "director address"
+	BOSHCACertPropertyName       = "bosh ca cert"
+)
+
 type StateQuery struct {
 	logger       logger
 	propertyName string

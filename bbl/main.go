@@ -130,41 +130,41 @@ func main() {
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
 	)
 	lbs := commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
-	directorAddress := commands.NewStateQuery(logger, "director address", func(state storage.State) string {
+	directorAddress := commands.NewStateQuery(logger, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})
-	directorUsername := commands.NewStateQuery(logger, "director username", func(state storage.State) string {
+	directorUsername := commands.NewStateQuery(logger, commands.DirectorUsernamePropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorUsername
 	})
-	directorPassword := commands.NewStateQuery(logger, "director password", func(state storage.State) string {
+	directorPassword := commands.NewStateQuery(logger, commands.DirectorPasswordPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorPassword
 	})
-	sshKey := commands.NewStateQuery(logger, "ssh key", func(state storage.State) string {
+	sshKey := commands.NewStateQuery(logger, commands.SSHKeyPropertyName, func(state storage.State) string {
 		return state.KeyPair.PrivateKey
 	})
-	boshCACert := commands.NewStateQuery(logger, "bosh ca cert", func(state storage.State) string {
+	boshCACert := commands.NewStateQuery(logger, commands.BOSHCACertPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorSSLCA
 	})
-	envID := commands.NewStateQuery(logger, "environment id", func(state storage.State) string {
+	envID := commands.NewStateQuery(logger, commands.EnvIDPropertyName, func(state storage.State) string {
 		return state.EnvID
 	})
 
 	app := application.New(application.CommandSet{
-		"help":                      help,
-		"version":                   version,
-		"up":                        up,
-		"destroy":                   destroy,
-		"director-address":          directorAddress,
-		"director-username":         directorUsername,
-		"director-password":         directorPassword,
-		"ssh-key":                   sshKey,
-		commands.CREATE_LBS_COMMAND: createLBs,
-		"update-lbs":                updateLBs,
-		"delete-lbs":                deleteLBs,
-		"lbs":                       lbs,
-		"bosh-ca-cert":              boshCACert,
-		"env-id":                    envID,
-	}, configuration, stateStore, usage.Print)
+		"help":                           help,
+		"version":                        version,
+		"up":                             up,
+		"destroy":                        destroy,
+		commands.DirectorAddressCommand:  directorAddress,
+		commands.DirectorUsernameCommand: directorUsername,
+		commands.DirectorPasswordCommand: directorPassword,
+		commands.SSHKeyCommand:           sshKey,
+		commands.CREATE_LBS_COMMAND:      createLBs,
+		"update-lbs":                     updateLBs,
+		"delete-lbs":                     deleteLBs,
+		"lbs":                            lbs,
+		commands.BOSHCACertCommand: boshCACert,
+		commands.EnvIDCommand:      envID,
+	}, configuration, stateStore, usage)
 
 	err = app.Run()
 	if err != nil {

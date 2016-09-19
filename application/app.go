@@ -8,14 +8,20 @@ import (
 
 type CommandSet map[string]commands.Command
 
+type usage interface {
+	Print()
+	PrintCommandUsage(command, message string)
+}
+
 type App struct {
 	commands      CommandSet
 	configuration Configuration
 	stateStore    stateStore
-	usage         func()
+	usage         usage
 }
 
-func New(commands CommandSet, configuration Configuration, stateStore stateStore, usage func()) App {
+func New(commands CommandSet, configuration Configuration, stateStore stateStore,
+	usage usage) App {
 	return App{
 		commands:      commands,
 		configuration: configuration,
@@ -33,14 +39,37 @@ func (a App) Run() error {
 	return nil
 }
 
-func (a App) execute() error {
-	command, ok := a.commands[a.configuration.Command]
+func (a App) getCommand(commandString string) (commands.Command, error) {
+	command, ok := a.commands[commandString]
 	if !ok {
-		a.usage()
-		return fmt.Errorf("unknown command: %s", a.configuration.Command)
+		a.usage.Print()
+		return nil, fmt.Errorf("unknown command: %s", commandString)
+	}
+	return command, nil
+}
+
+func (a App) execute() error {
+	command, err := a.getCommand(a.configuration.Command)
+	if err != nil {
+		return err
 	}
 
-	err := command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
+	if a.configuration.SubcommandFlags.ContainsAny("--help", "-help", "-h") {
+		a.usage.PrintCommandUsage(a.configuration.Command, command.Usage())
+		return nil
+	}
+
+	if a.configuration.Command == "help" && len(a.configuration.SubcommandFlags) != 0 {
+		commandString := a.configuration.SubcommandFlags[0]
+		command, err = a.getCommand(commandString)
+		if err != nil {
+			return err
+		}
+		a.usage.PrintCommandUsage(commandString, command.Usage())
+		return nil
+	}
+
+	err = command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
 	if err != nil {
 		return err
 	}

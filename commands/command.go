@@ -10,6 +10,7 @@ import (
 
 type Command interface {
 	Execute(subcommandFlags []string, state storage.State) error
+	Usage() string
 }
 
 func bblExists(stackName string, infrastructureManager infrastructureManager, boshClient bosh.Client) error {

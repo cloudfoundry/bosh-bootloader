@@ -44,7 +44,7 @@ var _ = Describe("ConfigurationParser", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(configuration.Command).To(Equal("up"))
-			Expect(configuration.SubcommandFlags).To(Equal([]string{"--some-flag", "some-value"}))
+			Expect(configuration.SubcommandFlags).To(Equal(application.StringSlice{"--some-flag", "some-value"}))
 			Expect(configuration.Global).To(Equal(application.GlobalConfiguration{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "some/state/dir",

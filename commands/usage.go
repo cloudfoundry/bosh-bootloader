@@ -8,16 +8,24 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
-const USAGE = `
+const (
+	GLOBAL_USAGE = `
 Usage:
-  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
+  bbl [GLOBAL OPTIONS] %s [OPTIONS]
 
 Global Options:
   --help    [-h] "print usage"
   --version [-v] "print version"
 
   --state-dir             "Directory that stores the state.json"
+%s
+`
+	COMMAND_USAGE = `
+[%s command options]
+  %s`
+)
 
+const USAGE = `
 Commands:
   destroy [--no-confirm]                                                                                               "tears down a BOSH Director environment on AWS"
   director-address                                                                                                     "prints the BOSH director address"
@@ -32,8 +40,7 @@ Commands:
   update-lbs --cert=<path> --key=<path> [--chain=<path>] [--skip-if-missing]                                           "updates a load balancer with the supplied certificate, key, and optional chain"
   delete-lbs [--skip-if-missing]                                                                                       "deletes the attached load balancer"
   up --aws-access-key-id <aws_access_key_id> --aws-secret-access-key <aws_secret_access_key> --aws-region <aws_region> "deploys a BOSH Director on AWS"
-  version                                                                                                              "prints version"
-`
+  version                                                                                                              "prints version"`
 
 type Usage struct {
 	stdout io.Writer
@@ -49,5 +56,12 @@ func (u Usage) Execute(subcommandFlags []string, state storage.State) error {
 }
 
 func (u Usage) Print() {
-	fmt.Fprint(u.stdout, strings.TrimLeft(USAGE, "\n"))
+	content := fmt.Sprintf(GLOBAL_USAGE, "COMMAND", USAGE)
+	fmt.Fprint(u.stdout, strings.TrimLeft(content, "\n"))
+}
+
+func (u Usage) PrintCommandUsage(command, message string) {
+	commandUsage := fmt.Sprintf(COMMAND_USAGE, command, message)
+	content := fmt.Sprintf(GLOBAL_USAGE, command, commandUsage)
+	fmt.Fprint(u.stdout, strings.TrimLeft(content, "\n"))
 }
