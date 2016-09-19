@@ -135,8 +135,8 @@ var _ = Describe("App", func() {
 				Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
 			})
 
-			Context("error case", func() {
-				It("prints te usage when a invalid subcommand is passed", func() {
+			Context("failure cases", func() {
+				It("prints the usage when a invalid subcommand is passed", func() {
 					app = NewAppWithConfiguration(application.Configuration{
 						Command:         "help",
 						SubcommandFlags: []string{"invalid-command"},
@@ -146,6 +146,38 @@ var _ = Describe("App", func() {
 					Expect(err).To(MatchError("unknown command: invalid-command"))
 					Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
 					Expect(usage.PrintCall.CallCount).To(Equal(1))
+				})
+			})
+		})
+
+		Context("when subcommand flags contains version", func() {
+			DescribeTable("prints version when version subcommand flag is provided", func(versionFlag string) {
+				app = NewAppWithConfiguration(application.Configuration{
+					Command:         "some",
+					SubcommandFlags: []string{versionFlag},
+				})
+
+				Expect(app.Run()).To(Succeed())
+				Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
+				Expect(versionCmd.ExecuteCall.CallCount).To(Equal(1))
+				Expect(versionCmd.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
+				Expect(versionCmd.ExecuteCall.Receives.State).To(Equal(storage.State{}))
+			},
+				Entry("when --version is provided", "--version"),
+				Entry("when -v is provided", "-v"),
+			)
+
+			Context("error cases", func() {
+				It("returns an error when version command is not part of the command set", func() {
+					app = application.New(application.CommandSet{
+						"some": someCmd,
+					}, application.Configuration{
+						Command:         "some",
+						SubcommandFlags: []string{"-v"},
+					}, storage.Store{}, usage)
+
+					err := app.Run()
+					Expect(err).To(MatchError("unknown command: version"))
 				})
 			})
 		})

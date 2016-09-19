@@ -57,11 +57,6 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 	}
 
 	return commandLineConfiguration, nil
-	if err != nil {
-		return CommandLineConfiguration{}, err
-	}
-
-	return commandLineConfiguration, nil
 }
 
 func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLineConfiguration, arguments []string) (CommandLineConfiguration, []string, error) {

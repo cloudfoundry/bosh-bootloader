@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
 	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
@@ -60,7 +61,7 @@ var _ = Describe("ConfigurationParser", func() {
 					AWSSecretAccessKey: "secret-access-key-from-flag",
 					AWSRegion:          "region-from-flag",
 					StateDir:           "some/state/dir",
-					Command:            "help",
+					Command:            "up",
 				}
 				configuration, err := configurationParser.Parse([]string{})
 				Expect(err).NotTo(HaveOccurred())
@@ -75,22 +76,46 @@ var _ = Describe("ConfigurationParser", func() {
 				}))
 			})
 
-			It("overrides aws configuration in the state with global flags", func() {
+			DescribeTable("help, version, help flags does not manipulate AWS in state", func(command string, subcommandFlags []string) {
 				commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
 					AWSAccessKeyID:     "access-key-id-from-flag",
 					AWSSecretAccessKey: "secret-access-key-from-flag",
 					AWSRegion:          "region-from-flag",
-					Command:            "up",
+					Command:            command,
+					SubcommandFlags:    application.StringSlice(subcommandFlags),
 				}
 
 				configuration, err := configurationParser.Parse([]string{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(configuration.State.AWS).To(Equal(storage.AWS{
-					AccessKeyID:     "access-key-id-from-flag",
-					SecretAccessKey: "secret-access-key-from-flag",
-					Region:          "region-from-flag",
-				}))
+				Expect(configuration.State.AWS).To(Equal(storage.AWS{}))
+			},
+				Entry("help", "help", []string{}),
+				Entry("--help", "some-command", []string{"--help"}),
+				Entry("-h", "some-command", []string{"-h"}),
+				Entry("version", "version", []string{}),
+				Entry("--version", "some-command", []string{"--version"}),
+				Entry("-v", "some-command", []string{"-v"}),
+			)
+
+			Context("when the arguments passed in contain a command that is not help or version", func() {
+				It("overrides aws configuration in the state with global flags", func() {
+					commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
+						AWSAccessKeyID:     "access-key-id-from-flag",
+						AWSSecretAccessKey: "secret-access-key-from-flag",
+						AWSRegion:          "region-from-flag",
+						Command:            "up",
+					}
+
+					configuration, err := configurationParser.Parse([]string{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(configuration.State.AWS).To(Equal(storage.AWS{
+						AccessKeyID:     "access-key-id-from-flag",
+						SecretAccessKey: "secret-access-key-from-flag",
+						Region:          "region-from-flag",
+					}))
+				})
 			})
 		})
 

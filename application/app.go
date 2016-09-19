@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
+	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
 )
 
 type CommandSet map[string]commands.Command
@@ -67,6 +68,15 @@ func (a App) execute() error {
 		}
 		a.usage.PrintCommandUsage(commandString, command.Usage())
 		return nil
+	}
+
+	if a.configuration.SubcommandFlags.ContainsAny("--version", "-v") {
+		versionCommand, err := a.getCommand(commands.VersionCommand)
+		if err != nil {
+			return err
+		}
+
+		return versionCommand.Execute([]string{}, storage.State{})
 	}
 
 	err = command.Execute(a.configuration.SubcommandFlags, a.configuration.State)

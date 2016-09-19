@@ -38,12 +38,14 @@ func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
 		State:           storage.State{},
 	}
 
-	configuration.State, err = getState(configuration.Global.StateDir)
-	if err != nil {
-		return Configuration{}, err
-	}
+	if !p.isHelpOrVersion(configuration.Command, configuration.SubcommandFlags) {
+		configuration.State, err = getState(configuration.Global.StateDir)
+		if err != nil {
+			return Configuration{}, err
+		}
 
-	configuration.State.AWS = p.overrideAWSCredentials(commandLineConfiguration, configuration.State.AWS)
+		configuration.State.AWS = p.overrideAWSCredentials(commandLineConfiguration, configuration.State.AWS)
+	}
 
 	return configuration, nil
 }
@@ -62,4 +64,16 @@ func (ConfigurationParser) overrideAWSCredentials(commandLineConfiguration Comma
 	}
 
 	return awsState
+}
+
+func (ConfigurationParser) isHelpOrVersion(command string, subcommandFlags StringSlice) bool {
+	if command == "help" || command == "version" {
+		return true
+	}
+
+	if subcommandFlags.ContainsAny("--help", "-h", "--version", "-v") {
+		return true
+	}
+
+	return false
 }
