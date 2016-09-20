@@ -1,4 +1,4 @@
 #!/bin/bash -exu
 
-go install github.com/pivotal-cf-experimental/bosh-bootloader/bbl
+go install github.com/cloudfoundry/bosh-bootloader/bbl
 bbl "${@:-""}"
