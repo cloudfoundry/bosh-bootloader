@@ -1,52 +1,52 @@
 package commands
 
 const (
-	UpCommandUsage = `Deploys a BOSH Director on AWS
+	UpCommandUsage = `Deploys BOSH director on AWS
 
   --aws-access-key-id        AWS Access Key ID to use
   --aws-secret-access-key    AWS Secret Access Key to use
   --aws-region               AWS region to use`
 
-	DestroyCommandUsage = `Tears down a BOSH Director environment on AWS
+	DestroyCommandUsage = `Tears down BOSH director infrastructure
 
-  --no-confirm  Do not ask for confirmation (optional)`
+  [--no-confirm]  Do not ask for confirmation (optional)`
 
-	CreateLBsCommandUsage = `Attaches a load balancer with a certificate, key, and optional chain
+	CreateLBsCommandUsage = `Attaches load balancer(s) with a certificate, key, and optional chain
 
-  --type            Load balancer type. Valid options: "concourse" or "cf"
-  --cert            Path to SSL certificate
-  --key             Path to SSL certificate key
-  --chain           Path to SSL certificate chain (optional)
-  --skip-if-exists  Skips creating load balancer if it is already attached (optional)`
+  --type              Load balancer(s) type. Valid options: "concourse" or "cf"
+  --cert              Path to SSL certificate
+  --key               Path to SSL certificate key
+  [--chain]           Path to SSL certificate chain (optional)
+  [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)`
 
-	UpdateLBsCommandUsage = `Updates a load balancer with the supplied certificate, key, and optional chain
+	UpdateLBsCommandUsage = `Updates load balancer(s) with the supplied certificate, key, and optional chain
 
-  --cert             Path to SSL certificate
-  --key              Path to SSL certificate key
-  --chain            Path to SSL certificate chain (optional)
-  --skip-if-missing  Skips updating load balancer if it is not attached (optional)`
+  --cert               Path to SSL certificate
+  --key                Path to SSL certificate key
+  [--chain]            Path to SSL certificate chain (optional)
+  [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`
 
-	DeleteLBsCommandUsage = `Deletes the load balancers
+	DeleteLBsCommandUsage = `Deletes load balancer(s)
 
-  --skip-if-missing  Skips deleting load balancer if it is not attached (optional)`
+  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)`
 
-	LBsCommandUsage = "Prints any attached load balancers"
+	LBsCommandUsage = "Prints attached load balancer(s)"
 
 	VersionCommandUsage = "Prints version"
 
 	UsageCommandUsage = "Prints helpful message for the given command"
 
-	EnvIdCommandUsage = "Prints the environment ID"
+	EnvIdCommandUsage = "Prints environment ID"
 
-	SSHKeyCommandUsage = "Prints the SSH private key"
+	SSHKeyCommandUsage = "Prints SSH private key"
 
-	DirectorUsernameCommandUsage = "Prints the BOSH director username"
+	DirectorUsernameCommandUsage = "Prints BOSH director username"
 
-	DirectorPasswordCommandUsage = "Prints the BOSH director password"
+	DirectorPasswordCommandUsage = "Prints BOSH director password"
 
-	DirectorAddressCommandUsage = "Prints the BOSH director address"
+	DirectorAddressCommandUsage = "Prints BOSH director address"
 
-	BOSHCACertCommandUsage = "Prints the BOSH director CA certificate"
+	BOSHCACertCommandUsage = "Prints BOSH director CA certificate"
 )
 
 func (Up) Usage() string { return UpCommandUsage }
