@@ -21,7 +21,7 @@ The following should be installed on your local machine
 bosh-bootloader can be installed with go get:
 
 ```
-go get github.com/pivotal-cf-experimental/bosh-bootloader/bbl
+go get github.com/cloudfoundry/bosh-bootloader/bbl
 ```
 
 ### Configure AWS
