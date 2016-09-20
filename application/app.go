@@ -3,8 +3,8 @@ package application
 import (
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type CommandSet map[string]commands.Command

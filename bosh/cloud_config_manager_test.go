@@ -5,8 +5,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

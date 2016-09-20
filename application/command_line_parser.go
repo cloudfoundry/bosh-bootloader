@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/flags"
 )
 
 var getwd func() (string, error) = os.Getwd

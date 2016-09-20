@@ -1,9 +1,9 @@
 package bosh_test
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

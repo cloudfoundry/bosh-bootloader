@@ -2,8 +2,8 @@ package iam_test
 
 import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 
 	goaws "github.com/aws/aws-sdk-go/aws"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"

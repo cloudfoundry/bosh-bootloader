@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
 )
 
 var _ = Describe("Config", func() {

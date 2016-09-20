@@ -9,9 +9,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 
 	. "github.com/onsi/ginkgo"

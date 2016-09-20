@@ -7,8 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

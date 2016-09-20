@@ -3,8 +3,8 @@ package fakes
 import (
 	"time"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 )
 
 type StackManager struct {

@@ -1,7 +1,7 @@
 package iam
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"

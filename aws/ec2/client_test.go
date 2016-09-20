@@ -2,8 +2,8 @@ package ec2_test
 
 import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 
 	goaws "github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"

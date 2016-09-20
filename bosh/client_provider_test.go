@@ -3,7 +3,7 @@ package bosh_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 )
 
 var _ = Describe("Client Provider", func() {

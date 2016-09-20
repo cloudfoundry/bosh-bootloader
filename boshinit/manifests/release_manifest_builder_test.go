@@ -3,7 +3,7 @@ package manifests_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 )
 
 var _ = Describe("ReleaseManifestBuilder", func() {

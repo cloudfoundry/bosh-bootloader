@@ -1,10 +1,10 @@
 package fakes
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 )
 
 type ClientProvider struct {

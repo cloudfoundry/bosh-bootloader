@@ -22,7 +22,7 @@ var _ = Describe("fakeboshinit", func() {
 		)
 		BeforeEach(func() {
 			var err error
-			pathToFake, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit")
+			pathToFake, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit")
 			Expect(err).NotTo(HaveOccurred())
 
 			tempDir, err = ioutil.TempDir("", "")
@@ -40,7 +40,7 @@ jobs:
 
 		It("fails fast if compiled with FailFast flag", func() {
 			var err error
-			pathToFake, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit",
+			pathToFake, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit",
 				"-ldflags",
 				"-X main.FailFast=true")
 			Expect(err).NotTo(HaveOccurred())

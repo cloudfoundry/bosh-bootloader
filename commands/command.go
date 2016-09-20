@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Command interface {

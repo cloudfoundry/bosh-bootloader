@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+import "github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 
 type InfrastructureManager struct {
 	CreateCall struct {

@@ -1,7 +1,7 @@
 package manifests_test
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

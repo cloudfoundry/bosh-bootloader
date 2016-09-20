@@ -3,9 +3,9 @@ package boshinit
 import (
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/ssl"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 const USERNAME_PREFIX = "user-"

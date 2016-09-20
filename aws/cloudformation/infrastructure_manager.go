@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 )
 
 const bblTagKey = "bbl-env-id"

@@ -3,7 +3,7 @@ package bosh
 import (
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 )
 
 type CloudConfigurator struct {

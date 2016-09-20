@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"errors"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/helpers"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

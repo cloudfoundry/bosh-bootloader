@@ -3,13 +3,13 @@ package actors
 import (
 	"os"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/clientmanager"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-bootloader/application"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test"
 
 	. "github.com/onsi/gomega"
 

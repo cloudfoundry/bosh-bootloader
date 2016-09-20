@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	"testing"
 )
@@ -31,10 +31,10 @@ var (
 var _ = BeforeSuite(func() {
 	var err error
 
-	pathToBBL, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl")
+	pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl")
 	Expect(err).NotTo(HaveOccurred())
 
-	pathToFakeBOSHInit, err = gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit")
+	pathToFakeBOSHInit, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit")
 	Expect(err).NotTo(HaveOccurred())
 
 	pathToBOSHInit = filepath.Join(filepath.Dir(pathToFakeBOSHInit), "bosh-init")

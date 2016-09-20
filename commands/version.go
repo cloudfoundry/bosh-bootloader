@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 const (

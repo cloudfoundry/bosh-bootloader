@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 )
 
 type BOSHClientProvider struct {

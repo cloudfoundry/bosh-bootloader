@@ -7,9 +7,9 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/ssl"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

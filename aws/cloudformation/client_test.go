@@ -2,8 +2,8 @@ package cloudformation_test
 
 import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 
 	goaws "github.com/aws/aws-sdk-go/aws"
 	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"

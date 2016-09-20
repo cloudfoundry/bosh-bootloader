@@ -9,8 +9,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/ssl"
 
 	certstrappkix "github.com/square/certstrap/pkix"
 

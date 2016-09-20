@@ -1,7 +1,7 @@
 package flags_test
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/flags"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

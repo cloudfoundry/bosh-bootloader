@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/ec2"
+import "github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 
 type KeyPairSynchronizer struct {
 	SyncCall struct {

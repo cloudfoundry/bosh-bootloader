@@ -2,7 +2,7 @@ package cloudformation
 
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
 
 	awscloudformation "github.com/aws/aws-sdk-go/service/cloudformation"
 )

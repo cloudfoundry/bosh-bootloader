@@ -1,7 +1,7 @@
 package commands_test
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/commands"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"

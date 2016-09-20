@@ -1,6 +1,6 @@
 package application
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type GlobalConfiguration struct {
 	EndpointOverride string

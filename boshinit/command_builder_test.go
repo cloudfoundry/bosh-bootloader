@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"os/exec"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

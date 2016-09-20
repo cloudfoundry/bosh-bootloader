@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

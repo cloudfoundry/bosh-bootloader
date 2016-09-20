@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
+import "github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 
 type TemplateBuilder struct {
 	BuildCall struct {

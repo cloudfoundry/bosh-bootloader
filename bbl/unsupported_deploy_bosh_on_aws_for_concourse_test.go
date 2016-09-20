@@ -14,10 +14,10 @@ import (
 	"sync"
 
 	"github.com/onsi/gomega/gexec"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
+	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -490,7 +490,7 @@ var _ = Describe("bbl", func() {
 					originalPath := os.Getenv("PATH")
 
 					By("rebuilding bosh-init with fail fast flag", func() {
-						pathToFakeBOSHInit, err := gexec.Build("github.com/pivotal-cf-experimental/bosh-bootloader/bbl/fakeboshinit",
+						pathToFakeBOSHInit, err := gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit",
 							"-ldflags",
 							"-X main.FailFast=true")
 						Expect(err).NotTo(HaveOccurred())

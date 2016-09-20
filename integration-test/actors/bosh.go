@@ -1,6 +1,6 @@
 package actors
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+import "github.com/cloudfoundry/bosh-bootloader/bosh"
 
 type BOSH struct{}
 

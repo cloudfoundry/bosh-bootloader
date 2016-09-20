@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+import "github.com/cloudfoundry/bosh-bootloader/ssl"
 
 type SSLKeyPairGenerator struct {
 	GenerateCall struct {

@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/onsi/gomega/gexec"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bbl/awsbackend"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
+	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"

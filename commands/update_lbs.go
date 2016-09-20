@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 const UpdateLBsCommand = "update-lbs"

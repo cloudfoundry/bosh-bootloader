@@ -11,7 +11,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test"
 )
 
 type BBL struct {

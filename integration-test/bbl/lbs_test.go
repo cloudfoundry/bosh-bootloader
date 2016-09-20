@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/integration-test/actors"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

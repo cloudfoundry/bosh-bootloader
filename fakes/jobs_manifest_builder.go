@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
+import "github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 
 type JobsManifestBuilder struct {
 	BuildCall struct {

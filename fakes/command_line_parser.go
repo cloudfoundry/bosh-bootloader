@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/application"
+import "github.com/cloudfoundry/bosh-bootloader/application"
 
 type CommandLineParser struct {
 	ParseCall struct {

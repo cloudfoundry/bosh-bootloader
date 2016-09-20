@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 )
 
 type BoshCloudConfigurator struct {

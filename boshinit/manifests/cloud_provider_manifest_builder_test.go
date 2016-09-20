@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 )
 
 var _ = Describe("CloudProviderManifestBuilder", func() {

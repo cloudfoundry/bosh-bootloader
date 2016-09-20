@@ -3,8 +3,8 @@ package manifests_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit/manifests"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
+	"github.com/cloudfoundry/bosh-bootloader/ssl"
 )
 
 var _ = Describe("JobPropertiesManifestBuilder", func() {

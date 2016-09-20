@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
+import "github.com/cloudfoundry/bosh-bootloader/boshinit"
 
 type BOSHDeleter struct {
 	DeleteCall struct {

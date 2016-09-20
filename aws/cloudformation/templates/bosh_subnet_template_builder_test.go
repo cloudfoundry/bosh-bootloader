@@ -3,7 +3,7 @@ package templates_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 )
 
 var _ = Describe("BOSHSubnetTemplateBuilder", func() {

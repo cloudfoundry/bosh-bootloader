@@ -1,7 +1,7 @@
 package ec2
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"

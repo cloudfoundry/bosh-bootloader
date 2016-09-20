@@ -12,8 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation/templates"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/testhelpers"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 )
 

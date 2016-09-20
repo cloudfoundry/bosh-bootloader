@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/aws/cloudformation"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/boshinit"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 const (

@@ -3,7 +3,7 @@ package application_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/application"
+	"github.com/cloudfoundry/bosh-bootloader/application"
 )
 
 var _ = Describe("StringSlice", func() {

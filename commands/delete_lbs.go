@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/flags"
-	"github.com/pivotal-cf-experimental/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 const (

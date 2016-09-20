@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/pivotal-cf-experimental/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

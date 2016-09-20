@@ -1,6 +1,6 @@
 package manifests
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/ssl"
+import "github.com/cloudfoundry/bosh-bootloader/ssl"
 
 const PASSWORD_LENGTH = 15
 

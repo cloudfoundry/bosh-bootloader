@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/pivotal-cf-experimental/bosh-bootloader/aws/iam"
+import "github.com/cloudfoundry/bosh-bootloader/aws/iam"
 
 type CertificateManager struct {
 	CreateCall struct {
