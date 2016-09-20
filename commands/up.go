@@ -268,7 +268,7 @@ func (u Up) checkForFastFails(state storage.State) error {
 		return fmt.Errorf(
 			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
 				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
-				"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance.",
+				"https://github.com/cloudfoundry/bosh-bootloader/issues/new if you need assistance.",
 			state.Stack.Name, state.AWS.Region)
 	}
 

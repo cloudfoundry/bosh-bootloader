@@ -918,7 +918,7 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("Found BOSH data in state directory, " +
 					"but Cloud Formation stack \"some-stack-name\" cannot be found for region \"some-aws-region\" and given " +
 					"AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at " +
-					"https://github.com/pivotal-cf-experimental/bosh-bootloader/issues/new if you need assistance."))
+					"https://github.com/cloudfoundry/bosh-bootloader/issues/new if you need assistance."))
 
 				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
 			})

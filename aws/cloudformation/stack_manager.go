@@ -134,7 +134,7 @@ func (s StackManager) WaitForCompletion(name string, sleepInterval time.Duration
 		cloudformation.StackStatusDeleteFailed:
 		return fmt.Errorf(`CloudFormation failure on stack '%s'.
 Check the AWS console for error events related to this stack,
-and/or open a GitHub issue at https://github.com/pivotal-cf-experimental/bosh-bootloader/issues.`, name)
+and/or open a GitHub issue at https://github.com/cloudfoundry/bosh-bootloader/issues.`, name)
 	default:
 		s.logger.Dot()
 		time.Sleep(sleepInterval)
