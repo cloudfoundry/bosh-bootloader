@@ -3,10 +3,10 @@ package application_test
 import (
 	"errors"
 
+	"github.com/cloudfoundry/bosh-bootloader/application"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/application"
 )
 
 var _ = Describe("CommandLineParser", func() {

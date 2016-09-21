@@ -10,13 +10,10 @@ import (
 var getwd func() (string, error) = os.Getwd
 
 type CommandLineConfiguration struct {
-	AWSAccessKeyID     string
-	AWSSecretAccessKey string
-	AWSRegion          string
-	Command            string
-	SubcommandFlags    []string
-	EndpointOverride   string
-	StateDir           string
+	Command          string
+	SubcommandFlags  []string
+	EndpointOverride string
+	StateDir         string
 
 	help    bool
 	version bool

@@ -33,13 +33,10 @@ var _ = Describe("ConfigurationParser", func() {
 		It("returns a configuration based on arguments provided", func() {
 
 			commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-				AWSAccessKeyID:     "access-key-id-from-flag",
-				AWSSecretAccessKey: "secret-access-key-from-flag",
-				AWSRegion:          "region-from-flag",
-				Command:            "up",
-				SubcommandFlags:    []string{"--some-flag", "some-value"},
-				StateDir:           "some/state/dir",
-				EndpointOverride:   "some-endpoint-override",
+				Command:          "up",
+				SubcommandFlags:  []string{"--some-flag", "some-value"},
+				StateDir:         "some/state/dir",
+				EndpointOverride: "some-endpoint-override",
 			}
 			configuration, err := configurationParser.Parse([]string{"up"})
 			Expect(err).NotTo(HaveOccurred())
