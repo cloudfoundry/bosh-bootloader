@@ -26,7 +26,7 @@ var _ = Describe("CommandLineParser", func() {
 	Describe("Parse", func() {
 		It("returns a command line configuration with correct global flags based on arguments passed in", func() {
 			args := []string{
-				"--endpoint-override", "some-endpoint-override",
+				"--endpoint-override=some-endpoint-override",
 				"--state-dir", "some/state/dir",
 				"some-command",
 				"--subcommand-flag", "some-value",

@@ -31,23 +31,23 @@ func NewCommandLineParser(usage func()) CommandLineParser {
 
 func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, error) {
 	var err error
-	var remainingArguments []string
 	commandLineConfiguration := CommandLineConfiguration{}
 
-	commandLineConfiguration, remainingArguments, err = p.parseGlobalFlags(commandLineConfiguration, arguments)
+	commandFinderResult := NewCommandFinder().FindCommand(arguments)
+
+	commandLineConfiguration, _, err = p.parseGlobalFlags(commandLineConfiguration, commandFinderResult.GlobalFlags)
 	if err != nil {
 		return CommandLineConfiguration{}, err
 	}
 
+	commandLineConfiguration.Command = commandFinderResult.Command
 	commandLineConfiguration = p.convertFlagsToCommands(commandLineConfiguration)
-
 	if commandLineConfiguration.Command == "" {
-		commandLineConfiguration, err = p.parseCommandAndSubcommandFlags(commandLineConfiguration, remainingArguments)
-		if err != nil {
-			return CommandLineConfiguration{}, err
-		}
+		p.usage()
+		return CommandLineConfiguration{}, errors.New("unknown command: [EMPTY]")
 	}
 
+	commandLineConfiguration.SubcommandFlags = commandFinderResult.OtherArgs
 	commandLineConfiguration, err = p.setDefaultStateDirectory(commandLineConfiguration)
 	if err != nil {
 		return CommandLineConfiguration{}, err
