@@ -8,12 +8,14 @@ import (
 )
 
 type ClientProvider struct {
+	EndpointOverride     string
 	ec2Client            ec2.Client
 	cloudformationClient cloudformation.Client
 	iamClient            iam.Client
 }
 
 func (c *ClientProvider) SetConfig(config aws.Config) {
+	config.EndpointOverride = c.EndpointOverride
 	c.ec2Client = ec2.NewClient(config)
 	c.cloudformationClient = cloudformation.NewClient(config)
 	c.iamClient = iam.NewClient(config)

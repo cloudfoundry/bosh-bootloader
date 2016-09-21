@@ -13,11 +13,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/onsi/gomega/gexec"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
+	"github.com/onsi/gomega/gexec"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -538,11 +538,11 @@ var _ = Describe("bbl", func() {
 func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
+		"--state-dir", tempDirectory,
+		"up",
 		"--aws-access-key-id", "some-access-key",
 		"--aws-secret-access-key", "some-access-secret",
 		"--aws-region", "some-region",
-		"--state-dir", tempDirectory,
-		"up",
 	}
 
 	return executeCommand(args, exitCode)
@@ -551,9 +551,6 @@ func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCod
 func createLB(serverURL string, tempDirectory string, lbType string, certPath string, keyPath string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
-		"--aws-access-key-id", "some-access-key",
-		"--aws-secret-access-key", "some-access-secret",
-		"--aws-region", "some-region",
 		"--state-dir", tempDirectory,
 		"create-lbs",
 		"--type", lbType,

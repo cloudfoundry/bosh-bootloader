@@ -53,7 +53,7 @@ func main() {
 		EndpointOverride: configuration.Global.EndpointOverride,
 	}
 
-	clientProvider := &clientmanager.ClientProvider{}
+	clientProvider := &clientmanager.ClientProvider{EndpointOverride: configuration.Global.EndpointOverride}
 	clientProvider.SetConfig(awsConfiguration)
 
 	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)

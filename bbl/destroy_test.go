@@ -13,11 +13,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/onsi/gomega/gexec"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
+	"github.com/onsi/gomega/gexec"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -61,6 +61,11 @@ var _ = Describe("destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			buf, err := json.Marshal(storage.State{
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
 				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: testhelpers.BBL_KEY,
@@ -79,9 +84,6 @@ var _ = Describe("destroy", func() {
 
 			args := []string{
 				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-				"--aws-access-key-id", "some-access-key",
-				"--aws-secret-access-key", "some-access-secret",
-				"--aws-region", "some-region",
 				"--state-dir", tempDirectory,
 				"destroy",
 			}
@@ -175,6 +177,11 @@ var _ = Describe("destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			buf, err := json.Marshal(storage.State{
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
 				Stack: storage.Stack{
 					Name:            "some-stack-name",
 					CertificateName: "some-certificate-name",
@@ -328,9 +335,6 @@ var _ = Describe("destroy", func() {
 func destroy(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
-		"--aws-access-key-id", "some-access-key",
-		"--aws-secret-access-key", "some-access-secret",
-		"--aws-region", "some-region",
 		"--state-dir", tempDirectory,
 		"destroy",
 	}

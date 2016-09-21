@@ -67,9 +67,6 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 
 	globalFlags.Bool(&commandLineConfiguration.help, "h", "help", false)
 	globalFlags.Bool(&commandLineConfiguration.version, "v", "version", false)
-	globalFlags.String(&commandLineConfiguration.AWSAccessKeyID, "aws-access-key-id", "")
-	globalFlags.String(&commandLineConfiguration.AWSSecretAccessKey, "aws-secret-access-key", "")
-	globalFlags.String(&commandLineConfiguration.AWSRegion, "aws-region", "")
 
 	err := globalFlags.Parse(arguments)
 	if err != nil {

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/onsi/gomega/gexec"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
+	"github.com/onsi/gomega/gexec"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -152,6 +152,11 @@ var _ = Describe("load balancers", func() {
 
 				It("exits 1 when the BOSH director does not exist", func() {
 					writeStateJson(storage.State{
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key",
+							SecretAccessKey: "some-access-secret",
+							Region:          "some-region",
+						},
 						Stack: storage.Stack{
 							Name: "some-stack-name",
 						},
@@ -174,6 +179,11 @@ var _ = Describe("load balancers", func() {
 	Describe("update-lbs", func() {
 		It("updates the load balancer with the given cert, key and chain", func() {
 			writeStateJson(storage.State{
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
 				Stack: storage.Stack{
 					Name:            "some-stack-name",
 					LBType:          "cf",
@@ -213,6 +223,11 @@ var _ = Describe("load balancers", func() {
 
 		It("does nothing if the certificate is unchanged", func() {
 			writeStateJson(storage.State{
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
 				Stack: storage.Stack{
 					Name:            "some-stack-name",
 					LBType:          "cf",
@@ -281,7 +296,13 @@ var _ = Describe("load balancers", func() {
 
 			Context("when bbl environment is not up", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
-					writeStateJson(storage.State{}, tempDirectory)
+					writeStateJson(storage.State{
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key",
+							SecretAccessKey: "some-access-secret",
+							Region:          "some-region",
+						},
+					}, tempDirectory)
 					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
 					stderr := session.Err.Contents()
 
@@ -294,6 +315,11 @@ var _ = Describe("load balancers", func() {
 					})
 
 					writeStateJson(storage.State{
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key",
+							SecretAccessKey: "some-access-secret",
+							Region:          "some-region",
+						},
 						Stack: storage.Stack{
 							Name: "some-stack-name",
 						},
@@ -317,6 +343,11 @@ var _ = Describe("load balancers", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			writeStateJson(storage.State{
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
 				Stack: storage.Stack{
 					Name:            "some-stack-name",
 					LBType:          "cf",
@@ -397,6 +428,11 @@ var _ = Describe("load balancers", func() {
 					})
 
 					writeStateJson(storage.State{
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key",
+							SecretAccessKey: "some-access-secret",
+							Region:          "some-region",
+						},
 						Stack: storage.Stack{
 							Name: "some-stack-name",
 						},
@@ -427,9 +463,6 @@ var _ = Describe("load balancers", func() {
 func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
-		"--aws-access-key-id", "some-access-key-id",
-		"--aws-secret-access-key", "some-secret-access-key",
-		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"lbs",
 	}
@@ -440,9 +473,6 @@ func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Sessi
 func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int, skipIfMissing bool) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
-		"--aws-access-key-id", "some-access-key-id",
-		"--aws-secret-access-key", "some-secret-access-key",
-		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"delete-lbs",
 	}
@@ -457,9 +487,6 @@ func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int, skipIf
 func updateLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, chainName string, exitCode int, skipIfMissing bool) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
-		"--aws-access-key-id", "some-access-key-id",
-		"--aws-secret-access-key", "some-secret-access-key",
-		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"update-lbs",
 		"--cert", certName,
@@ -477,9 +504,6 @@ func updateLBs(endpointOverrideURL string, stateDir string, certName string, key
 func createLBs(endpointOverrideURL string, stateDir string, certName string, keyName string, chainName string, lbType string, exitCode int, skipIfExists bool) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
-		"--aws-access-key-id", "some-access-key-id",
-		"--aws-secret-access-key", "some-secret-access-key",
-		"--aws-region", "some-region",
 		"--state-dir", stateDir,
 		"create-lbs",
 		"--type", lbType,

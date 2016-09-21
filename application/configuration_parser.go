@@ -43,28 +43,11 @@ func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
 		if err != nil {
 			return Configuration{}, err
 		}
-
-		configuration.State.AWS = p.overrideAWSCredentials(commandLineConfiguration, configuration.State.AWS)
 	}
 
 	return configuration, nil
 }
 
-func (ConfigurationParser) overrideAWSCredentials(commandLineConfiguration CommandLineConfiguration, awsState storage.AWS) storage.AWS {
-	if commandLineConfiguration.AWSAccessKeyID != "" {
-		awsState.AccessKeyID = commandLineConfiguration.AWSAccessKeyID
-	}
-
-	if commandLineConfiguration.AWSSecretAccessKey != "" {
-		awsState.SecretAccessKey = commandLineConfiguration.AWSSecretAccessKey
-	}
-
-	if commandLineConfiguration.AWSRegion != "" {
-		awsState.Region = commandLineConfiguration.AWSRegion
-	}
-
-	return awsState
-}
 
 func (ConfigurationParser) isHelpOrVersion(command string, subcommandFlags StringSlice) bool {
 	if command == "help" || command == "version" {

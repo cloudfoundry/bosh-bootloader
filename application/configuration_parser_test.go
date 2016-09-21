@@ -3,12 +3,12 @@ package application_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ConfigurationParser", func() {
@@ -57,38 +57,29 @@ var _ = Describe("ConfigurationParser", func() {
 		Describe("state management", func() {
 			It("returns a configuration with the state from the state store", func() {
 				commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-					AWSAccessKeyID:     "access-key-id-from-flag",
-					AWSSecretAccessKey: "secret-access-key-from-flag",
-					AWSRegion:          "region-from-flag",
-					StateDir:           "some/state/dir",
-					Command:            "up",
+					StateDir: "some/state/dir",
+					Command:  "up",
 				}
 				configuration, err := configurationParser.Parse([]string{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(configuration.State).To(Equal(storage.State{
 					Version: 1,
-					AWS: storage.AWS{
-						AccessKeyID:     "access-key-id-from-flag",
-						SecretAccessKey: "secret-access-key-from-flag",
-						Region:          "region-from-flag",
-					},
 				}))
 			})
 
-			DescribeTable("help, version, help flags does not manipulate AWS in state", func(command string, subcommandFlags []string) {
+			DescribeTable("help, version, help flags does not try parse state", func(command string, subcommandFlags []string) {
 				commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-					AWSAccessKeyID:     "access-key-id-from-flag",
-					AWSSecretAccessKey: "secret-access-key-from-flag",
-					AWSRegion:          "region-from-flag",
-					Command:            command,
-					SubcommandFlags:    application.StringSlice(subcommandFlags),
+					Command:         command,
+					SubcommandFlags: application.StringSlice(subcommandFlags),
 				}
 
-				configuration, err := configurationParser.Parse([]string{})
-				Expect(err).NotTo(HaveOccurred())
+				application.SetGetState(func(dir string) (storage.State, error) {
+					return storage.State{}, errors.New("State Error")
+				})
 
-				Expect(configuration.State.AWS).To(Equal(storage.AWS{}))
+				_, err := configurationParser.Parse([]string{})
+				Expect(err).NotTo(HaveOccurred())
 			},
 				Entry("help", "help", []string{}),
 				Entry("--help", "some-command", []string{"--help"}),
@@ -97,26 +88,6 @@ var _ = Describe("ConfigurationParser", func() {
 				Entry("--version", "some-command", []string{"--version"}),
 				Entry("-v", "some-command", []string{"-v"}),
 			)
-
-			Context("when the arguments passed in contain a command that is not help or version", func() {
-				It("overrides aws configuration in the state with global flags", func() {
-					commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-						AWSAccessKeyID:     "access-key-id-from-flag",
-						AWSSecretAccessKey: "secret-access-key-from-flag",
-						AWSRegion:          "region-from-flag",
-						Command:            "up",
-					}
-
-					configuration, err := configurationParser.Parse([]string{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(configuration.State.AWS).To(Equal(storage.AWS{
-						AccessKeyID:     "access-key-id-from-flag",
-						SecretAccessKey: "secret-access-key-from-flag",
-						Region:          "region-from-flag",
-					}))
-				})
-			})
 		})
 
 		Context("failure cases", func() {
