@@ -2,8 +2,10 @@ package application
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
+	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 )
 
@@ -32,22 +34,59 @@ func NewCommandLineParser(usage func()) CommandLineParser {
 func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, error) {
 	var err error
 	commandLineConfiguration := CommandLineConfiguration{}
+	var commandNotFoundError error
+	commandWasBlank := false
 
 	commandFinderResult := NewCommandFinder().FindCommand(arguments)
 
+	commandSet := CommandSet{
+		commands.HelpCommand:             nil,
+		commands.VersionCommand:          nil,
+		commands.UpCommand:               nil,
+		commands.DestroyCommand:          nil,
+		commands.DirectorAddressCommand:  nil,
+		commands.DirectorUsernameCommand: nil,
+		commands.DirectorPasswordCommand: nil,
+		commands.SSHKeyCommand:           nil,
+		commands.CreateLBsCommand:        nil,
+		commands.UpdateLBsCommand:        nil,
+		commands.DeleteLBsCommand:        nil,
+		commands.LBsCommand:              nil,
+		commands.BOSHCACertCommand:       nil,
+		commands.EnvIDCommand:            nil,
+	}
+
+	_, ok := commandSet[commandFinderResult.Command]
+	if !ok {
+		if commandFinderResult.Command == "" {
+			commandNotFoundError = fmt.Errorf("Unrecognized command [EMPTY]")
+			commandWasBlank = true
+		} else {
+			commandNotFoundError = fmt.Errorf("Unrecognized command '%s'", commandFinderResult.Command)
+		}
+	}
+
+	commandLineConfiguration.SubcommandFlags = commandFinderResult.OtherArgs
 	commandLineConfiguration, _, err = p.parseGlobalFlags(commandLineConfiguration, commandFinderResult.GlobalFlags)
-	if err != nil {
+	if err != nil && commandNotFoundError == nil {
+		p.usage()
 		return CommandLineConfiguration{}, err
 	}
 
 	commandLineConfiguration.Command = commandFinderResult.Command
-	commandLineConfiguration = p.convertFlagsToCommands(commandLineConfiguration)
-	if commandLineConfiguration.Command == "" {
+	if commandLineConfiguration.help {
+		commandLineConfiguration.Command = "help"
+		if commandWasBlank {
+			commandNotFoundError = nil
+		} else {
+			commandLineConfiguration.SubcommandFlags = append([]string{commandFinderResult.Command}, commandLineConfiguration.SubcommandFlags...)
+		}
+	}
+	if commandNotFoundError != nil {
 		p.usage()
-		return CommandLineConfiguration{}, errors.New("unknown command: [EMPTY]")
+		return CommandLineConfiguration{}, commandNotFoundError
 	}
 
-	commandLineConfiguration.SubcommandFlags = commandFinderResult.OtherArgs
 	commandLineConfiguration, err = p.setDefaultStateDirectory(commandLineConfiguration)
 	if err != nil {
 		return CommandLineConfiguration{}, err
@@ -67,7 +106,6 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 
 	err := globalFlags.Parse(arguments)
 	if err != nil {
-		c.usage()
 		return CommandLineConfiguration{}, []string{}, err
 	}
 
@@ -97,16 +135,4 @@ func (CommandLineParser) setDefaultStateDirectory(commandLineConfiguration Comma
 	}
 
 	return commandLineConfiguration, nil
-}
-
-func (CommandLineParser) convertFlagsToCommands(commandLineConfiguration CommandLineConfiguration) CommandLineConfiguration {
-	if commandLineConfiguration.version {
-		commandLineConfiguration.Command = "version"
-	}
-
-	if commandLineConfiguration.help {
-		commandLineConfiguration.Command = "help"
-	}
-
-	return commandLineConfiguration
 }

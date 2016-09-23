@@ -31,7 +31,7 @@ var _ = Describe("bbl", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(session).Should(gexec.Exit(1))
-		Expect(session.Err.Contents()).To(ContainSubstring("unknown command: some-unknown-command"))
+		Expect(session.Err.Contents()).To(ContainSubstring("Unrecognized command 'some-unknown-command'"))
 		Expect(session.Out.Contents()).To(ContainSubstring("Usage"))
 	})
 
@@ -40,7 +40,7 @@ var _ = Describe("bbl", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(session).Should(gexec.Exit(1))
-		Expect(session.Err.Contents()).To(ContainSubstring("unknown command: [EMPTY]"))
+		Expect(session.Err.Contents()).To(ContainSubstring("Unrecognized command [EMPTY]"))
 		Expect(session.Out.Contents()).To(ContainSubstring("Usage"))
 	})
 })

@@ -28,7 +28,7 @@ var _ = Describe("CommandLineParser", func() {
 			args := []string{
 				"--endpoint-override=some-endpoint-override",
 				"--state-dir", "some/state/dir",
-				"some-command",
+				"up",
 				"--subcommand-flag", "some-value",
 			}
 			commandLineConfiguration, err := commandLineParser.Parse(args)
@@ -40,13 +40,13 @@ var _ = Describe("CommandLineParser", func() {
 
 		It("returns a command line configuration with correct command with subcommand flags based on arguments passed in", func() {
 			args := []string{
-				"some-command",
+				"up",
 				"--subcommand-flag", "some-value",
 			}
 			commandLineConfiguration, err := commandLineParser.Parse(args)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(commandLineConfiguration.Command).To(Equal("some-command"))
+			Expect(commandLineConfiguration.Command).To(Equal("up"))
 			Expect(commandLineConfiguration.SubcommandFlags).To(Equal([]string{"--subcommand-flag", "some-value"}))
 		})
 
@@ -63,7 +63,7 @@ var _ = Describe("CommandLineParser", func() {
 
 			It("uses the current working directory as the state directory", func() {
 				commandLineConfiguration, err := commandLineParser.Parse([]string{
-					"some-command",
+					"up",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -83,26 +83,46 @@ var _ = Describe("CommandLineParser", func() {
 			Entry("returns the help command provided --h", "--h", "help"),
 			Entry("returns the help command provided help", "help", "help"),
 
-			Entry("returns the version command provided --version", "--version", "version"),
-			Entry("returns the version command provided --v", "--v", "version"),
 			Entry("returns the version command provided version", "version", "version"),
 		)
+
+		It("runs help without error if more arguments are provided to help", func() {
+			commandLineConfiguration, err := commandLineParser.Parse([]string{
+				"--help",
+				"up",
+				"--aws-stuff",
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(commandLineConfiguration.Command).To(Equal("help"))
+			Expect(commandLineConfiguration.SubcommandFlags).To(Equal([]string{"up", "--aws-stuff"}))
+		})
 
 		Context("failure cases", func() {
 			It("returns an error and prints usage when an invalid flag is provided", func() {
 				_, err := commandLineParser.Parse([]string{
 					"--invalid-flag",
-					"some-command",
+					"up",
 				})
 
 				Expect(err).To(Equal(errors.New("flag provided but not defined: -invalid-flag")))
 				Expect(usageCallCount).To(Equal(1))
 			})
 
+			It("returns an error and prints usage when an invalid flag is provided to help", func() {
+				_, err := commandLineParser.Parse([]string{
+					"--help",
+					"badcmd",
+				})
+
+				Expect(err).To(Equal(errors.New("Unrecognized command 'badcmd'")))
+				Expect(usageCallCount).To(Equal(1))
+			})
+
 			It("returns an error and prints usage when command is not provided", func() {
 				_, err := commandLineParser.Parse([]string{})
 
-				Expect(err).To(Equal(errors.New("unknown command: [EMPTY]")))
+				Expect(err).To(Equal(errors.New("Unrecognized command [EMPTY]")))
 				Expect(usageCallCount).To(Equal(1))
 			})
 
@@ -113,9 +133,18 @@ var _ = Describe("CommandLineParser", func() {
 				defer application.ResetGetwd()
 
 				_, err := commandLineParser.Parse([]string{
-					"some-command",
+					"up",
 				})
 				Expect(err).To(MatchError("failed to get working directory"))
+			})
+
+			It("validates the command before it validates the global arguments", func() {
+				_, err := commandLineParser.Parse([]string{
+					"--badflag", "x", "help", "delete-lbs", "--other-flag",
+				})
+
+				Expect(err).To(Equal(errors.New("Unrecognized command 'x'")))
+				Expect(usageCallCount).To(Equal(1))
 			})
 		})
 	})

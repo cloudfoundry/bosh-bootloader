@@ -27,9 +27,9 @@ var _ = Describe("flags test", func() {
 				Eventually(session.Err).Should(gbytes.Say("flag provided but not defined: -some-invalid-flag"))
 			})
 
-			It("fails when unknown global commands are passed", func() {
+			It("fails when unknown global flags are passed", func() {
 				args := []string{
-					"-some-global-flag", "true",
+					"-some-global-flag",
 					"up",
 					"--aws-access-key-id", "some-aws-access-key-id",
 					"--aws-secret-access-key", "aws-secret-access-key",
@@ -40,6 +40,21 @@ var _ = Describe("flags test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 				Eventually(session.Err).Should(gbytes.Say("flag provided but not defined: -some-global-flag"))
+			})
+
+			It("fails when unknown commands are passed", func() {
+				args := []string{
+					"-h",
+					"badcmd",
+					"--aws-access-key-id", "some-aws-access-key-id",
+					"--aws-secret-access-key", "aws-secret-access-key",
+					"--aws-region", "aws-region",
+				}
+				cmd := exec.Command(pathToBBL, args...)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+				Eventually(session.Err).Should(gbytes.Say("Unrecognized command 'badcmd'"))
 			})
 		})
 	})

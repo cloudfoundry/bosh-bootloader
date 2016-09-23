@@ -41,7 +41,7 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("usage"))
 			})
 
-			It("prints out the help and ignores any sub-commands passed to it", func() {
+			It("prints out the help and errors on any unkown commands passed to it", func() {
 				args := []string{
 					"--help",
 					"some-invalid-command",
@@ -50,9 +50,24 @@ var _ = Describe("bbl", func() {
 				cmd := exec.Command(pathToBBL, args...)
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(0))
+				Eventually(session).Should(gexec.Exit(1))
 				Eventually(session.Out.Contents()).Should(ContainSubstring("bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]"))
-				Eventually(session.Out.Contents()).ShouldNot(ContainSubstring("some-invalid-command"))
+				Eventually(session.Err.Contents()).Should(ContainSubstring("some-invalid-command"))
+			})
+
+			It("prints out the help and ignores other args passed to it", func() {
+				args := []string{
+					"--help",
+					"up",
+					"--aws-gibberish",
+				}
+
+				cmd := exec.Command(pathToBBL, args...)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Eventually(session.Out.Contents()).Should(ContainSubstring("bbl [GLOBAL OPTIONS] up [OPTIONS]"))
+				Expect(session.Out.Contents()).NotTo(ContainSubstring("aws-gibberish"))
 			})
 		})
 	})
