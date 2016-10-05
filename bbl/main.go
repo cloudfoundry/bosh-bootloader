@@ -25,6 +25,10 @@ import (
 	"github.com/square/certstrap/pkix"
 )
 
+var (
+	Version string
+)
+
 func main() {
 	// Command Set
 	commandSet := application.CommandSet{
@@ -124,7 +128,7 @@ func main() {
 
 	// Commands
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
-	commandSet[commands.VersionCommand] = commands.NewVersion(os.Stdout)
+	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
 	commandSet[commands.UpCommand] = commands.NewUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
