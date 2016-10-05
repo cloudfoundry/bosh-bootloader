@@ -17,7 +17,6 @@ Usage:
 
 Global Options:
   --help      [-h]       Print usage
-  --version   [-v]       Print version
   --state-dir            Directory containing state.json
 %s
 `

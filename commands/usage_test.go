@@ -32,7 +32,6 @@ Usage:
 
 Global Options:
   --help      [-h]       Print usage
-  --version   [-v]       Print version
   --state-dir            Directory containing state.json
 
 Commands:
@@ -64,7 +63,6 @@ Commands:
 
 Global Options:
   --help      [-h]       Print usage
-  --version   [-v]       Print version
   --state-dir            Directory containing state.json
 
 [my-command command options]
