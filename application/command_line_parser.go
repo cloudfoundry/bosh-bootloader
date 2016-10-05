@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 )
@@ -80,6 +81,10 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 }
 
 func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLineConfiguration, arguments []string) (CommandLineConfiguration, []string, error) {
+	if err := c.validateGlobalFlags(arguments); err != nil {
+		return commandLineConfiguration, []string{}, err
+	}
+
 	globalFlags := flags.New("global")
 
 	globalFlags.String(&commandLineConfiguration.EndpointOverride, "endpoint-override", "")
@@ -94,6 +99,22 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 	}
 
 	return commandLineConfiguration, globalFlags.Args(), nil
+}
+
+func (c CommandLineParser) validateGlobalFlags(arguments []string) error {
+	hasStateDir := false
+	for _, argument := range arguments {
+		name := strings.Split(argument, "=")[0]
+		if name == "--state-dir" || name == "-state-dir" {
+			if hasStateDir {
+				return errors.New("Invalid usage: cannot specify global 'state-dir' flag more than once.")
+			}
+
+			hasStateDir = true
+		}
+	}
+
+	return nil
 }
 
 func (c CommandLineParser) parseCommandAndSubcommandFlags(commandLineConfiguration CommandLineConfiguration, remainingArguments []string) (CommandLineConfiguration, error) {

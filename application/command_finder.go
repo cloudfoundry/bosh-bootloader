@@ -27,7 +27,7 @@ func (finder commandFinder) FindCommand(input []string) CommandFinderResult {
 	commandFound := false
 	for index, word := range input {
 		if !strings.HasPrefix(word, "-") {
-			if previousCommand != "--state-dir" {
+			if previousCommand != "--state-dir" && previousCommand != "-state-dir" {
 				commandIndex = index
 				commandFound = true
 				break

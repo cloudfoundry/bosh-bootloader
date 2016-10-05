@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -56,6 +57,20 @@ var _ = Describe("CommandLineParser", func() {
 			Expect(commandLineConfiguration.Command).To(Equal("up"))
 			Expect(commandLineConfiguration.SubcommandFlags).To(Equal([]string{"--subcommand-flag", "some-value"}))
 		})
+
+		DescribeTable("returns an error when --state-dir is provided twice", func(arguments string) {
+			args := strings.Split(arguments, " ")
+			_, err := commandLineParser.Parse(args)
+			Expect(err).To(MatchError("Invalid usage: cannot specify global 'state-dir' flag more than once."))
+		},
+			Entry("--state-dir with spaces", "--state-dir /some/state/dir --state-dir /some/other/state/dir up"),
+			Entry("--state-dir with equal signs", "--state-dir=/some/state/dir --state-dir=/some/other/state/dir up"),
+			Entry("--state-dir with mixed spaces/equal signs", "--state-dir=/some/state/dir --state-dir /some/other/state/dir up"),
+			Entry("-state-dir with spaces", "-state-dir /some/state/dir -state-dir /some/other/state/dir up"),
+			Entry("-state-dir with equal signs", "-state-dir=/some/state/dir -state-dir=/some/other/state/dir up"),
+			Entry("-state-dir with mixed spaces/equal signs", "-state-dir=/some/state/dir -state-dir /some/other/state/dir up"),
+			Entry("--state-dir/-state-dir", "--state-dir=/some/state/dir -state-dir /some/other/state/dir up"),
+		)
 
 		Context("when no --state-dir is provided", func() {
 			BeforeEach(func() {
