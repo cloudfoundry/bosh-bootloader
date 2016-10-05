@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 )
 
@@ -22,12 +21,14 @@ type CommandLineConfiguration struct {
 }
 
 type CommandLineParser struct {
-	usage func()
+	usage      func()
+	commandSet CommandSet
 }
 
-func NewCommandLineParser(usage func()) CommandLineParser {
+func NewCommandLineParser(usage func(), commandSet CommandSet) CommandLineParser {
 	return CommandLineParser{
-		usage: usage,
+		usage:      usage,
+		commandSet: commandSet,
 	}
 }
 
@@ -39,24 +40,7 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 
 	commandFinderResult := NewCommandFinder().FindCommand(arguments)
 
-	commandSet := CommandSet{
-		commands.HelpCommand:             nil,
-		commands.VersionCommand:          nil,
-		commands.UpCommand:               nil,
-		commands.DestroyCommand:          nil,
-		commands.DirectorAddressCommand:  nil,
-		commands.DirectorUsernameCommand: nil,
-		commands.DirectorPasswordCommand: nil,
-		commands.SSHKeyCommand:           nil,
-		commands.CreateLBsCommand:        nil,
-		commands.UpdateLBsCommand:        nil,
-		commands.DeleteLBsCommand:        nil,
-		commands.LBsCommand:              nil,
-		commands.BOSHCACertCommand:       nil,
-		commands.EnvIDCommand:            nil,
-	}
-
-	_, ok := commandSet[commandFinderResult.Command]
+	_, ok := p.commandSet[commandFinderResult.Command]
 	if !ok {
 		if commandFinderResult.Command == "" {
 			commandNotFoundError = fmt.Errorf("Unrecognized command [EMPTY]")

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
+	"github.com/cloudfoundry/bosh-bootloader/commands"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -20,7 +21,13 @@ var _ = Describe("CommandLineParser", func() {
 		usageFunc := func() {
 			usageCallCount++
 		}
-		commandLineParser = application.NewCommandLineParser(usageFunc)
+		commandSet := application.CommandSet{
+			commands.UpCommand:      nil,
+			commands.VersionCommand: nil,
+			commands.HelpCommand:    nil,
+		}
+
+		commandLineParser = application.NewCommandLineParser(usageFunc, commandSet)
 	})
 
 	Describe("Parse", func() {

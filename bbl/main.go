@@ -26,6 +26,24 @@ import (
 )
 
 func main() {
+	// Command Set
+	commandSet := application.CommandSet{
+		commands.HelpCommand:             nil,
+		commands.VersionCommand:          nil,
+		commands.UpCommand:               nil,
+		commands.DestroyCommand:          nil,
+		commands.DirectorAddressCommand:  nil,
+		commands.DirectorUsernameCommand: nil,
+		commands.DirectorPasswordCommand: nil,
+		commands.SSHKeyCommand:           nil,
+		commands.CreateLBsCommand:        nil,
+		commands.UpdateLBsCommand:        nil,
+		commands.DeleteLBsCommand:        nil,
+		commands.LBsCommand:              nil,
+		commands.BOSHCACertCommand:       nil,
+		commands.EnvIDCommand:            nil,
+	}
+
 	// Utilities
 	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
@@ -36,7 +54,7 @@ func main() {
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
 
-	commandLineParser := application.NewCommandLineParser(usage.Print)
+	commandLineParser := application.NewCommandLineParser(usage.Print, commandSet)
 	configurationParser := application.NewConfigurationParser(commandLineParser)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
@@ -105,66 +123,51 @@ func main() {
 	cloudConfigManager := bosh.NewCloudConfigManager(logger, cloudConfigGenerator)
 
 	// Commands
-	help := commands.NewUsage(os.Stdout)
-	version := commands.NewVersion(os.Stdout)
-	up := commands.NewUp(
+	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
+	commandSet[commands.VersionCommand] = commands.NewVersion(os.Stdout)
+	commandSet[commands.UpCommand] = commands.NewUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
 		clientProvider,
 	)
-	destroy := commands.NewDestroy(
+	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore,
 	)
-	createLBs := commands.NewCreateLBs(
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore,
 	)
-	updateLBs := commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
+	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore)
-	deleteLBs := commands.NewDeleteLBs(
+	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
 	)
-	lbs := commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
-	directorAddress := commands.NewStateQuery(logger, commands.DirectorAddressPropertyName, func(state storage.State) string {
+	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
+	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})
-	directorUsername := commands.NewStateQuery(logger, commands.DirectorUsernamePropertyName, func(state storage.State) string {
+	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, commands.DirectorUsernamePropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorUsername
 	})
-	directorPassword := commands.NewStateQuery(logger, commands.DirectorPasswordPropertyName, func(state storage.State) string {
+	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, commands.DirectorPasswordPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorPassword
 	})
-	sshKey := commands.NewStateQuery(logger, commands.SSHKeyPropertyName, func(state storage.State) string {
+	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, commands.SSHKeyPropertyName, func(state storage.State) string {
 		return state.KeyPair.PrivateKey
 	})
-	boshCACert := commands.NewStateQuery(logger, commands.BOSHCACertPropertyName, func(state storage.State) string {
+	commandSet[commands.BOSHCACertCommand] = commands.NewStateQuery(logger, commands.BOSHCACertPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorSSLCA
 	})
-	envID := commands.NewStateQuery(logger, commands.EnvIDPropertyName, func(state storage.State) string {
+	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, commands.EnvIDPropertyName, func(state storage.State) string {
 		return state.EnvID
 	})
 
-	app := application.New(application.CommandSet{
-		commands.HelpCommand:             help,
-		commands.VersionCommand:          version,
-		commands.UpCommand:               up,
-		commands.DestroyCommand:          destroy,
-		commands.DirectorAddressCommand:  directorAddress,
-		commands.DirectorUsernameCommand: directorUsername,
-		commands.DirectorPasswordCommand: directorPassword,
-		commands.SSHKeyCommand:           sshKey,
-		commands.CreateLBsCommand:        createLBs,
-		commands.UpdateLBsCommand:        updateLBs,
-		commands.DeleteLBsCommand:        deleteLBs,
-		commands.LBsCommand:              lbs,
-		commands.BOSHCACertCommand:       boshCACert,
-		commands.EnvIDCommand:            envID,
-	}, configuration, stateStore, usage)
+	app := application.New(commandSet, configuration, stateStore, usage)
 
 	err = app.Run()
 	if err != nil {
