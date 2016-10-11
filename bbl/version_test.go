@@ -1,7 +1,9 @@
 package main_test
 
 import (
+	"fmt"
 	"os/exec"
+	"runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -36,6 +38,7 @@ var _ = Describe("bbl", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 				Expect(session.Out.Contents()).To(ContainSubstring("bbl 1.2.3"))
+				Expect(session.Out.Contents()).To(ContainSubstring(fmt.Sprintf("(%s/%s)", runtime.GOOS, runtime.GOARCH)))
 			})
 		})
 	})

@@ -2,6 +2,8 @@ package commands_test
 
 import (
 	"bytes"
+	"fmt"
+	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -26,7 +28,7 @@ var _ = Describe("Version", func() {
 			It("prints out dev as the version", func() {
 				err := version.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout.String()).To(Equal("bbl dev\n"))
+				Expect(stdout.String()).To(Equal(fmt.Sprintf("bbl dev (%s/%s)\n", runtime.GOOS, runtime.GOARCH)))
 			})
 		})
 	})
@@ -41,7 +43,7 @@ var _ = Describe("Version", func() {
 			It("prints out the passed in version information", func() {
 				err := version.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout.String()).To(Equal("bbl 1.2.3\n"))
+				Expect(stdout.String()).To(Equal(fmt.Sprintf("bbl 1.2.3 (%s/%s)\n", runtime.GOOS, runtime.GOARCH)))
 			})
 		})
 	})
