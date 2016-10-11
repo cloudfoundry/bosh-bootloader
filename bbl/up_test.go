@@ -129,7 +129,7 @@ var _ = Describe("bbl", func() {
 			var stack awsbackend.Stack
 
 			It("creates a stack and a keypair", func() {
-				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				up(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -144,7 +144,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("creates an IAM user", func() {
-				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				up(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -192,7 +192,7 @@ var _ = Describe("bbl", func() {
 						DirectorAddress: fakeBOSHServer.URL,
 					},
 				}, tempDirectory)
-				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				up(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -217,7 +217,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("logs the steps and bosh-init manifest", func() {
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session := up(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: creating keypair"))
@@ -229,13 +229,13 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("invokes bosh-init", func() {
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session := up(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 			})
 
 			It("names the bosh director with env id", func() {
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session := up(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-bbl-"))
 			})
 
@@ -263,12 +263,12 @@ var _ = Describe("bbl", func() {
 						DirectorAddress: fakeBOSHServer.URL,
 					},
 				}, tempDirectory)
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session := up(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: my-bosh"))
 			})
 
 			It("signs bosh-init cert and key with the generated CA cert", func() {
-				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				up(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -292,11 +292,11 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("can invoke bosh-init idempotently", func() {
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session := up(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 
-				session = deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session = up(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value","md5checksum":`))
 				Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
@@ -304,7 +304,7 @@ var _ = Describe("bbl", func() {
 
 			It("fast fails if the bosh state exists", func() {
 				writeStateJson(storage.State{BOSH: storage.BOSH{DirectorAddress: "some-director-address"}}, tempDirectory)
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+				session := up(fakeAWSServer.URL, tempDirectory, 1)
 				Expect(session.Err.Contents()).To(ContainSubstring("Found BOSH data in state directory"))
 			})
 		})
@@ -334,7 +334,7 @@ var _ = Describe("bbl", func() {
 
 				ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
 
-				session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				session := up(fakeAWSServer.URL, tempDirectory, 0)
 
 				template, err := ioutil.ReadFile("fixtures/cloudformation-no-elb.json")
 				Expect(err).NotTo(HaveOccurred())
@@ -355,7 +355,7 @@ var _ = Describe("bbl", func() {
 
 		Context("when a load balancer is attached", func() {
 			It("attaches certificate to the load balancer", func() {
-				deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+				up(fakeAWSServer.URL, tempDirectory, 0)
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 
 				state := readStateJson(tempDirectory)
@@ -390,7 +390,7 @@ var _ = Describe("bbl", func() {
 			contents, err := ioutil.ReadFile(fixtureLocation)
 			Expect(err).NotTo(HaveOccurred())
 
-			session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+			session := up(fakeAWSServer.URL, tempDirectory, 0)
 			if lbType != "" {
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, lbType, 0, false)
 			}
@@ -424,7 +424,7 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create keypair",
 					})
-					session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					session := up(fakeAWSServer.URL, tempDirectory, 1)
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
@@ -445,7 +445,7 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create stack",
 					})
-					session := deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					session := up(fakeAWSServer.URL, tempDirectory, 1)
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
@@ -464,7 +464,7 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create stack",
 					})
-					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					up(fakeAWSServer.URL, tempDirectory, 1)
 					state := readStateJson(tempDirectory)
 
 					Expect(state.KeyPair.PrivateKey).To(ContainSubstring(testhelpers.PRIVATE_KEY))
@@ -476,10 +476,10 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create stack",
 					})
-					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					up(fakeAWSServer.URL, tempDirectory, 1)
 
 					fakeAWS.Stacks.SetCreateStackReturnError(nil)
-					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+					up(fakeAWSServer.URL, tempDirectory, 0)
 
 					Expect(fakeAWS.CreateKeyPairCallCount).To(Equal(int64(1)))
 				})
@@ -503,10 +503,10 @@ var _ = Describe("bbl", func() {
 					})
 
 					By("running up twice and checking if it created one stack", func() {
-						deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+						up(fakeAWSServer.URL, tempDirectory, 1)
 
 						os.Setenv("PATH", originalPath)
-						deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+						up(fakeAWSServer.URL, tempDirectory, 0)
 
 						Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
 					})
@@ -516,7 +516,7 @@ var _ = Describe("bbl", func() {
 			Context("when bosh cloud config fails to update", func() {
 				It("saves the bosh properties to the state", func() {
 					fakeBOSH.SetCloudConfigEndpointFail(true)
-					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 1)
+					up(fakeAWSServer.URL, tempDirectory, 1)
 					state := readStateJson(tempDirectory)
 
 					Expect(state.BOSH.DirectorName).To(MatchRegexp(`bosh-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
@@ -524,7 +524,7 @@ var _ = Describe("bbl", func() {
 					originalBOSHState := state.BOSH
 
 					fakeBOSH.SetCloudConfigEndpointFail(false)
-					deployBOSHOnAWSForConcourse(fakeAWSServer.URL, tempDirectory, 0)
+					up(fakeAWSServer.URL, tempDirectory, 0)
 					state = readStateJson(tempDirectory)
 
 					Expect(state.BOSH).To(Equal(originalBOSHState))
@@ -535,7 +535,7 @@ var _ = Describe("bbl", func() {
 
 })
 
-func deployBOSHOnAWSForConcourse(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
+func up(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--state-dir", tempDirectory,
