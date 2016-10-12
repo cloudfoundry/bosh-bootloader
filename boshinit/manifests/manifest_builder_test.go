@@ -25,6 +25,7 @@ var _ = Describe("ManifestBuilder", func() {
 		manifestProperties           manifests.ManifestProperties
 		cloudProviderManifestBuilder manifests.CloudProviderManifestBuilder
 		jobsManifestBuilder          manifests.JobsManifestBuilder
+		input                        manifests.ManifestBuilderInput
 	)
 
 	BeforeEach(func() {
@@ -33,8 +34,16 @@ var _ = Describe("ManifestBuilder", func() {
 		stringGenerator = &fakes.StringGenerator{}
 		cloudProviderManifestBuilder = manifests.NewCloudProviderManifestBuilder(stringGenerator)
 		jobsManifestBuilder = manifests.NewJobsManifestBuilder(stringGenerator)
+		input = manifests.ManifestBuilderInput{
+			BOSHURL:        "some-bosh-url",
+			BOSHSHA1:       "some-bosh-sha1",
+			BOSHAWSCPIURL:  "some-bosh-aws-cpi-url",
+			BOSHAWSCPISHA1: "some-bosh-aws-cpi-sha1",
+			StemcellURL:    "some-stemcell-url",
+			StemcellSHA1:   "some-stemcell-sha1",
+		}
 
-		manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
+		manifestBuilder = manifests.NewManifestBuilder(input, logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
 		manifestProperties = manifests.ManifestProperties{
 			DirectorName:     "bosh-name",
 			DirectorUsername: "bosh-username",
@@ -225,7 +234,7 @@ var _ = Describe("ManifestBuilder", func() {
 				BeforeEach(func() {
 					fakeCloudProviderManifestBuilder := &fakes.CloudProviderManifestBuilder{}
 					fakeCloudProviderManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
-					manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
+					manifestBuilder = manifests.NewManifestBuilder(input, logger, sslKeyPairGenerator, stringGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
 					manifestProperties = manifests.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",
@@ -250,7 +259,7 @@ var _ = Describe("ManifestBuilder", func() {
 				BeforeEach(func() {
 					fakeJobsManifestBuilder := &fakes.JobsManifestBuilder{}
 					fakeJobsManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
-					manifestBuilder = manifests.NewManifestBuilder(logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
+					manifestBuilder = manifests.NewManifestBuilder(input, logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
 					manifestProperties = manifests.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",

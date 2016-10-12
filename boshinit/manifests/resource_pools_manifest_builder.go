@@ -6,14 +6,14 @@ func NewResourcePoolsManifestBuilder() ResourcePoolsManifestBuilder {
 	return ResourcePoolsManifestBuilder{}
 }
 
-func (r ResourcePoolsManifestBuilder) Build(manifestProperties ManifestProperties) []ResourcePool {
+func (r ResourcePoolsManifestBuilder) Build(manifestProperties ManifestProperties, stemcellURL string, stemcellSHA1 string) []ResourcePool {
 	return []ResourcePool{
 		{
 			Name:    "vms",
 			Network: "private",
 			Stemcell: Stemcell{
-				URL:  "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.12",
-				SHA1: "90e9825b814da801e1aff7b02508fdada8e155cb",
+				URL:  stemcellURL,
+				SHA1: stemcellSHA1,
 			},
 			CloudProperties: ResourcePoolCloudProperties{
 				InstanceType: "m3.xlarge",

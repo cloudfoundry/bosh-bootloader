@@ -41,6 +41,7 @@ type ManifestProperties struct {
 }
 
 type ManifestBuilder struct {
+	input                        ManifestBuilderInput
 	logger                       logger
 	sslKeyPairGenerator          sslKeyPairGenerator
 	stringGenerator              stringGenerator
@@ -48,8 +49,18 @@ type ManifestBuilder struct {
 	jobsManifestBuilder          jobsManifestBuilder
 }
 
-func NewManifestBuilder(logger logger, sslKeyPairGenerator sslKeyPairGenerator, stringGenerator stringGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {
+type ManifestBuilderInput struct {
+	BOSHURL        string
+	BOSHSHA1       string
+	BOSHAWSCPIURL  string
+	BOSHAWSCPISHA1 string
+	StemcellURL    string
+	StemcellSHA1   string
+}
+
+func NewManifestBuilder(input ManifestBuilderInput, logger logger, sslKeyPairGenerator sslKeyPairGenerator, stringGenerator stringGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {
 	return ManifestBuilder{
+		input:                        input,
 		logger:                       logger,
 		sslKeyPairGenerator:          sslKeyPairGenerator,
 		stringGenerator:              stringGenerator,
@@ -87,8 +98,8 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 
 	return Manifest{
 		Name:          "bosh",
-		Releases:      releaseManifestBuilder.Build(),
-		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties),
+		Releases:      releaseManifestBuilder.Build(m.input.BOSHURL, m.input.BOSHSHA1, m.input.BOSHAWSCPIURL, m.input.BOSHAWSCPISHA1),
+		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties, m.input.StemcellURL, m.input.StemcellSHA1),
 		DiskPools:     diskPoolsManifestBuilder.Build(),
 		Networks:      networksManifestBuilder.Build(manifestProperties),
 		Jobs:          jobs,

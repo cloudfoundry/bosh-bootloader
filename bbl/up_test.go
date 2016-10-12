@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -125,6 +127,65 @@ var _ = Describe("bbl", func() {
 	})
 
 	Describe("up", func() {
+		Context("when bosh/cpi/stemcell is provided via ldflags", func() {
+			It("creates a bosh with provided versions", func() {
+				up(fakeAWSServer.URL, tempDirectory, 0)
+
+				state := readStateJson(tempDirectory)
+				var boshManifest struct {
+					Releases []struct {
+						Name string
+						URL  string
+						SHA1 string
+					}
+					ResourcePools []struct {
+						Stemcell struct {
+							URL  string
+							SHA1 string
+						}
+					} `yaml:"resource_pools"`
+				}
+
+				err := yaml.Unmarshal([]byte(state.BOSH.Manifest), &boshManifest)
+				Expect(err).NotTo(HaveOccurred())
+
+				boshRelease := boshManifest.Releases[0]
+				boshAWSCPIRelease := boshManifest.Releases[1]
+				stemcell := boshManifest.ResourcePools[0].Stemcell
+
+				Expect(boshRelease.URL).To(Equal("http://some-bosh-url"))
+				Expect(boshRelease.SHA1).To(Equal("some-bosh-sha1"))
+
+				Expect(boshAWSCPIRelease.URL).To(Equal("http://some-bosh-aws-cpi-url"))
+				Expect(boshAWSCPIRelease.SHA1).To(Equal("some-bosh-aws-cpi-sha1"))
+
+				Expect(stemcell.URL).To(Equal("http://some-stemcell-url"))
+				Expect(stemcell.SHA1).To(Equal("some-stemcell-sha1"))
+			})
+		})
+
+		Context("when bosh/cpi/stemcell is not provided via ldflags", func() {
+			It("fast fails", func() {
+				var err error
+				pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl")
+				Expect(err).NotTo(HaveOccurred())
+				up(fakeAWSServer.URL, tempDirectory, 1)
+
+				// Reset the pathToBBL
+				pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl",
+					"-ldflags", strings.Join([]string{
+						"-X main.BOSHURL=http://some-bosh-url",
+						"-X main.BOSHSHA1=some-bosh-sha1",
+						"-X main.BOSHAWSCPIURL=http://some-bosh-aws-cpi-url",
+						"-X main.BOSHAWSCPISHA1=some-bosh-aws-cpi-sha1",
+						"-X main.StemcellURL=http://some-stemcell-url",
+						"-X main.StemcellSHA1=some-stemcell-sha1",
+					}, " "))
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+		})
+
 		Context("when the cloudformation stack does not exist", func() {
 			var stack awsbackend.Stack
 

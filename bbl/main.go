@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,10 +27,21 @@ import (
 )
 
 var (
-	Version string
+	BOSHURL        string
+	BOSHSHA1       string
+	BOSHAWSCPIURL  string
+	BOSHAWSCPISHA1 string
+	StemcellURL    string
+	StemcellSHA1   string
+	Version        string
 )
 
 func main() {
+	// Fail fast if LD flags not specified
+	if BOSHURL == "" || BOSHSHA1 == "" || BOSHAWSCPIURL == "" || BOSHAWSCPISHA1 == "" || StemcellURL == "" || StemcellSHA1 == "" {
+		fail(errors.New("ldflags not specified"))
+	}
+
 	// Command Set
 	commandSet := application.CommandSet{
 		commands.HelpCommand:             nil,
@@ -108,8 +120,19 @@ func main() {
 
 	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
 	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
-	boshinitManifestBuilder := manifests.NewManifestBuilder(
-		logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder,
+	boshinitManifestBuilder := manifests.NewManifestBuilder(manifests.ManifestBuilderInput{
+		BOSHURL:        BOSHURL,
+		BOSHSHA1:       BOSHSHA1,
+		BOSHAWSCPIURL:  BOSHAWSCPIURL,
+		BOSHAWSCPISHA1: BOSHAWSCPISHA1,
+		StemcellURL:    StemcellURL,
+		StemcellSHA1:   StemcellSHA1,
+	},
+		logger,
+		sslKeyPairGenerator,
+		stringGenerator,
+		cloudProviderManifestBuilder,
+		jobsManifestBuilder,
 	)
 	boshinitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
 	boshinitDeployCommand := boshinitCommandBuilder.DeployCommand()
