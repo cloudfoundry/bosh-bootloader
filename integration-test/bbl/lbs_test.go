@@ -43,7 +43,9 @@ var _ = Describe("load balancer tests", func() {
 
 		Expect(aws.StackExists(stackName)).To(BeTrue())
 		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
-		Expect(boshcli.DirectorExists(directorAddress, caCertPath)).To(BeTrue())
+		exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(exists).To(BeTrue())
 
 		natInstanceID := aws.GetPhysicalID(stackName, "NATInstance")
 		Expect(natInstanceID).NotTo(BeEmpty())
@@ -86,7 +88,10 @@ var _ = Describe("load balancer tests", func() {
 		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(BeEmpty())
 
 		bbl.Destroy()
-		Expect(boshcli.DirectorExists(directorAddress, caCertPath)).To(BeFalse())
+
+		exists, _ = boshcli.DirectorExists(directorAddress, caCertPath)
+		Expect(exists).To(BeFalse())
+
 		Expect(aws.StackExists(stackName)).To(BeFalse())
 	})
 })
