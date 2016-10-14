@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
+	"github.com/cloudfoundry/bosh-bootloader/bbl/constants"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/onsi/gomega/gexec"
@@ -153,36 +154,14 @@ var _ = Describe("bbl", func() {
 				boshAWSCPIRelease := boshManifest.Releases[1]
 				stemcell := boshManifest.ResourcePools[0].Stemcell
 
-				Expect(boshRelease.URL).To(Equal("http://some-bosh-url"))
-				Expect(boshRelease.SHA1).To(Equal("some-bosh-sha1"))
+				Expect(boshRelease.URL).To(Equal(constants.BOSHURL))
+				Expect(boshRelease.SHA1).To(Equal(constants.BOSHSHA1))
 
-				Expect(boshAWSCPIRelease.URL).To(Equal("http://some-bosh-aws-cpi-url"))
-				Expect(boshAWSCPIRelease.SHA1).To(Equal("some-bosh-aws-cpi-sha1"))
+				Expect(boshAWSCPIRelease.URL).To(Equal(constants.BOSHAWSCPIURL))
+				Expect(boshAWSCPIRelease.SHA1).To(Equal(constants.BOSHAWSCPISHA1))
 
-				Expect(stemcell.URL).To(Equal("http://some-stemcell-url"))
-				Expect(stemcell.SHA1).To(Equal("some-stemcell-sha1"))
-			})
-		})
-
-		Context("when bosh/cpi/stemcell is not provided via ldflags", func() {
-			It("fast fails", func() {
-				var err error
-				pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl")
-				Expect(err).NotTo(HaveOccurred())
-				up(fakeAWSServer.URL, tempDirectory, 1)
-
-				// Reset the pathToBBL
-				pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl",
-					"-ldflags", strings.Join([]string{
-						"-X main.BOSHURL=http://some-bosh-url",
-						"-X main.BOSHSHA1=some-bosh-sha1",
-						"-X main.BOSHAWSCPIURL=http://some-bosh-aws-cpi-url",
-						"-X main.BOSHAWSCPISHA1=some-bosh-aws-cpi-sha1",
-						"-X main.StemcellURL=http://some-stemcell-url",
-						"-X main.StemcellSHA1=some-stemcell-sha1",
-					}, " "))
-				Expect(err).NotTo(HaveOccurred())
-
+				Expect(stemcell.URL).To(Equal(constants.StemcellURL))
+				Expect(stemcell.SHA1).To(Equal(constants.StemcellSHA1))
 			})
 		})
 

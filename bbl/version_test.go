@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
-	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,14 +28,7 @@ var _ = Describe("bbl", func() {
 			BeforeEach(func() {
 				var err error
 				pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl",
-					"--ldflags", strings.Join([]string{"-X main.Version=1.2.3",
-						"-X main.BOSHURL=http://some-bosh-url",
-						"-X main.BOSHSHA1=some-bosh-sha1",
-						"-X main.BOSHAWSCPIURL=http://some-bosh-aws-cpi-url",
-						"-X main.BOSHAWSCPISHA1=some-bosh-aws-cpi-sha1",
-						"-X main.StemcellURL=http://some-stemcell-url",
-						"-X main.StemcellSHA1=some-stemcell-sha1",
-					}, " "))
+					"--ldflags", "-X main.Version=1.2.3")
 				Expect(err).NotTo(HaveOccurred())
 			})
 

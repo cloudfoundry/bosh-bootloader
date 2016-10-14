@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/bbl/constants"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
@@ -27,21 +27,10 @@ import (
 )
 
 var (
-	BOSHURL        string
-	BOSHSHA1       string
-	BOSHAWSCPIURL  string
-	BOSHAWSCPISHA1 string
-	StemcellURL    string
-	StemcellSHA1   string
-	Version        string
+	Version string
 )
 
 func main() {
-	// Fail fast if LD flags not specified
-	if BOSHURL == "" || BOSHSHA1 == "" || BOSHAWSCPIURL == "" || BOSHAWSCPISHA1 == "" || StemcellURL == "" || StemcellSHA1 == "" {
-		fail(errors.New("ldflags not specified"))
-	}
-
 	// Command Set
 	commandSet := application.CommandSet{
 		commands.HelpCommand:             nil,
@@ -121,12 +110,12 @@ func main() {
 	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
 	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
 	boshinitManifestBuilder := manifests.NewManifestBuilder(manifests.ManifestBuilderInput{
-		BOSHURL:        BOSHURL,
-		BOSHSHA1:       BOSHSHA1,
-		BOSHAWSCPIURL:  BOSHAWSCPIURL,
-		BOSHAWSCPISHA1: BOSHAWSCPISHA1,
-		StemcellURL:    StemcellURL,
-		StemcellSHA1:   StemcellSHA1,
+		BOSHURL:        constants.BOSHURL,
+		BOSHSHA1:       constants.BOSHSHA1,
+		BOSHAWSCPIURL:  constants.BOSHAWSCPIURL,
+		BOSHAWSCPISHA1: constants.BOSHAWSCPISHA1,
+		StemcellURL:    constants.StemcellURL,
+		StemcellSHA1:   constants.StemcellSHA1,
 	},
 		logger,
 		sslKeyPairGenerator,
