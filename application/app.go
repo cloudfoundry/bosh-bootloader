@@ -1,8 +1,10 @@
 package application
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -81,7 +83,18 @@ func (a App) execute() error {
 
 	err = command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
 	if err != nil {
-		return err
+		switch err.(type) {
+		case awserr.RequestFailure:
+			requestFailure := err.(awserr.RequestFailure)
+			if requestFailure.StatusCode() == 403 && requestFailure.Code() == "AccessDenied" {
+				return errors.New(fmt.Sprintf(
+					"The AWS credentials provided have insufficient permissions to perform the operation `bbl %s`.\nPlease refer to the bbl README:\nhttps://github.com/cloudfoundry/bosh-bootloader#configure-aws.\nOriginal error message from AWS:\n\n%s",
+					a.configuration.Command, requestFailure.Message()))
+			}
+			return err
+		default:
+			return err
+		}
 	}
 
 	return nil
