@@ -133,6 +133,7 @@ type Route struct {
 
 type Instance struct {
 	InstanceType     string                 `json:",omitempty"`
+	PrivateIpAddress string                 `json:",omitempty"`
 	SubnetId         interface{}            `json:",omitempty"`
 	ImageId          map[string]interface{} `json:",omitempty"`
 	KeyName          interface{}            `json:",omitempty"`

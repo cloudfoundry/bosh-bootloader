@@ -4,31 +4,6 @@ ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 function main {
   pushd "${ROOT_DIRECTORY}"
-    mkdir -p /tmp/bbl-compiled-bosh-release-s3
-    mkdir -p /tmp/stemcell
-    mkdir -p /tmp/bosh-aws-cpi-release
-
-    local bosh_release
-    bosh_release=$(aws s3 ls bbl-precompiled-bosh-releases --region us-east --recursive --no-sign-request | sort | grep release-bosh | tail -1 | cut -f 5 -d" ")
-    echo "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/${bosh_release}" > /tmp/bbl-compiled-bosh-release-s3/url
-    curl -ko "/tmp/bbl-compiled-bosh-release-s3/${bosh_release}" $(cat /tmp/bbl-compiled-bosh-release-s3/url)
-
-    local stemcell_info
-    stemcell_info=$(curl  "https://bosh.io/api/v1/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent" | jq .[0])
-    echo "${stemcell_info}" | jq -r .version > /tmp/stemcell/version
-    echo "${stemcell_info}" | jq -r .light.sha1 > /tmp/stemcell/sha1
-    echo "${stemcell_info}" | jq -r .light.url > /tmp/stemcell/url
-
-    curl -ko /tmp/stemcell/stemcell.tgz $(cat /tmp/stemcell/url)
-
-    local aws_cpi_info
-    aws_cpi_info=$(curl  "https://bosh.io/api/v1/releases/github.com/cloudfoundry-incubator/bosh-aws-cpi-release" | jq .[0])
-    echo "${aws_cpi_info}" | jq -r .version > /tmp/bosh-aws-cpi-release/version
-    echo "${aws_cpi_info}" | jq -r .sha1 > /tmp/bosh-aws-cpi-release/sha1
-    echo "${aws_cpi_info}" | jq -r .url > /tmp/bosh-aws-cpi-release/url
-
-    curl -ko /tmp/bosh-aws-cpi-release/release.tgz $(cat /tmp/bosh-aws-cpi-release/url)
-
     docker pull cfinfrastructure/deployment
 
     docker run \
@@ -36,9 +11,6 @@ function main {
       -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
       -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
       -v $PWD:/bosh-bootloader \
-      -v /tmp/bbl-compiled-bosh-release-s3:/bbl-compiled-bosh-release-s3 \
-      -v /tmp/stemcell:/stemcell \
-      -v /tmp/bosh-aws-cpi-release:/bosh-aws-cpi-release \
       -v ${MEGA_CI:-"${GOPATH}/src/github.com/cloudfoundry/mega-ci"}:/mega-ci \
       cfinfrastructure/deployment ${TEST_TASK:-"/mega-ci/scripts/ci/bosh-bootloader/integration"}
   popd

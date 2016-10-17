@@ -376,6 +376,7 @@
                 },
                 "InstanceType": "t2.medium",
                 "KeyName": {"Ref": "SSHKeyPairName"},
+                "PrivateIpAddress": "10.0.0.7",
                 "SecurityGroupIds": [{"Ref": "NATSecurityGroup"}],
                 "SourceDestCheck": false,
                 "SubnetId": {"Ref": "BOSHSubnet"},

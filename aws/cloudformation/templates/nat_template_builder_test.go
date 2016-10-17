@@ -59,9 +59,10 @@ var _ = Describe("NATTemplateBuilder", func() {
 			Expect(nat.Resources).To(HaveKeyWithValue("NATInstance", templates.Resource{
 				Type: "AWS::EC2::Instance",
 				Properties: templates.Instance{
-					InstanceType:    "t2.medium",
-					SubnetId:        templates.Ref{"BOSHSubnet"},
-					SourceDestCheck: false,
+					InstanceType:     "t2.medium",
+					SubnetId:         templates.Ref{"BOSHSubnet"},
+					SourceDestCheck:  false,
+					PrivateIpAddress: "10.0.0.7",
 					ImageId: map[string]interface{}{
 						"Fn::FindInMap": []interface{}{
 							"AWSNATAMI",

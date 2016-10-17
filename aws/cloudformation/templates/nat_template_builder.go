@@ -48,9 +48,10 @@ func (t NATTemplateBuilder) NAT() Template {
 			"NATInstance": Resource{
 				Type: "AWS::EC2::Instance",
 				Properties: Instance{
-					InstanceType:    "t2.medium",
-					SubnetId:        Ref{"BOSHSubnet"},
-					SourceDestCheck: false,
+					PrivateIpAddress: "10.0.0.7",
+					InstanceType:     "t2.medium",
+					SubnetId:         Ref{"BOSHSubnet"},
+					SourceDestCheck:  false,
 					ImageId: map[string]interface{}{
 						"Fn::FindInMap": []interface{}{
 							"AWSNATAMI",
