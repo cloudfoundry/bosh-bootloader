@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -27,7 +28,7 @@ var _ = Describe("bbl-env-id", func() {
 		state := []byte(`{
 			"envID": "some-env-id"
 		}`)
-		err := ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), state, os.ModePerm)
+		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
 		args := []string{

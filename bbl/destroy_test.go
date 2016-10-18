@@ -79,7 +79,7 @@ var _ = Describe("destroy", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+			err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
 			args := []string{
@@ -194,7 +194,7 @@ var _ = Describe("destroy", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+			ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
 		})
 
 		It("invokes bosh-init delete", func() {
@@ -234,7 +234,7 @@ var _ = Describe("destroy", func() {
 		It("deletes the state.json file", func() {
 			destroy(fakeAWSServer.URL, tempDirectory, 0)
 
-			_, err := os.Stat(filepath.Join(tempDirectory, "state.json"))
+			_, err := os.Stat(filepath.Join(tempDirectory, storage.StateFileName))
 			Expect(os.IsNotExist(err)).To(BeTrue())
 		})
 

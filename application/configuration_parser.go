@@ -48,7 +48,6 @@ func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
 	return configuration, nil
 }
 
-
 func (ConfigurationParser) isHelpOrVersion(command string, subcommandFlags StringSlice) bool {
 	if command == "help" || command == "version" {
 		return true

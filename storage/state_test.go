@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -83,7 +85,7 @@ var _ = Describe("Store", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			data, err := ioutil.ReadFile(filepath.Join(tempDir, "state.json"))
+			data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(MatchJSON(`{
 				"version": 1,
@@ -134,35 +136,35 @@ var _ = Describe("Store", func() {
 				"envID": "some-env-id"
 			}`))
 
-			fileInfo, err := os.Stat(filepath.Join(tempDir, "state.json"))
+			fileInfo, err := os.Stat(filepath.Join(tempDir, "bbl-state.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fileInfo.Mode()).To(Equal(os.FileMode(0644)))
 		})
 
 		Context("when the state is empty", func() {
-			It("removes the state.json file", func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte("{}"), os.ModePerm)
+			It("removes the bbl-state.json file", func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte("{}"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = store.Set(storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = os.Stat(filepath.Join(tempDir, "state.json"))
+				_, err = os.Stat(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 
-			Context("when the state.json file does not exist", func() {
+			Context("when the bbl-state.json file does not exist", func() {
 				It("does nothing", func() {
 					err := store.Set(storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					_, err = os.Stat(filepath.Join(tempDir, "state.json"))
+					_, err = os.Stat(filepath.Join(tempDir, "bbl-state.json"))
 					Expect(os.IsNotExist(err)).To(BeTrue())
 				})
 			})
 
 			Context("failure cases", func() {
-				Context("when the state.json file cannot be removed", func() {
+				Context("when the bbl-state.json file cannot be removed", func() {
 					It("returns an error", func() {
 						err := os.Chmod(tempDir, 0000)
 						Expect(err).NotTo(HaveOccurred())
@@ -181,7 +183,7 @@ var _ = Describe("Store", func() {
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
-			It("fails to open the state.json file", func() {
+			It("fails to open the bbl-state.json file", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -193,7 +195,7 @@ var _ = Describe("Store", func() {
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 
-			It("fails to write the state.json file", func() {
+			It("fails to write the bbl-state.json file", func() {
 				storage.SetEncode(func(io.Writer, interface{}) error {
 					return errors.New("failed to encode")
 				})
@@ -209,8 +211,15 @@ var _ = Describe("Store", func() {
 	})
 
 	Describe("GetState", func() {
+		var logger *fakes.Logger
+
+		BeforeEach(func() {
+			logger = &fakes.Logger{}
+			storage.GetStateLogger = logger
+		})
+
 		It("returns the stored state information", func() {
-			err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
+			err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 				"version": 1,
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",
@@ -267,12 +276,75 @@ var _ = Describe("Store", func() {
 			}))
 		})
 
-		Context("when the state.json file doesn't exist", func() {
+		Context("when the bbl-state.json file doesn't exist", func() {
 			It("returns an empty state object", func() {
 				state, err := storage.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{}))
+			})
+
+			Context("when state.json exists", func() {
+				BeforeEach(func() {
+					err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
+						"version": 1,
+						"aws": {
+							"accessKeyId": "some-aws-access-key-id",
+							"secretAccessKey": "some-aws-secret-access-key",
+							"region": "some-aws-region"
+						}
+					}`), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					storage.ResetRename()
+				})
+
+				It("renames state.json to bbl-state.json and returns its state", func() {
+					state, err := storage.GetState(tempDir)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = os.Stat(filepath.Join(tempDir, "state.json"))
+					Expect(err).To(gomegamatchers.BeAnOsIsNotExistError())
+
+					_, err = os.Stat(filepath.Join(tempDir, "bbl-state.json"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state).To(Equal(storage.State{
+						Version: 1,
+						AWS: storage.AWS{
+							AccessKeyID:     "some-aws-access-key-id",
+							SecretAccessKey: "some-aws-secret-access-key",
+							Region:          "some-aws-region",
+						},
+					}))
+					Expect(logger.PrintlnCall.CallCount).To(Equal(1))
+					Expect(logger.PrintlnCall.Receives.Message).To(Equal("renaming state.json to bbl-state.json"))
+				})
+
+				Context("failure cases", func() {
+					Context("when checking if state file exists fails", func() {
+						It("returns an error", func() {
+							err := os.Chmod(tempDir, os.FileMode(0000))
+							Expect(err).NotTo(HaveOccurred())
+
+							_, err = storage.GetState(tempDir)
+							Expect(err).To(MatchError(ContainSubstring("permission denied")))
+						})
+					})
+
+					Context("when renaming the file fails", func() {
+						It("returns an error", func() {
+							storage.SetRename(func(src, dst string) error {
+								return errors.New("renaming failed")
+							})
+
+							_, err := storage.GetState(tempDir)
+							Expect(err).To(MatchError("renaming failed"))
+						})
+					})
+				})
 			})
 		})
 
@@ -282,7 +354,7 @@ var _ = Describe("Store", func() {
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
-			It("fails to open the state.json file", func() {
+			It("fails to open the bbl-state.json file", func() {
 				err := os.Chmod(tempDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -290,12 +362,24 @@ var _ = Describe("Store", func() {
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 
-			It("fails to decode the state.json file", func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`%%%%`), os.ModePerm)
+			It("fails to decode the bbl-state.json file", func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = storage.GetState(tempDir)
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
+			})
+
+			It("returns error when bbl-state.json and state.json exists", func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = storage.GetState(tempDir)
+				Expect(err).To(MatchError(ContainSubstring("Cannot proceed with state.json and bbl-state.json present. Please delete one of the files.")))
+
 			})
 		})
 	})

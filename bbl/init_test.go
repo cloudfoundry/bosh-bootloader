@@ -61,11 +61,11 @@ func writeStateJson(state storage.State, tempDirectory string) {
 	buf, err := json.Marshal(state)
 	Expect(err).NotTo(HaveOccurred())
 
-	ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+	ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
 }
 
 func readStateJson(tempDirectory string) storage.State {
-	buf, err := ioutil.ReadFile(filepath.Join(tempDirectory, "state.json"))
+	buf, err := ioutil.ReadFile(filepath.Join(tempDirectory, storage.StateFileName))
 	Expect(err).NotTo(HaveOccurred())
 
 	var state storage.State

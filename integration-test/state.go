@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,7 +27,7 @@ type state struct {
 
 func NewState(stateDirectory string) State {
 	return State{
-		stateFilePath: filepath.Join(stateDirectory, "state.json"),
+		stateFilePath: filepath.Join(stateDirectory, storage.StateFileName),
 	}
 }
 

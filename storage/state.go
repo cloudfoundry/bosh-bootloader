@@ -2,15 +2,26 @@ package storage
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 )
 
-const OS_READ_WRITE_MODE = os.FileMode(0644)
+const (
+	OS_READ_WRITE_MODE = os.FileMode(0644)
+	StateFileName      = "bbl-state.json"
+)
 
-var encode func(io.Writer, interface{}) error = encodeFile
+type logger interface {
+	Println(message string)
+}
+
+var (
+	encode func(io.Writer, interface{}) error = encodeFile
+	rename func(string, string) error         = os.Rename
+)
 
 type AWS struct {
 	AccessKeyID     string `json:"accessKeyId"`
@@ -34,25 +45,25 @@ type State struct {
 }
 
 type Store struct {
-	version  int
-	storeDir string
+	version   int
+	stateFile string
 }
 
 func NewStore(dir string) Store {
 	return Store{
-		version:  1,
-		storeDir: dir,
+		version:   1,
+		stateFile: filepath.Join(dir, StateFileName),
 	}
 }
 
 func (s Store) Set(state State) error {
-	_, err := os.Stat(s.storeDir)
+	_, err := os.Stat(filepath.Dir(s.stateFile))
 	if err != nil {
 		return err
 	}
 
 	if reflect.DeepEqual(state, State{}) {
-		err := os.Remove(filepath.Join(s.storeDir, "state.json"))
+		err := os.Remove(s.stateFile)
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
@@ -60,7 +71,7 @@ func (s Store) Set(state State) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(filepath.Join(s.storeDir, "state.json"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, OS_READ_WRITE_MODE)
+	file, err := os.OpenFile(s.stateFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, OS_READ_WRITE_MODE)
 	if err != nil {
 		return err
 	}
@@ -74,6 +85,8 @@ func (s Store) Set(state State) error {
 	return nil
 }
 
+var GetStateLogger logger
+
 func GetState(dir string) (State, error) {
 	state := State{}
 
@@ -82,7 +95,21 @@ func GetState(dir string) (State, error) {
 		return state, err
 	}
 
-	file, err := os.Open(filepath.Join(dir, "state.json"))
+	bothExist, err := stateAndBBLStateExist(dir)
+	if err != nil {
+		return state, err
+	}
+
+	if bothExist {
+		return state, errors.New("Cannot proceed with state.json and bbl-state.json present. Please delete one of the files.")
+	}
+
+	err = renameStateToBBLState(dir)
+	if err != nil {
+		return state, err
+	}
+
+	file, err := os.Open(filepath.Join(dir, StateFileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return state, nil
@@ -96,6 +123,46 @@ func GetState(dir string) (State, error) {
 	}
 
 	return state, nil
+}
+
+func renameStateToBBLState(dir string) error {
+	stateFile := filepath.Join(dir, "state.json")
+	_, err := os.Stat(stateFile)
+	switch {
+	case os.IsNotExist(err):
+		return nil
+	case err == nil:
+		GetStateLogger.Println("renaming state.json to bbl-state.json")
+		err := rename(stateFile, filepath.Join(dir, StateFileName))
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return err
+	}
+}
+
+func stateAndBBLStateExist(dir string) (bool, error) {
+	stateFile := filepath.Join(dir, "state.json")
+	_, err := os.Stat(stateFile)
+	switch {
+	case os.IsNotExist(err):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+
+	bblStateFile := filepath.Join(dir, StateFileName)
+	_, err = os.Stat(bblStateFile)
+	switch {
+	case os.IsNotExist(err):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return true, nil
+
 }
 
 func encodeFile(w io.Writer, v interface{}) error {

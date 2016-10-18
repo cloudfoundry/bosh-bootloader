@@ -58,6 +58,7 @@ func main() {
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
+	storage.GetStateLogger = logger
 
 	commandLineParser := application.NewCommandLineParser(usage.Print, commandSet)
 	configurationParser := application.NewConfigurationParser(commandLineParser)

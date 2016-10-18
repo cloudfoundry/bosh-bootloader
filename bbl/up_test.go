@@ -372,7 +372,7 @@ var _ = Describe("bbl", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), buf, os.ModePerm)
+				ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
 
 				session := up(fakeAWSServer.URL, tempDirectory, 0)
 

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -29,7 +30,7 @@ var _ = Describe("director-username", func() {
 				"directorUsername": "some-director-user"
 			}
 		}`)
-		err := ioutil.WriteFile(filepath.Join(tempDirectory, "state.json"), state, os.ModePerm)
+		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
 		args := []string{
