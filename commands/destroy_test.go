@@ -68,10 +68,11 @@ var _ = Describe("Destroy", func() {
 					BOSH: storage.BOSH{
 						DirectorName: "some-director",
 					},
+					EnvID: "some-lake",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete your infrastructure? This operation cannot be undone!"))
+				Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
 
 				if proceed {
 					Expect(logger.StepCall.Messages).To(ContainElement("destroying AWS stack"))

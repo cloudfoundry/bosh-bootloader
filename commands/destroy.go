@@ -89,7 +89,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if !config.NoConfirm {
-		d.logger.Prompt("Are you sure you want to delete your infrastructure? This operation cannot be undone!")
+		d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
 
 		var proceed string
 		fmt.Fscanln(d.stdin, &proceed)

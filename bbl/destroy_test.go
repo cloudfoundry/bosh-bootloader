@@ -105,7 +105,7 @@ var _ = Describe("destroy", func() {
 				}
 
 				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("Are you sure you want to delete your infrastructure? This operation cannot be undone!"))
+			}, "10s", "10s").Should(ContainSubstring("Are you sure you want to delete infrastructure for"))
 		})
 
 		It("continues with the destruction if you agree", func() {

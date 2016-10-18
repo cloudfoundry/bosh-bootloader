@@ -77,7 +77,6 @@ var _ = Describe("CloudConfigManager", func() {
 			err := cloudConfigManager.Update(cloudConfigInput, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
-			//Expect(logger.StepCall.Receives.Message).To(Equal("generating cloud config"))
 			manifestYAML, err := yaml.Marshal(bosh.CloudConfig{
 				VMTypes: []bosh.VMType{
 					{
@@ -91,7 +90,6 @@ var _ = Describe("CloudConfigManager", func() {
 			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal(manifestYAML))
 
 			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(cloudConfigInput))
-			//Expect(logger.StepCall.Receives.Message).To(Equal("applying cloud config"))
 		})
 
 		Context("failure cases", func() {
