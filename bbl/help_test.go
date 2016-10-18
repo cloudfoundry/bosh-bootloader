@@ -70,6 +70,16 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).NotTo(ContainSubstring("aws-gibberish"))
 			})
 		})
+
+		Describe("bbl", func() {
+			It("prints out the usage", func() {
+				session, err := gexec.Start(exec.Command(pathToBBL), GinkgoWriter, GinkgoWriter)
+
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(session.Out.Contents()).To(ContainSubstring("usage"))
+			})
+		})
 	})
 
 	Context("command specific help", func() {

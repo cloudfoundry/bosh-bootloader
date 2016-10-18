@@ -34,13 +34,4 @@ var _ = Describe("bbl", func() {
 		Expect(session.Err.Contents()).To(ContainSubstring("Unrecognized command 'some-unknown-command'"))
 		Expect(session.Out.Contents()).To(ContainSubstring("Usage"))
 	})
-
-	It("prints an error when no command is provided", func() {
-		session, err := gexec.Start(exec.Command(pathToBBL), GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(session).Should(gexec.Exit(1))
-		Expect(session.Err.Contents()).To(ContainSubstring("Unrecognized command [EMPTY]"))
-		Expect(session.Out.Contents()).To(ContainSubstring("Usage"))
-	})
 })

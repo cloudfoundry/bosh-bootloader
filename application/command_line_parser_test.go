@@ -120,6 +120,14 @@ var _ = Describe("CommandLineParser", func() {
 			Expect(commandLineConfiguration.SubcommandFlags).To(Equal([]string{"up", "--aws-stuff"}))
 		})
 
+		It("runs help without error", func() {
+			commandLineConfiguration, err := commandLineParser.Parse([]string{})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(commandLineConfiguration.Command).To(Equal("help"))
+			Expect(commandLineConfiguration.SubcommandFlags).To(BeEmpty())
+		})
+
 		Context("failure cases", func() {
 			It("returns an error and prints usage when an invalid flag is provided", func() {
 				_, err := commandLineParser.Parse([]string{
@@ -138,13 +146,6 @@ var _ = Describe("CommandLineParser", func() {
 				})
 
 				Expect(err).To(Equal(errors.New("Unrecognized command 'badcmd'")))
-				Expect(usageCallCount).To(Equal(1))
-			})
-
-			It("returns an error and prints usage when command is not provided", func() {
-				_, err := commandLineParser.Parse([]string{})
-
-				Expect(err).To(Equal(errors.New("Unrecognized command [EMPTY]")))
 				Expect(usageCallCount).To(Equal(1))
 			})
 

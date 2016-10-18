@@ -44,7 +44,6 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 	_, ok := p.commandSet[commandFinderResult.Command]
 	if !ok {
 		if commandFinderResult.Command == "" {
-			commandNotFoundError = fmt.Errorf("Unrecognized command [EMPTY]")
 			commandWasBlank = true
 		} else {
 			commandNotFoundError = fmt.Errorf("Unrecognized command '%s'", commandFinderResult.Command)
@@ -59,11 +58,9 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 	}
 
 	commandLineConfiguration.Command = commandFinderResult.Command
-	if commandLineConfiguration.help {
+	if commandLineConfiguration.help || commandWasBlank {
 		commandLineConfiguration.Command = "help"
-		if commandWasBlank {
-			commandNotFoundError = nil
-		} else {
+		if !commandWasBlank {
 			commandLineConfiguration.SubcommandFlags = append([]string{commandFinderResult.Command}, commandLineConfiguration.SubcommandFlags...)
 		}
 	}
