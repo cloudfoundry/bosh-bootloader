@@ -27,7 +27,7 @@ var _ = Describe("bosh ca cert", func() {
 
 		args := []string{
 			"--state-dir", tempDirectory,
-			"bosh-ca-cert",
+			"director-ca-cert",
 		}
 
 		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)

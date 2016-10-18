@@ -40,12 +40,12 @@ func main() {
 		commands.DirectorAddressCommand:  nil,
 		commands.DirectorUsernameCommand: nil,
 		commands.DirectorPasswordCommand: nil,
+		commands.DirectorCACertCommand:   nil,
 		commands.SSHKeyCommand:           nil,
 		commands.CreateLBsCommand:        nil,
 		commands.UpdateLBsCommand:        nil,
 		commands.DeleteLBsCommand:        nil,
 		commands.LBsCommand:              nil,
-		commands.BOSHCACertCommand:       nil,
 		commands.EnvIDCommand:            nil,
 	}
 
@@ -174,11 +174,11 @@ func main() {
 	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, commands.DirectorPasswordPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorPassword
 	})
+	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, commands.DirectorCACertPropertyName, func(state storage.State) string {
+		return state.BOSH.DirectorSSLCA
+	})
 	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, commands.SSHKeyPropertyName, func(state storage.State) string {
 		return state.KeyPair.PrivateKey
-	})
-	commandSet[commands.BOSHCACertCommand] = commands.NewStateQuery(logger, commands.BOSHCACertPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorSSLCA
 	})
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, commands.EnvIDPropertyName, func(state storage.State) string {
 		return state.EnvID

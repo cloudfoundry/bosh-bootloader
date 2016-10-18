@@ -63,13 +63,13 @@ Global Options:
   --state-dir            Directory containing state.json
 
 Commands:
-  bosh-ca-cert           Prints BOSH director CA certificate
   create-lbs             Attaches load balancer(s)
   delete-lbs             Deletes attached load balancer(s)
   destroy                Tears down BOSH director infrastructure
   director-address       Prints BOSH director address
   director-username      Prints BOSH director username
   director-password      Prints BOSH director password
+  director-ca-cert       Prints BOSH director CA certificate
   env-id                 Prints environment ID
   help                   Prints usage
   lbs                    Prints attached load balancer(s)

@@ -46,7 +46,7 @@ const (
 
 	DirectorAddressCommandUsage = "Prints BOSH director address"
 
-	BOSHCACertCommandUsage = "Prints BOSH director CA certificate"
+	DirectorCACertCommandUsage = "Prints BOSH director CA certificate"
 )
 
 func (Up) Usage() string { return UpCommandUsage }
@@ -77,8 +77,8 @@ func (s StateQuery) Usage() string {
 		return DirectorPasswordCommandUsage
 	case DirectorAddressPropertyName:
 		return DirectorAddressCommandUsage
-	case BOSHCACertPropertyName:
-		return BOSHCACertCommandUsage
+	case DirectorCACertPropertyName:
+		return DirectorCACertCommandUsage
 	}
 	return ""
 }

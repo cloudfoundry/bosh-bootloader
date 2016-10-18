@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/bosh-bootloader/integration-test"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test"
 )
 
 type BBL struct {
@@ -65,7 +65,7 @@ func (b BBL) SaveDirectorCA() string {
 	stdout := bytes.NewBuffer([]byte{})
 	session := b.execute([]string{
 		"--state-dir", b.stateDirectory,
-		"bosh-ca-cert",
+		"director-ca-cert",
 	}, stdout, os.Stderr)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 

@@ -12,14 +12,14 @@ const (
 	DirectorUsernameCommand = "director-username"
 	DirectorPasswordCommand = "director-password"
 	DirectorAddressCommand  = "director-address"
-	BOSHCACertCommand       = "bosh-ca-cert"
+	DirectorCACertCommand   = "director-ca-cert"
 
 	EnvIDPropertyName            = "environment id"
 	SSHKeyPropertyName           = "ssh key"
 	DirectorUsernamePropertyName = "director username"
 	DirectorPasswordPropertyName = "director password"
 	DirectorAddressPropertyName  = "director address"
-	BOSHCACertPropertyName       = "bosh ca cert"
+	DirectorCACertPropertyName   = "director ca cert"
 )
 
 type StateQuery struct {
