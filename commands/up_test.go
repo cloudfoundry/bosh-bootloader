@@ -862,7 +862,7 @@ var _ = Describe("Up", func() {
 						Expect(state.BOSH.Credentials).To(Equal(boshInitCredentials))
 					})
 
-					Context("when the bosh credentials exist in the state.json", func() {
+					Context("when the bosh credentials exist in the bbl state", func() {
 						It("deploys with those credentials and returns the state with the same credentials", func() {
 							boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 								Credentials: boshInitCredentials,

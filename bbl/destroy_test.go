@@ -231,7 +231,7 @@ var _ = Describe("destroy", func() {
 			Expect(ok).To(BeFalse())
 		})
 
-		It("deletes the state.json file", func() {
+		It("deletes the bbl state", func() {
 			destroy(fakeAWSServer.URL, tempDirectory, 0)
 
 			_, err := os.Stat(filepath.Join(tempDirectory, storage.StateFileName))

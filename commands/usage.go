@@ -17,7 +17,7 @@ Usage:
 
 Global Options:
   --help      [-h]       Print usage
-  --state-dir            Directory containing state.json
+  --state-dir            Directory containing bbl-state.json
 %s
 `
 	CommandUsage = `

@@ -32,7 +32,7 @@ Usage:
 
 Global Options:
   --help      [-h]       Print usage
-  --state-dir            Directory containing state.json
+  --state-dir            Directory containing bbl-state.json
 
 Commands:
   create-lbs             Attaches load balancer(s)
@@ -63,7 +63,7 @@ Commands:
 
 Global Options:
   --help      [-h]       Print usage
-  --state-dir            Directory containing state.json
+  --state-dir            Directory containing bbl-state.json
 
 [my-command command options]
   some message

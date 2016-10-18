@@ -60,7 +60,7 @@ Usage:
 Global Options:
   --help      [-h]       Print usage
   --version   [-v]       Print version
-  --state-dir            Directory containing state.json
+  --state-dir            Directory containing bbl-state.json
 
 Commands:
   create-lbs             Attaches load balancer(s)
