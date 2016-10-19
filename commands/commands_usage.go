@@ -9,7 +9,8 @@ const (
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
 
-  [--no-confirm]  Do not ask for confirmation (optional)`
+  [--no-confirm]       Do not ask for confirmation (optional)
+  [--skip-if-missing]  Gracefully exit if there is no state file (optional)`
 
 	CreateLBsCommandUsage = `Attaches load balancer(s) with a certificate, key, and optional chain
 

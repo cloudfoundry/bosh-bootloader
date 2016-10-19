@@ -31,7 +31,8 @@ type Destroy struct {
 }
 
 type destroyConfig struct {
-	NoConfirm bool
+	NoConfirm     bool
+	SkipIfMissing bool
 }
 
 type keyPairDeleter interface {
@@ -81,6 +82,11 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
+	}
+
+	if config.SkipIfMissing && state.Stack.Name == "" {
+		d.logger.Step("state file not found, and —skip-if-missing flag provided, exiting")
+		return nil
 	}
 
 	err = d.awsCredentialValidator.Validate()
@@ -170,6 +176,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 
 	config := destroyConfig{}
 	destroyFlags.Bool(&config.NoConfirm, "n", "no-confirm", false)
+	destroyFlags.Bool(&config.SkipIfMissing, "", "skip-if-missing", false)
 
 	err := destroyFlags.Parse(subcommandFlags)
 	if err != nil {

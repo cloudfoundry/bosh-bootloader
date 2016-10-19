@@ -52,6 +52,12 @@ var _ = Describe("Destroy", func() {
 	})
 
 	Describe("Execute", func() {
+		It("returns when there is no state and --skip-if-missing flag is provided", func() {
+			err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logger.StepCall.Receives.Message).To(Equal("state file not found, and —skip-if-missing flag provided, exiting"))
+		})
 		It("returns an error when aws credential validator fails", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
 

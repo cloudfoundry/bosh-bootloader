@@ -25,6 +25,26 @@ import (
 )
 
 var _ = Describe("destroy", func() {
+	Context("when there state file does not exist", func() {
+		It("exits with status 0 if --skip-if-missing flag is provided", func() {
+			tempDirectory, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy",
+				"--skip-if-missing",
+			}
+			cmd := exec.Command(pathToBBL, args...)
+
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+
+			Expect(session.Out.Contents()).To(ContainSubstring("state file not found, and —skip-if-missing flag provided, exiting"))
+		})
+	})
 	Context("asks for confirmation before it starts destroying things", func() {
 		var (
 			cmd            *exec.Cmd
