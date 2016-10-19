@@ -86,7 +86,7 @@ func (a App) execute() error {
 		switch err.(type) {
 		case awserr.RequestFailure:
 			requestFailure := err.(awserr.RequestFailure)
-			if requestFailure.StatusCode() == 403 && requestFailure.Code() == "AccessDenied" {
+			if requestFailure.StatusCode() == 403 {
 				return errors.New(fmt.Sprintf(
 					"The AWS credentials provided have insufficient permissions to perform the operation `bbl %s`.\nPlease refer to the bbl README:\nhttps://github.com/cloudfoundry/bosh-bootloader#configure-aws.\nOriginal error message from AWS:\n\n%s",
 					a.configuration.Command, requestFailure.Message()))

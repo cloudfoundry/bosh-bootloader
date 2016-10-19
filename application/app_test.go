@@ -197,7 +197,7 @@ var _ = Describe("App", func() {
 
 			Context("when the command fails for aws error", func() {
 				It("returns an error and link to bbl README when error is AccessDenied", func() {
-					awsError := awserr.New("AccessDenied", "User is not authorized to perform: action:SubCommand", nil)
+					awsError := awserr.New("UnauthorizedOperation", "User is not authorized to perform: action:SubCommand", nil)
 					errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 403, "some-request-id")
 					app = NewAppWithConfiguration(application.Configuration{
 						Command: "error",
