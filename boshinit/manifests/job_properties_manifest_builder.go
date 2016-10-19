@@ -109,6 +109,9 @@ func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProper
 			Cert: string(manifestProperties.SSLKeyPair.Certificate),
 			Key:  string(manifestProperties.SSLKeyPair.PrivateKey),
 		},
+		DefaultSSHOptions: DefaultSSHOptions{
+			GatewayHost: manifestProperties.ElasticIP,
+		},
 	}
 }
 

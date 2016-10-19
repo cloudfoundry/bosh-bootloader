@@ -32,6 +32,10 @@ type BlobstoreJobProperties struct {
 	Agent    Credentials `yaml:"agent"`
 }
 
+type DefaultSSHOptions struct {
+	GatewayHost string `yaml:"gateway_host"`
+}
+
 type DirectorJobProperties struct {
 	Address                     string                   `yaml:"address"`
 	Name                        string                   `yaml:"name"`
@@ -42,6 +46,7 @@ type DirectorJobProperties struct {
 	DB                          PostgresProperties       `yaml:"db"`
 	UserManagement              UserManagementProperties `yaml:"user_management"`
 	SSL                         SSLProperties            `yaml:"ssl"`
+	DefaultSSHOptions           DefaultSSHOptions        `yaml:"default_ssh_options"`
 }
 
 type HMJobProperties struct {

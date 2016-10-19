@@ -97,6 +97,8 @@ jobs:
       enable_dedicated_status_worker: true
       workers: 11
       enable_post_deploy: true
+      default_ssh_options:
+        gateway_host: 52.0.112.12
       user_management:
         local:
           users:
