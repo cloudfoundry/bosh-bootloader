@@ -3,6 +3,7 @@ package commands_test
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -129,6 +130,68 @@ var _ = Describe("Up", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
 			err := command.Execute([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
+		})
+
+		Context("when AWS creds are provided through environment variables", func() {
+			BeforeEach(func() {
+				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")
+				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-access-secret")
+				os.Setenv("BBL_AWS_REGION", "some-region")
+			})
+			AfterEach(func() {
+				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "")
+				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "")
+				os.Setenv("BBL_AWS_REGION", "")
+			})
+
+			It("honors the environment variables to fetch the AWS creds", func() {
+				err := command.Execute([]string{}, storage.State{
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					KeyPair: storage.KeyPair{
+						Name:       "some-keypair-name",
+						PrivateKey: "some-private-key",
+						PublicKey:  "some-public-key",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
+				Expect(clientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
+					Region:          "some-region",
+					SecretAccessKey: "some-access-secret",
+					AccessKeyID:     "some-access-key",
+				}))
+				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+			})
+
+			It("honors missong creds passed as arguments", func() {
+				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "")
+				err := command.Execute([]string{
+					"--aws-access-key-id", "access-key-from-arguments",
+				}, storage.State{
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					KeyPair: storage.KeyPair{
+						Name:       "some-keypair-name",
+						PrivateKey: "some-private-key",
+						PublicKey:  "some-public-key",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
+				Expect(clientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
+					Region:          "some-region",
+					SecretAccessKey: "some-access-secret",
+					AccessKeyID:     "access-key-from-arguments",
+				}))
+				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+			})
 		})
 
 		It("honors the cli flags", func() {

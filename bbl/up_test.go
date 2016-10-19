@@ -9,9 +9,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -128,7 +130,32 @@ var _ = Describe("bbl", func() {
 	})
 
 	Describe("up", func() {
-		Context("when bosh/cpi/stemcell is provided via ldflags", func() {
+		Context("when AWS creds are provided through environment variables", func() {
+			It("honors the environment variables and bbl's up", func() {
+				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")
+				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-access-secret")
+				os.Setenv("BBL_AWS_REGION", "some-region")
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"up",
+				}
+
+				cmd := exec.Command(pathToBBL, args...)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+
+				state := readStateJson(tempDirectory)
+				Expect(state.AWS).To(Equal(storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				}))
+			})
+		})
+
+		Context("when bosh/cpi/stemcell is provided via constants", func() {
 			It("creates a bosh with provided versions", func() {
 				up(fakeAWSServer.URL, tempDirectory, 0)
 

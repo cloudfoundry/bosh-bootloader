@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -279,9 +280,9 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	upFlags := flags.New("up")
 
 	config := upConfig{}
-	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", "")
-	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", "")
-	upFlags.String(&config.awsRegion, "aws-region", "")
+	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", os.Getenv("BBL_AWS_ACCESS_KEY_ID"))
+	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"))
+	upFlags.String(&config.awsRegion, "aws-region", os.Getenv("BBL_AWS_REGION"))
 
 	err := upFlags.Parse(subcommandFlags)
 	if err != nil {

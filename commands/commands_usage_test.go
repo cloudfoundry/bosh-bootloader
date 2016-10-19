@@ -16,9 +16,9 @@ var _ = Describe("Commands Usage", func() {
 				usageText := upCmd.Usage()
 				Expect(usageText).To(Equal(`Deploys BOSH director on AWS
 
-  --aws-access-key-id        AWS Access Key ID to use
-  --aws-secret-access-key    AWS Secret Access Key to use
-  --aws-region               AWS region to use`))
+  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
+  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+  --aws-region               AWS region to use (Defaults to environment variable BBL_AWS_REGION)))`))
 			})
 		})
 	})
