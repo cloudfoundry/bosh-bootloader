@@ -37,7 +37,7 @@ var _ = Describe("state rename", func() {
 			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 
 			Expect(err).NotTo(HaveOccurred())
-			Eventually(session.Out.Contents).Should(ContainSubstring("renaming state.json to bbl-state.json"))
+			Eventually(session.Err.Contents).Should(ContainSubstring("renaming state.json to bbl-state.json"))
 			Expect(filepath.Join(tempDirectory, "state.json")).NotTo(BeAnExistingFile())
 			Expect(filepath.Join(tempDirectory, "bbl-state.json")).To(BeAnExistingFile())
 		})

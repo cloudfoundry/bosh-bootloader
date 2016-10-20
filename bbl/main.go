@@ -55,11 +55,12 @@ func main() {
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
+	stderrLogger := application.NewLogger(os.Stderr)
 	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
-	storage.GetStateLogger = logger
+	storage.GetStateLogger = stderrLogger
 
 	commandLineParser := application.NewCommandLineParser(usage.Print, commandSet)
 	configurationParser := application.NewConfigurationParser(commandLineParser)
