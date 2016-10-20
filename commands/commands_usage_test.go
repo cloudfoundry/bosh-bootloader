@@ -98,6 +98,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("director-password", newStateQuery("director password"), "Prints BOSH director password"),
 		Entry("director-username", newStateQuery("director username"), "Prints BOSH director username"),
 		Entry("director-ca-cert", newStateQuery("director ca cert"), "Prints BOSH director CA certificate"),
+		Entry("bosh-ca-cert", newStateQuery("bosh ca cert"), "Prints BOSH director CA certificate"),
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
 		Entry("ssh-key", newStateQuery("ssh key"), "Prints SSH private key"),
 		Entry("version", commands.Version{}, "Prints version"),

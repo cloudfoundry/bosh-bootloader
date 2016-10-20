@@ -27,6 +27,7 @@ Global Options:
 
 const GlobalUsage = `
 Commands:
+  bosh-ca-cert           Prints BOSH director CA certificate
   create-lbs             Attaches load balancer(s)
   delete-lbs             Deletes attached load balancer(s)
   destroy                Tears down BOSH director infrastructure
