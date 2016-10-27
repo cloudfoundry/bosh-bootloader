@@ -1,10 +1,10 @@
 package application_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("AWSCredentialValidator", func() {
@@ -38,7 +38,7 @@ var _ = Describe("AWSCredentialValidator", func() {
 						},
 					},
 				})
-				Expect(awsCredentialValidator.Validate()).To(MatchError("--aws-access-key-id must be provided"))
+				Expect(awsCredentialValidator.Validate()).To(MatchError("AWS access key ID must be provided"))
 			})
 
 			It("returns an error when the secret access key is missing", func() {
@@ -50,7 +50,7 @@ var _ = Describe("AWSCredentialValidator", func() {
 						},
 					},
 				})
-				Expect(awsCredentialValidator.Validate()).To(MatchError("--aws-secret-access-key must be provided"))
+				Expect(awsCredentialValidator.Validate()).To(MatchError("AWS secret access key must be provided"))
 			})
 
 			It("returns an error when the region is missing", func() {
@@ -62,7 +62,7 @@ var _ = Describe("AWSCredentialValidator", func() {
 						},
 					},
 				})
-				Expect(awsCredentialValidator.Validate()).To(MatchError("--aws-region must be provided"))
+				Expect(awsCredentialValidator.Validate()).To(MatchError("AWS region must be provided"))
 			})
 		})
 	})

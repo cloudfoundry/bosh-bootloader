@@ -14,15 +14,15 @@ func NewAWSCredentialValidator(configuration Configuration) AWSCredentialValidat
 
 func (a AWSCredentialValidator) Validate() error {
 	if a.configuration.State.AWS.AccessKeyID == "" {
-		return errors.New("--aws-access-key-id must be provided")
+		return errors.New("AWS access key ID must be provided")
 	}
 
 	if a.configuration.State.AWS.SecretAccessKey == "" {
-		return errors.New("--aws-secret-access-key must be provided")
+		return errors.New("AWS secret access key must be provided")
 	}
 
 	if a.configuration.State.AWS.Region == "" {
-		return errors.New("--aws-region must be provided")
+		return errors.New("AWS region must be provided")
 	}
 
 	return nil

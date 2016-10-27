@@ -167,7 +167,7 @@ var _ = Describe("Up", func() {
 				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
 			})
 
-			It("honors missong creds passed as arguments", func() {
+			It("honors missing creds passed as arguments", func() {
 				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "")
 				err := command.Execute([]string{
 					"--aws-access-key-id", "access-key-from-arguments",
@@ -1067,6 +1067,19 @@ var _ = Describe("Up", func() {
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
+
+			It("returns an error when only some of the AWS parameters are provided", func() {
+				err := command.Execute([]string{"--aws-access-key-id", "some-key-id", "--aws-region", "some-region"}, storage.State{})
+				Expect(err).To(MatchError("AWS secret access key must be provided"))
+			})
+
+			It("returns an error when no AWS parameters are provided and the bbl-state AWS values are empty", func() {
+				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("AWS secret access key must be provided")
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("AWS secret access key must be provided"))
+			})
+
 		})
 	})
 })

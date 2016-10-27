@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -117,7 +118,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	if config.awsAccessKeyID != "" || config.awsSecretAccessKey != "" || config.awsRegion != "" {
+	if u.awsCredentialsPresent(config) {
 		state.AWS.AccessKeyID = config.awsAccessKeyID
 		state.AWS.SecretAccessKey = config.awsSecretAccessKey
 		state.AWS.Region = config.awsRegion
@@ -129,11 +130,13 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 			SecretAccessKey: config.awsSecretAccessKey,
 			Region:          config.awsRegion,
 		})
-	} else {
+	} else if u.awsCredentialsNotPresent(config) {
 		err := u.awsCredentialValidator.Validate()
 		if err != nil {
 			return err
 		}
+	} else {
+		return u.awsMissingCredentials(config)
 	}
 
 	err = u.checkForFastFails(state)
@@ -290,4 +293,25 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (Up) awsCredentialsPresent(config upConfig) bool {
+	return config.awsAccessKeyID != "" && config.awsSecretAccessKey != "" && config.awsRegion != ""
+}
+
+func (Up) awsCredentialsNotPresent(config upConfig) bool {
+	return config.awsAccessKeyID == "" && config.awsSecretAccessKey == "" && config.awsRegion == ""
+}
+
+func (Up) awsMissingCredentials(config upConfig) error {
+	switch {
+	case config.awsAccessKeyID == "":
+		return errors.New("AWS access key ID must be provided")
+	case config.awsSecretAccessKey == "":
+		return errors.New("AWS secret access key must be provided")
+	case config.awsRegion == "":
+		return errors.New("AWS region must be provided")
+	}
+
+	return nil
 }
