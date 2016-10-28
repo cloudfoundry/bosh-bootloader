@@ -16,6 +16,8 @@ The following should be installed on your local machine
 - Golang >= 1.5 (install with `brew install go`)
 - bosh-init ([installation instructions](http://bosh.io/docs/install-bosh-init.html))
 
+NOTE: Golang 1.7 is highly recommended
+
 ### Install bosh-bootloader
 
 bosh-bootloader can be installed with go get:
