@@ -24,6 +24,7 @@ type CreateLBs struct {
 	certificateValidator      certificateValidator
 	guidGenerator             guidGenerator
 	stateStore                stateStore
+	stateValidator            stateValidator
 }
 
 type lbConfig struct {
@@ -59,7 +60,7 @@ type guidGenerator interface {
 func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
 	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
-	guidGenerator guidGenerator, stateStore stateStore) CreateLBs {
+	guidGenerator guidGenerator, stateStore stateStore, stateValidator stateValidator) CreateLBs {
 	return CreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -72,11 +73,17 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
 		stateStore:                stateStore,
+		stateValidator:            stateValidator,
 	}
 }
 
 func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) error {
 	config, err := c.parseFlags(subcommandFlags)
+	if err != nil {
+		return err
+	}
+
+	err = c.stateValidator.Validate()
 	if err != nil {
 		return err
 	}

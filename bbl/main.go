@@ -158,7 +158,7 @@ func main() {
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
-		uuidGenerator, stateStore,
+		uuidGenerator, stateStore, stateValidator,
 	)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
