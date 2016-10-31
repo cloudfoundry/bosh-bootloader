@@ -20,6 +20,7 @@ type DeleteLBs struct {
 	cloudConfigManager        cloudConfigManager
 	boshClientProvider        boshClientProvider
 	stateStore                stateStore
+	stateValidator            stateValidator
 }
 
 type cloudConfigManager interface {
@@ -33,7 +34,7 @@ type deleteLBsConfig struct {
 func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
 	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, stateStore stateStore,
+	boshClientProvider boshClientProvider, stateStore stateStore, stateValidator stateValidator,
 ) DeleteLBs {
 	return DeleteLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -45,6 +46,7 @@ func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZon
 		cloudConfigManager:        cloudConfigManager,
 		boshClientProvider:        boshClientProvider,
 		stateStore:                stateStore,
+		stateValidator:            stateValidator,
 	}
 }
 
@@ -54,14 +56,19 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	err = c.awsCredentialValidator.Validate()
+	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
+		c.logger.Println("no lb type exists, skipping...")
+		return nil
+	}
+
+	err = c.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
-	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
-		c.logger.Println("no lb type exists, skipping...")
-		return nil
+	err = c.awsCredentialValidator.Validate()
+	if err != nil {
+		return err
 	}
 
 	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {

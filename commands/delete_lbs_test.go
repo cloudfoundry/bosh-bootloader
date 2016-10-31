@@ -27,6 +27,7 @@ var _ = Describe("Delete LBs", func() {
 		boshClient                *fakes.BOSHClient
 		boshClientProvider        *fakes.BOSHClientProvider
 		stateStore                *fakes.StateStore
+		stateValidator            *fakes.StateValidator
 		incomingState             storage.State
 	)
 
@@ -40,6 +41,7 @@ var _ = Describe("Delete LBs", func() {
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		stateStore = &fakes.StateStore{}
+		stateValidator = &fakes.StateValidator{}
 
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -69,7 +71,7 @@ var _ = Describe("Delete LBs", func() {
 
 		command = commands.NewDeleteLBs(awsCredentialValidator, availabilityZoneRetriever,
 			certificateManager, infrastructureManager, logger, cloudConfigurator, cloudConfigManager,
-			boshClientProvider, stateStore)
+			boshClientProvider, stateStore, stateValidator)
 	})
 
 	Describe("Execute", func() {
@@ -261,6 +263,15 @@ var _ = Describe("Delete LBs", func() {
 				err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("failed to save state"))
 			})
+
+			It("returns an error when state validator fails", func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+				err := command.Execute([]string{}, storage.State{})
+
+				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(err).To(MatchError("state validator failed"))
+			})
+
 		})
 	})
 })

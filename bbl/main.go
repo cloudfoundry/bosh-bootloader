@@ -166,6 +166,7 @@ func main() {
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
+		stateValidator,
 	)
 	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, commands.DirectorAddressPropertyName, func(state storage.State) string {
