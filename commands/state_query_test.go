@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -14,16 +15,18 @@ import (
 
 var _ = Describe("StateQuery", func() {
 	var (
-		fakeLogger *fakes.Logger
+		fakeLogger         *fakes.Logger
+		fakeStateValidator *fakes.StateValidator
 	)
 
 	BeforeEach(func() {
 		fakeLogger = &fakes.Logger{}
+		fakeStateValidator = &fakes.StateValidator{}
 	})
 
 	Describe("Execute", func() {
 		It("prints out the director address", func() {
-			command := commands.NewStateQuery(fakeLogger, "director address", func(state storage.State) string {
+			command := commands.NewStateQuery(fakeLogger, fakeStateValidator, "director address", func(state storage.State) string {
 				return state.BOSH.DirectorAddress
 			})
 
@@ -39,9 +42,22 @@ var _ = Describe("StateQuery", func() {
 			Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-director-address"))
 		})
 
+		It("returns an error when the state validator fails", func() {
+			fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			command := commands.NewStateQuery(fakeLogger, fakeStateValidator, "", func(state storage.State) string {
+				return ""
+			})
+
+			err := command.Execute([]string{}, storage.State{
+				BOSH: storage.BOSH{},
+			})
+
+			Expect(err).To(MatchError("state validator failed"))
+		})
+
 		It("returns an error when the state value is empty", func() {
 			propertyName := fmt.Sprintf("%s-%d", "some-name", rand.Int())
-			command := commands.NewStateQuery(fakeLogger, propertyName, func(state storage.State) string {
+			command := commands.NewStateQuery(fakeLogger, fakeStateValidator, propertyName, func(state storage.State) string {
 				return ""
 			})
 			err := command.Execute([]string{}, storage.State{

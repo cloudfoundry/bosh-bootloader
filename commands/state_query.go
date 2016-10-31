@@ -25,22 +25,29 @@ const (
 )
 
 type StateQuery struct {
-	logger       logger
-	propertyName string
-	getProperty  getPropertyFunc
+	logger         logger
+	stateValidator stateValidator
+	propertyName   string
+	getProperty    getPropertyFunc
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, propertyName string, getProperty getPropertyFunc) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, propertyName string, getProperty getPropertyFunc) StateQuery {
 	return StateQuery{
-		logger:       logger,
-		propertyName: propertyName,
-		getProperty:  getProperty,
+		logger:         logger,
+		stateValidator: stateValidator,
+		propertyName:   propertyName,
+		getProperty:    getProperty,
 	}
 }
 
 func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error {
+	err := s.stateValidator.Validate()
+	if err != nil {
+		return err
+	}
+
 	propertyValue := s.getProperty(state)
 	if propertyValue == "" {
 		return fmt.Errorf("Could not retrieve %s, please make sure you are targeting the proper state dir.", s.propertyName)

@@ -169,26 +169,26 @@ func main() {
 		stateValidator,
 	)
 	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
-	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, commands.DirectorAddressPropertyName, func(state storage.State) string {
+	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})
-	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, commands.DirectorUsernamePropertyName, func(state storage.State) string {
+	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorUsernamePropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorUsername
 	})
-	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, commands.DirectorPasswordPropertyName, func(state storage.State) string {
+	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorPasswordPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorPassword
 	})
-	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, commands.DirectorCACertPropertyName, func(state storage.State) string {
+	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorCACertPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorSSLCA
 	})
-	commandSet[commands.BOSHCACertCommand] = commands.NewStateQuery(logger, commands.BOSHCACertPropertyName, func(state storage.State) string {
+	commandSet[commands.BOSHCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.BOSHCACertPropertyName, func(state storage.State) string {
 		fmt.Fprintln(os.Stderr, "'bosh-ca-cert' has been deprecated and will be removed in future versions of bbl, please use 'director-ca-cert'")
 		return state.BOSH.DirectorSSLCA
 	})
-	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, commands.SSHKeyPropertyName, func(state storage.State) string {
+	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, commands.SSHKeyPropertyName, func(state storage.State) string {
 		return state.KeyPair.PrivateKey
 	})
-	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, commands.EnvIDPropertyName, func(state storage.State) string {
+	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, commands.EnvIDPropertyName, func(state storage.State) string {
 		return state.EnvID
 	})
 

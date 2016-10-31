@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -43,9 +44,52 @@ var _ = Describe("director-ca-cert", func() {
 		Entry("supporting bosh-ca-cert for backwards compatibility", "bosh-ca-cert"),
 	)
 
+	It("returns a non zero exit code when the bbl-state.json does not exist", func() {
+		tempDirectory, err := ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+
+		args := []string{
+			"--state-dir", tempDirectory,
+			"director-ca-cert",
+		}
+
+		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(1))
+
+		expectedErrorMessage := fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)
+		Expect(session.Err.Contents()).To(ContainSubstring(expectedErrorMessage))
+	})
+
 	Context("bosh-ca-cert", func() {
+		It("returns a non zero exit code when the bbl-state.json does not exist", func() {
+			tempDirectory, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			args := []string{
+				"--state-dir", tempDirectory,
+				"bosh-ca-cert",
+			}
+
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(1))
+
+			expectedErrorMessage := fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)
+			Expect(session.Err.Contents()).To(ContainSubstring(expectedErrorMessage))
+		})
+
 		It("prints a deprecation warning to STDERR", func() {
-			session, err := gexec.Start(exec.Command(pathToBBL, "bosh-ca-cert"), GinkgoWriter, GinkgoWriter)
+			tempDirectory, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			state := []byte(`{}`)
+			err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			session, err := gexec.Start(exec.Command(pathToBBL, "--state-dir", tempDirectory, "bosh-ca-cert"), GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(session).Should(gexec.Exit())

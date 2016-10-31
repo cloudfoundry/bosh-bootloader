@@ -106,5 +106,5 @@ var _ = Describe("Commands Usage", func() {
 })
 
 func newStateQuery(propertyName string) commands.StateQuery {
-	return commands.NewStateQuery(nil, propertyName, nil)
+	return commands.NewStateQuery(nil, nil, propertyName, nil)
 }
