@@ -31,6 +31,7 @@ var _ = Describe("Update LBs", func() {
 		logger                    *fakes.Logger
 		guidGenerator             *fakes.GuidGenerator
 		stateStore                *fakes.StateStore
+		stateValidator            *fakes.StateValidator
 	)
 
 	var updateLBs = func(certificatePath, keyPath, chainPath string, state storage.State) error {
@@ -52,6 +53,7 @@ var _ = Describe("Update LBs", func() {
 		logger = &fakes.Logger{}
 		guidGenerator = &fakes.GuidGenerator{}
 		stateStore = &fakes.StateStore{}
+		stateValidator = &fakes.StateValidator{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClientProvider.ClientCall.Returns.Client = boshClient
@@ -88,10 +90,18 @@ var _ = Describe("Update LBs", func() {
 
 		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, guidGenerator,
-			stateStore)
+			stateStore, stateValidator)
 	})
 
 	Describe("Execute", func() {
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			err := command.Execute([]string{}, storage.State{})
+
+			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(err).To(MatchError("state validator failed"))
+		})
+
 		It("creates the new certificate with private key", func() {
 			updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{

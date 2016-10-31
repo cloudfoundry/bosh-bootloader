@@ -28,11 +28,13 @@ type UpdateLBs struct {
 	certificateValidator      certificateValidator
 	guidGenerator             guidGenerator
 	stateStore                stateStore
+	stateValidator            stateValidator
 }
 
 func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
 	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager, boshClientProvider boshClientProvider,
-	logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator, stateStore stateStore) UpdateLBs {
+	logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator, stateStore stateStore,
+	stateValidator stateValidator) UpdateLBs {
 
 	return UpdateLBs{
 		awsCredentialValidator:    awsCredentialValidator,
@@ -44,11 +46,22 @@ func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateMana
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
 		stateStore:                stateStore,
+		stateValidator:            stateValidator,
 	}
 }
 
 func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error {
 	config, err := c.parseFlags(subcommandFlags)
+	if err != nil {
+		return err
+	}
+
+	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
+		c.logger.Println("no lb type exists, skipping...")
+		return nil
+	}
+
+	err = c.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
@@ -61,11 +74,6 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 	err = c.certificateValidator.Validate(UpdateLBsCommand, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return err
-	}
-
-	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
-		c.logger.Println("no lb type exists, skipping...")
-		return nil
 	}
 
 	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {

@@ -353,6 +353,26 @@ var _ = Describe("load balancers", func() {
 					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
 				})
 			})
+
+			Context("when bbl-state.json does not exist", func() {
+				It("exits with status 1 and outputs helpful error message", func() {
+					tempDirectory, err := ioutil.TempDir("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					args := []string{
+						"--state-dir", tempDirectory,
+						"update-lbs",
+					}
+					cmd := exec.Command(pathToBBL, args...)
+
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+
+					Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+				})
+			})
 		})
 	})
 

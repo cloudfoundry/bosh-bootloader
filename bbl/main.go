@@ -162,7 +162,7 @@ func main() {
 	)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
-		stateStore)
+		stateStore, stateValidator)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
