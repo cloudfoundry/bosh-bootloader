@@ -10,9 +10,6 @@ import (
 var _ = Describe("AWSCredentialValidator", func() {
 	var awsCredentialValidator application.AWSCredentialValidator
 
-	BeforeEach(func() {
-	})
-
 	Describe("ValidateCredentials", func() {
 		It("validates that the credentials have been set", func() {
 			awsCredentialValidator = application.NewAWSCredentialValidator(application.Configuration{

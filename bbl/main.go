@@ -70,6 +70,7 @@ func main() {
 	}
 
 	stateStore := storage.NewStore(configuration.Global.StateDir)
+	stateValidator := application.NewStateValidator(configuration.Global.StateDir)
 
 	// Amazon
 	awsConfiguration := aws.Config{
@@ -152,7 +153,7 @@ func main() {
 	)
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
-		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore,
+		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore, stateValidator,
 	)
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,

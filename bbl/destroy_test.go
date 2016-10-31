@@ -25,7 +25,7 @@ import (
 )
 
 var _ = Describe("destroy", func() {
-	Context("when there state file does not exist", func() {
+	Context("when the state file does not exist", func() {
 		It("exits with status 0 if --skip-if-missing flag is provided", func() {
 			tempDirectory, err := ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
@@ -44,7 +44,26 @@ var _ = Describe("destroy", func() {
 
 			Expect(session.Out.Contents()).To(ContainSubstring("state file not found, and —skip-if-missing flag provided, exiting"))
 		})
+
+		It("exits with status 1 and outputs helpful error message", func() {
+			tempDirectory, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy",
+			}
+			cmd := exec.Command(pathToBBL, args...)
+
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+
+			Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+		})
 	})
+
 	Context("asks for confirmation before it starts destroying things", func() {
 		var (
 			cmd            *exec.Cmd

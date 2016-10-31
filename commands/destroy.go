@@ -28,6 +28,7 @@ type Destroy struct {
 	keyPairDeleter         keyPairDeleter
 	certificateDeleter     certificateDeleter
 	stateStore             stateStore
+	stateValidator         stateValidator
 }
 
 type destroyConfig struct {
@@ -59,10 +60,14 @@ type certificateDeleter interface {
 	Delete(certificateName string) error
 }
 
+type stateValidator interface {
+	Validate() error
+}
+
 func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, stdin io.Reader,
 	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter,
-	certificateDeleter certificateDeleter, stateStore stateStore) Destroy {
+	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator) Destroy {
 	return Destroy{
 		awsCredentialValidator: awsCredentialValidator,
 		logger:                 logger,
@@ -75,6 +80,7 @@ func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, st
 		keyPairDeleter:         keyPairDeleter,
 		certificateDeleter:     certificateDeleter,
 		stateStore:             stateStore,
+		stateValidator:         stateValidator,
 	}
 }
 
@@ -87,6 +93,11 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	if config.SkipIfMissing && state.Stack.Name == "" {
 		d.logger.Step("state file not found, and —skip-if-missing flag provided, exiting")
 		return nil
+	}
+
+	err = d.stateValidator.Validate()
+	if err != nil {
+		return err
 	}
 
 	err = d.awsCredentialValidator.Validate()

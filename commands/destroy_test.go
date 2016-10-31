@@ -29,6 +29,7 @@ var _ = Describe("Destroy", func() {
 		certificateDeleter     *fakes.CertificateDeleter
 		awsCredentialValidator *fakes.AWSCredentialValidator
 		stateStore             *fakes.StateStore
+		stateValidator         *fakes.StateValidator
 		stdin                  *bytes.Buffer
 	)
 
@@ -45,10 +46,11 @@ var _ = Describe("Destroy", func() {
 		stringGenerator = &fakes.StringGenerator{}
 		awsCredentialValidator = &fakes.AWSCredentialValidator{}
 		stateStore = &fakes.StateStore{}
+		stateValidator = &fakes.StateValidator{}
 
 		destroy = commands.NewDestroy(awsCredentialValidator, logger, stdin, boshDeleter,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
-			keyPairDeleter, certificateDeleter, stateStore)
+			keyPairDeleter, certificateDeleter, stateStore, stateValidator)
 	})
 
 	Describe("Execute", func() {
@@ -58,6 +60,15 @@ var _ = Describe("Destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.StepCall.Receives.Message).To(Equal("state file not found, and —skip-if-missing flag provided, exiting"))
 		})
+
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			err := destroy.Execute([]string{}, storage.State{})
+
+			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(err).To(MatchError("state validator failed"))
+		})
+
 		It("returns an error when aws credential validator fails", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
 
