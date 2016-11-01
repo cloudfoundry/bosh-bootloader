@@ -120,6 +120,9 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if state.IAAS == "" {
+		if config.iaas == "" {
+			return nil
+		}
 		state.IAAS = config.iaas
 	}
 

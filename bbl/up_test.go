@@ -139,6 +139,7 @@ var _ = Describe("bbl", func() {
 					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
 					"--state-dir", tempDirectory,
 					"up",
+					"--iaas", "aws",
 				}
 
 				cmd := exec.Command(pathToBBL, args...)
@@ -667,6 +668,21 @@ var _ = Describe("bbl", func() {
 							Version: 1,
 							IAAS:    "gcp",
 						}))
+					})
+				})
+
+				Context("when up is called with no --iaas flag", func() {
+					It("no ops", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--state-dir", tempDirectory,
+							"up",
+						}
+
+						executeCommand(args, 0)
+
+						_, err := os.Stat(filepath.Join(tempDirectory, "bbl-state.json"))
+						Expect(os.IsNotExist(err)).To(BeTrue())
 					})
 				})
 			})
