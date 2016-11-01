@@ -15,19 +15,26 @@ const (
 type LBs struct {
 	awsCredentialValidator awsCredentialValidator
 	infrastructureManager  infrastructureManager
+	stateValidator         stateValidator
 	stdout                 io.Writer
 }
 
-func NewLBs(awsCredentialValidator awsCredentialValidator, infrastructureManager infrastructureManager, stdout io.Writer) LBs {
+func NewLBs(awsCredentialValidator awsCredentialValidator, stateValidator stateValidator, infrastructureManager infrastructureManager, stdout io.Writer) LBs {
 	return LBs{
 		awsCredentialValidator: awsCredentialValidator,
 		infrastructureManager:  infrastructureManager,
+		stateValidator:         stateValidator,
 		stdout:                 stdout,
 	}
 }
 
 func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
-	err := c.awsCredentialValidator.Validate()
+	err := c.stateValidator.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = c.awsCredentialValidator.Validate()
 	if err != nil {
 		return err
 	}

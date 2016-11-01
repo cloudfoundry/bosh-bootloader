@@ -168,7 +168,7 @@ func main() {
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
 		stateValidator,
 	)
-	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, infrastructureManager, os.Stdout)
+	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, stateValidator, infrastructureManager, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})
