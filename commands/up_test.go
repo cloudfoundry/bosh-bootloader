@@ -594,16 +594,32 @@ var _ = Describe("Up", func() {
 					})
 				})
 
-				Context("when the iaas exists in the state", func() {
-					It("uses the state iaas", func() {
-						err := command.Execute([]string{}, storage.State{
-							IAAS: "gcp",
-						})
-						Expect(err).NotTo(HaveOccurred())
+				Context("when the iaas: gcp exists in the state", func() {
+					var existingState storage.State
 
+					BeforeEach(func() {
+						existingState = storage.State{
+							IAAS: "gcp",
+						}
+						err := command.Execute([]string{}, existingState)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("uses the state iaas", func() {
 						Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
 							IAAS: "gcp",
 						}))
+					})
+
+					Context("when --iaas aws is provided", func() {
+						var err error
+						BeforeEach(func() {
+							err = command.Execute([]string{"--iaas", "aws"}, existingState)
+						})
+
+						It("returns an error", func() {
+							Expect(err).To(MatchError("the iaas provided must match the iaas in bbl-state.json"))
+						})
 					})
 				})
 			})

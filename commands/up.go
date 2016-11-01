@@ -123,7 +123,12 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 		if config.iaas == "" {
 			return errors.New("--iaas [gcp,aws] must be provided")
 		}
+
 		state.IAAS = config.iaas
+	}
+
+	if config.iaas != "" && state.IAAS != config.iaas {
+		return errors.New("the iaas provided must match the iaas in bbl-state.json")
 	}
 
 	if state.IAAS == "gcp" {

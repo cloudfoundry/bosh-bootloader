@@ -613,36 +613,51 @@ var _ = Describe("bbl", func() {
 			})
 
 			Context("--iaas", func() {
-				Context("when up is called with --iaas gcp", func() {
-					It("writes iaas: gcp to state", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--state-dir", tempDirectory,
-							"up",
-							"--iaas", "gcp",
-						}
+				Context("when bbl-state.json does not exist", func() {
+					Context("when up is called with --iaas gcp", func() {
+						It("writes iaas: gcp to state", func() {
+							args := []string{
+								fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+								"--state-dir", tempDirectory,
+								"up",
+								"--iaas", "gcp",
+							}
 
-						executeCommand(args, 0)
+							executeCommand(args, 0)
 
-						state := readStateJson(tempDirectory)
-						Expect(state.IAAS).To(Equal("gcp"))
+							state := readStateJson(tempDirectory)
+							Expect(state.IAAS).To(Equal("gcp"))
+						})
+					})
+
+					Context("when up is called with --iaas aws", func() {
+						It("writes iaas: aws to state and creates resources", func() {
+							upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
+							state := readStateJson(tempDirectory)
+							Expect(state.IAAS).To(Equal("aws"))
+
+							var ok bool
+							_, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+							Expect(ok).To(BeTrue())
+						})
+					})
+
+					Context("when up is called with no --iaas flag", func() {
+						It("exits 1 and prints a helpful error message", func() {
+							args := []string{
+								fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+								"--state-dir", tempDirectory,
+								"up",
+							}
+
+							session := executeCommand(args, 1)
+							Expect(session.Err.Contents()).To(ContainSubstring("--iaas [gcp,aws] must be provided"))
+						})
 					})
 				})
 
-				Context("when up is called with --iaas aws", func() {
-					It("writes iaas: aws to state and creates resources", func() {
-						upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-						state := readStateJson(tempDirectory)
-						Expect(state.IAAS).To(Equal("aws"))
-
-						var ok bool
-						_, ok = fakeAWS.Stacks.Get(state.Stack.Name)
-						Expect(ok).To(BeTrue())
-					})
-				})
-
-				Context("when no iaas is provided the second time", func() {
+				Context("when bbl-state.json contains iaas: gcp", func() {
 					BeforeEach(func() {
 						args := []string{
 							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
@@ -654,35 +669,50 @@ var _ = Describe("bbl", func() {
 						executeCommand(args, 0)
 					})
 
-					It("no ops", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--state-dir", tempDirectory,
-							"up",
-						}
+					Context("when up is called with --iaas gcp", func() {
+						It("no ops", func() {
+							originalState := readStateJson(tempDirectory)
+							args := []string{
+								fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+								"--state-dir", tempDirectory,
+								"up",
+								"--iaas", "gcp",
+							}
 
-						executeCommand(args, 0)
+							executeCommand(args, 0)
 
-						state := readStateJson(tempDirectory)
-						Expect(state).To(Equal(storage.State{
-							Version: 1,
-							IAAS:    "gcp",
-						}))
+							state := readStateJson(tempDirectory)
+							Expect(state).To(Equal(originalState))
+						})
+					})
+
+					Context("when up is called with --iaas aws", func() {
+						It("exits 1 and prints a helpful error message", func() {
+							session := upAWS(fakeAWSServer.URL, tempDirectory, 1)
+
+							Expect(session.Err.Contents()).To(ContainSubstring("the iaas provided must match the iaas in bbl-state.json"))
+						})
+					})
+
+					Context("when up is called with no --iaas flag", func() {
+						It("no ops", func() {
+							args := []string{
+								fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+								"--state-dir", tempDirectory,
+								"up",
+							}
+
+							executeCommand(args, 0)
+
+							state := readStateJson(tempDirectory)
+							Expect(state).To(Equal(storage.State{
+								Version: 1,
+								IAAS:    "gcp",
+							}))
+						})
 					})
 				})
 
-				Context("when up is called with no --iaas flag", func() {
-					It("exits 1 and prints a helpful error message", func() {
-						args := []string{
-							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-							"--state-dir", tempDirectory,
-							"up",
-						}
-
-						session := executeCommand(args, 1)
-						Expect(session.Err.Contents()).To(ContainSubstring("--iaas [gcp,aws] must be provided"))
-					})
-				})
 			})
 		})
 	})
