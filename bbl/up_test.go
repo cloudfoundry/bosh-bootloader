@@ -597,9 +597,21 @@ var _ = Describe("bbl", func() {
 					Expect(state.BOSH).To(Equal(originalBOSHState))
 				})
 			})
+
+			It("prints the up usage when --help is provided", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"up",
+					"--help",
+				}
+
+				session := executeCommand(args, 0)
+				Expect(session.Out.Contents()).To(ContainSubstring("Deploys BOSH director on an IAAS"))
+				Expect(session.Out.Contents()).To(ContainSubstring("--iaas"))
+			})
 		})
 	})
-
 })
 
 func up(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
