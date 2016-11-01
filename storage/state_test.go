@@ -37,6 +37,7 @@ var _ = Describe("Store", func() {
 	Describe("Set", func() {
 		It("stores the state into a file", func() {
 			err := store.Set(storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
@@ -89,6 +90,7 @@ var _ = Describe("Store", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(MatchJSON(`{
 				"version": 1,
+				"iaas": "aws",
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",
 					"secretAccessKey": "some-aws-secret-access-key",

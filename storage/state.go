@@ -37,6 +37,7 @@ type Stack struct {
 
 type State struct {
 	Version int     `json:"version"`
+	IAAS    string  `json:"iaas"`
 	AWS     AWS     `json:"aws"`
 	KeyPair KeyPair `json:"keyPair,omitempty"`
 	BOSH    BOSH    `json:"bosh,omitempty"`

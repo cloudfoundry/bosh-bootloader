@@ -610,6 +610,22 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("Deploys BOSH director on an IAAS"))
 				Expect(session.Out.Contents()).To(ContainSubstring("--iaas"))
 			})
+
+			Context("when up is called with --iaas gcp", func() {
+				It("writes iaas: gcp to state", func() {
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+						"--state-dir", tempDirectory,
+						"up",
+						"--iaas", "gcp",
+					}
+
+					executeCommand(args, 0)
+
+					state := readStateJson(tempDirectory)
+					Expect(state.IAAS).To(Equal("gcp"))
+				})
+			})
 		})
 	})
 })

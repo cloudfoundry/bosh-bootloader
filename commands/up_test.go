@@ -571,6 +571,21 @@ var _ = Describe("Up", func() {
 		})
 
 		Describe("state manipulation", func() {
+			Context("iaas", func() {
+				Context("when the iaas does not exist in the state", func() {
+					It("writes the iaas provided to the state", func() {
+						err := command.Execute([]string{
+							"--iaas", "gcp",
+						}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							IAAS: "gcp",
+						}))
+					})
+				})
+			})
+
 			Context("aws credentials", func() {
 				Context("when the credentials do not exist", func() {
 					It("saves the credentials", func() {
@@ -1033,6 +1048,13 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("env id generation failed"))
 			})
 
+			It("returns an error when state store fails to set the state when gcp is set", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+
+				err := command.Execute([]string{"--iaas", "gcp"}, storage.State{})
+				Expect(err).To(MatchError("failed to set state"))
+			})
+
 			It("returns an error when state store fails to set the state before syncing the keypair", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
 
@@ -1079,7 +1101,6 @@ var _ = Describe("Up", func() {
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
-
 		})
 	})
 })

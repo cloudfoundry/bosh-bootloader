@@ -85,6 +85,7 @@ type upConfig struct {
 	awsAccessKeyID     string
 	awsSecretAccessKey string
 	awsRegion          string
+	iaas               string
 }
 
 func NewUp(
@@ -116,6 +117,15 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
+	}
+
+	state.IAAS = config.iaas
+
+	if state.IAAS == "gcp" {
+		if err := u.stateStore.Set(state); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if u.awsCredentialsPresent(config) {
@@ -286,6 +296,7 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", os.Getenv("BBL_AWS_ACCESS_KEY_ID"))
 	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"))
 	upFlags.String(&config.awsRegion, "aws-region", os.Getenv("BBL_AWS_REGION"))
+	upFlags.String(&config.iaas, "iaas", "")
 
 	err := upFlags.Parse(subcommandFlags)
 	if err != nil {
