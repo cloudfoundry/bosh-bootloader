@@ -32,6 +32,7 @@ func (b BBL) Up() {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"up",
+		"--iaas", "aws",
 		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
 		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 		"--aws-region", b.configuration.AWSRegion,
@@ -44,6 +45,7 @@ func (b BBL) UpWithInvalidAWSCredentials() {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"up",
+		"--iaas", "aws",
 		"--aws-access-key-id", "some-bad-access-key-id",
 		"--aws-secret-access-key", "some-bad-secret-access-key",
 		"--aws-region", b.configuration.AWSRegion,

@@ -672,17 +672,15 @@ var _ = Describe("bbl", func() {
 				})
 
 				Context("when up is called with no --iaas flag", func() {
-					It("no ops", func() {
+					It("exits 1 and prints a helpful error message", func() {
 						args := []string{
 							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
 							"--state-dir", tempDirectory,
 							"up",
 						}
 
-						executeCommand(args, 0)
-
-						_, err := os.Stat(filepath.Join(tempDirectory, "bbl-state.json"))
-						Expect(os.IsNotExist(err)).To(BeTrue())
+						session := executeCommand(args, 1)
+						Expect(session.Err.Contents()).To(ContainSubstring("--iaas [gcp,aws] must be provided"))
 					})
 				})
 			})

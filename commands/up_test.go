@@ -587,11 +587,9 @@ var _ = Describe("Up", func() {
 					})
 
 					Context("when no iaas is provided", func() {
-						It("no ops", func() {
+						It("returns an error", func() {
 							err := command.Execute([]string{}, storage.State{})
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(stateStore.SetCall.CallCount).To(Equal(0))
+							Expect(err).To(MatchError("--iaas [gcp,aws] must be provided"))
 						})
 					})
 				})

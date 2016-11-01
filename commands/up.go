@@ -121,7 +121,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 
 	if state.IAAS == "" {
 		if config.iaas == "" {
-			return nil
+			return errors.New("--iaas [gcp,aws] must be provided")
 		}
 		state.IAAS = config.iaas
 	}
