@@ -119,9 +119,13 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
+	if config.iaas != "" && config.iaas != "gcp" && config.iaas != "aws" {
+		return fmt.Errorf("%q is invalid; supported values: [gcp, aws]", config.iaas)
+	}
+
 	if state.IAAS == "" {
 		if config.iaas == "" {
-			return errors.New("--iaas [gcp,aws] must be provided")
+			return errors.New("--iaas [gcp, aws] must be provided")
 		}
 
 		state.IAAS = config.iaas

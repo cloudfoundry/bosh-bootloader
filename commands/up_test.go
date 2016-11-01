@@ -586,10 +586,17 @@ var _ = Describe("Up", func() {
 						}))
 					})
 
+					Context("when an invalid iaas is provided", func() {
+						It("returns an error", func() {
+							err := command.Execute([]string{"--iaas", "bad-iaas"}, storage.State{})
+							Expect(err).To(MatchError(`"bad-iaas" is invalid; supported values: [gcp, aws]`))
+						})
+					})
+
 					Context("when no iaas is provided", func() {
 						It("returns an error", func() {
 							err := command.Execute([]string{}, storage.State{})
-							Expect(err).To(MatchError("--iaas [gcp,aws] must be provided"))
+							Expect(err).To(MatchError("--iaas [gcp, aws] must be provided"))
 						})
 					})
 				})

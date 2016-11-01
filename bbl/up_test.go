@@ -652,7 +652,21 @@ var _ = Describe("bbl", func() {
 							}
 
 							session := executeCommand(args, 1)
-							Expect(session.Err.Contents()).To(ContainSubstring("--iaas [gcp,aws] must be provided"))
+							Expect(session.Err.Contents()).To(ContainSubstring("--iaas [gcp, aws] must be provided"))
+						})
+					})
+
+					Context("when up is called with an unsupported --iaas value", func() {
+						It("exits 1 and prints a helpful error message", func() {
+							args := []string{
+								fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+								"--state-dir", tempDirectory,
+								"up",
+								"--iaas", "bad-iaas-value",
+							}
+
+							session := executeCommand(args, 1)
+							Expect(session.Err.Contents()).To(ContainSubstring(`"bad-iaas-value" is invalid; supported values: [gcp, aws]`))
 						})
 					})
 				})
@@ -712,7 +726,6 @@ var _ = Describe("bbl", func() {
 						})
 					})
 				})
-
 			})
 		})
 	})
