@@ -49,7 +49,7 @@ var _ = Describe("load balancers", func() {
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		up(fakeAWSServer.URL, tempDirectory, 0)
+		upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 		lbCertPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())

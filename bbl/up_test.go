@@ -157,7 +157,7 @@ var _ = Describe("bbl", func() {
 
 		Context("when bosh/cpi/stemcell is provided via constants", func() {
 			It("creates a bosh with provided versions", func() {
-				up(fakeAWSServer.URL, tempDirectory, 0)
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 				var boshManifest struct {
@@ -196,7 +196,7 @@ var _ = Describe("bbl", func() {
 			var stack awsbackend.Stack
 
 			It("creates a stack and a keypair", func() {
-				up(fakeAWSServer.URL, tempDirectory, 0)
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -211,7 +211,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("creates an IAM user", func() {
-				up(fakeAWSServer.URL, tempDirectory, 0)
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -259,7 +259,7 @@ var _ = Describe("bbl", func() {
 						DirectorAddress: fakeBOSHServer.URL,
 					},
 				}, tempDirectory)
-				up(fakeAWSServer.URL, tempDirectory, 0)
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -284,7 +284,7 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("logs the steps and bosh-init manifest", func() {
-				session := up(fakeAWSServer.URL, tempDirectory, 0)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
 				Expect(stdout).To(ContainSubstring("step: creating keypair"))
@@ -296,13 +296,13 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("invokes bosh-init", func() {
-				session := up(fakeAWSServer.URL, tempDirectory, 0)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 			})
 
 			It("names the bosh director with env id", func() {
-				session := up(fakeAWSServer.URL, tempDirectory, 0)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-bbl-"))
 			})
 
@@ -330,12 +330,12 @@ var _ = Describe("bbl", func() {
 						DirectorAddress: fakeBOSHServer.URL,
 					},
 				}, tempDirectory)
-				session := up(fakeAWSServer.URL, tempDirectory, 0)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: my-bosh"))
 			})
 
 			It("signs bosh-init cert and key with the generated CA cert", func() {
-				up(fakeAWSServer.URL, tempDirectory, 0)
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -359,11 +359,11 @@ var _ = Describe("bbl", func() {
 			})
 
 			It("can invoke bosh-init idempotently", func() {
-				session := up(fakeAWSServer.URL, tempDirectory, 0)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
 
-				session = up(fakeAWSServer.URL, tempDirectory, 0)
+				session = upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
 				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value","md5checksum":`))
 				Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
@@ -371,7 +371,7 @@ var _ = Describe("bbl", func() {
 
 			It("fast fails if the bosh state exists", func() {
 				writeStateJson(storage.State{BOSH: storage.BOSH{DirectorAddress: "some-director-address"}}, tempDirectory)
-				session := up(fakeAWSServer.URL, tempDirectory, 1)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 1)
 				Expect(session.Err.Contents()).To(ContainSubstring("Found BOSH data in state directory"))
 			})
 		})
@@ -401,7 +401,7 @@ var _ = Describe("bbl", func() {
 
 				ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
 
-				session := up(fakeAWSServer.URL, tempDirectory, 0)
+				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				template, err := ioutil.ReadFile("fixtures/cloudformation-no-elb.json")
 				Expect(err).NotTo(HaveOccurred())
@@ -422,7 +422,7 @@ var _ = Describe("bbl", func() {
 
 		Context("when a load balancer is attached", func() {
 			It("attaches certificate to the load balancer", func() {
-				up(fakeAWSServer.URL, tempDirectory, 0)
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 
 				state := readStateJson(tempDirectory)
@@ -457,7 +457,7 @@ var _ = Describe("bbl", func() {
 			contents, err := ioutil.ReadFile(fixtureLocation)
 			Expect(err).NotTo(HaveOccurred())
 
-			session := up(fakeAWSServer.URL, tempDirectory, 0)
+			session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 			if lbType != "" {
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, lbType, 0, false)
 			}
@@ -491,7 +491,7 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create keypair",
 					})
-					session := up(fakeAWSServer.URL, tempDirectory, 1)
+					session := upAWS(fakeAWSServer.URL, tempDirectory, 1)
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
@@ -512,7 +512,7 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create stack",
 					})
-					session := up(fakeAWSServer.URL, tempDirectory, 1)
+					session := upAWS(fakeAWSServer.URL, tempDirectory, 1)
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
@@ -531,7 +531,7 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create stack",
 					})
-					up(fakeAWSServer.URL, tempDirectory, 1)
+					upAWS(fakeAWSServer.URL, tempDirectory, 1)
 					state := readStateJson(tempDirectory)
 
 					Expect(state.KeyPair.PrivateKey).To(ContainSubstring(testhelpers.PRIVATE_KEY))
@@ -543,10 +543,10 @@ var _ = Describe("bbl", func() {
 						AWSErrorCode:    "InvalidRequest",
 						AWSErrorMessage: "failed to create stack",
 					})
-					up(fakeAWSServer.URL, tempDirectory, 1)
+					upAWS(fakeAWSServer.URL, tempDirectory, 1)
 
 					fakeAWS.Stacks.SetCreateStackReturnError(nil)
-					up(fakeAWSServer.URL, tempDirectory, 0)
+					upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 					Expect(fakeAWS.CreateKeyPairCallCount).To(Equal(int64(1)))
 				})
@@ -570,10 +570,10 @@ var _ = Describe("bbl", func() {
 					})
 
 					By("running up twice and checking if it created one stack", func() {
-						up(fakeAWSServer.URL, tempDirectory, 1)
+						upAWS(fakeAWSServer.URL, tempDirectory, 1)
 
 						os.Setenv("PATH", originalPath)
-						up(fakeAWSServer.URL, tempDirectory, 0)
+						upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 						Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
 					})
@@ -583,7 +583,7 @@ var _ = Describe("bbl", func() {
 			Context("when bosh cloud config fails to update", func() {
 				It("saves the bosh properties to the state", func() {
 					fakeBOSH.SetCloudConfigEndpointFail(true)
-					up(fakeAWSServer.URL, tempDirectory, 1)
+					upAWS(fakeAWSServer.URL, tempDirectory, 1)
 					state := readStateJson(tempDirectory)
 
 					Expect(state.BOSH.DirectorName).To(MatchRegexp(`bosh-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
@@ -591,7 +591,7 @@ var _ = Describe("bbl", func() {
 					originalBOSHState := state.BOSH
 
 					fakeBOSH.SetCloudConfigEndpointFail(false)
-					up(fakeAWSServer.URL, tempDirectory, 0)
+					upAWS(fakeAWSServer.URL, tempDirectory, 0)
 					state = readStateJson(tempDirectory)
 
 					Expect(state.BOSH).To(Equal(originalBOSHState))
@@ -611,30 +611,75 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("--iaas"))
 			})
 
-			Context("when up is called with --iaas gcp", func() {
-				It("writes iaas: gcp to state", func() {
-					args := []string{
-						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-						"--state-dir", tempDirectory,
-						"up",
-						"--iaas", "gcp",
-					}
+			Context("--iaas", func() {
+				Context("when up is called with --iaas gcp", func() {
+					It("writes iaas: gcp to state", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--state-dir", tempDirectory,
+							"up",
+							"--iaas", "gcp",
+						}
 
-					executeCommand(args, 0)
+						executeCommand(args, 0)
 
-					state := readStateJson(tempDirectory)
-					Expect(state.IAAS).To(Equal("gcp"))
+						state := readStateJson(tempDirectory)
+						Expect(state.IAAS).To(Equal("gcp"))
+					})
+				})
+
+				Context("when up is called with --iaas aws", func() {
+					It("writes iaas: aws to state and creates resources", func() {
+						upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
+						state := readStateJson(tempDirectory)
+						Expect(state.IAAS).To(Equal("aws"))
+
+						var ok bool
+						_, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+						Expect(ok).To(BeTrue())
+					})
+				})
+
+				Context("when no iaas is provided the second time", func() {
+					BeforeEach(func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--state-dir", tempDirectory,
+							"up",
+							"--iaas", "gcp",
+						}
+
+						executeCommand(args, 0)
+					})
+
+					It("no ops", func() {
+						args := []string{
+							fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+							"--state-dir", tempDirectory,
+							"up",
+						}
+
+						executeCommand(args, 0)
+
+						state := readStateJson(tempDirectory)
+						Expect(state).To(Equal(storage.State{
+							Version: 1,
+							IAAS:    "gcp",
+						}))
+					})
 				})
 			})
 		})
 	})
 })
 
-func up(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
+func upAWS(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--state-dir", tempDirectory,
 		"up",
+		"--iaas", "aws",
 		"--aws-access-key-id", "some-access-key",
 		"--aws-secret-access-key", "some-access-secret",
 		"--aws-region", "some-region",

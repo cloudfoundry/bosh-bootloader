@@ -119,7 +119,9 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	state.IAAS = config.iaas
+	if state.IAAS == "" {
+		state.IAAS = config.iaas
+	}
 
 	if state.IAAS == "gcp" {
 		if err := u.stateStore.Set(state); err != nil {

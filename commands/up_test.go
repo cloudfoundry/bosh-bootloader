@@ -584,6 +584,19 @@ var _ = Describe("Up", func() {
 						}))
 					})
 				})
+
+				Context("when the iaas exists in the state", func() {
+					It("uses the state iaas", func() {
+						err := command.Execute([]string{}, storage.State{
+							IAAS: "gcp",
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							IAAS: "gcp",
+						}))
+					})
+				})
 			})
 
 			Context("aws credentials", func() {
