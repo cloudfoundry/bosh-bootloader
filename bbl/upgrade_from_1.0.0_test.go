@@ -51,25 +51,11 @@ var _ = Describe("upgrade from 1.0.0", func() {
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 	})
 
-	bblUpV1 := func(bbl string) (*gexec.Session, error) {
+	bblUp := func(bbl string) (*gexec.Session, error) {
 		args := []string{
 			fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
 			"--state-dir", tmpDir,
 			"up",
-			"--aws-access-key-id", "some-access-key",
-			"--aws-secret-access-key", "some-access-secret",
-			"--aws-region", "some-region",
-		}
-		session, err := gexec.Start(exec.Command(bbl, args...), GinkgoWriter, GinkgoWriter)
-		return session, err
-	}
-
-	bblUpDev := func(bbl string) (*gexec.Session, error) {
-		args := []string{
-			fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-			"--state-dir", tmpDir,
-			"up",
-			"--iaas", "aws",
 			"--aws-access-key-id", "some-access-key",
 			"--aws-secret-access-key", "some-access-secret",
 			"--aws-region", "some-region",
@@ -117,7 +103,7 @@ var _ = Describe("upgrade from 1.0.0", func() {
 		})
 
 		By("bbl-ing up with v1.0.0", func() {
-			session, err := bblUpV1(pathToBBLv1)
+			session, err := bblUp(pathToBBLv1)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session, 10*time.Second).Should(gexec.Exit(0))
 		})
@@ -133,7 +119,7 @@ var _ = Describe("upgrade from 1.0.0", func() {
 		})
 
 		By("bbl-ing up with dev version", func() {
-			session, err := bblUpDev(pathToBBL)
+			session, err := bblUp(pathToBBL)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session, 10*time.Second).Should(gexec.Exit(0))
 		})
@@ -146,6 +132,25 @@ var _ = Describe("upgrade from 1.0.0", func() {
 
 			stdout := session.Out.Contents()
 			Expect(string(stdout)).To(Equal(envID))
+		})
+	})
+
+	Context("when a v1 state file exists", func() {
+		BeforeEach(func() {
+			err := downloadBBLV1()
+			Expect(err).NotTo(HaveOccurred())
+			session, err := bblUp(pathToBBLv1)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+		})
+
+		It("migrates the state file with a default of iaas: aws", func() {
+			session, err := bblUp(pathToBBL)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+
+			state := readStateJson(tmpDir)
+			Expect(state.IAAS).To(Equal("aws"))
 		})
 	})
 })

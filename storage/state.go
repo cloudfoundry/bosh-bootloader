@@ -52,7 +52,7 @@ type Store struct {
 
 func NewStore(dir string) Store {
 	return Store{
-		version:   1,
+		version:   2,
 		stateFile: filepath.Join(dir, StateFileName),
 	}
 }
@@ -123,7 +123,17 @@ func GetState(dir string) (State, error) {
 		return state, err
 	}
 
+	if state.Version == 1 {
+		state = migrateV1ToV2(state)
+	}
+
 	return state, nil
+}
+
+func migrateV1ToV2(state State) State {
+	state.Version = 2
+	state.IAAS = "aws"
+	return state
 }
 
 func renameStateToBBLState(dir string) error {

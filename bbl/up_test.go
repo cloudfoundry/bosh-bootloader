@@ -720,7 +720,7 @@ var _ = Describe("bbl", func() {
 
 							state := readStateJson(tempDirectory)
 							Expect(state).To(Equal(storage.State{
-								Version: 1,
+								Version: 2,
 								IAAS:    "gcp",
 							}))
 						})
