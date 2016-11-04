@@ -145,12 +145,16 @@ func main() {
 	// Commands
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
-	commandSet[commands.UpCommand] = commands.NewUp(
+
+	awsUp := commands.NewAWSUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
 		clientProvider,
 	)
+	gcpUp := commands.NewGCPUp(stateStore)
+	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp)
+
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore, stateValidator,
