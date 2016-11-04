@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -128,92 +127,16 @@ var _ = Describe("AWSUp", func() {
 
 		It("returns an error when aws credential validator fails", func() {
 			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
-			err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+			err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
-		Context("when AWS creds are provided through environment variables", func() {
-			BeforeEach(func() {
-				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")
-				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-access-secret")
-				os.Setenv("BBL_AWS_REGION", "some-region")
-			})
-
-			AfterEach(func() {
-				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "")
-				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "")
-				os.Setenv("BBL_AWS_REGION", "")
-			})
-
-			It("honors the environment variables to fetch the AWS creds", func() {
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{
-					AWS: storage.AWS{
-						Region:          "some-aws-region",
-						SecretAccessKey: "some-secret-access-key",
-						AccessKeyID:     "some-access-key-id",
-					},
-					KeyPair: storage.KeyPair{
-						Name:       "some-keypair-name",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
-				Expect(clientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
-					Region:          "some-region",
-					SecretAccessKey: "some-access-secret",
-					AccessKeyID:     "some-access-key",
-				}))
-				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
-			})
-
-			It("honors missing creds passed as arguments", func() {
-				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "")
-				err := command.Execute([]string{
-					"--iaas", "aws",
-					"--aws-access-key-id", "access-key-from-arguments",
-				}, storage.State{
-					AWS: storage.AWS{
-						Region:          "some-aws-region",
-						SecretAccessKey: "some-secret-access-key",
-						AccessKeyID:     "some-access-key-id",
-					},
-					KeyPair: storage.KeyPair{
-						Name:       "some-keypair-name",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
-				Expect(clientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
-					Region:          "some-region",
-					SecretAccessKey: "some-access-secret",
-					AccessKeyID:     "access-key-from-arguments",
-				}))
-				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
-			})
-		})
-
-		It("honors the cli flags", func() {
-			err := command.Execute([]string{
-				"--iaas", "aws",
-				"--aws-access-key-id", "new-aws-access-key-id",
-				"--aws-secret-access-key", "new-aws-secret-access-key",
-				"--aws-region", "new-aws-region",
-			}, storage.State{
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				},
-			})
+		It("retrieves a client with the provided credentials", func() {
+			err := command.Execute(commands.AWSUpConfig{
+				AWSAccessKeyID:     "new-aws-access-key-id",
+				AWSSecretAccessKey: "new-aws-secret-access-key",
+				AWSRegion:          "new-aws-region",
+			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
@@ -226,7 +149,7 @@ var _ = Describe("AWSUp", func() {
 		})
 
 		It("syncs the keypair", func() {
-			err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+			err := command.Execute(commands.AWSUpConfig{}, storage.State{
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
@@ -265,7 +188,7 @@ var _ = Describe("AWSUp", func() {
 				},
 			}
 
-			err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
@@ -282,7 +205,7 @@ var _ = Describe("AWSUp", func() {
 
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
-			err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-time-stamp"))
@@ -306,7 +229,7 @@ var _ = Describe("AWSUp", func() {
 				},
 			}
 
-			err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
@@ -340,7 +263,7 @@ var _ = Describe("AWSUp", func() {
 					Body: "some-certificate-body",
 				}
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{
 					Stack: storage.Stack{
 						Name:            "some-stack-name",
 						LBType:          "concourse",
@@ -391,7 +314,7 @@ var _ = Describe("AWSUp", func() {
 				}
 
 				cloudConfigurator.ConfigureCall.Returns.CloudConfigInput = cloudConfigInput
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-bosh-url"))
@@ -406,7 +329,7 @@ var _ = Describe("AWSUp", func() {
 				It("generates a cloud config", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cloudConfigurator.ConfigureCall.CallCount).To(Equal(1))
@@ -436,7 +359,7 @@ var _ = Describe("AWSUp", func() {
 						Body: "some-certificate-body",
 					}
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
 						Stack: storage.Stack{
 							LBType:          "concourse",
 							CertificateName: "some-certificate-name",
@@ -473,7 +396,7 @@ var _ = Describe("AWSUp", func() {
 						Body: "some-certificate-body",
 					}
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
 						Stack: storage.Stack{
 							LBType:          "cf",
 							CertificateName: "some-certificate-name",
@@ -509,7 +432,7 @@ var _ = Describe("AWSUp", func() {
 				It("saves the keypair name and returns an error", func() {
 					keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("error syncing key pair"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
@@ -520,7 +443,7 @@ var _ = Describe("AWSUp", func() {
 				It("saves the public/private key and returns an error", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone retrieve failed")
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("availability zone retrieve failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
@@ -532,7 +455,7 @@ var _ = Describe("AWSUp", func() {
 				It("saves the stack name and returns an error", func() {
 					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("infrastructure creation failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
@@ -541,7 +464,7 @@ var _ = Describe("AWSUp", func() {
 				It("saves the private/public key and returns an error", func() {
 					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("infrastructure creation failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
@@ -553,7 +476,7 @@ var _ = Describe("AWSUp", func() {
 				It("saves the bosh properties and returns an error", func() {
 					cloudConfigManager.UpdateCall.Returns.Error = errors.New("cloud config update failed")
 
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("cloud config update failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 					Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
@@ -576,7 +499,7 @@ var _ = Describe("AWSUp", func() {
 		Describe("state manipulation", func() {
 			Context("iaas", func() {
 				It("writes iaas aws to state", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(stateStore.SetCall.Receives.State.IAAS).To(Equal("aws"))
@@ -586,11 +509,10 @@ var _ = Describe("AWSUp", func() {
 			Context("aws credentials", func() {
 				Context("when the credentials do not exist", func() {
 					It("saves the credentials", func() {
-						err := command.Execute([]string{
-							"--iaas", "aws",
-							"--aws-access-key-id", "some-aws-access-key-id",
-							"--aws-secret-access-key", "some-aws-secret-access-key",
-							"--aws-region", "some-aws-region",
+						err := command.Execute(commands.AWSUpConfig{
+							AWSAccessKeyID:     "some-aws-access-key-id",
+							AWSSecretAccessKey: "some-aws-secret-access-key",
+							AWSRegion:          "some-aws-region",
 						}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
@@ -608,35 +530,21 @@ var _ = Describe("AWSUp", func() {
 									Error: errors.New("saving the state failed"),
 								},
 							}
-							err := command.Execute([]string{
-								"--iaas", "aws",
-								"--aws-access-key-id", "some-aws-access-key-id",
-								"--aws-secret-access-key", "some-aws-secret-access-key",
-								"--aws-region", "some-aws-region",
+							err := command.Execute(commands.AWSUpConfig{
+								AWSAccessKeyID:     "some-aws-access-key-id",
+								AWSSecretAccessKey: "some-aws-secret-access-key",
+								AWSRegion:          "some-aws-region",
 							}, storage.State{})
 							Expect(err).To(MatchError("saving the state failed"))
-						})
-
-						It("returns an error when parsing the flags fail", func() {
-							err := command.Execute([]string{
-								"--iaas", "aws",
-								"--aws-access-key-id", "some-aws-access-key-id",
-								"--aws-secret-access-key", "some-aws-secret-access-key",
-								"--unknown-flag", "some-value",
-								"--aws-region", "some-aws-region",
-							}, storage.State{})
-							Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
-
 						})
 					})
 				})
 				Context("when the credentials do exist", func() {
 					It("overrides the credentials when they're passed in", func() {
-						err := command.Execute([]string{
-							"--iaas", "aws",
-							"--aws-access-key-id", "new-aws-access-key-id",
-							"--aws-secret-access-key", "new-aws-secret-access-key",
-							"--aws-region", "new-aws-region",
+						err := command.Execute(commands.AWSUpConfig{
+							AWSAccessKeyID:     "new-aws-access-key-id",
+							AWSSecretAccessKey: "new-aws-secret-access-key",
+							AWSRegion:          "new-aws-region",
 						}, storage.State{
 							AWS: storage.AWS{
 								AccessKeyID:     "old-aws-access-key-id",
@@ -654,7 +562,7 @@ var _ = Describe("AWSUp", func() {
 					})
 
 					It("does not override the credentials when they're not passed in", func() {
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
 							AWS: storage.AWS{
 								AccessKeyID:     "aws-access-key-id",
 								SecretAccessKey: "aws-secret-access-key",
@@ -689,7 +597,7 @@ var _ = Describe("AWSUp", func() {
 							},
 						}
 
-						err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
@@ -710,7 +618,7 @@ var _ = Describe("AWSUp", func() {
 							PublicKey:  "some-public-key",
 						}
 
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
@@ -731,7 +639,7 @@ var _ = Describe("AWSUp", func() {
 				Context("when the stack name doesn't exist", func() {
 					It("populates a new stack name", func() {
 						incomingState := storage.State{}
-						err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -746,7 +654,7 @@ var _ = Describe("AWSUp", func() {
 								Name: "some-other-stack-name",
 							},
 						}
-						err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -760,7 +668,7 @@ var _ = Describe("AWSUp", func() {
 					It("populates a new bbl env id", func() {
 						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("bbl-lake-time:stamp"))
@@ -773,7 +681,7 @@ var _ = Describe("AWSUp", func() {
 							EnvID: "bbl-lake-time:stamp",
 						}
 
-						err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -789,7 +697,7 @@ var _ = Describe("AWSUp", func() {
 
 				Context("boshinit manifest", func() {
 					It("writes the boshinit manifest", func() {
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -801,7 +709,7 @@ var _ = Describe("AWSUp", func() {
 							BOSHInitManifest: "name: updated-bosh",
 						}
 
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
 							BOSH: storage.BOSH{
 								Manifest: "name: bosh",
 							},
@@ -816,7 +724,7 @@ var _ = Describe("AWSUp", func() {
 
 				Context("bosh state", func() {
 					It("writes the bosh state", func() {
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -833,7 +741,7 @@ var _ = Describe("AWSUp", func() {
 							},
 						}
 
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
 							BOSH: storage.BOSH{
 								Manifest: "name: bosh",
 								State: boshinit.State{
@@ -852,7 +760,7 @@ var _ = Describe("AWSUp", func() {
 				})
 
 				It("writes the bosh director address", func() {
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					state := stateStore.SetCall.Receives.State
@@ -860,7 +768,7 @@ var _ = Describe("AWSUp", func() {
 				})
 
 				It("writes the bosh director name", func() {
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					state := stateStore.SetCall.Receives.State
@@ -869,7 +777,7 @@ var _ = Describe("AWSUp", func() {
 
 				Context("when the bosh director ssl keypair exists", func() {
 					It("returns the given state unmodified", func() {
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
 							BOSH: storage.BOSH{
 								DirectorSSLCA:          "some-ca",
 								DirectorSSLCertificate: "some-certificate",
@@ -887,7 +795,7 @@ var _ = Describe("AWSUp", func() {
 
 				Context("when the bosh director ssl keypair doesn't exist", func() {
 					It("returns the state with a new key pair", func() {
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -902,7 +810,7 @@ var _ = Describe("AWSUp", func() {
 
 				Context("when there are no director credentials", func() {
 					It("deploys with randomized director credentials", func() {
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -920,7 +828,7 @@ var _ = Describe("AWSUp", func() {
 								DirectorPassword: "some-director-password",
 							},
 						}
-						err := command.Execute([]string{"--iaas", "aws"}, incomingState)
+						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(boshDeployer.DeployCall.Receives.Input.DirectorUsername).To(Equal("some-director-username"))
@@ -934,7 +842,7 @@ var _ = Describe("AWSUp", func() {
 							Credentials: boshInitCredentials,
 						}
 
-						err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
@@ -946,7 +854,7 @@ var _ = Describe("AWSUp", func() {
 							boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 								Credentials: boshInitCredentials,
 							}
-							err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+							err := command.Execute(commands.AWSUpConfig{}, storage.State{
 								BOSH: storage.BOSH{Credentials: boshInitCredentials},
 							})
 							Expect(err).NotTo(HaveOccurred())
@@ -963,7 +871,7 @@ var _ = Describe("AWSUp", func() {
 		Context("failure cases", func() {
 			It("returns an error when the certificate cannot be described", func() {
 				certificateDescriber.DescribeCall.Returns.Error = errors.New("failed to describe")
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{
 					Stack: storage.Stack{
 						LBType: "concourse",
 					},
@@ -973,14 +881,14 @@ var _ = Describe("AWSUp", func() {
 
 			It("returns an error when the cloud config cannot be uploaded", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to update"))
 			})
 
 			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
 				infrastructureManager.ExistsCall.Returns.Exists = false
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{
 					AWS: storage.AWS{
 						Region: "some-aws-region",
 					},
@@ -1005,21 +913,21 @@ var _ = Describe("AWSUp", func() {
 			It("returns an error when checking if the infrastructure exists fails", func() {
 				infrastructureManager.ExistsCall.Returns.Error = errors.New("error checking if stack exists")
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
 			It("returns an error when infrastructure cannot be created", func() {
 				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
 				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
 			})
 
@@ -1031,68 +939,68 @@ var _ = Describe("AWSUp", func() {
 
 					return "", nil
 				}
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("cannot generate string"))
 			})
 
 			It("returns an error when availability zones cannot be retrieved", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone could not be retrieved")
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
 			})
 
 			It("returns an error when env id generator fails", func() {
 				envIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("env id generation failed"))
 			})
 
 			It("returns an error when state store fails to set the state before syncing the keypair", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when state store fails to set the state before retrieving availability zones", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when state store fails to set the state before creating the stack", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when state store fails to set the state before updating the cloud config", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("failed to set state")}}
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when state store fails to set the state before method exits", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("failed to set state")}}
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when only some of the AWS parameters are provided", func() {
-				err := command.Execute([]string{"--iaas", "aws", "--aws-access-key-id", "some-key-id", "--aws-region", "some-region"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{AWSAccessKeyID: "some-key-id", AWSRegion: "some-region"}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
 
 			It("returns an error when no AWS parameters are provided and the bbl-state AWS values are empty", func() {
 				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("AWS secret access key must be provided")
 
-				err := command.Execute([]string{"--iaas", "aws"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
 		})

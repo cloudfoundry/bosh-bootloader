@@ -1,14 +1,17 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type AWSUp struct {
 	Name        string
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {
-			Args  []string
-			State storage.State
+			AWSUpConfig commands.AWSUpConfig
+			State       storage.State
 		}
 		Returns struct {
 			Error error
@@ -16,9 +19,9 @@ type AWSUp struct {
 	}
 }
 
-func (u *AWSUp) Execute(args []string, state storage.State) error {
+func (u *AWSUp) Execute(awsUpConfig commands.AWSUpConfig, state storage.State) error {
 	u.ExecuteCall.CallCount++
-	u.ExecuteCall.Receives.Args = args
+	u.ExecuteCall.Receives.AWSUpConfig = awsUpConfig
 	u.ExecuteCall.Receives.State = state
 	return u.ExecuteCall.Returns.Error
 }

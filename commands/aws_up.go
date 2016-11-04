@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -11,7 +10,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
-	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -81,11 +79,10 @@ type AWSUp struct {
 	configProvider            configProvider
 }
 
-type awsUpConfig struct {
-	awsAccessKeyID     string
-	awsSecretAccessKey string
-	awsRegion          string
-	iaas               string
+type AWSUpConfig struct {
+	AWSAccessKeyID     string
+	AWSSecretAccessKey string
+	AWSRegion          string
 }
 
 func NewAWSUp(
@@ -113,25 +110,20 @@ func NewAWSUp(
 	}
 }
 
-func (u AWSUp) Execute(subcommandFlags []string, state storage.State) error {
+func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	state.IAAS = "aws"
 
-	config, err := u.parseFlags(subcommandFlags)
-	if err != nil {
-		return err
-	}
-
 	if u.awsCredentialsPresent(config) {
-		state.AWS.AccessKeyID = config.awsAccessKeyID
-		state.AWS.SecretAccessKey = config.awsSecretAccessKey
-		state.AWS.Region = config.awsRegion
+		state.AWS.AccessKeyID = config.AWSAccessKeyID
+		state.AWS.SecretAccessKey = config.AWSSecretAccessKey
+		state.AWS.Region = config.AWSRegion
 		if err := u.stateStore.Set(state); err != nil {
 			return err
 		}
 		u.configProvider.SetConfig(aws.Config{
-			AccessKeyID:     config.awsAccessKeyID,
-			SecretAccessKey: config.awsSecretAccessKey,
-			Region:          config.awsRegion,
+			AccessKeyID:     config.AWSAccessKeyID,
+			SecretAccessKey: config.AWSSecretAccessKey,
+			Region:          config.AWSRegion,
 		})
 	} else if u.awsCredentialsNotPresent(config) {
 		err := u.awsCredentialValidator.Validate()
@@ -142,7 +134,7 @@ func (u AWSUp) Execute(subcommandFlags []string, state storage.State) error {
 		return u.awsMissingCredentials(config)
 	}
 
-	err = u.checkForFastFails(state)
+	err := u.checkForFastFails(state)
 	if err != nil {
 		return err
 	}
@@ -282,38 +274,21 @@ func (u AWSUp) checkForFastFails(state storage.State) error {
 	return nil
 }
 
-func (AWSUp) parseFlags(subcommandFlags []string) (awsUpConfig, error) {
-	upFlags := flags.New("up")
-
-	config := awsUpConfig{}
-	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", os.Getenv("BBL_AWS_ACCESS_KEY_ID"))
-	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"))
-	upFlags.String(&config.awsRegion, "aws-region", os.Getenv("BBL_AWS_REGION"))
-	upFlags.String(&config.iaas, "iaas", "")
-
-	err := upFlags.Parse(subcommandFlags)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
+func (AWSUp) awsCredentialsPresent(config AWSUpConfig) bool {
+	return config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != ""
 }
 
-func (AWSUp) awsCredentialsPresent(config awsUpConfig) bool {
-	return config.awsAccessKeyID != "" && config.awsSecretAccessKey != "" && config.awsRegion != ""
+func (AWSUp) awsCredentialsNotPresent(config AWSUpConfig) bool {
+	return config.AWSAccessKeyID == "" && config.AWSSecretAccessKey == "" && config.AWSRegion == ""
 }
 
-func (AWSUp) awsCredentialsNotPresent(config awsUpConfig) bool {
-	return config.awsAccessKeyID == "" && config.awsSecretAccessKey == "" && config.awsRegion == ""
-}
-
-func (AWSUp) awsMissingCredentials(config awsUpConfig) error {
+func (AWSUp) awsMissingCredentials(config AWSUpConfig) error {
 	switch {
-	case config.awsAccessKeyID == "":
+	case config.AWSAccessKeyID == "":
 		return errors.New("AWS access key ID must be provided")
-	case config.awsSecretAccessKey == "":
+	case config.AWSSecretAccessKey == "":
 		return errors.New("AWS secret access key must be provided")
-	case config.awsRegion == "":
+	case config.AWSRegion == "":
 		return errors.New("AWS region must be provided")
 	}
 

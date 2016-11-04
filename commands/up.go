@@ -15,7 +15,7 @@ type Up struct {
 }
 
 type awsUp interface {
-	Execute(args []string, state storage.State) error
+	Execute(awsUpConfig AWSUpConfig, state storage.State) error
 }
 
 type gcpUp interface {
@@ -39,20 +39,20 @@ func NewUp(awsUp awsUp, gcpUp gcpUp) Up {
 func (u Up) Execute(args []string, state storage.State) error {
 	var desiredIAAS string
 
-	argIAAS, err := u.iaasFromArgs(args)
+	config, err := u.parseArgs(args)
 	if err != nil {
 		return err
 	}
 
 	switch {
-	case state.IAAS == "" && argIAAS == "":
+	case state.IAAS == "" && config.iaas == "":
 		return errors.New("--iaas [gcp, aws] must be provided")
-	case state.IAAS == "" && argIAAS != "":
-		desiredIAAS = argIAAS
-	case state.IAAS != "" && argIAAS == "":
+	case state.IAAS == "" && config.iaas != "":
+		desiredIAAS = config.iaas
+	case state.IAAS != "" && config.iaas == "":
 		desiredIAAS = state.IAAS
-	case state.IAAS != "" && argIAAS != "":
-		if state.IAAS != argIAAS {
+	case state.IAAS != "" && config.iaas != "":
+		if state.IAAS != config.iaas {
 			return errors.New("the iaas provided must match the iaas in bbl-state.json")
 		} else {
 			desiredIAAS = state.IAAS
@@ -61,7 +61,12 @@ func (u Up) Execute(args []string, state storage.State) error {
 
 	switch desiredIAAS {
 	case "aws":
-		err = u.awsUp.Execute(args, state)
+		awsConfig := AWSUpConfig{
+			AWSAccessKeyID:     config.awsAccessKeyID,
+			AWSSecretAccessKey: config.awsSecretAccessKey,
+			AWSRegion:          config.awsRegion,
+		}
+		err = u.awsUp.Execute(awsConfig, state)
 	case "gcp":
 		err = u.gcpUp.Execute(state)
 	default:
@@ -75,7 +80,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 	return nil
 }
 
-func (u Up) iaasFromArgs(args []string) (string, error) {
+func (u Up) parseArgs(args []string) (upConfig, error) {
 	var config upConfig
 
 	upFlags := flags.New("up")
@@ -86,8 +91,8 @@ func (u Up) iaasFromArgs(args []string) (string, error) {
 
 	err := upFlags.Parse(args)
 	if err != nil {
-		return "", err
+		return upConfig{}, err
 	}
 
-	return config.iaas, nil
+	return config, nil
 }
