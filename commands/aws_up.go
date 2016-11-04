@@ -80,9 +80,9 @@ type AWSUp struct {
 }
 
 type AWSUpConfig struct {
-	AWSAccessKeyID     string
-	AWSSecretAccessKey string
-	AWSRegion          string
+	AccessKeyID     string
+	SecretAccessKey string
+	Region          string
 }
 
 func NewAWSUp(
@@ -114,16 +114,16 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	state.IAAS = "aws"
 
 	if u.awsCredentialsPresent(config) {
-		state.AWS.AccessKeyID = config.AWSAccessKeyID
-		state.AWS.SecretAccessKey = config.AWSSecretAccessKey
-		state.AWS.Region = config.AWSRegion
+		state.AWS.AccessKeyID = config.AccessKeyID
+		state.AWS.SecretAccessKey = config.SecretAccessKey
+		state.AWS.Region = config.Region
 		if err := u.stateStore.Set(state); err != nil {
 			return err
 		}
 		u.configProvider.SetConfig(aws.Config{
-			AccessKeyID:     config.AWSAccessKeyID,
-			SecretAccessKey: config.AWSSecretAccessKey,
-			Region:          config.AWSRegion,
+			AccessKeyID:     config.AccessKeyID,
+			SecretAccessKey: config.SecretAccessKey,
+			Region:          config.Region,
 		})
 	} else if u.awsCredentialsNotPresent(config) {
 		err := u.awsCredentialValidator.Validate()
@@ -275,20 +275,20 @@ func (u AWSUp) checkForFastFails(state storage.State) error {
 }
 
 func (AWSUp) awsCredentialsPresent(config AWSUpConfig) bool {
-	return config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != ""
+	return config.AccessKeyID != "" && config.SecretAccessKey != "" && config.Region != ""
 }
 
 func (AWSUp) awsCredentialsNotPresent(config AWSUpConfig) bool {
-	return config.AWSAccessKeyID == "" && config.AWSSecretAccessKey == "" && config.AWSRegion == ""
+	return config.AccessKeyID == "" && config.SecretAccessKey == "" && config.Region == ""
 }
 
 func (AWSUp) awsMissingCredentials(config AWSUpConfig) error {
 	switch {
-	case config.AWSAccessKeyID == "":
+	case config.AccessKeyID == "":
 		return errors.New("AWS access key ID must be provided")
-	case config.AWSSecretAccessKey == "":
+	case config.SecretAccessKey == "":
 		return errors.New("AWS secret access key must be provided")
-	case config.AWSRegion == "":
+	case config.Region == "":
 		return errors.New("AWS region must be provided")
 	}
 

@@ -62,9 +62,9 @@ func (u Up) Execute(args []string, state storage.State) error {
 	switch desiredIAAS {
 	case "aws":
 		awsConfig := AWSUpConfig{
-			AWSAccessKeyID:     config.awsAccessKeyID,
-			AWSSecretAccessKey: config.awsSecretAccessKey,
-			AWSRegion:          config.awsRegion,
+			AccessKeyID:     config.awsAccessKeyID,
+			SecretAccessKey: config.awsSecretAccessKey,
+			Region:          config.awsRegion,
 		}
 		err = u.awsUp.Execute(awsConfig, state)
 	case "gcp":

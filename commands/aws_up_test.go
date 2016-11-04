@@ -133,9 +133,9 @@ var _ = Describe("AWSUp", func() {
 
 		It("retrieves a client with the provided credentials", func() {
 			err := command.Execute(commands.AWSUpConfig{
-				AWSAccessKeyID:     "new-aws-access-key-id",
-				AWSSecretAccessKey: "new-aws-secret-access-key",
-				AWSRegion:          "new-aws-region",
+				AccessKeyID:     "new-aws-access-key-id",
+				SecretAccessKey: "new-aws-secret-access-key",
+				Region:          "new-aws-region",
 			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -510,9 +510,9 @@ var _ = Describe("AWSUp", func() {
 				Context("when the credentials do not exist", func() {
 					It("saves the credentials", func() {
 						err := command.Execute(commands.AWSUpConfig{
-							AWSAccessKeyID:     "some-aws-access-key-id",
-							AWSSecretAccessKey: "some-aws-secret-access-key",
-							AWSRegion:          "some-aws-region",
+							AccessKeyID:     "some-aws-access-key-id",
+							SecretAccessKey: "some-aws-secret-access-key",
+							Region:          "some-aws-region",
 						}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
@@ -531,9 +531,9 @@ var _ = Describe("AWSUp", func() {
 								},
 							}
 							err := command.Execute(commands.AWSUpConfig{
-								AWSAccessKeyID:     "some-aws-access-key-id",
-								AWSSecretAccessKey: "some-aws-secret-access-key",
-								AWSRegion:          "some-aws-region",
+								AccessKeyID:     "some-aws-access-key-id",
+								SecretAccessKey: "some-aws-secret-access-key",
+								Region:          "some-aws-region",
 							}, storage.State{})
 							Expect(err).To(MatchError("saving the state failed"))
 						})
@@ -542,9 +542,9 @@ var _ = Describe("AWSUp", func() {
 				Context("when the credentials do exist", func() {
 					It("overrides the credentials when they're passed in", func() {
 						err := command.Execute(commands.AWSUpConfig{
-							AWSAccessKeyID:     "new-aws-access-key-id",
-							AWSSecretAccessKey: "new-aws-secret-access-key",
-							AWSRegion:          "new-aws-region",
+							AccessKeyID:     "new-aws-access-key-id",
+							SecretAccessKey: "new-aws-secret-access-key",
+							Region:          "new-aws-region",
 						}, storage.State{
 							AWS: storage.AWS{
 								AccessKeyID:     "old-aws-access-key-id",
@@ -993,7 +993,7 @@ var _ = Describe("AWSUp", func() {
 			})
 
 			It("returns an error when only some of the AWS parameters are provided", func() {
-				err := command.Execute(commands.AWSUpConfig{AWSAccessKeyID: "some-key-id", AWSRegion: "some-region"}, storage.State{})
+				err := command.Execute(commands.AWSUpConfig{AccessKeyID: "some-key-id", Region: "some-region"}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
 

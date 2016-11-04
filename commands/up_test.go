@@ -42,9 +42,9 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-					AWSAccessKeyID:     "access-key-id-from-env",
-					AWSSecretAccessKey: "secret-access-key-from-env",
-					AWSRegion:          "region-from-env",
+					AccessKeyID:     "access-key-id-from-env",
+					SecretAccessKey: "secret-access-key-from-env",
+					Region:          "region-from-env",
 				}))
 				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{Version: 999}))
 			})
@@ -61,25 +61,25 @@ var _ = Describe("Up", func() {
 				Entry("precedence to aws access key id",
 					[]string{"--aws-access-key-id", "access-key-id-from-args"},
 					commands.AWSUpConfig{
-						AWSAccessKeyID:     "access-key-id-from-args",
-						AWSSecretAccessKey: "secret-access-key-from-env",
-						AWSRegion:          "region-from-env",
+						AccessKeyID:     "access-key-id-from-args",
+						SecretAccessKey: "secret-access-key-from-env",
+						Region:          "region-from-env",
 					},
 				),
 				Entry("precedence to aws secret access key",
 					[]string{"--aws-secret-access-key", "secret-access-key-from-args"},
 					commands.AWSUpConfig{
-						AWSAccessKeyID:     "access-key-id-from-env",
-						AWSSecretAccessKey: "secret-access-key-from-args",
-						AWSRegion:          "region-from-env",
+						AccessKeyID:     "access-key-id-from-env",
+						SecretAccessKey: "secret-access-key-from-args",
+						Region:          "region-from-env",
 					},
 				),
 				Entry("precedence to aws region",
 					[]string{"--aws-region", "region-from-args"},
 					commands.AWSUpConfig{
-						AWSAccessKeyID:     "access-key-id-from-env",
-						AWSSecretAccessKey: "secret-access-key-from-env",
-						AWSRegion:          "region-from-args",
+						AccessKeyID:     "access-key-id-from-env",
+						SecretAccessKey: "secret-access-key-from-env",
+						Region:          "region-from-args",
 					},
 				),
 			)
@@ -117,9 +117,9 @@ var _ = Describe("Up", func() {
 
 					Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
 					Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-						AWSAccessKeyID:     "some-access-key-id",
-						AWSSecretAccessKey: "some-secret-access-key",
-						AWSRegion:          "some-region",
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
 					}))
 					Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
 				})
