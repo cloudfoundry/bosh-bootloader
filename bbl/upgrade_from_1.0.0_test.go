@@ -151,6 +151,7 @@ var _ = Describe("upgrade from 1.0.0", func() {
 
 			state := readStateJson(tmpDir)
 			Expect(state.IAAS).To(Equal("aws"))
+			Expect(state.Version).To(Equal(2))
 		})
 	})
 })
