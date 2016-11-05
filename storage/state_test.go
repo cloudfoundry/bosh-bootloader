@@ -43,6 +43,12 @@ var _ = Describe("Store", func() {
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-region",
 				},
+				GCP: storage.GCP{
+					ServiceAccountKey: "some-service-account-key",
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "some-region",
+				},
 				KeyPair: storage.KeyPair{
 					Name:       "some-name",
 					PrivateKey: "some-private",
@@ -94,6 +100,12 @@ var _ = Describe("Store", func() {
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",
 					"secretAccessKey": "some-aws-secret-access-key",
+					"region": "some-region"
+				},
+				"gcp": {
+					"serviceAccountKey": "some-service-account-key",
+					"projectID": "some-project-id",
+					"zone": "some-zone",
 					"region": "some-region"
 				},
 				"keyPair": {
@@ -208,6 +220,22 @@ var _ = Describe("Store", func() {
 					},
 				})
 				Expect(err).To(MatchError("failed to encode"))
+			})
+		})
+	})
+
+	Describe("GCP", func() {
+		Describe("Empty", func() {
+			It("returns true when all fields are blank", func() {
+				gcp := storage.GCP{}
+				empty := gcp.Empty()
+				Expect(empty).To(BeTrue())
+			})
+
+			It("returns false when at least one field is present", func() {
+				gcp := storage.GCP{ServiceAccountKey: "some-account-key"}
+				empty := gcp.Empty()
+				Expect(empty).To(BeFalse())
 			})
 		})
 	})

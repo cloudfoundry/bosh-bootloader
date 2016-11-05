@@ -29,6 +29,13 @@ type AWS struct {
 	Region          string `json:"region"`
 }
 
+type GCP struct {
+	ServiceAccountKey string `json:"serviceAccountKey"`
+	ProjectID         string `json:"projectID"`
+	Zone              string `json:"zone"`
+	Region            string `json:"region"`
+}
+
 type Stack struct {
 	Name            string `json:"name"`
 	LBType          string `json:"lbType"`
@@ -38,7 +45,8 @@ type Stack struct {
 type State struct {
 	Version int     `json:"version"`
 	IAAS    string  `json:"iaas"`
-	AWS     AWS     `json:"aws"`
+	AWS     AWS     `json:"aws,omitempty"`
+	GCP     GCP     `json:"gcp,omitempty"`
 	KeyPair KeyPair `json:"keyPair,omitempty"`
 	BOSH    BOSH    `json:"bosh,omitempty"`
 	Stack   Stack   `json:"stack"`
@@ -84,6 +92,10 @@ func (s Store) Set(state State) error {
 	}
 
 	return nil
+}
+
+func (g GCP) Empty() bool {
+	return g.ServiceAccountKey == "" && g.ProjectID == "" && g.Region == "" && g.Zone == ""
 }
 
 var GetStateLogger logger

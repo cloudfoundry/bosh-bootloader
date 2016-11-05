@@ -19,14 +19,18 @@ type awsUp interface {
 }
 
 type gcpUp interface {
-	Execute(state storage.State) error
+	Execute(gcpUpConfig GCPUpConfig, state storage.State) error
 }
 
 type upConfig struct {
-	awsAccessKeyID     string
-	awsSecretAccessKey string
-	awsRegion          string
-	iaas               string
+	awsAccessKeyID       string
+	awsSecretAccessKey   string
+	awsRegion            string
+	gcpServiceAccountKey string
+	gcpProjectID         string
+	gcpZone              string
+	gcpRegion            string
+	iaas                 string
 }
 
 func NewUp(awsUp awsUp, gcpUp gcpUp) Up {
@@ -61,14 +65,18 @@ func (u Up) Execute(args []string, state storage.State) error {
 
 	switch desiredIAAS {
 	case "aws":
-		awsConfig := AWSUpConfig{
+		err = u.awsUp.Execute(AWSUpConfig{
 			AccessKeyID:     config.awsAccessKeyID,
 			SecretAccessKey: config.awsSecretAccessKey,
 			Region:          config.awsRegion,
-		}
-		err = u.awsUp.Execute(awsConfig, state)
+		}, state)
 	case "gcp":
-		err = u.gcpUp.Execute(state)
+		err = u.gcpUp.Execute(GCPUpConfig{
+			ServiceAccountKey: config.gcpServiceAccountKey,
+			ProjectID:         config.gcpProjectID,
+			Zone:              config.gcpZone,
+			Region:            config.gcpRegion,
+		}, state)
 	default:
 		return fmt.Errorf("%q is invalid; supported values: [gcp, aws]", desiredIAAS)
 	}
@@ -87,6 +95,10 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", os.Getenv("BBL_AWS_ACCESS_KEY_ID"))
 	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"))
 	upFlags.String(&config.awsRegion, "aws-region", os.Getenv("BBL_AWS_REGION"))
+	upFlags.String(&config.gcpServiceAccountKey, "gcp-service-account-key", "")
+	upFlags.String(&config.gcpProjectID, "gcp-project-id", "")
+	upFlags.String(&config.gcpZone, "gcp-zone", "")
+	upFlags.String(&config.gcpRegion, "gcp-region", "")
 	upFlags.String(&config.iaas, "iaas", "")
 
 	err := upFlags.Parse(args)

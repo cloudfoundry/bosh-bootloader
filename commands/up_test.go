@@ -97,10 +97,22 @@ var _ = Describe("Up", func() {
 		Context("when state does not contain an iaas", func() {
 			Context("when desired iaas is gcp", func() {
 				It("executes the GCP up", func() {
-					err := command.Execute([]string{"--iaas", "gcp"}, storage.State{})
+					err := command.Execute([]string{
+						"--iaas", "gcp",
+						"--gcp-service-account-key", "some-service-account-key",
+						"--gcp-project-id", "some-project-id",
+						"--gcp-zone", "some-zone",
+						"--gcp-region", "some-region",
+					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					}))
 					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
 				})
 			})

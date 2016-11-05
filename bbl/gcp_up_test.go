@@ -20,23 +20,42 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("writes iaas: gcp to state", func() {
+	It("writes gcp details to state", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
 			"up",
 			"--iaas", "gcp",
+			"--gcp-service-account-key", "some-service-account-key",
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "some-region",
 		}
 
 		executeCommand(args, 0)
 
 		state := readStateJson(tempDirectory)
-		Expect(state.IAAS).To(Equal("gcp"))
+		Expect(state).To(Equal(storage.State{
+			Version: 2,
+			IAAS:    "gcp",
+			GCP: storage.GCP{
+				ServiceAccountKey: "some-service-account-key",
+				ProjectID:         "some-project-id",
+				Zone:              "some-zone",
+				Region:            "some-region",
+			},
+		}))
 	})
 
-	Context("when bbl-state.json contains iaas: gcp", func() {
+	Context("when bbl-state.json contains gcp details", func() {
 		BeforeEach(func() {
 			buf, err := json.Marshal(storage.State{
 				IAAS: "gcp",
+				GCP: storage.GCP{
+					ServiceAccountKey: "some-service-account-key",
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "some-region",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -44,7 +63,7 @@ var _ = Describe("bbl up gcp", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("does not require --iaas flag and exits 0", func() {
+		It("does not require gcp args and exits 0", func() {
 			args := []string{
 				"--state-dir", tempDirectory,
 				"up",
