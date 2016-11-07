@@ -153,7 +153,8 @@ func main() {
 		clientProvider,
 	)
 	gcpUp := commands.NewGCPUp(stateStore)
-	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp)
+	envGetter := commands.NewEnvGetter()
+	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,

@@ -2,7 +2,6 @@ package commands_test
 
 import (
 	"errors"
-	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -17,22 +16,19 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
-		fakeAWSUp *fakes.AWSUp
-		fakeGCPUp *fakes.GCPUp
+		fakeAWSUp     *fakes.AWSUp
+		fakeGCPUp     *fakes.GCPUp
+		fakeEnvGetter *fakes.EnvGetter
 	)
 
 	describeAWSEnvVars := func(state storage.State) {
 		Context("when aws args are provided through environment variables", func() {
 			BeforeEach(func() {
-				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "access-key-id-from-env")
-				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "secret-access-key-from-env")
-				os.Setenv("BBL_AWS_REGION", "region-from-env")
-			})
-
-			AfterEach(func() {
-				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "")
-				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "")
-				os.Setenv("BBL_AWS_REGION", "")
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_AWS_ACCESS_KEY_ID":     "access-key-id-from-env",
+					"BBL_AWS_SECRET_ACCESS_KEY": "secret-access-key-from-env",
+					"BBL_AWS_REGION":            "region-from-env",
+				}
 			})
 
 			It("uses the aws args provided by environment variables", func() {
@@ -89,12 +85,44 @@ var _ = Describe("Up", func() {
 	BeforeEach(func() {
 		fakeAWSUp = &fakes.AWSUp{Name: "aws"}
 		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
+		fakeEnvGetter = &fakes.EnvGetter{}
 
-		command = commands.NewUp(fakeAWSUp, fakeGCPUp)
+		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter)
 	})
 
 	Describe("Execute", func() {
 		Context("when state does not contain an iaas", func() {
+			It("uses the iaas from the env var", func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_IAAS": "gcp",
+				}
+				err := command.Execute([]string{
+					"--gcp-service-account-key", "some-service-account-key",
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "some-region",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(0))
+			})
+
+			It("uses the iaas from the args over the env var", func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_IAAS": "aws",
+				}
+				err := command.Execute([]string{
+					"--iaas", "gcp",
+					"--gcp-service-account-key", "some-service-account-key",
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "some-region",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(0))
+			})
+
 			Context("when desired iaas is gcp", func() {
 				It("executes the GCP up", func() {
 					err := command.Execute([]string{
@@ -212,8 +240,16 @@ var _ = Describe("Up", func() {
 			})
 
 			Context("when iaas specified is different than the iaas in state", func() {
-				It("returns an error", func() {
+				It("returns an error when the iaas is provided via args", func() {
 					err := command.Execute([]string{"--iaas", "aws"}, storage.State{IAAS: "gcp"})
+					Expect(err).To(MatchError("the iaas provided must match the iaas in bbl-state.json"))
+				})
+
+				It("returns an error when the iaas is provided via env vars", func() {
+					fakeEnvGetter.Values = map[string]string{
+						"BBL_IAAS": "aws",
+					}
+					err := command.Execute([]string{}, storage.State{IAAS: "gcp"})
 					Expect(err).To(MatchError("the iaas provided must match the iaas in bbl-state.json"))
 				})
 			})
