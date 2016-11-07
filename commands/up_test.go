@@ -19,9 +19,18 @@ var _ = Describe("Up", func() {
 		fakeAWSUp     *fakes.AWSUp
 		fakeGCPUp     *fakes.GCPUp
 		fakeEnvGetter *fakes.EnvGetter
+		state         storage.State
 	)
 
-	describeAWSEnvVars := func(state storage.State) {
+	BeforeEach(func() {
+		fakeAWSUp = &fakes.AWSUp{Name: "aws"}
+		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
+		fakeEnvGetter = &fakes.EnvGetter{}
+
+		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter)
+	})
+
+	Describe("Execute", func() {
 		Context("when aws args are provided through environment variables", func() {
 			BeforeEach(func() {
 				fakeEnvGetter.Values = map[string]string{
@@ -80,17 +89,80 @@ var _ = Describe("Up", func() {
 				),
 			)
 		})
-	}
 
-	BeforeEach(func() {
-		fakeAWSUp = &fakes.AWSUp{Name: "aws"}
-		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
-		fakeEnvGetter = &fakes.EnvGetter{}
+		Context("when gcp args are provided through environment variables", func() {
+			BeforeEach(func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_GCP_SERVICE_ACCOUNT_KEY": "some-service-account-key-env",
+					"BBL_GCP_PROJECT_ID":          "some-project-id-env",
+					"BBL_GCP_ZONE":                "some-zone-env",
+					"BBL_GCP_REGION":              "some-region-env",
+				}
+			})
 
-		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter)
-	})
+			It("uses the gcp args provided by environment variables", func() {
+				err := command.Execute([]string{
+					"--iaas", "gcp",
+				}, storage.State{Version: 999})
+				Expect(err).NotTo(HaveOccurred())
 
-	Describe("Execute", func() {
+				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+					ServiceAccountKey: "some-service-account-key-env",
+					ProjectID:         "some-project-id-env",
+					Zone:              "some-zone-env",
+					Region:            "some-region-env",
+				}))
+				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{Version: 999}))
+			})
+
+			DescribeTable("gives precedence to arguments passed as command line args", func(args []string, expectedConfig commands.GCPUpConfig) {
+				args = append(args, "--iaas", "gcp")
+
+				err := command.Execute(args, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(expectedConfig))
+				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(state))
+			},
+				Entry("precedence to service account key",
+					[]string{"--gcp-service-account-key", "some-service-account-key-from-args"},
+					commands.GCPUpConfig{
+						ServiceAccountKey: "some-service-account-key-from-args",
+						ProjectID:         "some-project-id-env",
+						Zone:              "some-zone-env",
+						Region:            "some-region-env",
+					},
+				),
+				Entry("precedence to project id",
+					[]string{"--gcp-project-id", "some-project-id-from-args"},
+					commands.GCPUpConfig{
+						ServiceAccountKey: "some-service-account-key-env",
+						ProjectID:         "some-project-id-from-args",
+						Zone:              "some-zone-env",
+						Region:            "some-region-env",
+					},
+				),
+				Entry("precedence to zone",
+					[]string{"--gcp-zone", "some-zone-from-args"},
+					commands.GCPUpConfig{
+						ServiceAccountKey: "some-service-account-key-env",
+						ProjectID:         "some-project-id-env",
+						Zone:              "some-zone-from-args",
+						Region:            "some-region-env",
+					},
+				),
+				Entry("precedence to region",
+					[]string{"--gcp-region", "some-region-from-args"},
+					commands.GCPUpConfig{
+						ServiceAccountKey: "some-service-account-key-env",
+						ProjectID:         "some-project-id-env",
+						Zone:              "some-zone-env",
+						Region:            "some-region-from-args",
+					},
+				),
+			)
+		})
+
 		Context("when state does not contain an iaas", func() {
 			It("uses the iaas from the env var", func() {
 				fakeEnvGetter.Values = map[string]string{
@@ -124,13 +196,35 @@ var _ = Describe("Up", func() {
 			})
 
 			Context("when desired iaas is gcp", func() {
-				It("executes the GCP up", func() {
+				It("executes the GCP up with gcp details from args", func() {
 					err := command.Execute([]string{
 						"--iaas", "gcp",
 						"--gcp-service-account-key", "some-service-account-key",
 						"--gcp-project-id", "some-project-id",
 						"--gcp-zone", "some-zone",
 						"--gcp-region", "some-region",
+					}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					}))
+					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
+				})
+
+				It("executes the GCP up with gcp details from env vars", func() {
+					fakeEnvGetter.Values = map[string]string{
+						"BBL_GCP_SERVICE_ACCOUNT_KEY": "some-service-account-key",
+						"BBL_GCP_PROJECT_ID":          "some-project-id",
+						"BBL_GCP_ZONE":                "some-zone",
+						"BBL_GCP_REGION":              "some-region",
+					}
+					err := command.Execute([]string{
+						"--iaas", "gcp",
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -164,7 +258,6 @@ var _ = Describe("Up", func() {
 					Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
 				})
 
-				describeAWSEnvVars(storage.State{})
 			})
 
 			Context("when iaas is not provided", func() {
@@ -226,7 +319,6 @@ var _ = Describe("Up", func() {
 					}))
 				})
 
-				describeAWSEnvVars(state)
 			})
 
 			Context("when iaas is GCP", func() {

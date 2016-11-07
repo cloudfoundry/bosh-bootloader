@@ -46,6 +46,44 @@ var _ = Describe("bbl up gcp", func() {
 		}))
 	})
 
+	Context("when gcp details are provided via env vars", func() {
+		BeforeEach(func() {
+			os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", "some-service-account-key")
+			os.Setenv("BBL_GCP_PROJECT_ID", "some-project-id")
+			os.Setenv("BBL_GCP_ZONE", "some-zone")
+			os.Setenv("BBL_GCP_REGION", "some-region")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv("BBL_GCP_SERVICE_ACCOUNT_KEY")
+			os.Unsetenv("BBL_GCP_PROJECT_ID")
+			os.Unsetenv("BBL_GCP_ZONE")
+			os.Unsetenv("BBL_GCP_REGION")
+		})
+
+		It("writes gcp details to state", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+			}
+
+			executeCommand(args, 0)
+
+			state := readStateJson(tempDirectory)
+			Expect(state).To(Equal(storage.State{
+				Version: 2,
+				IAAS:    "gcp",
+				GCP: storage.GCP{
+					ServiceAccountKey: "some-service-account-key",
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "some-region",
+				},
+			}))
+		})
+	})
+
 	Context("when bbl-state.json contains gcp details", func() {
 		BeforeEach(func() {
 			buf, err := json.Marshal(storage.State{
