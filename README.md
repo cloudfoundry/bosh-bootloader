@@ -50,6 +50,18 @@ The AWS IAM user that is provided to bbl will need the following policy:
 }
 ```
 
+### Configure GCP
+
+To allow bbl to set up infrastructure a service account must be provided with the
+role 'roles/editor'
+
+Example:
+```
+gcloud iam service-accounts create some-account-name
+gcloud iam service-accounts keys create "service-account.key.json" --iam-account "some-account-name@PROJECT_ID.iam.gserviceaccount.com"
+gcloud projects add-iam-policy-binding PROJECT_ID --member 'serviceAccount:some-account-name@PROJECT_ID.iam.gserviceaccount.com' --role 'roles/editor'
+```
+
 ## Usage
 
 The `bbl` command can be invoked on the command line and will display its usage.
