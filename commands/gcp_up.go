@@ -11,10 +11,10 @@ type GCPUp struct {
 }
 
 type GCPUpConfig struct {
-	ServiceAccountKey string
-	ProjectID         string
-	Zone              string
-	Region            string
+	ServiceAccountKeyPath string
+	ProjectID             string
+	Zone                  string
+	Region                string
 }
 
 func NewGCPUp(stateStore stateStore) GCPUp {
@@ -33,7 +33,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 
 		state.GCP = storage.GCP{
-			ServiceAccountKey: upConfig.ServiceAccountKey,
+			ServiceAccountKey: upConfig.ServiceAccountKeyPath,
 			ProjectID:         upConfig.ProjectID,
 			Zone:              upConfig.Zone,
 			Region:            upConfig.Region,
@@ -49,7 +49,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 func (u GCPUp) validateUpConfig(upConfig GCPUpConfig) error {
 	switch {
-	case upConfig.ServiceAccountKey == "":
+	case upConfig.ServiceAccountKeyPath == "":
 		return errors.New("GCP service account key must be provided")
 	case upConfig.ProjectID == "":
 		return errors.New("GCP project ID must be provided")
@@ -63,5 +63,5 @@ func (u GCPUp) validateUpConfig(upConfig GCPUpConfig) error {
 }
 
 func (c GCPUpConfig) empty() bool {
-	return c.ServiceAccountKey == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
+	return c.ServiceAccountKeyPath == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
 }

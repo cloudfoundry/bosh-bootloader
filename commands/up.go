@@ -77,10 +77,10 @@ func (u Up) Execute(args []string, state storage.State) error {
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
-			ServiceAccountKey: config.gcpServiceAccountKey,
-			ProjectID:         config.gcpProjectID,
-			Zone:              config.gcpZone,
-			Region:            config.gcpRegion,
+			ServiceAccountKeyPath: config.gcpServiceAccountKey,
+			ProjectID:             config.gcpProjectID,
+			Zone:                  config.gcpZone,
+			Region:                config.gcpRegion,
 		}, state)
 	default:
 		return fmt.Errorf("%q is invalid; supported values: [gcp, aws]", desiredIAAS)

@@ -107,10 +107,10 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-					ServiceAccountKey: "some-service-account-key-env",
-					ProjectID:         "some-project-id-env",
-					Zone:              "some-zone-env",
-					Region:            "some-region-env",
+					ServiceAccountKeyPath: "some-service-account-key-env",
+					ProjectID:             "some-project-id-env",
+					Zone:                  "some-zone-env",
+					Region:                "some-region-env",
 				}))
 				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{Version: 999}))
 			})
@@ -127,37 +127,37 @@ var _ = Describe("Up", func() {
 				Entry("precedence to service account key",
 					[]string{"--gcp-service-account-key", "some-service-account-key-from-args"},
 					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-from-args",
-						ProjectID:         "some-project-id-env",
-						Zone:              "some-zone-env",
-						Region:            "some-region-env",
+						ServiceAccountKeyPath: "some-service-account-key-from-args",
+						ProjectID:             "some-project-id-env",
+						Zone:                  "some-zone-env",
+						Region:                "some-region-env",
 					},
 				),
 				Entry("precedence to project id",
 					[]string{"--gcp-project-id", "some-project-id-from-args"},
 					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-env",
-						ProjectID:         "some-project-id-from-args",
-						Zone:              "some-zone-env",
-						Region:            "some-region-env",
+						ServiceAccountKeyPath: "some-service-account-key-env",
+						ProjectID:             "some-project-id-from-args",
+						Zone:                  "some-zone-env",
+						Region:                "some-region-env",
 					},
 				),
 				Entry("precedence to zone",
 					[]string{"--gcp-zone", "some-zone-from-args"},
 					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-env",
-						ProjectID:         "some-project-id-env",
-						Zone:              "some-zone-from-args",
-						Region:            "some-region-env",
+						ServiceAccountKeyPath: "some-service-account-key-env",
+						ProjectID:             "some-project-id-env",
+						Zone:                  "some-zone-from-args",
+						Region:                "some-region-env",
 					},
 				),
 				Entry("precedence to region",
 					[]string{"--gcp-region", "some-region-from-args"},
 					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-env",
-						ProjectID:         "some-project-id-env",
-						Zone:              "some-zone-env",
-						Region:            "some-region-from-args",
+						ServiceAccountKeyPath: "some-service-account-key-env",
+						ProjectID:             "some-project-id-env",
+						Zone:                  "some-zone-env",
+						Region:                "some-region-from-args",
 					},
 				),
 			)
@@ -208,10 +208,10 @@ var _ = Describe("Up", func() {
 
 					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
 					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
+						ServiceAccountKeyPath: "some-service-account-key",
+						ProjectID:             "some-project-id",
+						Zone:                  "some-zone",
+						Region:                "some-region",
 					}))
 					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
 				})
@@ -230,10 +230,10 @@ var _ = Describe("Up", func() {
 
 					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
 					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
+						ServiceAccountKeyPath: "some-service-account-key",
+						ProjectID:             "some-project-id",
+						Zone:                  "some-zone",
+						Region:                "some-region",
 					}))
 					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
 				})
