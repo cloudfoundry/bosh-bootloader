@@ -270,7 +270,7 @@ var _ = Describe("Up", func() {
 			Context("when an invalid iaas is provided", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{"--iaas", "bad-iaas"}, storage.State{})
-					Expect(err).To(MatchError(`"bad-iaas" is invalid; supported values: [gcp, aws]`))
+					Expect(err).To(MatchError(`"bad-iaas" is an invalid iaas type, supported values are: [gcp, aws]`))
 				})
 			})
 

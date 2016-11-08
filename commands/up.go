@@ -83,7 +83,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			Region:                config.gcpRegion,
 		}, state)
 	default:
-		return fmt.Errorf("%q is invalid; supported values: [gcp, aws]", desiredIAAS)
+		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)
 	}
 
 	if err != nil {

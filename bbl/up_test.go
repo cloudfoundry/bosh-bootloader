@@ -85,6 +85,6 @@ var _ = Describe("bbl up", func() {
 		}
 
 		session := executeCommand(args, 1)
-		Expect(session.Err.Contents()).To(ContainSubstring(`"bad-iaas-value" is invalid; supported values: [gcp, aws]`))
+		Expect(session.Err.Contents()).To(ContainSubstring(`"bad-iaas-value" is an invalid iaas type, supported values are: [gcp, aws]`))
 	})
 })
