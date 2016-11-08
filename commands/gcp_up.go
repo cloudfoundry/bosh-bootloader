@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -32,8 +34,19 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 			return err
 		}
 
+		sak, err := ioutil.ReadFile(upConfig.ServiceAccountKeyPath)
+		if err != nil {
+			return err
+		}
+
+		var tmp interface{}
+		err = json.Unmarshal(sak, &tmp)
+		if err != nil {
+			return err
+		}
+
 		state.GCP = storage.GCP{
-			ServiceAccountKey: upConfig.ServiceAccountKeyPath,
+			ServiceAccountKey: string(sak),
 			ProjectID:         upConfig.ProjectID,
 			Zone:              upConfig.Zone,
 			Region:            upConfig.Region,

@@ -12,11 +12,23 @@ import (
 )
 
 var _ = Describe("bbl up gcp", func() {
-	var tempDirectory string
+	var (
+		tempDirectory         string
+		serviceAccountKeyPath string
+		serviceAccountKey     string
+	)
 
 	BeforeEach(func() {
 		var err error
 		tempDirectory, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+
+		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
+		Expect(err).NotTo(HaveOccurred())
+
+		serviceAccountKeyPath = tempFile.Name()
+		serviceAccountKey = `{"real": "json"}`
+		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -25,7 +37,7 @@ var _ = Describe("bbl up gcp", func() {
 			"--state-dir", tempDirectory,
 			"up",
 			"--iaas", "gcp",
-			"--gcp-service-account-key", "some-service-account-key",
+			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
 			"--gcp-region", "some-region",
@@ -38,7 +50,7 @@ var _ = Describe("bbl up gcp", func() {
 			Version: 2,
 			IAAS:    "gcp",
 			GCP: storage.GCP{
-				ServiceAccountKey: "some-service-account-key",
+				ServiceAccountKey: serviceAccountKey,
 				ProjectID:         "some-project-id",
 				Zone:              "some-zone",
 				Region:            "some-region",
@@ -48,7 +60,7 @@ var _ = Describe("bbl up gcp", func() {
 
 	Context("when gcp details are provided via env vars", func() {
 		BeforeEach(func() {
-			os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", "some-service-account-key")
+			os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKeyPath)
 			os.Setenv("BBL_GCP_PROJECT_ID", "some-project-id")
 			os.Setenv("BBL_GCP_ZONE", "some-zone")
 			os.Setenv("BBL_GCP_REGION", "some-region")
@@ -75,7 +87,7 @@ var _ = Describe("bbl up gcp", func() {
 				Version: 2,
 				IAAS:    "gcp",
 				GCP: storage.GCP{
-					ServiceAccountKey: "some-service-account-key",
+					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
 					Region:            "some-region",
@@ -89,7 +101,7 @@ var _ = Describe("bbl up gcp", func() {
 			buf, err := json.Marshal(storage.State{
 				IAAS: "gcp",
 				GCP: storage.GCP{
-					ServiceAccountKey: "some-service-account-key",
+					ServiceAccountKey: `{"key": "value"}`,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
 					Region:            "some-region",
