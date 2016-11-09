@@ -102,7 +102,7 @@ var _ = Describe("gcp up", func() {
 					Zone:                  "z",
 					Region:                "r",
 				}, storage.State{})
-				Expect(err).To(MatchError("open /some/non/existent/file: no such file or directory"))
+				Expect(err).To(MatchError("error reading service account key: open /some/non/existent/file: no such file or directory"))
 			})
 
 			It("returns an error when the service account key file does not contain valid json", func() {
@@ -119,7 +119,7 @@ var _ = Describe("gcp up", func() {
 					Zone:                  "z",
 					Region:                "r",
 				}, storage.State{})
-				Expect(err).To(MatchError("invalid character '%' looking for beginning of value"))
+				Expect(err).To(MatchError("error parsing service account key: invalid character '%' looking for beginning of value"))
 			})
 		})
 
