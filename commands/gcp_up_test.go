@@ -21,11 +21,13 @@ var _ = Describe("gcp up", func() {
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
+		keyPairCreator        *fakes.GCPKeyPairCreator
 	)
 
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
-		gcpUp = commands.NewGCPUp(stateStore)
+		keyPairCreator = &fakes.GCPKeyPairCreator{}
+		gcpUp = commands.NewGCPUp(stateStore, keyPairCreator)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -38,6 +40,9 @@ var _ = Describe("gcp up", func() {
 
 	Context("Execute", func() {
 		It("saves gcp details to the state", func() {
+			keyPairCreator.CreateCall.Returns.PrivateKey = "some-private-key"
+			keyPairCreator.CreateCall.Returns.PublicKey = "some-public-key"
+
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
@@ -53,6 +58,10 @@ var _ = Describe("gcp up", func() {
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
 					Region:            "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
 				},
 			}))
 		})
@@ -120,6 +129,18 @@ var _ = Describe("gcp up", func() {
 					Region:                "r",
 				}, storage.State{})
 				Expect(err).To(MatchError("error parsing service account key: invalid character '%' looking for beginning of value"))
+			})
+
+			It("returns an error when the keypair fails to be created", func() {
+				keyPairCreator.CreateCall.Returns.Error = errors.New("keypair failed")
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("keypair failed"))
 			})
 		})
 

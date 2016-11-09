@@ -46,16 +46,14 @@ var _ = Describe("bbl up gcp", func() {
 		executeCommand(args, 0)
 
 		state := readStateJson(tempDirectory)
-		Expect(state).To(Equal(storage.State{
-			Version: 2,
-			IAAS:    "gcp",
-			GCP: storage.GCP{
-				ServiceAccountKey: serviceAccountKey,
-				ProjectID:         "some-project-id",
-				Zone:              "some-zone",
-				Region:            "some-region",
-			},
-		}))
+		Expect(state.Version).To(Equal(2))
+		Expect(state.IAAS).To(Equal("gcp"))
+		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
+		Expect(state.GCP.Zone).To(Equal("some-zone"))
+		Expect(state.GCP.Region).To(Equal("some-region"))
+		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
+		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
 	})
 
 	Context("when gcp details are provided via env vars", func() {
@@ -83,16 +81,12 @@ var _ = Describe("bbl up gcp", func() {
 			executeCommand(args, 0)
 
 			state := readStateJson(tempDirectory)
-			Expect(state).To(Equal(storage.State{
-				Version: 2,
-				IAAS:    "gcp",
-				GCP: storage.GCP{
-					ServiceAccountKey: serviceAccountKey,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				},
-			}))
+			Expect(state.Version).To(Equal(2))
+			Expect(state.IAAS).To(Equal("gcp"))
+			Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+			Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
+			Expect(state.GCP.Zone).To(Equal("some-zone"))
+			Expect(state.GCP.Region).To(Equal("some-region"))
 		})
 	})
 

@@ -10,7 +10,8 @@ import (
 )
 
 type GCPUp struct {
-	stateStore stateStore
+	stateStore     stateStore
+	keyPairCreator gcpKeyPairCreator
 }
 
 type GCPUpConfig struct {
@@ -20,9 +21,14 @@ type GCPUpConfig struct {
 	Region                string
 }
 
-func NewGCPUp(stateStore stateStore) GCPUp {
+type gcpKeyPairCreator interface {
+	Create() (string, string, error)
+}
+
+func NewGCPUp(stateStore stateStore, keyPairCreator gcpKeyPairCreator) GCPUp {
 	return GCPUp{
-		stateStore: stateStore,
+		stateStore:     stateStore,
+		keyPairCreator: keyPairCreator,
 	}
 }
 
@@ -52,6 +58,14 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 			Zone:              upConfig.Zone,
 			Region:            upConfig.Region,
 		}
+
+		privateKey, publicKey, err := u.keyPairCreator.Create()
+		if err != nil {
+			return err
+		}
+
+		state.KeyPair.PrivateKey = privateKey
+		state.KeyPair.PublicKey = publicKey
 	}
 
 	if err := u.stateStore.Set(state); err != nil {

@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 
+	"golang.org/x/crypto/ssh"
+
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
@@ -20,6 +22,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -85,10 +88,10 @@ func main() {
 
 	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
 	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
-	keyPairCreator := ec2.NewKeyPairCreator(clientProvider)
+	awsKeyPairCreator := ec2.NewKeyPairCreator(clientProvider)
 	keyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
 	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
-	keyPairManager := ec2.NewKeyPairManager(keyPairCreator, keyPairChecker, logger)
+	keyPairManager := ec2.NewKeyPairManager(awsKeyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
@@ -99,6 +102,9 @@ func main() {
 	certificateDeleter := iam.NewCertificateDeleter(clientProvider)
 	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	certificateValidator := iam.NewCertificateValidator()
+
+	// GCP
+	gcpKeyPairCreator := gcp.NewKeyPairCreator(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey)
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -152,7 +158,7 @@ func main() {
 		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
 		clientProvider,
 	)
-	gcpUp := commands.NewGCPUp(stateStore)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairCreator)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter)
 
