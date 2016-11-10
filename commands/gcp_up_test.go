@@ -66,6 +66,125 @@ var _ = Describe("gcp up", func() {
 			}))
 		})
 
+		It("creates a ssh keypair", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "some-region",
+			}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(keyPairCreator.CreateCall.CallCount).To(Equal(1))
+		})
+
+		Context("when state contains gcp details", func() {
+			var (
+				updatedServiceAccountKey     string
+				updatedServiceAccountKeyPath string
+			)
+
+			BeforeEach(func() {
+				tempFile, err := ioutil.TempFile("", "updatedGcpServiceAccountKey")
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedServiceAccountKeyPath = tempFile.Name()
+				updatedServiceAccountKey = `{"another-real": "json-file"}`
+				err = ioutil.WriteFile(updatedServiceAccountKeyPath, []byte(updatedServiceAccountKey), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("overwrites them with the up config details", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: updatedServiceAccountKeyPath,
+					ProjectID:             "new-project-id",
+					Zone:                  "new-zone",
+					Region:                "new-region",
+				}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: updatedServiceAccountKey,
+						ProjectID:         "new-project-id",
+						Zone:              "new-zone",
+						Region:            "new-region",
+					},
+				}))
+			})
+
+			It("does not create a new ssh key", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(keyPairCreator.CreateCall.CallCount).To(Equal(0))
+			})
+
+			It("does not require details from up config", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			DescribeTable("up config contains subset of the details", func(upConfig commands.GCPUpConfig, expectedErr string) {
+				err := gcpUp.Execute(upConfig, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).To(MatchError(expectedErr))
+			},
+				Entry("returns an error when the service account key is not provided", commands.GCPUpConfig{
+					ProjectID: "new-project-id",
+					Zone:      "new-zone",
+					Region:    "new-region",
+				}, "GCP service account key must be provided"),
+				Entry("returns an error when the project ID is not provided", commands.GCPUpConfig{
+					ServiceAccountKeyPath: "new-service-account-key",
+					Zone:   "new-zone",
+					Region: "new-region",
+				}, "GCP project ID must be provided"),
+				Entry("returns an error when the zone is not provided", commands.GCPUpConfig{
+					ServiceAccountKeyPath: "new-service-account-key",
+					ProjectID:             "new-project-id",
+					Region:                "new-region",
+				}, "GCP zone must be provided"),
+				Entry("returns an error when the region is not provided", commands.GCPUpConfig{
+					ServiceAccountKeyPath: "new-service-account-key",
+					ProjectID:             "new-project-id",
+					Zone:                  "new-zone",
+				}, "GCP region must be provided"),
+			)
+		})
+
 		Context("failure cases", func() {
 			It("returns an error when state store fails", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("set call failed")}}
@@ -142,107 +261,6 @@ var _ = Describe("gcp up", func() {
 				}, storage.State{})
 				Expect(err).To(MatchError("keypair failed"))
 			})
-		})
-
-		Context("when state contains gcp details", func() {
-			var (
-				updatedServiceAccountKey     string
-				updatedServiceAccountKeyPath string
-			)
-
-			BeforeEach(func() {
-				tempFile, err := ioutil.TempFile("", "updatedGcpServiceAccountKey")
-				Expect(err).NotTo(HaveOccurred())
-
-				updatedServiceAccountKeyPath = tempFile.Name()
-				updatedServiceAccountKey = `{"another-real": "json-file"}`
-				err = ioutil.WriteFile(updatedServiceAccountKeyPath, []byte(updatedServiceAccountKey), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("overwrites them with the up config details", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: updatedServiceAccountKeyPath,
-					ProjectID:             "new-project-id",
-					Zone:                  "new-zone",
-					Region:                "new-region",
-				}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: updatedServiceAccountKey,
-						ProjectID:         "new-project-id",
-						Zone:              "new-zone",
-						Region:            "new-region",
-					},
-				}))
-			})
-
-			It("does not require details from up config", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				}))
-			})
-
-			DescribeTable("up config contains subset of the details", func(upConfig commands.GCPUpConfig, expectedErr string) {
-				err := gcpUp.Execute(upConfig, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				})
-				Expect(err).To(MatchError(expectedErr))
-			},
-				Entry("returns an error when the service account key is not provided", commands.GCPUpConfig{
-					ProjectID: "new-project-id",
-					Zone:      "new-zone",
-					Region:    "new-region",
-				}, "GCP service account key must be provided"),
-				Entry("returns an error when the project ID is not provided", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "new-service-account-key",
-					Zone:   "new-zone",
-					Region: "new-region",
-				}, "GCP project ID must be provided"),
-				Entry("returns an error when the zone is not provided", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "new-service-account-key",
-					ProjectID:             "new-project-id",
-					Region:                "new-region",
-				}, "GCP zone must be provided"),
-				Entry("returns an error when the region is not provided", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "new-service-account-key",
-					ProjectID:             "new-project-id",
-					Zone:                  "new-zone",
-				}, "GCP region must be provided"),
-			)
 		})
 	})
 })
