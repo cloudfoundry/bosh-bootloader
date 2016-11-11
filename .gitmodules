@@ -28,3 +28,15 @@
 [submodule "vendor/github.com/square/certstrap"]
 	path = vendor/github.com/square/certstrap
 	url = https://github.com/square/certstrap
+[submodule "vendor/golang.org/x/oauth2"]
+	path = vendor/golang.org/x/oauth2
+	url = https://go.googlesource.com/oauth2
+[submodule "vendor/cloud.google.com/go"]
+	path = vendor/cloud.google.com/go
+	url = https://code.googlesource.com/gocloud
+[submodule "vendor/google.golang.org/api"]
+	path = vendor/google.golang.org/api
+	url = https://code.googlesource.com/google-api-go-client
+[submodule "vendor/golang.org/x/net"]
+	path = vendor/golang.org/x/net
+	url = https://go.googlesource.com/net
