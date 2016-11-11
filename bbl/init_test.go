@@ -2,13 +2,16 @@ package main_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/bosh-bootloader/bbl/gcpbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -26,12 +29,15 @@ var (
 	pathToBBL          string
 	pathToBOSHInit     string
 	pathToFakeBOSHInit string
+	fakeGCPServer      *httptest.Server
+	serviceAccountKey  string
 )
 
 var _ = BeforeSuite(func() {
 	var err error
+	fakeGCPServer, serviceAccountKey = gcpbackend.StartFakeGCPBackend()
 
-	pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl")
+	pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl", "--ldflags", fmt.Sprintf("-X main.gcpBasePath=%s", fakeGCPServer.URL))
 	Expect(err).NotTo(HaveOccurred())
 
 	pathToFakeBOSHInit, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit")

@@ -15,7 +15,6 @@ var _ = Describe("bbl up gcp", func() {
 	var (
 		tempDirectory         string
 		serviceAccountKeyPath string
-		serviceAccountKey     string
 	)
 
 	BeforeEach(func() {
@@ -27,7 +26,6 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		serviceAccountKeyPath = tempFile.Name()
-		serviceAccountKey = `{"real": "json"}`
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 	})

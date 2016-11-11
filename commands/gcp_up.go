@@ -11,7 +11,8 @@ import (
 
 type GCPUp struct {
 	stateStore     stateStore
-	keyPairCreator gcpKeyPairCreator
+	keyPairUpdater keyPairUpdater
+	gcpProvider    gcpProvider
 }
 
 type GCPUpConfig struct {
@@ -25,10 +26,19 @@ type gcpKeyPairCreator interface {
 	Create() (string, string, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairCreator gcpKeyPairCreator) GCPUp {
+type keyPairUpdater interface {
+	Update(projectID string) (storage.KeyPair, error)
+}
+
+type gcpProvider interface {
+	SetConfig(serviceAccountKey string) error
+}
+
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider) GCPUp {
 	return GCPUp{
 		stateStore:     stateStore,
-		keyPairCreator: keyPairCreator,
+		keyPairUpdater: keyPairUpdater,
+		gcpProvider:    gcpProvider,
 	}
 }
 
@@ -38,15 +48,18 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		if err != nil {
 			return err
 		}
+		err = u.gcpProvider.SetConfig(gcpDetails.ServiceAccountKey)
+		if err != nil {
+			return err
+		}
 
 		if state.GCP.Empty() {
-			privateKey, publicKey, err := u.keyPairCreator.Create()
+			keyPair, err := u.keyPairUpdater.Update(gcpDetails.ProjectID)
 			if err != nil {
 				return err
 			}
 
-			state.KeyPair.PrivateKey = privateKey
-			state.KeyPair.PublicKey = publicKey
+			state.KeyPair = keyPair
 		}
 
 		state.IAAS = "gcp"

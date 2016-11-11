@@ -16,18 +16,21 @@ import (
 
 var _ = Describe("gcp up", func() {
 	var (
-		stateStore *fakes.StateStore
-		gcpUp      commands.GCPUp
+		stateStore     *fakes.StateStore
+		keyPairUpdater *fakes.GCPKeyPairUpdater
+		gcpUp          commands.GCPUp
+		gcpProvider    *fakes.GCPProvider
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
-		keyPairCreator        *fakes.GCPKeyPairCreator
 	)
 
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
-		keyPairCreator = &fakes.GCPKeyPairCreator{}
-		gcpUp = commands.NewGCPUp(stateStore, keyPairCreator)
+		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
+		gcpProvider = &fakes.GCPProvider{}
+
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpProvider)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -40,8 +43,10 @@ var _ = Describe("gcp up", func() {
 
 	Context("Execute", func() {
 		It("saves gcp details to the state", func() {
-			keyPairCreator.CreateCall.Returns.PrivateKey = "some-private-key"
-			keyPairCreator.CreateCall.Returns.PublicKey = "some-public-key"
+			keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
+				PrivateKey: "some-private-key",
+				PublicKey:  "some-public-key",
+			}
 
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -64,9 +69,11 @@ var _ = Describe("gcp up", func() {
 					PublicKey:  "some-public-key",
 				},
 			}))
+			Expect(gcpProvider.SetConfigCall.CallCount).To(Equal(1))
+			Expect(gcpProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(`{"real": "json"}`))
 		})
 
-		It("creates a ssh keypair", func() {
+		It("uploads the ssh keys", func() {
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
@@ -75,7 +82,8 @@ var _ = Describe("gcp up", func() {
 			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(keyPairCreator.CreateCall.CallCount).To(Equal(1))
+			Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(1))
+			Expect(keyPairUpdater.UpdateCall.Receives.ProjectID).To(Equal("some-project-id"))
 		})
 
 		Context("when state contains gcp details", func() {
@@ -134,7 +142,7 @@ var _ = Describe("gcp up", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(keyPairCreator.CreateCall.CallCount).To(Equal(0))
+				Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(0))
 			})
 
 			It("does not require details from up config", func() {
@@ -250,8 +258,8 @@ var _ = Describe("gcp up", func() {
 				Expect(err).To(MatchError("error parsing service account key: invalid character '%' looking for beginning of value"))
 			})
 
-			It("returns an error when the keypair fails to be created", func() {
-				keyPairCreator.CreateCall.Returns.Error = errors.New("keypair failed")
+			It("returns an error when the keypair could not be updated", func() {
+				keyPairUpdater.UpdateCall.Returns.Error = errors.New("keypair update failed")
 
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -259,7 +267,19 @@ var _ = Describe("gcp up", func() {
 					Zone:                  "some-zone",
 					Region:                "some-region",
 				}, storage.State{})
-				Expect(err).To(MatchError("keypair failed"))
+				Expect(err).To(MatchError("keypair update failed"))
+			})
+
+			It("returns an error when setting config fails", func() {
+				gcpProvider.SetConfigCall.Returns.Error = errors.New("setting config failed")
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("setting config failed"))
 			})
 		})
 	})

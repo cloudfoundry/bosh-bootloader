@@ -23,7 +23,7 @@ var _ = Describe("bbl up", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		serviceAccountKeyPath = tempFile.Name()
-		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(`{"real": "json"}`), os.ModePerm)
+		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
