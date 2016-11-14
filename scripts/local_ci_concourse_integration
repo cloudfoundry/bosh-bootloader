@@ -1,0 +1,19 @@
+#!/bin/bash -eux
+
+ROOT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+function main {
+  pushd "${ROOT_DIRECTORY}"
+    docker pull cfinfrastructure/deployment
+
+    docker run \
+      -e AWS_REGION="${AWS_REGION}" \
+      -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+      -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+      -v $PWD:/bosh-bootloader \
+      -v ${MEGA_CI:-"${GOPATH}/src/github.com/cloudfoundry/mega-ci"}:/mega-ci \
+      cfinfrastructure/deployment ${TEST_TASK:-"/mega-ci/scripts/ci/bosh-bootloader/concourse_integration"}
+  popd
+}
+
+main
