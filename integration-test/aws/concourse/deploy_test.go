@@ -4,16 +4,18 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-bootloader/integration-test"
+	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"github.com/cloudfoundry/bosh-bootloader/integration-test/aws/actors"
-	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 )
 
 const (
