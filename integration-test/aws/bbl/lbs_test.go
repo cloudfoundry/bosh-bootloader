@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test/aws/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"

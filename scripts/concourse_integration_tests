@@ -6,7 +6,7 @@ function main() {
 
 	pushd "${root_dir}" > /dev/null
 		ginkgo -race -failFast -randomizeAllSpecs -randomizeSuites integration-test
-		ginkgo -r -race -failFast -randomizeAllSpecs -randomizeSuites integration-test/concourse
+		ginkgo -r -race -failFast -randomizeAllSpecs -randomizeSuites integration-test/aws/concourse
 	popd > /dev/null
 }
 
