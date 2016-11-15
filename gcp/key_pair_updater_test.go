@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"io"
+	"strings"
 
 	compute "google.golang.org/api/compute/v1"
 
@@ -49,6 +50,7 @@ var _ = Describe("KeyPairUpdater", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(keyPair.PrivateKey).NotTo(BeEmpty())
 		Expect(keyPair.PublicKey).NotTo(BeEmpty())
+		Expect(keyPair.PublicKey).NotTo(ContainSubstring("\n"))
 
 		pemBlock, rest := pem.Decode([]byte(keyPair.PrivateKey))
 		Expect(rest).To(HaveLen(0))
@@ -63,7 +65,9 @@ var _ = Describe("KeyPairUpdater", func() {
 		newPublicKey, err := ssh.NewPublicKey(parsedPrivateKey.Public())
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(string(ssh.MarshalAuthorizedKey(newPublicKey))).To(Equal(keyPair.PublicKey))
+		rawPublicKey := strings.TrimSuffix(string(ssh.MarshalAuthorizedKey(newPublicKey)), "\n")
+
+		Expect(rawPublicKey).To(Equal(keyPair.PublicKey))
 	})
 
 	It("retrieves the project for the given project id", func() {
@@ -85,7 +89,7 @@ var _ = Describe("KeyPairUpdater", func() {
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(1))
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Key).To(Equal("sshKeys"))
-		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp("vcap:ssh-rsa .* vcap"))
+		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`vcap:ssh-rsa .* vcap\n$`))
 
 		Expect(logger.StepCall.CallCount).To(Equal(1))
 		Expect(logger.StepCall.Receives.Message).To(Equal(`Creating new ssh-keys for the project %q`))
@@ -112,7 +116,7 @@ var _ = Describe("KeyPairUpdater", func() {
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(2))
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Key).To(Equal("sshKeys"))
-		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp("my-user:ssh-rsa MY-PUBLIC-KEY my-user\nvcap:ssh-rsa .* vcap"))
+		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`my-user:ssh-rsa MY-PUBLIC-KEY my-user\nvcap:ssh-rsa .* vcap\n$`))
 
 		Expect(logger.StepCall.CallCount).To(Equal(1))
 		Expect(logger.StepCall.Receives.Message).To(Equal(`Appending new ssh-keys for the project %q`))

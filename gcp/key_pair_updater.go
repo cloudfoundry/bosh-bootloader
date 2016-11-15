@@ -56,7 +56,7 @@ func (k KeyPairUpdater) Update(projectID string) (storage.KeyPair, error) {
 		return storage.KeyPair{}, err
 	}
 
-	sshKeyItemValue := fmt.Sprintf("vcap:%s vcap", strings.TrimSpace(publicKey))
+	sshKeyItemValue := fmt.Sprintf("vcap:%s vcap\n", strings.TrimSpace(publicKey))
 
 	var updated bool
 	for i, item := range project.CommonInstanceMetadata.Items {
@@ -101,6 +101,9 @@ func (keyPairUpdater KeyPairUpdater) createKeyPair() (string, string, error) {
 		return "", "", err
 	}
 
+	rawPublicKey := string(ssh.MarshalAuthorizedKey(publicKey))
+	rawPublicKey = strings.TrimSuffix(rawPublicKey, "\n")
+
 	privateKey := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
@@ -108,5 +111,5 @@ func (keyPairUpdater KeyPairUpdater) createKeyPair() (string, string, error) {
 		},
 	)
 
-	return string(privateKey), string(ssh.MarshalAuthorizedKey(publicKey)), nil
+	return string(privateKey), rawPublicKey, nil
 }
