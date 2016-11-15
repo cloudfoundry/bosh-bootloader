@@ -19,27 +19,27 @@ type KeyPairUpdater struct {
 	random                io.Reader
 	rsaKeyGenerator       rsaKeyGenerator
 	sshPublicKeyGenerator sshPublicKeyGenerator
-	gcpProvider           gcpProvider
+	gcpClientProvider     gcpClientProvider
 	logger                logger
 }
 
 type rsaKeyGenerator func(io.Reader, int) (*rsa.PrivateKey, error)
 type sshPublicKeyGenerator func(interface{}) (ssh.PublicKey, error)
 
-type gcpProvider interface {
-	GetService() ServiceWrapper
+type gcpClientProvider interface {
+	Client() Client
 }
 
 type logger interface {
 	Step(string, ...interface{})
 }
 
-func NewKeyPairUpdater(random io.Reader, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator, gcpProvider gcpProvider, logger logger) KeyPairUpdater {
+func NewKeyPairUpdater(random io.Reader, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator, gcpClientProvider gcpClientProvider, logger logger) KeyPairUpdater {
 	return KeyPairUpdater{
 		random:                random,
 		rsaKeyGenerator:       generateRSAKey,
 		sshPublicKeyGenerator: generateSSHPublicKey,
-		gcpProvider:           gcpProvider,
+		gcpClientProvider:     gcpClientProvider,
 		logger:                logger,
 	}
 }
@@ -50,9 +50,8 @@ func (k KeyPairUpdater) Update(projectID string) (storage.KeyPair, error) {
 		return storage.KeyPair{}, err
 	}
 
-	service := k.gcpProvider.GetService()
-	projectsService := service.GetProjectsService()
-	project, err := projectsService.Get(projectID)
+	client := k.gcpClientProvider.Client()
+	project, err := client.GetProject(projectID)
 	if err != nil {
 		return storage.KeyPair{}, err
 	}
@@ -80,7 +79,7 @@ func (k KeyPairUpdater) Update(projectID string) (storage.KeyPair, error) {
 		project.CommonInstanceMetadata.Items = append(project.CommonInstanceMetadata.Items, sshKeyItem)
 	}
 
-	_, err = projectsService.SetCommonInstanceMetadata(projectID, project.CommonInstanceMetadata)
+	_, err = client.SetCommonInstanceMetadata(projectID, project.CommonInstanceMetadata)
 	if err != nil {
 		return storage.KeyPair{}, err
 	}

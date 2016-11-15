@@ -48,6 +48,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		if err != nil {
 			return err
 		}
+
 		err = u.gcpProvider.SetConfig(gcpDetails.ServiceAccountKey)
 		if err != nil {
 			return err

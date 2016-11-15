@@ -6,10 +6,10 @@ import (
 	"golang.org/x/oauth2/jwt"
 )
 
-func SetClient(f func(*jwt.Config) *http.Client) {
-	client = f
+func SetGCPHTTPClient(f func(*jwt.Config) *http.Client) {
+	gcpHTTPClient = f
 }
 
-func ResetClient() {
-	client = clientFunc
+func ResetGCPHTTPClient() {
+	gcpHTTPClient = gcpHTTPClientFunc
 }

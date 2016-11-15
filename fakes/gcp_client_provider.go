@@ -2,11 +2,11 @@ package fakes
 
 import "github.com/cloudfoundry/bosh-bootloader/gcp"
 
-type GCPProvider struct {
-	GetServiceCall struct {
+type GCPClientProvider struct {
+	ClientCall struct {
 		CallCount int
 		Returns   struct {
-			Service gcp.ServiceWrapper
+			Client gcp.Client
 		}
 	}
 	SetConfigCall struct {
@@ -20,13 +20,13 @@ type GCPProvider struct {
 	}
 }
 
-func (g *GCPProvider) GetService() gcp.ServiceWrapper {
-	g.GetServiceCall.CallCount++
+func (g *GCPClientProvider) Client() gcp.Client {
+	g.ClientCall.CallCount++
 
-	return g.GetServiceCall.Returns.Service
+	return g.ClientCall.Returns.Client
 }
 
-func (g *GCPProvider) SetConfig(serviceAccountKey string) error {
+func (g *GCPClientProvider) SetConfig(serviceAccountKey string) error {
 	g.SetConfigCall.CallCount++
 	g.SetConfigCall.Receives.ServiceAccountKey = serviceAccountKey
 

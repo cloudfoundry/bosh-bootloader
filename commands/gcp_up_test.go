@@ -16,10 +16,10 @@ import (
 
 var _ = Describe("gcp up", func() {
 	var (
-		stateStore     *fakes.StateStore
-		keyPairUpdater *fakes.GCPKeyPairUpdater
-		gcpUp          commands.GCPUp
-		gcpProvider    *fakes.GCPProvider
+		stateStore        *fakes.StateStore
+		keyPairUpdater    *fakes.GCPKeyPairUpdater
+		gcpUp             commands.GCPUp
+		gcpClientProvider *fakes.GCPClientProvider
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
@@ -28,9 +28,9 @@ var _ = Describe("gcp up", func() {
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
 		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
-		gcpProvider = &fakes.GCPProvider{}
+		gcpClientProvider = &fakes.GCPClientProvider{}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpProvider)
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -69,8 +69,8 @@ var _ = Describe("gcp up", func() {
 					PublicKey:  "some-public-key",
 				},
 			}))
-			Expect(gcpProvider.SetConfigCall.CallCount).To(Equal(1))
-			Expect(gcpProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(`{"real": "json"}`))
+			Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
+			Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(`{"real": "json"}`))
 		})
 
 		It("uploads the ssh keys", func() {
@@ -271,7 +271,7 @@ var _ = Describe("gcp up", func() {
 			})
 
 			It("returns an error when setting config fails", func() {
-				gcpProvider.SetConfigCall.Returns.Error = errors.New("setting config failed")
+				gcpClientProvider.SetConfigCall.Returns.Error = errors.New("setting config failed")
 
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,

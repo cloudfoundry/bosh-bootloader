@@ -2,8 +2,8 @@ package fakes
 
 import compute "google.golang.org/api/compute/v1"
 
-type GCPProjectsService struct {
-	GetCall struct {
+type GCPClient struct {
+	GetProjectCall struct {
 		CallCount int
 		Receives  struct {
 			ProjectID string
@@ -26,13 +26,13 @@ type GCPProjectsService struct {
 	}
 }
 
-func (g *GCPProjectsService) Get(projectID string) (*compute.Project, error) {
-	g.GetCall.CallCount++
-	g.GetCall.Receives.ProjectID = projectID
-	return g.GetCall.Returns.Project, g.GetCall.Returns.Error
+func (g *GCPClient) GetProject(projectID string) (*compute.Project, error) {
+	g.GetProjectCall.CallCount++
+	g.GetProjectCall.Receives.ProjectID = projectID
+	return g.GetProjectCall.Returns.Project, g.GetProjectCall.Returns.Error
 }
 
-func (g *GCPProjectsService) SetCommonInstanceMetadata(projectID string, metadata *compute.Metadata) (*compute.Operation, error) {
+func (g *GCPClient) SetCommonInstanceMetadata(projectID string, metadata *compute.Metadata) (*compute.Operation, error) {
 	g.SetCommonInstanceMetadataCall.CallCount++
 	g.SetCommonInstanceMetadataCall.Receives.ProjectID = projectID
 	g.SetCommonInstanceMetadataCall.Receives.Metadata = metadata

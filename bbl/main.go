@@ -105,8 +105,8 @@ func main() {
 	certificateValidator := iam.NewCertificateValidator()
 
 	// GCP
-	gcpProvider := gcp.NewProvider(gcpBasePath)
-	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpProvider, logger)
+	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
+	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -160,7 +160,7 @@ func main() {
 		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
 		clientProvider,
 	)
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpProvider)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter)
 
