@@ -16,16 +16,16 @@ var _ = Describe("Commands Usage", func() {
 				usageText := upCmd.Usage()
 				Expect(usageText).To(Equal(`Deploys BOSH director on an IAAS
 
-  --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws"
+  --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
   --aws-region               AWS region to use (Defaults to environment variable BBL_AWS_REGION)
 
-  --gcp-service-account-key  GCP Service Access Key to use
-  --gcp-project-id           GCP Project ID to use
-  --gcp-zone                 GCP Zone to use
-  --gcp-region               GCP Region to use`))
+  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
+  --gcp-project-id           GCP Project ID to use (Defaults to environment variable BBL_GCP_PROJECT_ID)
+  --gcp-zone                 GCP Zone to use (Defaults to environment variable BBL_GCP_ZONE)
+  --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)`))
 			})
 		})
 	})
