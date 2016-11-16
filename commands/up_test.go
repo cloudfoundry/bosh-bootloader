@@ -334,7 +334,7 @@ var _ = Describe("Up", func() {
 			Context("when iaas specified is different than the iaas in state", func() {
 				It("returns an error when the iaas is provided via args", func() {
 					err := command.Execute([]string{"--iaas", "aws"}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("the iaas provided must match the iaas in bbl-state.json"))
+					Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
 				})
 
 				It("returns an error when the iaas is provided via env vars", func() {
@@ -342,7 +342,7 @@ var _ = Describe("Up", func() {
 						"BBL_IAAS": "aws",
 					}
 					err := command.Execute([]string{}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("the iaas provided must match the iaas in bbl-state.json"))
+					Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
 				})
 			})
 		})

@@ -118,7 +118,7 @@ var _ = Describe("bbl up gcp", func() {
 			It("exits 1 and prints error message", func() {
 				session := upAWS("", tempDirectory, 1)
 
-				Expect(session.Err.Contents()).To(ContainSubstring("the iaas provided must match the iaas in bbl-state.json"))
+				Expect(session.Err.Contents()).To(ContainSubstring("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
 			})
 		})
 	})

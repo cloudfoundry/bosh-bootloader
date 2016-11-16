@@ -62,7 +62,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 		desiredIAAS = state.IAAS
 	case state.IAAS != "" && config.iaas != "":
 		if state.IAAS != config.iaas {
-			return errors.New("the iaas provided must match the iaas in bbl-state.json")
+			return fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
 		} else {
 			desiredIAAS = state.IAAS
 		}
