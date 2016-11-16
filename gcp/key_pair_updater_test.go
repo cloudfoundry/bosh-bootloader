@@ -119,7 +119,7 @@ var _ = Describe("KeyPairUpdater", func() {
 		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`my-user:ssh-rsa MY-PUBLIC-KEY my-user\nvcap:ssh-rsa .* vcap\n$`))
 
 		Expect(logger.StepCall.CallCount).To(Equal(1))
-		Expect(logger.StepCall.Receives.Message).To(Equal(`Appending new ssh-keys for the project %q`))
+		Expect(logger.StepCall.Receives.Message).To(Equal(`appending new ssh-keys for the project %q`))
 		Expect(logger.StepCall.Receives.Arguments[0]).To(Equal("some-project-id"))
 	})
 
