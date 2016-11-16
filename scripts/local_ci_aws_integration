@@ -12,7 +12,7 @@ function main {
       -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
       -v $PWD:/bosh-bootloader \
       -v ${MEGA_CI:-"${GOPATH}/src/github.com/cloudfoundry/mega-ci"}:/mega-ci \
-      cfinfrastructure/deployment ${TEST_TASK:-"/mega-ci/scripts/ci/bosh-bootloader/integration"}
+      cfinfrastructure/deployment ${TEST_TASK:-"/mega-ci/scripts/ci/bosh-bootloader/aws_integration"}
   popd
 }
 
