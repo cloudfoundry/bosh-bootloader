@@ -2,6 +2,7 @@ package actors
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,11 +15,18 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
+const (
+	AWSIAAS = iota
+	GCPIAAS
+)
+
 type BBL struct {
 	stateDirectory string
 	pathToBBL      string
 	configuration  integration.Config
 }
+
+type IAAS int
 
 func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config) BBL {
 	return BBL{
@@ -28,15 +36,32 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 	}
 }
 
-func (b BBL) Up() {
+func (b BBL) Up(iaas IAAS) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"up",
-		"--iaas", "aws",
-		"--aws-access-key-id", b.configuration.AWSAccessKeyID,
-		"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
-		"--aws-region", b.configuration.AWSRegion,
 	}
+
+	switch iaas {
+	case AWSIAAS:
+		args = append(args, []string{
+			"--iaas", "aws",
+			"--aws-access-key-id", b.configuration.AWSAccessKeyID,
+			"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
+			"--aws-region", b.configuration.AWSRegion,
+		}...)
+	case GCPIAAS:
+		args = append(args, []string{
+			"--iaas", "gcp",
+			"--gcp-service-account-key", b.configuration.GCPServiceAccountKeyPath,
+			"--gcp-project-id", b.configuration.GCPProjectID,
+			"--gcp-region", b.configuration.GCPRegion,
+			"--gcp-zone", b.configuration.GCPZone,
+		}...)
+	default:
+		panic(errors.New("invalid iaas"))
+	}
+
 	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }

@@ -21,8 +21,13 @@ type stack struct {
 	CertificateName string `json:"certificateName"`
 }
 
+type keyPair struct {
+	PublicKey string `json:"publicKey"`
+}
+
 type state struct {
-	Stack stack `json:"stack"`
+	Stack   stack   `json:"stack"`
+	KeyPair keyPair `json:"keyPair"`
 }
 
 func NewState(stateDirectory string) State {
@@ -45,6 +50,11 @@ func (s State) StackName() string {
 func (s State) CertificateName() string {
 	state := s.readStateFile()
 	return state.Stack.CertificateName
+}
+
+func (s State) SSHPublicKey() string {
+	state := s.readStateFile()
+	return state.KeyPair.PublicKey
 }
 
 func (s State) readStateFile() state {

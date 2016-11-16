@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/aws/actors"
+	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
@@ -23,7 +23,7 @@ var _ = Describe("load balancer tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err := integration.LoadAWSConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
@@ -35,7 +35,7 @@ var _ = Describe("load balancer tests", func() {
 	})
 
 	It("creates, updates and deletes an LB with the specified cert and key", func() {
-		bbl.Up()
+		bbl.Up(actors.AWSIAAS)
 
 		stackName := state.StackName()
 		directorAddress := bbl.DirectorAddress()

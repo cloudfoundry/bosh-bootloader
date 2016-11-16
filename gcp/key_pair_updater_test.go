@@ -97,7 +97,7 @@ var _ = Describe("KeyPairUpdater", func() {
 	})
 
 	It("appends to the list of ssh-keys", func() {
-		existingSSHKey := "my-user:ssh-rsa MY-PUBLIC-KEY my-user"
+		existingSSHKey := "my-user:ssh-rsa MY-PUBLIC-KEY my-user\n"
 		someOtherValue := "some-other-value"
 		gcpClient.GetProjectCall.Returns.Project.CommonInstanceMetadata = &compute.Metadata{
 			Items: []*compute.MetadataItems{

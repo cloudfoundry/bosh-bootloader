@@ -10,8 +10,9 @@ import (
 	"strings"
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/aws/actors"
+	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -36,7 +37,7 @@ var _ = Describe("bosh deployment tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err := integration.LoadAWSConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
@@ -45,7 +46,7 @@ var _ = Describe("bosh deployment tests", func() {
 	})
 
 	It("is able to deploy concourse", func() {
-		bbl.Up()
+		bbl.Up(actors.AWSIAAS)
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())

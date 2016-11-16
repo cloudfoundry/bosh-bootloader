@@ -10,15 +10,19 @@ import (
 )
 
 type Config struct {
-	AWSAccessKeyID     string
-	AWSSecretAccessKey string
-	AWSRegion          string
-	StateFileDir       string
+	AWSAccessKeyID           string
+	AWSSecretAccessKey       string
+	AWSRegion                string
+	GCPServiceAccountKeyPath string
+	GCPProjectID             string
+	GCPRegion                string
+	GCPZone                  string
+	StateFileDir             string
 }
 
 var tempDir func(string, string) (string, error) = ioutil.TempDir
 
-func LoadConfig() (Config, error) {
+func LoadAWSConfig() (Config, error) {
 	config, err := loadConfigJson()
 	if err != nil {
 		return Config{}, err
@@ -34,6 +38,39 @@ func LoadConfig() (Config, error) {
 
 	if config.AWSRegion == "" {
 		return Config{}, errors.New("aws region is missing")
+	}
+
+	if config.StateFileDir == "" {
+		dir, err := tempDir("", "")
+		if err != nil {
+			return Config{}, err
+		}
+		config.StateFileDir = dir
+	}
+
+	return config, nil
+}
+
+func LoadGCPConfig() (Config, error) {
+	config, err := loadConfigJson()
+	if err != nil {
+		return Config{}, err
+	}
+
+	if config.GCPServiceAccountKeyPath == "" {
+		return Config{}, errors.New("gcp service account key path is missing")
+	}
+
+	if config.GCPProjectID == "" {
+		return Config{}, errors.New("project id is missing")
+	}
+
+	if config.GCPRegion == "" {
+		return Config{}, errors.New("gcp region is missing")
+	}
+
+	if config.GCPZone == "" {
+		return Config{}, errors.New("gcp zone is missing")
 	}
 
 	if config.StateFileDir == "" {
