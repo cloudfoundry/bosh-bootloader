@@ -134,11 +134,11 @@ provider "google" {
 }
 
 resource "google_compute_network" "bbl" {
-  name		 = "${var.env_id}-network"
+  name		 = "${var.env_id}"
 }
 
 resource "google_compute_subnetwork" "bbl-subnet" {
-  name			= "bbl-test-${var.region}"
+  name			= "${var.env_id}-subnet"
   ip_cidr_range = "10.0.0.0/16"
   network		= "${google_compute_network.bbl.self_link}"
 }`))
