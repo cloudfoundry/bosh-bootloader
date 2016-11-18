@@ -74,7 +74,7 @@ var _ = Describe("Create LBs", func() {
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
-				EnvID: "some-env-id:timestamp",
+				EnvID: "some-env-id-timestamp",
 			}
 
 			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
@@ -150,7 +150,7 @@ var _ = Describe("Create LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id:timestamp"))
+			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id-timestamp"))
 		})
 
 		It("names the loadbalancer without EnvID when EnvID is not set", func() {
@@ -304,7 +304,7 @@ var _ = Describe("Create LBs", func() {
 						"--cert", "temp/some-cert.crt",
 						"--key", "temp/some-key.key",
 					}, storage.State{
-						EnvID: "some-env-id:timestamp",
+						EnvID: "some-env-id-timestamp",
 					})
 					Expect(err).NotTo(HaveOccurred())
 

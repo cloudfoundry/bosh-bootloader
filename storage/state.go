@@ -51,6 +51,7 @@ type State struct {
 	BOSH    BOSH    `json:"bosh,omitempty"`
 	Stack   Stack   `json:"stack"`
 	EnvID   string  `json:"envID"`
+	TFState string  `json:"tfState"`
 }
 
 type Store struct {

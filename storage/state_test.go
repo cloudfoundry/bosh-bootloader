@@ -88,7 +88,8 @@ var _ = Describe("Store", func() {
 					LBType:          "some-lb-type",
 					CertificateName: "some-certificate-name",
 				},
-				EnvID: "some-env-id",
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -147,7 +148,8 @@ var _ = Describe("Store", func() {
 					"lbType": "some-lb-type",
 					"certificateName": "some-certificate-name"
 				},
-				"envID": "some-env-id"
+				"envID": "some-env-id",
+				"tfState": "some-tf-state"
 			}`))
 
 			fileInfo, err := os.Stat(filepath.Join(tempDir, "bbl-state.json"))

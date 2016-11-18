@@ -155,7 +155,7 @@ var _ = Describe("Update LBs", func() {
 				KeyPair: storage.KeyPair{
 					Name: "some-key-pair",
 				},
-				EnvID: "some-env-id:timestamp",
+				EnvID: "some-env-id-timestamp",
 			})
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
@@ -167,7 +167,7 @@ var _ = Describe("Update LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id:timestamp"))
+			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id-timestamp"))
 		})
 
 		It("names the loadbalancer without EnvID when EnvID is not set", func() {
@@ -332,7 +332,7 @@ var _ = Describe("Update LBs", func() {
 						LBType:          "cf",
 						CertificateName: "some-certificate-name",
 					},
-					EnvID: "some-env:timestamp",
+					EnvID: "some-env-timestamp",
 				})
 				Expect(err).NotTo(HaveOccurred())
 

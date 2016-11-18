@@ -4,10 +4,10 @@ import (
 	"crypto/rand"
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("EnvIDGenerator", func() {
@@ -17,7 +17,7 @@ var _ = Describe("EnvIDGenerator", func() {
 
 			envID, err := generator.Generate()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(envID).To(MatchRegexp(`bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+			Expect(envID).To(MatchRegexp(`bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 		})
 
 		Context("when there are errors", func() {

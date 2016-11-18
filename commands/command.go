@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -60,5 +59,5 @@ func certificateNameFor(lbType string, generator guidGenerator, envid string) (s
 		certificateName = fmt.Sprintf("%s-elb-cert-%s-%s", lbType, guid, envid)
 	}
 
-	return strings.Replace(certificateName, ":", "-", -1), nil
+	return certificateName, nil
 }

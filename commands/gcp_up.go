@@ -10,9 +10,10 @@ import (
 )
 
 type GCPUp struct {
-	stateStore     stateStore
-	keyPairUpdater keyPairUpdater
-	gcpProvider    gcpProvider
+	stateStore       stateStore
+	keyPairUpdater   keyPairUpdater
+	gcpProvider      gcpProvider
+	terraformApplier terraformApplier
 }
 
 type GCPUpConfig struct {
@@ -34,11 +35,16 @@ type gcpProvider interface {
 	SetConfig(serviceAccountKey string) error
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider) GCPUp {
+type terraformApplier interface {
+	Apply(credentials, envID, projectID, zone, region, template string) (string, error)
+}
+
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformApplier terraformApplier) GCPUp {
 	return GCPUp{
-		stateStore:     stateStore,
-		keyPairUpdater: keyPairUpdater,
-		gcpProvider:    gcpProvider,
+		stateStore:       stateStore,
+		keyPairUpdater:   keyPairUpdater,
+		gcpProvider:      gcpProvider,
+		terraformApplier: terraformApplier,
 	}
 }
 
@@ -69,6 +75,50 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		if err := u.stateStore.Set(state); err != nil {
 			return err
 		}
+	}
+
+	tfState, err := u.terraformApplier.Apply(upConfig.ServiceAccountKeyPath, state.EnvID, upConfig.ProjectID, upConfig.Zone, upConfig.Region, `variable "project_id" {
+	type = "string"
+}
+
+variable "region" {
+	type = "string"
+}
+
+variable "zone" {
+	type = "string"
+}
+
+variable "env_id" {
+	type = "string"
+}
+
+variable "credentials" {
+	type = "string"
+}
+
+provider "google" {
+	credentials = "${file("${var.credentials}")}"
+	project = "${var.project_id}"
+	region = "${var.region}"
+}
+
+resource "google_compute_network" "bbl" {
+  name		 = "${var.env_id}-network"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet" {
+  name			= "bbl-test-${var.region}"
+  ip_cidr_range = "10.0.0.0/16"
+  network		= "${google_compute_network.bbl.self_link}"
+}`)
+	if err != nil {
+		return err
+	}
+
+	state.TFState = tfState
+	if err := u.stateStore.Set(state); err != nil {
+		return err
 	}
 
 	return nil

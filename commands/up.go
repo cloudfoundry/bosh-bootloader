@@ -9,9 +9,10 @@ import (
 )
 
 type Up struct {
-	awsUp     awsUp
-	gcpUp     gcpUp
-	envGetter envGetter
+	awsUp          awsUp
+	gcpUp          gcpUp
+	envGetter      envGetter
+	envIDGenerator envIDGenerator
 }
 
 type awsUp interface {
@@ -26,6 +27,10 @@ type envGetter interface {
 	Get(name string) string
 }
 
+type envIDGenerator interface {
+	Generate() (string, error)
+}
+
 type upConfig struct {
 	awsAccessKeyID       string
 	awsSecretAccessKey   string
@@ -37,11 +42,13 @@ type upConfig struct {
 	iaas                 string
 }
 
-func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter) Up {
+func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter,
+	envIDGenerator envIDGenerator) Up {
 	return Up{
-		awsUp:     awsUp,
-		gcpUp:     gcpUp,
-		envGetter: envGetter,
+		awsUp:          awsUp,
+		gcpUp:          gcpUp,
+		envGetter:      envGetter,
+		envIDGenerator: envIDGenerator,
 	}
 }
 
@@ -65,6 +72,13 @@ func (u Up) Execute(args []string, state storage.State) error {
 			return fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
 		} else {
 			desiredIAAS = state.IAAS
+		}
+	}
+
+	if state.EnvID == "" {
+		state.EnvID, err = u.envIDGenerator.Generate()
+		if err != nil {
+			return err
 		}
 	}
 

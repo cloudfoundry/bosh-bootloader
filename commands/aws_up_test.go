@@ -34,7 +34,6 @@ var _ = Describe("AWSUp", func() {
 			cloudConfigManager        *fakes.CloudConfigManager
 			boshClientProvider        *fakes.BOSHClientProvider
 			boshClient                *fakes.BOSHClient
-			envIDGenerator            *fakes.EnvIDGenerator
 			boshInitCredentials       map[string]string
 			stateStore                *fakes.StateStore
 			clientProvider            *fakes.ClientProvider
@@ -94,16 +93,13 @@ var _ = Describe("AWSUp", func() {
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
-			envIDGenerator = &fakes.EnvIDGenerator{}
-			envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
-
 			stateStore = &fakes.StateStore{}
 			clientProvider = &fakes.ClientProvider{}
 
 			command = commands.NewAWSUp(
 				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-				cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
+				cloudConfigManager, boshClientProvider, stateStore,
 				clientProvider,
 			)
 
@@ -136,7 +132,9 @@ var _ = Describe("AWSUp", func() {
 				AccessKeyID:     "new-aws-access-key-id",
 				SecretAccessKey: "new-aws-secret-access-key",
 				Region:          "new-aws-region",
-			}, storage.State{})
+			}, storage.State{
+				EnvID: "bbl-lake-time-stamp",
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
@@ -160,6 +158,7 @@ var _ = Describe("AWSUp", func() {
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
+				EnvID: "bbl-lake-time-stamp",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(0))
@@ -179,21 +178,6 @@ var _ = Describe("AWSUp", func() {
 			}))
 		})
 
-		It("generates an bbl-env-id", func() {
-			incomingState := storage.State{
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-			}
-
-			err := command.Execute(commands.AWSUpConfig{}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
-		})
-
 		It("creates/updates the stack with the given name", func() {
 			incomingState := storage.State{
 				AWS: storage.AWS{
@@ -201,6 +185,7 @@ var _ = Describe("AWSUp", func() {
 					SecretAccessKey: "some-secret-access-key",
 					AccessKeyID:     "some-access-key-id",
 				},
+				EnvID: "bbl-lake-time-stamp",
 			}
 
 			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
@@ -209,9 +194,9 @@ var _ = Describe("AWSUp", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-time-stamp"))
-			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("keypair-bbl-lake-time:stamp"))
+			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("keypair-bbl-lake-time-stamp"))
 			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
-			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-time:stamp"))
+			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-time-stamp"))
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
 		})
 
@@ -227,6 +212,7 @@ var _ = Describe("AWSUp", func() {
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
+				EnvID: "bbl-lake-time:stamp",
 			}
 
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
@@ -269,6 +255,7 @@ var _ = Describe("AWSUp", func() {
 						LBType:          "concourse",
 						CertificateName: "some-certificate-name",
 					},
+					EnvID: "bbl-lake-time-stamp",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -432,7 +419,9 @@ var _ = Describe("AWSUp", func() {
 				It("saves the keypair name and returns an error", func() {
 					keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					})
 					Expect(err).To(MatchError("error syncing key pair"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
@@ -443,7 +432,9 @@ var _ = Describe("AWSUp", func() {
 				It("saves the public/private key and returns an error", func() {
 					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("availability zone retrieve failed")
 
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					})
 					Expect(err).To(MatchError("availability zone retrieve failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
@@ -455,7 +446,9 @@ var _ = Describe("AWSUp", func() {
 				It("saves the stack name and returns an error", func() {
 					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
+						EnvID: "bbl-lake-time-stamp",
+					})
 					Expect(err).To(MatchError("infrastructure creation failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
@@ -476,11 +469,13 @@ var _ = Describe("AWSUp", func() {
 				It("saves the bosh properties and returns an error", func() {
 					cloudConfigManager.UpdateCall.Returns.Error = errors.New("cloud config update failed")
 
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
+						EnvID: "bbl-lake-time-stamp",
+					})
 					Expect(err).To(MatchError("cloud config update failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 					Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
-						DirectorName:           "bosh-bbl-lake-time:stamp",
+						DirectorName:           "bosh-bbl-lake-time-stamp",
 						DirectorUsername:       "user-some-random-string",
 						DirectorPassword:       "p-some-random-string",
 						DirectorAddress:        "some-bosh-url",
@@ -618,7 +613,9 @@ var _ = Describe("AWSUp", func() {
 							PublicKey:  "some-public-key",
 						}
 
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
+							EnvID: "bbl-lake-time:stamp",
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
@@ -638,7 +635,9 @@ var _ = Describe("AWSUp", func() {
 			Context("cloudformation", func() {
 				Context("when the stack name doesn't exist", func() {
 					It("populates a new stack name", func() {
-						incomingState := storage.State{}
+						incomingState := storage.State{
+							EnvID: "bbl-lake-time-stamp",
+						}
 						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -659,33 +658,6 @@ var _ = Describe("AWSUp", func() {
 
 						state := stateStore.SetCall.Receives.State
 						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
-					})
-				})
-			})
-
-			Context("env id", func() {
-				Context("when the env id doesn't exist", func() {
-					It("populates a new bbl env id", func() {
-						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
-
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("bbl-lake-time:stamp"))
-					})
-				})
-
-				Context("when the env id exists", func() {
-					It("does not modify the state", func() {
-						incomingState := storage.State{
-							EnvID: "bbl-lake-time:stamp",
-						}
-
-						err := command.Execute(commands.AWSUpConfig{}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						state := stateStore.SetCall.Receives.State
-						Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
 					})
 				})
 			})
@@ -768,7 +740,9 @@ var _ = Describe("AWSUp", func() {
 				})
 
 				It("writes the bosh director name", func() {
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					state := stateStore.SetCall.Receives.State
@@ -948,13 +922,6 @@ var _ = Describe("AWSUp", func() {
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("availability zone could not be retrieved"))
-			})
-
-			It("returns an error when env id generator fails", func() {
-				envIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
-
-				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-				Expect(err).To(MatchError("env id generation failed"))
 			})
 
 			It("returns an error when state store fails to set the state before syncing the keypair", func() {

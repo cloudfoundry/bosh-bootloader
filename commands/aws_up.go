@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -55,10 +54,6 @@ type certificateDescriber interface {
 	Describe(certificateName string) (iam.Certificate, error)
 }
 
-type envIDGenerator interface {
-	Generate() (string, error)
-}
-
 type configProvider interface {
 	SetConfig(config aws.Config)
 }
@@ -90,7 +85,7 @@ func NewAWSUp(
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, envIDGenerator envIDGenerator, stateStore stateStore,
+	boshClientProvider boshClientProvider, stateStore stateStore,
 	configProvider configProvider) AWSUp {
 
 	return AWSUp{
@@ -104,7 +99,6 @@ func NewAWSUp(
 		certificateDescriber:      certificateDescriber,
 		cloudConfigManager:        cloudConfigManager,
 		boshClientProvider:        boshClientProvider,
-		envIDGenerator:            envIDGenerator,
 		stateStore:                stateStore,
 		configProvider:            configProvider,
 	}
@@ -139,13 +133,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	if state.EnvID == "" {
-		state.EnvID, err = u.envIDGenerator.Generate()
-		if err != nil {
-			return err
-		}
-	}
-
 	if state.KeyPair.Name == "" {
 		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
 	}
@@ -176,8 +163,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	}
 
 	if state.Stack.Name == "" {
-		stackEnvID := strings.Replace(state.EnvID, ":", "-", -1)
-		state.Stack.Name = fmt.Sprintf("stack-%s", stackEnvID)
+		state.Stack.Name = fmt.Sprintf("stack-%s", state.EnvID)
 
 		if err := u.stateStore.Set(state); err != nil {
 			return err

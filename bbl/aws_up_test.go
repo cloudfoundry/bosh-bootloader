@@ -243,11 +243,11 @@ var _ = Describe("bbl up aws", func() {
 				var ok bool
 				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
 				Expect(ok).To(BeTrue())
-				Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+				Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 
 				keyPairs := fakeAWS.KeyPairs.All()
 				Expect(keyPairs).To(HaveLen(1))
-				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+				Expect(keyPairs[0].Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 			})
 
 			It("creates an IAM user", func() {
@@ -272,7 +272,7 @@ var _ = Describe("bbl up aws", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
-				Expect(template.Resources.BOSHUser.Properties.UserName).To(MatchRegexp(`bosh-iam-user-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+				Expect(template.Resources.BOSHUser.Properties.UserName).To(MatchRegexp(`bosh-iam-user-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 			})
 
 			It("does not change the iam user name when state exists", func() {
@@ -535,13 +535,13 @@ var _ = Describe("bbl up aws", func() {
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
-					Expect(stdout).To(MatchRegexp(`step: checking if keypair "keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z" exists`))
+					Expect(stdout).To(MatchRegexp(`step: checking if keypair "keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z" exists`))
 					Expect(stdout).To(ContainSubstring("step: creating keypair"))
 					Expect(stderr).To(ContainSubstring("failed to create keypair"))
 
 					state := readStateJson(tempDirectory)
 
-					Expect(state.KeyPair.Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+					Expect(state.KeyPair.Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 				})
 			})
 
@@ -556,13 +556,13 @@ var _ = Describe("bbl up aws", func() {
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
-					Expect(stdout).To(MatchRegexp(`step: checking if cloudformation stack "stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z" exists`))
+					Expect(stdout).To(MatchRegexp(`step: checking if cloudformation stack "stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z" exists`))
 					Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
 					Expect(stderr).To(ContainSubstring("failed to create stack"))
 
 					state := readStateJson(tempDirectory)
 
-					Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+					Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 				})
 
 				It("saves the private key to the state", func() {
@@ -626,7 +626,7 @@ var _ = Describe("bbl up aws", func() {
 					upAWS(fakeAWSServer.URL, tempDirectory, 1)
 					state := readStateJson(tempDirectory)
 
-					Expect(state.BOSH.DirectorName).To(MatchRegexp(`bosh-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+					Expect(state.BOSH.DirectorName).To(MatchRegexp(`bosh-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
 
 					originalBOSHState := state.BOSH
 

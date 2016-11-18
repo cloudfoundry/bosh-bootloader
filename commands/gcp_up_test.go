@@ -23,14 +23,16 @@ var _ = Describe("gcp up", func() {
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
+		terraformApplier      *fakes.TerraformApplier
 	)
 
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
 		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
 		gcpClientProvider = &fakes.GCPClientProvider{}
+		terraformApplier = &fakes.TerraformApplier{}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider)
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformApplier)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -84,6 +86,63 @@ var _ = Describe("gcp up", func() {
 
 			Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(1))
 			Expect(keyPairUpdater.UpdateCall.Receives.ProjectID).To(Equal("some-project-id"))
+		})
+
+		It("creates a network and subnetwork", func() {
+			terraformApplier.ApplyCall.Returns.TFState = "my-tf-state"
+			gcpUpConfig := commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "some-region",
+			}
+
+			err := gcpUp.Execute(gcpUpConfig, storage.State{
+				EnvID: "some-env-id",
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(terraformApplier.ApplyCall.Receives.Credentials).To(Equal(serviceAccountKeyPath))
+			Expect(terraformApplier.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+			Expect(terraformApplier.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
+			Expect(terraformApplier.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+			Expect(terraformApplier.ApplyCall.Receives.Region).To(Equal("some-region"))
+			Expect(terraformApplier.ApplyCall.Receives.Template).To(Equal(`variable "project_id" {
+	type = "string"
+}
+
+variable "region" {
+	type = "string"
+}
+
+variable "zone" {
+	type = "string"
+}
+
+variable "env_id" {
+	type = "string"
+}
+
+variable "credentials" {
+	type = "string"
+}
+
+provider "google" {
+	credentials = "${file("${var.credentials}")}"
+	project = "${var.project_id}"
+	region = "${var.region}"
+}
+
+resource "google_compute_network" "bbl" {
+  name		 = "${var.env_id}-network"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet" {
+  name			= "bbl-test-${var.region}"
+  ip_cidr_range = "10.0.0.0/16"
+  network		= "${google_compute_network.bbl.self_link}"
+}`))
+			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal(`my-tf-state`))
 		})
 
 		Context("when state contains gcp details", func() {
@@ -280,6 +339,30 @@ var _ = Describe("gcp up", func() {
 					Region:                "some-region",
 				}, storage.State{})
 				Expect(err).To(MatchError("setting config failed"))
+			})
+
+			It("returns an error when terraform applier fails", func() {
+				terraformApplier.ApplyCall.Returns.Error = errors.New("terraform applier failed")
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("terraform applier failed"))
+			})
+
+			It("returns an error when the state fails to be set", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("state failed to be set"))
 			})
 		})
 	})

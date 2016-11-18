@@ -122,4 +122,20 @@ var _ = Describe("bbl up gcp", func() {
 			})
 		})
 	})
+
+	It("calls out to terraform", func() {
+		args := []string{
+			"--state-dir", tempDirectory,
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKeyPath,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "some-region",
+		}
+
+		session := executeCommand(args, 0)
+
+		Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+	})
 })

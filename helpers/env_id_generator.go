@@ -23,7 +23,7 @@ func (e EnvIDGenerator) Generate() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	timestamp := time.Now().UTC().Format("2006-01-02T15:04Z")
+	timestamp := time.Now().UTC().Format("2006-01-02t15-04z")
 
 	return fmt.Sprintf("bbl-env-%s-%s", lake, timestamp), nil
 }

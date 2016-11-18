@@ -16,10 +16,11 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
-		fakeAWSUp     *fakes.AWSUp
-		fakeGCPUp     *fakes.GCPUp
-		fakeEnvGetter *fakes.EnvGetter
-		state         storage.State
+		fakeAWSUp          *fakes.AWSUp
+		fakeGCPUp          *fakes.GCPUp
+		fakeEnvGetter      *fakes.EnvGetter
+		fakeEnvIDGenerator *fakes.EnvIDGenerator
+		state              storage.State
 	)
 
 	BeforeEach(func() {
@@ -27,7 +28,10 @@ var _ = Describe("Up", func() {
 		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
 		fakeEnvGetter = &fakes.EnvGetter{}
 
-		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter)
+		fakeEnvIDGenerator = &fakes.EnvIDGenerator{}
+		fakeEnvIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
+
+		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter, fakeEnvIDGenerator)
 	})
 
 	Describe("Execute", func() {
@@ -51,17 +55,21 @@ var _ = Describe("Up", func() {
 					SecretAccessKey: "secret-access-key-from-env",
 					Region:          "region-from-env",
 				}))
-				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{Version: 999}))
+				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+					Version: 999,
+					EnvID:   "bbl-lake-time:stamp",
+				}))
 			})
 
 			DescribeTable("gives precedence to arguments passed as command line args", func(args []string, expectedConfig commands.AWSUpConfig) {
 				args = append(args, "--iaas", "aws")
-
 				err := command.Execute(args, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(expectedConfig))
-				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(state))
+				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+					EnvID: "bbl-lake-time:stamp",
+				}))
 			},
 				Entry("precedence to aws access key id",
 					[]string{"--aws-access-key-id", "access-key-id-from-args"},
@@ -90,6 +98,49 @@ var _ = Describe("Up", func() {
 			)
 		})
 
+		Context("env id", func() {
+			Context("when the env id doesn't exist", func() {
+				It("populates a new bbl env id", func() {
+					fakeEnvIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
+
+					err := command.Execute([]string{
+						"--iaas", "aws",
+					}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeEnvIDGenerator.GenerateCall.CallCount).To(Equal(1))
+					Expect(fakeAWSUp.ExecuteCall.Receives.State.EnvID).To(Equal("bbl-lake-time:stamp"))
+				})
+			})
+
+			Context("when the env id exists", func() {
+				It("does not modify the state", func() {
+					incomingState := storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					}
+
+					err := command.Execute([]string{
+						"--iaas", "aws",
+					}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					state := fakeAWSUp.ExecuteCall.Receives.State
+					Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
+				})
+			})
+
+			Context("failure cases", func() {
+				It("returns an error when env id generator fails", func() {
+					fakeEnvIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
+
+					err := command.Execute([]string{
+						"--iaas", "aws",
+					}, storage.State{})
+					Expect(err).To(MatchError("env id generation failed"))
+				})
+			})
+		})
+
 		Context("when gcp args are provided through environment variables", func() {
 			BeforeEach(func() {
 				fakeEnvGetter.Values = map[string]string{
@@ -112,7 +163,10 @@ var _ = Describe("Up", func() {
 					Zone:                  "some-zone-env",
 					Region:                "some-region-env",
 				}))
-				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{Version: 999}))
+				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+					Version: 999,
+					EnvID:   "bbl-lake-time:stamp",
+				}))
 			})
 
 			DescribeTable("gives precedence to arguments passed as command line args", func(args []string, expectedConfig commands.GCPUpConfig) {
@@ -122,7 +176,9 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(expectedConfig))
-				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(state))
+				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+					EnvID: "bbl-lake-time:stamp",
+				}))
 			},
 				Entry("precedence to service account key",
 					[]string{"--gcp-service-account-key", "some-service-account-key-from-args"},
@@ -213,7 +269,9 @@ var _ = Describe("Up", func() {
 						Zone:                  "some-zone",
 						Region:                "some-region",
 					}))
-					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
+					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					}))
 				})
 
 				It("executes the GCP up with gcp details from env vars", func() {
@@ -235,7 +293,9 @@ var _ = Describe("Up", func() {
 						Zone:                  "some-zone",
 						Region:                "some-region",
 					}))
-					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
+					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					}))
 				})
 			})
 
@@ -255,7 +315,9 @@ var _ = Describe("Up", func() {
 						SecretAccessKey: "some-secret-access-key",
 						Region:          "some-region",
 					}))
-					Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{}))
+					Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+						EnvID: "bbl-lake-time:stamp",
+					}))
 				})
 
 			})
@@ -316,6 +378,7 @@ var _ = Describe("Up", func() {
 							SecretAccessKey: "some-secret-access-key",
 							Region:          "some-region",
 						},
+						EnvID: "bbl-lake-time:stamp",
 					}))
 				})
 
@@ -327,7 +390,10 @@ var _ = Describe("Up", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{IAAS: "gcp"}))
+					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
+						IAAS:  "gcp",
+						EnvID: "bbl-lake-time:stamp",
+					}))
 				})
 			})
 

@@ -26,11 +26,13 @@ func TestBbl(t *testing.T) {
 }
 
 var (
-	pathToBBL          string
-	pathToBOSHInit     string
-	pathToFakeBOSHInit string
-	fakeGCPServer      *httptest.Server
-	serviceAccountKey  string
+	pathToBBL           string
+	pathToBOSHInit      string
+	pathToFakeBOSHInit  string
+	pathToFakeTerraform string
+	pathToTerraform     string
+	fakeGCPServer       *httptest.Server
+	serviceAccountKey   string
 )
 
 var _ = BeforeSuite(func() {
@@ -47,7 +49,14 @@ var _ = BeforeSuite(func() {
 	err = os.Rename(pathToFakeBOSHInit, pathToBOSHInit)
 	Expect(err).NotTo(HaveOccurred())
 
-	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
+	pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform")
+	Expect(err).NotTo(HaveOccurred())
+
+	pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+	err = os.Rename(pathToFakeTerraform, pathToTerraform)
+	Expect(err).NotTo(HaveOccurred())
+
+	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
 })
 
 var _ = AfterSuite(func() {

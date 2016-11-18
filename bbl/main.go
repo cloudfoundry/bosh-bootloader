@@ -26,6 +26,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	"github.com/square/certstrap/pkix"
 )
 
@@ -157,12 +158,14 @@ func main() {
 	awsUp := commands.NewAWSUp(
 		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, boshClientProvider, envIDGenerator, stateStore,
-		clientProvider,
-	)
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider)
+		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
+
+	terraformCmd := terraform.NewCmd(os.Stdout, os.Stderr)
+	terraformApplier := terraform.NewApplier(terraformCmd)
+
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformApplier)
 	envGetter := commands.NewEnvGetter()
-	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter)
+	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
