@@ -9,13 +9,14 @@ import (
 
 var tempDir func(dir, prefix string) (string, error) = ioutil.TempDir
 var writeFile func(file string, data []byte, perm os.FileMode) error = ioutil.WriteFile
+var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
 
 type Applier struct {
 	cmd terraformCmd
 }
 
 type terraformCmd interface {
-	Run(args []string) error
+	Run(workingDirectory string, args []string) error
 }
 
 func NewApplier(cmd terraformCmd) Applier {
@@ -40,12 +41,17 @@ func (applier Applier) Apply(credentials, envID, projectID, zone, region, templa
 	args = append(args, makeVar("zone", zone)...)
 	args = append(args, makeVar("credentials", credentials)...)
 	args = append(args, templateDir)
-	err = applier.cmd.Run(args)
+	err = applier.cmd.Run(templateDir, args)
 	if err != nil {
 		return "", err
 	}
 
-	return "", nil
+	tfState, err := readFile(filepath.Join(templateDir, "terraform.tfstate"))
+	if err != nil {
+		return "", err
+	}
+
+	return string(tfState), nil
 }
 
 func makeVar(name string, value string) []string {

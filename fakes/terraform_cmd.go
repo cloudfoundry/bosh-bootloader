@@ -6,12 +6,14 @@ type TerraformCmd struct {
 			Error error
 		}
 		Receives struct {
-			Args []string
+			WorkingDirectory string
+			Args             []string
 		}
 	}
 }
 
-func (t *TerraformCmd) Run(args []string) error {
+func (t *TerraformCmd) Run(workingDirectory string, args []string) error {
+	t.RunCall.Receives.WorkingDirectory = workingDirectory
 	t.RunCall.Receives.Args = args
 	return t.RunCall.Returns.Error
 }

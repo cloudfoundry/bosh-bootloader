@@ -25,15 +25,16 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("runs terraform with args", func() {
-		err := cmd.Run([]string{"apply", "some-arg"})
+		err := cmd.Run("/private/tmp", []string{"apply", "some-arg"})
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(stdout).To(ContainSubstring("working directory: /private/tmp"))
 		Expect(stdout).To(ContainSubstring("apply some-arg"))
 	})
 
 	Context("failure case", func() {
 		It("returns an error when terraform fails", func() {
-			err := cmd.Run([]string{"fast-fail"})
+			err := cmd.Run("", []string{"fast-fail"})
 			Expect(err).To(MatchError("exit status 1"))
 
 			Expect(stderr).To(ContainSubstring("failed to terraform"))
