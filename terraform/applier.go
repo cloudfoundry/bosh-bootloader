@@ -29,9 +29,11 @@ func (applier Applier) Apply(credentials, envID, projectID, zone, region, templa
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
-	if err != nil {
-		return "", err
+	if prevTFState != "" {
+		err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	err = writeFile(filepath.Join(templateDir, "template.tf"), []byte(template), os.ModePerm)
