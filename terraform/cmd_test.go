@@ -28,7 +28,7 @@ var _ = Describe("Cmd", func() {
 		err := cmd.Run("/tmp", []string{"apply", "some-arg"})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(stdout).To(ContainSubstring("working directory: /private/tmp"))
+		Expect(stdout).To(MatchRegexp("working directory: (.*)/tmp"))
 		Expect(stdout).To(ContainSubstring("apply some-arg"))
 	})
 
