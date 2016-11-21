@@ -36,7 +36,7 @@ type gcpProvider interface {
 }
 
 type terraformApplier interface {
-	Apply(credentials, envID, projectID, zone, region, template string) (string, error)
+	Apply(credentials, envID, projectID, zone, region, template, tfState string) (string, error)
 }
 
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformApplier terraformApplier) GCPUp {
@@ -111,7 +111,7 @@ resource "google_compute_subnetwork" "bbl-subnet" {
   name			= "${var.env_id}-subnet"
   ip_cidr_range = "10.0.0.0/16"
   network		= "${google_compute_network.bbl.self_link}"
-}`)
+}`, state.TFState)
 	if err != nil {
 		return err
 	}

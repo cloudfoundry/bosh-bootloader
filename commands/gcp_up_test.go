@@ -102,6 +102,7 @@ var _ = Describe("gcp up", func() {
 			})
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(terraformApplier.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformApplier.ApplyCall.Receives.Credentials).To(Equal(serviceAccountKeyPath))
 			Expect(terraformApplier.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
 			Expect(terraformApplier.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
@@ -202,6 +203,23 @@ resource "google_compute_subnetwork" "bbl-subnet" {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(0))
+			})
+
+			It("calls terraform applier with previous tf state", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+					TFState: "some-tf-state",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(terraformApplier.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformApplier.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
 			})
 
 			It("does not require details from up config", func() {

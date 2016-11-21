@@ -23,8 +23,13 @@ func NewApplier(cmd terraformCmd) Applier {
 	return Applier{cmd: cmd}
 }
 
-func (applier Applier) Apply(credentials, envID, projectID, zone, region, template string) (string, error) {
+func (applier Applier) Apply(credentials, envID, projectID, zone, region, template, prevTFState string) (string, error) {
 	templateDir, err := tempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -40,7 +45,6 @@ func (applier Applier) Apply(credentials, envID, projectID, zone, region, templa
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
 	args = append(args, makeVar("credentials", credentials)...)
-	args = append(args, templateDir)
 	err = applier.cmd.Run(templateDir, args)
 	if err != nil {
 		return "", err

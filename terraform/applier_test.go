@@ -5,13 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("Applier", func() {
@@ -42,123 +42,108 @@ var _ = Describe("Applier", func() {
 	AfterEach(func() {
 		terraform.ResetTempDir()
 		terraform.ResetReadFile()
+		terraform.ResetWriteFile()
 	})
 
-	It("terraform command is called with apply", func() {
-		_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
+	It("writes the terraform template to a file", func() {
+		_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-		Expect(cmd.RunCall.Receives.Args[0]).To(Equal("apply"))
-	})
-
-	It("saves the terraform template to disk", func() {
-		_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(len(cmd.RunCall.Receives.Args)).NotTo(Equal(0))
-		path := cmd.RunCall.Receives.Args[len(cmd.RunCall.Receives.Args)-1]
-
-		fileContents, err := ioutil.ReadFile(filepath.Join(path, "template.tf"))
+		fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(string(fileContents)).To(Equal("some-template"))
 	})
 
-	It("passes vars to apply", func() {
-		_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
+	It("writes the tf state to a file", func() {
+		_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(cmd.RunCall.Receives.Args).To(ContainSequence([]string{"-var", "credentials=some/credential/file"}))
-		Expect(cmd.RunCall.Receives.Args).To(ContainSequence([]string{"-var", "env_id=some-env-id"}))
-		Expect(cmd.RunCall.Receives.Args).To(ContainSequence([]string{"-var", "project_id=some-project-id"}))
-		Expect(cmd.RunCall.Receives.Args).To(ContainSequence([]string{"-var", "zone=some-zone"}))
-		Expect(cmd.RunCall.Receives.Args).To(ContainSequence([]string{"-var", "region=some-region"}))
+		fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(fileContents)).To(Equal("some-tf-state"))
 	})
 
-	Context("when the terraform command saves a terraform.tfstate", func() {
-		var (
-			actualFilename string
-		)
+	It("passes the correct args and dir to run command", func() {
+		_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+		Expect(err).NotTo(HaveOccurred())
 
-		BeforeEach(func() {
-			terraform.SetReadFile(func(filename string) ([]byte, error) {
-				actualFilename = filename
-				return []byte("some-terraform-state"), nil
-			})
+		Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+		Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+			"apply",
+			"-var", "project_id=some-project-id",
+			"-var", "env_id=some-env-id",
+			"-var", "region=some-region",
+			"-var", "zone=some-zone",
+			"-var", "credentials=some/credential/file",
+		}))
+	})
+
+	It("reads and returns the terraform state written by the command", func() {
+		var actualFilename string
+
+		terraform.SetReadFile(func(filename string) ([]byte, error) {
+			actualFilename = filename
+			return []byte("some-terraform-state"), nil
 		})
 
-		AfterEach(func() {
-			terraform.ResetReadFile()
-		})
+		terraformState, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+		Expect(err).NotTo(HaveOccurred())
 
-		It("returns the terraform state", func() {
-			terraformState, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(actualFilename).To(ContainSubstring("terraform.tfstate"))
-			Expect(terraformState).To(Equal("some-terraform-state"))
-		})
+		Expect(actualFilename).To(ContainSubstring("terraform.tfstate"))
+		Expect(terraformState).To(Equal("some-terraform-state"))
 	})
 
 	Context("failure case", func() {
-		Context("when it fails to create a temp dir", func() {
-			BeforeEach(func() {
-				terraform.SetTempDir(func(dir, prefix string) (string, error) {
-					return "", errors.New("failed to make temp dir")
-				})
+		It("returns an error when it fails to create a temp dir", func() {
+			terraform.SetTempDir(func(dir, prefix string) (string, error) {
+				return "", errors.New("failed to make temp dir")
 			})
-
-			AfterEach(func() {
-				terraform.ResetTempDir()
-			})
-
-			It("returns an error", func() {
-				_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
-				Expect(err).To(MatchError("failed to make temp dir"))
-			})
+			_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+			Expect(err).To(MatchError("failed to make temp dir"))
 		})
 
-		Context("when it fails to write a file", func() {
-			BeforeEach(func() {
-				terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-					return errors.New("failed to write a file")
-				})
+		It("returns an error when it fails to write the template file", func() {
+			terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
+				if strings.Contains(file, "template.tf") {
+					return errors.New("failed to write template file")
+				}
+
+				return nil
 			})
 
-			AfterEach(func() {
-				terraform.ResetWriteFile()
-			})
-
-			It("returns an error", func() {
-				_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
-				Expect(err).To(MatchError("failed to write a file"))
-			})
+			_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+			Expect(err).To(MatchError("failed to write template file"))
 		})
 
-		Context("when it fails to call terraform command run", func() {
-			It("returns an error", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
-				_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
-				Expect(err).To(MatchError("failed to run terraform command"))
+		It("returns an error when it fails to write the previous tfstate file", func() {
+			terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
+				if strings.Contains(file, "terraform.tfstate") {
+					return errors.New("failed to write tf state file")
+				}
+
+				return nil
 			})
+
+			_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+			Expect(err).To(MatchError("failed to write tf state file"))
 		})
 
-		Context("when it fails to read a file", func() {
-			BeforeEach(func() {
-				terraform.SetReadFile(func(filename string) ([]byte, error) {
-					return []byte{}, errors.New("failed to read a file")
-				})
+		It("returns an error when it fails to call terraform command run", func() {
+			cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
+
+			_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+			Expect(err).To(MatchError("failed to run terraform command"))
+		})
+
+		It("returns an error when it fails to read the tf state file", func() {
+			terraform.SetReadFile(func(filename string) ([]byte, error) {
+				return []byte{}, errors.New("failed to read tf state file")
 			})
 
-			AfterEach(func() {
-				terraform.ResetReadFile()
-			})
-
-			It("returns an error", func() {
-				_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template")
-				Expect(err).To(MatchError("failed to read a file"))
-			})
+			_, err := applier.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+			Expect(err).To(MatchError("failed to read tf state file"))
 		})
 	})
 })
