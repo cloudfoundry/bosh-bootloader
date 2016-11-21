@@ -25,7 +25,7 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("runs terraform with args", func() {
-		err := cmd.Run("/private/tmp", []string{"apply", "some-arg"})
+		err := cmd.Run("/tmp", []string{"apply", "some-arg"})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(stdout).To(ContainSubstring("working directory: /private/tmp"))
