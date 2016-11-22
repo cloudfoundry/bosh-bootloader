@@ -17,7 +17,7 @@ type Primary struct {
 }
 
 func (tfState TFState) GetNetworkName() string {
-	return tfState.Modules[0].Resources["google_compute_network.bbl"].Primary.Attributes["name"]
+	return tfState.Modules[0].Resources["google_compute_network.bbl-network"].Primary.Attributes["name"]
 }
 
 func (tfState TFState) GetSubnetName() string {

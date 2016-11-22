@@ -103,14 +103,14 @@ provider "google" {
 	region = "${var.region}"
 }
 
-resource "google_compute_network" "bbl" {
-  name		 = "${var.env_id}"
+resource "google_compute_network" "bbl-network" {
+  name		 = "${var.env_id}-network"
 }
 
 resource "google_compute_subnetwork" "bbl-subnet" {
   name			= "${var.env_id}-subnet"
   ip_cidr_range = "10.0.0.0/16"
-  network		= "${google_compute_network.bbl.self_link}"
+  network		= "${google_compute_network.bbl-network.self_link}"
 }`, state.TFState)
 	if err != nil {
 		return err
