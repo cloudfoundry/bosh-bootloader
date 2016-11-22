@@ -164,6 +164,25 @@ resource "google_compute_firewall" "bosh-open" {
   }
 
   target_tags = ["${var.env_id}-bosh-open"]
+}
+
+resource "google_compute_firewall" "internal" {
+  name    = "${var.env_id}-internal"
+  network = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "icmp"
+  }
+
+  allow {
+    protocol = "tcp"
+  }
+
+  allow {
+    protocol = "udp"
+  }
+
+  source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }`))
 			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal(`my-tf-state`))
 		})

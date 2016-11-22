@@ -50,12 +50,18 @@ var _ = Describe("up test", func() {
 			Expect(subnet).NotTo(BeNil())
 		})
 
-		By("creating a static ip and BOSH firewall rules", func() {
+		By("creating a static ip", func() {
 			address, err := gcp.GetAddress(state.EnvID() + "-bosh-external-ip")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(address).NotTo(BeNil())
+		})
 
+		By("creating open and internal firewall rules", func() {
 			firewallRule, err := gcp.GetFirewallRule(state.EnvID() + "-bosh-open")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(firewallRule).NotTo(BeNil())
+
+			firewallRule, err = gcp.GetFirewallRule(state.EnvID() + "-internal")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(firewallRule).NotTo(BeNil())
 		})
