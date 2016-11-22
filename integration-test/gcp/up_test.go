@@ -50,6 +50,16 @@ var _ = Describe("up test", func() {
 			Expect(subnet).NotTo(BeNil())
 		})
 
+		By("creating a static ip and BOSH firewall rules", func() {
+			address, err := gcp.GetAddress(state.EnvID() + "-bosh-external-ip")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(address).NotTo(BeNil())
+
+			firewallRule, err := gcp.GetFirewallRule(state.EnvID() + "-bosh-open")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(firewallRule).NotTo(BeNil())
+		})
+
 		By("cleaning up", func() {
 			err := terraform.Destroy(state)
 			Expect(err).NotTo(HaveOccurred())

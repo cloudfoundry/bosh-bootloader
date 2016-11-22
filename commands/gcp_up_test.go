@@ -88,7 +88,7 @@ var _ = Describe("gcp up", func() {
 			Expect(keyPairUpdater.UpdateCall.Receives.ProjectID).To(Equal("some-project-id"))
 		})
 
-		It("creates a network and subnetwork", func() {
+		It("creates gcp resources via terraform", func() {
 			terraformApplier.ApplyCall.Returns.TFState = "my-tf-state"
 			gcpUpConfig := commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -142,6 +142,28 @@ resource "google_compute_subnetwork" "bbl-subnet" {
   name			= "${var.env_id}-subnet"
   ip_cidr_range = "10.0.0.0/16"
   network		= "${google_compute_network.bbl-network.self_link}"
+}
+
+resource "google_compute_address" "bosh-external-ip" {
+  name = "${var.env_id}-bosh-external-ip"
+}
+
+resource "google_compute_firewall" "bosh-open" {
+  name    = "${var.env_id}-bosh-open"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_ranges = ["0.0.0.0/0"]
+
+  allow {
+    protocol = "icmp"
+  }
+
+  allow {
+    ports = ["22", "6868", "25555"]
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-bosh-open"]
 }`))
 			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal(`my-tf-state`))
 		})
