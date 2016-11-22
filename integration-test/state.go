@@ -28,6 +28,8 @@ type keyPair struct {
 type state struct {
 	Stack   stack   `json:"stack"`
 	KeyPair keyPair `json:"keyPair"`
+	EnvID   string  `json:"envID"`
+	TFState string  `json:"tfState"`
 }
 
 func NewState(stateDirectory string) State {
@@ -55,6 +57,16 @@ func (s State) CertificateName() string {
 func (s State) SSHPublicKey() string {
 	state := s.readStateFile()
 	return state.KeyPair.PublicKey
+}
+
+func (s State) EnvID() string {
+	state := s.readStateFile()
+	return state.EnvID
+}
+
+func (s State) TFState() string {
+	state := s.readStateFile()
+	return state.TFState
 }
 
 func (s State) readStateFile() state {

@@ -12,6 +12,7 @@ import (
 type GCP struct {
 	service   *compute.Service
 	projectID string
+	region    string
 }
 
 func NewGCP(config integration.Config) GCP {
@@ -30,6 +31,7 @@ func NewGCP(config integration.Config) GCP {
 	return GCP{
 		service:   service,
 		projectID: config.GCPProjectID,
+		region:    config.GCPRegion,
 	}
 }
 
@@ -68,4 +70,22 @@ func (g GCP) RemoveSSHKey() error {
 	}
 
 	return nil
+}
+
+func (g GCP) GetNetwork(networkName string) (*compute.Network, error) {
+	network, err := g.service.Networks.Get(g.projectID, networkName).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return network, nil
+}
+
+func (g GCP) GetSubnet(subnetName string) (*compute.Subnetwork, error) {
+	subnet, err := g.service.Subnetworks.Get(g.projectID, g.region, subnetName).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return subnet, nil
 }
