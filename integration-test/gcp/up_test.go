@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"encoding/json"
 	"fmt"
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
@@ -39,21 +38,14 @@ var _ = Describe("up test", func() {
 			actualSSHKey, err := gcp.SSHKey()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualSSHKey).To(Equal(expectedSSHKey))
-
 		})
 
 		By("creating a network and subnet", func() {
-			var tfState actors.TFState
-
-			err := json.Unmarshal([]byte(state.TFState()), &tfState)
-
-			networkName := tfState.GetNetworkName()
-			network, err := gcp.GetNetwork(networkName)
+			network, err := gcp.GetNetwork(state.EnvID() + "-network")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(network).NotTo(BeNil())
 
-			subnetName := tfState.GetSubnetName()
-			subnet, err := gcp.GetSubnet(subnetName)
+			subnet, err := gcp.GetSubnet(state.EnvID() + "-subnet")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(subnet).NotTo(BeNil())
 		})
