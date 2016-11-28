@@ -253,21 +253,6 @@ var _ = Describe("Up", func() {
 			}))
 		})
 
-		It("generates an bbl-env-id", func() {
-			incomingState := storage.State{
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-			}
-
-			err := command.Execute([]string{}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
-		})
-
 		It("creates/updates the stack with the given name", func() {
 			incomingState := storage.State{
 				AWS: storage.AWS{
@@ -713,7 +698,7 @@ var _ = Describe("Up", func() {
 
 			Context("cloudformation", func() {
 				Context("when the stack name doesn't exist", func() {
-					It("populates a new stack name", func() {
+					It("populates a new stack name using env id", func() {
 						incomingState := storage.State{}
 						err := command.Execute([]string{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
@@ -741,7 +726,7 @@ var _ = Describe("Up", func() {
 
 			Context("env id", func() {
 				Context("when the env id doesn't exist", func() {
-					It("populates a new bbl env id", func() {
+					It("generates an environment id when it is not provided", func() {
 						envIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
 
 						err := command.Execute([]string{}, storage.State{})
@@ -749,6 +734,26 @@ var _ = Describe("Up", func() {
 
 						Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("bbl-lake-time:stamp"))
 					})
+
+					It("honors an environment id passed as a cli flag", func() {
+						err := command.Execute([]string{
+							"--aws-access-key-id", "new-aws-access-key-id",
+							"--aws-secret-access-key", "new-aws-secret-access-key",
+							"--aws-region", "new-aws-region",
+							"--environment-id", "some-env-id",
+						}, storage.State{
+							AWS: storage.AWS{
+								Region:          "some-aws-region",
+								SecretAccessKey: "some-secret-access-key",
+								AccessKeyID:     "some-access-key-id",
+							},
+						})
+
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("some-env-id"))
+					})
+
 				})
 
 				Context("when the env id exists", func() {
@@ -762,6 +767,44 @@ var _ = Describe("Up", func() {
 
 						state := stateStore.SetCall.Receives.State
 						Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
+					})
+
+					It("accepts environment id from cli flag that matches saved state", func() {
+						err := command.Execute([]string{
+							"--aws-access-key-id", "new-aws-access-key-id",
+							"--aws-secret-access-key", "new-aws-secret-access-key",
+							"--aws-region", "new-aws-region",
+							"--environment-id", "some-env-id",
+						}, storage.State{
+							AWS: storage.AWS{
+								Region:          "some-aws-region",
+								SecretAccessKey: "some-secret-access-key",
+								AccessKeyID:     "some-access-key-id",
+							},
+							EnvID: "some-env-id",
+						})
+
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("some-env-id"))
+					})
+
+					It("returns an error when passed an environment id that does not match the saved state", func() {
+						err := command.Execute([]string{
+							"--aws-access-key-id", "new-aws-access-key-id",
+							"--aws-secret-access-key", "new-aws-secret-access-key",
+							"--aws-region", "new-aws-region",
+							"--environment-id", "some-env-id",
+						}, storage.State{
+							AWS: storage.AWS{
+								Region:          "some-aws-region",
+								SecretAccessKey: "some-secret-access-key",
+								AccessKeyID:     "some-access-key-id",
+							},
+							EnvID: "some-other-env-id",
+						})
+
+						Expect(err).To(MatchError(`environment id "some-env-id" does not match saved state "some-other-env-id"`))
 					})
 				})
 			})
