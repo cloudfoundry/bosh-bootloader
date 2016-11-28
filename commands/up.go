@@ -85,6 +85,7 @@ type upConfig struct {
 	awsAccessKeyID     string
 	awsSecretAccessKey string
 	awsRegion          string
+	envID              string
 }
 
 func NewUp(
@@ -139,15 +140,19 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 		return u.awsMissingCredentials(config)
 	}
 
-	err = u.checkForFastFails(state)
+	err = u.checkForFastFails(state, config)
 	if err != nil {
 		return err
 	}
 
 	if state.EnvID == "" {
-		state.EnvID, err = u.envIDGenerator.Generate()
-		if err != nil {
-			return err
+		if config.envID != "" {
+			state.EnvID = config.envID
+		} else {
+			state.EnvID, err = u.envIDGenerator.Generate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -183,7 +188,6 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	if state.Stack.Name == "" {
 		stackEnvID := strings.Replace(state.EnvID, ":", "-", -1)
 		state.Stack.Name = fmt.Sprintf("stack-%s", stackEnvID)
-
 		if err := u.stateStore.Set(state); err != nil {
 			return err
 		}
@@ -262,7 +266,7 @@ func (u Up) Execute(subcommandFlags []string, state storage.State) error {
 	return nil
 }
 
-func (u Up) checkForFastFails(state storage.State) error {
+func (u Up) checkForFastFails(state storage.State, config upConfig) error {
 	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name)
 	if err != nil {
 		return err
@@ -276,6 +280,10 @@ func (u Up) checkForFastFails(state storage.State) error {
 			state.Stack.Name, state.AWS.Region)
 	}
 
+	if state.EnvID != "" && config.envID != "" && state.EnvID != config.envID {
+		return fmt.Errorf("environment id \"%s\" does not match saved state \"%s\"", config.envID, state.EnvID)
+	}
+
 	return nil
 }
 
@@ -286,6 +294,7 @@ func (Up) parseFlags(subcommandFlags []string) (upConfig, error) {
 	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", os.Getenv("BBL_AWS_ACCESS_KEY_ID"))
 	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"))
 	upFlags.String(&config.awsRegion, "aws-region", os.Getenv("BBL_AWS_REGION"))
+	upFlags.String(&config.envID, "environment-id", "")
 
 	err := upFlags.Parse(subcommandFlags)
 	if err != nil {

@@ -403,7 +403,7 @@ var _ = Describe("load balancers", func() {
 				KeyPair: storage.KeyPair{
 					Name: "some-keypair-name",
 				},
-				EnvID: "bbl-env-lake-timestamp",
+				EnvID: "some-env-id",
 			}, tempDirectory)
 
 			fakeAWS.Stacks.Set(awsbackend.Stack{

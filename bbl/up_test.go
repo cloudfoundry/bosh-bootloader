@@ -195,8 +195,31 @@ var _ = Describe("bbl", func() {
 		Context("when the cloudformation stack does not exist", func() {
 			var stack awsbackend.Stack
 
-			It("creates a stack and a keypair", func() {
+			It("creates a stack and a keypair with given name", func() {
 				up(fakeAWSServer.URL, tempDirectory, 0)
+
+				state := readStateJson(tempDirectory)
+
+				var ok bool
+				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+				Expect(ok).To(BeTrue())
+				Expect(state.Stack.Name).To(Equal("stack-some-env-id"))
+
+				keyPairs := fakeAWS.KeyPairs.All()
+				Expect(keyPairs).To(HaveLen(1))
+				Expect(keyPairs[0].Name).To(Equal("keypair-some-env-id"))
+			})
+
+			It("generates a env id when one is not given", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"up",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+				}
+				executeCommand(args, 0)
 
 				state := readStateJson(tempDirectory)
 
@@ -232,55 +255,57 @@ var _ = Describe("bbl", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
-				Expect(template.Resources.BOSHUser.Properties.UserName).To(MatchRegexp(`bosh-iam-user-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+				Expect(template.Resources.BOSHUser.Properties.UserName).To(Equal("bosh-iam-user-some-env-id"))
 			})
 
-			It("does not change the iam user name when state exists", func() {
-				fakeAWS.Stacks.Set(awsbackend.Stack{
-					Name: "some-stack-name",
-				})
-				fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
-					Name: "some-keypair-name",
-				})
-
-				writeStateJson(storage.State{
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-keypair-name",
-					},
-					Stack: storage.Stack{
+			Context("when state exists", func() {
+				It("does not change the iam user name when state exists", func() {
+					fakeAWS.Stacks.Set(awsbackend.Stack{
 						Name: "some-stack-name",
-					},
-					BOSH: storage.BOSH{
-						DirectorAddress: fakeBOSHServer.URL,
-					},
-				}, tempDirectory)
-				up(fakeAWSServer.URL, tempDirectory, 0)
+					})
+					fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
+						Name: "some-keypair-name",
+					})
 
-				state := readStateJson(tempDirectory)
+					writeStateJson(storage.State{
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key-id",
+							SecretAccessKey: "some-secret-access-key",
+							Region:          "some-region",
+						},
+						KeyPair: storage.KeyPair{
+							Name: "some-keypair-name",
+						},
+						Stack: storage.Stack{
+							Name: "some-stack-name",
+						},
+						BOSH: storage.BOSH{
+							DirectorAddress: fakeBOSHServer.URL,
+						},
+					}, tempDirectory)
+					up(fakeAWSServer.URL, tempDirectory, 0)
 
-				var ok bool
-				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
-				Expect(ok).To(BeTrue())
+					state := readStateJson(tempDirectory)
 
-				var template struct {
-					Resources struct {
-						BOSHUser struct {
-							Properties templates.IAMUser
-							Type       string
+					var ok bool
+					stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+					Expect(ok).To(BeTrue())
+
+					var template struct {
+						Resources struct {
+							BOSHUser struct {
+								Properties templates.IAMUser
+								Type       string
+							}
 						}
 					}
-				}
 
-				err := json.Unmarshal([]byte(stack.Template), &template)
-				Expect(err).NotTo(HaveOccurred())
+					err := json.Unmarshal([]byte(stack.Template), &template)
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
-				Expect(template.Resources.BOSHUser.Properties.UserName).To(BeEmpty())
+					Expect(template.Resources.BOSHUser.Properties.Policies).To(HaveLen(1))
+					Expect(template.Resources.BOSHUser.Properties.UserName).To(BeEmpty())
+				})
 			})
 
 			It("logs the steps and bosh-init manifest", func() {
@@ -303,7 +328,7 @@ var _ = Describe("bbl", func() {
 
 			It("names the bosh director with env id", func() {
 				session := up(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-bbl-"))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-some-env-id"))
 			})
 
 			It("does not change the bosh director name when state exists", func() {
@@ -395,7 +420,7 @@ var _ = Describe("bbl", func() {
 					Stack: storage.Stack{
 						Name: "some-stack-name",
 					},
-					EnvID: "bbl-env-lake-timestamp",
+					EnvID: "some-env-id",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -495,13 +520,13 @@ var _ = Describe("bbl", func() {
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
-					Expect(stdout).To(MatchRegexp(`step: checking if keypair "keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z" exists`))
+					Expect(stdout).To(ContainSubstring(`step: checking if keypair "keypair-some-env-id" exists`))
 					Expect(stdout).To(ContainSubstring("step: creating keypair"))
 					Expect(stderr).To(ContainSubstring("failed to create keypair"))
 
 					state := readStateJson(tempDirectory)
 
-					Expect(state.KeyPair.Name).To(MatchRegexp(`keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+					Expect(state.KeyPair.Name).To(Equal("keypair-some-env-id"))
 				})
 			})
 
@@ -516,13 +541,13 @@ var _ = Describe("bbl", func() {
 					stdout := session.Out.Contents()
 					stderr := session.Err.Contents()
 
-					Expect(stdout).To(MatchRegexp(`step: checking if cloudformation stack "stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z" exists`))
+					Expect(stdout).To(MatchRegexp(`step: checking if cloudformation stack "stack-some-env-id" exists`))
 					Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
 					Expect(stderr).To(ContainSubstring("failed to create stack"))
 
 					state := readStateJson(tempDirectory)
 
-					Expect(state.Stack.Name).To(MatchRegexp(`stack-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z`))
+					Expect(state.Stack.Name).To(Equal("stack-some-env-id"))
 				})
 
 				It("saves the private key to the state", func() {
@@ -586,7 +611,7 @@ var _ = Describe("bbl", func() {
 					up(fakeAWSServer.URL, tempDirectory, 1)
 					state := readStateJson(tempDirectory)
 
-					Expect(state.BOSH.DirectorName).To(MatchRegexp(`bosh-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z`))
+					Expect(state.BOSH.DirectorName).To(Equal(`bosh-some-env-id`))
 
 					originalBOSHState := state.BOSH
 
@@ -610,6 +635,7 @@ func up(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 		"--aws-access-key-id", "some-access-key",
 		"--aws-secret-access-key", "some-access-secret",
 		"--aws-region", "some-region",
+		"--environment-id", "some-env-id",
 	}
 
 	return executeCommand(args, exitCode)
