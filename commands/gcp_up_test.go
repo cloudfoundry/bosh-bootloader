@@ -88,27 +88,55 @@ var _ = Describe("gcp up", func() {
 			Expect(keyPairUpdater.UpdateCall.Receives.ProjectID).To(Equal("some-project-id"))
 		})
 
-		It("creates gcp resources via terraform", func() {
-			terraformApplier.ApplyCall.Returns.TFState = "my-tf-state"
-			gcpUpConfig := commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "some-region",
-			}
+		Context("terraform apply", func() {
+			var (
+				actualFilename string
+				actualData     []byte
+				actualPerm     os.FileMode
+			)
 
-			err := gcpUp.Execute(gcpUpConfig, storage.State{
-				EnvID: "some-env-id",
+			BeforeEach(func() {
+				commands.SetTempDir(func(dir, prefix string) (string, error) {
+					return "/some/temp/dir", nil
+				})
+				commands.SetWriteFile(func(filename string, data []byte, perm os.FileMode) error {
+					actualFilename = filename
+					actualData = data
+					actualPerm = perm
+					return nil
+				})
 			})
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(terraformApplier.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformApplier.ApplyCall.Receives.Credentials).To(Equal(serviceAccountKeyPath))
-			Expect(terraformApplier.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
-			Expect(terraformApplier.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
-			Expect(terraformApplier.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-			Expect(terraformApplier.ApplyCall.Receives.Region).To(Equal("some-region"))
-			Expect(terraformApplier.ApplyCall.Receives.Template).To(Equal(`variable "project_id" {
+			AfterEach(func() {
+				commands.ResetTempDir()
+				commands.ResetWriteFile()
+			})
+
+			It("creates gcp resources via terraform", func() {
+				terraformApplier.ApplyCall.Returns.TFState = "my-tf-state"
+				gcpUpConfig := commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}
+
+				err := gcpUp.Execute(gcpUpConfig, storage.State{
+					EnvID: "some-env-id",
+				})
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualFilename).To(Equal("/some/temp/dir/credentials.json"))
+				Expect(actualData).To(Equal([]byte(serviceAccountKey)))
+				Expect(actualPerm).To(Equal(os.ModePerm))
+
+				Expect(terraformApplier.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformApplier.ApplyCall.Receives.Credentials).To(Equal("/some/temp/dir/credentials.json"))
+				Expect(terraformApplier.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+				Expect(terraformApplier.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
+				Expect(terraformApplier.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+				Expect(terraformApplier.ApplyCall.Receives.Region).To(Equal("some-region"))
+				Expect(terraformApplier.ApplyCall.Receives.Template).To(Equal(`variable "project_id" {
 	type = "string"
 }
 
@@ -184,7 +212,8 @@ resource "google_compute_firewall" "internal" {
 
   source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }`))
-			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal(`my-tf-state`))
+				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal(`my-tf-state`))
+			})
 		})
 
 		Context("when state contains gcp details", func() {

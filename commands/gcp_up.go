@@ -5,8 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
+
+var (
+	writeFile = ioutil.WriteFile
+	tempDir   = ioutil.TempDir
 )
 
 type GCPUp struct {
@@ -82,7 +89,18 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
-	tfState, err := u.terraformApplier.Apply(upConfig.ServiceAccountKeyPath, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
+	tempDir, err := tempDir("", "")
+	if err != nil {
+		panic(err)
+	}
+
+	serviceAccountKeyPath := filepath.Join(tempDir, "credentials.json")
+	err = writeFile(serviceAccountKeyPath, []byte(state.GCP.ServiceAccountKey), os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
+	tfState, err := u.terraformApplier.Apply(serviceAccountKeyPath, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
 	if err != nil {
 		return err
 	}
