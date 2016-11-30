@@ -49,35 +49,40 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
-	if state.GCP.Empty() || !upConfig.empty() {
+	if !upConfig.empty() {
 		gcpDetails, err := u.parseUpConfig(upConfig)
 		if err != nil {
 			return err
 		}
 
-		err = u.gcpProvider.SetConfig(gcpDetails.ServiceAccountKey)
+		state.IAAS = "gcp"
+		state.GCP = gcpDetails
+	}
+
+	if err := u.validateState(state); err != nil {
+		return err
+	}
+
+	if err := u.stateStore.Set(state); err != nil {
+		return err
+	}
+
+	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey); err != nil {
+		return err
+	}
+
+	if state.KeyPair.IsEmpty() {
+		keyPair, err := u.keyPairUpdater.Update(state.GCP.ProjectID)
 		if err != nil {
 			return err
 		}
-
-		if state.GCP.Empty() {
-			keyPair, err := u.keyPairUpdater.Update(gcpDetails.ProjectID)
-			if err != nil {
-				return err
-			}
-
-			state.KeyPair = keyPair
-		}
-
-		state.IAAS = "gcp"
-		state.GCP = gcpDetails
-
+		state.KeyPair = keyPair
 		if err := u.stateStore.Set(state); err != nil {
 			return err
 		}
 	}
 
-	tfState, err := u.terraformApplier.Apply(upConfig.ServiceAccountKeyPath, state.EnvID, upConfig.ProjectID, upConfig.Zone, upConfig.Region, terraformTemplate, state.TFState)
+	tfState, err := u.terraformApplier.Apply(upConfig.ServiceAccountKeyPath, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
 	if err != nil {
 		return err
 	}
@@ -90,16 +95,24 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	return nil
 }
 
-func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
+func (u GCPUp) validateState(state storage.State) error {
 	switch {
-	case upConfig.ServiceAccountKeyPath == "":
+	case state.GCP.ServiceAccountKey == "":
+		return errors.New("GCP service account key must be provided")
+	case state.GCP.ProjectID == "":
+		return errors.New("GCP project ID must be provided")
+	case state.GCP.Region == "":
+		return errors.New("GCP region must be provided")
+	case state.GCP.Zone == "":
+		return errors.New("GCP zone must be provided")
+	}
+
+	return nil
+}
+
+func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
+	if upConfig.ServiceAccountKeyPath == "" {
 		return storage.GCP{}, errors.New("GCP service account key must be provided")
-	case upConfig.ProjectID == "":
-		return storage.GCP{}, errors.New("GCP project ID must be provided")
-	case upConfig.Region == "":
-		return storage.GCP{}, errors.New("GCP region must be provided")
-	case upConfig.Zone == "":
-		return storage.GCP{}, errors.New("GCP zone must be provided")
 	}
 
 	sak, err := ioutil.ReadFile(upConfig.ServiceAccountKeyPath)

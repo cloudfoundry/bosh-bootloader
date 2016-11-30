@@ -93,7 +93,7 @@ var _ = Describe("bbl up gcp", func() {
 			buf, err := json.Marshal(storage.State{
 				IAAS: "gcp",
 				GCP: storage.GCP{
-					ServiceAccountKey: `{"key": "value"}`,
+					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
 					Region:            "some-region",

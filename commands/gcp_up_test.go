@@ -240,6 +240,9 @@ resource "google_compute_firewall" "internal" {
 						Zone:              "some-zone",
 						Region:            "some-region",
 					},
+					KeyPair: storage.KeyPair{
+						Name: "some-key-name",
+					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -276,8 +279,8 @@ resource "google_compute_firewall" "internal" {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			DescribeTable("up config contains subset of the details", func(upConfig commands.GCPUpConfig, expectedErr string) {
-				err := gcpUp.Execute(upConfig, storage.State{
+			DescribeTable("up config contains subset of the details", func(upConfig func() commands.GCPUpConfig, expectedErr string) {
+				err := gcpUp.Execute(upConfig(), storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
 						ServiceAccountKey: serviceAccountKey,
@@ -288,25 +291,33 @@ resource "google_compute_firewall" "internal" {
 				})
 				Expect(err).To(MatchError(expectedErr))
 			},
-				Entry("returns an error when the service account key is not provided", commands.GCPUpConfig{
-					ProjectID: "new-project-id",
-					Zone:      "new-zone",
-					Region:    "new-region",
+				Entry("returns an error when the service account key is not provided", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ProjectID: "new-project-id",
+						Zone:      "new-zone",
+						Region:    "new-region",
+					}
 				}, "GCP service account key must be provided"),
-				Entry("returns an error when the project ID is not provided", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "new-service-account-key",
-					Zone:   "new-zone",
-					Region: "new-region",
+				Entry("returns an error when the project ID is not provided", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						Zone:   "new-zone",
+						Region: "new-region",
+					}
 				}, "GCP project ID must be provided"),
-				Entry("returns an error when the zone is not provided", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "new-service-account-key",
-					ProjectID:             "new-project-id",
-					Region:                "new-region",
+				Entry("returns an error when the zone is not provided", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "new-project-id",
+						Region:                "new-region",
+					}
 				}, "GCP zone must be provided"),
-				Entry("returns an error when the region is not provided", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "new-service-account-key",
-					ProjectID:             "new-project-id",
-					Zone:                  "new-zone",
+				Entry("returns an error when the region is not provided", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "new-project-id",
+						Zone:                  "new-zone",
+					}
 				}, "GCP region must be provided"),
 			)
 		})
@@ -323,29 +334,50 @@ resource "google_compute_firewall" "internal" {
 				Expect(err).To(MatchError("set call failed"))
 			})
 
-			DescribeTable("up config validation", func(upConfig commands.GCPUpConfig, expectedErr string) {
-				err := gcpUp.Execute(upConfig, storage.State{})
+			It("should not store the state if the provided flags are not valid", func() {
+				err := gcpUp.Execute(
+					commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+					}, storage.State{})
+				Expect(err).To(MatchError("GCP project ID must be provided"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+			})
+
+			DescribeTable("up config validation", func(upConfig func() commands.GCPUpConfig, expectedErr string) {
+				err := gcpUp.Execute(upConfig(), storage.State{})
 				Expect(err).To(MatchError(expectedErr))
 			},
-				Entry("returns an error when service account key is missing", commands.GCPUpConfig{
-					ProjectID: "p",
-					Zone:      "z",
-					Region:    "r",
+				Entry("returns an error when no flags are passed in", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{}
+				},
+					"GCP service account key must be provided"),
+				Entry("returns an error when service account key is missing", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ProjectID: "p",
+						Zone:      "z",
+						Region:    "r",
+					}
 				}, "GCP service account key must be provided"),
-				Entry("returns an error when project ID is missing", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "sak",
-					Zone:   "z",
-					Region: "r",
+				Entry("returns an error when project ID is missing", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						Zone:   "z",
+						Region: "r",
+					}
 				}, "GCP project ID must be provided"),
-				Entry("returns an error when zone is missing", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "sak",
-					ProjectID:             "p",
-					Region:                "r",
+				Entry("returns an error when zone is missing", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "p",
+						Region:                "r",
+					}
 				}, "GCP zone must be provided"),
-				Entry("returns an error when region is missing", commands.GCPUpConfig{
-					ServiceAccountKeyPath: "sak",
-					ProjectID:             "p",
-					Zone:                  "z",
+				Entry("returns an error when region is missing", func() commands.GCPUpConfig {
+					return commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "p",
+						Zone:                  "z",
+					}
 				}, "GCP region must be provided"),
 			)
 
@@ -400,6 +432,23 @@ resource "google_compute_firewall" "internal" {
 				Expect(err).To(MatchError("setting config failed"))
 			})
 
+			It("saves the keypair when the terraform fails", func() {
+				terraformApplier.ApplyCall.Returns.Error = errors.New("terraform applier failed")
+				keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
+					Name: "some-key-pair",
+				}
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("terraform applier failed"))
+
+				Expect(stateStore.SetCall.Receives.State.KeyPair.IsEmpty()).To(BeFalse())
+			})
+
 			It("returns an error when terraform applier fails", func() {
 				terraformApplier.ApplyCall.Returns.Error = errors.New("terraform applier failed")
 
@@ -412,8 +461,20 @@ resource "google_compute_firewall" "internal" {
 				Expect(err).To(MatchError("terraform applier failed"))
 			})
 
-			It("returns an error when the state fails to be set", func() {
+			It("returns an error when the state fails to be set after updating keypair", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("state failed to be set"))
+			})
+
+			It("returns an error when the state fails to be set after applying terraform", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
 
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,
