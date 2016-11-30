@@ -35,9 +35,9 @@ var _ = Describe("up test", func() {
 		By("creating and uploading a ssh key", func() {
 			expectedSSHKey := fmt.Sprintf("vcap:%s vcap\n", state.SSHPublicKey())
 
-			actualSSHKey, err := gcp.SSHKey()
+			actualSSHKeys, err := gcp.SSHKey()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualSSHKey).To(Equal(expectedSSHKey))
+			Expect(actualSSHKeys).To(ContainSubstring(expectedSSHKey))
 		})
 
 		By("creating a network and subnet", func() {
