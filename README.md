@@ -13,10 +13,8 @@ support bootstrapping a CloudFoundry installation on AWS.
 ### Install Dependencies
 
 The following should be installed on your local machine
-- Golang >= 1.5 (install with `brew install go`)
+- Golang >= 1.7 (install with `brew install go`)
 - bosh-init ([installation instructions](http://bosh.io/docs/install-bosh-init.html))
-
-NOTE: Golang 1.7 is highly recommended
 
 ### Install bosh-bootloader
 
