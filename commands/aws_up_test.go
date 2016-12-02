@@ -219,6 +219,7 @@ var _ = Describe("AWSUp", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(boshinit.DeployInput{
+				IAAS:             "aws",
 				DirectorName:     "bosh-bbl-lake-time:stamp",
 				DirectorUsername: "user-some-random-string",
 				DirectorPassword: "p-some-random-string",

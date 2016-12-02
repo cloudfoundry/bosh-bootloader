@@ -14,6 +14,7 @@ const PASSWORD_PREFIX = "p-"
 const PASSWORD_LENGTH = 15
 
 type DeployInput struct {
+	IAAS                        string
 	DirectorName                string
 	DirectorUsername            string
 	DirectorPassword            string
@@ -32,6 +33,17 @@ type InfrastructureConfiguration struct {
 	AccessKeyID      string
 	SecretAccessKey  string
 	SecurityGroup    string
+	GCP              InfrastructureConfigurationGCP
+}
+
+type InfrastructureConfigurationGCP struct {
+	Zone           string
+	NetworkName    string
+	SubnetworkName string
+	BOSHTag        string
+	InternalTag    string
+	Project        string
+	JsonKey        string
 }
 
 type DeployOutput struct {
@@ -45,8 +57,9 @@ type stringGenerator interface {
 	Generate(prefix string, length int) (string, error)
 }
 
-func NewDeployInput(state storage.State, infrastructureConfiguration InfrastructureConfiguration, stringGenerator stringGenerator, envID string) (DeployInput, error) {
+func NewDeployInput(state storage.State, infrastructureConfiguration InfrastructureConfiguration, stringGenerator stringGenerator, envID, iaas string) (DeployInput, error) {
 	deployInput := DeployInput{
+		IAAS:  iaas,
 		State: map[string]interface{}{},
 		InfrastructureConfiguration: infrastructureConfiguration,
 		SSLKeyPair:                  ssl.KeyPair{},

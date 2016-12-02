@@ -14,8 +14,8 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 	})
 
 	Describe("ResourcePools", func() {
-		It("returns all resource pools for manifest", func() {
-			resourcePools := resourcePoolsManifestBuilder.Build(manifests.ManifestProperties{AvailabilityZone: "some-az"}, "some-stemcell-url", "some-stemcell-sha1")
+		It("returns all resource pools for manifest for aws", func() {
+			resourcePools := resourcePoolsManifestBuilder.Build("aws", manifests.ManifestProperties{AvailabilityZone: "some-az"}, "some-stemcell-url", "some-stemcell-sha1")
 
 			Expect(resourcePools).To(HaveLen(1))
 			Expect(resourcePools).To(ConsistOf([]manifests.ResourcePool{
@@ -33,6 +33,36 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 							Type: "gp2",
 						},
 						AvailabilityZone: "some-az",
+					},
+				},
+			}))
+		})
+
+		It("returns all resource pools for manifest for gcp", func() {
+			resourcePools := resourcePoolsManifestBuilder.Build("gcp", manifests.ManifestProperties{
+				GCP: manifests.ManifestPropertiesGCP{
+					Zone: "some-zone",
+				},
+			}, "some-stemcell-url", "some-stemcell-sha1")
+
+			Expect(resourcePools).To(HaveLen(1))
+			Expect(resourcePools).To(ConsistOf([]manifests.ResourcePool{
+				{
+					Name:    "vms",
+					Network: "private",
+					Stemcell: manifests.Stemcell{
+						URL:  "some-stemcell-url",
+						SHA1: "some-stemcell-sha1",
+					},
+					CloudProperties: manifests.ResourcePoolCloudProperties{
+						Zone:           "some-zone",
+						MachineType:    "n1-standard-4",
+						RootDiskSizeGB: 25,
+						RootDiskType:   "pd-standard",
+						ServiceScopes: []string{
+							"compute",
+							"devstorage.full_control",
+						},
 					},
 				},
 			}))

@@ -138,4 +138,22 @@ var _ = Describe("bbl up gcp", func() {
 
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
 	})
+
+	It("invokes bosh-init", func() {
+		args := []string{
+			"--state-dir", tempDirectory,
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKeyPath,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "some-region",
+		}
+
+		session := executeCommand(args, 0)
+
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+	})
+
 })

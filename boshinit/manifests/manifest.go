@@ -44,9 +44,15 @@ type Stemcell struct {
 }
 
 type ResourcePoolCloudProperties struct {
-	InstanceType     string        `yaml:"instance_type"`
-	EphemeralDisk    EphemeralDisk `yaml:"ephemeral_disk"`
-	AvailabilityZone string        `yaml:"availability_zone"`
+	InstanceType     string        `yaml:"instance_type,omitempty"`
+	EphemeralDisk    EphemeralDisk `yaml:"ephemeral_disk,omitempty"`
+	AvailabilityZone string        `yaml:"availability_zone,omitempty"`
+
+	Zone           string   `yaml:"zone,omitempty"`
+	MachineType    string   `yaml:"machine_type,omitempty"`
+	RootDiskSizeGB int      `yaml:"root_disk_size_gb,omitempty"`
+	RootDiskType   string   `yaml:"root_disk_type,omitempty"`
+	ServiceScopes  []string `yaml:"service_scopes,omitempty"`
 }
 
 type EphemeralDisk struct {
@@ -62,7 +68,7 @@ type DiskPool struct {
 
 type DiskPoolsCloudProperties struct {
 	Type      string `yaml:"type"`
-	Encrypted bool   `yaml:"encrypted"`
+	Encrypted bool   `yaml:"encrypted,omitempty"`
 }
 
 type Network struct {
@@ -79,7 +85,11 @@ type Subnet struct {
 }
 
 type NetworksCloudProperties struct {
-	Subnet string `yaml:"subnet"`
+	Subnet              string   `yaml:"subnet,omitempty"`
+	NetworkName         string   `yaml:"network_name,omitempty"`
+	SubnetworkName      string   `yaml:"subnetwork_name,omitempty"`
+	EphemeralExternalIP *bool    `yaml:"ephemeral_external_ip,omitempty"`
+	Tags                []string `yaml:"tags,omitempty"`
 }
 
 type Job struct {
@@ -118,7 +128,8 @@ type SSHTunnel struct {
 }
 
 type CloudProviderProperties struct {
-	AWS       AWSProperties       `yaml:"aws"`
+	AWS       AWSProperties       `yaml:"aws,omitempty"`
+	Google    GoogleProperties    `yaml:"google,omitempty"`
 	Agent     AgentProperties     `yaml:"agent"`
 	Blobstore BlobstoreProperties `yaml:"blobstore"`
 }
@@ -134,6 +145,11 @@ type AWSProperties struct {
 	DefaultKeyName        string   `yaml:"default_key_name"`
 	DefaultSecurityGroups []string `yaml:"default_security_groups"`
 	Region                string   `yaml:"region"`
+}
+
+type GoogleProperties struct {
+	Project string `yaml:"project"`
+	JsonKey string `yaml:"json_key"`
 }
 
 type AgentProperties struct {

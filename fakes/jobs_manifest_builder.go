@@ -10,6 +10,6 @@ type JobsManifestBuilder struct {
 	}
 }
 
-func (j JobsManifestBuilder) Build(manifestProperties manifests.ManifestProperties) ([]manifests.Job, manifests.ManifestProperties, error) {
+func (j JobsManifestBuilder) Build(iaas string, manifestProperties manifests.ManifestProperties) ([]manifests.Job, manifests.ManifestProperties, error) {
 	return nil, manifestProperties, j.BuildCall.Returns.Error
 }

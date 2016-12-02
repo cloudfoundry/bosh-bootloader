@@ -1,0 +1,234 @@
+---
+name: bosh
+
+releases:
+- name: bosh
+  url: some-google-bosh-url
+  sha1: some-google-bosh-sha1
+- name: bosh-google-cpi
+  url: some-bosh-google-cpi-url
+  sha1: some-bosh-google-cpi-sha1
+
+resource_pools:
+- name: vms
+  network: private
+  stemcell:
+    url: some-google-stemcell-url
+    sha1: some-google-stemcell-sha1
+  cloud_properties:
+    zone: some-zone
+    machine_type: n1-standard-4
+    root_disk_size_gb: 25
+    root_disk_type: pd-standard
+    service_scopes:
+      - compute
+      - devstorage.full_control
+
+disk_pools:
+- name: disks
+  disk_size: 81_920
+  cloud_properties:
+    type: pd-standard
+    encrypted: true
+
+networks:
+- name: private
+  type: manual
+  subnets:
+  - range: 10.0.0.0/24
+    gateway: 10.0.0.1
+    dns: [10.0.0.2]
+    cloud_properties:
+      network_name: some-network-name
+      subnetwork_name: some-subnet-name
+      ephemeral_external_ip: false
+      tags:
+        - some-bosh-tag
+        - some-internal-tag
+- name: public
+  type: vip
+
+jobs:
+- name: bosh
+  instances: 1
+
+  templates:
+  - name: nats
+    release: bosh
+  - name: postgres
+    release: bosh
+  - name: blobstore
+    release: bosh
+  - name: director
+    release: bosh
+  - name: health_monitor
+    release: bosh
+  - name: registry
+    release: bosh
+  - name: google_cpi
+    release: bosh-google-cpi
+
+  resource_pool: vms
+  persistent_disk_pool: disks
+
+  networks:
+  - name: private
+    static_ips: [10.0.0.6]
+    default: [dns, gateway]
+  - name: public
+    static_ips: [52.0.112.12]
+
+  properties:
+    nats:
+      address: 127.0.0.1
+      user: nats-user-some-random-string
+      password: nats-some-random-string
+
+    postgres:
+      user: postgres-user-some-random-string
+      password: postgres-some-random-string
+
+    registry:
+      host: 10.0.0.6
+      address: 10.0.0.6
+      db:
+        user: postgres-user-some-random-string
+        password: postgres-some-random-string
+        database: bosh
+      http: {user: registry-user-some-random-string, password: registry-some-random-string}
+      username: registry-user-some-random-string
+      password: registry-some-random-string
+
+    blobstore:
+      address: 10.0.0.6
+      director: {user: blobstore-director-user-some-random-string, password: blobstore-director-some-random-string}
+      agent: {user: blobstore-agent-user-some-random-string, password: blobstore-agent-some-random-string}
+
+    director:
+      address: 127.0.0.1
+      name: bosh-name
+      db:
+        user: postgres-user-some-random-string
+        password: postgres-some-random-string
+      cpi_job: google_cpi
+      enable_dedicated_status_worker: true
+      workers: 11
+      enable_post_deploy: true
+      default_ssh_options:
+        gateway_host: 52.0.112.12
+      user_management:
+        local:
+          users:
+          - {name: bosh-username, password: bosh-password}
+          - {name: hm-user-some-random-string, password: hm-some-random-string}
+      ssl:
+        cert: |-
+          -----BEGIN CERTIFICATE-----
+          MIIEPzCCAiegAwIBAgIRAJrdboyEu5sl7tPvquxc2XgwDQYJKoZIhvcNAQELBQAw
+          GjEYMBYGA1UEAxMPQk9TSCBCb290bG9hZGVyMB4XDTE2MDgwMTIzNTcwOVoXDTE4
+          MDgwMTIzNTcwOVowFjEUMBIGA1UEAxMLNTIuMC4xMTIuMTIwggEiMA0GCSqGSIb3
+          DQEBAQUAA4IBDwAwggEKAoIBAQC/C2R8JpqmhQwoC1zHaKNyxaCcPd2ND+BT1CZS
+          /c+w3jL5+ViroQdWXwOKhAV0iFha2u0YFmwD8wokPmO/liYh67f8H4ulo9meQXis
+          IGpL7KPTUw0UU1Ce/FGDNDLy8qI5xtsUP4MLrOKus1rT/0mriVWj7mYK71gRbbAh
+          SluWgi1pOVCYIdVGKGtkfkov6Mu06S1jGREv0ZmmpXH0PD3EmjDJ/IiS5o76XY2v
+          JwzNqySt5XCYOHDVPepoNtf6CpipnFZHBp3wje4Y4IPHWQYw61Fsa5aqvgZZwkxO
+          H87B/OXqlejSQm9Zv43Rp5kVy9bCNq7byTZo/fAi8yTSVOwVAgMBAAGjgYMwgYAw
+          DgYDVR0PAQH/BAQDAgO4MB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAd
+          BgNVHQ4EFgQUIQ6yRw9W2QWlZv4YnwqTsH8Dpb4wHwYDVR0jBBgwFoAUReDxaZVG
+          GcL1BenPk/mQ/ceOMFwwDwYDVR0RBAgwBocENABwDDANBgkqhkiG9w0BAQsFAAOC
+          AgEAXXA0XYFpEMfprSlpYxeHRvhIqu1G9BWb9pqwgxLjvKHdgPe6/uQRWTMUFDC/
+          v0bKJg4mFFB2lLrp9msbfB8O8C71Gh+yilasEaAqiKFB6nSKoQoNuGGNTzUz5ST4
+          Y4Z7FfenkvFCpY3D6JTvTfzpC/lWBxf9CWiPN91aPPv9BU3lsV7txte26mEZg0Cc
+          qZnlIEff8C9xeTa12YJgkC97odFYo+Slmm2Iq5AmmC6esr/G8oYo/TTEGVamCBUf
+          KkcDGxM2ph9pwguZg8DdcvPsmzwTbIvxoauxd/q4uCoAk4BlhVb82sxIdcdAPy9U
+          ooXuB+CEGNjcGoEzPSrWngYsSf9taeWzoSWKeN+y9Zh0iNoie5nqLzqxZYpakgyW
+          5mNTUNdOv6Vbr1ZPR8oHqBaIQmLhB1djl1X5MRS+yWv5TtZW8f8ifHGPWI1GRJ4u
+          bN21b+aAhnTjBPprFVGPkO/aPSYATUEquE+ly7bQ6UhO610I5K9oyD2JMG5fhHOs
+          +WZ8SK+HBVelkbBqz6fA2vkhhcX7cfZFMTm7pBsBzsK2XkqohJjYYl8Omjt3c9L3
+          4miJCz5NulT6N02UtNSNbIpWPV3QRByU+aczocQL0qvJE6mtVroEfdEqhI6Uwty6
+          lkrvLKRcnXocpj8xkQdvVIR/hw05RDe2xrhnNgSW/SRtpug=
+          -----END CERTIFICATE-----
+        key: |-
+          -----BEGIN RSA PRIVATE KEY-----
+          MIIEpgIBAAKCAQEAvwtkfCaapoUMKAtcx2ijcsWgnD3djQ/gU9QmUv3PsN4y+flY
+          q6EHVl8DioQFdIhYWtrtGBZsA/MKJD5jv5YmIeu3/B+LpaPZnkF4rCBqS+yj01MN
+          FFNQnvxRgzQy8vKiOcbbFD+DC6zirrNa0/9Jq4lVo+5mCu9YEW2wIUpbloItaTlQ
+          mCHVRihrZH5KL+jLtOktYxkRL9GZpqVx9Dw9xJowyfyIkuaO+l2NrycMzaskreVw
+          mDhw1T3qaDbX+gqYqZxWRwad8I3uGOCDx1kGMOtRbGuWqr4GWcJMTh/Owfzl6pXo
+          0kJvWb+N0aeZFcvWwjau28k2aP3wIvMk0lTsFQIDAQABAoIBAQCoi8mESp6oCLt3
+          3MZm2ydQi5CuJ1p+KCKWcpW5JFmGxhIdPeH/0Vpi1gKOwvj5HY0t4vXICYgUV+h7
+          n1trXHGZ/ZddZQtUAGFu4H4xBYwiHc1PFHd2liaLjTnw0i2c73k2Ff2UOJBJzaZT
+          0MJyREjfgJNAxIPcY9rDzYzVYf+5oOgNOGMC06/Uxb+iIt3tQb67BvH0Oxs/LkQm
+          c88CQqVkzL1+FzujrIPXb5Ct/CE0mgFC3OIG3A+35LOrML8DQVy3YdxXjhG1spYn
+          gnvG0mnNUOGnfEnnd7l/k5n84x9I/4AUt+duWX3fTPF+Y7hihZimOVP9D8ciYje+
+          oCUJAQPlAoGBAMHpAiaGYCKNaeh3nT8m+dRMqn60rm4MwKi2fCzknTrjWOCvQtHl
+          M/pbNDryJzGEX/I+Vf7gwseERV7fVT8IubJvev3R3lahShqpmFtvJ9RboAX+6uWz
+          sUxAUSelLQeYQLEKjjHcRlsO93Zelh/pDwPU9ZVPN5kGNbLUIRDsbcZ7AoGBAPw3
+          ey9Hm0gBX0RuGwN2kAMPyp8ZitUtMt5Ug1/AFumXgz9hzrlKjKa/otoLKlIqFkY+
+          2N0DFlUXDk3k28ved0zUR4WIhrxrw6AHm0aegHR5bnRVMyYYGDifFsTMzpzMkyUA
+          THLAnnljf1H/rMgYiNRqTas5f7+ek1Q3kBg0mVqvAoGBAKM0MOop2QnbydKtsfxw
+          Gn9Tk4AXJGRdeV3GUVcbhzYEGU7qU6wDZC8Hyjr+inxDtNlXG9vsYiO4sQY7pCzs
+          dBa5e2Pb2m1BTPSJ30C9mmFCSLojJqL0DXpm+6cJf4/P1krr3mgaxGBphV/sFiB/
+          cHLCL3xecyXpMxLzNW1gALi3AoGBAKbcldTbzPHAZqTBK4IJCJHd+rFzlpQeiQ7q
+          XtgUH5R/NsfSD5AqsA8JrdYPmPou+fmTTqo5hqbY0A/cn0WrcsYTkxXXEzzJFu1i
+          2unHpzhnthmk3GgRfMTJC6k7zl2SQq8yGWG56Z5poyw+uLLQ+IV/ps7nBYtigBox
+          gFVjRynlAoGBAJZVobYuwzOIqdtqy6YVy+dfHKBHZ0ixcOmLzmkJlrSCb9GT5ZjK
+          bZpzeIZ8y049ku1t7F1rTyIVA632fKwFLZ9iG4/nh8rldhC9Fe1S6bh9SFRS0sc0
+          GpDFKzD6hsPTfTKJthgzxNxokD/L3lrXW4KpD9Iwk2PcZo82ZiTFDHcm
+          -----END RSA PRIVATE KEY-----
+
+    hm:
+      director_account: {user: hm-user-some-random-string, password: hm-some-random-string}
+      resurrector_enabled: true
+
+    google:
+      project: some-project
+      json_key: |+
+        {
+          "type": "service_account",
+          "project_id": "some-project",
+          "private_key_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "private_key": "-----BEGIN PRIVATE KEY-----\nxxxx=\n-----END PRIVATE KEY-----\n",
+          "client_email": "test-account@some-project.iam.gserviceaccount.com",
+          "client_id": "xxxxxxxxxxxxxxxxxxxxx",
+          "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+          "token_uri": "https://accounts.google.com/o/oauth2/token",
+          "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test-account%40some-project.iam.gserviceaccount.com"
+        }
+    agent:
+      mbus: "nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"
+
+cloud_provider:
+  template:
+    name: google_cpi
+    release: bosh-google-cpi
+  ssh_tunnel:
+    host: 52.0.112.12
+    port: 22
+    user: vcap
+    private_key: ./bosh.pem
+
+  mbus: "https://mbus-user-some-random-string:mbus-some-random-string@52.0.112.12:6868"
+
+  properties:
+    google:
+      project: some-project
+      json_key: |+
+        {
+          "type": "service_account",
+          "project_id": "some-project",
+          "private_key_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "private_key": "-----BEGIN PRIVATE KEY-----\nxxxx=\n-----END PRIVATE KEY-----\n",
+          "client_email": "test-account@some-project.iam.gserviceaccount.com",
+          "client_id": "xxxxxxxxxxxxxxxxxxxxx",
+          "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+          "token_uri": "https://accounts.google.com/o/oauth2/token",
+          "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test-account%40some-project.iam.gserviceaccount.com"
+        }
+    agent:
+      mbus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868"
+    blobstore:
+      provider: local
+      path: /var/vcap/micro_bosh/data/cache

@@ -16,3 +16,10 @@ func (SharedPropertiesManifestBuilder) AWS(manifestProperties ManifestProperties
 		Region:                manifestProperties.Region,
 	}
 }
+
+func (SharedPropertiesManifestBuilder) Google(manifestProperties ManifestProperties) GoogleProperties {
+	return GoogleProperties{
+		Project: manifestProperties.GCP.Project,
+		JsonKey: manifestProperties.GCP.JsonKey,
+	}
+}

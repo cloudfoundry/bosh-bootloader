@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("JobsManifestBuilder", func() {
@@ -31,8 +33,8 @@ var _ = Describe("JobsManifestBuilder", func() {
 			}
 		})
 
-		It("returns all jobs for manifest", func() {
-			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+		DescribeTable("returns all jobs for manifest", func(iaas, cpiName, cpiRelease string) {
+			jobs, _, err := jobsManifestBuilder.Build(iaas, manifests.ManifestProperties{
 				DirectorName:    "some-director-name",
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
@@ -57,7 +59,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 				{Name: "director", Release: "bosh"},
 				{Name: "health_monitor", Release: "bosh"},
 				{Name: "registry", Release: "bosh"},
-				{Name: "aws_cpi", Release: "bosh-aws-cpi"},
+				{Name: cpiName, Release: cpiRelease},
 			}))
 
 			Expect(job.Networks).To(ConsistOf([]manifests.JobNetwork{
@@ -77,15 +79,82 @@ var _ = Describe("JobsManifestBuilder", func() {
 			Expect(job.Properties.Registry.Username).To(Equal("registry-user-some-random-string"))
 			Expect(job.Properties.Director.Name).To(Equal("some-director-name"))
 			Expect(job.Properties.HM.ResurrectorEnabled).To(Equal(true))
+			Expect(job.Properties.Agent.MBus).To(Equal("nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"))
+		},
+			Entry("for aws", "aws", "aws_cpi", "bosh-aws-cpi"),
+			Entry("for gcp", "gcp", "google_cpi", "bosh-google-cpi"),
+		)
+
+		It("returns aws job properties for aws", func() {
+			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
+				DirectorName:    "some-director-name",
+				ElasticIP:       "some-elastic-ip",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				DefaultKeyName:  "some-key-name",
+				Region:          "some-region",
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			job := jobs[0]
+
 			Expect(job.Properties.AWS.AccessKeyId).To(Equal("some-access-key-id"))
 			Expect(job.Properties.AWS.SecretAccessKey).To(Equal("some-secret-access-key"))
 			Expect(job.Properties.AWS.Region).To(Equal("some-region"))
 			Expect(job.Properties.AWS.DefaultKeyName).To(Equal("some-key-name"))
-			Expect(job.Properties.Agent.MBus).To(Equal("nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"))
+		})
+
+		It("returns google job properties for gcp", func() {
+			jobs, _, err := jobsManifestBuilder.Build("gcp", manifests.ManifestProperties{
+				DirectorName: "some-director-name",
+				ElasticIP:    "some-elastic-ip",
+				GCP: manifests.ManifestPropertiesGCP{
+					Project: "some-project",
+					JsonKey: `{"key":"value"}`,
+				},
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			job := jobs[0]
+
+			Expect(job.Properties.Google.Project).To(Equal("some-project"))
+			Expect(job.Properties.Google.JsonKey).To(Equal(`{"key":"value"}`))
+		})
+
+		It("does not add gcp properties when iaas aws is provided", func() {
+			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
+				DirectorName:    "some-director-name",
+				ElasticIP:       "some-elastic-ip",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				DefaultKeyName:  "some-key-name",
+				Region:          "some-region",
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			job := jobs[0]
+
+			Expect(job.Properties.Google).To(Equal(manifests.GoogleProperties{}))
+		})
+
+		It("does not add aws properties when iaas gcp is provided", func() {
+			jobs, _, err := jobsManifestBuilder.Build("gcp", manifests.ManifestProperties{
+				DirectorName: "some-director-name",
+				ElasticIP:    "some-elastic-ip",
+				GCP: manifests.ManifestPropertiesGCP{
+					Project: "some-project",
+					JsonKey: `{"key":"value"}`,
+				},
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			job := jobs[0]
+
+			Expect(job.Properties.AWS).To(Equal(manifests.AWSProperties{}))
 		})
 
 		It("returns manifest properties with new credentials", func() {
-			_, manifestProperties, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+			_, manifestProperties, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -109,7 +178,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("returns manifest and manifest properties with existing credentials", func() {
-			jobs, manifestProperties, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+			jobs, manifestProperties, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -171,7 +240,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("uses the same credentials for NATS and the Agent", func() {
-			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -188,7 +257,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for postgres", func() {
-			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -208,7 +277,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for blobstore director and agent", func() {
-			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -226,7 +295,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		})
 
 		It("generates a password for health monitor", func() {
-			jobs, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{
+			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -252,7 +321,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 				stringGenerator.GenerateCall.Stub = nil
 				stringGenerator.GenerateCall.Returns.Error = errors.New("string generation failed")
 
-				_, _, err := jobsManifestBuilder.Build(manifests.ManifestProperties{})
+				_, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{})
 				Expect(err).To(MatchError("string generation failed"))
 			})
 		})

@@ -82,11 +82,11 @@ func (j JobPropertiesManifestBuilder) Blobstore() BlobstoreJobProperties {
 	}
 }
 
-func (j JobPropertiesManifestBuilder) Director(manifestProperties ManifestProperties) DirectorJobProperties {
+func (j JobPropertiesManifestBuilder) Director(iaas string, manifestProperties ManifestProperties) DirectorJobProperties {
 	return DirectorJobProperties{
 		Address:                     "127.0.0.1",
 		Name:                        manifestProperties.DirectorName,
-		CPIJob:                      "aws_cpi",
+		CPIJob:                      getCPIJobName(iaas),
 		EnablePostDeploy:            true,
 		Workers:                     11,
 		EnableDedicatedStatusWorker: true,
@@ -128,5 +128,16 @@ func (j JobPropertiesManifestBuilder) HM() HMJobProperties {
 func (j JobPropertiesManifestBuilder) Agent() AgentProperties {
 	return AgentProperties{
 		MBus: fmt.Sprintf("nats://%s:%s@10.0.0.6:4222", j.natsUsername, j.natsPassword),
+	}
+}
+
+func getCPIJobName(iaas string) string {
+	switch iaas {
+	case "aws":
+		return "aws_cpi"
+	case "gcp":
+		return "google_cpi"
+	default:
+		return ""
 	}
 }

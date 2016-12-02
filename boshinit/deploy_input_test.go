@@ -19,6 +19,7 @@ var _ = Describe("DeployInput", func() {
 		state                       storage.State
 		infrastructureConfiguration boshinit.InfrastructureConfiguration
 		envID                       string
+		iaas                        string
 	)
 
 	Describe("NewDeployInput", func() {
@@ -56,13 +57,15 @@ var _ = Describe("DeployInput", func() {
 			}
 
 			envID = "some-env-id"
+			iaas = "aws"
 		})
 
 		It("constructs a DeployInput given a state", func() {
-			deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator, envID)
+			deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator, envID, iaas)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deployInput).To(Equal(boshinit.DeployInput{
+				IAAS:             "aws",
 				DirectorName:     "some-director-name",
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
@@ -96,7 +99,7 @@ var _ = Describe("DeployInput", func() {
 		Context("when existing state contains bosh state without director name", func() {
 			It("sets director name to my-bosh", func() {
 				state.BOSH.DirectorName = ""
-				deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator, envID)
+				deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, fakeStringGenerator, envID, iaas)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(deployInput.DirectorName).To(Equal("my-bosh"))
@@ -128,7 +131,7 @@ var _ = Describe("DeployInput", func() {
 				},
 			}
 
-			_, err := boshinit.NewDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, envID)
+			_, err := boshinit.NewDeployInput(state, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, envID, iaas)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(state).To(Equal(storage.State{
@@ -167,10 +170,11 @@ var _ = Describe("DeployInput", func() {
 					return "", errors.New("too many calls to password generator")
 				}
 			}
-			deployInput, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, envID)
+			deployInput, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, envID, iaas)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deployInput).To(Equal(boshinit.DeployInput{
+				IAAS:             "aws",
 				State:            map[string]interface{}{},
 				DirectorName:     "bosh-some-env-id",
 				DirectorUsername: "some-generated-username",
@@ -183,7 +187,7 @@ var _ = Describe("DeployInput", func() {
 		Describe("failure cases", func() {
 			It("returns an error when director username generation fails", func() {
 				fakeStringGenerator.GenerateCall.Returns.Error = errors.New("failed to generate username")
-				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, "")
+				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, "", iaas)
 
 				Expect(err).To(MatchError("failed to generate username"))
 			})
@@ -197,7 +201,7 @@ var _ = Describe("DeployInput", func() {
 						return "", errors.New("failed to generate password")
 					}
 				}
-				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, "")
+				_, err := boshinit.NewDeployInput(storage.State{}, boshinit.InfrastructureConfiguration{}, fakeStringGenerator, "", iaas)
 				Expect(err).To(MatchError("failed to generate password"))
 			})
 		})

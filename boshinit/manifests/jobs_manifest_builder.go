@@ -10,7 +10,7 @@ func NewJobsManifestBuilder(stringGenerator stringGenerator) JobsManifestBuilder
 	}
 }
 
-func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job, ManifestProperties, error) {
+func (j JobsManifestBuilder) Build(iaas string, manifestProperties ManifestProperties) ([]Job, ManifestProperties, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
 	manifestProperties, err := j.generateInternalCredentials(manifestProperties)
@@ -33,6 +33,23 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 		manifestProperties.Credentials.HMPassword,
 	)
 
+	cpiName, cpiRelease := getCPIJob(iaas)
+	jobProperties := JobProperties{
+		NATS:      jobPropertiesManifestBuilder.NATS(),
+		Postgres:  jobPropertiesManifestBuilder.Postgres(),
+		Registry:  jobPropertiesManifestBuilder.Registry(),
+		Blobstore: jobPropertiesManifestBuilder.Blobstore(),
+		Director:  jobPropertiesManifestBuilder.Director(iaas, manifestProperties),
+		HM:        jobPropertiesManifestBuilder.HM(),
+		Agent:     jobPropertiesManifestBuilder.Agent(),
+	}
+
+	if iaas == "aws" {
+		jobProperties.AWS = sharedPropertiesManifestBuilder.AWS(manifestProperties)
+	} else {
+		jobProperties.Google = sharedPropertiesManifestBuilder.Google(manifestProperties)
+	}
+
 	return []Job{
 		{
 			Name:               "bosh",
@@ -47,7 +64,7 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 				{Name: "director", Release: "bosh"},
 				{Name: "health_monitor", Release: "bosh"},
 				{Name: "registry", Release: "bosh"},
-				{Name: "aws_cpi", Release: "bosh-aws-cpi"},
+				{Name: cpiName, Release: cpiRelease},
 			},
 
 			Networks: []JobNetwork{
@@ -62,16 +79,7 @@ func (j JobsManifestBuilder) Build(manifestProperties ManifestProperties) ([]Job
 				},
 			},
 
-			Properties: JobProperties{
-				NATS:      jobPropertiesManifestBuilder.NATS(),
-				Postgres:  jobPropertiesManifestBuilder.Postgres(),
-				Registry:  jobPropertiesManifestBuilder.Registry(),
-				Blobstore: jobPropertiesManifestBuilder.Blobstore(),
-				Director:  jobPropertiesManifestBuilder.Director(manifestProperties),
-				HM:        jobPropertiesManifestBuilder.HM(),
-				AWS:       sharedPropertiesManifestBuilder.AWS(manifestProperties),
-				Agent:     jobPropertiesManifestBuilder.Agent(),
-			},
+			Properties: jobProperties,
 		},
 	}, manifestProperties, nil
 }
@@ -102,4 +110,15 @@ func (j JobsManifestBuilder) generateInternalCredentials(manifestProperties Mani
 	}
 
 	return manifestProperties, nil
+}
+
+func getCPIJob(iaas string) (name, release string) {
+	switch iaas {
+	case "aws":
+		return "aws_cpi", "bosh-aws-cpi"
+	case "gcp":
+		return "google_cpi", "bosh-google-cpi"
+	default:
+		return "", ""
+	}
 }

@@ -123,12 +123,19 @@ func main() {
 	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
 	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
 	boshinitManifestBuilder := manifests.NewManifestBuilder(manifests.ManifestBuilderInput{
-		BOSHURL:        constants.BOSHURL,
-		BOSHSHA1:       constants.BOSHSHA1,
-		BOSHAWSCPIURL:  constants.BOSHAWSCPIURL,
-		BOSHAWSCPISHA1: constants.BOSHAWSCPISHA1,
-		StemcellURL:    constants.StemcellURL,
-		StemcellSHA1:   constants.StemcellSHA1,
+		AWSBOSHURL:      constants.AWSBOSHURL,
+		AWSBOSHSHA1:     constants.AWSBOSHSHA1,
+		BOSHAWSCPIURL:   constants.BOSHAWSCPIURL,
+		BOSHAWSCPISHA1:  constants.BOSHAWSCPISHA1,
+		AWSStemcellURL:  constants.AWSStemcellURL,
+		AWSStemcellSHA1: constants.AWSStemcellSHA1,
+
+		GCPBOSHURL:      constants.GCPBOSHURL,
+		GCPBOSHSHA1:     constants.GCPBOSHSHA1,
+		BOSHGCPCPIURL:   constants.BOSHGCPCPIURL,
+		BOSHGCPCPISHA1:  constants.BOSHGCPCPISHA1,
+		GCPStemcellURL:  constants.GCPStemcellURL,
+		GCPStemcellSHA1: constants.GCPStemcellSHA1,
 	},
 		logger,
 		sslKeyPairGenerator,
@@ -163,7 +170,7 @@ func main() {
 	terraformCmd := terraform.NewCmd(os.Stdout, os.Stderr)
 	terraformApplier := terraform.NewApplier(terraformCmd)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformApplier)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformApplier, boshinitExecutor, stringGenerator)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 

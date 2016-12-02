@@ -3,8 +3,8 @@ name: bosh
 
 releases:
 - name: bosh
-  url: some-bosh-url
-  sha1: some-bosh-sha1
+  url: some-aws-bosh-url
+  sha1: some-aws-bosh-sha1
 - name: bosh-aws-cpi
   url: some-bosh-aws-cpi-url
   sha1: some-bosh-aws-cpi-sha1
@@ -13,8 +13,8 @@ resource_pools:
 - name: vms
   network: private
   stemcell:
-    url: some-stemcell-url
-    sha1: some-stemcell-sha1
+    url: some-aws-stemcell-url
+    sha1: some-aws-stemcell-sha1
   cloud_properties:
     instance_type: m3.xlarge
     ephemeral_disk: {size: 25000, type: gp2}
@@ -43,13 +43,20 @@ jobs:
   instances: 1
 
   templates:
-  - {name: nats, release: bosh}
-  - {name: postgres, release: bosh}
-  - {name: blobstore, release: bosh}
-  - {name: director, release: bosh}
-  - {name: health_monitor, release: bosh}
-  - {name: registry, release: bosh}
-  - {name: aws_cpi, release: bosh-aws-cpi}
+  - name: nats
+    release: bosh
+  - name: postgres
+    release: bosh
+  - name: blobstore
+    release: bosh
+  - name: director
+    release: bosh
+  - name: health_monitor
+    release: bosh
+  - name: registry
+    release: bosh
+  - name: aws_cpi
+    release: bosh-aws-cpi
 
   resource_pool: vms
   persistent_disk_pool: disks
@@ -171,11 +178,13 @@ jobs:
       default_security_groups: [some-security-group]
       region: some-region
 
-    agent: {mbus: "nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"}
+    agent:
+      mbus: "nats://nats-user-some-random-string:nats-some-random-string@10.0.0.6:4222"
 
 cloud_provider:
-  template: {name: aws_cpi, release: bosh-aws-cpi}
-
+  template:
+    name: aws_cpi
+    release: bosh-aws-cpi
   ssh_tunnel:
     host: 52.0.112.12
     port: 22
@@ -191,5 +200,8 @@ cloud_provider:
       default_key_name: some-key-name
       default_security_groups: [some-security-group]
       region: some-region
-    agent: {mbus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868"}
-    blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
+    agent:
+      mbus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868"
+    blobstore:
+      provider: local
+      path: /var/vcap/micro_bosh/data/cache

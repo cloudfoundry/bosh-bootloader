@@ -16,7 +16,7 @@ func NewCloudProviderManifestBuilder(stringGenerator stringGenerator) CloudProvi
 	}
 }
 
-func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestProperties) (CloudProvider, ManifestProperties, error) {
+func (c CloudProviderManifestBuilder) Build(iaas string, manifestProperties ManifestProperties) (CloudProvider, ManifestProperties, error) {
 	sharedPropertiesManifestBuilder := NewSharedPropertiesManifestBuilder()
 
 	username := manifestProperties.Credentials.MBusUsername
@@ -41,10 +41,32 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 		manifestProperties.Credentials.MBusPassword = password
 	}
 
+	cpiName, cpiRelease := getCPIValues(iaas)
+
+	properties := CloudProviderProperties{
+
+		Agent: AgentProperties{
+			MBus: fmt.Sprintf("https://%s:%s@0.0.0.0:6868", username, password),
+		},
+
+		Blobstore: BlobstoreProperties{
+			Provider: "local",
+			Path:     "/var/vcap/micro_bosh/data/cache",
+		},
+	}
+
+	if iaas == "aws" {
+		properties.AWS = sharedPropertiesManifestBuilder.AWS(manifestProperties)
+	}
+
+	if iaas == "gcp" {
+		properties.Google = sharedPropertiesManifestBuilder.Google(manifestProperties)
+	}
+
 	return CloudProvider{
 		Template: Template{
-			Name:    "aws_cpi",
-			Release: "bosh-aws-cpi",
+			Name:    cpiName,
+			Release: cpiRelease,
 		},
 
 		SSHTunnel: SSHTunnel{
@@ -56,17 +78,17 @@ func (c CloudProviderManifestBuilder) Build(manifestProperties ManifestPropertie
 
 		MBus: fmt.Sprintf("https://%s:%s@%s:6868", username, password, manifestProperties.ElasticIP),
 
-		Properties: CloudProviderProperties{
-			AWS: sharedPropertiesManifestBuilder.AWS(manifestProperties),
-
-			Agent: AgentProperties{
-				MBus: fmt.Sprintf("https://%s:%s@0.0.0.0:6868", username, password),
-			},
-
-			Blobstore: BlobstoreProperties{
-				Provider: "local",
-				Path:     "/var/vcap/micro_bosh/data/cache",
-			},
-		},
+		Properties: properties,
 	}, manifestProperties, nil
+}
+
+func getCPIValues(iaas string) (string, string) {
+	switch iaas {
+	case "aws":
+		return "aws_cpi", "bosh-aws-cpi"
+	case "gcp":
+		return "google_cpi", "bosh-google-cpi"
+	default:
+		return "", ""
+	}
 }

@@ -13,7 +13,7 @@ func main() {
 		log.Fatal("failed to terraform")
 	}
 
-	err := ioutil.WriteFile("terraform.tfstate", []byte("hello-world"), os.ModePerm)
+	err := ioutil.WriteFile("terraform.tfstate", []byte(`{"modules": [{"resources": {"google_compute_address.bosh-external-ip": {"primary": {"attributes": {"address": "127.0.0.1"}}}}}]}`), os.ModePerm)
 	if err != nil {
 		panic(err)
 	}

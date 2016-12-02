@@ -3,10 +3,10 @@ package manifests_test
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("CloudProviderManifestBuilder", func() {
@@ -24,8 +24,8 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 	})
 
 	Describe("Build", func() {
-		It("returns all cloud provider fields for manifest", func() {
-			cloudProvider, _, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{
+		It("returns all cloud provider fields for aws manifest", func() {
+			cloudProvider, _, err := cloudProviderManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -74,8 +74,53 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 			Expect(stringGenerator.GenerateCall.Receives.Lengths).To(Equal([]int{15, 15}))
 		})
 
+		It("returns all cloud provider fields for gcp manifest", func() {
+			cloudProvider, _, err := cloudProviderManifestBuilder.Build("gcp", manifests.ManifestProperties{
+				ElasticIP: "some-elastic-ip",
+				GCP: manifests.ManifestPropertiesGCP{
+					Project: "some-project",
+					JsonKey: `{"key": "value"}`,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cloudProvider).To(Equal(manifests.CloudProvider{
+				Template: manifests.Template{
+					Name:    "google_cpi",
+					Release: "bosh-google-cpi",
+				},
+
+				SSHTunnel: manifests.SSHTunnel{
+					Host:       "some-elastic-ip",
+					Port:       22,
+					User:       "vcap",
+					PrivateKey: "./bosh.pem",
+				},
+
+				MBus: "https://mbus-user-some-random-string:mbus-some-random-string@some-elastic-ip:6868",
+
+				Properties: manifests.CloudProviderProperties{
+					Google: manifests.GoogleProperties{
+						Project: "some-project",
+						JsonKey: `{"key": "value"}`,
+					},
+					Agent: manifests.AgentProperties{
+						MBus: "https://mbus-user-some-random-string:mbus-some-random-string@0.0.0.0:6868",
+					},
+
+					Blobstore: manifests.BlobstoreProperties{
+						Provider: "local",
+						Path:     "/var/vcap/micro_bosh/data/cache",
+					},
+				},
+			}))
+
+			Expect(stringGenerator.GenerateCall.Receives.Prefixes).To(Equal([]string{"mbus-user-", "mbus-"}))
+			Expect(stringGenerator.GenerateCall.Receives.Lengths).To(Equal([]int{15, 15}))
+		})
+
 		It("returns manifest properties with new credentials", func() {
-			_, manifestProperties, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{})
+			_, manifestProperties, err := cloudProviderManifestBuilder.Build("aws", manifests.ManifestProperties{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(manifestProperties.Credentials.MBusUsername).To(Equal("mbus-user-some-random-string"))
@@ -83,7 +128,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 		})
 
 		It("returns manifest and manifest properties with existing credentials", func() {
-			cloudProvider, manifestProperties, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{
+			cloudProvider, manifestProperties, err := cloudProviderManifestBuilder.Build("aws", manifests.ManifestProperties{
 				ElasticIP:       "some-elastic-ip",
 				AccessKeyID:     "some-access-key-id",
 				SecretAccessKey: "some-secret-access-key",
@@ -109,7 +154,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 			})
 
 			It("forwards the error", func() {
-				_, _, err := cloudProviderManifestBuilder.Build(manifests.ManifestProperties{})
+				_, _, err := cloudProviderManifestBuilder.Build("aws", manifests.ManifestProperties{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("foo"))
 			})

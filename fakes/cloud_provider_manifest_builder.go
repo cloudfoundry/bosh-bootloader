@@ -10,6 +10,6 @@ type CloudProviderManifestBuilder struct {
 	}
 }
 
-func (c CloudProviderManifestBuilder) Build(manifestProperties manifests.ManifestProperties) (manifests.CloudProvider, manifests.ManifestProperties, error) {
+func (c CloudProviderManifestBuilder) Build(iaas string, manifestProperties manifests.ManifestProperties) (manifests.CloudProvider, manifests.ManifestProperties, error) {
 	return manifests.CloudProvider{}, manifestProperties, c.BuildCall.Returns.Error
 }

@@ -1,9 +1,9 @@
 package manifests_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 )
 
 var _ = Describe("SharedPropertiesManifestBuilder", func() {
@@ -30,6 +30,22 @@ var _ = Describe("SharedPropertiesManifestBuilder", func() {
 				DefaultKeyName:        "some-key-name",
 				DefaultSecurityGroups: []string{"some-security-group"},
 				Region:                "some-region",
+			}))
+		})
+	})
+
+	Describe("Google", func() {
+		It("returns job properties for Google", func() {
+			gcp := sharedPropertiesManifestBuilder.Google(manifests.ManifestProperties{
+				GCP: manifests.ManifestPropertiesGCP{
+					Project: "some-project",
+					JsonKey: `{"key":"value"}`,
+				},
+			})
+
+			Expect(gcp).To(Equal(manifests.GoogleProperties{
+				Project: "some-project",
+				JsonKey: `{"key":"value"}`,
 			}))
 		})
 	})

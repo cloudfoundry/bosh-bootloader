@@ -6,7 +6,7 @@ func NewReleaseManifestBuilder() ReleaseManifestBuilder {
 	return ReleaseManifestBuilder{}
 }
 
-func (r ReleaseManifestBuilder) Build(boshURL, boshSHA1, boshAWSCPIURL, boshAWSCPISHA1 string) []Release {
+func (r ReleaseManifestBuilder) Build(boshURL, boshSHA1, boshCPIName, boshCPIURL, boshCPISHA1 string) []Release {
 	return []Release{
 		{
 			Name: "bosh",
@@ -14,9 +14,9 @@ func (r ReleaseManifestBuilder) Build(boshURL, boshSHA1, boshAWSCPIURL, boshAWSC
 			SHA1: boshSHA1,
 		},
 		{
-			Name: "bosh-aws-cpi",
-			URL:  boshAWSCPIURL,
-			SHA1: boshAWSCPISHA1,
+			Name: boshCPIName,
+			URL:  boshCPIURL,
+			SHA1: boshCPISHA1,
 		},
 	}
 }

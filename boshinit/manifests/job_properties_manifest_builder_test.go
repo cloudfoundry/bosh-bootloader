@@ -1,10 +1,12 @@
 package manifests_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("JobPropertiesManifestBuilder", func() {
@@ -114,8 +116,8 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 	})
 
 	Describe("Director", func() {
-		It("returns job properties for Director", func() {
-			director := jobPropertiesManifestBuilder.Director(manifests.ManifestProperties{
+		DescribeTable("returns job properties for Director", func(iaas, cpiName string) {
+			director := jobPropertiesManifestBuilder.Director(iaas, manifests.ManifestProperties{
 				DirectorName:     "my-bosh",
 				DirectorUsername: "bosh-username",
 				DirectorPassword: "bosh-password",
@@ -127,7 +129,7 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 			Expect(director).To(Equal(manifests.DirectorJobProperties{
 				Address:                     "127.0.0.1",
 				Name:                        "my-bosh",
-				CPIJob:                      "aws_cpi",
+				CPIJob:                      cpiName,
 				Workers:                     11,
 				EnableDedicatedStatusWorker: true,
 				EnablePostDeploy:            true,
@@ -154,7 +156,10 @@ var _ = Describe("JobPropertiesManifestBuilder", func() {
 					Key:  "some-ssl-key",
 				},
 			}))
-		})
+		},
+			Entry("for aws", "aws", "aws_cpi"),
+			Entry("for aws", "gcp", "google_cpi"),
+		)
 	})
 
 	Describe("HM", func() {

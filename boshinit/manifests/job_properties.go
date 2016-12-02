@@ -7,8 +7,9 @@ type JobProperties struct {
 	Blobstore BlobstoreJobProperties `yaml:"blobstore"`
 	Director  DirectorJobProperties  `yaml:"director"`
 	HM        HMJobProperties        `yaml:"hm"`
-	AWS       AWSProperties          `yaml:"aws"`
+	AWS       AWSProperties          `yaml:"aws,omitempty"`
 	Agent     AgentProperties        `yaml:"agent"`
+	Google    GoogleProperties       `yaml:"google,omitempty"`
 }
 
 type NATSJobProperties struct {

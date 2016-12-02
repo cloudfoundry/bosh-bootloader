@@ -22,7 +22,8 @@ var _ = Describe("ManifestBuilder", func() {
 		sslKeyPairGenerator          *fakes.SSLKeyPairGenerator
 		stringGenerator              *fakes.StringGenerator
 		manifestBuilder              manifests.ManifestBuilder
-		manifestProperties           manifests.ManifestProperties
+		awsManifestProperties        manifests.ManifestProperties
+		gcpManifestProperties        manifests.ManifestProperties
 		cloudProviderManifestBuilder manifests.CloudProviderManifestBuilder
 		jobsManifestBuilder          manifests.JobsManifestBuilder
 		input                        manifests.ManifestBuilderInput
@@ -35,16 +36,22 @@ var _ = Describe("ManifestBuilder", func() {
 		cloudProviderManifestBuilder = manifests.NewCloudProviderManifestBuilder(stringGenerator)
 		jobsManifestBuilder = manifests.NewJobsManifestBuilder(stringGenerator)
 		input = manifests.ManifestBuilderInput{
-			BOSHURL:        "some-bosh-url",
-			BOSHSHA1:       "some-bosh-sha1",
-			BOSHAWSCPIURL:  "some-bosh-aws-cpi-url",
-			BOSHAWSCPISHA1: "some-bosh-aws-cpi-sha1",
-			StemcellURL:    "some-stemcell-url",
-			StemcellSHA1:   "some-stemcell-sha1",
+			AWSBOSHURL:      "some-aws-bosh-url",
+			AWSBOSHSHA1:     "some-aws-bosh-sha1",
+			GCPBOSHURL:      "some-google-bosh-url",
+			GCPBOSHSHA1:     "some-google-bosh-sha1",
+			BOSHAWSCPIURL:   "some-bosh-aws-cpi-url",
+			BOSHAWSCPISHA1:  "some-bosh-aws-cpi-sha1",
+			BOSHGCPCPIURL:   "some-bosh-google-cpi-url",
+			BOSHGCPCPISHA1:  "some-bosh-google-cpi-sha1",
+			AWSStemcellURL:  "some-aws-stemcell-url",
+			AWSStemcellSHA1: "some-aws-stemcell-sha1",
+			GCPStemcellURL:  "some-google-stemcell-url",
+			GCPStemcellSHA1: "some-google-stemcell-sha1",
 		}
 
 		manifestBuilder = manifests.NewManifestBuilder(input, logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, jobsManifestBuilder)
-		manifestProperties = manifests.ManifestProperties{
+		awsManifestProperties = manifests.ManifestProperties{
 			DirectorName:     "bosh-name",
 			DirectorUsername: "bosh-username",
 			DirectorPassword: "bosh-password",
@@ -57,6 +64,35 @@ var _ = Describe("ManifestBuilder", func() {
 			DefaultKeyName:   "some-key-name",
 			Region:           "some-region",
 			SecurityGroup:    "some-security-group",
+		}
+
+		gcpManifestProperties = manifests.ManifestProperties{
+			DirectorName:     "bosh-name",
+			DirectorUsername: "bosh-username",
+			DirectorPassword: "bosh-password",
+			ElasticIP:        "52.0.112.12",
+			CACommonName:     "BOSH Bootloader",
+			GCP: manifests.ManifestPropertiesGCP{
+				Zone:           "some-zone",
+				NetworkName:    "some-network-name",
+				SubnetworkName: "some-subnet-name",
+				BOSHTag:        "some-bosh-tag",
+				InternalTag:    "some-internal-tag",
+				Project:        "some-project",
+				JsonKey: `{
+  "type": "service_account",
+  "project_id": "some-project",
+  "private_key_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nxxxx=\n-----END PRIVATE KEY-----\n",
+  "client_email": "test-account@some-project.iam.gserviceaccount.com",
+  "client_id": "xxxxxxxxxxxxxxxxxxxxx",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test-account%40some-project.iam.gserviceaccount.com"
+}
+`,
+			},
 		}
 
 		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
@@ -72,16 +108,8 @@ var _ = Describe("ManifestBuilder", func() {
 				PrivateKey:  []byte(privateKey),
 			}
 
-			manifest, manifestProperties, err := manifestBuilder.Build(manifestProperties)
+			manifest, awsManifestProperties, err := manifestBuilder.Build("aws", awsManifestProperties)
 			Expect(err).NotTo(HaveOccurred())
-
-			expectedAWSProperties := manifests.AWSProperties{
-				AccessKeyId:           "some-access-key-id",
-				SecretAccessKey:       "some-secret-access-key",
-				DefaultKeyName:        "some-key-name",
-				DefaultSecurityGroups: []string{"some-security-group"},
-				Region:                "some-region",
-			}
 
 			Expect(manifest.Name).To(Equal("bosh"))
 			Expect(manifest.Releases[0].Name).To(Equal("bosh"))
@@ -89,13 +117,11 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(manifest.DiskPools[0].Name).To(Equal("disks"))
 			Expect(manifest.Networks[0].Subnets[0].CloudProperties.Subnet).To(Equal("subnet-12345"))
 			Expect(manifest.Jobs[0].Networks[1].StaticIPs[0]).To(Equal("52.0.112.12"))
-			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.Jobs[0].Properties.Director.Name).To(Equal("bosh-name"))
 			Expect(manifest.Jobs[0].Properties.Director.SSL).To(Equal(manifests.SSLProperties{
 				Cert: certificate,
 				Key:  privateKey,
 			}))
-			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
 			Expect(manifest.CloudProvider.SSHTunnel.Host).To(Equal("52.0.112.12"))
 			Expect(manifest.CloudProvider.MBus).To(Equal("https://mbus-user-some-random-string:mbus-some-random-string@52.0.112.12:6868"))
 
@@ -103,7 +129,7 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(sslKeyPairGenerator.GenerateCall.Receives.CertCommonName).To(Equal("52.0.112.12"))
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(1))
 
-			Expect(manifestProperties).To(Equal(
+			Expect(awsManifestProperties).To(Equal(
 				manifests.ManifestProperties{
 					DirectorName:     "bosh-name",
 					DirectorUsername: "bosh-username",
@@ -142,30 +168,113 @@ var _ = Describe("ManifestBuilder", func() {
 			))
 		})
 
-		It("does not generate an ssl keypair if it exists", func() {
-			manifestProperties.SSLKeyPair = ssl.KeyPair{
+		It("builds the bosh-init manifest and updates the manifest properties for aws", func() {
+			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
 				CA:          []byte(ca),
 				Certificate: []byte(certificate),
 				PrivateKey:  []byte(privateKey),
 			}
 
-			_, _, err := manifestBuilder.Build(manifestProperties)
+			manifest, _, err := manifestBuilder.Build("aws", awsManifestProperties)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(manifest.Releases[0]).To(Equal(manifests.Release{
+				Name: "bosh",
+				URL:  "some-aws-bosh-url",
+				SHA1: "some-aws-bosh-sha1"},
+			))
+
+			Expect(manifest.Releases[1]).To(Equal(manifests.Release{
+				Name: "bosh-aws-cpi",
+				URL:  "some-bosh-aws-cpi-url",
+				SHA1: "some-bosh-aws-cpi-sha1",
+			}))
+
+			Expect(manifest.ResourcePools[0].Stemcell).To(Equal(manifests.Stemcell{
+				URL:  "some-aws-stemcell-url",
+				SHA1: "some-aws-stemcell-sha1",
+			}))
+
+			expectedAWSProperties := manifests.AWSProperties{
+				AccessKeyId:           "some-access-key-id",
+				SecretAccessKey:       "some-secret-access-key",
+				DefaultKeyName:        "some-key-name",
+				DefaultSecurityGroups: []string{"some-security-group"},
+				Region:                "some-region",
+			}
+			Expect(manifest.Jobs[0].Properties.AWS).To(Equal(expectedAWSProperties))
+			Expect(manifest.CloudProvider.Properties.AWS).To(Equal(expectedAWSProperties))
+		})
+
+		It("builds the bosh-init manifest and updates the manifest properties for gcp", func() {
+			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
+				CA:          []byte(ca),
+				Certificate: []byte(certificate),
+				PrivateKey:  []byte(privateKey),
+			}
+
+			manifest, _, err := manifestBuilder.Build("gcp", gcpManifestProperties)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(manifest.Releases[0]).To(Equal(manifests.Release{
+				Name: "bosh",
+				URL:  "some-google-bosh-url",
+				SHA1: "some-google-bosh-sha1"},
+			))
+
+			Expect(manifest.Releases[1]).To(Equal(manifests.Release{
+				Name: "bosh-google-cpi",
+				URL:  "some-bosh-google-cpi-url",
+				SHA1: "some-bosh-google-cpi-sha1",
+			}))
+
+			Expect(manifest.ResourcePools[0].Stemcell).To(Equal(manifests.Stemcell{
+				URL:  "some-google-stemcell-url",
+				SHA1: "some-google-stemcell-sha1",
+			}))
+
+			Expect(manifest.Jobs[0].Properties.Google).To(Equal(manifests.GoogleProperties{
+				Project: "some-project",
+				JsonKey: `{
+  "type": "service_account",
+  "project_id": "some-project",
+  "private_key_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nxxxx=\n-----END PRIVATE KEY-----\n",
+  "client_email": "test-account@some-project.iam.gserviceaccount.com",
+  "client_id": "xxxxxxxxxxxxxxxxxxxxx",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/test-account%40some-project.iam.gserviceaccount.com"
+}
+`,
+			}))
+		})
+
+		It("does not generate an ssl keypair if it exists", func() {
+			awsManifestProperties.SSLKeyPair = ssl.KeyPair{
+				CA:          []byte(ca),
+				Certificate: []byte(certificate),
+				PrivateKey:  []byte(privateKey),
+			}
+
+			_, _, err := manifestBuilder.Build("aws", awsManifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(sslKeyPairGenerator.GenerateCall.CallCount).To(Equal(0))
 		})
 
 		It("logs that the bosh-init manifest is being generated", func() {
-			_, _, err := manifestBuilder.Build(manifestProperties)
+			_, _, err := manifestBuilder.Build("aws", awsManifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating bosh-init manifest"))
 		})
 
 		It("stores the randomly generated passwords into manifest properties", func() {
-			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
+			_, awsManifestProperties, err := manifestBuilder.Build("aws", awsManifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(14))
-			Expect(manifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
+			Expect(awsManifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-random-string",
 				NatsUsername:              "nats-user-some-random-string",
 				PostgresUsername:          "postgres-user-some-random-string",
@@ -184,7 +293,7 @@ var _ = Describe("ManifestBuilder", func() {
 		})
 
 		It("does not regenerate new random passwords if they already exist", func() {
-			manifestProperties.Credentials = manifests.InternalCredentials{
+			awsManifestProperties.Credentials = manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-persisted-string",
 				NatsUsername:              "nats-user-some-persisted-string",
 				PostgresUsername:          "postgres-user-some-persisted-string",
@@ -201,10 +310,10 @@ var _ = Describe("ManifestBuilder", func() {
 				HMPassword:                "hm-some-persisted-string",
 			}
 
-			_, manifestProperties, err := manifestBuilder.Build(manifestProperties)
+			_, awsManifestProperties, err := manifestBuilder.Build("aws", awsManifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stringGenerator.GenerateCall.CallCount).To(Equal(0))
-			Expect(manifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
+			Expect(awsManifestProperties.Credentials).To(Equal(manifests.InternalCredentials{
 				MBusUsername:              "mbus-user-some-persisted-string",
 				NatsUsername:              "nats-user-some-persisted-string",
 				PostgresUsername:          "postgres-user-some-persisted-string",
@@ -226,7 +335,7 @@ var _ = Describe("ManifestBuilder", func() {
 			It("returns an error when the ssl key pair cannot be generated", func() {
 				sslKeyPairGenerator.GenerateCall.Returns.Error = errors.New("failed to generate key pair")
 
-				_, _, err := manifestBuilder.Build(manifestProperties)
+				_, _, err := manifestBuilder.Build("aws", awsManifestProperties)
 				Expect(err).To(MatchError("failed to generate key pair"))
 			})
 
@@ -235,7 +344,7 @@ var _ = Describe("ManifestBuilder", func() {
 					fakeCloudProviderManifestBuilder := &fakes.CloudProviderManifestBuilder{}
 					fakeCloudProviderManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
 					manifestBuilder = manifests.NewManifestBuilder(input, logger, sslKeyPairGenerator, stringGenerator, fakeCloudProviderManifestBuilder, jobsManifestBuilder)
-					manifestProperties = manifests.ManifestProperties{
+					awsManifestProperties = manifests.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",
 						SubnetID:         "subnet-12345",
@@ -250,7 +359,7 @@ var _ = Describe("ManifestBuilder", func() {
 					}
 				})
 				It("returns an error when it cannot build the cloud provider manifest", func() {
-					_, _, err := manifestBuilder.Build(manifestProperties)
+					_, _, err := manifestBuilder.Build("aws", awsManifestProperties)
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -260,7 +369,7 @@ var _ = Describe("ManifestBuilder", func() {
 					fakeJobsManifestBuilder := &fakes.JobsManifestBuilder{}
 					fakeJobsManifestBuilder.BuildCall.Returns.Error = fmt.Errorf("something bad happened")
 					manifestBuilder = manifests.NewManifestBuilder(input, logger, sslKeyPairGenerator, stringGenerator, cloudProviderManifestBuilder, fakeJobsManifestBuilder)
-					manifestProperties = manifests.ManifestProperties{
+					awsManifestProperties = manifests.ManifestProperties{
 						DirectorUsername: "bosh-username",
 						DirectorPassword: "bosh-password",
 						SubnetID:         "subnet-12345",
@@ -275,7 +384,7 @@ var _ = Describe("ManifestBuilder", func() {
 					}
 				})
 				It("returns an error when it cannot build the job manifest", func() {
-					_, _, err := manifestBuilder.Build(manifestProperties)
+					_, _, err := manifestBuilder.Build("aws", awsManifestProperties)
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -283,17 +392,32 @@ var _ = Describe("ManifestBuilder", func() {
 	})
 
 	Describe("template marshaling", func() {
-		It("can be marshaled to YML", func() {
+		BeforeEach(func() {
 			sslKeyPairGenerator.GenerateCall.Returns.KeyPair = ssl.KeyPair{
 				CA:          []byte(ca),
 				Certificate: []byte(certificate),
 				PrivateKey:  []byte(privateKey),
 			}
+		})
 
-			manifest, _, err := manifestBuilder.Build(manifestProperties)
+		It("can correctly marshal an aws manifest", func() {
+			manifest, _, err := manifestBuilder.Build("aws", awsManifestProperties)
 			Expect(err).NotTo(HaveOccurred())
 
-			buf, err := ioutil.ReadFile("fixtures/manifest.yml")
+			buf, err := ioutil.ReadFile("fixtures/aws_manifest.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			output, err := yaml.Marshal(manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(output).To(MatchYAML(string(buf)))
+		})
+
+		It("can correctly marshal an gcp manifest", func() {
+			manifest, _, err := manifestBuilder.Build("gcp", gcpManifestProperties)
+			Expect(err).NotTo(HaveOccurred())
+
+			buf, err := ioutil.ReadFile("fixtures/gcp_manifest.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := yaml.Marshal(manifest)
@@ -302,4 +426,5 @@ var _ = Describe("ManifestBuilder", func() {
 			Expect(output).To(MatchYAML(string(buf)))
 		})
 	})
+
 })

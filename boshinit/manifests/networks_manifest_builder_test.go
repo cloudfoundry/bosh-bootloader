@@ -1,9 +1,9 @@
 package manifests_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
 )
 
 var _ = Describe("NetworksManifestBuilder", func() {
@@ -36,6 +36,35 @@ var _ = Describe("NetworksManifestBuilder", func() {
 				{
 					Name: "public",
 					Type: "vip",
+				},
+			}))
+		})
+
+		It("returns networks with aws cloud properties", func() {
+			networks := networksManifestBuilder.Build(manifests.ManifestProperties{SubnetID: "subnet-12345"})
+			Expect(networks[0].Subnets[0].CloudProperties).To(Equal(manifests.NetworksCloudProperties{
+				Subnet: "subnet-12345",
+			}))
+		})
+
+		It("returns networks with gcp cloud properties", func() {
+			networks := networksManifestBuilder.Build(manifests.ManifestProperties{
+				GCP: manifests.ManifestPropertiesGCP{
+					NetworkName:    "some-network",
+					SubnetworkName: "some-subnet",
+					BOSHTag:        "some-bosh-open-tag",
+					InternalTag:    "some-internal-tag",
+				},
+			})
+
+			ip := false
+			Expect(networks[0].Subnets[0].CloudProperties).To(Equal(manifests.NetworksCloudProperties{
+				NetworkName:         "some-network",
+				SubnetworkName:      "some-subnet",
+				EphemeralExternalIP: &ip,
+				Tags: []string{
+					"some-bosh-open-tag",
+					"some-internal-tag",
 				},
 			}))
 		})

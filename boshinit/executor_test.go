@@ -15,15 +15,16 @@ import (
 
 var _ = Describe("Executor", func() {
 	var (
-		manifestBuilder             *fakes.BOSHInitManifestBuilder
-		deployCommandRunner         *fakes.BOSHInitCommandRunner
-		deleteCommandRunner         *fakes.BOSHInitCommandRunner
-		executor                    boshinit.Executor
-		logger                      *fakes.Logger
-		infrastructureConfiguration boshinit.InfrastructureConfiguration
-		sslKeyPair                  ssl.KeyPair
-		ec2KeyPair                  ec2.KeyPair
-		credentials                 map[string]string
+		manifestBuilder                *fakes.BOSHInitManifestBuilder
+		deployCommandRunner            *fakes.BOSHInitCommandRunner
+		deleteCommandRunner            *fakes.BOSHInitCommandRunner
+		executor                       boshinit.Executor
+		logger                         *fakes.Logger
+		awsInfrastructureConfiguration boshinit.InfrastructureConfiguration
+		gcpInfrastructureConfiguration boshinit.InfrastructureConfiguration
+		sslKeyPair                     ssl.KeyPair
+		ec2KeyPair                     ec2.KeyPair
+		credentials                    map[string]string
 	)
 
 	BeforeEach(func() {
@@ -33,7 +34,7 @@ var _ = Describe("Executor", func() {
 		logger = &fakes.Logger{}
 		executor = boshinit.NewExecutor(manifestBuilder, deployCommandRunner, deleteCommandRunner, logger)
 
-		infrastructureConfiguration = boshinit.InfrastructureConfiguration{
+		awsInfrastructureConfiguration = boshinit.InfrastructureConfiguration{
 			SubnetID:         "subnet-12345",
 			AvailabilityZone: "some-az",
 			ElasticIP:        "some-elastic-ip",
@@ -41,6 +42,19 @@ var _ = Describe("Executor", func() {
 			SecretAccessKey:  "some-secret-access-key",
 			SecurityGroup:    "some-security-group",
 			AWSRegion:        "some-aws-region",
+		}
+
+		gcpInfrastructureConfiguration = boshinit.InfrastructureConfiguration{
+			ElasticIP: "some-elastic-ip",
+			GCP: boshinit.InfrastructureConfigurationGCP{
+				Zone:           "some-zone",
+				NetworkName:    "some-network-name",
+				SubnetworkName: "some-subnet-name",
+				BOSHTag:        "some-bosh-tag",
+				InternalTag:    "some-internal-tag",
+				Project:        "some-project",
+				JsonKey:        `{"key":"value"}`,
+			},
 		}
 
 		sslKeyPair = ssl.KeyPair{
@@ -136,21 +150,23 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("Deploy", func() {
-		It("deploys bosh and returns a bosh output", func() {
+		It("deploys bosh on aws and returns a bosh output", func() {
 			deployOutput, err := executor.Deploy(boshinit.DeployInput{
+				IAAS:             "aws",
 				DirectorName:     "some-director-name",
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
 				State: boshinit.State{
 					"key": "value",
 				},
-				InfrastructureConfiguration: infrastructureConfiguration,
+				InfrastructureConfiguration: awsInfrastructureConfiguration,
 				SSLKeyPair:                  sslKeyPair,
 				EC2KeyPair:                  ec2KeyPair,
 				Credentials:                 credentials,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(manifestBuilder.BuildCall.Receives.IAAS).To(Equal("aws"))
 			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(manifests.ManifestProperties{
 				DirectorName:     "some-director-name",
 				DirectorUsername: "some-director-username",
@@ -221,9 +237,64 @@ var _ = Describe("Executor", func() {
 			}))
 		})
 
+		It("deploys bosh on gcp and returns a bosh output", func() {
+			_, err := executor.Deploy(boshinit.DeployInput{
+				IAAS:             "gcp",
+				DirectorName:     "some-director-name",
+				DirectorUsername: "some-director-username",
+				DirectorPassword: "some-director-password",
+				State: boshinit.State{
+					"key": "value",
+				},
+				InfrastructureConfiguration: gcpInfrastructureConfiguration,
+				SSLKeyPair:                  sslKeyPair,
+				Credentials:                 credentials,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(manifestBuilder.BuildCall.Receives.IAAS).To(Equal("gcp"))
+			Expect(manifestBuilder.BuildCall.Receives.Properties).To(Equal(manifests.ManifestProperties{
+				DirectorName:     "some-director-name",
+				DirectorUsername: "some-director-username",
+				DirectorPassword: "some-director-password",
+				CACommonName:     "BOSH Bootloader",
+				ElasticIP:        "some-elastic-ip",
+				SSLKeyPair: ssl.KeyPair{
+					Certificate: []byte("some-certificate"),
+					PrivateKey:  []byte("some-private-key"),
+				},
+				GCP: manifests.ManifestPropertiesGCP{
+					Zone:           "some-zone",
+					NetworkName:    "some-network-name",
+					SubnetworkName: "some-subnet-name",
+					BOSHTag:        "some-bosh-tag",
+					InternalTag:    "some-internal-tag",
+					Project:        "some-project",
+					JsonKey:        `{"key":"value"}`,
+				},
+				Credentials: manifests.InternalCredentials{
+					MBusUsername:              "some-mbus-username",
+					NatsUsername:              "some-nats-username",
+					PostgresUsername:          "some-postgres-username",
+					RegistryUsername:          "some-registry-username",
+					BlobstoreDirectorUsername: "some-blobstore-director-username",
+					BlobstoreAgentUsername:    "some-blobstore-agent-username",
+					HMUsername:                "some-hm-username",
+					MBusPassword:              "some-mbus-password",
+					NatsPassword:              "some-nats-password",
+					PostgresPassword:          "some-postgres-password",
+					RegistryPassword:          "some-registry-password",
+					BlobstoreDirectorPassword: "some-blobstore-director-password",
+					BlobstoreAgentPassword:    "some-blobstore-agent-password",
+					HMPassword:                "some-hm-password",
+				},
+			}))
+		})
+
 		It("prints out that the director is being deployed", func() {
 			_, err := executor.Deploy(boshinit.DeployInput{
-				InfrastructureConfiguration: infrastructureConfiguration,
+				IAAS: "aws",
+				InfrastructureConfiguration: awsInfrastructureConfiguration,
 				SSLKeyPair:                  sslKeyPair,
 				EC2KeyPair:                  ec2KeyPair,
 			})

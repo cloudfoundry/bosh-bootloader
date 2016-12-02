@@ -194,7 +194,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
 	}
 
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID)
+	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID, "aws")
 	if err != nil {
 		return err
 	}

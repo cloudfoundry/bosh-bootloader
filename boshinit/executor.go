@@ -23,7 +23,7 @@ type logger interface {
 }
 
 type manifestBuilder interface {
-	Build(manifests.ManifestProperties) (manifests.Manifest, manifests.ManifestProperties, error)
+	Build(string, manifests.ManifestProperties) (manifests.Manifest, manifests.ManifestProperties, error)
 }
 
 type command interface {
@@ -51,7 +51,7 @@ func (e Executor) Delete(boshInitManifest string, boshInitState State, ec2Privat
 }
 
 func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
-	manifest, manifestProperties, err := e.manifestBuilder.Build(manifests.ManifestProperties{
+	manifest, manifestProperties, err := e.manifestBuilder.Build(input.IAAS, manifests.ManifestProperties{
 		DirectorName:     input.DirectorName,
 		DirectorUsername: input.DirectorUsername,
 		DirectorPassword: input.DirectorPassword,
@@ -66,6 +66,15 @@ func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 		DefaultKeyName:   input.EC2KeyPair.Name,
 		SSLKeyPair:       input.SSLKeyPair,
 		Credentials:      manifests.NewInternalCredentials(input.Credentials),
+		GCP: manifests.ManifestPropertiesGCP{
+			Zone:           input.InfrastructureConfiguration.GCP.Zone,
+			NetworkName:    input.InfrastructureConfiguration.GCP.NetworkName,
+			SubnetworkName: input.InfrastructureConfiguration.GCP.SubnetworkName,
+			BOSHTag:        input.InfrastructureConfiguration.GCP.BOSHTag,
+			InternalTag:    input.InfrastructureConfiguration.GCP.InternalTag,
+			Project:        input.InfrastructureConfiguration.GCP.Project,
+			JsonKey:        input.InfrastructureConfiguration.GCP.JsonKey,
+		},
 	})
 	if err != nil {
 		return DeployOutput{}, err

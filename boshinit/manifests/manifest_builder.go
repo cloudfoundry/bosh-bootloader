@@ -16,11 +16,11 @@ type stringGenerator interface {
 }
 
 type cloudProviderManifestBuilder interface {
-	Build(ManifestProperties) (CloudProvider, ManifestProperties, error)
+	Build(string, ManifestProperties) (CloudProvider, ManifestProperties, error)
 }
 
 type jobsManifestBuilder interface {
-	Build(ManifestProperties) ([]Job, ManifestProperties, error)
+	Build(string, ManifestProperties) ([]Job, ManifestProperties, error)
 }
 
 type ManifestProperties struct {
@@ -38,6 +38,17 @@ type ManifestProperties struct {
 	SecurityGroup    string
 	SSLKeyPair       ssl.KeyPair
 	Credentials      InternalCredentials
+	GCP              ManifestPropertiesGCP
+}
+
+type ManifestPropertiesGCP struct {
+	Zone           string
+	NetworkName    string
+	SubnetworkName string
+	BOSHTag        string
+	InternalTag    string
+	Project        string
+	JsonKey        string
 }
 
 type ManifestBuilder struct {
@@ -50,12 +61,18 @@ type ManifestBuilder struct {
 }
 
 type ManifestBuilderInput struct {
-	BOSHURL        string
-	BOSHSHA1       string
-	BOSHAWSCPIURL  string
-	BOSHAWSCPISHA1 string
-	StemcellURL    string
-	StemcellSHA1   string
+	AWSBOSHURL      string
+	AWSBOSHSHA1     string
+	GCPBOSHURL      string
+	GCPBOSHSHA1     string
+	BOSHAWSCPIURL   string
+	BOSHAWSCPISHA1  string
+	BOSHGCPCPIURL   string
+	BOSHGCPCPISHA1  string
+	AWSStemcellURL  string
+	AWSStemcellSHA1 string
+	GCPStemcellURL  string
+	GCPStemcellSHA1 string
 }
 
 func NewManifestBuilder(input ManifestBuilderInput, logger logger, sslKeyPairGenerator sslKeyPairGenerator, stringGenerator stringGenerator, cloudProviderManifestBuilder cloudProviderManifestBuilder, jobsManifestBuilder jobsManifestBuilder) ManifestBuilder {
@@ -69,7 +86,7 @@ func NewManifestBuilder(input ManifestBuilderInput, logger logger, sslKeyPairGen
 	}
 }
 
-func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest, ManifestProperties, error) {
+func (m ManifestBuilder) Build(iaas string, manifestProperties ManifestProperties) (Manifest, ManifestProperties, error) {
 	m.logger.Step("generating bosh-init manifest")
 
 	releaseManifestBuilder := NewReleaseManifestBuilder()
@@ -86,23 +103,60 @@ func (m ManifestBuilder) Build(manifestProperties ManifestProperties) (Manifest,
 		manifestProperties.SSLKeyPair = keyPair
 	}
 
-	cloudProvider, manifestProperties, err := m.cloudProviderManifestBuilder.Build(manifestProperties)
+	cloudProvider, manifestProperties, err := m.cloudProviderManifestBuilder.Build(iaas, manifestProperties)
 	if err != nil {
 		return Manifest{}, ManifestProperties{}, err
 	}
 
-	jobs, manifestProperties, err := m.jobsManifestBuilder.Build(manifestProperties)
+	jobs, manifestProperties, err := m.jobsManifestBuilder.Build(iaas, manifestProperties)
 	if err != nil {
 		return Manifest{}, ManifestProperties{}, err
 	}
+
+	boshURL, boshSHA1 := getBOSHRelease(iaas, m.input.AWSBOSHURL, m.input.AWSBOSHSHA1, m.input.GCPBOSHURL, m.input.GCPBOSHSHA1)
+	cpiName, cpiURL, cpiSHA1 := getCPIRelease(iaas, m.input.BOSHAWSCPIURL, m.input.BOSHAWSCPISHA1, m.input.BOSHGCPCPIURL, m.input.BOSHGCPCPISHA1)
+	stemcellURL, stemcellSHA1 := getStemcell(iaas, m.input.AWSStemcellURL, m.input.AWSStemcellSHA1, m.input.GCPStemcellURL, m.input.GCPStemcellSHA1)
 
 	return Manifest{
 		Name:          "bosh",
-		Releases:      releaseManifestBuilder.Build(m.input.BOSHURL, m.input.BOSHSHA1, m.input.BOSHAWSCPIURL, m.input.BOSHAWSCPISHA1),
-		ResourcePools: resourcePoolsManifestBuilder.Build(manifestProperties, m.input.StemcellURL, m.input.StemcellSHA1),
-		DiskPools:     diskPoolsManifestBuilder.Build(),
+		Releases:      releaseManifestBuilder.Build(boshURL, boshSHA1, cpiName, cpiURL, cpiSHA1),
+		ResourcePools: resourcePoolsManifestBuilder.Build(iaas, manifestProperties, stemcellURL, stemcellSHA1),
+		DiskPools:     diskPoolsManifestBuilder.Build(iaas),
 		Networks:      networksManifestBuilder.Build(manifestProperties),
 		Jobs:          jobs,
 		CloudProvider: cloudProvider,
 	}, manifestProperties, nil
+}
+
+func getBOSHRelease(iaas, awsURL, awsSHA1, gcpURL, gcpSHA1 string) (url, sha1 string) {
+	switch iaas {
+	case "aws":
+		return awsURL, awsSHA1
+	case "gcp":
+		return gcpURL, gcpSHA1
+	default:
+		return "", ""
+	}
+}
+
+func getCPIRelease(iaas, awsURL, awsSHA1, gcpURL, gcpSHA1 string) (name, url, sha1 string) {
+	switch iaas {
+	case "aws":
+		return "bosh-aws-cpi", awsURL, awsSHA1
+	case "gcp":
+		return "bosh-google-cpi", gcpURL, gcpSHA1
+	default:
+		return "", "", ""
+	}
+}
+
+func getStemcell(iaas, awsURL, awsSHA1, gcpURL, gcpSHA1 string) (url, sha1 string) {
+	switch iaas {
+	case "aws":
+		return awsURL, awsSHA1
+	case "gcp":
+		return gcpURL, gcpSHA1
+	default:
+		return "", ""
+	}
 }
