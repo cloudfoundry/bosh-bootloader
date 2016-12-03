@@ -56,12 +56,15 @@ func (k KeyPairUpdater) Update(projectID string) (storage.KeyPair, error) {
 		return storage.KeyPair{}, err
 	}
 
-	sshKeyItemValue := fmt.Sprintf("vcap:%s vcap\n", strings.TrimSpace(publicKey))
+	sshKeyItemValue := fmt.Sprintf("vcap:%s vcap", strings.TrimSpace(publicKey))
 
 	var updated bool
 	for i, item := range project.CommonInstanceMetadata.Items {
 		if item.Key == "sshKeys" {
-			newValue := fmt.Sprintf("%s%s", *item.Value, sshKeyItemValue)
+			sshKeys := strings.Split(*item.Value, "\n")
+			sshKeys = append(sshKeys, sshKeyItemValue)
+
+			newValue := strings.Join(sshKeys, "\n")
 			project.CommonInstanceMetadata.Items[i].Value = &newValue
 			updated = true
 			k.logger.Step("appending new ssh-keys for the project %q", projectID)

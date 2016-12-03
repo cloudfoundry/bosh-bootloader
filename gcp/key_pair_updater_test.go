@@ -89,7 +89,7 @@ var _ = Describe("KeyPairUpdater", func() {
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(1))
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Key).To(Equal("sshKeys"))
-		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`vcap:ssh-rsa .* vcap\n$`))
+		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`vcap:ssh-rsa .* vcap$`))
 
 		Expect(logger.StepCall.CallCount).To(Equal(1))
 		Expect(logger.StepCall.Receives.Message).To(Equal(`Creating new ssh-keys for the project %q`))
@@ -97,7 +97,7 @@ var _ = Describe("KeyPairUpdater", func() {
 	})
 
 	It("appends to the list of ssh-keys", func() {
-		existingSSHKey := "my-user:ssh-rsa MY-PUBLIC-KEY my-user\n"
+		existingSSHKey := "my-user:ssh-rsa MY-PUBLIC-KEY my-user\nmy-other-user:ssh-rsa MY-OTHER-PUBLIC-KEY my-other-user"
 		someOtherValue := "some-other-value"
 		gcpClient.GetProjectCall.Returns.Project.CommonInstanceMetadata = &compute.Metadata{
 			Items: []*compute.MetadataItems{
@@ -116,7 +116,7 @@ var _ = Describe("KeyPairUpdater", func() {
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(2))
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Key).To(Equal("sshKeys"))
-		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`my-user:ssh-rsa MY-PUBLIC-KEY my-user\nvcap:ssh-rsa .* vcap\n$`))
+		Expect(*gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Value).To(MatchRegexp(`my-user:ssh-rsa MY-PUBLIC-KEY my-user\nmy-other-user:ssh-rsa MY-OTHER-PUBLIC-KEY my-other-user\nvcap:ssh-rsa .* vcap$`))
 
 		Expect(logger.StepCall.CallCount).To(Equal(1))
 		Expect(logger.StepCall.Receives.Message).To(Equal(`appending new ssh-keys for the project %q`))
