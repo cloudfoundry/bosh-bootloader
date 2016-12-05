@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"golang.org/x/oauth2/google"
@@ -51,7 +52,7 @@ func (g GCP) SSHKey() (string, error) {
 	return "", nil
 }
 
-func (g GCP) RemoveSSHKey() error {
+func (g GCP) RemoveSSHKey(sshKey string) error {
 	project, err := g.service.Projects.Get(g.projectID).Do()
 	if err != nil {
 		return err
@@ -59,7 +60,15 @@ func (g GCP) RemoveSSHKey() error {
 
 	for i, item := range project.CommonInstanceMetadata.Items {
 		if item.Key == "sshKeys" {
-			newValue := ""
+			newSSHKeys := []string{}
+
+			for _, keyFromGCP := range strings.Split(*item.Value, "\n") {
+				if keyFromGCP != sshKey {
+					newSSHKeys = append(newSSHKeys, keyFromGCP)
+				}
+			}
+
+			newValue := strings.Join(newSSHKeys, "\n")
 			project.CommonInstanceMetadata.Items[i].Value = &newValue
 			break
 		}

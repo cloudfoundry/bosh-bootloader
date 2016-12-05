@@ -30,6 +30,10 @@ type state struct {
 	KeyPair keyPair `json:"keyPair"`
 	EnvID   string  `json:"envID"`
 	TFState string  `json:"tfState"`
+	BOSH    struct {
+		State    map[string]interface{} `json:"state"`
+		Manifest string                 `json:"manifest"`
+	} `json:"bosh"`
 }
 
 func NewState(stateDirectory string) State {
@@ -67,6 +71,21 @@ func (s State) EnvID() string {
 func (s State) TFState() string {
 	state := s.readStateFile()
 	return state.TFState
+}
+
+func (s State) BOSHState() string {
+	state := s.readStateFile()
+	boshState, err := json.Marshal(state.BOSH.State)
+	if err != nil {
+		panic(err)
+	}
+	return string(boshState)
+}
+
+func (s State) BOSHManifest() string {
+	state := s.readStateFile()
+
+	return state.BOSH.Manifest
 }
 
 func (s State) readStateFile() state {
