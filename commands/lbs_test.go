@@ -15,20 +15,20 @@ import (
 
 var _ = Describe("LBs", func() {
 	var (
-		awsCredentialValidator *fakes.AWSCredentialValidator
-		infrastructureManager  *fakes.InfrastructureManager
-		stateValidator         *fakes.StateValidator
-		lbsCommand             commands.LBs
-		stdout                 *bytes.Buffer
+		credentialValidator   *fakes.CredentialValidator
+		infrastructureManager *fakes.InfrastructureManager
+		stateValidator        *fakes.StateValidator
+		lbsCommand            commands.LBs
+		stdout                *bytes.Buffer
 	)
 
 	BeforeEach(func() {
-		awsCredentialValidator = &fakes.AWSCredentialValidator{}
+		credentialValidator = &fakes.CredentialValidator{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		stateValidator = &fakes.StateValidator{}
 		stdout = bytes.NewBuffer([]byte{})
 
-		lbsCommand = commands.NewLBs(awsCredentialValidator, stateValidator, infrastructureManager, stdout)
+		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, stdout)
 	})
 
 	Describe("Execute", func() {
@@ -52,7 +52,7 @@ var _ = Describe("LBs", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
 
 			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
@@ -78,7 +78,7 @@ var _ = Describe("LBs", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
 
 			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
@@ -98,7 +98,7 @@ var _ = Describe("LBs", func() {
 		Context("failure cases", func() {
 			Context("when credential validator fails", func() {
 				It("returns an error", func() {
-					awsCredentialValidator.ValidateCall.Returns.Error = errors.New("validator failed")
+					credentialValidator.ValidateAWSCall.Returns.Error = errors.New("validator failed")
 
 					err := lbsCommand.Execute([]string{}, storage.State{})
 

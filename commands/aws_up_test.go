@@ -30,7 +30,7 @@ var _ = Describe("AWSUp", func() {
 			cloudConfigurator         *fakes.BoshCloudConfigurator
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			certificateDescriber      *fakes.CertificateDescriber
-			awsCredentialValidator    *fakes.AWSCredentialValidator
+			credentialValidator       *fakes.CredentialValidator
 			cloudConfigManager        *fakes.CloudConfigManager
 			boshClientProvider        *fakes.BOSHClientProvider
 			boshClient                *fakes.BOSHClient
@@ -86,7 +86,7 @@ var _ = Describe("AWSUp", func() {
 
 			certificateDescriber = &fakes.CertificateDescriber{}
 
-			awsCredentialValidator = &fakes.AWSCredentialValidator{}
+			credentialValidator = &fakes.CredentialValidator{}
 
 			boshClient = &fakes.BOSHClient{}
 			boshClientProvider = &fakes.BOSHClientProvider{}
@@ -97,7 +97,7 @@ var _ = Describe("AWSUp", func() {
 			clientProvider = &fakes.ClientProvider{}
 
 			command = commands.NewAWSUp(
-				awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
+				credentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
 				stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 				cloudConfigManager, boshClientProvider, stateStore,
 				clientProvider,
@@ -122,7 +122,7 @@ var _ = Describe("AWSUp", func() {
 		})
 
 		It("returns an error when aws credential validator fails", func() {
-			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
+			credentialValidator.ValidateAWSCall.Returns.Error = errors.New("failed to validate aws credentials")
 			err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
@@ -143,7 +143,7 @@ var _ = Describe("AWSUp", func() {
 				SecretAccessKey: "new-aws-secret-access-key",
 				AccessKeyID:     "new-aws-access-key-id",
 			}))
-			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
 		})
 
 		It("syncs the keypair", func() {
@@ -162,7 +162,7 @@ var _ = Describe("AWSUp", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(0))
-			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
 
 			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
@@ -966,7 +966,7 @@ var _ = Describe("AWSUp", func() {
 			})
 
 			It("returns an error when no AWS parameters are provided and the bbl-state AWS values are empty", func() {
-				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("AWS secret access key must be provided")
+				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("AWS secret access key must be provided")
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))

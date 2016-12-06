@@ -89,7 +89,7 @@ func main() {
 	clientProvider := &clientmanager.ClientProvider{EndpointOverride: configuration.Global.EndpointOverride}
 	clientProvider.SetConfig(awsConfiguration)
 
-	awsCredentialValidator := application.NewAWSCredentialValidator(configuration)
+	credentialValidator := application.NewCredentialValidator(configuration)
 	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
 	awsKeyPairCreator := ec2.NewKeyPairCreator(clientProvider)
 	keyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
@@ -165,7 +165,7 @@ func main() {
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
 
 	awsUp := commands.NewAWSUp(
-		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
+		credentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
@@ -179,23 +179,23 @@ func main() {
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
-		awsCredentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
+		credentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore, stateValidator,
 	)
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(
-		logger, awsCredentialValidator, certificateManager, infrastructureManager,
+		logger, credentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore, stateValidator,
 	)
-	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
+	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(credentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore, stateValidator)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(
-		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
+		credentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
 		stateValidator,
 	)
-	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, stateValidator, infrastructureManager, os.Stdout)
+	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})

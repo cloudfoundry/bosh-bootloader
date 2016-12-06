@@ -19,7 +19,7 @@ type CreateLBs struct {
 	boshClientProvider        boshClientProvider
 	availabilityZoneRetriever availabilityZoneRetriever
 	boshCloudConfigurator     boshCloudConfigurator
-	awsCredentialValidator    awsCredentialValidator
+	credentialValidator       credentialValidator
 	cloudConfigManager        cloudConfigManager
 	certificateValidator      certificateValidator
 	guidGenerator             guidGenerator
@@ -57,7 +57,7 @@ type guidGenerator interface {
 	Generate() (string, error)
 }
 
-func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
+func NewCreateLBs(logger logger, credentialValidator credentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
 	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
 	guidGenerator guidGenerator, stateStore stateStore, stateValidator stateValidator) CreateLBs {
@@ -68,7 +68,7 @@ func NewCreateLBs(logger logger, awsCredentialValidator awsCredentialValidator, 
 		boshClientProvider:        boshClientProvider,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		boshCloudConfigurator:     boshCloudConfigurator,
-		awsCredentialValidator:    awsCredentialValidator,
+		credentialValidator:       credentialValidator,
 		cloudConfigManager:        cloudConfigManager,
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
@@ -88,7 +88,7 @@ func (c CreateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	err = c.awsCredentialValidator.Validate()
+	err = c.credentialValidator.ValidateAWS()
 	if err != nil {
 		return err
 	}

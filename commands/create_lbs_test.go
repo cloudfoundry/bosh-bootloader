@@ -26,7 +26,7 @@ var _ = Describe("Create LBs", func() {
 			boshClientProvider        *fakes.BOSHClientProvider
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			boshCloudConfigurator     *fakes.BoshCloudConfigurator
-			awsCredentialValidator    *fakes.AWSCredentialValidator
+			credentialValidator       *fakes.CredentialValidator
 			logger                    *fakes.Logger
 			cloudConfigManager        *fakes.CloudConfigManager
 			certificateValidator      *fakes.CertificateValidator
@@ -43,7 +43,7 @@ var _ = Describe("Create LBs", func() {
 			boshCloudConfigurator = &fakes.BoshCloudConfigurator{}
 			boshClient = &fakes.BOSHClient{}
 			boshClientProvider = &fakes.BOSHClientProvider{}
-			awsCredentialValidator = &fakes.AWSCredentialValidator{}
+			credentialValidator = &fakes.CredentialValidator{}
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			certificateValidator = &fakes.CertificateValidator{}
@@ -77,7 +77,7 @@ var _ = Describe("Create LBs", func() {
 				EnvID: "some-env-id-timestamp",
 			}
 
-			command = commands.NewCreateLBs(logger, awsCredentialValidator, certificateManager, infrastructureManager,
+			command = commands.NewCreateLBs(logger, credentialValidator, certificateManager, infrastructureManager,
 				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator, guidGenerator,
 				stateStore, stateValidator)
 		})
@@ -91,7 +91,7 @@ var _ = Describe("Create LBs", func() {
 		})
 
 		It("returns an error if aws credential validator fails", func() {
-			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
+			credentialValidator.ValidateAWSCall.Returns.Error = errors.New("failed to validate aws credentials")
 			err := command.Execute([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
@@ -367,7 +367,7 @@ var _ = Describe("Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
-					Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+					Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
 				})
 			})
 

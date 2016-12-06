@@ -22,7 +22,7 @@ type UpdateLBs struct {
 	certificateManager        certificateManager
 	availabilityZoneRetriever availabilityZoneRetriever
 	infrastructureManager     infrastructureManager
-	awsCredentialValidator    awsCredentialValidator
+	credentialValidator       credentialValidator
 	boshClientProvider        boshClientProvider
 	logger                    logger
 	certificateValidator      certificateValidator
@@ -31,13 +31,13 @@ type UpdateLBs struct {
 	stateValidator            stateValidator
 }
 
-func NewUpdateLBs(awsCredentialValidator awsCredentialValidator, certificateManager certificateManager,
+func NewUpdateLBs(credentialValidator credentialValidator, certificateManager certificateManager,
 	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager, boshClientProvider boshClientProvider,
 	logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator, stateStore stateStore,
 	stateValidator stateValidator) UpdateLBs {
 
 	return UpdateLBs{
-		awsCredentialValidator:    awsCredentialValidator,
+		credentialValidator:       credentialValidator,
 		certificateManager:        certificateManager,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		infrastructureManager:     infrastructureManager,
@@ -66,7 +66,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	err = c.awsCredentialValidator.Validate()
+	err = c.credentialValidator.ValidateAWS()
 	if err != nil {
 		return err
 	}

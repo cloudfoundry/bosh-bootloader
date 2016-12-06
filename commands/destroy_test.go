@@ -18,19 +18,19 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy                commands.Destroy
-		boshDeleter            *fakes.BOSHDeleter
-		stackManager           *fakes.StackManager
-		infrastructureManager  *fakes.InfrastructureManager
-		vpcStatusChecker       *fakes.VPCStatusChecker
-		stringGenerator        *fakes.StringGenerator
-		logger                 *fakes.Logger
-		keyPairDeleter         *fakes.KeyPairDeleter
-		certificateDeleter     *fakes.CertificateDeleter
-		awsCredentialValidator *fakes.AWSCredentialValidator
-		stateStore             *fakes.StateStore
-		stateValidator         *fakes.StateValidator
-		stdin                  *bytes.Buffer
+		destroy               commands.Destroy
+		boshDeleter           *fakes.BOSHDeleter
+		stackManager          *fakes.StackManager
+		infrastructureManager *fakes.InfrastructureManager
+		vpcStatusChecker      *fakes.VPCStatusChecker
+		stringGenerator       *fakes.StringGenerator
+		logger                *fakes.Logger
+		keyPairDeleter        *fakes.KeyPairDeleter
+		certificateDeleter    *fakes.CertificateDeleter
+		credentialValidator   *fakes.CredentialValidator
+		stateStore            *fakes.StateStore
+		stateValidator        *fakes.StateValidator
+		stdin                 *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -44,11 +44,11 @@ var _ = Describe("Destroy", func() {
 		keyPairDeleter = &fakes.KeyPairDeleter{}
 		certificateDeleter = &fakes.CertificateDeleter{}
 		stringGenerator = &fakes.StringGenerator{}
-		awsCredentialValidator = &fakes.AWSCredentialValidator{}
+		credentialValidator = &fakes.CredentialValidator{}
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 
-		destroy = commands.NewDestroy(awsCredentialValidator, logger, stdin, boshDeleter,
+		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshDeleter,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			keyPairDeleter, certificateDeleter, stateStore, stateValidator)
 	})
@@ -69,12 +69,28 @@ var _ = Describe("Destroy", func() {
 			Expect(err).To(MatchError("state validator failed"))
 		})
 
-		It("returns an error when aws credential validator fails", func() {
-			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
+		Context("when iaas is aws", func() {
+			It("returns an error when aws credential validator fails", func() {
+				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("aws credentials validator failed")
 
-			err := destroy.Execute([]string{}, storage.State{})
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "aws",
+				})
 
-			Expect(err).To(MatchError("aws credentials validator failed"))
+				Expect(err).To(MatchError("aws credentials validator failed"))
+			})
+		})
+
+		Context("when iaas is gcp", func() {
+			It("returns an error when gcp credential validator fails", func() {
+				credentialValidator.ValidateGCPCall.Returns.Error = errors.New("gcp credentials validator failed")
+
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+				})
+
+				Expect(err).To(MatchError("gcp credentials validator failed"))
+			})
 		})
 
 		DescribeTable("prompting the user for confirmation",
@@ -126,7 +142,23 @@ var _ = Describe("Destroy", func() {
 			)
 		})
 
-		Describe("destroying the infrastructure", func() {
+		It("clears the state", func() {
+			stdin.Write([]byte("yes\n"))
+			err := destroy.Execute([]string{}, storage.State{
+				IAAS: "aws",
+				Stack: storage.Stack{
+					Name:            "some-stack-name",
+					LBType:          "some-lb-type",
+					CertificateName: "some-certificate-name",
+				},
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stateStore.SetCall.CallCount).To(Equal(4))
+			Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{}))
+		})
+
+		Describe("destroying the aws infrastructure", func() {
 			var (
 				state storage.State
 			)
@@ -233,14 +265,6 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(keyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
-			})
-
-			It("clears the state", func() {
-				err := destroy.Execute([]string{}, state)
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
-				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{}))
 			})
 
 			Context("reentrance", func() {
@@ -376,7 +400,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
-					Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+					Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
 				})
 			})
 

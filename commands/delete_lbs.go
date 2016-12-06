@@ -11,7 +11,7 @@ const (
 )
 
 type DeleteLBs struct {
-	awsCredentialValidator    awsCredentialValidator
+	credentialValidator       credentialValidator
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateManager        certificateManager
 	infrastructureManager     infrastructureManager
@@ -31,13 +31,13 @@ type deleteLBsConfig struct {
 	skipIfMissing bool
 }
 
-func NewDeleteLBs(awsCredentialValidator awsCredentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
+func NewDeleteLBs(credentialValidator credentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
 	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore, stateValidator stateValidator,
 ) DeleteLBs {
 	return DeleteLBs{
-		awsCredentialValidator:    awsCredentialValidator,
+		credentialValidator:       credentialValidator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateManager:        certificateManager,
 		infrastructureManager:     infrastructureManager,
@@ -66,7 +66,7 @@ func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	err = c.awsCredentialValidator.Validate()
+	err = c.credentialValidator.ValidateAWS()
 	if err != nil {
 		return err
 	}

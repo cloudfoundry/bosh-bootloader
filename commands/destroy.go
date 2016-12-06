@@ -17,18 +17,18 @@ const (
 )
 
 type Destroy struct {
-	awsCredentialValidator awsCredentialValidator
-	logger                 logger
-	stdin                  io.Reader
-	boshDeleter            boshDeleter
-	vpcStatusChecker       vpcStatusChecker
-	stackManager           stackManager
-	stringGenerator        stringGenerator
-	infrastructureManager  infrastructureManager
-	keyPairDeleter         keyPairDeleter
-	certificateDeleter     certificateDeleter
-	stateStore             stateStore
-	stateValidator         stateValidator
+	credentialValidator   credentialValidator
+	logger                logger
+	stdin                 io.Reader
+	boshDeleter           boshDeleter
+	vpcStatusChecker      vpcStatusChecker
+	stackManager          stackManager
+	stringGenerator       stringGenerator
+	infrastructureManager infrastructureManager
+	keyPairDeleter        keyPairDeleter
+	certificateDeleter    certificateDeleter
+	stateStore            stateStore
+	stateValidator        stateValidator
 }
 
 type destroyConfig struct {
@@ -64,23 +64,23 @@ type stateValidator interface {
 	Validate() error
 }
 
-func NewDestroy(awsCredentialValidator awsCredentialValidator, logger logger, stdin io.Reader,
+func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter,
 	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator) Destroy {
 	return Destroy{
-		awsCredentialValidator: awsCredentialValidator,
-		logger:                 logger,
-		stdin:                  stdin,
-		boshDeleter:            boshDeleter,
-		vpcStatusChecker:       vpcStatusChecker,
-		stackManager:           stackManager,
-		stringGenerator:        stringGenerator,
-		infrastructureManager:  infrastructureManager,
-		keyPairDeleter:         keyPairDeleter,
-		certificateDeleter:     certificateDeleter,
-		stateStore:             stateStore,
-		stateValidator:         stateValidator,
+		credentialValidator:   credentialValidator,
+		logger:                logger,
+		stdin:                 stdin,
+		boshDeleter:           boshDeleter,
+		vpcStatusChecker:      vpcStatusChecker,
+		stackManager:          stackManager,
+		stringGenerator:       stringGenerator,
+		infrastructureManager: infrastructureManager,
+		keyPairDeleter:        keyPairDeleter,
+		certificateDeleter:    certificateDeleter,
+		stateStore:            stateStore,
+		stateValidator:        stateValidator,
 	}
 }
 
@@ -90,7 +90,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	if config.SkipIfMissing && state.Stack.Name == "" {
+	if config.SkipIfMissing && state.EnvID == "" {
 		d.logger.Step("state file not found, and —skip-if-missing flag provided, exiting")
 		return nil
 	}
@@ -100,9 +100,17 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	err = d.awsCredentialValidator.Validate()
-	if err != nil {
-		return err
+	switch state.IAAS {
+	case "aws":
+		err = d.credentialValidator.ValidateAWS()
+		if err != nil {
+			return err
+		}
+	case "gcp":
+		err = d.credentialValidator.ValidateGCP()
+		if err != nil {
+			return err
+		}
 	}
 
 	if !config.NoConfirm {
@@ -136,7 +144,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	state, err = d.deleteBOSH(stack, state)
+	state, err = d.deleteBOSH(state)
 	if err != nil {
 		return err
 	}
@@ -197,7 +205,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(stack cloudformation.Stack, state storage.State) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State) (storage.State, error) {
 	emptyBOSH := storage.BOSH{}
 	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
 		d.logger.Println("no BOSH director, skipping...")

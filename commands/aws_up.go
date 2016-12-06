@@ -36,8 +36,9 @@ type availabilityZoneRetriever interface {
 	Retrieve(region string) ([]string, error)
 }
 
-type awsCredentialValidator interface {
-	Validate() error
+type credentialValidator interface {
+	ValidateAWS() error
+	ValidateGCP() error
 }
 
 type logger interface {
@@ -59,7 +60,7 @@ type configProvider interface {
 }
 
 type AWSUp struct {
-	awsCredentialValidator    awsCredentialValidator
+	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
 	boshDeployer              boshDeployer
@@ -81,7 +82,7 @@ type AWSUpConfig struct {
 }
 
 func NewAWSUp(
-	awsCredentialValidator awsCredentialValidator, infrastructureManager infrastructureManager,
+	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
 	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
@@ -89,7 +90,7 @@ func NewAWSUp(
 	configProvider configProvider) AWSUp {
 
 	return AWSUp{
-		awsCredentialValidator:    awsCredentialValidator,
+		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
 		boshDeployer:              boshDeployer,
@@ -120,7 +121,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 			Region:          config.Region,
 		})
 	} else if u.awsCredentialsNotPresent(config) {
-		err := u.awsCredentialValidator.Validate()
+		err := u.credentialValidator.ValidateAWS()
 		if err != nil {
 			return err
 		}

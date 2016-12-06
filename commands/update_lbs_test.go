@@ -25,7 +25,7 @@ var _ = Describe("Update LBs", func() {
 		certificateValidator      *fakes.CertificateValidator
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		infrastructureManager     *fakes.InfrastructureManager
-		awsCredentialValidator    *fakes.AWSCredentialValidator
+		credentialValidator       *fakes.CredentialValidator
 		boshClientProvider        *fakes.BOSHClientProvider
 		boshClient                *fakes.BOSHClient
 		logger                    *fakes.Logger
@@ -49,7 +49,7 @@ var _ = Describe("Update LBs", func() {
 		certificateValidator = &fakes.CertificateValidator{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
-		awsCredentialValidator = &fakes.AWSCredentialValidator{}
+		credentialValidator = &fakes.CredentialValidator{}
 		logger = &fakes.Logger{}
 		guidGenerator = &fakes.GuidGenerator{}
 		stateStore = &fakes.StateStore{}
@@ -88,7 +88,7 @@ var _ = Describe("Update LBs", func() {
 		chainFilePath, err = testhelpers.WriteContentsToTempFile("some-chain-contents")
 		Expect(err).NotTo(HaveOccurred())
 
-		command = commands.NewUpdateLBs(awsCredentialValidator, certificateManager,
+		command = commands.NewUpdateLBs(credentialValidator, certificateManager,
 			availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, guidGenerator,
 			stateStore, stateValidator)
 	})
@@ -359,7 +359,7 @@ var _ = Describe("Update LBs", func() {
 			})
 
 			It("returns an error when aws credential validator fails", func() {
-				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
+				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("aws credentials validator failed")
 
 				err := command.Execute([]string{}, storage.State{})
 
@@ -409,7 +409,7 @@ var _ = Describe("Update LBs", func() {
 				}, incomingState)
 
 				Expect(err).To(MatchError(ContainSubstring("flag provided but not defined")))
-				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+				Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
 			})
 
 			It("returns an error when infrastructure update fails", func() {

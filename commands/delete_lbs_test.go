@@ -17,7 +17,7 @@ import (
 var _ = Describe("Delete LBs", func() {
 	var (
 		command                   commands.DeleteLBs
-		awsCredentialValidator    *fakes.AWSCredentialValidator
+		credentialValidator       *fakes.CredentialValidator
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		certificateManager        *fakes.CertificateManager
 		infrastructureManager     *fakes.InfrastructureManager
@@ -32,7 +32,7 @@ var _ = Describe("Delete LBs", func() {
 	)
 
 	BeforeEach(func() {
-		awsCredentialValidator = &fakes.AWSCredentialValidator{}
+		credentialValidator = &fakes.CredentialValidator{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		certificateManager = &fakes.CertificateManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
@@ -69,7 +69,7 @@ var _ = Describe("Delete LBs", func() {
 
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
-		command = commands.NewDeleteLBs(awsCredentialValidator, availabilityZoneRetriever,
+		command = commands.NewDeleteLBs(credentialValidator, availabilityZoneRetriever,
 			certificateManager, infrastructureManager, logger, cloudConfigurator, cloudConfigManager,
 			boshClientProvider, stateStore, stateValidator)
 	})
@@ -113,7 +113,7 @@ var _ = Describe("Delete LBs", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
@@ -219,11 +219,11 @@ var _ = Describe("Delete LBs", func() {
 			It("returns an error when an unknown flag is provided", func() {
 				err := command.Execute([]string{"--unknown-flag"}, incomingState)
 				Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
-				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+				Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
 			})
 
 			It("returns an error when aws credential validator fails to validate", func() {
-				awsCredentialValidator.ValidateCall.Returns.Error = errors.New("validate failed")
+				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("validate failed")
 				err := command.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("validate failed"))
 			})
