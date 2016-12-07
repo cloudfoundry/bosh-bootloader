@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,7 +17,7 @@ type Applier struct {
 }
 
 type terraformCmd interface {
-	Run(workingDirectory string, args []string) error
+	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 func NewApplier(cmd terraformCmd) Applier {
@@ -47,7 +48,7 @@ func (applier Applier) Apply(credentials, envID, projectID, zone, region, templa
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
 	args = append(args, makeVar("credentials", credentials)...)
-	err = applier.cmd.Run(templateDir, args)
+	err = applier.cmd.Run(os.Stdout, templateDir, args)
 	if err != nil {
 		return "", err
 	}

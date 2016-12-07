@@ -8,22 +8,30 @@ import (
 	"os"
 	"path/filepath"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 var (
 	writeFile = ioutil.WriteFile
 	tempDir   = ioutil.TempDir
+	marshal   = yaml.Marshal
 )
 
 type GCPUp struct {
-	stateStore       stateStore
-	keyPairUpdater   keyPairUpdater
-	gcpProvider      gcpProvider
-	terraformApplier terraformApplier
-	boshDeployer     boshDeployer
-	stringGenerator  stringGenerator
+	stateStore           stateStore
+	keyPairUpdater       keyPairUpdater
+	gcpProvider          gcpProvider
+	terraformApplier     terraformApplier
+	boshDeployer         boshDeployer
+	stringGenerator      stringGenerator
+	logger               logger
+	boshClientProvider   boshClientProvider
+	cloudConfigGenerator gcpCloudConfigGenerator
+	terraformOutputer    terraformOutputer
 }
 
 type GCPUpConfig struct {
@@ -31,6 +39,10 @@ type GCPUpConfig struct {
 	ProjectID             string
 	Zone                  string
 	Region                string
+}
+
+type gcpCloudConfigGenerator interface {
+	Generate(gcp.CloudConfigInput) (gcp.CloudConfig, error)
 }
 
 type gcpKeyPairCreator interface {
@@ -49,14 +61,24 @@ type terraformApplier interface {
 	Apply(credentials, envID, projectID, zone, region, template, tfState string) (string, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformApplier terraformApplier, boshDeployer boshDeployer, stringGenerator stringGenerator) GCPUp {
+type terraformOutputer interface {
+	Get(tfState, outputName string) (string, error)
+}
+
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformApplier terraformApplier, boshDeployer boshDeployer,
+	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
+	terraformOutputer terraformOutputer) GCPUp {
 	return GCPUp{
-		stateStore:       stateStore,
-		keyPairUpdater:   keyPairUpdater,
-		gcpProvider:      gcpProvider,
-		terraformApplier: terraformApplier,
-		boshDeployer:     boshDeployer,
-		stringGenerator:  stringGenerator,
+		stateStore:           stateStore,
+		keyPairUpdater:       keyPairUpdater,
+		gcpProvider:          gcpProvider,
+		terraformApplier:     terraformApplier,
+		boshDeployer:         boshDeployer,
+		stringGenerator:      stringGenerator,
+		logger:               logger,
+		boshClientProvider:   boshClientProvider,
+		cloudConfigGenerator: cloudConfigGenerator,
+		terraformOutputer:    terraformOutputer,
 	}
 }
 
@@ -115,7 +137,28 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	externalIP, err := u.getExternalIP(state.TFState)
+	externalIP, err := u.terraformOutputer.Get(state.TFState, "external_ip")
+	if err != nil {
+		return err
+	}
+
+	networkName, err := u.terraformOutputer.Get(state.TFState, "network_name")
+	if err != nil {
+		return err
+	}
+	subnetworkName, err := u.terraformOutputer.Get(state.TFState, "subnetwork_name")
+	if err != nil {
+		return err
+	}
+	boshTag, err := u.terraformOutputer.Get(state.TFState, "bosh_open_tag_name")
+	if err != nil {
+		return err
+	}
+	internalTag, err := u.terraformOutputer.Get(state.TFState, "internal_tag_name")
+	if err != nil {
+		return err
+	}
+	directorAddress, err := u.terraformOutputer.Get(state.TFState, "director_address")
 	if err != nil {
 		return err
 	}
@@ -124,10 +167,10 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		ElasticIP: externalIP,
 		GCP: boshinit.InfrastructureConfigurationGCP{
 			Zone:           state.GCP.Zone,
-			NetworkName:    fmt.Sprintf("%s-network", state.EnvID),
-			SubnetworkName: fmt.Sprintf("%s-subnet", state.EnvID),
-			BOSHTag:        fmt.Sprintf("%s-bosh-open", state.EnvID),
-			InternalTag:    fmt.Sprintf("%s-internal", state.EnvID),
+			NetworkName:    networkName,
+			SubnetworkName: subnetworkName,
+			BOSHTag:        boshTag,
+			InternalTag:    internalTag,
 			Project:        state.GCP.ProjectID,
 			JsonKey:        state.GCP.ServiceAccountKey,
 		},
@@ -146,7 +189,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	if state.BOSH.IsEmpty() {
 		state.BOSH = storage.BOSH{
 			DirectorName:           deployInput.DirectorName,
-			DirectorAddress:        externalIP,
+			DirectorAddress:        directorAddress,
 			DirectorUsername:       deployInput.DirectorUsername,
 			DirectorPassword:       deployInput.DirectorPassword,
 			DirectorSSLCA:          string(deployOutput.DirectorSSLKeyPair.CA),
@@ -161,6 +204,31 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	err = u.stateStore.Set(state)
 	if err != nil {
+		return err
+	}
+
+	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+		state.BOSH.DirectorPassword)
+
+	u.logger.Step("generating cloud config")
+	azs := u.getAZs(state.GCP.Region)
+	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
+		AZs:            azs,
+		Tags:           []string{internalTag},
+		NetworkName:    networkName,
+		SubnetworkName: subnetworkName,
+	})
+	if err != nil {
+		return err
+	}
+
+	manifestYAML, err := marshal(cloudConfig)
+	if err != nil {
+		return err
+	}
+
+	u.logger.Step("applying cloud config")
+	if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
 		return err
 	}
 
@@ -210,35 +278,14 @@ func (c GCPUpConfig) empty() bool {
 	return c.ServiceAccountKeyPath == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
 }
 
-func (u GCPUp) getExternalIP(state string) (string, error) {
-	var tfState struct {
-		Modules []struct {
-			Resources map[string]interface{}
-		}
+func (u GCPUp) getAZs(region string) []string {
+	azs := map[string][]string{
+		"us-west1":        []string{"us-west1-a", "us-west1-b"},
+		"us-central1":     []string{"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"},
+		"us-east1":        []string{"us-east1-b", "us-east1-c", "us-east1-d"},
+		"europe-west1":    []string{"europe-west1-b", "europe-west1-c", "europe-west1-d"},
+		"asia-east1":      []string{"asia-east1-a", "asia-east1-b", "asia-east1-c"},
+		"asia-northeast1": []string{"asia-northeast1-a", "asia-northeast1-b", "asia-northeast1-c"},
 	}
-
-	var externalIP struct {
-		Primary struct {
-			Attributes struct {
-				Address string
-			}
-		}
-	}
-
-	err := json.Unmarshal([]byte(state), &tfState)
-	if err != nil {
-		return "", err
-	}
-
-	externalIPJson, err := json.Marshal(tfState.Modules[0].Resources["google_compute_address.bosh-external-ip"])
-	if err != nil {
-		return "", err
-	}
-
-	err = json.Unmarshal(externalIPJson, &externalIP)
-	if err != nil {
-		return "", err
-	}
-
-	return externalIP.Primary.Attributes.Address, nil
+	return azs[region]
 }

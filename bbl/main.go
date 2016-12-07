@@ -21,6 +21,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
+	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
@@ -108,6 +109,7 @@ func main() {
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
+	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -167,10 +169,12 @@ func main() {
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
-	terraformCmd := terraform.NewCmd(os.Stdout, os.Stderr)
+	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformApplier := terraform.NewApplier(terraformCmd)
+	terraformOutputer := terraform.NewOutputer(terraformCmd)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformApplier, boshinitExecutor, stringGenerator)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformApplier, boshinitExecutor, stringGenerator, logger,
+		boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 

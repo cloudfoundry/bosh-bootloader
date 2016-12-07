@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
@@ -19,14 +20,19 @@ import (
 
 var _ = Describe("gcp up", func() {
 	var (
-		gcpUp               commands.GCPUp
-		stateStore          *fakes.StateStore
-		keyPairUpdater      *fakes.GCPKeyPairUpdater
-		gcpClientProvider   *fakes.GCPClientProvider
-		terraformApplier    *fakes.TerraformApplier
-		boshDeployer        *fakes.BOSHDeployer
-		stringGenerator     *fakes.StringGenerator
-		boshInitCredentials map[string]string
+		gcpUp                   commands.GCPUp
+		stateStore              *fakes.StateStore
+		keyPairUpdater          *fakes.GCPKeyPairUpdater
+		gcpClientProvider       *fakes.GCPClientProvider
+		terraformApplier        *fakes.TerraformApplier
+		terraformOutputer       *fakes.TerraformOutputer
+		boshDeployer            *fakes.BOSHDeployer
+		stringGenerator         *fakes.StringGenerator
+		boshClientProvider      *fakes.BOSHClientProvider
+		boshClient              *fakes.BOSHClient
+		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
+		logger                  *fakes.Logger
+		boshInitCredentials     map[string]string
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
@@ -42,6 +48,10 @@ var _ = Describe("gcp up", func() {
 		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
 			return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
 		}
+		boshClientProvider = &fakes.BOSHClientProvider{}
+		boshClient = &fakes.BOSHClient{}
+		boshClientProvider.ClientCall.Returns.Client = boshClient
+		gcpCloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
 
 		boshInitCredentials = map[string]string{
 			"mbusUsername":              "some-mbus-username",
@@ -60,6 +70,7 @@ var _ = Describe("gcp up", func() {
 			"hmPassword":                "some-hm-password",
 		}
 
+		logger = &fakes.Logger{}
 		boshDeployer = &fakes.BOSHDeployer{}
 		boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 			DirectorSSLKeyPair: ssl.KeyPair{
@@ -74,7 +85,27 @@ var _ = Describe("gcp up", func() {
 			Credentials:      boshInitCredentials,
 		}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformApplier, boshDeployer, stringGenerator)
+		terraformOutputer = &fakes.TerraformOutputer{}
+		terraformOutputer.GetCall.Stub = func(output string) (string, error) {
+			switch output {
+			case "network_name":
+				return "bbl-lake-time:stamp-network", nil
+			case "subnetwork_name":
+				return "bbl-lake-time:stamp-subnet", nil
+			case "bosh_open_tag_name":
+				return "bbl-lake-time:stamp-bosh-open", nil
+			case "internal_tag_name":
+				return "bbl-lake-time:stamp-internal", nil
+			case "external_ip":
+				return "some-external-ip", nil
+			case "director_address":
+				return "some-director-address", nil
+			default:
+				return "", nil
+			}
+		}
+
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformApplier, boshDeployer, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -83,6 +114,12 @@ var _ = Describe("gcp up", func() {
 		serviceAccountKey = `{"real": "json"}`
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		commands.ResetTempDir()
+		commands.ResetWriteFile()
+		commands.ResetMarshal()
 	})
 
 	Context("Execute", func() {
@@ -193,6 +230,30 @@ variable "env_id" {
 
 variable "credentials" {
 	type = "string"
+}
+
+output "external_ip" {
+    value = "${google_compute_address.bosh-external-ip.address}"
+}
+
+output "network_name" {
+    value = "${google_compute_network.bbl-network.name}"
+}
+
+output "subnetwork_name" {
+    value = "${google_compute_subnetwork.bbl-subnet.name}"
+}
+
+output "bosh_open_tag_name" {
+    value = "${google_compute_firewall.bosh-open.name}"
+}
+
+output "internal_tag_name" {
+    value = "${google_compute_firewall.internal.name}"
+}
+
+output "director_address" {
+	value = "https://${google_compute_address.bosh-external-ip.address}:25555"
 }
 
 provider "google" {
@@ -307,7 +368,7 @@ resource "google_compute_firewall" "internal" {
 							DirectorName:           "bosh-bbl-lake-time:stamp",
 							DirectorUsername:       "user-some-random-string",
 							DirectorPassword:       "p-some-random-string",
-							DirectorAddress:        "some-external-ip",
+							DirectorAddress:        "some-director-address",
 							DirectorSSLCA:          "updated-ca",
 							DirectorSSLCertificate: "updated-certificate",
 							DirectorSSLPrivateKey:  "updated-private-key",
@@ -383,8 +444,13 @@ resource "google_compute_firewall" "internal" {
 			})
 
 			Context("failure cases", func() {
-				It("returns an error when we fail to get the external ip", func() {
-					terraformApplier.ApplyCall.Returns.TFState = "some-tf-state"
+				DescribeTable("returns an error when we fail to get an output", func(outputName string) {
+					terraformOutputer.GetCall.Stub = func(output string) (string, error) {
+						if output == outputName {
+							return "", errors.New("failed to get output")
+						}
+						return "", nil
+					}
 
 					err := gcpUp.Execute(commands.GCPUpConfig{
 						ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -392,8 +458,15 @@ resource "google_compute_firewall" "internal" {
 						Zone:                  "some-zone",
 						Region:                "some-region",
 					}, storage.State{})
-					Expect(err).To(MatchError("invalid character 's' looking for beginning of value"))
-				})
+					Expect(err).To(MatchError("failed to get output"))
+				},
+					Entry("failed to get external_ip", "external_ip"),
+					Entry("failed to get network_name", "network_name"),
+					Entry("failed to get subnetwork_name", "subnetwork_name"),
+					Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name"),
+					Entry("failed to get internal_tag_name", "internal_tag_name"),
+					Entry("failed to get director_address", "director_address"),
+				)
 
 				It("returns an error when boshinit fails to create the deploy input", func() {
 					stringGenerator.GenerateCall.Stub = nil
@@ -435,7 +508,74 @@ resource "google_compute_firewall" "internal" {
 					}, storage.State{})
 					Expect(err).To(MatchError("state failed to be set"))
 				})
+			})
+		})
+	})
 
+	Context("cloud config", func() {
+		It("generates and uploads a cloud config", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{
+				EnvID: "bbl-lake-time:stamp",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("user-some-random-string"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("p-some-random-string"))
+
+			gcpCloudConfigGenerator.GenerateCall.Returns.CloudConfig = gcp.CloudConfig{}
+			Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(gcp.CloudConfigInput{
+				AZs:            []string{"us-west1-a", "us-west1-b"},
+				Tags:           []string{"bbl-lake-time:stamp-internal"},
+				NetworkName:    "bbl-lake-time:stamp-network",
+				SubnetworkName: "bbl-lake-time:stamp-subnet",
+			}))
+
+			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the cloud config fails to be generated", func() {
+				gcpCloudConfigGenerator.GenerateCall.Returns.Error = errors.New("failed to generate cloud config")
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("failed to generate cloud config"))
+			})
+
+			It("returns an error when the cloud config fails to be marshaled", func() {
+				commands.SetMarshal(func(interface{}) ([]byte, error) {
+					return []byte{}, errors.New("failed to marshal")
+				})
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("failed to marshal"))
+			})
+
+			It("returns an error when the cloud config fails to be updated", func() {
+				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update cloud config")
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("failed to update cloud config"))
 			})
 		})
 	})

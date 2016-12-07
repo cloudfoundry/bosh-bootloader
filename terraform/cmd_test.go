@@ -21,11 +21,11 @@ var _ = Describe("Cmd", func() {
 		stdout = bytes.NewBuffer([]byte{})
 		stderr = bytes.NewBuffer([]byte{})
 
-		cmd = terraform.NewCmd(stdout, stderr)
+		cmd = terraform.NewCmd(stderr)
 	})
 
 	It("runs terraform with args", func() {
-		err := cmd.Run("/tmp", []string{"apply", "some-arg"})
+		err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(stdout).To(MatchRegexp("working directory: (.*)/tmp"))
@@ -34,7 +34,7 @@ var _ = Describe("Cmd", func() {
 
 	Context("failure case", func() {
 		It("returns an error when terraform fails", func() {
-			err := cmd.Run("", []string{"fast-fail"})
+			err := cmd.Run(stdout, "", []string{"fast-fail"})
 			Expect(err).To(MatchError("exit status 1"))
 
 			Expect(stderr).To(ContainSubstring("failed to terraform"))

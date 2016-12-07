@@ -4,8 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
+)
+
+var (
+	backendURL string
 )
 
 func main() {
@@ -13,18 +18,34 @@ func main() {
 		log.Fatal("failed to terraform")
 	}
 
-	err := ioutil.WriteFile("terraform.tfstate", []byte(`{"modules": [{"resources": {"google_compute_address.bosh-external-ip": {"primary": {"attributes": {"address": "127.0.0.1"}}}}}]}`), os.ModePerm)
-	if err != nil {
-		panic(err)
+	if os.Args[1] == "output" {
+		resp, err := http.Get(fmt.Sprintf("%s/output/%s", backendURL, os.Args[2]))
+		if err != nil {
+			panic(err)
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Print(string(body))
 	}
 
-	dir, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
+	if os.Args[1] == "apply" {
+		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
 
-	fmt.Printf("working directory: %s\n", dir)
-	fmt.Printf("terraform %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
+		dir, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("working directory: %s\n", dir)
+		fmt.Printf("terraform %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
+	}
 }
 
 func removeBrackets(contents string) string {

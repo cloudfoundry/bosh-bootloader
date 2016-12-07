@@ -27,6 +27,7 @@ func (c CloudConfigManager) Update(input CloudConfigInput, boshClient Client) er
 
 	manifestYAML, err := yaml.Marshal(cloudConfig)
 	if err != nil {
+		// not tested, should never fail since CloudConfig is a strongly typed struct
 		return err
 	}
 

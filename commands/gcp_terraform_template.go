@@ -20,6 +20,30 @@ variable "credentials" {
 	type = "string"
 }
 
+output "external_ip" {
+    value = "${google_compute_address.bosh-external-ip.address}"
+}
+
+output "network_name" {
+    value = "${google_compute_network.bbl-network.name}"
+}
+
+output "subnetwork_name" {
+    value = "${google_compute_subnetwork.bbl-subnet.name}"
+}
+
+output "bosh_open_tag_name" {
+    value = "${google_compute_firewall.bosh-open.name}"
+}
+
+output "internal_tag_name" {
+    value = "${google_compute_firewall.internal.name}"
+}
+
+output "director_address" {
+	value = "https://${google_compute_address.bosh-external-ip.address}:25555"
+}
+
 provider "google" {
 	credentials = "${file("${var.credentials}")}"
 	project = "${var.project_id}"
