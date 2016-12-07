@@ -21,6 +21,18 @@ func (BOSHCLI) DirectorExists(address, caCertPath string) (bool, error) {
 	return err == nil, err
 }
 
+func (BOSHCLI) CloudConfig(address, caCertPath, username, password string) (string, error) {
+	cloudConfig, err := exec.Command("bosh",
+		"--ca-cert", caCertPath,
+		"--user", username,
+		"--password", password,
+		"-e", address,
+		"cloud-config",
+	).Output()
+
+	return string(cloudConfig), err
+}
+
 func (BOSHCLI) DeleteEnv(stateFilePath, manifestPath string) error {
 	_, err := exec.Command(
 		"bosh",

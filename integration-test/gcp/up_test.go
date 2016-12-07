@@ -108,5 +108,16 @@ var _ = Describe("up test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
+
+		By("checking that the cloud config exists", func() {
+			directorAddress := bbl.DirectorAddress()
+			caCertPath := bbl.SaveDirectorCA()
+			directorUsername := bbl.DirectorUsername()
+			directorPassword := bbl.DirectorPassword()
+
+			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cloudConfig).NotTo(BeEmpty())
+		})
 	})
 })
