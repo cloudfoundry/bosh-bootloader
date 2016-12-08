@@ -25,18 +25,24 @@ func NewExecutor(cmd terraformCmd) Executor {
 }
 
 func (e Executor) Apply(credentials, envID, projectID, zone, region, template, prevTFState string) (string, error) {
-	templateDir, err := tempDir("", "")
+	tempDir, err := tempDir("", "")
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(templateDir, "template.tf"), []byte(template), os.ModePerm)
+	credentialsPath := filepath.Join(tempDir, "credentials.json")
+	err = writeFile(credentialsPath, []byte(credentials), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
 	if prevTFState != "" {
-		err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
+		err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
@@ -48,12 +54,12 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
 	args = append(args, makeVar("credentials", credentials)...)
-	err = e.cmd.Run(os.Stdout, templateDir, args)
+	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {
 		return "", err
 	}
 
-	tfState, err := readFile(filepath.Join(templateDir, "terraform.tfstate"))
+	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
 	if err != nil {
 		return "", err
 	}
@@ -62,23 +68,23 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 }
 
 func (e Executor) Destroy(credentials, envID, projectID, zone, region, template, tfState string) error {
-	tempTFDir, err := tempDir("", "")
+	tempDir, err := tempDir("", "")
 	if err != nil {
 		return err
 	}
 
-	credentialsPath := filepath.Join(tempTFDir, "credentials.json")
+	credentialsPath := filepath.Join(tempDir, "credentials.json")
 	err = writeFile(credentialsPath, []byte(credentials), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = writeFile(filepath.Join(tempTFDir, "template.tf"), []byte(template), os.ModePerm)
+	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = writeFile(filepath.Join(tempTFDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -89,7 +95,7 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
 	args = append(args, makeVar("credentials", credentialsPath)...)
-	err = e.cmd.Run(os.Stdout, tempTFDir, args)
+	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {
 		return err
 	}

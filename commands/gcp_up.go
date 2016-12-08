@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -16,9 +14,7 @@ import (
 )
 
 var (
-	writeFile = ioutil.WriteFile
-	tempDir   = ioutil.TempDir
-	marshal   = yaml.Marshal
+	marshal = yaml.Marshal
 )
 
 type GCPUp struct {
@@ -127,18 +123,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
-	tempDir, err := tempDir("", "")
-	if err != nil {
-		return err
-	}
-
-	serviceAccountKeyPath := filepath.Join(tempDir, "credentials.json")
-	err = writeFile(serviceAccountKeyPath, []byte(state.GCP.ServiceAccountKey), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	tfState, err := u.terraformExecutor.Apply(serviceAccountKeyPath, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
+	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
 	if err != nil {
 		return err
 	}

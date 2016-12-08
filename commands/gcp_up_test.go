@@ -117,8 +117,6 @@ var _ = Describe("gcp up", func() {
 	})
 
 	AfterEach(func() {
-		commands.ResetTempDir()
-		commands.ResetWriteFile()
 		commands.ResetMarshal()
 	})
 
@@ -166,29 +164,6 @@ var _ = Describe("gcp up", func() {
 		})
 
 		Context("terraform apply", func() {
-			var (
-				actualFilename string
-				actualData     []byte
-				actualPerm     os.FileMode
-			)
-
-			BeforeEach(func() {
-				commands.SetTempDir(func(dir, prefix string) (string, error) {
-					return "/some/temp/dir", nil
-				})
-				commands.SetWriteFile(func(filename string, data []byte, perm os.FileMode) error {
-					actualFilename = filename
-					actualData = data
-					actualPerm = perm
-					return nil
-				})
-			})
-
-			AfterEach(func() {
-				commands.ResetTempDir()
-				commands.ResetWriteFile()
-			})
-
 			It("creates gcp resources via terraform", func() {
 				gcpUpConfig := commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -202,12 +177,9 @@ var _ = Describe("gcp up", func() {
 				})
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(actualFilename).To(Equal("/some/temp/dir/credentials.json"))
-				Expect(actualData).To(Equal([]byte(serviceAccountKey)))
-				Expect(actualPerm).To(Equal(os.ModePerm))
 
 				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("/some/temp/dir/credentials.json"))
+				Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal(serviceAccountKey))
 				Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
 				Expect(terraformExecutor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
 				Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
@@ -894,34 +866,6 @@ resource "google_compute_firewall" "internal" {
 				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("state failed to be set"))
-		})
-
-		It("returns an error when it fails to create a temp dir", func() {
-			commands.SetTempDir(func(dir, prefix string) (string, error) {
-				return "", errors.New("failed to make temp dir")
-			})
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "us-west1",
-			}, storage.State{})
-			Expect(err).To(MatchError("failed to make temp dir"))
-			commands.ResetTempDir()
-		})
-
-		It("returns an error when it fails to write a file", func() {
-			commands.SetWriteFile(func(filename string, data []byte, perm os.FileMode) error {
-				return errors.New("failed to write file")
-			})
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "us-west1",
-			}, storage.State{})
-			Expect(err).To(MatchError("failed to write file"))
-			commands.ResetWriteFile()
 		})
 
 		It("returns an error when the state fails to be set after applying terraform", func() {

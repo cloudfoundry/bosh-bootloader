@@ -202,14 +202,14 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	if state.IAAS == "aws" {
+	switch state.IAAS {
+	case "aws":
 		err = d.awsKeyPairDeleter.Delete(state.KeyPair.Name)
 		if err != nil {
 			return err
 		}
-	}
 
-	if state.IAAS == "gcp" {
+	case "gcp":
 		err = d.gcpKeyPairDeleter.Delete(state.GCP.ProjectID, state.KeyPair.PublicKey)
 		if err != nil {
 			return err
