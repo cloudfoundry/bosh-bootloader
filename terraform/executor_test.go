@@ -48,7 +48,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Apply", func() {
 		It("writes the terraform template to a file", func() {
-			_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
@@ -58,7 +58,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("passes the correct args and dir to run command", func() {
-			_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
@@ -68,7 +68,7 @@ var _ = Describe("Executor", func() {
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
 				"-var", "zone=some-zone",
-				"-var", "credentials=some/credential/file",
+				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
 			}))
 		})
 
@@ -80,7 +80,7 @@ var _ = Describe("Executor", func() {
 				return []byte("some-terraform-state"), nil
 			})
 
-			terraformState, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+			terraformState, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(actualFilename).To(ContainSubstring("terraform.tfstate"))
@@ -89,7 +89,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when previous tf state is blank", func() {
 			It("does not write the previous tf state file", func() {
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = os.Stat(filepath.Join(tempDir, "terraform.tfstate"))
@@ -99,7 +99,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when previous tf state is not blank", func() {
 			It("writes the tf state to a file", func() {
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
 				Expect(err).NotTo(HaveOccurred())
 
 				fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
@@ -114,7 +114,7 @@ var _ = Describe("Executor", func() {
 				terraform.SetTempDir(func(dir, prefix string) (string, error) {
 					return "", errors.New("failed to make temp dir")
 				})
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to make temp dir"))
 			})
 
@@ -127,7 +127,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to write template file"))
 			})
 
@@ -140,14 +140,14 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
 				Expect(err).To(MatchError("failed to write tf state file"))
 			})
 
 			It("returns an error when it fails to call terraform command run", func() {
 				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to run terraform command"))
 			})
 
@@ -156,7 +156,7 @@ var _ = Describe("Executor", func() {
 					return []byte{}, errors.New("failed to read tf state file")
 				})
 
-				_, err := executor.Apply("some/credential/file", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to read tf state file"))
 			})
 		})

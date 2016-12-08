@@ -53,7 +53,7 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 	args = append(args, makeVar("env_id", envID)...)
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
-	args = append(args, makeVar("credentials", credentials)...)
+	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {
 		return "", err
