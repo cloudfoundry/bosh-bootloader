@@ -32,7 +32,7 @@ func main() {
 		fmt.Print(string(body))
 	}
 
-	if os.Args[1] == "apply" {
+	if os.Args[1] == "apply" || os.Args[1] == "destroy" {
 		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), os.ModePerm)
 		if err != nil {
 			panic(err)

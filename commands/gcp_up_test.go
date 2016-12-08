@@ -24,7 +24,7 @@ var _ = Describe("gcp up", func() {
 		stateStore              *fakes.StateStore
 		keyPairUpdater          *fakes.GCPKeyPairUpdater
 		gcpClientProvider       *fakes.GCPClientProvider
-		terraformExecutor       *fakes.TerraformApplier
+		terraformExecutor       *fakes.TerraformExecutor
 		terraformOutputer       *fakes.TerraformOutputer
 		boshDeployer            *fakes.BOSHDeployer
 		stringGenerator         *fakes.StringGenerator

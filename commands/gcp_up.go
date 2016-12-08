@@ -70,14 +70,16 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
 	terraformOutputer terraformOutputer) GCPUp {
 	return GCPUp{
-		stateStore:         stateStore,
-		keyPairUpdater:     keyPairUpdater,
-		gcpProvider:        gcpProvider,
-		terraformExecutor:  terraformExecutor,
-		boshDeployer:       boshDeployer,
-		stringGenerator:    stringGenerator,
-		logger:             logger,
-		boshClientProvider: boshClientProvider,
+		stateStore:           stateStore,
+		keyPairUpdater:       keyPairUpdater,
+		gcpProvider:          gcpProvider,
+		terraformExecutor:    terraformExecutor,
+		boshDeployer:         boshDeployer,
+		stringGenerator:      stringGenerator,
+		logger:               logger,
+		boshClientProvider:   boshClientProvider,
+		cloudConfigGenerator: cloudConfigGenerator,
+		terraformOutputer:    terraformOutputer,
 	}
 }
 

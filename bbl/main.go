@@ -172,11 +172,11 @@ func main() {
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
-	terraformCmd := terraform.NewCmd(os.Stdout, os.Stderr)
+	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd)
 	terraformOutputer := terraform.NewOutputer(terraformCmd)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, gcpCloudConfigGenerator, terraformOutputer)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 

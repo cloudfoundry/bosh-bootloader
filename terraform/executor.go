@@ -89,7 +89,7 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
 	args = append(args, makeVar("credentials", credentialsPath)...)
-	err = e.cmd.Run(tempTFDir, args)
+	err = e.cmd.Run(os.Stdout, tempTFDir, args)
 	if err != nil {
 		return err
 	}
