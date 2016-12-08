@@ -26,14 +26,18 @@ type DeployInput struct {
 }
 
 type InfrastructureConfiguration struct {
+	ExternalIP string
+	AWS        InfrastructureConfigurationAWS
+	GCP        InfrastructureConfigurationGCP
+}
+
+type InfrastructureConfigurationAWS struct {
 	AWSRegion        string
 	SubnetID         string
 	AvailabilityZone string
-	ElasticIP        string
 	AccessKeyID      string
 	SecretAccessKey  string
 	SecurityGroup    string
-	GCP              InfrastructureConfigurationGCP
 }
 
 type InfrastructureConfigurationGCP struct {

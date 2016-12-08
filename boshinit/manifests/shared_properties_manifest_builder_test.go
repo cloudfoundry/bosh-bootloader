@@ -16,12 +16,14 @@ var _ = Describe("SharedPropertiesManifestBuilder", func() {
 	Describe("AWS", func() {
 		It("returns job properties for AWS", func() {
 			aws := sharedPropertiesManifestBuilder.AWS(manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
-				SecurityGroup:   "some-security-group",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+					SecurityGroup:   "some-security-group",
+				},
 			})
 
 			Expect(aws).To(Equal(manifests.AWSProperties{

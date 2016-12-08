@@ -29,7 +29,7 @@ func getCloudProperties(iaas string, manifestProperties ManifestProperties) Reso
 				Size: 25000,
 				Type: "gp2",
 			},
-			AvailabilityZone: manifestProperties.AvailabilityZone,
+			AvailabilityZone: manifestProperties.AWS.AvailabilityZone,
 		}
 	case "gcp":
 		return ResourcePoolCloudProperties{

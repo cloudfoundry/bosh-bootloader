@@ -47,13 +47,15 @@ var _ = Describe("DeployInput", func() {
 			}
 
 			infrastructureConfiguration = boshinit.InfrastructureConfiguration{
-				AWSRegion:        "some-aws-region",
-				SubnetID:         "some-subnet-id",
-				AvailabilityZone: "some-az",
-				ElasticIP:        "some-eip",
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				SecurityGroup:    "some-security-group",
+				ExternalIP: "some-eip",
+				AWS: boshinit.InfrastructureConfigurationAWS{
+					AWSRegion:        "some-aws-region",
+					SubnetID:         "some-subnet-id",
+					AvailabilityZone: "some-az",
+					AccessKeyID:      "some-access-key-id",
+					SecretAccessKey:  "some-secret-access-key",
+					SecurityGroup:    "some-security-group",
+				},
 			}
 
 			envID = "some-env-id"
@@ -73,13 +75,15 @@ var _ = Describe("DeployInput", func() {
 					"some-state-key": "some-state-value",
 				},
 				InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
-					AWSRegion:        "some-aws-region",
-					SubnetID:         "some-subnet-id",
-					AvailabilityZone: "some-az",
-					ElasticIP:        "some-eip",
-					AccessKeyID:      "some-access-key-id",
-					SecretAccessKey:  "some-secret-access-key",
-					SecurityGroup:    "some-security-group",
+					ExternalIP: "some-eip",
+					AWS: boshinit.InfrastructureConfigurationAWS{
+						AWSRegion:        "some-aws-region",
+						SubnetID:         "some-subnet-id",
+						AvailabilityZone: "some-az",
+						AccessKeyID:      "some-access-key-id",
+						SecretAccessKey:  "some-secret-access-key",
+						SecurityGroup:    "some-security-group",
+					},
 				},
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-ssl-cert"),

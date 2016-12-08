@@ -309,7 +309,7 @@ resource "google_compute_firewall" "internal" {
 					DirectorPassword: "p-some-random-string",
 					State:            map[string]interface{}{},
 					InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
-						ElasticIP: "some-external-ip",
+						ExternalIP: "some-external-ip",
 						GCP: boshinit.InfrastructureConfigurationGCP{
 							Zone:           "some-zone",
 							NetworkName:    "bbl-lake-time:stamp-network",

@@ -75,7 +75,7 @@ func (j JobsManifestBuilder) Build(iaas string, manifestProperties ManifestPrope
 				},
 				{
 					Name:      "public",
-					StaticIPs: []string{manifestProperties.ElasticIP},
+					StaticIPs: []string{manifestProperties.ExternalIP},
 				},
 			},
 

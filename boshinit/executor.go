@@ -52,20 +52,22 @@ func (e Executor) Delete(boshInitManifest string, boshInitState State, ec2Privat
 
 func (e Executor) Deploy(input DeployInput) (DeployOutput, error) {
 	manifest, manifestProperties, err := e.manifestBuilder.Build(input.IAAS, manifests.ManifestProperties{
+		SSLKeyPair:       input.SSLKeyPair,
 		DirectorName:     input.DirectorName,
 		DirectorUsername: input.DirectorUsername,
 		DirectorPassword: input.DirectorPassword,
-		SubnetID:         input.InfrastructureConfiguration.SubnetID,
-		AvailabilityZone: input.InfrastructureConfiguration.AvailabilityZone,
+		ExternalIP:       input.InfrastructureConfiguration.ExternalIP,
 		CACommonName:     BOSH_BOOTLOADER_COMMON_NAME,
-		ElasticIP:        input.InfrastructureConfiguration.ElasticIP,
-		AccessKeyID:      input.InfrastructureConfiguration.AccessKeyID,
-		SecretAccessKey:  input.InfrastructureConfiguration.SecretAccessKey,
-		SecurityGroup:    input.InfrastructureConfiguration.SecurityGroup,
-		Region:           input.InfrastructureConfiguration.AWSRegion,
-		DefaultKeyName:   input.EC2KeyPair.Name,
-		SSLKeyPair:       input.SSLKeyPair,
 		Credentials:      manifests.NewInternalCredentials(input.Credentials),
+		AWS: manifests.ManifestPropertiesAWS{
+			SubnetID:         input.InfrastructureConfiguration.AWS.SubnetID,
+			AvailabilityZone: input.InfrastructureConfiguration.AWS.AvailabilityZone,
+			AccessKeyID:      input.InfrastructureConfiguration.AWS.AccessKeyID,
+			SecretAccessKey:  input.InfrastructureConfiguration.AWS.SecretAccessKey,
+			SecurityGroup:    input.InfrastructureConfiguration.AWS.SecurityGroup,
+			Region:           input.InfrastructureConfiguration.AWS.AWSRegion,
+			DefaultKeyName:   input.EC2KeyPair.Name,
+		},
 		GCP: manifests.ManifestPropertiesGCP{
 			Zone:           input.InfrastructureConfiguration.GCP.Zone,
 			NetworkName:    input.InfrastructureConfiguration.GCP.NetworkName,

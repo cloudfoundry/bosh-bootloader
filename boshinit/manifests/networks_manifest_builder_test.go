@@ -15,7 +15,8 @@ var _ = Describe("NetworksManifestBuilder", func() {
 
 	Describe("Build", func() {
 		It("returns all networks for manifest", func() {
-			networks := networksManifestBuilder.Build(manifests.ManifestProperties{SubnetID: "subnet-12345"})
+			networks := networksManifestBuilder.Build(manifests.ManifestProperties{
+				AWS: manifests.ManifestPropertiesAWS{SubnetID: "subnet-12345"}})
 
 			Expect(networks).To(HaveLen(2))
 			Expect(networks).To(ConsistOf([]manifests.Network{
@@ -41,7 +42,8 @@ var _ = Describe("NetworksManifestBuilder", func() {
 		})
 
 		It("returns networks with aws cloud properties", func() {
-			networks := networksManifestBuilder.Build(manifests.ManifestProperties{SubnetID: "subnet-12345"})
+			networks := networksManifestBuilder.Build(manifests.ManifestProperties{
+				AWS: manifests.ManifestPropertiesAWS{SubnetID: "subnet-12345"}})
 			Expect(networks[0].Subnets[0].CloudProperties).To(Equal(manifests.NetworksCloudProperties{
 				Subnet: "subnet-12345",
 			}))

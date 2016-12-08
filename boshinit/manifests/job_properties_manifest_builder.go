@@ -110,7 +110,7 @@ func (j JobPropertiesManifestBuilder) Director(iaas string, manifestProperties M
 			Key:  string(manifestProperties.SSLKeyPair.PrivateKey),
 		},
 		DefaultSSHOptions: DefaultSSHOptions{
-			GatewayHost: manifestProperties.ElasticIP,
+			GatewayHost: manifestProperties.ExternalIP,
 		},
 	}
 }

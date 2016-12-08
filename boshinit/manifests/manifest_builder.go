@@ -27,18 +27,22 @@ type ManifestProperties struct {
 	DirectorName     string
 	DirectorUsername string
 	DirectorPassword string
-	SubnetID         string
-	AvailabilityZone string
 	CACommonName     string
-	ElasticIP        string
-	AccessKeyID      string
-	SecretAccessKey  string
-	DefaultKeyName   string
-	Region           string
-	SecurityGroup    string
+	ExternalIP       string
 	SSLKeyPair       ssl.KeyPair
 	Credentials      InternalCredentials
+	AWS              ManifestPropertiesAWS
 	GCP              ManifestPropertiesGCP
+}
+
+type ManifestPropertiesAWS struct {
+	SubnetID         string
+	AvailabilityZone string
+	AccessKeyID      string
+	SecretAccessKey  string
+	Region           string
+	SecurityGroup    string
+	DefaultKeyName   string
 }
 
 type ManifestPropertiesGCP struct {
@@ -94,8 +98,8 @@ func (m ManifestBuilder) Build(iaas string, manifestProperties ManifestPropertie
 	diskPoolsManifestBuilder := NewDiskPoolsManifestBuilder()
 	networksManifestBuilder := NewNetworksManifestBuilder()
 
-	if !manifestProperties.SSLKeyPair.IsValidForIP(manifestProperties.ElasticIP) {
-		keyPair, err := m.sslKeyPairGenerator.Generate(manifestProperties.CACommonName, manifestProperties.ElasticIP)
+	if !manifestProperties.SSLKeyPair.IsValidForIP(manifestProperties.ExternalIP) {
+		keyPair, err := m.sslKeyPairGenerator.Generate(manifestProperties.CACommonName, manifestProperties.ExternalIP)
 		if err != nil {
 			return Manifest{}, ManifestProperties{}, err
 		}

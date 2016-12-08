@@ -160,7 +160,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		ElasticIP: externalIP,
+		ExternalIP: externalIP,
 		GCP: boshinit.InfrastructureConfigurationGCP{
 			Zone:           state.GCP.Zone,
 			NetworkName:    networkName,

@@ -225,13 +225,15 @@ var _ = Describe("AWSUp", func() {
 				DirectorPassword: "p-some-random-string",
 				State:            map[string]interface{}{},
 				InfrastructureConfiguration: boshinit.InfrastructureConfiguration{
-					AWSRegion:        "some-aws-region",
-					SubnetID:         "some-bosh-subnet",
-					AvailabilityZone: "some-bosh-subnet-az",
-					ElasticIP:        "some-bosh-elastic-ip",
-					AccessKeyID:      "some-bosh-user-access-key",
-					SecretAccessKey:  "some-bosh-user-secret-access-key",
-					SecurityGroup:    "some-bosh-security-group",
+					ExternalIP: "some-bosh-elastic-ip",
+					AWS: boshinit.InfrastructureConfigurationAWS{
+						AWSRegion:        "some-aws-region",
+						SubnetID:         "some-bosh-subnet",
+						AvailabilityZone: "some-bosh-subnet-az",
+						AccessKeyID:      "some-bosh-user-access-key",
+						SecretAccessKey:  "some-bosh-user-secret-access-key",
+						SecurityGroup:    "some-bosh-security-group",
+					},
 				},
 				SSLKeyPair: ssl.KeyPair{},
 				EC2KeyPair: ec2.KeyPair{

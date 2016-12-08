@@ -9,11 +9,11 @@ func NewSharedPropertiesManifestBuilder() *SharedPropertiesManifestBuilder {
 
 func (SharedPropertiesManifestBuilder) AWS(manifestProperties ManifestProperties) AWSProperties {
 	return AWSProperties{
-		AccessKeyId:           manifestProperties.AccessKeyID,
-		SecretAccessKey:       manifestProperties.SecretAccessKey,
-		DefaultKeyName:        manifestProperties.DefaultKeyName,
-		DefaultSecurityGroups: []string{manifestProperties.SecurityGroup},
-		Region:                manifestProperties.Region,
+		AccessKeyId:           manifestProperties.AWS.AccessKeyID,
+		SecretAccessKey:       manifestProperties.AWS.SecretAccessKey,
+		DefaultKeyName:        manifestProperties.AWS.DefaultKeyName,
+		DefaultSecurityGroups: []string{manifestProperties.AWS.SecurityGroup},
+		Region:                manifestProperties.AWS.Region,
 	}
 }
 

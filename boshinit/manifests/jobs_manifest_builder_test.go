@@ -35,12 +35,14 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		DescribeTable("returns all jobs for manifest", func(iaas, cpiName, cpiRelease string) {
 			jobs, _, err := jobsManifestBuilder.Build(iaas, manifests.ManifestProperties{
-				DirectorName:    "some-director-name",
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				DirectorName: "some-director-name",
+				ExternalIP:   "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -87,12 +89,14 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("returns aws job properties for aws", func() {
 			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				DirectorName:    "some-director-name",
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				DirectorName: "some-director-name",
+				ExternalIP:   "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -107,7 +111,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		It("returns google job properties for gcp", func() {
 			jobs, _, err := jobsManifestBuilder.Build("gcp", manifests.ManifestProperties{
 				DirectorName: "some-director-name",
-				ElasticIP:    "some-elastic-ip",
+				ExternalIP:   "some-elastic-ip",
 				GCP: manifests.ManifestPropertiesGCP{
 					Project: "some-project",
 					JsonKey: `{"key":"value"}`,
@@ -123,12 +127,14 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("does not add gcp properties when iaas aws is provided", func() {
 			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				DirectorName:    "some-director-name",
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				DirectorName: "some-director-name",
+				ExternalIP:   "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -140,7 +146,7 @@ var _ = Describe("JobsManifestBuilder", func() {
 		It("does not add aws properties when iaas gcp is provided", func() {
 			jobs, _, err := jobsManifestBuilder.Build("gcp", manifests.ManifestProperties{
 				DirectorName: "some-director-name",
-				ElasticIP:    "some-elastic-ip",
+				ExternalIP:   "some-elastic-ip",
 				GCP: manifests.ManifestPropertiesGCP{
 					Project: "some-project",
 					JsonKey: `{"key":"value"}`,
@@ -155,11 +161,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("returns manifest properties with new credentials", func() {
 			_, manifestProperties, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -179,11 +187,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("returns manifest and manifest properties with existing credentials", func() {
 			jobs, manifestProperties, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 				Credentials: manifests.InternalCredentials{
 					NatsUsername:              "some-persisted-nats-username",
 					PostgresUsername:          "some-persisted-postgres-username",
@@ -241,11 +251,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("uses the same credentials for NATS and the Agent", func() {
 			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -258,11 +270,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("generates a password for postgres", func() {
 			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -278,11 +292,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("generates a password for blobstore director and agent", func() {
 			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -296,11 +312,13 @@ var _ = Describe("JobsManifestBuilder", func() {
 
 		It("generates a password for health monitor", func() {
 			jobs, _, err := jobsManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 

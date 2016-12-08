@@ -15,7 +15,11 @@ var _ = Describe("ResourcePoolsManifestBuilder", func() {
 
 	Describe("ResourcePools", func() {
 		It("returns all resource pools for manifest for aws", func() {
-			resourcePools := resourcePoolsManifestBuilder.Build("aws", manifests.ManifestProperties{AvailabilityZone: "some-az"}, "some-stemcell-url", "some-stemcell-sha1")
+			resourcePools := resourcePoolsManifestBuilder.Build("aws", manifests.ManifestProperties{
+				AWS: manifests.ManifestPropertiesAWS{
+					AvailabilityZone: "some-az",
+				},
+			}, "some-stemcell-url", "some-stemcell-sha1")
 
 			Expect(resourcePools).To(HaveLen(1))
 			Expect(resourcePools).To(ConsistOf([]manifests.ResourcePool{

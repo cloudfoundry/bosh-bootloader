@@ -186,13 +186,15 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	}
 
 	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		AWSRegion:        state.AWS.Region,
-		SubnetID:         stack.Outputs["BOSHSubnet"],
-		AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
-		ElasticIP:        stack.Outputs["BOSHEIP"],
-		AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
-		SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
-		SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
+		ExternalIP: stack.Outputs["BOSHEIP"],
+		AWS: boshinit.InfrastructureConfigurationAWS{
+			AWSRegion:        state.AWS.Region,
+			SubnetID:         stack.Outputs["BOSHSubnet"],
+			AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
+			AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
+			SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
+			SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
+		},
 	}
 
 	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID, "aws")

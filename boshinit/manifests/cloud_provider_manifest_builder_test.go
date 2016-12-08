@@ -26,12 +26,14 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 	Describe("Build", func() {
 		It("returns all cloud provider fields for aws manifest", func() {
 			cloudProvider, _, err := cloudProviderManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
-				SecurityGroup:   "some-security-group",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+					SecurityGroup:   "some-security-group",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -76,7 +78,7 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 		It("returns all cloud provider fields for gcp manifest", func() {
 			cloudProvider, _, err := cloudProviderManifestBuilder.Build("gcp", manifests.ManifestProperties{
-				ElasticIP: "some-elastic-ip",
+				ExternalIP: "some-elastic-ip",
 				GCP: manifests.ManifestPropertiesGCP{
 					Project: "some-project",
 					JsonKey: `{"key": "value"}`,
@@ -129,12 +131,14 @@ var _ = Describe("CloudProviderManifestBuilder", func() {
 
 		It("returns manifest and manifest properties with existing credentials", func() {
 			cloudProvider, manifestProperties, err := cloudProviderManifestBuilder.Build("aws", manifests.ManifestProperties{
-				ElasticIP:       "some-elastic-ip",
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				DefaultKeyName:  "some-key-name",
-				Region:          "some-region",
-				SecurityGroup:   "some-security-group",
+				ExternalIP: "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					DefaultKeyName:  "some-key-name",
+					Region:          "some-region",
+					SecurityGroup:   "some-security-group",
+				},
 				Credentials: manifests.InternalCredentials{
 					MBusUsername: "some-persisted-mbus-username",
 					MBusPassword: "some-persisted-mbus-password",

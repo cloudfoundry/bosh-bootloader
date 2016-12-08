@@ -35,17 +35,19 @@ var _ = Describe("Executor", func() {
 		executor = boshinit.NewExecutor(manifestBuilder, deployCommandRunner, deleteCommandRunner, logger)
 
 		awsInfrastructureConfiguration = boshinit.InfrastructureConfiguration{
-			SubnetID:         "subnet-12345",
-			AvailabilityZone: "some-az",
-			ElasticIP:        "some-elastic-ip",
-			AccessKeyID:      "some-access-key-id",
-			SecretAccessKey:  "some-secret-access-key",
-			SecurityGroup:    "some-security-group",
-			AWSRegion:        "some-aws-region",
+			ExternalIP: "some-elastic-ip",
+			AWS: boshinit.InfrastructureConfigurationAWS{
+				SubnetID:         "subnet-12345",
+				AvailabilityZone: "some-az",
+				AccessKeyID:      "some-access-key-id",
+				SecretAccessKey:  "some-secret-access-key",
+				SecurityGroup:    "some-security-group",
+				AWSRegion:        "some-aws-region",
+			},
 		}
 
 		gcpInfrastructureConfiguration = boshinit.InfrastructureConfiguration{
-			ElasticIP: "some-elastic-ip",
+			ExternalIP: "some-elastic-ip",
 			GCP: boshinit.InfrastructureConfigurationGCP{
 				Zone:           "some-zone",
 				NetworkName:    "some-network-name",
@@ -89,7 +91,7 @@ var _ = Describe("Executor", func() {
 			DirectorUsername: "admin",
 			DirectorPassword: "admin",
 			CACommonName:     "BOSH Bootloader",
-			ElasticIP:        "some-elastic-ip",
+			ExternalIP:       "some-elastic-ip",
 			SSLKeyPair: ssl.KeyPair{
 				Certificate: []byte("updated-certificate"),
 				PrivateKey:  []byte("updated-private-key"),
@@ -171,15 +173,17 @@ var _ = Describe("Executor", func() {
 				DirectorName:     "some-director-name",
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
-				SubnetID:         "subnet-12345",
-				AvailabilityZone: "some-az",
 				CACommonName:     "BOSH Bootloader",
-				ElasticIP:        "some-elastic-ip",
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				DefaultKeyName:   "some-keypair-name",
-				Region:           "some-aws-region",
-				SecurityGroup:    "some-security-group",
+				ExternalIP:       "some-elastic-ip",
+				AWS: manifests.ManifestPropertiesAWS{
+					SubnetID:         "subnet-12345",
+					AvailabilityZone: "some-az",
+					AccessKeyID:      "some-access-key-id",
+					SecretAccessKey:  "some-secret-access-key",
+					DefaultKeyName:   "some-keypair-name",
+					Region:           "some-aws-region",
+					SecurityGroup:    "some-security-group",
+				},
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),
@@ -258,7 +262,7 @@ var _ = Describe("Executor", func() {
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
 				CACommonName:     "BOSH Bootloader",
-				ElasticIP:        "some-elastic-ip",
+				ExternalIP:       "some-elastic-ip",
 				SSLKeyPair: ssl.KeyPair{
 					Certificate: []byte("some-certificate"),
 					PrivateKey:  []byte("some-private-key"),

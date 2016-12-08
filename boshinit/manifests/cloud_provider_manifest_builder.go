@@ -70,13 +70,13 @@ func (c CloudProviderManifestBuilder) Build(iaas string, manifestProperties Mani
 		},
 
 		SSHTunnel: SSHTunnel{
-			Host:       manifestProperties.ElasticIP,
+			Host:       manifestProperties.ExternalIP,
 			Port:       22,
 			User:       "vcap",
 			PrivateKey: "./bosh.pem",
 		},
 
-		MBus: fmt.Sprintf("https://%s:%s@%s:6868", username, password, manifestProperties.ElasticIP),
+		MBus: fmt.Sprintf("https://%s:%s@%s:6868", username, password, manifestProperties.ExternalIP),
 
 		Properties: properties,
 	}, manifestProperties, nil

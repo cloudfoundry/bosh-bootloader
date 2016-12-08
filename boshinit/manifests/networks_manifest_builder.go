@@ -9,9 +9,9 @@ func NewNetworksManifestBuilder() NetworksManifestBuilder {
 func (r NetworksManifestBuilder) Build(manifestProperties ManifestProperties) []Network {
 	cloudProperties := NetworksCloudProperties{}
 
-	if manifestProperties.SubnetID != "" {
+	if manifestProperties.AWS.SubnetID != "" {
 		cloudProperties = NetworksCloudProperties{
-			Subnet: manifestProperties.SubnetID,
+			Subnet: manifestProperties.AWS.SubnetID,
 		}
 	}
 
