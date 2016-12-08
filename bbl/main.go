@@ -92,7 +92,7 @@ func main() {
 	credentialValidator := application.NewCredentialValidator(configuration)
 	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
 	awsKeyPairCreator := ec2.NewKeyPairCreator(clientProvider)
-	keyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
+	awsKeyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
 	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
 	keyPairManager := ec2.NewKeyPairManager(awsKeyPairCreator, keyPairChecker, logger)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
@@ -108,8 +108,11 @@ func main() {
 
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
+	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey)
+
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()
+	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -169,18 +172,17 @@ func main() {
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
-	terraformCmd := terraform.NewCmd(os.Stderr)
-	terraformApplier := terraform.NewApplier(terraformCmd)
+	terraformCmd := terraform.NewCmd(os.Stdout, os.Stderr)
+	terraformExecutor := terraform.NewExecutor(terraformCmd)
 	terraformOutputer := terraform.NewOutputer(terraformCmd)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformApplier, boshinitExecutor, stringGenerator, logger,
-		boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, gcpCloudConfigGenerator, terraformOutputer)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
-		stringGenerator, infrastructureManager, keyPairDeleter, certificateDeleter, stateStore, stateValidator,
+		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore, stateValidator, terraformExecutor,
 	)
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,

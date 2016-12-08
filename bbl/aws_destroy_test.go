@@ -42,7 +42,7 @@ var _ = Describe("destroy", func() {
 
 			Eventually(session, 10*time.Second).Should(gexec.Exit(0))
 
-			Expect(session.Out.Contents()).To(ContainSubstring("state file not found, and —skip-if-missing flag provided, exiting"))
+			Expect(session.Out.Contents()).To(ContainSubstring("state file not found, and --skip-if-missing flag provided, exiting"))
 		})
 
 		It("exits with status 1 and outputs helpful error message", func() {
@@ -100,6 +100,7 @@ var _ = Describe("destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			buf, err := json.Marshal(storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -216,6 +217,7 @@ var _ = Describe("destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			buf, err := json.Marshal(storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",

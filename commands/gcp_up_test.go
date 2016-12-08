@@ -24,7 +24,7 @@ var _ = Describe("gcp up", func() {
 		stateStore              *fakes.StateStore
 		keyPairUpdater          *fakes.GCPKeyPairUpdater
 		gcpClientProvider       *fakes.GCPClientProvider
-		terraformApplier        *fakes.TerraformApplier
+		terraformExecutor       *fakes.TerraformApplier
 		terraformOutputer       *fakes.TerraformOutputer
 		boshDeployer            *fakes.BOSHDeployer
 		stringGenerator         *fakes.StringGenerator
@@ -42,8 +42,8 @@ var _ = Describe("gcp up", func() {
 		stateStore = &fakes.StateStore{}
 		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
 		gcpClientProvider = &fakes.GCPClientProvider{}
-		terraformApplier = &fakes.TerraformApplier{}
-		terraformApplier.ApplyCall.Returns.TFState = `{"modules": [{"resources": {"google_compute_address.bosh-external-ip": {"primary": {"attributes": {"address": "some-external-ip"}}}}}]}`
+		terraformExecutor = &fakes.TerraformExecutor{}
+		terraformExecutor.ApplyCall.Returns.TFState = `{"modules": [{"resources": {"google_compute_address.bosh-external-ip": {"primary": {"attributes": {"address": "some-external-ip"}}}}}]}`
 		stringGenerator = &fakes.StringGenerator{}
 		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
 			return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
@@ -105,7 +105,7 @@ var _ = Describe("gcp up", func() {
 			}
 		}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformApplier, boshDeployer, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -206,13 +206,13 @@ var _ = Describe("gcp up", func() {
 				Expect(actualData).To(Equal([]byte(serviceAccountKey)))
 				Expect(actualPerm).To(Equal(os.ModePerm))
 
-				Expect(terraformApplier.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformApplier.ApplyCall.Receives.Credentials).To(Equal("/some/temp/dir/credentials.json"))
-				Expect(terraformApplier.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
-				Expect(terraformApplier.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(terraformApplier.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-				Expect(terraformApplier.ApplyCall.Receives.Region).To(Equal("some-region"))
-				Expect(terraformApplier.ApplyCall.Receives.Template).To(Equal(`variable "project_id" {
+				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("/some/temp/dir/credentials.json"))
+				Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+				Expect(terraformExecutor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
+				Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+				Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
+				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(`variable "project_id" {
 	type = "string"
 }
 
@@ -638,7 +638,7 @@ resource "google_compute_firewall" "internal" {
 			Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(0))
 		})
 
-		It("calls terraform applier with previous tf state", func() {
+		It("calls terraform executor with previous tf state", func() {
 			err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 				IAAS: "gcp",
 				GCP: storage.GCP{
@@ -651,8 +651,8 @@ resource "google_compute_firewall" "internal" {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformApplier.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformApplier.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
 		})
 
 		It("does not require details from up config", func() {
@@ -822,7 +822,7 @@ resource "google_compute_firewall" "internal" {
 		})
 
 		It("saves the keypair when the terraform fails", func() {
-			terraformApplier.ApplyCall.Returns.Error = errors.New("terraform applier failed")
+			terraformExecutor.ApplyCall.Returns.Error = errors.New("terraform executor failed")
 			keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
 				Name: "some-key-pair",
 			}
@@ -833,13 +833,13 @@ resource "google_compute_firewall" "internal" {
 				Zone:                  "some-zone",
 				Region:                "some-region",
 			}, storage.State{})
-			Expect(err).To(MatchError("terraform applier failed"))
+			Expect(err).To(MatchError("terraform executor failed"))
 
 			Expect(stateStore.SetCall.Receives.State.KeyPair.IsEmpty()).To(BeFalse())
 		})
 
-		It("returns an error when terraform applier fails", func() {
-			terraformApplier.ApplyCall.Returns.Error = errors.New("terraform applier failed")
+		It("returns an error when terraform executor fails", func() {
+			terraformExecutor.ApplyCall.Returns.Error = errors.New("terraform executor failed")
 
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -847,7 +847,7 @@ resource "google_compute_firewall" "internal" {
 				Zone:                  "some-zone",
 				Region:                "some-region",
 			}, storage.State{})
-			Expect(err).To(MatchError("terraform applier failed"))
+			Expect(err).To(MatchError("terraform executor failed"))
 		})
 
 		It("returns an error when the state fails to be set after updating keypair", func() {

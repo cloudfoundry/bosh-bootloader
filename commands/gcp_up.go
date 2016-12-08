@@ -25,13 +25,13 @@ type GCPUp struct {
 	stateStore           stateStore
 	keyPairUpdater       keyPairUpdater
 	gcpProvider          gcpProvider
-	terraformApplier     terraformApplier
 	boshDeployer         boshDeployer
 	stringGenerator      stringGenerator
 	logger               logger
 	boshClientProvider   boshClientProvider
 	cloudConfigGenerator gcpCloudConfigGenerator
 	terraformOutputer    terraformOutputer
+	terraformExecutor    terraformExecutor
 }
 
 type GCPUpConfig struct {
@@ -57,28 +57,27 @@ type gcpProvider interface {
 	SetConfig(serviceAccountKey string) error
 }
 
-type terraformApplier interface {
+type terraformExecutor interface {
 	Apply(credentials, envID, projectID, zone, region, template, tfState string) (string, error)
+	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) error
 }
 
 type terraformOutputer interface {
 	Get(tfState, outputName string) (string, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformApplier terraformApplier, boshDeployer boshDeployer,
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshDeployer boshDeployer,
 	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
 	terraformOutputer terraformOutputer) GCPUp {
 	return GCPUp{
-		stateStore:           stateStore,
-		keyPairUpdater:       keyPairUpdater,
-		gcpProvider:          gcpProvider,
-		terraformApplier:     terraformApplier,
-		boshDeployer:         boshDeployer,
-		stringGenerator:      stringGenerator,
-		logger:               logger,
-		boshClientProvider:   boshClientProvider,
-		cloudConfigGenerator: cloudConfigGenerator,
-		terraformOutputer:    terraformOutputer,
+		stateStore:         stateStore,
+		keyPairUpdater:     keyPairUpdater,
+		gcpProvider:        gcpProvider,
+		terraformExecutor:  terraformExecutor,
+		boshDeployer:       boshDeployer,
+		stringGenerator:    stringGenerator,
+		logger:             logger,
+		boshClientProvider: boshClientProvider,
 	}
 }
 
@@ -127,7 +126,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	tfState, err := u.terraformApplier.Apply(serviceAccountKeyPath, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
+	tfState, err := u.terraformExecutor.Apply(serviceAccountKeyPath, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
 	if err != nil {
 		return err
 	}

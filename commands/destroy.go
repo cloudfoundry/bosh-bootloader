@@ -25,10 +25,12 @@ type Destroy struct {
 	stackManager          stackManager
 	stringGenerator       stringGenerator
 	infrastructureManager infrastructureManager
-	keyPairDeleter        keyPairDeleter
+	awsKeyPairDeleter     awsKeyPairDeleter
+	gcpKeyPairDeleter     gcpKeyPairDeleter
 	certificateDeleter    certificateDeleter
 	stateStore            stateStore
 	stateValidator        stateValidator
+	terraformExecutor     terraformExecutor
 }
 
 type destroyConfig struct {
@@ -36,8 +38,12 @@ type destroyConfig struct {
 	SkipIfMissing bool
 }
 
-type keyPairDeleter interface {
+type awsKeyPairDeleter interface {
 	Delete(name string) error
+}
+
+type gcpKeyPairDeleter interface {
+	Delete(projectID, publicKey string) error
 }
 
 type boshDeleter interface {
@@ -66,8 +72,9 @@ type stateValidator interface {
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
-	stringGenerator stringGenerator, infrastructureManager infrastructureManager, keyPairDeleter keyPairDeleter,
-	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator) Destroy {
+	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
+	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
+	terraformExecutor terraformExecutor) Destroy {
 	return Destroy{
 		credentialValidator:   credentialValidator,
 		logger:                logger,
@@ -77,10 +84,12 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		stackManager:          stackManager,
 		stringGenerator:       stringGenerator,
 		infrastructureManager: infrastructureManager,
-		keyPairDeleter:        keyPairDeleter,
+		awsKeyPairDeleter:     awsKeyPairDeleter,
+		gcpKeyPairDeleter:     gcpKeyPairDeleter,
 		certificateDeleter:    certificateDeleter,
 		stateStore:            stateStore,
 		stateValidator:        stateValidator,
+		terraformExecutor:     terraformExecutor,
 	}
 }
 
@@ -91,7 +100,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if config.SkipIfMissing && state.EnvID == "" {
-		d.logger.Step("state file not found, and —skip-if-missing flag provided, exiting")
+		d.logger.Step("state file not found, and --skip-if-missing flag provided, exiting")
 		return nil
 	}
 
@@ -126,21 +135,25 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	stackExists := true
-	stack, err := d.stackManager.Describe(state.Stack.Name)
-	switch err {
-	case cloudformation.StackNotFound:
-		stackExists = false
-	case nil:
-		break
-	default:
-		return err
-	}
-
-	if stackExists {
-		var vpcID = stack.Outputs["VPCID"]
-		if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
+	var stack cloudformation.Stack
+	if state.IAAS == "aws" {
+		stackExists := true
+		var err error
+		stack, err = d.stackManager.Describe(state.Stack.Name)
+		switch err {
+		case cloudformation.StackNotFound:
+			stackExists = false
+		case nil:
+			break
+		default:
 			return err
+		}
+
+		if stackExists {
+			var vpcID = stack.Outputs["VPCID"]
+			if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -153,33 +166,54 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	d.logger.Step("destroying AWS stack")
-	state, err = d.deleteStack(stack, state)
-	if err != nil {
-		return err
+	if state.IAAS == "aws" {
+		d.logger.Step("destroying AWS stack")
+		state, err = d.deleteStack(stack, state)
+		if err != nil {
+			return err
+		}
+	}
+
+	if state.IAAS == "gcp" {
+		err := d.terraformExecutor.Destroy(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
+			state.GCP.Region, terraformTemplate, state.TFState)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := d.stateStore.Set(state); err != nil {
 		return err
 	}
 
-	if state.Stack.CertificateName != "" {
-		d.logger.Step("deleting certificate")
-		err = d.certificateDeleter.Delete(state.Stack.CertificateName)
-		if err != nil {
-			return err
+	if state.IAAS == "aws" {
+		if state.Stack.CertificateName != "" {
+			d.logger.Step("deleting certificate")
+			err = d.certificateDeleter.Delete(state.Stack.CertificateName)
+			if err != nil {
+				return err
+			}
+
+			state.Stack.CertificateName = ""
+
+			if err := d.stateStore.Set(state); err != nil {
+				return err
+			}
 		}
+	}
 
-		state.Stack.CertificateName = ""
-
-		if err := d.stateStore.Set(state); err != nil {
+	if state.IAAS == "aws" {
+		err = d.awsKeyPairDeleter.Delete(state.KeyPair.Name)
+		if err != nil {
 			return err
 		}
 	}
 
-	err = d.keyPairDeleter.Delete(state.KeyPair.Name)
-	if err != nil {
-		return err
+	if state.IAAS == "gcp" {
+		err = d.gcpKeyPairDeleter.Delete(state.GCP.ProjectID, state.KeyPair.PublicKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = d.stateStore.Set(storage.State{})

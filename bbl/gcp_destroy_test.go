@@ -32,7 +32,7 @@ var _ = Describe("bbl destroy gcp", func() {
 			TFState: "some-tf-state",
 			GCP: storage.GCP{
 				ProjectID:         "some-project-id",
-				ServiceAccountKey: "some-service-account-key",
+				ServiceAccountKey: serviceAccountKey,
 				Region:            "some-region",
 				Zone:              "some-zone",
 			},
@@ -60,13 +60,19 @@ var _ = Describe("bbl destroy gcp", func() {
 		}
 		cmd := exec.Command(pathToBBL, args...)
 
+		stdin, err := cmd.StdinPipe()
+		Expect(err).NotTo(HaveOccurred())
+
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = stdin.Write([]byte("yes\n"))
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(session, 10*time.Second).Should(gexec.Exit(0))
 
 		_, err = os.Stat(statePath)
-		Expect(err).To(MatchError("some-error"))
+		Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 	})
 
 	It("calls out to terraform", func() {
@@ -76,7 +82,13 @@ var _ = Describe("bbl destroy gcp", func() {
 		}
 		cmd := exec.Command(pathToBBL, args...)
 
+		stdin, err := cmd.StdinPipe()
+		Expect(err).NotTo(HaveOccurred())
+
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = stdin.Write([]byte("yes\n"))
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(session, 10*time.Second).Should(gexec.Exit(0))

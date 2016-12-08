@@ -19,14 +19,14 @@ type KeyPairUpdater struct {
 	random                io.Reader
 	rsaKeyGenerator       rsaKeyGenerator
 	sshPublicKeyGenerator sshPublicKeyGenerator
-	gcpClientProvider     gcpClientProvider
+	clientProvider        clientProvider
 	logger                logger
 }
 
 type rsaKeyGenerator func(io.Reader, int) (*rsa.PrivateKey, error)
 type sshPublicKeyGenerator func(interface{}) (ssh.PublicKey, error)
 
-type gcpClientProvider interface {
+type clientProvider interface {
 	Client() Client
 }
 
@@ -34,12 +34,12 @@ type logger interface {
 	Step(string, ...interface{})
 }
 
-func NewKeyPairUpdater(random io.Reader, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator, gcpClientProvider gcpClientProvider, logger logger) KeyPairUpdater {
+func NewKeyPairUpdater(random io.Reader, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator, clientProvider clientProvider, logger logger) KeyPairUpdater {
 	return KeyPairUpdater{
 		random:                random,
 		rsaKeyGenerator:       generateRSAKey,
 		sshPublicKeyGenerator: generateSSHPublicKey,
-		gcpClientProvider:     gcpClientProvider,
+		clientProvider:        clientProvider,
 		logger:                logger,
 	}
 }
@@ -50,7 +50,7 @@ func (k KeyPairUpdater) Update(projectID string) (storage.KeyPair, error) {
 		return storage.KeyPair{}, err
 	}
 
-	client := k.gcpClientProvider.Client()
+	client := k.clientProvider.Client()
 	project, err := client.GetProject(projectID)
 	if err != nil {
 		return storage.KeyPair{}, err

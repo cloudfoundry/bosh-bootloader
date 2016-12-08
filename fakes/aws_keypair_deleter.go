@@ -1,6 +1,6 @@
 package fakes
 
-type KeyPairDeleter struct {
+type AWSKeyPairDeleter struct {
 	DeleteCall struct {
 		Receives struct {
 			Name string
@@ -11,7 +11,7 @@ type KeyPairDeleter struct {
 	}
 }
 
-func (d *KeyPairDeleter) Delete(name string) error {
+func (d *AWSKeyPairDeleter) Delete(name string) error {
 	d.DeleteCall.Receives.Name = name
 
 	return d.DeleteCall.Returns.Error
