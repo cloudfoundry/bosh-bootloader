@@ -184,11 +184,12 @@ func main() {
 		credentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore, stateValidator, terraformExecutor,
 	)
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(
+	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore, stateValidator,
 	)
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, commands.NewGCPCreateLBs())
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(credentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore, stateValidator)
