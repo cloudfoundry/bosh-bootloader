@@ -70,7 +70,7 @@ var _ = Describe("bbl up", func() {
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
-			"--gcp-region", "some-region",
+			"--gcp-region", "us-west1",
 		}
 
 		executeCommand(args, 0)
@@ -97,7 +97,7 @@ var _ = Describe("bbl up", func() {
 				"--gcp-service-account-key", serviceAccountKeyPath,
 				"--gcp-project-id", "some-project-id",
 				"--gcp-zone", "some-zone",
-				"--gcp-region", "some-region",
+				"--gcp-region", "us-west1",
 			}
 
 			executeCommand(args, 0)

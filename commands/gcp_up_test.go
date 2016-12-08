@@ -133,7 +133,7 @@ var _ = Describe("gcp up", func() {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -142,7 +142,7 @@ var _ = Describe("gcp up", func() {
 				ServiceAccountKey: serviceAccountKey,
 				ProjectID:         "some-project-id",
 				Zone:              "some-zone",
-				Region:            "some-region",
+				Region:            "us-west1",
 			}))
 			Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(storage.KeyPair{
 				PrivateKey: "some-private-key",
@@ -157,7 +157,7 @@ var _ = Describe("gcp up", func() {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -194,7 +194,7 @@ var _ = Describe("gcp up", func() {
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "some-project-id",
 					Zone:                  "some-zone",
-					Region:                "some-region",
+					Region:                "us-west1",
 				}
 
 				err := gcpUp.Execute(gcpUpConfig, storage.State{
@@ -211,7 +211,7 @@ var _ = Describe("gcp up", func() {
 				Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
 				Expect(terraformExecutor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
 				Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-				Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
+				Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("us-west1"))
 				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(`variable "project_id" {
 	type = "string"
 }
@@ -324,7 +324,7 @@ resource "google_compute_firewall" "internal" {
 						ServiceAccountKey: serviceAccountKey,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
-						Region:            "some-region",
+						Region:            "us-west1",
 					},
 					EnvID: "bbl-lake-time:stamp",
 				})
@@ -358,7 +358,7 @@ resource "google_compute_firewall" "internal" {
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
 							Zone:                  "some-zone",
-							Region:                "some-region",
+							Region:                "us-west1",
 						}, storage.State{
 							EnvID: "bbl-lake-time:stamp",
 						})
@@ -386,7 +386,7 @@ resource "google_compute_firewall" "internal" {
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
 							Zone:                  "some-zone",
-							Region:                "some-region",
+							Region:                "us-west1",
 						}, storage.State{
 							EnvID: "bbl-lake-time:stamp",
 							BOSH: storage.BOSH{
@@ -423,7 +423,7 @@ resource "google_compute_firewall" "internal" {
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
 							Zone:                  "some-zone",
-							Region:                "some-region",
+							Region:                "us-west1",
 						}, storage.State{
 							EnvID: "bbl-lake-time:stamp",
 							BOSH: storage.BOSH{
@@ -456,7 +456,7 @@ resource "google_compute_firewall" "internal" {
 						ServiceAccountKeyPath: serviceAccountKeyPath,
 						ProjectID:             "some-project-id",
 						Zone:                  "some-zone",
-						Region:                "some-region",
+						Region:                "us-west1",
 					}, storage.State{})
 					Expect(err).To(MatchError("failed to get output"))
 				},
@@ -476,7 +476,7 @@ resource "google_compute_firewall" "internal" {
 						ServiceAccountKeyPath: serviceAccountKeyPath,
 						ProjectID:             "some-project-id",
 						Zone:                  "some-zone",
-						Region:                "some-region",
+						Region:                "us-west1",
 					}, storage.State{
 						BOSH: storage.BOSH{
 							DirectorUsername: "some-username",
@@ -492,7 +492,7 @@ resource "google_compute_firewall" "internal" {
 						ServiceAccountKeyPath: serviceAccountKeyPath,
 						ProjectID:             "some-project-id",
 						Zone:                  "some-zone",
-						Region:                "some-region",
+						Region:                "us-west1",
 					}, storage.State{})
 					Expect(err).To(MatchError("failed to deploy"))
 				})
@@ -504,7 +504,7 @@ resource "google_compute_firewall" "internal" {
 						ServiceAccountKeyPath: serviceAccountKeyPath,
 						ProjectID:             "some-project-id",
 						Zone:                  "some-zone",
-						Region:                "some-region",
+						Region:                "us-west1",
 					}, storage.State{})
 					Expect(err).To(MatchError("state failed to be set"))
 				})
@@ -547,7 +547,7 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "some-project-id",
 					Zone:                  "some-zone",
-					Region:                "some-region",
+					Region:                "us-west1",
 				}, storage.State{})
 				Expect(err).To(MatchError("failed to generate cloud config"))
 			})
@@ -561,7 +561,7 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "some-project-id",
 					Zone:                  "some-zone",
-					Region:                "some-region",
+					Region:                "us-west1",
 				}, storage.State{})
 				Expect(err).To(MatchError("failed to marshal"))
 			})
@@ -573,7 +573,7 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "some-project-id",
 					Zone:                  "some-zone",
-					Region:                "some-region",
+					Region:                "us-west1",
 				}, storage.State{})
 				Expect(err).To(MatchError("failed to update cloud config"))
 			})
@@ -603,7 +603,7 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "some-region",
+					Region:            "us-west1",
 				},
 				KeyPair: storage.KeyPair{
 					Name: "some-key-name",
@@ -621,7 +621,7 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "some-region",
+					Region:            "us-west1",
 				},
 				TFState: "some-tf-state",
 			})
@@ -638,7 +638,7 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "some-region",
+					Region:            "us-west1",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -695,10 +695,10 @@ resource "google_compute_firewall" "internal" {
 						ServiceAccountKey: serviceAccountKey,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
-						Region:            "some-region",
+						Region:            "us-west1",
 					},
 				})
-				Expect(err).To(MatchError("The region cannot be changed for an existing environment. The current region is some-region."))
+				Expect(err).To(MatchError("The region cannot be changed for an existing environment. The current region is us-west1."))
 			})
 
 			It("returns an error when the --gcp-zone is different", func() {
@@ -706,13 +706,13 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "some-project-id",
 					Zone:                  "some-other-zone",
-					Region:                "some-region",
+					Region:                "us-west1",
 				}, storage.State{
 					GCP: storage.GCP{
 						ServiceAccountKey: serviceAccountKey,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
-						Region:            "some-region",
+						Region:            "us-west1",
 					},
 				})
 				Expect(err).To(MatchError("The zone cannot be changed for an existing environment. The current zone is some-zone."))
@@ -723,17 +723,27 @@ resource "google_compute_firewall" "internal" {
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "some-other-project-id",
 					Zone:                  "some-zone",
-					Region:                "some-region",
+					Region:                "us-west1",
 				}, storage.State{
 					GCP: storage.GCP{
 						ServiceAccountKey: serviceAccountKey,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
-						Region:            "some-region",
+						Region:            "us-west1",
 					},
 				})
 				Expect(err).To(MatchError("The project id cannot be changed for an existing environment. The current project id is some-project-id."))
 			})
+		})
+
+		It("returns an error when region does not exist", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-other-project-id",
+				Zone:                  "some-zone",
+				Region:                "some-fake-region",
+			}, storage.State{})
+			Expect(err).To(MatchError(`The region "some-fake-region" does not exist.`))
 		})
 
 		It("returns an error when state store fails", func() {
@@ -742,7 +752,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "p",
 				Zone:                  "z",
-				Region:                "r",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("set call failed"))
 		})
@@ -768,21 +778,21 @@ resource "google_compute_firewall" "internal" {
 				return commands.GCPUpConfig{
 					ProjectID: "p",
 					Zone:      "z",
-					Region:    "r",
+					Region:    "us-west1",
 				}
 			}, "GCP service account key must be provided"),
 			Entry("returns an error when project ID is missing", func() commands.GCPUpConfig {
 				return commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					Zone:   "z",
-					Region: "r",
+					Region: "us-west1",
 				}
 			}, "GCP project ID must be provided"),
 			Entry("returns an error when zone is missing", func() commands.GCPUpConfig {
 				return commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,
 					ProjectID:             "p",
-					Region:                "r",
+					Region:                "us-west1",
 				}
 			}, "GCP zone must be provided"),
 			Entry("returns an error when region is missing", func() commands.GCPUpConfig {
@@ -799,7 +809,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: "/some/non/existent/file",
 				ProjectID:             "p",
 				Zone:                  "z",
-				Region:                "r",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("error reading service account key: open /some/non/existent/file: no such file or directory"))
 		})
@@ -816,7 +826,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: invalidServiceAccountKeyPath,
 				ProjectID:             "p",
 				Zone:                  "z",
-				Region:                "r",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("error parsing service account key: invalid character '%' looking for beginning of value"))
 		})
@@ -828,7 +838,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("keypair update failed"))
 		})
@@ -840,7 +850,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("setting config failed"))
 		})
@@ -855,7 +865,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("terraform executor failed"))
 
@@ -869,7 +879,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("terraform executor failed"))
 		})
@@ -881,7 +891,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("state failed to be set"))
 		})
@@ -894,7 +904,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("failed to make temp dir"))
 			commands.ResetTempDir()
@@ -908,7 +918,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("failed to write file"))
 			commands.ResetWriteFile()
@@ -921,7 +931,7 @@ resource "google_compute_firewall" "internal" {
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "some-region",
+				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("state failed to be set"))
 		})

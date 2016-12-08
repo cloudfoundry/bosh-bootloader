@@ -83,7 +83,7 @@ var _ = Describe("bbl up gcp", func() {
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
-			"--gcp-region", "some-region",
+			"--gcp-region", "us-west1",
 		}
 
 		executeCommand(args, 0)
@@ -94,7 +94,7 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 		Expect(state.GCP.Zone).To(Equal("some-zone"))
-		Expect(state.GCP.Region).To(Equal("some-region"))
+		Expect(state.GCP.Region).To(Equal("us-west1"))
 		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
 	})
@@ -104,7 +104,7 @@ var _ = Describe("bbl up gcp", func() {
 			os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKeyPath)
 			os.Setenv("BBL_GCP_PROJECT_ID", "some-project-id")
 			os.Setenv("BBL_GCP_ZONE", "some-zone")
-			os.Setenv("BBL_GCP_REGION", "some-region")
+			os.Setenv("BBL_GCP_REGION", "us-west1")
 		})
 
 		AfterEach(func() {
@@ -129,7 +129,7 @@ var _ = Describe("bbl up gcp", func() {
 			Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 			Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 			Expect(state.GCP.Zone).To(Equal("some-zone"))
-			Expect(state.GCP.Region).To(Equal("some-region"))
+			Expect(state.GCP.Region).To(Equal("us-west1"))
 		})
 	})
 
@@ -141,7 +141,7 @@ var _ = Describe("bbl up gcp", func() {
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "some-region",
+					Region:            "us-west1",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -179,7 +179,7 @@ var _ = Describe("bbl up gcp", func() {
 					"--gcp-service-account-key", serviceAccountKeyPath,
 				}
 				session := executeCommand(args, 1)
-				Expect(session.Err.Contents()).To(ContainSubstring("The region cannot be changed for an existing environment. The current region is some-region."))
+				Expect(session.Err.Contents()).To(ContainSubstring("The region cannot be changed for an existing environment. The current region is us-west1."))
 			})
 
 			It("returns an error when passing different zone", func() {
@@ -188,7 +188,7 @@ var _ = Describe("bbl up gcp", func() {
 					"up",
 					"--iaas", "gcp",
 					"--gcp-zone", "some-other-zone",
-					"--gcp-region", "some-region",
+					"--gcp-region", "us-west1",
 					"--gcp-project-id", "some-project-id",
 					"--gcp-service-account-key", serviceAccountKeyPath,
 				}
@@ -203,7 +203,7 @@ var _ = Describe("bbl up gcp", func() {
 					"--iaas", "gcp",
 					"--gcp-project-id", "some-other-project-id",
 					"--gcp-zone", "some-zone",
-					"--gcp-region", "some-region",
+					"--gcp-region", "us-west1",
 					"--gcp-service-account-key", serviceAccountKeyPath,
 				}
 				session := executeCommand(args, 1)
@@ -220,7 +220,7 @@ var _ = Describe("bbl up gcp", func() {
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
-			"--gcp-region", "some-region",
+			"--gcp-region", "us-west1",
 		}
 
 		session := executeCommand(args, 0)
@@ -236,7 +236,7 @@ var _ = Describe("bbl up gcp", func() {
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
-			"--gcp-region", "some-region",
+			"--gcp-region", "us-west1",
 		}
 
 		session := executeCommand(args, 0)
@@ -278,4 +278,21 @@ var _ = Describe("bbl up gcp", func() {
 	},
 		Entry("generates a cloud config with no lb type", "fixtures/gcp-cloud-config-no-lb.yml"),
 	)
+
+	Context("failure cases", func() {
+		It("fast fails if the --gcp-region does not exist", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "some-fake-region",
+			}
+
+			session := executeCommand(args, 1)
+			Expect(session.Err.Contents()).To(ContainSubstring(`The region "some-fake-region" does not exist.`))
+		})
+	})
 })

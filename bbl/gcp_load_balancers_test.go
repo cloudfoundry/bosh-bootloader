@@ -76,7 +76,7 @@ var _ = Describe("load balancers", func() {
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
-			"--gcp-region", "some-region",
+			"--gcp-region", "us-west1",
 		}, 0)
 	})
 

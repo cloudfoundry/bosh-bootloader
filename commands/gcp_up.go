@@ -103,6 +103,11 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
+	azs, err := u.getAZs(state.GCP.Region)
+	if err != nil {
+		return err
+	}
+
 	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
@@ -217,7 +222,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		state.BOSH.DirectorPassword)
 
 	u.logger.Step("generating cloud config")
-	azs := u.getAZs(state.GCP.Region)
+
 	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
 		AZs:            azs,
 		Tags:           []string{internalTag},
@@ -284,7 +289,7 @@ func (c GCPUpConfig) empty() bool {
 	return c.ServiceAccountKeyPath == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
 }
 
-func (u GCPUp) getAZs(region string) []string {
+func (u GCPUp) getAZs(region string) ([]string, error) {
 	azs := map[string][]string{
 		"us-west1":        []string{"us-west1-a", "us-west1-b"},
 		"us-central1":     []string{"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"},
@@ -293,7 +298,11 @@ func (u GCPUp) getAZs(region string) []string {
 		"asia-east1":      []string{"asia-east1-a", "asia-east1-b", "asia-east1-c"},
 		"asia-northeast1": []string{"asia-northeast1-a", "asia-northeast1-b", "asia-northeast1-c"},
 	}
-	return azs[region]
+	regionAZs, ok := azs[region]
+	if !ok {
+		return []string{}, fmt.Errorf("The region %q does not exist.", region)
+	}
+	return regionAZs, nil
 }
 
 func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
