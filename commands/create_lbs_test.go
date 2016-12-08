@@ -13,16 +13,18 @@ import (
 
 var _ = Describe("create-lbs", func() {
 	var (
-		command          commands.CreateLBs
-		fakeAWSCreateLBs *fakes.AWSCreateLBs
-		fakeGCPCreateLBs *fakes.GCPCreateLBs
+		command        commands.CreateLBs
+		awsCreateLBs   *fakes.AWSCreateLBs
+		gcpCreateLBs   *fakes.GCPCreateLBs
+		stateValidator *fakes.StateValidator
 	)
 
 	BeforeEach(func() {
-		fakeAWSCreateLBs = &fakes.AWSCreateLBs{}
-		fakeGCPCreateLBs = &fakes.GCPCreateLBs{}
+		awsCreateLBs = &fakes.AWSCreateLBs{}
+		gcpCreateLBs = &fakes.GCPCreateLBs{}
+		stateValidator = &fakes.StateValidator{}
 
-		command = commands.NewCreateLBs(fakeAWSCreateLBs, fakeGCPCreateLBs)
+		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
 	})
 
 	Describe("Execute", func() {
@@ -33,7 +35,7 @@ var _ = Describe("create-lbs", func() {
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeGCPCreateLBs.ExecuteCall.Receives.Args).Should(Equal([]string{"--type", "concourse"}))
+			Expect(gcpCreateLBs.ExecuteCall.Receives.Args).Should(Equal([]string{"--type", "concourse"}))
 		})
 
 		It("creates an AWS lb type if the iaas is AWS", func() {
@@ -48,7 +50,7 @@ var _ = Describe("create-lbs", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(fakeAWSCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.AWSCreateLBsConfig{
+			Expect(awsCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.AWSCreateLBsConfig{
 				LBType:       "concourse",
 				CertPath:     "my-cert",
 				KeyPath:      "my-key",
@@ -58,13 +60,21 @@ var _ = Describe("create-lbs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when state validator fails", func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+				err := command.Execute([]string{}, storage.State{})
+
+				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(err).To(MatchError("state validator failed"))
+			})
+
 			It("returns an error when an invalid command line flag is supplied", func() {
 				err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 				Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
 			})
 
 			It("returns an error when the AWSCreateLBs fails", func() {
-				fakeAWSCreateLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+				awsCreateLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
 
 				err := command.Execute([]string{"some-aws-args"}, storage.State{
 					IAAS: "aws",
@@ -73,7 +83,7 @@ var _ = Describe("create-lbs", func() {
 			})
 
 			It("returns an error when the GCPCreateLBs fails", func() {
-				fakeGCPCreateLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+				gcpCreateLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
 
 				err := command.Execute([]string{"some-gcp-args"}, storage.State{
 					IAAS: "gcp",

@@ -187,9 +187,9 @@ func main() {
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
-		uuidGenerator, stateStore, stateValidator,
+		uuidGenerator, stateStore,
 	)
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, commands.NewGCPCreateLBs())
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, commands.NewGCPCreateLBs(), stateValidator)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(credentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore, stateValidator)

@@ -32,7 +32,6 @@ var _ = Describe("AWS Create LBs", func() {
 			certificateValidator      *fakes.CertificateValidator
 			guidGenerator             *fakes.GuidGenerator
 			stateStore                *fakes.StateStore
-			stateValidator            *fakes.StateValidator
 			incomingState             storage.State
 		)
 
@@ -49,7 +48,6 @@ var _ = Describe("AWS Create LBs", func() {
 			certificateValidator = &fakes.CertificateValidator{}
 			guidGenerator = &fakes.GuidGenerator{}
 			stateStore = &fakes.StateStore{}
-			stateValidator = &fakes.StateValidator{}
 
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -79,15 +77,7 @@ var _ = Describe("AWS Create LBs", func() {
 
 			command = commands.NewAWSCreateLBs(logger, credentialValidator, certificateManager, infrastructureManager,
 				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator, guidGenerator,
-				stateStore, stateValidator)
-		})
-
-		It("returns an error when state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-			err := command.Execute(commands.AWSCreateLBsConfig{}, storage.State{})
-
-			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-			Expect(err).To(MatchError("state validator failed"))
+				stateStore)
 		})
 
 		It("returns an error if aws credential validator fails", func() {

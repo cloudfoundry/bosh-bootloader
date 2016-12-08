@@ -154,6 +154,7 @@ var _ = Describe("load balancers", func() {
 
 				It("exits 1 when the BOSH director does not exist", func() {
 					writeStateJson(storage.State{
+						IAAS: "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",

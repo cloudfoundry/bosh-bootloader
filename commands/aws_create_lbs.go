@@ -57,7 +57,7 @@ type guidGenerator interface {
 func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
 	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
-	guidGenerator guidGenerator, stateStore stateStore, stateValidator stateValidator) AWSCreateLBs {
+	guidGenerator guidGenerator, stateStore stateStore) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -70,17 +70,11 @@ func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, cer
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
 		stateStore:                stateStore,
-		stateValidator:            stateValidator,
 	}
 }
 
 func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
-	err := c.stateValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	err = c.credentialValidator.ValidateAWS()
+	err := c.credentialValidator.ValidateAWS()
 	if err != nil {
 		return err
 	}

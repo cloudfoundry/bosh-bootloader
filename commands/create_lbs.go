@@ -8,8 +8,9 @@ import (
 const CreateLBsCommand = "create-lbs"
 
 type CreateLBs struct {
-	awsCreateLBs awsCreateLBs
-	gcpCreateLBs gcpCreateLBs
+	awsCreateLBs   awsCreateLBs
+	gcpCreateLBs   gcpCreateLBs
+	stateValidator stateValidator
 }
 
 type lbConfig struct {
@@ -28,24 +29,30 @@ type awsCreateLBs interface {
 	Execute(AWSCreateLBsConfig, storage.State) error
 }
 
-func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs) CreateLBs {
+func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateValidator stateValidator) CreateLBs {
 	return CreateLBs{
-		awsCreateLBs: awsCreateLBs,
-		gcpCreateLBs: gcpCreateLBs,
+		awsCreateLBs:   awsCreateLBs,
+		gcpCreateLBs:   gcpCreateLBs,
+		stateValidator: stateValidator,
 	}
 }
 
 func (c CreateLBs) Execute(args []string, state storage.State) error {
+	if err := c.stateValidator.Validate(); err != nil {
+		return err
+	}
+
 	config, err := c.parseFlags(args)
 	if err != nil {
 		return err
 	}
 
-	if state.IAAS == "gcp" {
+	switch state.IAAS {
+	case "gcp":
 		if err := c.gcpCreateLBs.Execute(args, state); err != nil {
 			return err
 		}
-	} else {
+	case "aws":
 		if err := c.awsCreateLBs.Execute(AWSCreateLBsConfig{
 			LBType:       config.lbType,
 			CertPath:     config.certPath,
