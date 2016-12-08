@@ -166,6 +166,50 @@ var _ = Describe("bbl up gcp", func() {
 				Expect(session.Err.Contents()).To(ContainSubstring("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
 			})
 		})
+
+		Context("when re-bbling up with different gcp args than in bbl-state", func() {
+			It("returns an error when passing different region", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-region", "some-other-region",
+					"--gcp-zone", "some-zone",
+					"--gcp-project-id", "some-project-id",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+				}
+				session := executeCommand(args, 1)
+				Expect(session.Err.Contents()).To(ContainSubstring("The region cannot be changed for an existing environment. The current region is some-region."))
+			})
+
+			It("returns an error when passing different zone", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-zone", "some-other-zone",
+					"--gcp-region", "some-region",
+					"--gcp-project-id", "some-project-id",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+				}
+				session := executeCommand(args, 1)
+				Expect(session.Err.Contents()).To(ContainSubstring("The zone cannot be changed for an existing environment. The current zone is some-zone."))
+			})
+
+			It("returns an error when passing different project-id", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-project-id", "some-other-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "some-region",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+				}
+				session := executeCommand(args, 1)
+				Expect(session.Err.Contents()).To(ContainSubstring("The project id cannot be changed for an existing environment. The current project id is some-project-id."))
+			})
+		})
 	})
 
 	It("calls out to terraform", func() {

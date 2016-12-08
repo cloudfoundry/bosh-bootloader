@@ -43,7 +43,7 @@ var _ = Describe("gcp up", func() {
 		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
 		gcpClientProvider = &fakes.GCPClientProvider{}
 		terraformExecutor = &fakes.TerraformExecutor{}
-		terraformExecutor.ApplyCall.Returns.TFState = `{"modules": [{"resources": {"google_compute_address.bosh-external-ip": {"primary": {"attributes": {"address": "some-external-ip"}}}}}]}`
+		terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
 		stringGenerator = &fakes.StringGenerator{}
 		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
 			return fmt.Sprintf("%s%s", prefix, "some-random-string"), nil
@@ -312,7 +312,7 @@ resource "google_compute_firewall" "internal" {
 
   source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }`))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal(`{"modules": [{"resources": {"google_compute_address.bosh-external-ip": {"primary": {"attributes": {"address": "some-external-ip"}}}}}]}`))
+				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 			})
 		})
 
@@ -596,30 +596,6 @@ resource "google_compute_firewall" "internal" {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("overwrites the gcp details with the new configuration", func() {
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: updatedServiceAccountKeyPath,
-				ProjectID:             "new-project-id",
-				Zone:                  "new-zone",
-				Region:                "new-region",
-			}, storage.State{
-				GCP: storage.GCP{
-					ServiceAccountKey: serviceAccountKey,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(stateStore.SetCall.Receives.State.GCP).To(Equal(storage.GCP{
-				ServiceAccountKey: updatedServiceAccountKey,
-				ProjectID:         "new-project-id",
-				Zone:              "new-zone",
-				Region:            "new-region",
-			}))
-		})
-
 		It("does not create a new ssh key", func() {
 			err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 				IAAS: "gcp",
@@ -671,12 +647,7 @@ resource "google_compute_firewall" "internal" {
 		DescribeTable("up config contains subset of the details", func(upConfig func() commands.GCPUpConfig, expectedErr string) {
 			err := gcpUp.Execute(upConfig(), storage.State{
 				IAAS: "gcp",
-				GCP: storage.GCP{
-					ServiceAccountKey: serviceAccountKey,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				},
+				GCP:  storage.GCP{},
 			})
 			Expect(err).To(MatchError(expectedErr))
 		},
@@ -712,6 +683,59 @@ resource "google_compute_firewall" "internal" {
 	})
 
 	Context("failure cases", func() {
+		Context("when calling up with different gcp flags then the state", func() {
+			It("returns an error when the --gcp-region is different", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-other-region",
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).To(MatchError("The region cannot be changed for an existing environment. The current region is some-region."))
+			})
+
+			It("returns an error when the --gcp-zone is different", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-other-zone",
+					Region:                "some-region",
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).To(MatchError("The zone cannot be changed for an existing environment. The current zone is some-zone."))
+			})
+
+			It("returns an error when the --gcp-project-id is different", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-other-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).To(MatchError("The project id cannot be changed for an existing environment. The current project id is some-project-id."))
+			})
+		})
+
 		It("returns an error when state store fails", func() {
 			stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("set call failed")}}
 			err := gcpUp.Execute(commands.GCPUpConfig{

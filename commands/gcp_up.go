@@ -91,6 +91,11 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 
 		state.IAAS = "gcp"
+
+		if err := u.fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
+			return err
+		}
+
 		state.GCP = gcpDetails
 	}
 
@@ -289,4 +294,20 @@ func (u GCPUp) getAZs(region string) []string {
 		"asia-northeast1": []string{"asia-northeast1-a", "asia-northeast1-b", "asia-northeast1-c"},
 	}
 	return azs[region]
+}
+
+func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
+	if stateGCP.Region != "" && stateGCP.Region != configGCP.Region {
+		return errors.New(fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", stateGCP.Region))
+	}
+
+	if stateGCP.Zone != "" && stateGCP.Zone != configGCP.Zone {
+		return errors.New(fmt.Sprintf("The zone cannot be changed for an existing environment. The current zone is %s.", stateGCP.Zone))
+	}
+
+	if stateGCP.ProjectID != "" && stateGCP.ProjectID != configGCP.ProjectID {
+		return errors.New(fmt.Sprintf("The project id cannot be changed for an existing environment. The current project id is %s.", stateGCP.ProjectID))
+	}
+
+	return nil
 }
