@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-type Outputer struct {
+type Outputter struct {
 	cmd terraformCmd
 }
 
-func NewOutputer(cmd terraformCmd) Outputer {
-	return Outputer{cmd: cmd}
+func NewOutputter(cmd terraformCmd) Outputter {
+	return Outputter{cmd: cmd}
 }
 
-func (o Outputer) Get(tfState, outputName string) (string, error) {
+func (o Outputter) Get(tfState, outputName string) (string, error) {
 	templateDir, err := tempDir("", "")
 	if err != nil {
 		return "", err

@@ -1,6 +1,6 @@
 package fakes
 
-type TerraformOutputer struct {
+type TerraformOutputter struct {
 	GetCall struct {
 		Stub      func(string) (string, error)
 		CallCount int
@@ -15,7 +15,7 @@ type TerraformOutputer struct {
 	}
 }
 
-func (t *TerraformOutputer) Get(tfState, outputName string) (string, error) {
+func (t *TerraformOutputter) Get(tfState, outputName string) (string, error) {
 	t.GetCall.CallCount++
 	t.GetCall.Receives.TFState = tfState
 	t.GetCall.Receives.OutputName = outputName

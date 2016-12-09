@@ -26,7 +26,7 @@ type GCPUp struct {
 	logger               logger
 	boshClientProvider   boshClientProvider
 	cloudConfigGenerator gcpCloudConfigGenerator
-	terraformOutputer    terraformOutputer
+	terraformOutputter   terraformOutputter
 	terraformExecutor    terraformExecutor
 }
 
@@ -58,13 +58,13 @@ type terraformExecutor interface {
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) error
 }
 
-type terraformOutputer interface {
+type terraformOutputter interface {
 	Get(tfState, outputName string) (string, error)
 }
 
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshDeployer boshDeployer,
 	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
-	terraformOutputer terraformOutputer) GCPUp {
+	terraformOutputter terraformOutputter) GCPUp {
 	return GCPUp{
 		stateStore:           stateStore,
 		keyPairUpdater:       keyPairUpdater,
@@ -75,7 +75,7 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 		logger:               logger,
 		boshClientProvider:   boshClientProvider,
 		cloudConfigGenerator: cloudConfigGenerator,
-		terraformOutputer:    terraformOutputer,
+		terraformOutputter:   terraformOutputter,
 	}
 }
 
@@ -133,28 +133,28 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	externalIP, err := u.terraformOutputer.Get(state.TFState, "external_ip")
+	externalIP, err := u.terraformOutputter.Get(state.TFState, "external_ip")
 	if err != nil {
 		return err
 	}
 
-	networkName, err := u.terraformOutputer.Get(state.TFState, "network_name")
+	networkName, err := u.terraformOutputter.Get(state.TFState, "network_name")
 	if err != nil {
 		return err
 	}
-	subnetworkName, err := u.terraformOutputer.Get(state.TFState, "subnetwork_name")
+	subnetworkName, err := u.terraformOutputter.Get(state.TFState, "subnetwork_name")
 	if err != nil {
 		return err
 	}
-	boshTag, err := u.terraformOutputer.Get(state.TFState, "bosh_open_tag_name")
+	boshTag, err := u.terraformOutputter.Get(state.TFState, "bosh_open_tag_name")
 	if err != nil {
 		return err
 	}
-	internalTag, err := u.terraformOutputer.Get(state.TFState, "internal_tag_name")
+	internalTag, err := u.terraformOutputter.Get(state.TFState, "internal_tag_name")
 	if err != nil {
 		return err
 	}
-	directorAddress, err := u.terraformOutputer.Get(state.TFState, "director_address")
+	directorAddress, err := u.terraformOutputter.Get(state.TFState, "director_address")
 	if err != nil {
 		return err
 	}

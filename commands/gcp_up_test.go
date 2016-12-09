@@ -25,7 +25,7 @@ var _ = Describe("gcp up", func() {
 		keyPairUpdater          *fakes.GCPKeyPairUpdater
 		gcpClientProvider       *fakes.GCPClientProvider
 		terraformExecutor       *fakes.TerraformExecutor
-		terraformOutputer       *fakes.TerraformOutputer
+		terraformOutputter      *fakes.TerraformOutputter
 		boshDeployer            *fakes.BOSHDeployer
 		stringGenerator         *fakes.StringGenerator
 		boshClientProvider      *fakes.BOSHClientProvider
@@ -85,8 +85,8 @@ var _ = Describe("gcp up", func() {
 			Credentials:      boshInitCredentials,
 		}
 
-		terraformOutputer = &fakes.TerraformOutputer{}
-		terraformOutputer.GetCall.Stub = func(output string) (string, error) {
+		terraformOutputter = &fakes.TerraformOutputter{}
+		terraformOutputter.GetCall.Stub = func(output string) (string, error) {
 			switch output {
 			case "network_name":
 				return "bbl-lake-time:stamp-network", nil
@@ -105,7 +105,7 @@ var _ = Describe("gcp up", func() {
 			}
 		}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -417,7 +417,7 @@ resource "google_compute_firewall" "internal" {
 
 			Context("failure cases", func() {
 				DescribeTable("returns an error when we fail to get an output", func(outputName string) {
-					terraformOutputer.GetCall.Stub = func(output string) (string, error) {
+					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
 						if output == outputName {
 							return "", errors.New("failed to get output")
 						}

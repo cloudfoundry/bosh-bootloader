@@ -15,17 +15,17 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Outputer", func() {
+var _ = Describe("Outputter", func() {
 	var (
-		cmd      *fakes.TerraformCmd
-		outputer terraform.Outputer
-		tempDir  string
+		cmd       *fakes.TerraformCmd
+		outputter terraform.Outputter
+		tempDir   string
 	)
 
 	BeforeEach(func() {
 		cmd = &fakes.TerraformCmd{}
 
-		outputer = terraform.NewOutputer(cmd)
+		outputter = terraform.NewOutputter(cmd)
 
 		terraform.SetTempDir(func(dir, prefix string) (string, error) {
 			var err error
@@ -50,7 +50,7 @@ var _ = Describe("Outputer", func() {
 		cmd.RunCall.Stub = func(stdout io.Writer) {
 			fmt.Fprintf(stdout, "some-external-ip\n")
 		}
-		output, err := outputer.Get("some-tf-state", "external_ip")
+		output, err := outputter.Get("some-tf-state", "external_ip")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(Equal("some-external-ip"))
 
@@ -63,7 +63,7 @@ var _ = Describe("Outputer", func() {
 			terraform.SetTempDir(func(dir, prefix string) (string, error) {
 				return "", errors.New("failed to make temp dir")
 			})
-			_, err := outputer.Get("some-tf-state", "external_ip")
+			_, err := outputter.Get("some-tf-state", "external_ip")
 			Expect(err).To(MatchError("failed to make temp dir"))
 		})
 
@@ -76,14 +76,14 @@ var _ = Describe("Outputer", func() {
 				return nil
 			})
 
-			_, err := outputer.Get("some-tf-state", "external_ip")
+			_, err := outputter.Get("some-tf-state", "external_ip")
 			Expect(err).To(MatchError("failed to write tf state file"))
 		})
 
 		It("returns an error when it fails to call terraform command run", func() {
 			cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-			_, err := outputer.Get("some-tf-state", "external_ip")
+			_, err := outputter.Get("some-tf-state", "external_ip")
 			Expect(err).To(MatchError("failed to run terraform command"))
 		})
 	})

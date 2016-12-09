@@ -174,9 +174,9 @@ func main() {
 
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd)
-	terraformOutputer := terraform.NewOutputer(terraformCmd)
+	terraformOutputter := terraform.NewOutputter(terraformCmd)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputer)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
