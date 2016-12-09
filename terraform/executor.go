@@ -89,7 +89,7 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 		return err
 	}
 
-	args := []string{"destroy"}
+	args := []string{"destroy", "-force"}
 	args = append(args, makeVar("project_id", projectID)...)
 	args = append(args, makeVar("env_id", envID)...)
 	args = append(args, makeVar("region", region)...)

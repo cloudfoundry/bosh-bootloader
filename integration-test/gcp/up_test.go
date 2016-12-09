@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"io/ioutil"
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
@@ -32,43 +31,22 @@ var _ = Describe("up test", func() {
 		boshcli = actors.NewBOSHCLI()
 	})
 
-	AfterEach(func() {
-		boshState, err := ioutil.TempFile("", "")
-		if err != nil {
-			fmt.Println(err)
-		}
+	It("successfully bbls up and destroys", func() {
+		var (
+			expectedSSHKey  string
+			envID           string
+			directorAddress string
+			caCertPath      string
+		)
 
-		boshManifest, err := ioutil.TempFile("", "")
-		if err != nil {
-			fmt.Println(err)
-		}
+		By("calling bbl up", func() {
+			bbl.Up(actors.GCPIAAS)
 
-		if _, err := boshState.Write([]byte(state.BOSHState())); err != nil {
-			fmt.Println(err)
-		}
-
-		if _, err := boshManifest.Write([]byte(state.BOSHManifest())); err != nil {
-			fmt.Println(err)
-		}
-
-		if err := boshcli.DeleteEnv(boshState.Name(), boshManifest.Name()); err != nil {
-			fmt.Println("DeleteEnv", err)
-		}
-
-		if err := terraform.Destroy(state); err != nil {
-			fmt.Println("Destroy", err)
-		}
-
-		if err := gcp.RemoveSSHKey(fmt.Sprintf("vcap:%s vcap", state.SSHPublicKey())); err != nil {
-			fmt.Println("RemoveSSHKey", err)
-		}
-	})
-
-	It("successfully bbls up", func() {
-		bbl.Up(actors.GCPIAAS)
+			envID = state.EnvID()
+		})
 
 		By("checking the ssh key exists", func() {
-			expectedSSHKey := fmt.Sprintf("vcap:%s vcap", state.SSHPublicKey())
+			expectedSSHKey = fmt.Sprintf("vcap:%s vcap", state.SSHPublicKey())
 
 			actualSSHKeys, err := gcp.SSHKey()
 			Expect(err).NotTo(HaveOccurred())
@@ -76,48 +54,82 @@ var _ = Describe("up test", func() {
 		})
 
 		By("checking the network and subnet", func() {
-			network, err := gcp.GetNetwork(state.EnvID() + "-network")
+			network, err := gcp.GetNetwork(envID + "-network")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(network).NotTo(BeNil())
 
-			subnet, err := gcp.GetSubnet(state.EnvID() + "-subnet")
+			subnet, err := gcp.GetSubnet(envID + "-subnet")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(subnet).NotTo(BeNil())
 		})
 
 		By("checking the static ip", func() {
-			address, err := gcp.GetAddress(state.EnvID() + "-bosh-external-ip")
+			address, err := gcp.GetAddress(envID + "-bosh-external-ip")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(address).NotTo(BeNil())
 		})
 
 		By("checking the open and internal firewall rules", func() {
-			firewallRule, err := gcp.GetFirewallRule(state.EnvID() + "-bosh-open")
+			boshOpenFirewallRule, err := gcp.GetFirewallRule(envID + "-bosh-open")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(firewallRule).NotTo(BeNil())
+			Expect(boshOpenFirewallRule).NotTo(BeNil())
 
-			firewallRule, err = gcp.GetFirewallRule(state.EnvID() + "-internal")
+			internalFirewallRule, err := gcp.GetFirewallRule(envID + "-internal")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(firewallRule).NotTo(BeNil())
+			Expect(internalFirewallRule).NotTo(BeNil())
 		})
 
 		By("checking that the bosh director exists", func() {
-			directorAddress := bbl.DirectorAddress()
-			caCertPath := bbl.SaveDirectorCA()
+			directorAddress = bbl.DirectorAddress()
+			caCertPath = bbl.SaveDirectorCA()
 			exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
 
 		By("checking that the cloud config exists", func() {
-			directorAddress := bbl.DirectorAddress()
-			caCertPath := bbl.SaveDirectorCA()
 			directorUsername := bbl.DirectorUsername()
 			directorPassword := bbl.DirectorPassword()
 
 			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cloudConfig).NotTo(BeEmpty())
+		})
+
+		By("calling bbl destroy", func() {
+			bbl.Destroy()
+		})
+
+		By("checking the ssh key does not exist", func() {
+			actualSSHKeys, err := gcp.SSHKey()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualSSHKeys).NotTo(ContainSubstring(expectedSSHKey))
+		})
+
+		By("checking the network and subnet do not exist", func() {
+			network, _ := gcp.GetNetwork(envID + "-network")
+			Expect(network).To(BeNil())
+
+			subnet, _ := gcp.GetSubnet(envID + "-subnet")
+			Expect(subnet).To(BeNil())
+		})
+
+		By("checking the static ip does not exist", func() {
+			address, _ := gcp.GetAddress(envID + "-bosh-external-ip")
+			Expect(address).To(BeNil())
+		})
+
+		By("checking the open and internal firewall rules do not exist", func() {
+			boshOpenFirewallRule, _ := gcp.GetFirewallRule(envID + "-bosh-open")
+			Expect(boshOpenFirewallRule).To(BeNil())
+
+			internalFirewallRule, _ := gcp.GetFirewallRule(envID + "-internal")
+			Expect(internalFirewallRule).To(BeNil())
+		})
+
+		By("checking that the bosh director does not exists", func() {
+			exists, _ := boshcli.DirectorExists(directorAddress, caCertPath)
+			Expect(exists).To(BeFalse())
 		})
 	})
 })

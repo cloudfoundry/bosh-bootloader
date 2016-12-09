@@ -7,10 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -96,42 +94,20 @@ var _ = Describe("bbl destroy gcp", func() {
 	It("deletes the bbl-state", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
-			"destroy",
+			"destroy", "--no-confirm",
 		}
-		cmd := exec.Command(pathToBBL, args...)
+		_ = executeCommand(args, 0)
 
-		stdin, err := cmd.StdinPipe()
-		Expect(err).NotTo(HaveOccurred())
-
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = stdin.Write([]byte("yes\n"))
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(session, 10*time.Second).Should(gexec.Exit(0))
-
-		_, err = os.Stat(statePath)
+		_, err := os.Stat(statePath)
 		Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 	})
 
 	It("calls out to terraform", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
-			"destroy",
+			"destroy", "--no-confirm",
 		}
-		cmd := exec.Command(pathToBBL, args...)
-
-		stdin, err := cmd.StdinPipe()
-		Expect(err).NotTo(HaveOccurred())
-
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = stdin.Write([]byte("yes\n"))
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+		session := executeCommand(args, 0)
 
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})

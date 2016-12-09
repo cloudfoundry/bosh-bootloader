@@ -30,8 +30,8 @@ var _ = Describe("KeyPairDeleter", func() {
 	})
 
 	It("deletes the gcp keypair", func() {
-		publicKey := "some-public-key"
-		sshKeysValue := fmt.Sprintf("vcap:ssh-rsa %s vcap\nsomeuser:ssh-rsa some-other-public-key someuser", publicKey)
+		publicKey := "ssh-rsa some-public-key"
+		sshKeysValue := fmt.Sprintf("vcap:%s vcap\nsomeuser:ssh-rsa some-other-public-key someuser", publicKey)
 		client.GetProjectCall.Returns.Project = &compute.Project{
 			CommonInstanceMetadata: &compute.Metadata{
 				Items: []*compute.MetadataItems{
@@ -94,7 +94,7 @@ var _ = Describe("KeyPairDeleter", func() {
 		})
 
 		It("returns an error when setting common instance metadata fails", func() {
-			sshKeysValue := fmt.Sprintf("vcap:ssh-rsa %s vcap", "some-pub-key")
+			sshKeysValue := fmt.Sprintf("vcap:%s vcap", "ssh-rsa some-pub-key")
 			client.GetProjectCall.Returns.Project = &compute.Project{
 				CommonInstanceMetadata: &compute.Metadata{
 					Items: []*compute.MetadataItems{
@@ -107,7 +107,7 @@ var _ = Describe("KeyPairDeleter", func() {
 			}
 			client.SetCommonInstanceMetadataCall.Returns.Error = errors.New("set common metadata failed")
 
-			err := deleter.Delete("", "some-pub-key")
+			err := deleter.Delete("", "ssh-rsa some-pub-key")
 			Expect(err).To(MatchError("set common metadata failed"))
 		})
 	})

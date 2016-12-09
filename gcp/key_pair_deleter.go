@@ -26,7 +26,7 @@ func (k KeyPairDeleter) Delete(projectID, publicKey string) error {
 		return err
 	}
 
-	sshKey := fmt.Sprintf("vcap:ssh-rsa %s vcap", publicKey)
+	sshKey := fmt.Sprintf("vcap:%s vcap", publicKey)
 
 	var modified bool
 	for i, item := range project.CommonInstanceMetadata.Items {
