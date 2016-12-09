@@ -111,3 +111,11 @@ func (g GCP) GetAddress(addressName string) (*compute.Address, error) {
 func (g GCP) GetFirewallRule(firewallRuleName string) (*compute.Firewall, error) {
 	return g.service.Firewalls.Get(g.projectID, firewallRuleName).Do()
 }
+
+func (g GCP) GetTargetPool(targetPoolName string) (*compute.TargetPool, error) {
+	return g.service.TargetPools.Get(g.projectID, g.region, targetPoolName).Do()
+}
+
+func (g GCP) GetHealthCheck(healthCheckName string) (*compute.HttpHealthCheck, error) {
+	return g.service.HttpHealthChecks.Get(g.projectID, healthCheckName).Do()
+}
