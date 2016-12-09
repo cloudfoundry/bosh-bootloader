@@ -241,3 +241,6 @@ vm_extensions:
   cloud_properties:
     root_disk_size_gb: 1000
     root_disk_type: pd-ssd
+- name: lb
+  cloud_properties:
+    target_pool: concourse-target-pool

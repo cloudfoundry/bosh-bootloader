@@ -32,6 +32,7 @@ var _ = Describe("gcp up", func() {
 		boshClient              *fakes.BOSHClient
 		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
 		logger                  *fakes.Logger
+		zones                   *fakes.Zones
 		boshInitCredentials     map[string]string
 
 		serviceAccountKeyPath string
@@ -43,6 +44,7 @@ var _ = Describe("gcp up", func() {
 		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
 		gcpClientProvider = &fakes.GCPClientProvider{}
 		terraformExecutor = &fakes.TerraformExecutor{}
+		zones = &fakes.Zones{}
 		terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
 		stringGenerator = &fakes.StringGenerator{}
 		stringGenerator.GenerateCall.Stub = func(prefix string, length int) (string, error) {
@@ -105,7 +107,8 @@ var _ = Describe("gcp up", func() {
 			}
 		}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter)
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer,
+			stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -204,6 +207,12 @@ variable "credentials" {
 	type = "string"
 }
 
+provider "google" {
+	credentials = "${file("${var.credentials}")}"
+	project = "${var.project_id}"
+	region = "${var.region}"
+}
+
 output "external_ip" {
     value = "${google_compute_address.bosh-external-ip.address}"
 }
@@ -226,12 +235,6 @@ output "internal_tag_name" {
 
 output "director_address" {
 	value = "https://${google_compute_address.bosh-external-ip.address}:25555"
-}
-
-provider "google" {
-	credentials = "${file("${var.credentials}")}"
-	project = "${var.project_id}"
-	region = "${var.region}"
 }
 
 resource "google_compute_network" "bbl-network" {
@@ -486,11 +489,12 @@ resource "google_compute_firewall" "internal" {
 
 	Context("cloud config", func() {
 		It("generates and uploads a cloud config", func() {
+			zones.GetCall.Returns.Zones = []string{"zone-1", "zone-2", "zone-3"}
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Region:                "us-west1",
+				Region:                "some-region",
 			}, storage.State{
 				EnvID: "bbl-lake-time:stamp",
 			})
@@ -500,9 +504,12 @@ resource "google_compute_firewall" "internal" {
 			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("user-some-random-string"))
 			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("p-some-random-string"))
 
+			Expect(zones.GetCall.CallCount).To(Equal(1))
+			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
+
 			gcpCloudConfigGenerator.GenerateCall.Returns.CloudConfig = gcp.CloudConfig{}
 			Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(gcp.CloudConfigInput{
-				AZs:            []string{"us-west1-a", "us-west1-b"},
+				AZs:            []string{"zone-1", "zone-2", "zone-3"},
 				Tags:           []string{"bbl-lake-time:stamp-internal"},
 				NetworkName:    "bbl-lake-time:stamp-network",
 				SubnetworkName: "bbl-lake-time:stamp-subnet",
@@ -706,16 +713,6 @@ resource "google_compute_firewall" "internal" {
 				})
 				Expect(err).To(MatchError("The project id cannot be changed for an existing environment. The current project id is some-project-id."))
 			})
-		})
-
-		It("returns an error when region does not exist", func() {
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-other-project-id",
-				Zone:                  "some-zone",
-				Region:                "some-fake-region",
-			}, storage.State{})
-			Expect(err).To(MatchError(`The region "some-fake-region" does not exist.`))
 		})
 
 		It("returns an error when state store fails", func() {

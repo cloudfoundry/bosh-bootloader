@@ -22,7 +22,7 @@ type lbConfig struct {
 }
 
 type gcpCreateLBs interface {
-	Execute([]string, storage.State) error
+	Execute(GCPCreateLBsConfig, storage.State) error
 }
 
 type awsCreateLBs interface {
@@ -49,7 +49,9 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 
 	switch state.IAAS {
 	case "gcp":
-		if err := c.gcpCreateLBs.Execute(args, state); err != nil {
+		if err := c.gcpCreateLBs.Execute(GCPCreateLBsConfig{
+			LBType: config.lbType,
+		}, state); err != nil {
 			return err
 		}
 	case "aws":

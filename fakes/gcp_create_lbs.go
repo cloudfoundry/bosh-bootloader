@@ -1,14 +1,17 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type GCPCreateLBs struct {
 	Name        string
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {
-			Args  []string
-			State storage.State
+			Config commands.GCPCreateLBsConfig
+			State  storage.State
 		}
 		Returns struct {
 			Error error
@@ -16,9 +19,9 @@ type GCPCreateLBs struct {
 	}
 }
 
-func (u *GCPCreateLBs) Execute(args []string, state storage.State) error {
+func (u *GCPCreateLBs) Execute(config commands.GCPCreateLBsConfig, state storage.State) error {
 	u.ExecuteCall.CallCount++
-	u.ExecuteCall.Receives.Args = args
+	u.ExecuteCall.Receives.Config = config
 	u.ExecuteCall.Receives.State = state
 	return u.ExecuteCall.Returns.Error
 }

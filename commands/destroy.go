@@ -176,7 +176,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 	if state.IAAS == "gcp" {
 		err := d.terraformExecutor.Destroy(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-			state.GCP.Region, terraformTemplate, state.TFState)
+			state.GCP.Region, terraformVarsTemplate, state.TFState)
 		if err != nil {
 			return err
 		}

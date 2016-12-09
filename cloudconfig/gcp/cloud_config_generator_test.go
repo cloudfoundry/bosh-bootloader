@@ -27,7 +27,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 			gcp.ResetUnmarshal()
 		})
 
-		It("returns a generated cloud config that matches our example fixture", func() {
+		It("generates a cloud config with no load balancers", func() {
 			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
 				AZs:            []string{"us-east1-a", "us-east1-b", "us-east1-c"},
 				Tags:           []string{"some-tag", "some-other-tag"},
@@ -37,6 +37,25 @@ var _ = Describe("CloudConfigGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			buf, err := ioutil.ReadFile("fixtures/cloud-config-no-lb.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			output, err := yaml.Marshal(cloudConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(output).To(MatchYAML(string(buf)))
+		})
+
+		It("generates a cloud config with a concourse load balancer", func() {
+			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
+				AZs:            []string{"us-east1-a", "us-east1-b", "us-east1-c"},
+				Tags:           []string{"some-tag", "some-other-tag"},
+				NetworkName:    "some-network-name",
+				SubnetworkName: "some-subnetwork-name",
+				LoadBalancer:   "concourse-target-pool",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			buf, err := ioutil.ReadFile("fixtures/cloud-config-concourse-lb.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := yaml.Marshal(cloudConfig)

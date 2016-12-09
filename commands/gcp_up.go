@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -28,6 +29,7 @@ type GCPUp struct {
 	cloudConfigGenerator gcpCloudConfigGenerator
 	terraformOutputter   terraformOutputter
 	terraformExecutor    terraformExecutor
+	zones                zones
 }
 
 type GCPUpConfig struct {
@@ -62,9 +64,13 @@ type terraformOutputter interface {
 	Get(tfState, outputName string) (string, error)
 }
 
+type zones interface {
+	Get(region string) []string
+}
+
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshDeployer boshDeployer,
 	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
-	terraformOutputter terraformOutputter) GCPUp {
+	terraformOutputter terraformOutputter, zones zones) GCPUp {
 	return GCPUp{
 		stateStore:           stateStore,
 		keyPairUpdater:       keyPairUpdater,
@@ -76,6 +82,7 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 		boshClientProvider:   boshClientProvider,
 		cloudConfigGenerator: cloudConfigGenerator,
 		terraformOutputter:   terraformOutputter,
+		zones:                zones,
 	}
 }
 
@@ -99,11 +106,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	azs, err := u.getAZs(state.GCP.Region)
-	if err != nil {
-		return err
-	}
-
 	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
@@ -123,7 +125,11 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
-	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, terraformTemplate, state.TFState)
+	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,
+		state.EnvID, state.GCP.ProjectID,
+		state.GCP.Zone, state.GCP.Region,
+		strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n\n"), state.TFState,
+	)
 	if err != nil {
 		return err
 	}
@@ -207,9 +213,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		state.BOSH.DirectorPassword)
 
 	u.logger.Step("generating cloud config")
-
 	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:            azs,
+		AZs:            u.zones.Get(state.GCP.Region),
 		Tags:           []string{internalTag},
 		NetworkName:    networkName,
 		SubnetworkName: subnetworkName,
@@ -272,22 +277,6 @@ func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
 
 func (c GCPUpConfig) empty() bool {
 	return c.ServiceAccountKeyPath == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
-}
-
-func (u GCPUp) getAZs(region string) ([]string, error) {
-	azs := map[string][]string{
-		"us-west1":        []string{"us-west1-a", "us-west1-b"},
-		"us-central1":     []string{"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"},
-		"us-east1":        []string{"us-east1-b", "us-east1-c", "us-east1-d"},
-		"europe-west1":    []string{"europe-west1-b", "europe-west1-c", "europe-west1-d"},
-		"asia-east1":      []string{"asia-east1-a", "asia-east1-b", "asia-east1-c"},
-		"asia-northeast1": []string{"asia-northeast1-a", "asia-northeast1-b", "asia-northeast1-c"},
-	}
-	regionAZs, ok := azs[region]
-	if !ok {
-		return []string{}, fmt.Errorf("The region %q does not exist.", region)
-	}
-	return regionAZs, nil
 }
 
 func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {

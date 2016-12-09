@@ -7,6 +7,7 @@ type CloudConfigInput struct {
 	Tags           []string
 	NetworkName    string
 	SubnetworkName string
+	LoadBalancer   string
 }
 
 type CloudConfigGenerator struct {
@@ -14,13 +15,24 @@ type CloudConfigGenerator struct {
 	cloudConfig CloudConfig
 }
 
+type VMExtension struct {
+	Name            string                     `yaml:"name"`
+	CloudProperties VMExtensionCloudProperties `yaml:"cloud_properties"`
+}
+
+type VMExtensionCloudProperties struct {
+	RootDiskSizeGB int    `yaml:"root_disk_size_gb,omitempty"`
+	RootDiskType   string `yaml:"root_disk_type,omitempty"`
+	TargetPool     string `yaml:"target_pool,omitempty"`
+}
+
 type CloudConfig struct {
-	AZs          []AZ        `yaml:"azs,omitempty"`
-	Networks     []Network   `yaml:"networks,omitempty"`
-	VMTypes      interface{} `yaml:"vm_types,omitempty"`
-	DiskTypes    interface{} `yaml:"disk_types,omitempty"`
-	Compilation  interface{} `yaml:"compilation,omitempty"`
-	VMExtensions interface{} `yaml:"vm_extensions,omitempty"`
+	AZs          []AZ          `yaml:"azs,omitempty"`
+	Networks     []Network     `yaml:"networks,omitempty"`
+	VMTypes      interface{}   `yaml:"vm_types,omitempty"`
+	DiskTypes    interface{}   `yaml:"disk_types,omitempty"`
+	Compilation  interface{}   `yaml:"compilation,omitempty"`
+	VMExtensions []VMExtension `yaml:"vm_extensions,omitempty"`
 }
 
 var unmarshal func([]byte, interface{}) error = yaml.Unmarshal
@@ -39,6 +51,15 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 	c.generateAZs()
 	if err := c.generateNetworks(); err != nil {
 		return CloudConfig{}, err
+	}
+
+	if c.input.LoadBalancer != "" {
+		c.cloudConfig.VMExtensions = append(c.cloudConfig.VMExtensions, VMExtension{
+			Name: "lb",
+			CloudProperties: VMExtensionCloudProperties{
+				TargetPool: c.input.LoadBalancer,
+			},
+		})
 	}
 
 	return c.cloudConfig, nil

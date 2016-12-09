@@ -278,21 +278,4 @@ var _ = Describe("bbl up gcp", func() {
 	},
 		Entry("generates a cloud config with no lb type", "fixtures/gcp-cloud-config-no-lb.yml"),
 	)
-
-	Context("failure cases", func() {
-		It("fast fails if the --gcp-region does not exist", func() {
-			args := []string{
-				"--state-dir", tempDirectory,
-				"up",
-				"--iaas", "gcp",
-				"--gcp-service-account-key", serviceAccountKeyPath,
-				"--gcp-project-id", "some-project-id",
-				"--gcp-zone", "some-zone",
-				"--gcp-region", "some-fake-region",
-			}
-
-			session := executeCommand(args, 1)
-			Expect(session.Err.Contents()).To(ContainSubstring(`The region "some-fake-region" does not exist.`))
-		})
-	})
 })

@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/onsi/gomega/gexec"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("load balancers", func() {
@@ -46,6 +48,8 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("some-tag"))
 			case "/output/bosh_open_tag_name":
 				responseWriter.Write([]byte("some-bosh-open-tag"))
+			case "/output/concourse_target_pool":
+				responseWriter.Write([]byte("concourse-target-pool"))
 			}
 		}))
 
@@ -75,13 +79,16 @@ var _ = Describe("load balancers", func() {
 			"--iaas", "gcp",
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-west1",
+			"--gcp-zone", "us-east1-a",
+			"--gcp-region", "us-east1",
 		}, 0)
 	})
 
 	Describe("create-lbs", func() {
-		It("creates and attaches a concourse lb type ", func() {
+		It("creates and attaches a concourse lb type", func() {
+			contents, err := ioutil.ReadFile("fixtures/gcp-cloud-config-concourse-lb.yml")
+			Expect(err).NotTo(HaveOccurred())
+
 			args := []string{
 				"--state-dir", tempDirectory,
 				"create-lbs",
@@ -89,6 +96,8 @@ var _ = Describe("load balancers", func() {
 			}
 
 			executeCommand(args, 0)
+
+			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 		})
 	})
 })

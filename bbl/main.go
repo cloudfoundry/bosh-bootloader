@@ -113,6 +113,7 @@ func main() {
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
+	zones := gcp.NewZones()
 
 	// bosh-init
 	tempDir, err := ioutil.TempDir("", "bosh-init")
@@ -176,7 +177,7 @@ func main() {
 	terraformExecutor := terraform.NewExecutor(terraformCmd)
 	terraformOutputter := terraform.NewOutputter(terraformCmd)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
 	envGetter := commands.NewEnvGetter()
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
@@ -189,7 +190,9 @@ func main() {
 		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore,
 	)
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, commands.NewGCPCreateLBs(), stateValidator)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore)
+
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(credentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore, stateValidator)

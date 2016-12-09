@@ -35,7 +35,9 @@ var _ = Describe("create-lbs", func() {
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(gcpCreateLBs.ExecuteCall.Receives.Args).Should(Equal([]string{"--type", "concourse"}))
+			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
+				LBType: "concourse",
+			}))
 		})
 
 		It("creates an AWS lb type if the iaas is AWS", func() {
