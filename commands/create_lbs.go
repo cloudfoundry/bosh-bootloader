@@ -50,7 +50,8 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 	switch state.IAAS {
 	case "gcp":
 		if err := c.gcpCreateLBs.Execute(GCPCreateLBsConfig{
-			LBType: config.lbType,
+			LBType:       config.lbType,
+			SkipIfExists: config.skipIfExists,
 		}, state); err != nil {
 			return err
 		}

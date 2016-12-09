@@ -31,12 +31,14 @@ var _ = Describe("create-lbs", func() {
 		It("creates a GCP lb type if the iaas if GCP", func() {
 			err := command.Execute([]string{
 				"--type", "concourse",
+				"--skip-if-exists",
 			}, storage.State{
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
-				LBType: "concourse",
+				LBType:       "concourse",
+				SkipIfExists: true,
 			}))
 		})
 

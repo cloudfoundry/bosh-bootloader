@@ -99,5 +99,39 @@ var _ = Describe("load balancers", func() {
 
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 		})
+
+		It("logs all the steps", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "concourse",
+			}
+
+			session := executeCommand(args, 0)
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring("step: generating terraform template"))
+			Expect(stdout).To(ContainSubstring("step: finished applying terraform template"))
+			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+		})
+
+		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "concourse",
+			}
+			executeCommand(args, 0)
+
+			args = []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "concourse",
+				"--skip-if-exists",
+			}
+			session := executeCommand(args, 0)
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring(`lb type "concourse" exists, skipping...`))
+		})
 	})
 })

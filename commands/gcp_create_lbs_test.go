@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 const expectedTemplate = `variable "project_id" {
@@ -176,6 +177,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		boshClient           *fakes.BOSHClient
 		zones                *fakes.Zones
 		stateStore           *fakes.StateStore
+		logger               *fakes.Logger
 		command              commands.GCPCreateLBs
 	)
 
@@ -188,8 +190,9 @@ var _ = Describe("GCPCreateLBs", func() {
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 		zones = &fakes.Zones{}
 		stateStore = &fakes.StateStore{}
+		logger = &fakes.Logger{}
 
-		command = commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, cloudConfigGenerator, boshClientProvider, zones, stateStore)
+		command = commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, cloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
 	})
 
 	AfterEach(func() {
@@ -212,6 +215,9 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				"generating terraform template", "finished applying terraform template",
+			}))
 			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
 			Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
@@ -265,6 +271,10 @@ var _ = Describe("GCPCreateLBs", func() {
 			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.NetworkName).To(Equal("some-network-name"))
 			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.SubnetworkName).To(Equal("some-subnetwork-name"))
 			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LoadBalancer).To(Equal("env-id-concourse-target-pool"))
+
+			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				"generating cloud config", "applying cloud config",
+			}))
 		})
 
 		It("uploads a new cloud-config to the bosh director", func() {
@@ -287,7 +297,36 @@ var _ = Describe("GCPCreateLBs", func() {
 			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
 		})
 
+		It("no-ops if SkipIfExists is supplied and the LBType does not change", func() {
+			err := command.Execute(commands.GCPCreateLBsConfig{
+				LBType:       "concourse",
+				SkipIfExists: true,
+			}, storage.State{
+				IAAS: "gcp",
+				Stack: storage.Stack{
+					LBType: "concourse",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.StepCall.Messages).To(ContainElement(`lb type "concourse" exists, skipping...`))
+			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(0))
+			Expect(terraformOutputter.GetCall.CallCount).To(Equal(0))
+			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(0))
+		})
+
 		Context("state manipulation", func() {
+			It("saves the lb type", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(stateStore.SetCall.Receives.State.Stack.LBType).To(Equal("concourse"))
+			})
+
 			It("saves the updated tfstate", func() {
 				terraformExecutor.ApplyCall.Returns.TFState = "some-new-tfstate"
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -324,8 +363,17 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(err).To(MatchError("failed to apply terraform"))
 			})
 
-			It("returns an error when the state store fails to save the state", func() {
+			It("returns an error when the state store fails to save the state after applying terraform", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("failed to save state"))
+			})
+
+			It("returns an error when the state store fails to save the state after writing lb type", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: nil}, fakes.SetCallReturn{Error: errors.New("failed to save state")}}
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
@@ -388,6 +436,18 @@ var _ = Describe("GCPCreateLBs", func() {
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("iaas type must be gcp"))
+			})
+
+			It("returns an error when the BOSH director does not exist", func() {
+				boshClient.InfoCall.Returns.Error = errors.New("error with the director")
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).To(MatchError("error with the director"))
+
+				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
 			})
 		})
 	})
