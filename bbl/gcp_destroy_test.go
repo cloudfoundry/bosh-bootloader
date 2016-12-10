@@ -111,4 +111,34 @@ var _ = Describe("bbl destroy gcp", func() {
 
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})
+
+	Context("when instances exist in my bbl environment", func() {
+		BeforeEach(func() {
+			gcpBackend.HandleListInstances(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{
+					"items": [
+						{
+							"name": "some-vm",
+							"networkInterfaces": [
+								{
+								 "network": "https://www.googleapis.com/compute/v1/projects/some-project-id/global/networks/some-network-name"
+								}
+							]
+						}
+					]
+				}`))
+			})
+		})
+
+		It("fast fails with a nice error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("bbl environment is not safe to delete; vms still exist in network"))
+		})
+	})
 })

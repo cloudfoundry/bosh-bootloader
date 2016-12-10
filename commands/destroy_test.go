@@ -18,21 +18,23 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy               commands.Destroy
-		boshDeleter           *fakes.BOSHDeleter
-		stackManager          *fakes.StackManager
-		infrastructureManager *fakes.InfrastructureManager
-		vpcStatusChecker      *fakes.VPCStatusChecker
-		stringGenerator       *fakes.StringGenerator
-		logger                *fakes.Logger
-		awsKeyPairDeleter     *fakes.AWSKeyPairDeleter
-		gcpKeyPairDeleter     *fakes.GCPKeyPairDeleter
-		certificateDeleter    *fakes.CertificateDeleter
-		credentialValidator   *fakes.CredentialValidator
-		stateStore            *fakes.StateStore
-		stateValidator        *fakes.StateValidator
-		terraformExecutor     *fakes.TerraformExecutor
-		stdin                 *bytes.Buffer
+		destroy                   commands.Destroy
+		boshDeleter               *fakes.BOSHDeleter
+		stackManager              *fakes.StackManager
+		infrastructureManager     *fakes.InfrastructureManager
+		vpcStatusChecker          *fakes.VPCStatusChecker
+		stringGenerator           *fakes.StringGenerator
+		logger                    *fakes.Logger
+		awsKeyPairDeleter         *fakes.AWSKeyPairDeleter
+		gcpKeyPairDeleter         *fakes.GCPKeyPairDeleter
+		certificateDeleter        *fakes.CertificateDeleter
+		credentialValidator       *fakes.CredentialValidator
+		stateStore                *fakes.StateStore
+		stateValidator            *fakes.StateValidator
+		terraformExecutor         *fakes.TerraformExecutor
+		terraformOutputter        *fakes.TerraformOutputter
+		networkInstancesRetriever *fakes.NetworkInstancesRetriever
+		stdin                     *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -51,10 +53,13 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformExecutor = &fakes.TerraformExecutor{}
+		terraformOutputter = &fakes.TerraformOutputter{}
+		networkInstancesRetriever = &fakes.NetworkInstancesRetriever{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshDeleter,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
-			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore, stateValidator, terraformExecutor)
+			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
+			stateValidator, terraformExecutor, terraformOutputter, networkInstancesRetriever)
 	})
 
 	Describe("Execute", func() {
@@ -544,6 +549,38 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformExecutor.DestroyCall.Receives.TFState).To(Equal("some-tf-state"))
 				Expect(terraformExecutor.DestroyCall.Receives.Template).To(ContainSubstring(`variable "project_id"`))
 			})
+
+			Context("when instances exist in the gcp network", func() {
+				BeforeEach(func() {
+					networkInstancesRetriever.ListCall.Returns.Instances = []string{"some-vm"}
+					terraformOutputter.GetCall.Returns.Output = "some-network-name"
+				})
+
+				It("returns an error", func() {
+					projectID := "some-project-id"
+					zone := "some-zone"
+					tfState := "some-tf-state"
+					err := destroy.Execute([]string{}, storage.State{
+						IAAS:  "gcp",
+						EnvID: "some-env-id",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							ProjectID:         projectID,
+							Zone:              zone,
+							Region:            "some-region",
+						},
+						TFState: tfState,
+					})
+
+					Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
+					Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
+
+					Expect(networkInstancesRetriever.ListCall.Receives.ProjectID).To(Equal(projectID))
+					Expect(networkInstancesRetriever.ListCall.Receives.Zone).To(Equal(zone))
+					Expect(networkInstancesRetriever.ListCall.Receives.NetworkName).To(Equal("some-network-name"))
+					Expect(err).To(MatchError("bbl environment is not safe to delete; vms still exist in network"))
+				})
+			})
 		})
 
 		It("deletes the keypair", func() {
@@ -583,6 +620,26 @@ var _ = Describe("Destroy", func() {
 				})
 
 				Expect(err).To(MatchError("failed to destroy"))
+			})
+
+			It("returns an error when terraform outputter fails", func() {
+				terraformOutputter.GetCall.Returns.Error = errors.New("terraform outputter failed")
+
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+				})
+
+				Expect(err).To(MatchError("terraform outputter failed"))
+			})
+
+			It("returns an error when network instances retreiver fails", func() {
+				terraformOutputter.GetCall.Returns.Error = errors.New("network instances retreiver failed")
+
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+				})
+
+				Expect(err).To(MatchError("network instances retreiver failed"))
 			})
 		})
 	})

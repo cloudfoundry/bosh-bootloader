@@ -29,13 +29,15 @@ var (
 	pathToBBL          string
 	pathToBOSHInit     string
 	pathToFakeBOSHInit string
+	gcpBackend         gcpbackend.GCPBackend
 	fakeGCPServer      *httptest.Server
 	serviceAccountKey  string
 )
 
 var _ = BeforeSuite(func() {
 	var err error
-	fakeGCPServer, serviceAccountKey = gcpbackend.StartFakeGCPBackend()
+	gcpBackend = gcpbackend.GCPBackend{}
+	fakeGCPServer, serviceAccountKey = gcpBackend.StartFakeGCPBackend()
 
 	pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl", "--ldflags", fmt.Sprintf("-X main.gcpBasePath=%s", fakeGCPServer.URL))
 	Expect(err).NotTo(HaveOccurred())

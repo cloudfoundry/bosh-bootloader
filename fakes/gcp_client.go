@@ -24,6 +24,17 @@ type GCPClient struct {
 			Error     error
 		}
 	}
+	ListInstancesCall struct {
+		CallCount int
+		Receives  struct {
+			ProjectID string
+			Zone      string
+		}
+		Returns struct {
+			InstanceList *compute.InstanceList
+			Error        error
+		}
+	}
 }
 
 func (g *GCPClient) GetProject(projectID string) (*compute.Project, error) {
@@ -37,4 +48,11 @@ func (g *GCPClient) SetCommonInstanceMetadata(projectID string, metadata *comput
 	g.SetCommonInstanceMetadataCall.Receives.ProjectID = projectID
 	g.SetCommonInstanceMetadataCall.Receives.Metadata = metadata
 	return g.SetCommonInstanceMetadataCall.Returns.Operation, g.SetCommonInstanceMetadataCall.Returns.Error
+}
+
+func (g *GCPClient) ListInstances(projectID, zone string) (*compute.InstanceList, error) {
+	g.ListInstancesCall.CallCount++
+	g.ListInstancesCall.Receives.ProjectID = projectID
+	g.ListInstancesCall.Receives.Zone = zone
+	return g.ListInstancesCall.Returns.InstanceList, g.ListInstancesCall.Returns.Error
 }

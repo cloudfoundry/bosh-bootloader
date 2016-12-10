@@ -113,6 +113,7 @@ func main() {
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
+	gcpNetworkInstancesRetriever := gcp.NewNetworkInstancesRetriever(gcpClientProvider, logger)
 	zones := gcp.NewZones()
 
 	// bosh-init
@@ -183,7 +184,8 @@ func main() {
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
-		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore, stateValidator, terraformExecutor,
+		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
+		stateStore, stateValidator, terraformExecutor, terraformOutputter, gcpNetworkInstancesRetriever,
 	)
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,

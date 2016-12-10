@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 )
 
 const (
@@ -26,8 +27,15 @@ const (
  }`
 )
 
-func StartFakeGCPBackend() (*httptest.Server, string) {
+type GCPBackend struct {
+	handleListInstances func(http.ResponseWriter, *http.Request)
+	handlerMutex        sync.Mutex
+}
+
+func (g *GCPBackend) StartFakeGCPBackend() (*httptest.Server, string) {
 	fakeGCPServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		g.handlerMutex.Lock()
+		defer g.handlerMutex.Unlock()
 		switch req.URL.Path {
 		case "/o/oauth2/token":
 			w.WriteHeader(http.StatusOK)
@@ -49,6 +57,14 @@ func StartFakeGCPBackend() (*httptest.Server, string) {
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte(`{"code":1,"errorSpace":"core","status":403,"message":"forbidden"}`))
 			return
+		case "/some-project-id/zones/some-zone/instances":
+			if g.handleListInstances != nil {
+				g.handleListInstances(w, req)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{}`))
+			}
+			return
 		default:
 			log.Println("unexpected request recieved: ", req.URL.Path)
 			w.WriteHeader(http.StatusTeapot)
@@ -66,4 +82,10 @@ func StartFakeGCPBackend() (*httptest.Server, string) {
 }`, fakeGCPServer.URL)
 
 	return fakeGCPServer, serviceAccountKey
+}
+
+func (g *GCPBackend) HandleListInstances(f func(http.ResponseWriter, *http.Request)) {
+	g.handlerMutex.Lock()
+	defer g.handlerMutex.Unlock()
+	g.handleListInstances = f
 }

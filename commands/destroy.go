@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -17,20 +18,22 @@ const (
 )
 
 type Destroy struct {
-	credentialValidator   credentialValidator
-	logger                logger
-	stdin                 io.Reader
-	boshDeleter           boshDeleter
-	vpcStatusChecker      vpcStatusChecker
-	stackManager          stackManager
-	stringGenerator       stringGenerator
-	infrastructureManager infrastructureManager
-	awsKeyPairDeleter     awsKeyPairDeleter
-	gcpKeyPairDeleter     gcpKeyPairDeleter
-	certificateDeleter    certificateDeleter
-	stateStore            stateStore
-	stateValidator        stateValidator
-	terraformExecutor     terraformExecutor
+	credentialValidator       credentialValidator
+	logger                    logger
+	stdin                     io.Reader
+	boshDeleter               boshDeleter
+	vpcStatusChecker          vpcStatusChecker
+	stackManager              stackManager
+	stringGenerator           stringGenerator
+	infrastructureManager     infrastructureManager
+	awsKeyPairDeleter         awsKeyPairDeleter
+	gcpKeyPairDeleter         gcpKeyPairDeleter
+	certificateDeleter        certificateDeleter
+	stateStore                stateStore
+	stateValidator            stateValidator
+	terraformExecutor         terraformExecutor
+	terraformOutputter        terraformOutputter
+	networkInstancesRetriever networkInstancesRetriever
 }
 
 type destroyConfig struct {
@@ -70,26 +73,32 @@ type stateValidator interface {
 	Validate() error
 }
 
+type networkInstancesRetriever interface {
+	List(projectID, zone, networkName string) ([]string, error)
+}
+
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformExecutor terraformExecutor) Destroy {
+	terraformExecutor terraformExecutor, terraformOutputter terraformOutputter, networkInstancesRetriever networkInstancesRetriever) Destroy {
 	return Destroy{
-		credentialValidator:   credentialValidator,
-		logger:                logger,
-		stdin:                 stdin,
-		boshDeleter:           boshDeleter,
-		vpcStatusChecker:      vpcStatusChecker,
-		stackManager:          stackManager,
-		stringGenerator:       stringGenerator,
-		infrastructureManager: infrastructureManager,
-		awsKeyPairDeleter:     awsKeyPairDeleter,
-		gcpKeyPairDeleter:     gcpKeyPairDeleter,
-		certificateDeleter:    certificateDeleter,
-		stateStore:            stateStore,
-		stateValidator:        stateValidator,
-		terraformExecutor:     terraformExecutor,
+		credentialValidator:       credentialValidator,
+		logger:                    logger,
+		stdin:                     stdin,
+		boshDeleter:               boshDeleter,
+		vpcStatusChecker:          vpcStatusChecker,
+		stackManager:              stackManager,
+		stringGenerator:           stringGenerator,
+		infrastructureManager:     infrastructureManager,
+		awsKeyPairDeleter:         awsKeyPairDeleter,
+		gcpKeyPairDeleter:         gcpKeyPairDeleter,
+		certificateDeleter:        certificateDeleter,
+		stateStore:                stateStore,
+		stateValidator:            stateValidator,
+		terraformExecutor:         terraformExecutor,
+		terraformOutputter:        terraformOutputter,
+		networkInstancesRetriever: networkInstancesRetriever,
 	}
 }
 
@@ -119,6 +128,22 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		err = d.credentialValidator.ValidateGCP()
 		if err != nil {
 			return err
+		}
+	}
+
+	if state.IAAS == "gcp" {
+		networkName, err := d.terraformOutputter.Get(state.TFState, "network_name")
+		if err != nil {
+			return err
+		}
+
+		instances, err := d.networkInstancesRetriever.List(state.GCP.ProjectID, state.GCP.Zone, networkName)
+		if err != nil {
+			return err
+		}
+
+		if len(instances) != 0 {
+			return errors.New("bbl environment is not safe to delete; vms still exist in network")
 		}
 	}
 
