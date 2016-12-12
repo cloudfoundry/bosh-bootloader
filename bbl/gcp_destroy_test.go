@@ -124,7 +124,15 @@ var _ = Describe("bbl destroy gcp", func() {
 								{
 								 "network": "https://www.googleapis.com/compute/v1/projects/some-project-id/global/networks/some-network-name"
 								}
-							]
+							],
+							"metadata": {
+								"items": [
+									{
+										"key": "director",
+										"value": "some-director"
+									}
+								]
+							}
 						}
 					]
 				}`))

@@ -18,23 +18,23 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy                   commands.Destroy
-		boshDeleter               *fakes.BOSHDeleter
-		stackManager              *fakes.StackManager
-		infrastructureManager     *fakes.InfrastructureManager
-		vpcStatusChecker          *fakes.VPCStatusChecker
-		stringGenerator           *fakes.StringGenerator
-		logger                    *fakes.Logger
-		awsKeyPairDeleter         *fakes.AWSKeyPairDeleter
-		gcpKeyPairDeleter         *fakes.GCPKeyPairDeleter
-		certificateDeleter        *fakes.CertificateDeleter
-		credentialValidator       *fakes.CredentialValidator
-		stateStore                *fakes.StateStore
-		stateValidator            *fakes.StateValidator
-		terraformExecutor         *fakes.TerraformExecutor
-		terraformOutputter        *fakes.TerraformOutputter
-		networkInstancesRetriever *fakes.NetworkInstancesRetriever
-		stdin                     *bytes.Buffer
+		destroy                 commands.Destroy
+		boshDeleter             *fakes.BOSHDeleter
+		stackManager            *fakes.StackManager
+		infrastructureManager   *fakes.InfrastructureManager
+		vpcStatusChecker        *fakes.VPCStatusChecker
+		stringGenerator         *fakes.StringGenerator
+		logger                  *fakes.Logger
+		awsKeyPairDeleter       *fakes.AWSKeyPairDeleter
+		gcpKeyPairDeleter       *fakes.GCPKeyPairDeleter
+		certificateDeleter      *fakes.CertificateDeleter
+		credentialValidator     *fakes.CredentialValidator
+		stateStore              *fakes.StateStore
+		stateValidator          *fakes.StateValidator
+		terraformExecutor       *fakes.TerraformExecutor
+		terraformOutputter      *fakes.TerraformOutputter
+		networkInstancesChecker *fakes.NetworkInstancesChecker
+		stdin                   *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -54,12 +54,12 @@ var _ = Describe("Destroy", func() {
 		stateValidator = &fakes.StateValidator{}
 		terraformExecutor = &fakes.TerraformExecutor{}
 		terraformOutputter = &fakes.TerraformOutputter{}
-		networkInstancesRetriever = &fakes.NetworkInstancesRetriever{}
+		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshDeleter,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
-			stateValidator, terraformExecutor, terraformOutputter, networkInstancesRetriever)
+			stateValidator, terraformExecutor, terraformOutputter, networkInstancesChecker)
 	})
 
 	Describe("Execute", func() {
@@ -550,36 +550,32 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformExecutor.DestroyCall.Receives.Template).To(ContainSubstring(`variable "project_id"`))
 			})
 
-			Context("when instances exist in the gcp network", func() {
-				BeforeEach(func() {
-					networkInstancesRetriever.ListCall.Returns.Instances = []string{"some-vm"}
-					terraformOutputter.GetCall.Returns.Output = "some-network-name"
+			It("returns an error when instances exist in the gcp network", func() {
+				networkInstancesChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
+				terraformOutputter.GetCall.Returns.Output = "some-network-name"
+
+				projectID := "some-project-id"
+				zone := "some-zone"
+				tfState := "some-tf-state"
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         projectID,
+						Zone:              zone,
+						Region:            "some-region",
+					},
+					TFState: tfState,
 				})
 
-				It("returns an error", func() {
-					projectID := "some-project-id"
-					zone := "some-zone"
-					tfState := "some-tf-state"
-					err := destroy.Execute([]string{}, storage.State{
-						IAAS:  "gcp",
-						EnvID: "some-env-id",
-						GCP: storage.GCP{
-							ServiceAccountKey: "some-service-account-key",
-							ProjectID:         projectID,
-							Zone:              zone,
-							Region:            "some-region",
-						},
-						TFState: tfState,
-					})
+				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
+				Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
 
-					Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
-					Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
-
-					Expect(networkInstancesRetriever.ListCall.Receives.ProjectID).To(Equal(projectID))
-					Expect(networkInstancesRetriever.ListCall.Receives.Zone).To(Equal(zone))
-					Expect(networkInstancesRetriever.ListCall.Receives.NetworkName).To(Equal("some-network-name"))
-					Expect(err).To(MatchError("bbl environment is not safe to delete; vms still exist in network"))
-				})
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.ProjectID).To(Equal(projectID))
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.Zone).To(Equal(zone))
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
+				Expect(err).To(MatchError("validation failed"))
 			})
 		})
 

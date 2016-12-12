@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -18,22 +17,22 @@ const (
 )
 
 type Destroy struct {
-	credentialValidator       credentialValidator
-	logger                    logger
-	stdin                     io.Reader
-	boshDeleter               boshDeleter
-	vpcStatusChecker          vpcStatusChecker
-	stackManager              stackManager
-	stringGenerator           stringGenerator
-	infrastructureManager     infrastructureManager
-	awsKeyPairDeleter         awsKeyPairDeleter
-	gcpKeyPairDeleter         gcpKeyPairDeleter
-	certificateDeleter        certificateDeleter
-	stateStore                stateStore
-	stateValidator            stateValidator
-	terraformExecutor         terraformExecutor
-	terraformOutputter        terraformOutputter
-	networkInstancesRetriever networkInstancesRetriever
+	credentialValidator     credentialValidator
+	logger                  logger
+	stdin                   io.Reader
+	boshDeleter             boshDeleter
+	vpcStatusChecker        vpcStatusChecker
+	stackManager            stackManager
+	stringGenerator         stringGenerator
+	infrastructureManager   infrastructureManager
+	awsKeyPairDeleter       awsKeyPairDeleter
+	gcpKeyPairDeleter       gcpKeyPairDeleter
+	certificateDeleter      certificateDeleter
+	stateStore              stateStore
+	stateValidator          stateValidator
+	terraformExecutor       terraformExecutor
+	terraformOutputter      terraformOutputter
+	networkInstancesChecker networkInstancesChecker
 }
 
 type destroyConfig struct {
@@ -73,32 +72,32 @@ type stateValidator interface {
 	Validate() error
 }
 
-type networkInstancesRetriever interface {
-	List(projectID, zone, networkName string) ([]string, error)
+type networkInstancesChecker interface {
+	ValidateSafeToDelete(projectID, zone, networkName string) error
 }
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformExecutor terraformExecutor, terraformOutputter terraformOutputter, networkInstancesRetriever networkInstancesRetriever) Destroy {
+	terraformExecutor terraformExecutor, terraformOutputter terraformOutputter, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
-		credentialValidator:       credentialValidator,
-		logger:                    logger,
-		stdin:                     stdin,
-		boshDeleter:               boshDeleter,
-		vpcStatusChecker:          vpcStatusChecker,
-		stackManager:              stackManager,
-		stringGenerator:           stringGenerator,
-		infrastructureManager:     infrastructureManager,
-		awsKeyPairDeleter:         awsKeyPairDeleter,
-		gcpKeyPairDeleter:         gcpKeyPairDeleter,
-		certificateDeleter:        certificateDeleter,
-		stateStore:                stateStore,
-		stateValidator:            stateValidator,
-		terraformExecutor:         terraformExecutor,
-		terraformOutputter:        terraformOutputter,
-		networkInstancesRetriever: networkInstancesRetriever,
+		credentialValidator:     credentialValidator,
+		logger:                  logger,
+		stdin:                   stdin,
+		boshDeleter:             boshDeleter,
+		vpcStatusChecker:        vpcStatusChecker,
+		stackManager:            stackManager,
+		stringGenerator:         stringGenerator,
+		infrastructureManager:   infrastructureManager,
+		awsKeyPairDeleter:       awsKeyPairDeleter,
+		gcpKeyPairDeleter:       gcpKeyPairDeleter,
+		certificateDeleter:      certificateDeleter,
+		stateStore:              stateStore,
+		stateValidator:          stateValidator,
+		terraformExecutor:       terraformExecutor,
+		terraformOutputter:      terraformOutputter,
+		networkInstancesChecker: networkInstancesChecker,
 	}
 }
 
@@ -137,13 +136,9 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			return err
 		}
 
-		instances, err := d.networkInstancesRetriever.List(state.GCP.ProjectID, state.GCP.Zone, networkName)
+		err = d.networkInstancesChecker.ValidateSafeToDelete(state.GCP.ProjectID, state.GCP.Zone, networkName)
 		if err != nil {
 			return err
-		}
-
-		if len(instances) != 0 {
-			return errors.New("bbl environment is not safe to delete; vms still exist in network")
 		}
 	}
 
