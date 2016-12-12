@@ -139,6 +139,10 @@ var _ = Describe("bbl destroy gcp", func() {
 			})
 		})
 
+		AfterEach(func() {
+			gcpBackend.HandleListInstances(nil)
+		})
+
 		It("fast fails with a nice error message", func() {
 			args := []string{
 				"--state-dir", tempDirectory,
