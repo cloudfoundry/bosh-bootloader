@@ -151,6 +151,8 @@ var _ = Describe("gcp up", func() {
 			}))
 			Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
 			Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(`{"real": "json"}`))
+			Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
+			Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
 		})
 
 		It("uploads the ssh keys", func() {
@@ -163,7 +165,6 @@ var _ = Describe("gcp up", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(1))
-			Expect(keyPairUpdater.UpdateCall.Receives.ProjectID).To(Equal("some-project-id"))
 		})
 
 		Context("terraform apply", func() {

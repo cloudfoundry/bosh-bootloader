@@ -17,11 +17,11 @@ func NewKeyPairDeleter(clientProvider clientProvider, logger logger) KeyPairDele
 	}
 }
 
-func (k KeyPairDeleter) Delete(projectID, publicKey string) error {
+func (k KeyPairDeleter) Delete(publicKey string) error {
 	k.logger.Step("deleting keypair")
 
 	client := k.clientProvider.Client()
-	project, err := client.GetProject(projectID)
+	project, err := client.GetProject()
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (k KeyPairDeleter) Delete(projectID, publicKey string) error {
 		return nil
 	}
 
-	_, err = client.SetCommonInstanceMetadata(projectID, project.CommonInstanceMetadata)
+	_, err = client.SetCommonInstanceMetadata(project.CommonInstanceMetadata)
 	if err != nil {
 		return err
 	}

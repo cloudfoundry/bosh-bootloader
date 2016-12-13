@@ -108,7 +108,7 @@ func main() {
 
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
-	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey)
+	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey, configuration.State.GCP.ProjectID, configuration.State.GCP.Zone)
 
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()

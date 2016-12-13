@@ -4,7 +4,6 @@ type GCPKeyPairDeleter struct {
 	DeleteCall struct {
 		CallCount int
 		Receives  struct {
-			ProjectID string
 			PublicKey string
 		}
 		Returns struct {
@@ -13,9 +12,8 @@ type GCPKeyPairDeleter struct {
 	}
 }
 
-func (g *GCPKeyPairDeleter) Delete(projectID, publicKey string) error {
+func (g *GCPKeyPairDeleter) Delete(publicKey string) error {
 	g.DeleteCall.CallCount++
-	g.DeleteCall.Receives.ProjectID = projectID
 	g.DeleteCall.Receives.PublicKey = publicKey
 	return g.DeleteCall.Returns.Error
 }

@@ -17,9 +17,9 @@ func NewNetworkInstancesChecker(clientProvider clientProvider) NetworkInstancesC
 	}
 }
 
-func (n NetworkInstancesChecker) ValidateSafeToDelete(projectID, zone, networkName string) error {
+func (n NetworkInstancesChecker) ValidateSafeToDelete(networkName string) error {
 	client := n.clientProvider.Client()
-	instanceList, err := client.ListInstances(projectID, zone)
+	instanceList, err := client.ListInstances()
 	if err != nil {
 		return err
 	}

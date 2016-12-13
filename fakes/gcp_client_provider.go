@@ -13,6 +13,8 @@ type GCPClientProvider struct {
 		CallCount int
 		Receives  struct {
 			ServiceAccountKey string
+			ProjectID         string
+			Zone              string
 		}
 		Returns struct {
 			Error error
@@ -26,9 +28,11 @@ func (g *GCPClientProvider) Client() gcp.Client {
 	return g.ClientCall.Returns.Client
 }
 
-func (g *GCPClientProvider) SetConfig(serviceAccountKey string) error {
+func (g *GCPClientProvider) SetConfig(serviceAccountKey, projectID, zone string) error {
 	g.SetConfigCall.CallCount++
 	g.SetConfigCall.Receives.ServiceAccountKey = serviceAccountKey
+	g.SetConfigCall.Receives.ProjectID = projectID
+	g.SetConfigCall.Receives.Zone = zone
 
 	return g.SetConfigCall.Returns.Error
 }

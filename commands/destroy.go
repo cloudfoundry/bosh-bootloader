@@ -45,7 +45,7 @@ type awsKeyPairDeleter interface {
 }
 
 type gcpKeyPairDeleter interface {
-	Delete(projectID, publicKey string) error
+	Delete(publicKey string) error
 }
 
 type boshDeleter interface {
@@ -73,7 +73,7 @@ type stateValidator interface {
 }
 
 type networkInstancesChecker interface {
-	ValidateSafeToDelete(projectID, zone, networkName string) error
+	ValidateSafeToDelete(networkName string) error
 }
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
@@ -136,7 +136,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			return err
 		}
 
-		err = d.networkInstancesChecker.ValidateSafeToDelete(state.GCP.ProjectID, state.GCP.Zone, networkName)
+		err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
 		if err != nil {
 			return err
 		}
@@ -230,7 +230,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 
 	case "gcp":
-		err = d.gcpKeyPairDeleter.Delete(state.GCP.ProjectID, state.KeyPair.PublicKey)
+		err = d.gcpKeyPairDeleter.Delete(state.KeyPair.PublicKey)
 		if err != nil {
 			return err
 		}

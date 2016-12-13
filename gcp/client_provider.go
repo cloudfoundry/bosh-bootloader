@@ -31,7 +31,7 @@ func NewClientProvider(gcpBasePath string) *ClientProvider {
 	}
 }
 
-func (p *ClientProvider) SetConfig(serviceAccountKey string) error {
+func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, zone string) error {
 	authURL := GoogleComputeAuth
 	if p.basePath != "" {
 		authURL = p.basePath
@@ -52,7 +52,9 @@ func (p *ClientProvider) SetConfig(serviceAccountKey string) error {
 	}
 
 	p.client = GCPClient{
-		service: service,
+		service:   service,
+		projectID: projectID,
+		zone:      zone,
 	}
 
 	return nil

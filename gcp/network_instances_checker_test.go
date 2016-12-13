@@ -87,12 +87,9 @@ var _ = Describe("network instances checker", func() {
 					},
 				},
 			}
-			err := networkInstancesChecker.ValidateSafeToDelete("some-project-id", "some-zone", network)
+			err := networkInstancesChecker.ValidateSafeToDelete(network)
 
 			Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
-
-			Expect(client.ListInstancesCall.Receives.ProjectID).To(Equal("some-project-id"))
-			Expect(client.ListInstancesCall.Receives.Zone).To(Equal("some-zone"))
 
 			Expect(err).To(MatchError("bbl environment is not safe to delete; vms still exist in network"))
 		})
@@ -100,7 +97,7 @@ var _ = Describe("network instances checker", func() {
 		Context("failure cases", func() {
 			It("returns an error when gcp client list instances fails", func() {
 				client.ListInstancesCall.Returns.Error = errors.New("fails to list instances")
-				err := networkInstancesChecker.ValidateSafeToDelete("some-project-id", "some-zone", "some-network")
+				err := networkInstancesChecker.ValidateSafeToDelete("some-network")
 				Expect(err).To(MatchError("fails to list instances"))
 			})
 		})

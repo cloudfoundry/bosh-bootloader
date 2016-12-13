@@ -572,8 +572,6 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
 				Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
 
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.ProjectID).To(Equal(projectID))
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.Zone).To(Equal(zone))
 				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
 				Expect(err).To(MatchError("validation failed"))
 			})
@@ -593,7 +591,6 @@ var _ = Describe("Destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(gcpKeyPairDeleter.DeleteCall.CallCount).To(Equal(1))
-			Expect(gcpKeyPairDeleter.DeleteCall.Receives.ProjectID).To(Equal("some-project-id"))
 			Expect(gcpKeyPairDeleter.DeleteCall.Receives.PublicKey).To(Equal("some-public-key"))
 		})
 

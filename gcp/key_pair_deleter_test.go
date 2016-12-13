@@ -42,14 +42,13 @@ var _ = Describe("KeyPairDeleter", func() {
 				},
 			},
 		}
-		err := deleter.Delete("some-project-id", publicKey)
+		err := deleter.Delete(publicKey)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
 
-		Expect(client.GetProjectCall.Receives.ProjectID).To(Equal("some-project-id"))
-
-		Expect(client.SetCommonInstanceMetadataCall.Receives.ProjectID).To(Equal("some-project-id"))
+		Expect(client.GetProjectCall.CallCount).To(Equal(1))
+		Expect(client.SetCommonInstanceMetadataCall.CallCount).To(Equal(1))
 
 		expectedSSHKeysValue := "someuser:ssh-rsa some-other-public-key someuser"
 		Expect(*client.SetCommonInstanceMetadataCall.Receives.Metadata).To(Equal(compute.Metadata{
@@ -78,7 +77,7 @@ var _ = Describe("KeyPairDeleter", func() {
 				},
 			}
 
-			err := deleter.Delete("some-project-id", "non-existent-pub-key")
+			err := deleter.Delete("non-existent-pub-key")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.SetCommonInstanceMetadataCall.CallCount).To(Equal(0))
@@ -89,7 +88,7 @@ var _ = Describe("KeyPairDeleter", func() {
 		It("returns an error when the project cannot be retrieved", func() {
 			client.GetProjectCall.Returns.Error = errors.New("project retrieval failed")
 
-			err := deleter.Delete("", "")
+			err := deleter.Delete("")
 			Expect(err).To(MatchError("project retrieval failed"))
 		})
 
@@ -107,7 +106,7 @@ var _ = Describe("KeyPairDeleter", func() {
 			}
 			client.SetCommonInstanceMetadataCall.Returns.Error = errors.New("set common metadata failed")
 
-			err := deleter.Delete("", "ssh-rsa some-pub-key")
+			err := deleter.Delete("ssh-rsa some-pub-key")
 			Expect(err).To(MatchError("set common metadata failed"))
 		})
 	})

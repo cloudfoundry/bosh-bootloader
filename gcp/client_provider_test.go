@@ -24,7 +24,7 @@ var _ = Describe("ClientProvider", func() {
 		})
 
 		It("returns an error when the service account key is not valid json", func() {
-			err := clientProvider.SetConfig("1231:123")
+			err := clientProvider.SetConfig("1231:123", "proj-id", "zone")
 			Expect(err).To(MatchError("invalid character ':' after top-level value"))
 		})
 
@@ -32,7 +32,7 @@ var _ = Describe("ClientProvider", func() {
 			gcp.SetGCPHTTPClient(func(*jwt.Config) *http.Client {
 				return nil
 			})
-			err := clientProvider.SetConfig(`{"type": "service_account"}`)
+			err := clientProvider.SetConfig(`{"type": "service_account"}`, "proj-id", "zone")
 			Expect(err).To(MatchError("client is nil"))
 		})
 	})

@@ -48,11 +48,11 @@ type gcpKeyPairCreator interface {
 }
 
 type keyPairUpdater interface {
-	Update(projectID string) (storage.KeyPair, error)
+	Update() (storage.KeyPair, error)
 }
 
 type gcpProvider interface {
-	SetConfig(serviceAccountKey string) error
+	SetConfig(serviceAccountKey, projectID, zone string) error
 }
 
 type terraformExecutor interface {
@@ -110,12 +110,12 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey); err != nil {
+	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone); err != nil {
 		return err
 	}
 
 	if state.KeyPair.IsEmpty() {
-		keyPair, err := u.keyPairUpdater.Update(state.GCP.ProjectID)
+		keyPair, err := u.keyPairUpdater.Update()
 		if err != nil {
 			return err
 		}

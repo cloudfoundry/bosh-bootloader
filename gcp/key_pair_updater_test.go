@@ -26,10 +26,6 @@ var _ = Describe("KeyPairUpdater", func() {
 		logger            *fakes.Logger
 	)
 
-	const (
-		projectID = "some-project-id"
-	)
-
 	BeforeEach(func() {
 		gcpClientProvider = &fakes.GCPClientProvider{}
 		gcpClient = &fakes.GCPClient{}
@@ -42,11 +38,12 @@ var _ = Describe("KeyPairUpdater", func() {
 				Items: []*compute.MetadataItems{},
 			},
 		}
+		gcpClient.ProjectIDCall.Returns.ProjectID = "some-project-id"
 		keyPairUpdater = gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	})
 
 	It("generates a keypair", func() {
-		keyPair, err := keyPairUpdater.Update(projectID)
+		keyPair, err := keyPairUpdater.Update()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(keyPair.PrivateKey).NotTo(BeEmpty())
 		Expect(keyPair.PublicKey).NotTo(BeEmpty())
@@ -71,21 +68,19 @@ var _ = Describe("KeyPairUpdater", func() {
 	})
 
 	It("retrieves the project for the given project id", func() {
-		_, err := keyPairUpdater.Update(projectID)
+		_, err := keyPairUpdater.Update()
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
 
 		Expect(gcpClient.GetProjectCall.CallCount).To(Equal(1))
-		Expect(gcpClient.GetProjectCall.Receives.ProjectID).To(Equal("some-project-id"))
 	})
 
 	It("updates common metadata for given project id", func() {
-		_, err := keyPairUpdater.Update(projectID)
+		_, err := keyPairUpdater.Update()
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.CallCount).To(Equal(1))
-		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.ProjectID).To(Equal("some-project-id"))
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(1))
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items[0].Key).To(Equal("sshKeys"))
@@ -111,7 +106,7 @@ var _ = Describe("KeyPairUpdater", func() {
 				},
 			},
 		}
-		_, err := keyPairUpdater.Update(projectID)
+		_, err := keyPairUpdater.Update()
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(2))
@@ -131,7 +126,7 @@ var _ = Describe("KeyPairUpdater", func() {
 				},
 				ssh.NewPublicKey, gcpClientProvider, logger)
 
-			_, err := keyPairUpdater.Update(projectID)
+			_, err := keyPairUpdater.Update()
 			Expect(err).To(MatchError("rsa key generator failed"))
 		})
 
@@ -141,21 +136,21 @@ var _ = Describe("KeyPairUpdater", func() {
 					return nil, errors.New("ssh public key gen failed")
 				}, gcpClientProvider, logger)
 
-			_, err := keyPairUpdater.Update(projectID)
+			_, err := keyPairUpdater.Update()
 			Expect(err).To(MatchError("ssh public key gen failed"))
 		})
 
 		It("returns an error when project could not be found", func() {
 			gcpClient.GetProjectCall.Returns.Error = errors.New("project could not be found")
 
-			_, err := keyPairUpdater.Update(projectID)
+			_, err := keyPairUpdater.Update()
 			Expect(err).To(MatchError("project could not be found"))
 		})
 
 		It("returns an error when set common instance metadata fails", func() {
 			gcpClient.SetCommonInstanceMetadataCall.Returns.Error = errors.New("updating ssh-key failed")
 
-			_, err := keyPairUpdater.Update(projectID)
+			_, err := keyPairUpdater.Update()
 			Expect(err).To(MatchError("updating ssh-key failed"))
 		})
 	})
