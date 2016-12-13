@@ -11,6 +11,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -57,7 +58,7 @@ type gcpProvider interface {
 
 type terraformExecutor interface {
 	Apply(credentials, envID, projectID, zone, region, template, tfState string) (string, error)
-	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) error
+	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
 }
 
 type terraformOutputter interface {
@@ -131,6 +132,13 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n\n"), state.TFState,
 	)
 	if err != nil {
+		state.TFState = tfState
+		if setErr := u.stateStore.Set(state); setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
 		return err
 	}
 

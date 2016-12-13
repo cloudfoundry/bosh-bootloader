@@ -290,6 +290,27 @@ resource "google_compute_firewall" "internal" {
 }`))
 				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 			})
+
+			It("saves the tf state even if the applier fails", func() {
+				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
+				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+					EnvID: "bbl-lake-time:stamp",
+				})
+
+				Expect(err).To(MatchError("failed to apply terraform"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(3))
+				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+
+			})
 		})
 
 		Context("bosh", func() {
@@ -864,6 +885,27 @@ resource "google_compute_firewall" "internal" {
 				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("state failed to be set"))
+		})
+
+		It("returns an error when both the applier fails and state fails to be set", func() {
+			terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
+			terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+
+			stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
+			err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+				IAAS: "gcp",
+				GCP: storage.GCP{
+					ServiceAccountKey: serviceAccountKey,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+				},
+				EnvID: "bbl-lake-time:stamp",
+			})
+
+			Expect(err).To(MatchError("the following errors occurred:\nfailed to apply terraform,\nstate failed to be set"))
+			Expect(stateStore.SetCall.CallCount).To(Equal(3))
+			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 		})
 
 		It("returns an error when the state fails to be set after applying terraform", func() {

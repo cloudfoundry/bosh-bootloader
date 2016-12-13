@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 )
 
 var (
@@ -15,6 +17,15 @@ var (
 
 func main() {
 	if os.Args[1] == "fast-fail" {
+		log.Fatal("failed to terraform")
+	}
+
+	if testhelpers.Contains(os.Args, "region=fail-to-terraform") {
+		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"partial-apply"}`), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+
 		log.Fatal("failed to terraform")
 	}
 

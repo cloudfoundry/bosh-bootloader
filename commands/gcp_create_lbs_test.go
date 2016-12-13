@@ -200,31 +200,56 @@ var _ = Describe("GCPCreateLBs", func() {
 	})
 
 	Describe("Execute", func() {
-		It("creates and applies a concourse target pool", func() {
-			err := command.Execute(commands.GCPCreateLBsConfig{
-				LBType: "concourse",
-			}, storage.State{
-				IAAS:    "gcp",
-				EnvID:   "some-env-id",
-				TFState: "some-prev-tf-state",
-				GCP: storage.GCP{
-					ServiceAccountKey: "some-service-account-key",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+		Context("terraform apply call", func() {
+			It("creates and applies a concourse target pool", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS:    "gcp",
+					EnvID:   "some-env-id",
+					TFState: "some-prev-tf-state",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-				"generating terraform template", "finished applying terraform template",
-			}))
-			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
-			Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
-			Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-			Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
-			Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
-			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedTemplate))
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					"generating terraform template", "finished applying terraform template",
+				}))
+				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
+				Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+				Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+				Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
+				Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
+				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedTemplate))
+			})
+
+			It("saves the tf state even if the applier fails", func() {
+				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
+				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS:    "gcp",
+					EnvID:   "some-env-id",
+					TFState: "some-prev-tf-state",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+
+				Expect(err).To(MatchError("failed to apply terraform"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+
+			})
 		})
 
 		It("creates a cloud-config", func() {
@@ -370,6 +395,20 @@ var _ = Describe("GCPCreateLBs", func() {
 				}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("failed to save state"))
+			})
+
+			It("returns an error when both the applier fails and state fails to be set", func() {
+				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
+				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply terraform,\nstate failed to be set"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 			})
 
 			It("returns an error when the state store fails to save the state after writing lb type", func() {

@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
 var tempDir func(dir, prefix string) (string, error) = ioutil.TempDir
@@ -56,7 +58,14 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {
-		return "", err
+		tfState, readErr := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+		if readErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(readErr)
+			return "", errorList
+		}
+		return string(tfState), err
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
@@ -67,26 +76,26 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 	return string(tfState), nil
 }
 
-func (e Executor) Destroy(credentials, envID, projectID, zone, region, template, tfState string) error {
+func (e Executor) Destroy(credentials, envID, projectID, zone, region, template, prevTFState string) (string, error) {
 	tempDir, err := tempDir("", "")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	credentialsPath := filepath.Join(tempDir, "credentials.json")
 	err = writeFile(credentialsPath, []byte(credentials), os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	args := []string{"destroy", "-force"}
@@ -97,10 +106,22 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {
-		return err
+		tfState, readErr := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+		if readErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(readErr)
+			return "", errorList
+		}
+		return string(tfState), err
 	}
 
-	return nil
+	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+	if err != nil {
+		return "", err
+	}
+
+	return string(tfState), nil
 }
 
 func makeVar(name string, value string) []string {

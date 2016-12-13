@@ -112,6 +112,43 @@ var _ = Describe("bbl destroy gcp", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})
 
+	Context("bbl re-entrance", func() {
+		It("saves the tf state when terraform destroy fails", func() {
+			state := storage.State{
+				IAAS:    "gcp",
+				TFState: `{"key": "value"}`,
+				GCP: storage.GCP{
+					ProjectID:         "some-project-id",
+					ServiceAccountKey: serviceAccountKey,
+					Region:            "fail-to-terraform",
+					Zone:              "some-zone",
+				},
+				KeyPair: storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: testhelpers.BBL_KEY,
+				},
+				BOSH: storage.BOSH{
+					DirectorName: "some-bosh-director-name",
+				},
+			}
+			stateContents, err := json.Marshal(state)
+			Expect(err).NotTo(HaveOccurred())
+
+			statePath = filepath.Join(tempDirectory, "bbl-state.json")
+			err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+
+			executeCommand(args, 1)
+
+			state = readStateJson(tempDirectory)
+			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+		})
+	})
+
 	Context("when instances exist in my bbl environment", func() {
 		BeforeEach(func() {
 			gcpBackend.HandleListInstances(func(w http.ResponseWriter, req *http.Request) {

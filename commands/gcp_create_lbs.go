@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -56,6 +57,12 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n\n")
 	if state.TFState, err = c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
 		state.GCP.Region, templateWithLB, state.TFState); err != nil {
+		if setErr := c.stateStore.Set(state); setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
 		return err
 	}
 	c.logger.Step("finished applying terraform template")

@@ -4,7 +4,6 @@ type TerraformExecutor struct {
 	ApplyCall struct {
 		CallCount int
 		Receives  struct {
-			// TODO
 			Credentials string
 			EnvID       string
 			ProjectID   string
@@ -30,7 +29,8 @@ type TerraformExecutor struct {
 			TFState     string
 		}
 		Returns struct {
-			Error error
+			TFState string
+			Error   error
 		}
 	}
 }
@@ -47,7 +47,7 @@ func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, t
 	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Destroy(credentials, envID, projectID, zone, region, template, tfState string) error {
+func (t *TerraformExecutor) Destroy(credentials, envID, projectID, zone, region, template, tfState string) (string, error) {
 	t.DestroyCall.CallCount++
 	t.DestroyCall.Receives.Credentials = credentials
 	t.DestroyCall.Receives.EnvID = envID
@@ -56,5 +56,5 @@ func (t *TerraformExecutor) Destroy(credentials, envID, projectID, zone, region,
 	t.DestroyCall.Receives.Region = region
 	t.DestroyCall.Receives.Template = template
 	t.DestroyCall.Receives.TFState = tfState
-	return t.DestroyCall.Returns.Error
+	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error
 }

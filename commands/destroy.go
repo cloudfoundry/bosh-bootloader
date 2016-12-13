@@ -9,6 +9,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -195,9 +196,15 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if state.IAAS == "gcp" {
-		err := d.terraformExecutor.Destroy(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
+		state.TFState, err = d.terraformExecutor.Destroy(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
 			state.GCP.Region, terraformVarsTemplate, state.TFState)
 		if err != nil {
+			if setErr := d.stateStore.Set(state); setErr != nil {
+				errorList := helpers.Errors{}
+				errorList.Add(err)
+				errorList.Add(setErr)
+				return errorList
+			}
 			return err
 		}
 	}

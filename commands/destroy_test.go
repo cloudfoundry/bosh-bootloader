@@ -548,6 +548,41 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformExecutor.DestroyCall.Receives.Region).To(Equal("some-region"))
 				Expect(terraformExecutor.DestroyCall.Receives.TFState).To(Equal("some-tf-state"))
 				Expect(terraformExecutor.DestroyCall.Receives.Template).To(ContainSubstring(`variable "project_id"`))
+
+				Expect(terraformExecutor.DestroyCall.Returns.TFState).To(Equal(""))
+			})
+
+			Context("when terraform destroy fails", func() {
+				It("saves the partially destroyed tf state", func() {
+					terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to terraform destroy")
+					terraformExecutor.DestroyCall.Returns.TFState = "some-tf-state"
+					stdin.Write([]byte("yes\n"))
+					err := destroy.Execute([]string{}, storage.State{
+						IAAS:  "gcp",
+						EnvID: "some-env-id",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+						TFState: "some-tf-state",
+					})
+					Expect(err).To(MatchError("failed to terraform destroy"))
+
+					Expect(terraformExecutor.DestroyCall.CallCount).To(Equal(1))
+					Expect(terraformExecutor.DestroyCall.Receives.Credentials).To(Equal("some-service-account-key"))
+					Expect(terraformExecutor.DestroyCall.Receives.EnvID).To(Equal("some-env-id"))
+					Expect(terraformExecutor.DestroyCall.Receives.ProjectID).To(Equal("some-project-id"))
+					Expect(terraformExecutor.DestroyCall.Receives.Zone).To(Equal("some-zone"))
+					Expect(terraformExecutor.DestroyCall.Receives.Region).To(Equal("some-region"))
+					Expect(terraformExecutor.DestroyCall.Receives.TFState).To(Equal("some-tf-state"))
+					Expect(terraformExecutor.DestroyCall.Receives.Template).To(ContainSubstring(`variable "project_id"`))
+
+					Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+
+				})
 			})
 
 			It("returns an error when instances exist in the gcp network", func() {
@@ -603,6 +638,17 @@ var _ = Describe("Destroy", func() {
 				})
 
 				Expect(err).To(MatchError("failed to destroy"))
+			})
+
+			It("returns an error when terraform executor fails to destroy and the resulting state fails to be set", func() {
+				stdin.Write([]byte("yes\n"))
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+				terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to destroy")
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+				})
+
+				Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
 			})
 
 			It("returns an error when the key pair deleter fails", func() {
