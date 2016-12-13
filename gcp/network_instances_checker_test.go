@@ -29,8 +29,9 @@ var _ = Describe("network instances checker", func() {
 
 		It("returns helpful error message when instances instances other than bosh director exist in network", func() {
 			network := "some-network"
-			directorBOSHInitVal := "bosh-init"
-			directorOtherVal := "some-other-val"
+			boshInit := "bosh-init"
+			directorName := "some-bosh-director"
+			deployment := "some-deployment"
 
 			client.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
 				Items: []*compute.Instance{
@@ -48,7 +49,7 @@ var _ = Describe("network instances checker", func() {
 							Items: []*compute.MetadataItems{
 								{
 									Key:   "director",
-									Value: &directorBOSHInitVal,
+									Value: &boshInit,
 								},
 							},
 						},
@@ -64,9 +65,24 @@ var _ = Describe("network instances checker", func() {
 							Items: []*compute.MetadataItems{
 								{
 									Key:   "director",
-									Value: &directorOtherVal,
+									Value: &directorName,
+								},
+								{
+									Key:   "deployment",
+									Value: &deployment,
 								},
 							},
+						},
+					},
+					{
+						Name: "non-bosh-vm",
+						NetworkInterfaces: []*compute.NetworkInterface{
+							{
+								Network: fmt.Sprintf("http://some-host/%s", network),
+							},
+						},
+						Metadata: &compute.Metadata{
+							Items: []*compute.MetadataItems{},
 						},
 					},
 					{
@@ -80,7 +96,7 @@ var _ = Describe("network instances checker", func() {
 							Items: []*compute.MetadataItems{
 								{
 									Key:   "director",
-									Value: &directorOtherVal,
+									Value: &directorName,
 								},
 							},
 						},
@@ -91,7 +107,9 @@ var _ = Describe("network instances checker", func() {
 
 			Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
 
-			Expect(err).To(MatchError("bbl environment is not safe to delete; vms still exist in network"))
+			Expect(err).To(MatchError(`bbl environment is not safe to delete; vms still exist in network:
+some-other-vm (deployment: some-deployment)
+non-bosh-vm (not managed by bosh)`))
 		})
 
 		Context("failure cases", func() {

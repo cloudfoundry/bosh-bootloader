@@ -1,7 +1,7 @@
 package gcp
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	compute "google.golang.org/api/compute/v1"
@@ -24,16 +24,38 @@ func (n NetworkInstancesChecker) ValidateSafeToDelete(networkName string) error 
 		return err
 	}
 
+	var runningInstances []*compute.Instance
 	for _, instance := range instanceList.Items {
 		isInNetwork := n.isInNetwork(networkName, instance.NetworkInterfaces)
 		isBoshDirector := n.isBoshDirector(instance.Metadata)
 
 		if isInNetwork && !isBoshDirector {
-			return errors.New("bbl environment is not safe to delete; vms still exist in network")
+			runningInstances = append(runningInstances, instance)
 		}
 	}
 
-	return nil
+	if len(runningInstances) == 0 {
+		return nil
+	}
+
+	var errorMessages []string
+	for _, instance := range runningInstances {
+		var hasDeployment bool
+		for _, item := range instance.Metadata.Items {
+			if item.Key == "deployment" {
+				errorMessages = append(errorMessages, fmt.Sprintf("%s (deployment: %s)", instance.Name, *item.Value))
+				hasDeployment = true
+				break
+			}
+		}
+
+		if !hasDeployment {
+			errorMessages = append(errorMessages, fmt.Sprintf("%s (not managed by bosh)", instance.Name))
+		}
+	}
+
+	return fmt.Errorf("bbl environment is not safe to delete; vms still exist in network:\n%s",
+		strings.Join(errorMessages, "\n"))
 }
 
 func (n NetworkInstancesChecker) isInNetwork(networkName string, networkInterfaces []*compute.NetworkInterface) bool {
