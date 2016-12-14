@@ -3,12 +3,12 @@ package constants
 // THIS FILE IS GENERATED AUTOMATICALLY, NO TOUCHING!!!!!
 
 const (
-	AWSBOSHURL      = "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-260-on-ubuntu-trusty-stemcell-3312.7.tgz"
-	AWSBOSHSHA1     = "79f4b07d9e8f3134987f06c6d0eba0ada440142c"
+	AWSBOSHURL      = "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-260-on-ubuntu-trusty-stemcell-3312.8.tgz"
+	AWSBOSHSHA1     = "76a4198741dc717b0cd2deb76394ee588e7ff209"
 	BOSHAWSCPIURL   = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=62"
 	BOSHAWSCPISHA1  = "f36967927ceae09e5663a41fdda199edfe649dc6"
-	AWSStemcellURL  = "https://s3.amazonaws.com/bosh-aws-light-stemcells/light-bosh-stemcell-3312.7-aws-xen-hvm-ubuntu-trusty-go_agent.tgz"
-	AWSStemcellSHA1 = "e11da993d8bad4305e4bc51117f1de88a63f76bb"
+	AWSStemcellURL  = "https://s3.amazonaws.com/bosh-aws-light-stemcells/light-bosh-stemcell-3312.8-aws-xen-hvm-ubuntu-trusty-go_agent.tgz"
+	AWSStemcellSHA1 = "50fb9765d92b5f38407bc248a2477152cbe80ebf"
 	GCPBOSHURL      = "https://bosh.io/d/github.com/cloudfoundry/bosh?v=260"
 	GCPBOSHSHA1     = "f8f086974d9769263078fb6cb7927655744dacbc"
 	BOSHGCPCPIURL   = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-google-cpi-release?v=25.6.1"
