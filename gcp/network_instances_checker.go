@@ -60,15 +60,19 @@ func (n NetworkInstancesChecker) ValidateSafeToDelete(networkName string) error 
 
 func (n NetworkInstancesChecker) isInNetwork(networkName string, networkInterfaces []*compute.NetworkInterface) bool {
 	for _, networkInterface := range networkInterfaces {
-		return strings.Contains(networkInterface.Network, networkName)
+		if strings.Contains(networkInterface.Network, networkName) {
+			return true
+		}
 	}
 
 	return false
 }
 
 func (n NetworkInstancesChecker) isBoshDirector(metadata *compute.Metadata) bool {
-	for _, metadata := range metadata.Items {
-		return metadata.Key == "director" && metadata.Value != nil && *metadata.Value == "bosh-init"
+	for _, item := range metadata.Items {
+		if item.Key == "director" && item.Value != nil && *item.Value == "bosh-init" {
+			return true
+		}
 	}
 
 	return false
