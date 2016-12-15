@@ -1,6 +1,4 @@
-package commands
-
-const terraformVarsTemplate = `variable "project_id" {
+variable "project_id" {
 	type = "string"
 }
 
@@ -25,9 +23,8 @@ provider "google" {
 	project = "${var.project_id}"
 	region = "${var.region}"
 }
-`
 
-const terraformBOSHDirectorTemplate = `output "external_ip" {
+output "external_ip" {
     value = "${google_compute_address.bosh-external-ip.address}"
 }
 
@@ -101,59 +98,3 @@ resource "google_compute_firewall" "internal" {
 
   source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }
-`
-
-const terraformConcourseLBTemplate = `output "concourse_target_pool" {
-	value = "${google_compute_target_pool.target-pool.name}"
-}
-
-resource "google_compute_firewall" "firewall-concourse" {
-  name    = "${var.env_id}-concourse-open"
-  network = "${google_compute_network.bbl-network.name}"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443", "2222"]
-  }
-
-  target_tags = ["concourse"]
-}
-
-resource "google_compute_address" "concourse-address" {
-  name = "${var.env_id}-concourse"
-}
-
-resource "google_compute_http_health_check" "health-check" {
-  name               = "${var.env_id}-concourse"
-  request_path       = "/login"
-  port               = 443
-  check_interval_sec  = 30
-  timeout_sec         = 5
-  healthy_threshold   = 10
-  unhealthy_threshold = 2
-}
-
-resource "google_compute_target_pool" "target-pool" {
-  name = "${var.env_id}-concourse"
-
-  health_checks = [
-    "${google_compute_http_health_check.health-check.name}",
-  ]
-}
-
-resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
-  name        = "${var.env_id}-concourse-ssh"
-  target      = "${google_compute_target_pool.target-pool.self_link}"
-  port_range  = "2222"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-address.address}"
-}
-
-resource "google_compute_forwarding_rule" "https-forwarding-rule" {
-  name        = "${var.env_id}-concourse-https"
-  target      = "${google_compute_target_pool.target-pool.self_link}"
-  port_range  = "443"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-address.address}"
-}
-`

@@ -54,7 +54,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	c.logger.Step("generating terraform template")
 	var err error
-	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n\n")
+	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
 	if state.TFState, err = c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
 		state.GCP.Region, templateWithLB, state.TFState); err != nil {
 		if setErr := c.stateStore.Set(state); setErr != nil {

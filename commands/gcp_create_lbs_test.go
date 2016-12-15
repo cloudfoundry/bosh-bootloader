@@ -166,7 +166,8 @@ resource "google_compute_forwarding_rule" "https-forwarding-rule" {
   port_range  = "443"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
-}`
+}
+`
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (

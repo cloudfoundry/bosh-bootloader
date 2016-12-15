@@ -159,27 +159,45 @@ func main() {
 		boshinitManifestBuilder, boshinitDeployRunner, boshinitDeleteRunner, logger,
 	)
 
+	// Terraform
+	terraformCmd := terraform.NewCmd(os.Stderr)
+	terraformExecutor := terraform.NewExecutor(terraformCmd)
+	terraformOutputter := terraform.NewOutputter(terraformCmd)
+
 	// BOSH
 	boshClientProvider := bosh.NewClientProvider()
 	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
 	cloudConfigManager := bosh.NewCloudConfigManager(logger, cloudConfigGenerator)
 
-	// Commands
-	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
-	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
-
+	// Subcommands
 	awsUp := commands.NewAWSUp(
 		credentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
 		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
-	terraformCmd := terraform.NewCmd(os.Stderr)
-	terraformExecutor := terraform.NewExecutor(terraformCmd)
-	terraformOutputter := terraform.NewOutputter(terraformCmd)
+	awsCreateLBs := commands.NewAWSCreateLBs(
+		logger, credentialValidator, certificateManager, infrastructureManager,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
+		uuidGenerator, stateStore,
+	)
+
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
+
+	awsDeleteLBs := commands.NewAWSDeleteLBs(
+		credentialValidator, availabilityZoneRetriever, certificateManager,
+		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
+	)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputter, gcpCloudConfigGenerator, zones, logger,
+		boshClientProvider, stateStore, terraformExecutor)
 
 	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
 	envGetter := commands.NewEnvGetter()
+
+	// Commands
+	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
+	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
+
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
@@ -187,22 +205,12 @@ func main() {
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
 		stateStore, stateValidator, terraformExecutor, terraformOutputter, gcpNetworkInstancesChecker,
 	)
-	awsCreateLBs := commands.NewAWSCreateLBs(
-		logger, credentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
-		uuidGenerator, stateStore,
-	)
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
 
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(credentialValidator, certificateManager,
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore, stateValidator)
-	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(
-		credentialValidator, availabilityZoneRetriever, certificateManager,
-		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
-		stateValidator,
-	)
+	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
 	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress

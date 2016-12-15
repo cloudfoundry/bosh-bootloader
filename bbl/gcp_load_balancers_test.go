@@ -134,4 +134,44 @@ var _ = Describe("load balancers", func() {
 			Expect(stdout).To(ContainSubstring(`lb type "concourse" exists, skipping...`))
 		})
 	})
+
+	Describe("delete-lbs", func() {
+		It("deletes lbs", func() {
+			var session *gexec.Session
+			var stdout []byte
+
+			By("running create-lbs", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"",
+				}
+
+				session = executeCommand(args, 0)
+			})
+
+			By("running delete-lbs", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"delete-lbs",
+				}
+
+				session := executeCommand(args, 0)
+				stdout = session.Out.Contents()
+			})
+
+			By("logging the steps", func() {
+				Expect(stdout).To(ContainSubstring("step: generating terraform template"))
+				Expect(stdout).To(ContainSubstring("step: finished applying terraform template"))
+				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+			})
+
+			By("removing the lb vm_extention from cloud config", func() {
+				contents, err := ioutil.ReadFile(filepath.Join("fixtures", "gcp-cloud-config-no-lb.yml"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+			})
+		})
+	})
 })

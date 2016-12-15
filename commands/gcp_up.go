@@ -129,7 +129,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,
 		state.EnvID, state.GCP.ProjectID,
 		state.GCP.Zone, state.GCP.Region,
-		strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n\n"), state.TFState,
+		strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n"), state.TFState,
 	)
 	if err != nil {
 		state.TFState = tfState

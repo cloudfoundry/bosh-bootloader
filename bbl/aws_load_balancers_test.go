@@ -202,6 +202,7 @@ var _ = Describe("load balancers", func() {
 	Describe("update-lbs", func() {
 		It("updates the load balancer with the given cert, key and chain", func() {
 			writeStateJson(storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -246,6 +247,7 @@ var _ = Describe("load balancers", func() {
 
 		It("does nothing if the certificate is unchanged", func() {
 			writeStateJson(storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -320,6 +322,7 @@ var _ = Describe("load balancers", func() {
 			Context("when bbl environment is not up", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
 					writeStateJson(storage.State{
+						IAAS: "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",
@@ -338,6 +341,7 @@ var _ = Describe("load balancers", func() {
 					})
 
 					writeStateJson(storage.State{
+						IAAS: "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",
@@ -386,6 +390,7 @@ var _ = Describe("load balancers", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			writeStateJson(storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -471,6 +476,7 @@ var _ = Describe("load balancers", func() {
 					})
 
 					writeStateJson(storage.State{
+						IAAS: "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",

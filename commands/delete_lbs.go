@@ -1,117 +1,60 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"fmt"
+
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const (
-	DeleteLBsCommand = "delete-lbs"
-)
-
 type DeleteLBs struct {
-	credentialValidator       credentialValidator
-	availabilityZoneRetriever availabilityZoneRetriever
-	certificateManager        certificateManager
-	infrastructureManager     infrastructureManager
-	logger                    logger
-	boshCloudConfigurator     boshCloudConfigurator
-	cloudConfigManager        cloudConfigManager
-	boshClientProvider        boshClientProvider
-	stateStore                stateStore
-	stateValidator            stateValidator
+	gcpDeleteLBs   gcpDeleteLBs
+	awsDeleteLBs   awsDeleteLBs
+	logger         logger
+	stateValidator stateValidator
 }
 
-type cloudConfigManager interface {
-	Update(cloudConfigInput bosh.CloudConfigInput, boshClient bosh.Client) error
+type gcpDeleteLBs interface {
+	Execute(state storage.State) error
 }
 
-type deleteLBsConfig struct {
-	skipIfMissing bool
+type awsDeleteLBs interface {
+	Execute(state storage.State) error
 }
 
-func NewDeleteLBs(credentialValidator credentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
-	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
-	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, stateStore stateStore, stateValidator stateValidator,
-) DeleteLBs {
+func NewDeleteLBs(gcpDeleteLBs gcpDeleteLBs, awsDeleteLBs awsDeleteLBs,
+	logger logger, stateValidator stateValidator) DeleteLBs {
 	return DeleteLBs{
-		credentialValidator:       credentialValidator,
-		availabilityZoneRetriever: availabilityZoneRetriever,
-		certificateManager:        certificateManager,
-		infrastructureManager:     infrastructureManager,
-		logger:                    logger,
-		boshCloudConfigurator:     boshCloudConfigurator,
-		cloudConfigManager:        cloudConfigManager,
-		boshClientProvider:        boshClientProvider,
-		stateStore:                stateStore,
-		stateValidator:            stateValidator,
+		gcpDeleteLBs:   gcpDeleteLBs,
+		awsDeleteLBs:   awsDeleteLBs,
+		logger:         logger,
+		stateValidator: stateValidator,
 	}
 }
 
-func (c DeleteLBs) Execute(subcommandFlags []string, state storage.State) error {
-	config, err := c.parseFlags(subcommandFlags)
+func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error {
+	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
 	}
 
 	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
-		c.logger.Println("no lb type exists, skipping...")
+		d.logger.Println("no lb type exists, skipping...")
 		return nil
 	}
 
-	err = c.stateValidator.Validate()
+	err = d.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
-	err = c.credentialValidator.ValidateAWS()
-	if err != nil {
-		return err
-	}
-
-	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
-		return err
-	}
-
-	azs, err := c.availabilityZoneRetriever.Retrieve(state.AWS.Region)
-	if err != nil {
-		return err
-	}
-
-	stack, err := c.infrastructureManager.Describe(state.Stack.Name)
-	if err != nil {
-		return err
-	}
-
-	cloudConfigInput := c.boshCloudConfigurator.Configure(stack, azs)
-	cloudConfigInput.LBs = nil
-
-	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
-
-	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.infrastructureManager.Update(state.KeyPair.Name, len(azs), state.Stack.Name, "", "", state.EnvID)
-	if err != nil {
-		return err
-	}
-
-	c.logger.Step("deleting certificate")
-	err = c.certificateManager.Delete(state.Stack.CertificateName)
-	if err != nil {
-		return err
-	}
-
-	state.Stack.LBType = "none"
-	state.Stack.CertificateName = ""
-
-	err = c.stateStore.Set(state)
-	if err != nil {
-		return err
+	switch state.IAAS {
+	case "gcp":
+		return d.gcpDeleteLBs.Execute(state)
+	case "aws":
+		return d.awsDeleteLBs.Execute(state)
+	default:
+		return fmt.Errorf("%q is an invalid iaas type in state, supported iaas types are: [gcp, aws]", state.IAAS)
 	}
 
 	return nil
