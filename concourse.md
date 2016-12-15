@@ -10,6 +10,12 @@ This document will walk through deploying a concourse clustered install to GCP u
 * BBL up. e.g. ```bbl up --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-gcp-project-id --iaas gcp```
 * This guide will assume the [Bosh v2 CLI](https://bosh.io/docs/cli-v2.html) is installed, but bosh v1 CLI will work, with some minor changes.
 
+## Create load balancer
+
+```
+bbl create-lbs --type concourse
+```
+
 ## Create a bosh deployment manifest
 
 Scale instance types, disks and instance count based on your needs. Other sizes are available, see ```bosh cloud-config```.
