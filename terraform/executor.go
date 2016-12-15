@@ -14,10 +14,7 @@ var tempDir func(dir, prefix string) (string, error) = ioutil.TempDir
 var writeFile func(file string, data []byte, perm os.FileMode) error = ioutil.WriteFile
 var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
 
-type Executor struct {
-	cmd terraformCmd
-}
-
+type Executor struct{ cmd terraformCmd }
 type terraformCmd interface {
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
@@ -65,7 +62,7 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 			errorList.Add(readErr)
 			return "", errorList
 		}
-		return string(tfState), err
+		return string(tfState), NewTerraformApplyError(string(tfState), err)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))

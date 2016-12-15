@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/onsi/gomega/gexec"
 
@@ -25,7 +26,21 @@ var _ = Describe("load balancers", func() {
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
+		fastFailTerraform          bool
+		fastFailTerraformMutex     sync.Mutex
 	)
+
+	var setFastFailTerraform = func(on bool) {
+		fastFailTerraformMutex.Lock()
+		defer fastFailTerraformMutex.Unlock()
+		fastFailTerraform = on
+	}
+
+	var getFastFailTerraform = func() bool {
+		fastFailTerraformMutex.Lock()
+		defer fastFailTerraformMutex.Unlock()
+		return fastFailTerraform
+	}
 
 	BeforeEach(func() {
 		var err error
@@ -35,6 +50,7 @@ var _ = Describe("load balancers", func() {
 		}))
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+
 			switch request.URL.Path {
 			case "/output/external_ip":
 				responseWriter.Write([]byte("127.0.0.1"))
@@ -50,6 +66,10 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("some-bosh-open-tag"))
 			case "/output/concourse_target_pool":
 				responseWriter.Write([]byte("concourse-target-pool"))
+			case "/fastfail":
+				if getFastFailTerraform() {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				}
 			}
 		}))
 
@@ -82,6 +102,10 @@ var _ = Describe("load balancers", func() {
 			"--gcp-zone", "us-east1-a",
 			"--gcp-region", "us-east1",
 		}, 0)
+	})
+
+	AfterEach(func() {
+		setFastFailTerraform(false)
 	})
 
 	Describe("create-lbs", func() {
@@ -143,7 +167,8 @@ var _ = Describe("load balancers", func() {
 			By("running create-lbs", func() {
 				args := []string{
 					"--state-dir", tempDirectory,
-					"",
+					"create-lbs",
+					"--type", "concourse",
 				}
 
 				session = executeCommand(args, 0)
@@ -171,6 +196,45 @@ var _ = Describe("load balancers", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+			})
+		})
+
+		It("the command is re-entrant when terraform apply fails", func() {
+			var (
+				session *gexec.Session
+				stdout  []byte
+			)
+			By("running create-lbs", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "concourse",
+				}
+
+				session = executeCommand(args, 0)
+			})
+
+			By("running delete-lbs and it fails", func() {
+				setFastFailTerraform(true)
+				args := []string{
+					"--state-dir", tempDirectory,
+					"delete-lbs",
+				}
+
+				session := executeCommand(args, 1)
+				stderr := session.Err.Contents()
+
+				Expect(stderr).To(ContainSubstring("failed to terraform"))
+			})
+
+			By("running delete-lbs and it succeeds", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"delete-lbs",
+				}
+
+				session := executeCommand(args, 1)
+				stdout = session.Out.Contents()
 			})
 		})
 	})

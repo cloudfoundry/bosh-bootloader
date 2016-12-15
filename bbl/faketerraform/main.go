@@ -16,7 +16,7 @@ var (
 )
 
 func main() {
-	if os.Args[1] == "fast-fail" {
+	if checkFastFail() {
 		log.Fatal("failed to terraform")
 	}
 
@@ -63,4 +63,13 @@ func removeBrackets(contents string) string {
 	contents = strings.Replace(contents, "[", "", -1)
 	contents = strings.Replace(contents, "]", "", -1)
 	return contents
+}
+
+func checkFastFail() bool {
+	resp, err := http.Get(fmt.Sprintf("%s/fastfail", backendURL))
+	if err != nil {
+		panic(err)
+	}
+
+	return resp.StatusCode == http.StatusInternalServerError
 }

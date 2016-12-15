@@ -150,9 +150,10 @@ var _ = Describe("Executor", func() {
 				})
 				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-				tfState, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
-				Expect(err).To(MatchError("failed to run terraform command"))
-				Expect(tfState).To(Equal("some-tf-state"))
+				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				taErr := err.(terraform.TerraformApplyError)
+				Expect(taErr).To(MatchError("failed to run terraform command"))
+				Expect(taErr.TFState()).To(Equal("some-tf-state"))
 			})
 
 			It("returns an error when it fails to call terraform command run and read out the resulting tf state", func() {

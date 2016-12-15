@@ -12,6 +12,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -199,8 +200,8 @@ var _ = Describe("gcp up", func() {
 			})
 
 			It("saves the tf state even if the applier fails", func() {
-				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
-				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
@@ -213,7 +214,7 @@ var _ = Describe("gcp up", func() {
 					EnvID: "bbl-lake-time:stamp",
 				})
 
-				Expect(err).To(MatchError("failed to apply terraform"))
+				Expect(err).To(MatchError("failed to apply"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 
@@ -371,6 +372,23 @@ var _ = Describe("gcp up", func() {
 					Entry("failed to get internal_tag_name", "internal_tag_name"),
 					Entry("failed to get director_address", "director_address"),
 				)
+
+				It("returns an error if applier fails with non terraform apply error", func() {
+					terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
+					err := gcpUp.Execute(commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "some-project-id",
+						Zone:                  "some-zone",
+						Region:                "us-west1",
+					}, storage.State{
+						IAAS: "gcp",
+						Stack: storage.Stack{
+							LBType: "concourse",
+						},
+					})
+					Expect(err).To(MatchError("failed to apply"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				})
 
 				It("returns an error when boshinit fails to create the deploy input", func() {
 					stringGenerator.GenerateCall.Stub = nil
@@ -795,7 +813,8 @@ var _ = Describe("gcp up", func() {
 		})
 
 		It("returns an error when both the applier fails and state fails to be set", func() {
-			terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
+			expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+			terraformExecutor.ApplyCall.Returns.Error = expectedError
 			terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
 
 			stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
@@ -810,7 +829,7 @@ var _ = Describe("gcp up", func() {
 				EnvID: "bbl-lake-time:stamp",
 			})
 
-			Expect(err).To(MatchError("the following errors occurred:\nfailed to apply terraform,\nstate failed to be set"))
+			Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 			Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 		})

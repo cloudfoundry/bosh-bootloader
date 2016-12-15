@@ -13,6 +13,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 var (
@@ -131,14 +132,18 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		state.GCP.Zone, state.GCP.Region,
 		strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n"), state.TFState,
 	)
-	if err != nil {
-		state.TFState = tfState
+	switch err.(type) {
+	case terraform.TerraformApplyError:
+		taErr := err.(terraform.TerraformApplyError)
+		state.TFState = taErr.TFState()
 		if setErr := u.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)
 			errorList.Add(setErr)
 			return errorList
 		}
+		return err
+	case error:
 		return err
 	}
 
