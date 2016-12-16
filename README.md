@@ -8,6 +8,10 @@ support bootstrapping a CloudFoundry installation on AWS.
 * [CI](https://mega.ci.cf-app.com/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
 
+## Guides
+
+- [Getting Started on AWS](docs/getting-started-aws.md)
+
 ## Prerequisites
 
 ### Install Dependencies
