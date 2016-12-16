@@ -68,12 +68,12 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 		ephemeralTrue := true
 		ephemeralFalse := false
 		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
-			Name: "cf-internet-required",
+			Name: "internet-required",
 			CloudProperties: VMExtensionCloudProperties{
 				EphemeralExternalIP: &ephemeralTrue,
 			},
 		}, VMExtension{
-			Name: "cf-internet-not-required",
+			Name: "internet-not-required",
 			CloudProperties: VMExtensionCloudProperties{
 				EphemeralExternalIP: &ephemeralFalse,
 			},
