@@ -38,8 +38,8 @@ var _ = Describe("Commands Usage", func() {
 				Expect(usageText).To(Equal(`Attaches load balancer(s) with a certificate, key, and optional chain
 
   --type              Load balancer(s) type. Valid options: "concourse" or "cf"
-  --cert              Path to SSL certificate
-  --key               Path to SSL certificate key
+  [--cert]            Path to SSL certificate (required when type="cf")
+  [--key]             Path to SSL certificate key (required when type="cf")
   [--chain]           Path to SSL certificate chain (optional)
   [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)`))
 			})

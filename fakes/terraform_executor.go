@@ -9,6 +9,9 @@ type TerraformExecutor struct {
 			ProjectID   string
 			Zone        string
 			Region      string
+			Cert        string
+			Key         string
+			Zones       string
 			Template    string
 			TFState     string
 		}
@@ -35,13 +38,16 @@ type TerraformExecutor struct {
 	}
 }
 
-func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, template, tfState string) (string, error) {
+func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, cert, key, zones, template, tfState string) (string, error) {
 	t.ApplyCall.CallCount++
 	t.ApplyCall.Receives.Credentials = credentials
 	t.ApplyCall.Receives.EnvID = envID
 	t.ApplyCall.Receives.ProjectID = projectID
 	t.ApplyCall.Receives.Zone = zone
 	t.ApplyCall.Receives.Region = region
+	t.ApplyCall.Receives.Cert = cert
+	t.ApplyCall.Receives.Key = key
+	t.ApplyCall.Receives.Zones = zones
 	t.ApplyCall.Receives.Template = template
 	t.ApplyCall.Receives.TFState = tfState
 	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error

@@ -23,7 +23,7 @@ func NewExecutor(cmd terraformCmd) Executor {
 	return Executor{cmd: cmd}
 }
 
-func (e Executor) Apply(credentials, envID, projectID, zone, region, template, prevTFState string) (string, error) {
+func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, zones, template, prevTFState string) (string, error) {
 	tempDir, err := tempDir("", "")
 	if err != nil {
 		return "", err
@@ -33,6 +33,24 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 	err = writeFile(credentialsPath, []byte(credentials), os.ModePerm)
 	if err != nil {
 		return "", err
+	}
+
+	var certPath string
+	if cert != "" {
+		certPath = filepath.Join(tempDir, "cert")
+		err = writeFile(certPath, []byte(cert), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	var keyPath string
+	if key != "" {
+		keyPath = filepath.Join(tempDir, "key")
+		err = writeFile(keyPath, []byte(key), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
@@ -52,6 +70,13 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, template, p
 	args = append(args, makeVar("env_id", envID)...)
 	args = append(args, makeVar("region", region)...)
 	args = append(args, makeVar("zone", zone)...)
+	if certPath != "" {
+		args = append(args, makeVar("ssl_certificate", certPath)...)
+	}
+	if keyPath != "" {
+		args = append(args, makeVar("ssl_certificate_private_key", keyPath)...)
+	}
+	args = append(args, makeVar("zones", zones)...)
 	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {

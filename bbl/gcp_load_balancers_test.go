@@ -70,6 +70,8 @@ var _ = Describe("load balancers", func() {
 				if getFastFailTerraform() {
 					responseWriter.WriteHeader(http.StatusInternalServerError)
 				}
+			case "/output/router_backend_service":
+				responseWriter.Write([]byte("router-backend-service"))
 			}
 		}))
 
@@ -117,6 +119,31 @@ var _ = Describe("load balancers", func() {
 				"--state-dir", tempDirectory,
 				"create-lbs",
 				"--type", "concourse",
+			}
+
+			executeCommand(args, 0)
+
+			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+		})
+
+		It("creates and attaches a cf lb type", func() {
+			certPath := filepath.Join(tempDirectory, "some-cert")
+			err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath := filepath.Join(tempDirectory, "some-key")
+			err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			contents, err := ioutil.ReadFile("fixtures/gcp-cloud-config-cf-lb.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			args := []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "cf",
+				"--cert", certPath,
+				"--key", keyPath,
 			}
 
 			executeCommand(args, 0)

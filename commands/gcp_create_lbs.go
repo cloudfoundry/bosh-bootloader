@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -22,6 +23,8 @@ type GCPCreateLBs struct {
 
 type GCPCreateLBsConfig struct {
 	LBType       string
+	CertPath     string
+	KeyPath      string
 	SkipIfExists bool
 }
 
@@ -54,9 +57,32 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	c.logger.Step("generating terraform template")
 	var err error
-	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
+
+	var lbTemplate, zonesString string
+	var cert, key []byte
+	zones := c.zones.Get(state.GCP.Region)
+	switch config.LBType {
+	case "concourse":
+		lbTemplate = terraformConcourseLBTemplate
+	case "cf":
+		terraformCFLBBackendService := c.generateBackendServiceTerraform(len(zones))
+		lbTemplate = strings.Join([]string{terraformCFLBTemplate, terraformCFLBBackendService}, "\n")
+		zonesString = `["` + strings.Join(zones, `", "`) + `"]`
+
+		cert, err = ioutil.ReadFile(config.CertPath)
+		if err != nil {
+			panic(err)
+		}
+
+		key, err = ioutil.ReadFile(config.KeyPath)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
 	if state.TFState, err = c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-		state.GCP.Region, templateWithLB, state.TFState); err != nil {
+		state.GCP.Region, string(cert), string(key), zonesString, templateWithLB, state.TFState); err != nil {
 		if setErr := c.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)
@@ -86,18 +112,30 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	concourseTargetPool, err := c.terraformOutputter.Get(state.TFState, "concourse_target_pool")
-	if err != nil {
-		return err
+	concourseTargetPool := ""
+	if config.LBType == "concourse" {
+		concourseTargetPool, err = c.terraformOutputter.Get(state.TFState, "concourse_target_pool")
+		if err != nil {
+			return err
+		}
+	}
+
+	cfBackendService := ""
+	if config.LBType == "cf" {
+		cfBackendService, err = c.terraformOutputter.Get(state.TFState, "router_backend_service")
+		if err != nil {
+			return err
+		}
 	}
 
 	c.logger.Step("generating cloud config")
 	cloudConfig, err := c.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:            c.zones.Get(state.GCP.Region),
-		Tags:           []string{internalTag},
-		NetworkName:    network,
-		SubnetworkName: subnetwork,
-		LoadBalancer:   concourseTargetPool,
+		AZs:                 zones,
+		Tags:                []string{internalTag},
+		NetworkName:         network,
+		SubnetworkName:      subnetwork,
+		ConcourseTargetPool: concourseTargetPool,
+		CFBackendService:    cfBackendService,
 	})
 	if err != nil {
 		return err
@@ -122,8 +160,8 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 }
 
 func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State, boshClient bosh.Client) error {
-	if config.LBType != "concourse" {
-		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse", config.LBType)
+	if config.LBType != "concourse" && config.LBType != "cf" {
+		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse, cf", config.LBType)
 	}
 
 	if state.IAAS != "gcp" {
@@ -132,4 +170,30 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 
 	_, err := boshClient.Info()
 	return err
+}
+
+func (GCPCreateLBs) generateBackendServiceTerraform(count int) string {
+	backendResourceStart := `resource "google_compute_backend_service" "router-lb-backend-service" {
+  name        = "${var.env_id}-router-lb"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 900
+  enable_cdn  = false
+`
+	backendResourceEnd := `  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
+}
+`
+	backendStrings := []string{}
+	for i := 0; i < count; i++ {
+		backendString := fmt.Sprintf(`  backend {
+    group = "${google_compute_instance_group.router-lb.%d.self_link}"
+  }
+`, i)
+		backendStrings = append(backendStrings, backendString)
+	}
+
+	backendServiceTemplate := []string{backendResourceStart}
+	backendServiceTemplate = append(backendServiceTemplate, backendStrings...)
+	backendServiceTemplate = append(backendServiceTemplate, backendResourceEnd)
+	return strings.Join(backendServiceTemplate, "\n")
 }

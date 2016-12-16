@@ -75,7 +75,7 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 
 	g.logger.Step("generating terraform template")
 	tfState, err := g.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID,
-		state.GCP.Zone, state.GCP.Region, template, state.TFState)
+		state.GCP.Zone, state.GCP.Region, "", "", "", template, state.TFState)
 
 	switch err.(type) {
 	case terraform.TerraformApplyError:

@@ -157,3 +157,108 @@ resource "google_compute_forwarding_rule" "https-forwarding-rule" {
   ip_address  = "${google_compute_address.concourse-address.address}"
 }
 `
+
+const terraformCFLBTemplate = `variable "ssl_certificate" {
+  type = "string"
+}
+
+variable "ssl_certificate_private_key" {
+  type = "string"
+}
+
+variable "zones" {
+  type = "list"
+}
+
+output "router_backend_service" {
+  value = "${google_compute_backend_service.router-lb-backend-service.name}"
+}
+
+resource "google_compute_firewall" "firewall-cf" {
+  name       = "${var.env_id}-cf-open"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
+
+  target_tags = ["${google_compute_backend_service.router-lb-backend-service.name}"]
+}
+
+resource "google_compute_global_address" "cf-address" {
+  name = "${var.env_id}-cf"
+}
+
+resource "google_compute_global_forwarding_rule" "cf-http-forwarding-rule" {
+  name       = "${var.env_id}-cf-http"
+  ip_address = "${google_compute_global_address.cf-address.address}"
+  target     = "${google_compute_target_http_proxy.cf-http-lb-proxy.self_link}"
+  port_range = "80"
+}
+
+resource "google_compute_global_forwarding_rule" "cf-https-forwarding-rule" {
+  name       = "${var.env_id}-cf-https"
+  ip_address = "${google_compute_global_address.cf-address.address}"
+  target     = "${google_compute_target_https_proxy.cf-https-lb-proxy.self_link}"
+  port_range = "443"
+}
+
+resource "google_compute_target_http_proxy" "cf-http-lb-proxy" {
+  name        = "${var.env_id}-http-proxy"
+  description = "really a load balancer but listed as an http proxy"
+  url_map     = "${google_compute_url_map.cf-https-lb-url-map.self_link}"
+}
+
+resource "google_compute_target_https_proxy" "cf-https-lb-proxy" {
+  name             = "${var.env_id}-https-proxy"
+  description      = "really a load balancer but listed as an https proxy"
+  url_map          = "${google_compute_url_map.cf-https-lb-url-map.self_link}"
+  ssl_certificates = ["${google_compute_ssl_certificate.cf-cert.self_link}"]
+}
+
+resource "google_compute_ssl_certificate" "cf-cert" {
+  name        = "${var.env_id}-lb-cert"
+  description = "user provided ssl private key / ssl certificate pair"
+  private_key = "${file(var.ssl_certificate_private_key)}"
+  certificate = "${file(var.ssl_certificate)}"
+}
+
+resource "google_compute_url_map" "cf-https-lb-url-map" {
+  name = "${var.env_id}-cf-http"
+
+  default_service = "${google_compute_backend_service.router-lb-backend-service.self_link}"
+}
+
+resource "google_compute_http_health_check" "cf-public-health-check" {
+  name                = "${var.env_id}-cf"
+  port                = 8080
+  request_path        = "/health"
+  check_interval_sec  = 30
+  timeout_sec         = 5
+  healthy_threshold   = 10
+  unhealthy_threshold = 2
+}
+
+resource "google_compute_firewall" "cf-health-check" {
+  name       = "${var.env_id}-cf-health-check"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+
+  source_ranges = ["130.211.0.0/22"]
+  target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
+}
+
+resource "google_compute_instance_group" "router-lb" {
+  count       = "${length(var.zones)}"
+  name        = "${var.env_id}-router-${element(var.zones, count.index)}"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
+  zone        = "${element(var.zones, count.index)}"
+}
+`

@@ -4,8 +4,9 @@ import "io"
 
 type TerraformCmd struct {
 	RunCall struct {
-		Stub    func(stdout io.Writer)
-		Returns struct {
+		CallCount int
+		Stub      func(stdout io.Writer)
+		Returns   struct {
 			Error error
 		}
 		Receives struct {
@@ -17,6 +18,7 @@ type TerraformCmd struct {
 }
 
 func (t *TerraformCmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+	t.RunCall.CallCount++
 	t.RunCall.Receives.Stdout = stdout
 	t.RunCall.Receives.WorkingDirectory = workingDirectory
 	t.RunCall.Receives.Args = args

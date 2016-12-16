@@ -3,17 +3,15 @@ package gcp
 import yaml "gopkg.in/yaml.v2"
 
 type CloudConfigInput struct {
-	AZs            []string
-	Tags           []string
-	NetworkName    string
-	SubnetworkName string
-	LoadBalancer   string
+	AZs                 []string
+	Tags                []string
+	NetworkName         string
+	SubnetworkName      string
+	ConcourseTargetPool string
+	CFBackendService    string
 }
 
-type CloudConfigGenerator struct {
-	input       CloudConfigInput
-	cloudConfig CloudConfig
-}
+type CloudConfigGenerator struct{}
 
 type VMExtension struct {
 	Name            string                     `yaml:"name"`
@@ -21,9 +19,12 @@ type VMExtension struct {
 }
 
 type VMExtensionCloudProperties struct {
-	RootDiskSizeGB int    `yaml:"root_disk_size_gb,omitempty"`
-	RootDiskType   string `yaml:"root_disk_type,omitempty"`
-	TargetPool     string `yaml:"target_pool,omitempty"`
+	RootDiskSizeGB      int      `yaml:"root_disk_size_gb,omitempty"`
+	RootDiskType        string   `yaml:"root_disk_type,omitempty"`
+	TargetPool          string   `yaml:"target_pool,omitempty"`
+	EphemeralExternalIP *bool    `yaml:"ephemeral_external_ip,omitempty"`
+	BackendService      string   `yaml:"backend_service,omitempty"`
+	Tags                []string `yaml:"tags,omitempty"`
 }
 
 type CloudConfig struct {
@@ -42,47 +43,71 @@ func NewCloudConfigGenerator() CloudConfigGenerator {
 }
 
 func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, error) {
-	if err := unmarshal([]byte(cloudConfigTemplate), &c.cloudConfig); err != nil {
+	var cloudConfig CloudConfig
+	if err := unmarshal([]byte(cloudConfigTemplate), &cloudConfig); err != nil {
 		return CloudConfig{}, err
 	}
 
-	c.input = input
+	cloudConfig = c.generateAZs(input, cloudConfig)
 
-	c.generateAZs()
-	if err := c.generateNetworks(); err != nil {
+	cloudConfig, err := c.generateNetworks(input, cloudConfig)
+	if err != nil {
 		return CloudConfig{}, err
 	}
 
-	if c.input.LoadBalancer != "" {
-		c.cloudConfig.VMExtensions = append(c.cloudConfig.VMExtensions, VMExtension{
+	if input.ConcourseTargetPool != "" {
+		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
 			Name: "lb",
 			CloudProperties: VMExtensionCloudProperties{
-				TargetPool: c.input.LoadBalancer,
+				TargetPool: input.ConcourseTargetPool,
 			},
 		})
 	}
 
-	return c.cloudConfig, nil
+	if input.CFBackendService != "" {
+		ephemeralTrue := true
+		ephemeralFalse := false
+		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
+			Name: "cf-internet-required",
+			CloudProperties: VMExtensionCloudProperties{
+				EphemeralExternalIP: &ephemeralTrue,
+			},
+		}, VMExtension{
+			Name: "cf-internet-not-required",
+			CloudProperties: VMExtensionCloudProperties{
+				EphemeralExternalIP: &ephemeralFalse,
+			},
+		}, VMExtension{
+			Name: "router-lb",
+			CloudProperties: VMExtensionCloudProperties{
+				BackendService: input.CFBackendService,
+				Tags:           []string{input.CFBackendService},
+			},
+		})
+	}
+
+	return cloudConfig, nil
 }
 
-func (c *CloudConfigGenerator) generateAZs() {
-	azsGenerator := NewAZsGenerator(c.input.AZs...)
-	c.cloudConfig.AZs = azsGenerator.Generate()
+func (CloudConfigGenerator) generateAZs(input CloudConfigInput, cloudConfig CloudConfig) CloudConfig {
+	azsGenerator := NewAZsGenerator(input.AZs...)
+	cloudConfig.AZs = azsGenerator.Generate()
+	return cloudConfig
 }
 
-func (c *CloudConfigGenerator) generateNetworks() error {
+func (CloudConfigGenerator) generateNetworks(input CloudConfigInput, cloudConfig CloudConfig) (CloudConfig, error) {
 	azs := []string{}
-	for _, az := range c.cloudConfig.AZs {
+	for _, az := range cloudConfig.AZs {
 		azs = append(azs, az.Name)
 	}
 
-	networksGenerator := NewNetworksGenerator(c.input.NetworkName, c.input.SubnetworkName, c.input.Tags, azs)
+	networksGenerator := NewNetworksGenerator(input.NetworkName, input.SubnetworkName, input.Tags, azs)
 
 	var err error
-	c.cloudConfig.Networks, err = networksGenerator.Generate()
+	cloudConfig.Networks, err = networksGenerator.Generate()
 	if err != nil {
-		return err
+		return CloudConfig{}, err
 	}
 
-	return nil
+	return cloudConfig, nil
 }

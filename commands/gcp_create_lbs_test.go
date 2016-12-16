@@ -2,6 +2,8 @@ package commands_test
 
 import (
 	"errors"
+	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -13,7 +15,7 @@ import (
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
-const expectedTemplate = `variable "project_id" {
+const expectedConcourseTemplate = `variable "project_id" {
 	type = "string"
 }
 
@@ -169,6 +171,230 @@ resource "google_compute_forwarding_rule" "https-forwarding-rule" {
 }
 `
 
+const expectedCFTemplate = `variable "project_id" {
+	type = "string"
+}
+
+variable "region" {
+	type = "string"
+}
+
+variable "zone" {
+	type = "string"
+}
+
+variable "env_id" {
+	type = "string"
+}
+
+variable "credentials" {
+	type = "string"
+}
+
+provider "google" {
+	credentials = "${file("${var.credentials}")}"
+	project = "${var.project_id}"
+	region = "${var.region}"
+}
+
+output "external_ip" {
+    value = "${google_compute_address.bosh-external-ip.address}"
+}
+
+output "network_name" {
+    value = "${google_compute_network.bbl-network.name}"
+}
+
+output "subnetwork_name" {
+    value = "${google_compute_subnetwork.bbl-subnet.name}"
+}
+
+output "bosh_open_tag_name" {
+    value = "${google_compute_firewall.bosh-open.name}"
+}
+
+output "internal_tag_name" {
+    value = "${google_compute_firewall.internal.name}"
+}
+
+output "director_address" {
+	value = "https://${google_compute_address.bosh-external-ip.address}:25555"
+}
+
+resource "google_compute_network" "bbl-network" {
+  name		 = "${var.env_id}-network"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet" {
+  name			= "${var.env_id}-subnet"
+  ip_cidr_range = "10.0.0.0/16"
+  network		= "${google_compute_network.bbl-network.self_link}"
+}
+
+resource "google_compute_address" "bosh-external-ip" {
+  name = "${var.env_id}-bosh-external-ip"
+}
+
+resource "google_compute_firewall" "bosh-open" {
+  name    = "${var.env_id}-bosh-open"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_ranges = ["0.0.0.0/0"]
+
+  allow {
+    protocol = "icmp"
+  }
+
+  allow {
+    ports = ["22", "6868", "25555"]
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-bosh-open"]
+}
+
+resource "google_compute_firewall" "internal" {
+  name    = "${var.env_id}-internal"
+  network = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "icmp"
+  }
+
+  allow {
+    protocol = "tcp"
+  }
+
+  allow {
+    protocol = "udp"
+  }
+
+  source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
+}
+
+variable "ssl_certificate" {
+  type = "string"
+}
+
+variable "ssl_certificate_private_key" {
+  type = "string"
+}
+
+variable "zones" {
+  type = "list"
+}
+
+output "router_backend_service" {
+  value = "${google_compute_backend_service.router-lb-backend-service.name}"
+}
+
+resource "google_compute_firewall" "firewall-cf" {
+  name       = "${var.env_id}-cf-open"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
+
+  target_tags = ["${google_compute_backend_service.router-lb-backend-service.name}"]
+}
+
+resource "google_compute_global_address" "cf-address" {
+  name = "${var.env_id}-cf"
+}
+
+resource "google_compute_global_forwarding_rule" "cf-http-forwarding-rule" {
+  name       = "${var.env_id}-cf-http"
+  ip_address = "${google_compute_global_address.cf-address.address}"
+  target     = "${google_compute_target_http_proxy.cf-http-lb-proxy.self_link}"
+  port_range = "80"
+}
+
+resource "google_compute_global_forwarding_rule" "cf-https-forwarding-rule" {
+  name       = "${var.env_id}-cf-https"
+  ip_address = "${google_compute_global_address.cf-address.address}"
+  target     = "${google_compute_target_https_proxy.cf-https-lb-proxy.self_link}"
+  port_range = "443"
+}
+
+resource "google_compute_target_http_proxy" "cf-http-lb-proxy" {
+  name        = "${var.env_id}-http-proxy"
+  description = "really a load balancer but listed as an http proxy"
+  url_map     = "${google_compute_url_map.cf-https-lb-url-map.self_link}"
+}
+
+resource "google_compute_target_https_proxy" "cf-https-lb-proxy" {
+  name             = "${var.env_id}-https-proxy"
+  description      = "really a load balancer but listed as an https proxy"
+  url_map          = "${google_compute_url_map.cf-https-lb-url-map.self_link}"
+  ssl_certificates = ["${google_compute_ssl_certificate.cf-cert.self_link}"]
+}
+
+resource "google_compute_ssl_certificate" "cf-cert" {
+  name        = "${var.env_id}-lb-cert"
+  description = "user provided ssl private key / ssl certificate pair"
+  private_key = "${file(var.ssl_certificate_private_key)}"
+  certificate = "${file(var.ssl_certificate)}"
+}
+
+resource "google_compute_url_map" "cf-https-lb-url-map" {
+  name = "${var.env_id}-cf-http"
+
+  default_service = "${google_compute_backend_service.router-lb-backend-service.self_link}"
+}
+
+resource "google_compute_http_health_check" "cf-public-health-check" {
+  name                = "${var.env_id}-cf"
+  port                = 8080
+  request_path        = "/health"
+  check_interval_sec  = 30
+  timeout_sec         = 5
+  healthy_threshold   = 10
+  unhealthy_threshold = 2
+}
+
+resource "google_compute_firewall" "cf-health-check" {
+  name       = "${var.env_id}-cf-health-check"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+
+  source_ranges = ["130.211.0.0/22"]
+  target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
+}
+
+resource "google_compute_instance_group" "router-lb" {
+  count       = "${length(var.zones)}"
+  name        = "${var.env_id}-router-${element(var.zones, count.index)}"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
+  zone        = "${element(var.zones, count.index)}"
+}
+
+resource "google_compute_backend_service" "router-lb-backend-service" {
+  name        = "${var.env_id}-router-lb"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 900
+  enable_cdn  = false
+
+  backend {
+    group = "${google_compute_instance_group.router-lb.0.self_link}"
+  }
+
+  backend {
+    group = "${google_compute_instance_group.router-lb.1.self_link}"
+  }
+
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
+}
+`
+
 var _ = Describe("GCPCreateLBs", func() {
 	var (
 		cloudConfigGenerator *fakes.GCPCloudConfigGenerator
@@ -180,6 +406,8 @@ var _ = Describe("GCPCreateLBs", func() {
 		stateStore           *fakes.StateStore
 		logger               *fakes.Logger
 		command              commands.GCPCreateLBs
+		certPath             string
+		keyPath              string
 	)
 
 	BeforeEach(func() {
@@ -194,6 +422,20 @@ var _ = Describe("GCPCreateLBs", func() {
 		logger = &fakes.Logger{}
 
 		command = commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, cloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
+
+		tempCertFile, err := ioutil.TempFile("", "cert")
+		Expect(err).NotTo(HaveOccurred())
+
+		certPath = tempCertFile.Name()
+		err = ioutil.WriteFile(certPath, []byte("some-cert"), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		tempKeyFile, err := ioutil.TempFile("", "key")
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath = tempKeyFile.Name()
+		err = ioutil.WriteFile(keyPath, []byte("some-key"), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -202,31 +444,69 @@ var _ = Describe("GCPCreateLBs", func() {
 
 	Describe("Execute", func() {
 		Context("terraform apply call", func() {
-			It("creates and applies a concourse target pool", func() {
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}, storage.State{
-					IAAS:    "gcp",
-					EnvID:   "some-env-id",
-					TFState: "some-prev-tf-state",
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
+			Context("when called with the concourse lb type", func() {
+				It("creates and applies a concourse target pool", func() {
+					err := command.Execute(commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}, storage.State{
+						IAAS:    "gcp",
+						EnvID:   "some-env-id",
+						TFState: "some-prev-tf-state",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-					"generating terraform template", "finished applying terraform template",
-				}))
-				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
-				Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
-				Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-				Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
-				Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
-				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedTemplate))
+					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+						"generating terraform template", "finished applying terraform template",
+					}))
+					Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+					Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
+					Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+					Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
+					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
+					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
+				})
+			})
+
+			Context("when called with a cf lb type", func() {
+				It("creates and applies a cf backend service", func() {
+					zones.GetCall.Returns.Zones = []string{"zone1", "zone2"}
+
+					err := command.Execute(commands.GCPCreateLBsConfig{
+						LBType:   "cf",
+						CertPath: certPath,
+						KeyPath:  keyPath,
+					}, storage.State{
+						IAAS:    "gcp",
+						EnvID:   "some-env-id",
+						TFState: "some-prev-tf-state",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+						"generating terraform template", "finished applying terraform template",
+					}))
+					Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+					Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
+					Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+					Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
+					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
+					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
+					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
+					Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(`["zone1", "zone2"]`))
+					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
+				})
 			})
 
 			It("saves the tf state even if the applier fails", func() {
@@ -253,54 +533,94 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 		})
 
-		It("creates a cloud-config", func() {
-			terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-				switch output {
-				case "network_name":
-					return "some-network-name", nil
-				case "subnetwork_name":
-					return "some-subnetwork-name", nil
-				case "internal_tag_name":
-					return "some-internal-tag", nil
-				case "concourse_target_pool":
-					return "env-id-concourse-target-pool", nil
-				default:
-					return "", nil
+		Context("when creating a concourse lb", func() {
+			It("creates a cloud-config with concourse lb vm extension", func() {
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					switch output {
+					case "network_name":
+						return "some-network-name", nil
+					case "subnetwork_name":
+						return "some-subnetwork-name", nil
+					case "internal_tag_name":
+						return "some-internal-tag", nil
+					case "concourse_target_pool":
+						return "env-id-concourse-target-pool", nil
+					default:
+						return "", nil
+					}
 				}
-			}
 
-			zones.GetCall.Returns.Zones = []string{"region1", "region2"}
+				zones.GetCall.Returns.Zones = []string{"region1", "region2"}
 
-			err := command.Execute(commands.GCPCreateLBsConfig{
-				LBType: "concourse",
-			}, storage.State{
-				IAAS: "gcp",
-				GCP: storage.GCP{
-					Region: "some-region",
-				},
-				BOSH: storage.BOSH{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					DirectorAddress:  "some-director-address",
-				},
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						Region: "some-region",
+					},
+					BOSH: storage.BOSH{
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+						DirectorAddress:  "some-director-address",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(zones.GetCall.CallCount).To(Equal(1))
+				Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
+
+				Expect(terraformOutputter.GetCall.CallCount).To(Equal(4))
+
+				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.AZs).To(Equal([]string{"region1", "region2"}))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.Tags).To(Equal([]string{"some-internal-tag"}))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.NetworkName).To(Equal("some-network-name"))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.SubnetworkName).To(Equal("some-subnetwork-name"))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseTargetPool).To(Equal("env-id-concourse-target-pool"))
+
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					"generating cloud config", "applying cloud config",
+				}))
 			})
-			Expect(err).NotTo(HaveOccurred())
+		})
 
-			Expect(zones.GetCall.CallCount).To(Equal(1))
-			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
+		Context("when creating a cf lb", func() {
+			It("creates a cloud-config with cf lb vm extension", func() {
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					switch output {
+					case "router_backend_service":
+						return "env-id-cf-https-lb", nil
+					default:
+						return "", nil
+					}
+				}
 
-			Expect(terraformOutputter.GetCall.CallCount).To(Equal(4))
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						Region: "some-region",
+					},
+					BOSH: storage.BOSH{
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+						DirectorAddress:  "some-director-address",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(terraformOutputter.GetCall.CallCount).To(Equal(4))
 
-			Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.AZs).To(Equal([]string{"region1", "region2"}))
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.Tags).To(Equal([]string{"some-internal-tag"}))
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.NetworkName).To(Equal("some-network-name"))
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.SubnetworkName).To(Equal("some-subnetwork-name"))
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.LoadBalancer).To(Equal("env-id-concourse-target-pool"))
+				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackendService).To(Equal("env-id-cf-https-lb"))
 
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-				"generating cloud config", "applying cloud config",
-			}))
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					"generating cloud config", "applying cloud config",
+				}))
+			})
 		})
 
 		It("uploads a new cloud-config to the bosh director", func() {
@@ -373,11 +693,11 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the lb type is not concourse", func() {
+			It("returns an error when the lb type is not concourse or cf", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "some-fake-lb",
 				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError(`"some-fake-lb" is not a valid lb type, valid lb types are: concourse`))
+				Expect(err).To(MatchError(`"some-fake-lb" is not a valid lb type, valid lb types are: concourse, cf`))
 			})
 
 			It("returns an error when the terraform executor fails", func() {

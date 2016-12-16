@@ -42,6 +42,24 @@ var _ = Describe("create-lbs", func() {
 			}))
 		})
 
+		It("creates a GCP cf lb type is the iaas if GCP and type is cf", func() {
+			err := command.Execute([]string{
+				"--type", "cf",
+				"--cert", "my-cert",
+				"--key", "my-key",
+				"--skip-if-exists",
+			}, storage.State{
+				IAAS: "gcp",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
+				LBType:       "cf",
+				CertPath:     "my-cert",
+				KeyPath:      "my-key",
+				SkipIfExists: true,
+			}))
+		})
+
 		It("creates an AWS lb type if the iaas is AWS", func() {
 			err := command.Execute([]string{
 				"--type", "concourse",
