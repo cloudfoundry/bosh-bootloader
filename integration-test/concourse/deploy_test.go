@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,38 +25,14 @@ const (
 	ConcourseReleaseURL         = "https://bosh.io/d/github.com/concourse/concourse"
 	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-runc-release"
 	GardenReleaseName           = "garden-runc"
-	StemcellURL                 = "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
-	StemcellName                = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
+	AWSStemcellURL              = "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
+	AWSStemcellName             = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
+	GCPStemcellURL              = "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent"
+	GCPStemcellName             = "bosh-google-kvm-ubuntu-trusty-go_agent"
 )
 
-var _ = Describe("bosh deployment tests", func() {
-	var (
-		bbl   actors.BBL
-		aws   actors.AWS
-		state integration.State
-	)
-
-	BeforeEach(func() {
-		var err error
-		configuration, err := integration.LoadAWSConfig()
-		Expect(err).NotTo(HaveOccurred())
-
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
-		aws = actors.NewAWS(configuration)
-		state = integration.NewState(configuration.StateFileDir)
-	})
-
-	It("is able to deploy concourse", func() {
-		bbl.Up(actors.AWSIAAS)
-
-		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
-		Expect(err).NotTo(HaveOccurred())
-
-		keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
-		Expect(err).NotTo(HaveOccurred())
-
-		bbl.CreateLB("concourse", certPath, keyPath, "")
-
+var _ = Describe("concourse deployment test", func() {
+	var deployConcourseTest = func(bbl actors.BBL, stemcellURL, stemcellName, lbURL string, tlsMode bool, tlsBindPort int) {
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
@@ -63,13 +40,13 @@ var _ = Describe("bosh deployment tests", func() {
 			AllowInsecureSSL: true,
 		})
 
-		err = downloadAndUploadRelease(boshClient, ConcourseReleaseURL)
+		err := downloadAndUploadRelease(boshClient, ConcourseReleaseURL)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = downloadAndUploadRelease(boshClient, GardenReleaseURL)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = downloadAndUploadStemcell(boshClient, StemcellURL)
+		err = downloadAndUploadStemcell(boshClient, stemcellURL)
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseExampleManifest, err := downloadConcourseExampleManifest()
@@ -78,9 +55,7 @@ var _ = Describe("bosh deployment tests", func() {
 		info, err := boshClient.Info()
 		Expect(err).NotTo(HaveOccurred())
 
-		lbURL := fmt.Sprintf("http://%s", aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"])
-
-		stemcell, err := boshClient.Stemcell(StemcellName)
+		stemcell, err := boshClient.Stemcell(stemcellName)
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseRelease, err := boshClient.Release("concourse")
@@ -92,6 +67,8 @@ var _ = Describe("bosh deployment tests", func() {
 		concourseManifestInputs := concourseManifestInputs{
 			boshDirectorUUID:        info.UUID,
 			webExternalURL:          lbURL,
+			tlsMode:                 tlsMode,
+			tlsBindPort:             tlsBindPort,
 			stemcellVersion:         stemcell.Latest(),
 			concourseReleaseVersion: concourseRelease.Latest(),
 			gardenReleaseVersion:    gardenRelease.Latest(),
@@ -110,7 +87,12 @@ var _ = Describe("bosh deployment tests", func() {
 			{JobName: "web", Index: 0, State: "running"},
 		}))
 
-		resp, err := http.Get(lbURL)
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+
+		resp, err := client.Get(lbURL)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -124,7 +106,76 @@ var _ = Describe("bosh deployment tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl.Destroy()
+	}
+
+	Describe("aws", func() {
+		var (
+			bbl   actors.BBL
+			aws   actors.AWS
+			state integration.State
+			lbURL string
+		)
+
+		BeforeEach(func() {
+			var err error
+			configuration, err := integration.LoadAWSConfig()
+			Expect(err).NotTo(HaveOccurred())
+
+			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
+			aws = actors.NewAWS(configuration)
+			state = integration.NewState(configuration.StateFileDir)
+
+			bbl.Up(actors.AWSIAAS)
+
+			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
+
+			bbl.CreateLB("concourse", certPath, keyPath, "")
+
+			lbURL = fmt.Sprintf("http://%s", aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"])
+		})
+
+		It("is able to deploy concourse", func() {
+			deployConcourseTest(bbl, AWSStemcellURL, AWSStemcellName, lbURL, false, 0)
+		})
 	})
+
+	Describe("gcp", func() {
+		var (
+			bbl   actors.BBL
+			gcp   actors.GCP
+			state integration.State
+			lbURL string
+		)
+
+		BeforeEach(func() {
+			var err error
+			configuration, err := integration.LoadGCPConfig()
+			Expect(err).NotTo(HaveOccurred())
+
+			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
+			gcp = actors.NewGCP(configuration)
+			state = integration.NewState(configuration.StateFileDir)
+
+			bbl.Up(actors.GCPIAAS)
+
+			bbl.CreateGCPLB("concourse")
+
+			envID := bbl.EnvID()
+			address, err := gcp.GetAddress(envID + "-concourse")
+			Expect(err).NotTo(HaveOccurred())
+
+			lbURL = fmt.Sprintf("https://%s", address.Address)
+		})
+
+		It("is able to deploy concourse", func() {
+			deployConcourseTest(bbl, GCPStemcellURL, GCPStemcellName, lbURL, true, 443)
+		})
+	})
+
 })
 
 func downloadAndUploadStemcell(boshClient bosh.Client, stemcell string) error {
