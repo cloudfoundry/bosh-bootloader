@@ -244,3 +244,9 @@ vm_extensions:
   cloud_properties:
     root_disk_size_gb: 1000
     root_disk_type: pd-ssd
+- name: internet-required
+  cloud_properties:
+    ephemeral_external_ip: true
+- name: internet-not-required
+  cloud_properties:
+    ephemeral_external_ip: false
