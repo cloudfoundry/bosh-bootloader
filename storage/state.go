@@ -34,6 +34,8 @@ type GCP struct {
 	ProjectID         string `json:"projectID"`
 	Zone              string `json:"zone"`
 	Region            string `json:"region"`
+	Certificate       string `json:"certificate"`
+	Key               string `json:"key"`
 }
 
 type Stack struct {

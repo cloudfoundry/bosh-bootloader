@@ -75,7 +75,19 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 			return err
 		}
 
+		state.GCP.Certificate = string(cert)
+		err := c.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
+
 		key, err = ioutil.ReadFile(config.KeyPath)
+		if err != nil {
+			return err
+		}
+
+		state.GCP.Key = string(key)
+		err = c.stateStore.Set(state)
 		if err != nil {
 			return err
 		}

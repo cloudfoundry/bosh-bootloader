@@ -409,6 +409,8 @@ var _ = Describe("GCPCreateLBs", func() {
 		command              commands.GCPCreateLBs
 		certPath             string
 		keyPath              string
+		certificate          string
+		key                  string
 	)
 
 	BeforeEach(func() {
@@ -427,15 +429,17 @@ var _ = Describe("GCPCreateLBs", func() {
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
 
+		certificate = "some-cert"
 		certPath = tempCertFile.Name()
-		err = ioutil.WriteFile(certPath, []byte("some-cert"), os.ModePerm)
+		err = ioutil.WriteFile(certPath, []byte(certificate), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
 		tempKeyFile, err := ioutil.TempFile("", "key")
 		Expect(err).NotTo(HaveOccurred())
 
+		key = "some-key"
 		keyPath = tempKeyFile.Name()
-		err = ioutil.WriteFile(keyPath, []byte("some-key"), os.ModePerm)
+		err = ioutil.WriteFile(keyPath, []byte(key), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -503,8 +507,8 @@ var _ = Describe("GCPCreateLBs", func() {
 					Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
 					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
 					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
-					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
-					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
+					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(certificate))
+					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(key))
 					Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(`["zone1", "zone2"]`))
 					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
 				})
@@ -673,6 +677,21 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(stateStore.SetCall.Receives.State.Stack.LBType).To(Equal("concourse"))
 			})
 
+			It("saves the certificate and key", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.Receives.State.GCP.Certificate).To(Equal(certificate))
+				Expect(stateStore.SetCall.Receives.State.GCP.Key).To(Equal(key))
+			})
+
 			It("saves the updated tfstate", func() {
 				terraformExecutor.ApplyCall.Returns.TFState = "some-new-tfstate"
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -693,6 +712,28 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error if the command fails to save the certificate in the state", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("failed to save state"))
+			})
+
+			It("returns an error if the command fails to save the key in the state", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, fakes.SetCallReturn{Error: errors.New("failed to save state")}}
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("failed to save state"))
+			})
+
 			It("returns an error if the command fails to read the certificate", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType:   "cf",
@@ -723,7 +764,7 @@ var _ = Describe("GCPCreateLBs", func() {
 					},
 				})
 				Expect(err).To(MatchError("failed to apply"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
 			})
 
 			It("returns an error when the lb type is not concourse or cf", func() {
