@@ -696,21 +696,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal("some-key"))
 			})
 
-			It("saves the certificate and key", func() {
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, storage.State{
-					IAAS: "gcp",
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
-				Expect(stateStore.SetCall.Receives.State.GCP.Certificate).To(Equal(certificate))
-				Expect(stateStore.SetCall.Receives.State.GCP.Key).To(Equal(key))
-			})
-
 			It("saves the updated tfstate", func() {
 				terraformExecutor.ApplyCall.Returns.TFState = "some-new-tfstate"
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -783,7 +768,7 @@ var _ = Describe("GCPCreateLBs", func() {
 					},
 				})
 				Expect(err).To(MatchError("failed to apply"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
 			It("returns an error when the lb type is not concourse or cf", func() {
