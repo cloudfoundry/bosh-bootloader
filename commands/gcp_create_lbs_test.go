@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -510,8 +511,8 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("saves the tf state even if the applier fails", func() {
-				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
-				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
@@ -526,10 +527,9 @@ var _ = Describe("GCPCreateLBs", func() {
 					},
 				})
 
-				Expect(err).To(MatchError("failed to apply terraform"))
+				Expect(err).To(MatchError("failed to apply"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
-
 			})
 		})
 
@@ -693,6 +693,39 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error if the command fails to read the certificate", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: "some/fake/path",
+				}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
+			})
+
+			It("returns an error if the command fails to read the key", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  "some/fake/path",
+				}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
+			})
+
+			It("returns an error if applier fails with non terraform apply error", func() {
+				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{
+					IAAS: "gcp",
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
+				})
+				Expect(err).To(MatchError("failed to apply"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+			})
+
 			It("returns an error when the lb type is not concourse or cf", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "some-fake-lb",
@@ -719,15 +752,15 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("returns an error when both the applier fails and state fails to be set", func() {
-				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
-				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 
-				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply terraform,\nstate failed to be set"))
+				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 			})

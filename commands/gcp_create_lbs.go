@@ -9,6 +9,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type GCPCreateLBs struct {
@@ -71,28 +72,35 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 		cert, err = ioutil.ReadFile(config.CertPath)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		key, err = ioutil.ReadFile(config.KeyPath)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
 	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
-	if state.TFState, err = c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-		state.GCP.Region, string(cert), string(key), zonesString, templateWithLB, state.TFState); err != nil {
+	tfState, err := c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
+		state.GCP.Region, string(cert), string(key), zonesString, templateWithLB, state.TFState)
+	switch err.(type) {
+	case terraform.TerraformApplyError:
+		taError := err.(terraform.TerraformApplyError)
+		state.TFState = taError.TFState()
 		if setErr := c.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)
 			errorList.Add(setErr)
 			return errorList
 		}
+		return taError
+	case error:
 		return err
 	}
 	c.logger.Step("finished applying terraform template")
 
+	state.TFState = tfState
 	if err := c.stateStore.Set(state); err != nil {
 		return err
 	}
