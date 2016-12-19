@@ -51,7 +51,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	if config.SkipIfExists && config.LBType == state.Stack.LBType {
+	if config.SkipIfExists && config.LBType == state.LB.Type {
 		c.logger.Step(fmt.Sprintf("lb type %q exists, skipping...", config.LBType))
 		return nil
 	}
@@ -66,7 +66,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	case "concourse":
 		lbTemplate = terraformConcourseLBTemplate
 	case "cf":
-		terraformCFLBBackendService := c.generateBackendServiceTerraform(len(zones))
+		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
 		lbTemplate = strings.Join([]string{terraformCFLBTemplate, terraformCFLBBackendService}, "\n")
 		zonesString = `["` + strings.Join(zones, `", "`) + `"]`
 
@@ -171,7 +171,12 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	state.Stack.LBType = config.LBType
+	state.LB.Type = config.LBType
+	if config.LBType == "cf" {
+		state.LB.Cert = string(cert)
+		state.LB.Key = string(key)
+	}
+
 	if err := c.stateStore.Set(state); err != nil {
 		return err
 	}
@@ -192,7 +197,7 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 	return err
 }
 
-func (GCPCreateLBs) generateBackendServiceTerraform(count int) string {
+func generateBackendServiceTerraform(count int) string {
 	backendResourceStart := `resource "google_compute_backend_service" "router-lb-backend-service" {
   name        = "${var.env_id}-router-lb"
   port_name   = "http"

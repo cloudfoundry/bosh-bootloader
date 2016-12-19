@@ -299,6 +299,8 @@ resource "google_compute_firewall" "firewall-cf" {
     ports    = ["80", "443"]
   }
 
+  source_ranges = ["0.0.0.0/0"]
+
   target_tags = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 
@@ -653,8 +655,8 @@ var _ = Describe("GCPCreateLBs", func() {
 				SkipIfExists: true,
 			}, storage.State{
 				IAAS: "gcp",
-				Stack: storage.Stack{
-					LBType: "concourse",
+				LB: storage.LB{
+					Type: "concourse",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -666,7 +668,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("state manipulation", func() {
-			It("saves the lb type", func() {
+			It("saves the concourse lb type", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
 				}, storage.State{
@@ -674,7 +676,24 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stateStore.SetCall.Receives.State.Stack.LBType).To(Equal("concourse"))
+				Expect(stateStore.SetCall.Receives.State.LB.Type).To(Equal("concourse"))
+				Expect(stateStore.SetCall.Receives.State.LB.Cert).To(Equal(""))
+				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal(""))
+			})
+
+			It("saves the cf lb type, cert, and key", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(stateStore.SetCall.Receives.State.LB.Type).To(Equal("cf"))
+				Expect(stateStore.SetCall.Receives.State.LB.Cert).To(Equal("some-cert"))
+				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal("some-key"))
 			})
 
 			It("saves the certificate and key", func() {

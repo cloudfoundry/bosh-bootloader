@@ -608,6 +608,51 @@ var _ = Describe("gcp up", func() {
 		)
 	})
 
+	Context("when lb type exists in the state", func() {
+		It("applies the correct cf template and args for cf lb type", func() {
+			zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "some-region",
+			}, storage.State{
+				LB: storage.LB{
+					Type: "cf",
+					Cert: "some-cert",
+					Key:  "some-key",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
+			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
+			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
+			Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(`["some-zone", "some-other-zone"]`))
+		})
+
+		It("applies the correct concourse template and args for concourse lb type", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "some-region",
+			}, storage.State{
+				LB: storage.LB{
+					Type: "concourse",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
+			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(""))
+			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(""))
+			Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(""))
+		})
+	})
+
 	Context("failure cases", func() {
 		Context("when calling up with different gcp flags then the state", func() {
 			It("returns an error when the --gcp-region is different", func() {

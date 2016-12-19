@@ -124,6 +124,12 @@ var _ = Describe("load balancers", func() {
 			executeCommand(args, 0)
 
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+
+			state := readStateJson(tempDirectory)
+			Expect(state.LB).NotTo(BeNil())
+			Expect(state.LB.Type).To(Equal("concourse"))
+			Expect(state.LB.Cert).To(Equal(""))
+			Expect(state.LB.Key).To(Equal(""))
 		})
 
 		It("creates and attaches a cf lb type", func() {
@@ -149,6 +155,12 @@ var _ = Describe("load balancers", func() {
 			executeCommand(args, 0)
 
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+
+			state := readStateJson(tempDirectory)
+			Expect(state.LB).NotTo(BeNil())
+			Expect(state.LB.Type).To(Equal("cf"))
+			Expect(state.LB.Cert).To(Equal("cert-contents"))
+			Expect(state.LB.Key).To(Equal("key-contents"))
 		})
 
 		It("logs all the steps", func() {

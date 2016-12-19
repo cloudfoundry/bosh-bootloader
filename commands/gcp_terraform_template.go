@@ -184,6 +184,8 @@ resource "google_compute_firewall" "firewall-cf" {
     ports    = ["80", "443"]
   }
 
+  source_ranges = ["0.0.0.0/0"]
+
   target_tags = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 

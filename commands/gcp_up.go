@@ -127,9 +127,22 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
+	var template, zonesString string
+	zones := u.zones.Get(state.GCP.Region)
+	switch state.LB.Type {
+	case "concourse":
+		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
+	case "cf":
+		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
+		zonesString = `["` + strings.Join(zones, `", "`) + `"]`
+		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, terraformCFLBBackendService}, "\n")
+	default:
+		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
+	}
+
 	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,
-		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, "", "", "",
-		strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n"), state.TFState,
+		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, state.LB.Cert, state.LB.Key, zonesString,
+		template, state.TFState,
 	)
 	switch err.(type) {
 	case terraform.TerraformApplyError:
@@ -226,7 +239,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	u.logger.Step("generating cloud config")
 	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:            u.zones.Get(state.GCP.Region),
+		AZs:            zones,
 		Tags:           []string{internalTag},
 		NetworkName:    networkName,
 		SubnetworkName: subnetworkName,

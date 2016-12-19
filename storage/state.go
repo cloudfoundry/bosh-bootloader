@@ -44,6 +44,12 @@ type Stack struct {
 	CertificateName string `json:"certificateName"`
 }
 
+type LB struct {
+	Type string `json:"type"`
+	Cert string `json:"cert"`
+	Key  string `json:"key"`
+}
+
 type State struct {
 	Version int     `json:"version"`
 	IAAS    string  `json:"iaas"`
@@ -54,6 +60,7 @@ type State struct {
 	Stack   Stack   `json:"stack"`
 	EnvID   string  `json:"envID"`
 	TFState string  `json:"tfState"`
+	LB      LB      `json:"lb"`
 }
 
 type Store struct {
