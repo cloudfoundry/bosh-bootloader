@@ -112,7 +112,7 @@ var _ = Describe("load balancers", func() {
 
 	Describe("create-lbs", func() {
 		It("creates and attaches a concourse lb type", func() {
-			contents, err := ioutil.ReadFile("fixtures/gcp-cloud-config-concourse-lb.yml")
+			contents, err := ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-concourse-lb.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			args := []string{
@@ -141,7 +141,7 @@ var _ = Describe("load balancers", func() {
 			err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-			contents, err := ioutil.ReadFile("fixtures/gcp-cloud-config-cf-lb.yml")
+			contents, err := ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-cf-lb.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			args := []string{
@@ -231,7 +231,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			By("removing the lb vm_extention from cloud config", func() {
-				contents, err := ioutil.ReadFile(filepath.Join("fixtures", "gcp-cloud-config-no-lb.yml"))
+				contents, err := ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))

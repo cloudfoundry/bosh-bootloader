@@ -2,13 +2,13 @@
 azs:
 - name: z1
   cloud_properties:
-    zone: us-east1-a
+    zone: us-east1-b
 - name: z2
   cloud_properties:
-    zone: us-east1-b
+    zone: us-east1-c
 - name: z3
   cloud_properties:
-    zone: us-east1-c
+    zone: us-east1-d
 
 compilation:
   az: z1
@@ -58,7 +58,6 @@ disk_types:
 
 networks:
 - name: private
-  type: manual
   subnets:
   - az: z1
     gateway: 10.0.16.1
@@ -74,7 +73,6 @@ networks:
       subnetwork_name: some-subnetwork-name
       tags:
         - some-tag
-        - some-other-tag
   - az: z2
     gateway: 10.0.32.1
     range: 10.0.32.0/20
@@ -89,7 +87,6 @@ networks:
       subnetwork_name: some-subnetwork-name
       tags:
         - some-tag
-        - some-other-tag
   - az: z3
     gateway: 10.0.48.1
     range: 10.0.48.0/20
@@ -104,7 +101,7 @@ networks:
       subnetwork_name: some-subnetwork-name
       tags:
         - some-tag
-        - some-other-tag
+  type: manual
 
 vm_types:
 - name: n1-standard-2
@@ -250,3 +247,4 @@ vm_extensions:
 - name: internet-not-required
   cloud_properties:
     ephemeral_external_ip: false
+

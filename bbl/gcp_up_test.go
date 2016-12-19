@@ -276,7 +276,7 @@ var _ = Describe("bbl up gcp", func() {
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 		})
 	},
-		Entry("generates a cloud config with no lb type", "fixtures/gcp-cloud-config-no-lb.yml"),
+		Entry("generates a cloud config with no lb type", "../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml"),
 	)
 
 	Context("bbl re-entrance", func() {

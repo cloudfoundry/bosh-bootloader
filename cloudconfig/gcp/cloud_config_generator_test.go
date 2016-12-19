@@ -29,8 +29,8 @@ var _ = Describe("CloudConfigGenerator", func() {
 
 		It("generates a cloud config with no load balancers", func() {
 			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-				AZs:            []string{"us-east1-a", "us-east1-b", "us-east1-c"},
-				Tags:           []string{"some-tag", "some-other-tag"},
+				AZs:            []string{"us-east1-b", "us-east1-c", "us-east1-d"},
+				Tags:           []string{"some-tag"},
 				NetworkName:    "some-network-name",
 				SubnetworkName: "some-subnetwork-name",
 			})
@@ -47,8 +47,8 @@ var _ = Describe("CloudConfigGenerator", func() {
 
 		It("generates a cloud config with a concourse load balancer", func() {
 			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-				AZs:                 []string{"us-east1-a", "us-east1-b", "us-east1-c"},
-				Tags:                []string{"some-tag", "some-other-tag"},
+				AZs:                 []string{"us-east1-b", "us-east1-c", "us-east1-d"},
+				Tags:                []string{"some-tag"},
 				NetworkName:         "some-network-name",
 				SubnetworkName:      "some-subnetwork-name",
 				ConcourseTargetPool: "concourse-target-pool",
@@ -66,8 +66,8 @@ var _ = Describe("CloudConfigGenerator", func() {
 
 		It("generates a cloud config with a cf load balancer", func() {
 			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-				AZs:              []string{"us-east1-a", "us-east1-b", "us-east1-c"},
-				Tags:             []string{"some-tag", "some-other-tag"},
+				AZs:              []string{"us-east1-b", "us-east1-c", "us-east1-d"},
+				Tags:             []string{"some-tag"},
 				NetworkName:      "some-network-name",
 				SubnetworkName:   "some-subnetwork-name",
 				CFBackendService: "router-backend-service",
@@ -90,7 +90,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 				})
 
 				_, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-					AZs:            []string{"us-east1-a", "us-east1-b", "us-east1-c"},
+					AZs:            []string{"us-east1-b", "us-east1-c", "us-east1-d"},
 					Tags:           []string{"some-tag", "some-other-tag"},
 					NetworkName:    "some-network-name",
 					SubnetworkName: "some-subnetwork-name",
