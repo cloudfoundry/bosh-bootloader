@@ -173,6 +173,10 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 }
 
 func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State, boshClient bosh.Client) error {
+	if config.LBType == "" {
+		return fmt.Errorf("--type is a required flag")
+	}
+
 	if config.LBType != "concourse" && config.LBType != "cf" {
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse, cf", config.LBType)
 	}

@@ -127,6 +127,10 @@ func (AWSCreateLBs) isValidLBType(lbType string) bool {
 }
 
 func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client) error {
+	if newLBType == "" {
+		return fmt.Errorf("--type is a required flag")
+	}
+
 	if !c.isValidLBType(newLBType) {
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", newLBType)
 	}

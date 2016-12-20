@@ -233,6 +233,15 @@ var _ = Describe("AWS Create LBs", func() {
 				}, incomingState)
 				Expect(err).To(MatchError("\"some-invalid-lb\" is not a valid lb type, valid lb types are: concourse and cf"))
 			})
+
+			It("returns a helpful error when no lb type is provided", func() {
+				err := command.Execute(commands.AWSCreateLBsConfig{
+					LBType:   "",
+					CertPath: "temp/some-cert.crt",
+					KeyPath:  "temp/some-key.key",
+				}, incomingState)
+				Expect(err).To(MatchError("--type is a required flag"))
+			})
 		})
 
 		Context("fast fail if the stack or BOSH director does not exist", func() {

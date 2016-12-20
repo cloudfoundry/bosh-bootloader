@@ -771,6 +771,13 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
+			It("returns a helpful error when no lb type is provided", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "",
+				}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("--type is a required flag"))
+			})
+
 			It("returns an error when the lb type is not concourse or cf", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "some-fake-lb",
