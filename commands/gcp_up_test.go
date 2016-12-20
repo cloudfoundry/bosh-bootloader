@@ -629,7 +629,6 @@ var _ = Describe("gcp up", func() {
 			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
 			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
 			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
-			Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(`["some-zone", "some-other-zone"]`))
 		})
 
 		It("applies the correct concourse template and args for concourse lb type", func() {
@@ -649,7 +648,6 @@ var _ = Describe("gcp up", func() {
 			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
 			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(""))
 			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(""))
-			Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(""))
 		})
 	})
 

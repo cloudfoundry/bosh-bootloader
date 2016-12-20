@@ -166,10 +166,6 @@ variable "ssl_certificate_private_key" {
   type = "string"
 }
 
-variable "zones" {
-  type = "list"
-}
-
 output "router_backend_service" {
   value = "${google_compute_backend_service.router-lb-backend-service.name}"
 }
@@ -255,12 +251,5 @@ resource "google_compute_firewall" "cf-health-check" {
 
   source_ranges = ["130.211.0.0/22"]
   target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
-}
-
-resource "google_compute_instance_group" "router-lb" {
-  count       = "${length(var.zones)}"
-  name        = "${var.env_id}-router-${element(var.zones, count.index)}"
-  description = "terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "${element(var.zones, count.index)}"
 }
 `

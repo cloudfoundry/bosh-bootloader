@@ -23,7 +23,7 @@ func NewExecutor(cmd terraformCmd) Executor {
 	return Executor{cmd: cmd}
 }
 
-func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, zones, template, prevTFState string) (string, error) {
+func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, template, prevTFState string) (string, error) {
 	tempDir, err := tempDir("", "")
 	if err != nil {
 		return "", err
@@ -76,7 +76,6 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, 
 	if keyPath != "" {
 		args = append(args, makeVar("ssl_certificate_private_key", keyPath)...)
 	}
-	args = append(args, makeVar("zones", zones)...)
 	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args)
 	if err != nil {

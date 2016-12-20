@@ -59,7 +59,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	c.logger.Step("generating terraform template")
 	var err error
 
-	var lbTemplate, zonesString string
+	var lbTemplate string
 	var cert, key []byte
 	zones := c.zones.Get(state.GCP.Region)
 	switch config.LBType {
@@ -67,8 +67,8 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		lbTemplate = terraformConcourseLBTemplate
 	case "cf":
 		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
-		lbTemplate = strings.Join([]string{terraformCFLBTemplate, terraformCFLBBackendService}, "\n")
-		zonesString = `["` + strings.Join(zones, `", "`) + `"]`
+		instanceGroups := generateInstanceGroups(zones)
+		lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
 
 		cert, err = ioutil.ReadFile(config.CertPath)
 		if err != nil {
@@ -83,7 +83,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
 	tfState, err := c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-		state.GCP.Region, string(cert), string(key), zonesString, templateWithLB, state.TFState)
+		state.GCP.Region, string(cert), string(key), templateWithLB, state.TFState)
 	switch err.(type) {
 	case terraform.TerraformApplyError:
 		taError := err.(terraform.TerraformApplyError)
@@ -199,7 +199,7 @@ func generateBackendServiceTerraform(count int) string {
 	backendStrings := []string{}
 	for i := 0; i < count; i++ {
 		backendString := fmt.Sprintf(`  backend {
-    group = "${google_compute_instance_group.router-lb.%d.self_link}"
+    group = "${google_compute_instance_group.router-lb-%d.self_link}"
   }
 `, i)
 		backendStrings = append(backendStrings, backendString)
@@ -209,4 +209,18 @@ func generateBackendServiceTerraform(count int) string {
 	backendServiceTemplate = append(backendServiceTemplate, backendStrings...)
 	backendServiceTemplate = append(backendServiceTemplate, backendResourceEnd)
 	return strings.Join(backendServiceTemplate, "\n")
+}
+
+func generateInstanceGroups(zones []string) string {
+	var groups []string
+	for i, zone := range zones {
+		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
+  name        = "${var.env_id}-router-%[2]s"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
+  zone        = "%[2]s"
+}
+`, i, zone))
+	}
+
+	return strings.Join(groups, "\n")
 }

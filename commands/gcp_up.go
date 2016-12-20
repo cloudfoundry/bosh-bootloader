@@ -58,7 +58,7 @@ type gcpProvider interface {
 }
 
 type terraformExecutor interface {
-	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, zones, template, tfState string) (string, error)
+	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, template, tfState string) (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
 }
 
@@ -127,21 +127,21 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
-	var template, zonesString string
+	var template string
 	zones := u.zones.Get(state.GCP.Region)
 	switch state.LB.Type {
 	case "concourse":
 		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
 	case "cf":
 		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
-		zonesString = `["` + strings.Join(zones, `", "`) + `"]`
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, terraformCFLBBackendService}, "\n")
+		instanceGroups := generateInstanceGroups(zones)
+		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
 	default:
 		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
 	}
 
 	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,
-		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, state.LB.Cert, state.LB.Key, zonesString,
+		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, state.LB.Cert, state.LB.Key,
 		template, state.TFState,
 	)
 	switch err.(type) {

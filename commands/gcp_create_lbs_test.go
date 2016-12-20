@@ -281,10 +281,6 @@ variable "ssl_certificate_private_key" {
   type = "string"
 }
 
-variable "zones" {
-  type = "list"
-}
-
 output "router_backend_service" {
   value = "${google_compute_backend_service.router-lb-backend-service.name}"
 }
@@ -372,11 +368,16 @@ resource "google_compute_firewall" "cf-health-check" {
   target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 
-resource "google_compute_instance_group" "router-lb" {
-  count       = "${length(var.zones)}"
-  name        = "${var.env_id}-router-${element(var.zones, count.index)}"
+resource "google_compute_instance_group" "router-lb-0" {
+  name        = "${var.env_id}-router-some-zone"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "${element(var.zones, count.index)}"
+  zone        = "some-zone"
+}
+
+resource "google_compute_instance_group" "router-lb-1" {
+  name        = "${var.env_id}-router-some-other-zone"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
+  zone        = "some-other-zone"
 }
 
 resource "google_compute_backend_service" "router-lb-backend-service" {
@@ -387,11 +388,11 @@ resource "google_compute_backend_service" "router-lb-backend-service" {
   enable_cdn  = false
 
   backend {
-    group = "${google_compute_instance_group.router-lb.0.self_link}"
+    group = "${google_compute_instance_group.router-lb-0.self_link}"
   }
 
   backend {
-    group = "${google_compute_instance_group.router-lb.1.self_link}"
+    group = "${google_compute_instance_group.router-lb-1.self_link}"
   }
 
   health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
@@ -482,7 +483,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 			Context("when called with a cf lb type", func() {
 				It("creates and applies a cf backend service", func() {
-					zones.GetCall.Returns.Zones = []string{"zone1", "zone2"}
+					zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
 
 					err := command.Execute(commands.GCPCreateLBsConfig{
 						LBType:   "cf",
@@ -511,7 +512,6 @@ var _ = Describe("GCPCreateLBs", func() {
 					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
 					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(certificate))
 					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(key))
-					Expect(terraformExecutor.ApplyCall.Receives.Zones).To(Equal(`["zone1", "zone2"]`))
 					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
 				})
 			})
