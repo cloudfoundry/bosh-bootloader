@@ -2,6 +2,7 @@ package cloudformation
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
@@ -123,5 +124,5 @@ func (m InfrastructureManager) Delete(stackName string) error {
 }
 
 func generateIAMUserName(envID string) string {
-	return fmt.Sprintf("bosh-iam-user-%s", envID)
+	return fmt.Sprintf("bosh-iam-user-%s", strings.Replace(envID, ":", "-", -1))
 }

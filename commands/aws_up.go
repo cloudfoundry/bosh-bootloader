@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -164,7 +165,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	}
 
 	if state.Stack.Name == "" {
-		state.Stack.Name = fmt.Sprintf("stack-%s", state.EnvID)
+		state.Stack.Name = fmt.Sprintf("stack-%s", strings.Replace(state.EnvID, ":", "-", -1))
 
 		if err := u.stateStore.Set(state); err != nil {
 			return err
