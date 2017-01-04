@@ -64,13 +64,16 @@ var _ = Describe("CloudConfigGenerator", func() {
 			Expect(output).To(MatchYAML(string(buf)))
 		})
 
-		It("generates a cloud config with a cf load balancer", func() {
+		It("generates a cloud config with a cf load balancers", func() {
 			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-				AZs:              []string{"us-east1-b", "us-east1-c", "us-east1-d"},
-				Tags:             []string{"some-tag"},
-				NetworkName:      "some-network-name",
-				SubnetworkName:   "some-subnetwork-name",
-				CFBackendService: "router-backend-service",
+				AZs:            []string{"us-east1-b", "us-east1-c", "us-east1-d"},
+				Tags:           []string{"some-tag"},
+				NetworkName:    "some-network-name",
+				SubnetworkName: "some-subnetwork-name",
+				CFBackends: gcp.CFBackends{
+					Router:   "router-backend-service",
+					SSHProxy: "ssh-proxy-target-pool",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 

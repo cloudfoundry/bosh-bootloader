@@ -2,16 +2,21 @@ package gcp
 
 import yaml "gopkg.in/yaml.v2"
 
+type CloudConfigGenerator struct{}
+
 type CloudConfigInput struct {
 	AZs                 []string
 	Tags                []string
 	NetworkName         string
 	SubnetworkName      string
 	ConcourseTargetPool string
-	CFBackendService    string
+	CFBackends          CFBackends
 }
 
-type CloudConfigGenerator struct{}
+type CFBackends struct {
+	Router   string
+	SSHProxy string
+}
 
 type VMExtension struct {
 	Name            string                     `yaml:"name"`
@@ -64,12 +69,22 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 		})
 	}
 
-	if input.CFBackendService != "" {
+	if input.CFBackends.Router != "" {
 		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
 			Name: "router-lb",
 			CloudProperties: VMExtensionCloudProperties{
-				BackendService: input.CFBackendService,
-				Tags:           []string{input.CFBackendService},
+				BackendService: input.CFBackends.Router,
+				Tags:           []string{input.CFBackends.Router},
+			},
+		})
+	}
+
+	if input.CFBackends.SSHProxy != "" {
+		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
+			Name: "ssh-proxy-lb",
+			CloudProperties: VMExtensionCloudProperties{
+				TargetPool: input.CFBackends.SSHProxy,
+				Tags:       []string{input.CFBackends.SSHProxy},
 			},
 		})
 	}

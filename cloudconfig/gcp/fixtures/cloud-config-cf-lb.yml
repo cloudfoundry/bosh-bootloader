@@ -258,3 +258,8 @@ vm_extensions:
     backend_service: router-backend-service
     tags:
     - router-backend-service
+- name: ssh-proxy-lb
+  cloud_properties:
+    target_pool: ssh-proxy-target-pool
+    tags:
+    - ssh-proxy-target-pool

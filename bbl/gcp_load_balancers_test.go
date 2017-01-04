@@ -72,6 +72,8 @@ var _ = Describe("load balancers", func() {
 				}
 			case "/output/router_backend_service":
 				responseWriter.Write([]byte("router-backend-service"))
+			case "/output/ssh_proxy_target_pool":
+				responseWriter.Write([]byte("ssh-proxy-target-pool"))
 			}
 		}))
 

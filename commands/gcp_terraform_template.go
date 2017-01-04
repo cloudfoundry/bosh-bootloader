@@ -252,4 +252,37 @@ resource "google_compute_firewall" "cf-health-check" {
   source_ranges = ["130.211.0.0/22"]
   target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
+
+output "ssh_proxy_target_pool" {
+  value = "${google_compute_target_pool.cf-ssh-proxy.name}"
+}
+
+resource "google_compute_address" "cf-ssh-proxy" {
+  name = "${var.env_id}-cf-ssh-proxy"
+}
+
+resource "google_compute_firewall" "cf-ssh-proxy" {
+  name       = "${var.env_id}-cf-ssh-proxy-open"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["2222"]
+  }
+
+  target_tags = ["${google_compute_target_pool.cf-ssh-proxy.name}"]
+}
+
+resource "google_compute_target_pool" "cf-ssh-proxy" {
+  name = "${var.env_id}-cf-ssh-proxy"
+}
+
+resource "google_compute_forwarding_rule" "cf-ssh-proxy" {
+  name        = "${var.env_id}-cf-ssh-proxy"
+  target      = "${google_compute_target_pool.cf-ssh-proxy.self_link}"
+  port_range  = "2222"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-ssh-proxy.address}"
+}
 `
