@@ -128,10 +128,14 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		}
 	}
 
-	cfBackendService := ""
+	routerBackendService := ""
+	sshProxyTargetPool := ""
 	if config.LBType == "cf" {
-		cfBackendService, err = c.terraformOutputter.Get(state.TFState, "router_backend_service")
-		if err != nil {
+		if routerBackendService, err = c.terraformOutputter.Get(state.TFState, "router_backend_service"); err != nil {
+			return err
+		}
+
+		if sshProxyTargetPool, err = c.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool"); err != nil {
 			return err
 		}
 	}
@@ -143,7 +147,10 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		NetworkName:         network,
 		SubnetworkName:      subnetwork,
 		ConcourseTargetPool: concourseTargetPool,
-		CFBackendService:    cfBackendService,
+		CFBackends: gcp.CFBackends{
+			Router:   routerBackendService,
+			SSHProxy: sshProxyTargetPool,
+		},
 	})
 	if err != nil {
 		return err

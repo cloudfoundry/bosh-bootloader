@@ -368,6 +368,39 @@ resource "google_compute_firewall" "cf-health-check" {
   target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 
+output "ssh_proxy_target_pool" {
+  value = "${google_compute_target_pool.cf-ssh-proxy.name}"
+}
+
+resource "google_compute_address" "cf-ssh-proxy" {
+  name = "${var.env_id}-cf-ssh-proxy"
+}
+
+resource "google_compute_firewall" "cf-ssh-proxy" {
+  name       = "${var.env_id}-cf-ssh-proxy-open"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["2222"]
+  }
+
+  target_tags = ["${google_compute_target_pool.cf-ssh-proxy.name}"]
+}
+
+resource "google_compute_target_pool" "cf-ssh-proxy" {
+  name = "${var.env_id}-cf-ssh-proxy"
+}
+
+resource "google_compute_forwarding_rule" "cf-ssh-proxy" {
+  name        = "${var.env_id}-cf-ssh-proxy"
+  target      = "${google_compute_target_pool.cf-ssh-proxy.self_link}"
+  port_range  = "2222"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-ssh-proxy.address}"
+}
+
 resource "google_compute_instance_group" "router-lb-0" {
   name        = "${var.env_id}-router-some-zone"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"
@@ -592,11 +625,13 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("when creating a cf lb", func() {
-			It("creates a cloud-config with cf lb vm extension", func() {
+			It("creates a cloud-config with router-lb and ssh-proxy-lb vm extensions", func() {
 				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
 					switch output {
 					case "router_backend_service":
 						return "env-id-cf-https-lb", nil
+					case "ssh_proxy_target_pool":
+						return "env-id-cf-ssh-proxy-lb", nil
 					default:
 						return "", nil
 					}
@@ -618,10 +653,11 @@ var _ = Describe("GCPCreateLBs", func() {
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(terraformOutputter.GetCall.CallCount).To(Equal(4))
+				Expect(terraformOutputter.GetCall.CallCount).To(Equal(5))
 
 				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackendService).To(Equal("env-id-cf-https-lb"))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("env-id-cf-https-lb"))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("env-id-cf-ssh-proxy-lb"))
 
 				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
 					"generating cloud config", "applying cloud config",
