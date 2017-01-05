@@ -253,12 +253,12 @@ vm_extensions:
 - name: cf-internet-not-required
   cloud_properties:
     ephemeral_external_ip: false
-- name: router-lb
+- name: cf-router-network-properties
   cloud_properties:
     backend_service: router-backend-service
     tags:
     - router-backend-service
-- name: ssh-proxy-lb
+- name: diego-ssh-proxy-network-properties
   cloud_properties:
     target_pool: ssh-proxy-target-pool
     tags:
