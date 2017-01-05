@@ -89,5 +89,6 @@ bosh upload-stemcell ~/Downloads/light-bosh-stemcell-XXXX.X-google-kvm-ubuntu-tr
 ## Deploy
 
 ```
-bosh -d cf deploy cf-deployment.yml
+bosh -d cf deploy --vars-store cf-deployment-vars.yml -o opsfiles/gcp.yml -o opsfiles/disable-router-tls-termination.yml cf-deployment.yml
+
 ```
