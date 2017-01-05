@@ -9,7 +9,6 @@ This document will walk through deploying a cf-deployment based Cloud Foundry.
 * A GCP Service Account key as described in README.md
 * BBL up. e.g. ```bbl up --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-gcp-project-id --iaas gcp```
 * This guide will assume the [Bosh v2 CLI](https://bosh.io/docs/cli-v2.html) is installed, but bosh v1 CLI could work, with some minor changes.
-* A key and cert for TLS. You can use [certstrap](https://github.com/square/certstrap) to generate these.
 
 ## Set the bosh environment
 
@@ -32,7 +31,7 @@ bbl create-lbs --type cf --key path/to/cf.example.com.key --cert path/to/cf.exam
 Scale instance types, disks and instance count based on your needs. Other sizes are available, see ```bosh cloud-config```.
 
 1. Start with a clone of the [CF Deployment](https://github.com/cloudfoundry/cf-deployment) repo.
-2. Replace static IP addresses defined in ```opsfiles/gcp.yml``` with ip addresses from the cloud-config for bbl:
+2. Replace static IP addresses defined in ```cf-deployment.yml``` and ```opsfiles/gcp.yml``` with ip addresses from the cloud-config for bbl:
 ```
 - type: replace
   path: /instance_groups/name=mysql/networks/name=private/static_ips
@@ -70,29 +69,6 @@ instance_groups:
    - z1
    - z2
 -  - z3
-```
-5. Remove vm_extensions that BBL does not yet support in opsfiles/gcp.yml, diego-ssh-proxy-network-properties, cf-router-network-properties, and cf-tcp-router-network-properties:
-```
-   path: /instance_groups/name=diego-brain/vm_extensions
-   value:
-   - cf-internet-required
--  - diego-ssh-proxy-network-properties
- - type: replace
-   path: /instance_groups/name=diego-cell/vm_extensions
-   value:
-@@ -42,12 +41,10 @@
-   path: /instance_groups/name=router/vm_extensions
-   value:
-   - cf-internet-required
--  - cf-router-network-properties
- - type: replace
-   path: /instance_groups/name=tcp-router/vm_extensions?
-   value:
-   - cf-internet-required
--  - cf-tcp-router-network-properties
- - type: replace
-   path: /instance_groups/name=route-emitter/vm_extensions?
-   value:
 ```
 6. Create a vars file, cf-deployment-vars.yml:
 ```
