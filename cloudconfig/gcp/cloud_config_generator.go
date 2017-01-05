@@ -71,7 +71,7 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 
 	if input.CFBackends.Router != "" {
 		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
-			Name: "router-lb",
+			Name: "cf-router-network-properties",
 			CloudProperties: VMExtensionCloudProperties{
 				BackendService: input.CFBackends.Router,
 				Tags:           []string{input.CFBackends.Router},
@@ -81,7 +81,7 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 
 	if input.CFBackends.SSHProxy != "" {
 		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
-			Name: "ssh-proxy-lb",
+			Name: "diego-ssh-proxy-network-properties",
 			CloudProperties: VMExtensionCloudProperties{
 				TargetPool: input.CFBackends.SSHProxy,
 				Tags:       []string{input.CFBackends.SSHProxy},
