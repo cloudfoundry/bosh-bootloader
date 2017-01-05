@@ -71,8 +71,9 @@ var _ = Describe("CloudConfigGenerator", func() {
 				NetworkName:    "some-network-name",
 				SubnetworkName: "some-subnetwork-name",
 				CFBackends: gcp.CFBackends{
-					Router:   "router-backend-service",
-					SSHProxy: "ssh-proxy-target-pool",
+					Router:    "router-backend-service",
+					SSHProxy:  "ssh-proxy-target-pool",
+					TCPRouter: "tcp-router-target-pool",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())

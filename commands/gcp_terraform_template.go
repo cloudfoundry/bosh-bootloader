@@ -285,4 +285,51 @@ resource "google_compute_forwarding_rule" "cf-ssh-proxy" {
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-ssh-proxy.address}"
 }
+
+output "tcp_router_target_pool" {
+  value = "${google_compute_target_pool.cf-tcp-router.name}"
+}
+
+resource "google_compute_firewall" "cf-tcp-router" {
+  name       = "${var.env_id}-cf-tcp-router"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["1024-32768"]
+  }
+
+  target_tags = ["${google_compute_target_pool.cf-tcp-router.name}"]
+}
+
+resource "google_compute_address" "cf-tcp-router" {
+  name = "${var.env_id}-cf-tcp-router"
+}
+
+resource "google_compute_http_health_check" "cf-tcp-router" {
+  name                = "${var.env_id}-cf-tcp-router"
+  port                = 8080
+  request_path        = "/health"
+  check_interval_sec  = 30
+  timeout_sec         = 5
+  healthy_threshold   = 10
+  unhealthy_threshold = 2
+}
+
+resource "google_compute_target_pool" "cf-tcp-router" {
+  name = "${var.env_id}-cf-tcp-router"
+
+  health_checks = [
+    "${google_compute_http_health_check.cf-tcp-router.name}",
+  ]
+}
+
+resource "google_compute_forwarding_rule" "cf-tcp-router" {
+  name        = "${var.env_id}-cf-tcp-router"
+  target      = "${google_compute_target_pool.cf-tcp-router.self_link}"
+  port_range  = "1024-32768"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-tcp-router.address}"
+}
 `

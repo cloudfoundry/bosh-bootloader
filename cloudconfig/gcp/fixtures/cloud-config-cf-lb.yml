@@ -263,3 +263,8 @@ vm_extensions:
     target_pool: ssh-proxy-target-pool
     tags:
     - ssh-proxy-target-pool
+- name: cf-tcp-router-network-properties
+  cloud_properties:
+    target_pool: tcp-router-target-pool
+    tags:
+    - tcp-router-target-pool
