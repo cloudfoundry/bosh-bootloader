@@ -9,7 +9,7 @@ This document will walk through deploying a cf-deployment based Cloud Foundry.
 * A GCP Service Account key as described in README.md
 * BBL up. e.g. ```bbl up --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-gcp-project-id --iaas gcp```
 * This guide will assume the [Bosh v2 CLI](https://bosh.io/docs/cli-v2.html) is installed, but bosh v1 CLI could work, with some minor changes.
-* A key and cert for TLS. You can use (certstrap)[https://github.com/square/certstrap] to generate these.
+* A key and cert for TLS. You can use [certstrap](https://github.com/square/certstrap) to generate these.
 
 ## Set the bosh environment
 
@@ -105,7 +105,7 @@ bosh -n interpolate --vars-store cf-deployment-vars.yml -o opsfiles/gcp.yml -o o
 
 ## Upload Stemcells
 
-1. Download and upload latest (Google stemcell)[http://bosh.io/stemcells]
+1. Download and upload latest [Google stemcell](http://bosh.io/stemcells)
 ```
 bosh upload-stemcell ~/Downloads/light-bosh-stemcell-XXXX.X-google-kvm-ubuntu-trusty-go_agent.tgz
 ```
