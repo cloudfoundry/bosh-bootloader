@@ -211,7 +211,7 @@ func main() {
 		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
 		stateStore, stateValidator)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
-	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, os.Stdout)
+	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputter, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})

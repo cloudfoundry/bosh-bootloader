@@ -76,6 +76,14 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("ssh-proxy-target-pool"))
 			case "/output/tcp_router_target_pool":
 				responseWriter.Write([]byte("tcp-router-target-pool"))
+			case "/output/router_lb_ip":
+				responseWriter.Write([]byte("some-router-lb-ip"))
+			case "/output/ssh_proxy_lb_ip":
+				responseWriter.Write([]byte("some-ssh-proxy-lb-ip"))
+			case "/output/tcp_router_lb_ip":
+				responseWriter.Write([]byte("some-tcp-router-lb-ip"))
+			case "/output/concourse_lb_ip":
+				responseWriter.Write([]byte("some-concourse-lb-ip"))
 			}
 		}))
 
@@ -278,6 +286,58 @@ var _ = Describe("load balancers", func() {
 
 				session := executeCommand(args, 1)
 				stdout = session.Out.Contents()
+			})
+		})
+	})
+
+	Describe("lbs", func() {
+		Context("when cf lb was created", func() {
+			BeforeEach(func() {
+				certPath := filepath.Join(tempDirectory, "some-cert")
+				err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				keyPath := filepath.Join(tempDirectory, "some-key")
+				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "cf",
+					"--cert", certPath,
+					"--key", keyPath,
+				}
+
+				executeCommand(args, 0)
+			})
+
+			It("prints out the currently attached lb names and urls", func() {
+				session := lbs("", tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
+				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
+				Expect(stdout).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
+			})
+		})
+
+		Context("when concourse lb was created", func() {
+			BeforeEach(func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "concourse",
+				}
+
+				executeCommand(args, 0)
+			})
+
+			It("prints out the currently attached lb names and urls", func() {
+				session := lbs("", tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(ContainSubstring("Concourse LB: some-concourse-lb-ip"))
 			})
 		})
 	})

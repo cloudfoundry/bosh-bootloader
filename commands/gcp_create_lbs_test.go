@@ -121,6 +121,10 @@ output "concourse_target_pool" {
 	value = "${google_compute_target_pool.target-pool.name}"
 }
 
+output "concourse_lb_ip" {
+    value = "${google_compute_address.concourse-address.address}"
+}
+
 resource "google_compute_firewall" "firewall-concourse" {
   name    = "${var.env_id}-concourse-open"
   network = "${google_compute_network.bbl-network.name}"
@@ -283,6 +287,18 @@ variable "ssl_certificate_private_key" {
 
 output "router_backend_service" {
   value = "${google_compute_backend_service.router-lb-backend-service.name}"
+}
+
+output "router_lb_ip" {
+    value = "${google_compute_global_address.cf-address.address}"
+}
+
+output "ssh_proxy_lb_ip" {
+    value = "${google_compute_address.cf-ssh-proxy.address}"
+}
+
+output "tcp_router_lb_ip" {
+    value = "${google_compute_address.cf-tcp-router.address}"
 }
 
 resource "google_compute_firewall" "firewall-cf" {
