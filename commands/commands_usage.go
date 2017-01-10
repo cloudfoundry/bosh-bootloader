@@ -4,6 +4,7 @@ const (
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
   --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
+  --name                     Name to assign to your BOSH Director (optional, will be randomly generated)
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)

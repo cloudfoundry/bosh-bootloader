@@ -129,6 +129,21 @@ var _ = Describe("Up", func() {
 				})
 			})
 
+			Context("when the user provides the name flag", func() {
+				It("uses the name flag instead of generating one", func() {
+					fakeEnvIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
+
+					err := command.Execute([]string{
+						"--iaas", "aws",
+						"--name", "a-better-name",
+					}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeEnvIDGenerator.GenerateCall.CallCount).To(Equal(0))
+					Expect(fakeAWSUp.ExecuteCall.Receives.State.EnvID).To(Equal("a-better-name"))
+				})
+			})
+
 			Context("failure cases", func() {
 				It("returns an error when env id generator fails", func() {
 					fakeEnvIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
@@ -137,6 +152,16 @@ var _ = Describe("Up", func() {
 						"--iaas", "aws",
 					}, storage.State{})
 					Expect(err).To(MatchError("env id generation failed"))
+				})
+
+				It("returns an error when name is passed for an existing env", func() {
+					err := command.Execute([]string{
+						"--iaas", "aws",
+						"--name", "a-bad-name",
+					}, storage.State{
+						EnvID: "a-name",
+					})
+					Expect(err).To(MatchError("The director name cannot be changed for an existing environment. Current name is a-name."))
 				})
 			})
 		})
