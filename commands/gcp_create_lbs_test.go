@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -495,6 +496,62 @@ resource "google_compute_backend_service" "router-lb-backend-service" {
 }
 `
 
+const dnsTemplate = `
+variable "system_domain" {
+  type = "string"
+}
+
+resource "google_dns_managed_zone" "env_dns_zone" {
+  name        = "${var.env_id}-zone"
+  dns_name    = "${var.system_domain}."
+  description = "DNS zone for the ${var.env_id} environment"
+}
+
+resource "google_dns_record_set" "wildcard-dns" {
+  name       = "*.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_global_address.cf-address"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_global_address.cf-address.address}"]
+}
+
+resource "google_dns_record_set" "bosh-dns" {
+  name       = "bosh.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.bosh-external-ip"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.bosh-external-ip.address}"]
+}
+
+resource "google_dns_record_set" "cf-ssh-proxy" {
+  name       = "ssh.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ssh-proxy"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ssh-proxy.address}"]
+}
+
+resource "google_dns_record_set" "tcp-dns" {
+  name       = "tcp.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-tcp-router"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-tcp-router.address}"]
+}
+`
+
 var _ = Describe("GCPCreateLBs", func() {
 	var (
 		cloudConfigGenerator *fakes.GCPCloudConfigGenerator
@@ -578,7 +635,43 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			Context("when called with a cf lb type", func() {
-				It("creates and applies a cf backend service", func() {
+				It("creates and applies a cf backend service and dns", func() {
+					zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
+
+					err := command.Execute(commands.GCPCreateLBsConfig{
+						LBType:       "cf",
+						CertPath:     certPath,
+						KeyPath:      keyPath,
+						SystemDomain: "some-system-domain",
+					}, storage.State{
+						IAAS:    "gcp",
+						EnvID:   "some-env-id",
+						TFState: "some-prev-tf-state",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+						"generating terraform template", "finished applying terraform template",
+					}))
+					Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+					Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
+					Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+					Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
+					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(certificate))
+					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(key))
+					Expect(terraformExecutor.ApplyCall.Receives.SystemDomain).To(Equal("some-system-domain"))
+					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(strings.Join([]string{expectedCFTemplate, dnsTemplate}, "\n")))
+
+					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
+				})
+
+				It("creates and applies only a cf backend service when called without a system domain", func() {
 					zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
 
 					err := command.Execute(commands.GCPCreateLBsConfig{
@@ -605,10 +698,11 @@ var _ = Describe("GCPCreateLBs", func() {
 					Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
 					Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
 					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
-					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
 					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(certificate))
 					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(key))
+					Expect(terraformExecutor.ApplyCall.Receives.SystemDomain).To(Equal(""))
 					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
+					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
 				})
 			})
 
@@ -718,8 +812,8 @@ var _ = Describe("GCPCreateLBs", func() {
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(terraformOutputter.GetCall.CallCount).To(Equal(6))
 
+				Expect(terraformOutputter.GetCall.CallCount).To(Equal(6))
 				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("env-id-cf-https-lb"))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("env-id-cf-ssh-proxy-lb"))

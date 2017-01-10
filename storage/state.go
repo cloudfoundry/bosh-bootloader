@@ -43,9 +43,10 @@ type Stack struct {
 }
 
 type LB struct {
-	Type string `json:"type"`
-	Cert string `json:"cert"`
-	Key  string `json:"key"`
+	Type         string `json:"type"`
+	Cert         string `json:"cert"`
+	Key          string `json:"key"`
+	SystemDomain string `json:"systemDomain,omitempty"`
 }
 
 type State struct {

@@ -58,7 +58,7 @@ type gcpProvider interface {
 }
 
 type terraformExecutor interface {
-	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, template, tfState string) (string, error)
+	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, systemDomain, template, tfState string) (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
 }
 
@@ -141,7 +141,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,
-		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, state.LB.Cert, state.LB.Key,
+		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, state.LB.Cert, state.LB.Key, state.LB.SystemDomain,
 		template, state.TFState,
 	)
 	switch err.(type) {

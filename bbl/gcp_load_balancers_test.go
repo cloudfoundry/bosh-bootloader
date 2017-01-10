@@ -144,35 +144,65 @@ var _ = Describe("load balancers", func() {
 			Expect(state.LB.Key).To(Equal(""))
 		})
 
-		It("creates and attaches a cf lb type", func() {
-			certPath := filepath.Join(tempDirectory, "some-cert")
-			err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
+		Context("cf lb", func() {
+			var certPath, keyPath string
+			var contents []byte
 
-			keyPath := filepath.Join(tempDirectory, "some-key")
-			err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
+			BeforeEach(func() {
+				certPath = filepath.Join(tempDirectory, "some-cert")
+				err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 
-			contents, err := ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-cf-lb.yml")
-			Expect(err).NotTo(HaveOccurred())
+				keyPath = filepath.Join(tempDirectory, "some-key")
+				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 
-			args := []string{
-				"--state-dir", tempDirectory,
-				"create-lbs",
-				"--type", "cf",
-				"--cert", certPath,
-				"--key", keyPath,
-			}
+				contents, err = ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-cf-lb.yml")
+				Expect(err).NotTo(HaveOccurred())
+			})
 
-			executeCommand(args, 0)
+			It("creates and attaches a cf lb type and dns when -d is provided", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "cf",
+					"--cert", certPath,
+					"--key", keyPath,
+					"-d", "cf.example.com",
+				}
 
-			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+				executeCommand(args, 0)
 
-			state := readStateJson(tempDirectory)
-			Expect(state.LB).NotTo(BeNil())
-			Expect(state.LB.Type).To(Equal("cf"))
-			Expect(state.LB.Cert).To(Equal("cert-contents"))
-			Expect(state.LB.Key).To(Equal("key-contents"))
+				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+
+				state := readStateJson(tempDirectory)
+				Expect(state.LB).NotTo(BeNil())
+				Expect(state.LB.Type).To(Equal("cf"))
+				Expect(state.LB.Cert).To(Equal("cert-contents"))
+				Expect(state.LB.Key).To(Equal("key-contents"))
+				Expect(state.LB.SystemDomain).To(Equal("cf.example.com"))
+			})
+
+			It("creates and attaches only a cf lb type when -d is provided", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "cf",
+					"--cert", certPath,
+					"--key", keyPath,
+				}
+
+				executeCommand(args, 0)
+
+				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+
+				state := readStateJson(tempDirectory)
+				Expect(state.LB).NotTo(BeNil())
+				Expect(state.LB.Type).To(Equal("cf"))
+				Expect(state.LB.Cert).To(Equal("cert-contents"))
+				Expect(state.LB.Key).To(Equal("key-contents"))
+				Expect(state.LB.SystemDomain).To(Equal(""))
+			})
 		})
 
 		It("logs all the steps", func() {

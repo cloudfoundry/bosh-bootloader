@@ -18,6 +18,7 @@ type lbConfig struct {
 	certPath     string
 	keyPath      string
 	chainPath    string
+	systemDomain string
 	skipIfExists bool
 }
 
@@ -53,6 +54,7 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 			LBType:       config.lbType,
 			CertPath:     config.certPath,
 			KeyPath:      config.keyPath,
+			SystemDomain: config.systemDomain,
 			SkipIfExists: config.skipIfExists,
 		}, state); err != nil {
 			return err
@@ -80,6 +82,7 @@ func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
+	lbFlags.String(&config.systemDomain, "d", "")
 	lbFlags.Bool(&config.skipIfExists, "skip-if-exists", "", false)
 
 	if err := lbFlags.Parse(subcommandFlags); err != nil {
