@@ -40,6 +40,7 @@ type upConfig struct {
 	gcpZone              string
 	gcpRegion            string
 	iaas                 string
+	name                 string
 }
 
 func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter,
@@ -75,10 +76,18 @@ func (u Up) Execute(args []string, state storage.State) error {
 		}
 	}
 
+	if state.EnvID != "" && config.name != "" {
+		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
+	}
+
 	if state.EnvID == "" {
-		state.EnvID, err = u.envIDGenerator.Generate()
-		if err != nil {
-			return err
+		if config.name == "" {
+			state.EnvID, err = u.envIDGenerator.Generate()
+			if err != nil {
+				return err
+			}
+		} else {
+			state.EnvID = config.name
 		}
 	}
 
@@ -122,6 +131,8 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.gcpProjectID, "gcp-project-id", u.envGetter.Get("BBL_GCP_PROJECT_ID"))
 	upFlags.String(&config.gcpZone, "gcp-zone", u.envGetter.Get("BBL_GCP_ZONE"))
 	upFlags.String(&config.gcpRegion, "gcp-region", u.envGetter.Get("BBL_GCP_REGION"))
+
+	upFlags.String(&config.name, "name", "")
 
 	err := upFlags.Parse(args)
 	if err != nil {
