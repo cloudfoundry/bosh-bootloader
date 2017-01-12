@@ -184,6 +184,11 @@ func main() {
 
 	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
 
+	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
+		boshClientProvider, logger, uuidGenerator, stateStore)
+
+	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
+
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
 		credentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
@@ -207,9 +212,7 @@ func main() {
 	)
 
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
-	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(credentialValidator, certificateManager,
-		availabilityZoneRetriever, infrastructureManager, boshClientProvider, logger, certificateValidator, uuidGenerator,
-		stateStore, stateValidator)
+	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
 	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputter, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {

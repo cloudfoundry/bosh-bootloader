@@ -205,7 +205,11 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 	}
 
 	_, err := boshClient.Info()
-	return err
+	if err != nil {
+		return BBLNotFound
+	}
+
+	return nil
 }
 
 func generateBackendServiceTerraform(count int) string {

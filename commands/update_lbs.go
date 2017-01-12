@@ -1,10 +1,6 @@
 package commands
 
 import (
-	"errors"
-	"io/ioutil"
-	"strings"
-
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -15,38 +11,35 @@ type updateLBConfig struct {
 	certPath      string
 	keyPath       string
 	chainPath     string
+	systemDomain  string
 	skipIfMissing bool
 }
 
 type UpdateLBs struct {
-	certificateManager        certificateManager
-	availabilityZoneRetriever availabilityZoneRetriever
-	infrastructureManager     infrastructureManager
-	credentialValidator       credentialValidator
-	boshClientProvider        boshClientProvider
-	logger                    logger
-	certificateValidator      certificateValidator
-	guidGenerator             guidGenerator
-	stateStore                stateStore
-	stateValidator            stateValidator
+	awsUpdateLBs         awsUpdateLBs
+	gcpUpdateLBs         gcpUpdateLBs
+	certificateValidator certificateValidator
+	stateValidator       stateValidator
+	logger               logger
 }
 
-func NewUpdateLBs(credentialValidator credentialValidator, certificateManager certificateManager,
-	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager, boshClientProvider boshClientProvider,
-	logger logger, certificateValidator certificateValidator, guidGenerator guidGenerator, stateStore stateStore,
-	stateValidator stateValidator) UpdateLBs {
+type awsUpdateLBs interface {
+	Execute(AWSCreateLBsConfig, storage.State) error
+}
+
+type gcpUpdateLBs interface {
+	Execute(GCPCreateLBsConfig, storage.State) error
+}
+
+func NewUpdateLBs(awsUpdateLBs awsUpdateLBs, gcpUpdateLBs gcpUpdateLBs, certificateValidator certificateValidator,
+	stateValidator stateValidator, logger logger) UpdateLBs {
 
 	return UpdateLBs{
-		credentialValidator:       credentialValidator,
-		certificateManager:        certificateManager,
-		availabilityZoneRetriever: availabilityZoneRetriever,
-		infrastructureManager:     infrastructureManager,
-		boshClientProvider:        boshClientProvider,
-		logger:                    logger,
-		certificateValidator:      certificateValidator,
-		guidGenerator:             guidGenerator,
-		stateStore:                stateStore,
-		stateValidator:            stateValidator,
+		awsUpdateLBs:         awsUpdateLBs,
+		gcpUpdateLBs:         gcpUpdateLBs,
+		certificateValidator: certificateValidator,
+		stateValidator:       stateValidator,
+		logger:               logger,
 	}
 }
 
@@ -56,19 +49,19 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
-		c.logger.Println("no lb type exists, skipping...")
-		return nil
-	}
-
 	err = c.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
-	err = c.credentialValidator.ValidateAWS()
-	if err != nil {
-		return err
+	lbExists := lbExists(state.Stack.LBType) || lbExists(state.LB.Type)
+	if config.skipIfMissing && !lbExists {
+		c.logger.Println("no lb type exists, skipping...")
+		return nil
+	}
+
+	if !lbExists {
+		return LBNotFound
 	}
 
 	err = c.certificateValidator.Validate(UpdateLBsCommand, config.certPath, config.keyPath, config.chainPath)
@@ -76,76 +69,27 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
-		return err
+	switch state.IAAS {
+	case "gcp":
+		if err := c.gcpUpdateLBs.Execute(GCPCreateLBsConfig{
+			LBType:       state.LB.Type,
+			CertPath:     config.certPath,
+			KeyPath:      config.keyPath,
+			SystemDomain: config.systemDomain,
+		}, state); err != nil {
+			return err
+		}
+	case "aws":
+		if err := c.awsUpdateLBs.Execute(AWSCreateLBsConfig{
+			LBType:    state.Stack.LBType,
+			CertPath:  config.certPath,
+			KeyPath:   config.keyPath,
+			ChainPath: config.chainPath,
+		}, state); err != nil {
+			return err
+		}
 	}
-
-	if match, err := c.checkCertificateAndChain(config.certPath, config.chainPath, state.Stack.CertificateName); err != nil {
-		return err
-	} else if match {
-		c.logger.Println("no updates are to be performed")
-		return nil
-	}
-
-	c.logger.Step("uploading new certificate")
-
-	certificateName, err := certificateNameFor(state.Stack.LBType, c.guidGenerator, state.EnvID)
-	if err != nil {
-		return err
-	}
-
-	err = c.certificateManager.Create(config.certPath, config.keyPath, config.chainPath, certificateName)
-	if err != nil {
-		return err
-	}
-
-	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region, state.EnvID); err != nil {
-		return err
-	}
-
-	c.logger.Step("deleting old certificate")
-	err = c.certificateManager.Delete(state.Stack.CertificateName)
-	if err != nil {
-		return err
-	}
-
-	state.Stack.CertificateName = certificateName
-
-	err = c.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
 	return nil
-}
-
-func (c UpdateLBs) checkCertificateAndChain(certPath string, chainPath string, oldCertName string) (bool, error) {
-	localCertificate, err := ioutil.ReadFile(certPath)
-	if err != nil {
-		return false, err
-	}
-
-	remoteCertificate, err := c.certificateManager.Describe(oldCertName)
-	if err != nil {
-		return false, err
-	}
-
-	if strings.TrimSpace(string(localCertificate)) != strings.TrimSpace(remoteCertificate.Body) {
-		return false, nil
-	}
-
-	if chainPath != "" {
-		localChain, err := ioutil.ReadFile(chainPath)
-		if err != nil {
-			return false, err
-		}
-
-		if strings.TrimSpace(string(localChain)) != strings.TrimSpace(remoteCertificate.Chain) {
-			return false, errors.New("you cannot change the chain after the lb has been created, please delete and re-create the lb with the chain")
-		}
-	}
-
-	return true, nil
 }
 
 func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
@@ -155,6 +99,7 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
+	lbFlags.String(&config.systemDomain, "d", "")
 	lbFlags.Bool(&config.skipIfMissing, "skip-if-missing", "", false)
 
 	err := lbFlags.Parse(subcommandFlags)
@@ -163,23 +108,4 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	}
 
 	return config, nil
-}
-
-func (c UpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion, envID string) error {
-	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
-	if err != nil {
-		return err
-	}
-
-	certificate, err := c.certificateManager.Describe(certificateName)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, envID)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

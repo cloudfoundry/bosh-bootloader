@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +11,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/ssl"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/onsi/gomega/gexec"
+	"github.com/square/certstrap/pkix"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -183,7 +188,7 @@ var _ = Describe("load balancers", func() {
 				Expect(state.LB.SystemDomain).To(Equal("cf.example.com"))
 			})
 
-			It("creates and attaches only a cf lb type when -d is provided", func() {
+			It("creates and attaches only a cf lb type when -d is not provided", func() {
 				args := []string{
 					"--state-dir", tempDirectory,
 					"create-lbs",
@@ -237,6 +242,171 @@ var _ = Describe("load balancers", func() {
 			session := executeCommand(args, 0)
 			stdout := session.Out.Contents()
 			Expect(stdout).To(ContainSubstring(`lb type "concourse" exists, skipping...`))
+		})
+	})
+
+	Describe("update-lbs", func() {
+		var (
+			certPath    string
+			keyPath     string
+			newCertPath string
+			newKeyPath  string
+			cert        []byte
+			key         []byte
+			newCert     []byte
+			newKey      []byte
+		)
+
+		BeforeEach(func() {
+			keyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
+			keyPair, err := keyPairGenerator.Generate("127.0.0.1", "127.0.0.1")
+			Expect(err).NotTo(HaveOccurred())
+			cert = keyPair.Certificate
+			key = keyPair.PrivateKey
+
+			newKeyPair, err := keyPairGenerator.Generate("127.0.0.2", "127.0.0.2")
+			Expect(err).NotTo(HaveOccurred())
+			newCert = newKeyPair.Certificate
+			newKey = newKeyPair.PrivateKey
+
+			certPath = filepath.Join(tempDirectory, "some-cert")
+			err = ioutil.WriteFile(certPath, cert, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath = filepath.Join(tempDirectory, "some-key")
+			err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), key, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			newCertPath = filepath.Join(tempDirectory, "some-new-cert")
+			err = ioutil.WriteFile(newCertPath, newCert, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			newKeyPath = filepath.Join(tempDirectory, "some-new-key")
+			err = ioutil.WriteFile(newKeyPath, newKey, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("when a cf lb exists", func() {
+			BeforeEach(func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "cf",
+					"--cert", certPath,
+					"--key", keyPath,
+				}
+
+				executeCommand(args, 0)
+			})
+
+			It("updates the load balancer with the given cert and key", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"update-lbs",
+					"--cert", newCertPath,
+					"--key", newKeyPath,
+				}
+
+				executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+				Expect(state.LB.Cert).To(Equal(string(newCert)))
+				Expect(state.LB.Key).To(Equal(string(newKey)))
+			})
+
+			It("does nothing if the certificate is unchanged", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"update-lbs",
+					"--cert", certPath,
+					"--key", keyPath,
+				}
+
+				executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+				Expect(state.LB.Cert).To(Equal(string(cert)))
+				Expect(state.LB.Key).To(Equal(string(key)))
+			})
+		})
+
+		It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"update-lbs",
+				"--cert", certPath,
+				"--key", keyPath,
+				"--skip-if-missing",
+			}
+
+			session := executeCommand(args, 0)
+			stdout := session.Out.Contents()
+			Expect(stdout).To(ContainSubstring(`no lb type exists, skipping...`))
+		})
+
+		Context("failure cases", func() {
+			Context("when an lb type does not exist", func() {
+				It("exits 1", func() {
+					args := []string{
+						"--state-dir", tempDirectory,
+						"update-lbs",
+						"--cert", certPath,
+						"--key", keyPath,
+					}
+
+					session := executeCommand(args, 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
+				})
+			})
+
+			Context("when bbl environment is not up", func() {
+				It("exits 1 when the BOSH director does not exist", func() {
+					writeStateJson(storage.State{
+						IAAS: "gcp",
+						GCP: storage.GCP{
+							ProjectID:         "some-project-id",
+							ServiceAccountKey: "some-service-account-key",
+							Region:            "some-region",
+							Zone:              "some-zone",
+						},
+						BOSH: storage.BOSH{
+							DirectorAddress: "127.2.5.4",
+						},
+						LB: storage.LB{
+							Type: "cf",
+						},
+					}, tempDirectory)
+
+					args := []string{
+						"--state-dir", tempDirectory,
+						"update-lbs",
+						"--cert", certPath,
+						"--key", keyPath,
+					}
+
+					session := executeCommand(args, 1)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+				})
+			})
+
+			Context("when bbl-state.json does not exist", func() {
+				It("exits with status 1 and outputs helpful error message", func() {
+					tempDirectory, err := ioutil.TempDir("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					args := []string{
+						"--state-dir", tempDirectory,
+						"update-lbs",
+					}
+
+					session := executeCommand(args, 1)
+					Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+				})
+			})
 		})
 	})
 

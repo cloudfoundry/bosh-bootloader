@@ -328,6 +328,9 @@ var _ = Describe("load balancers", func() {
 							SecretAccessKey: "some-access-secret",
 							Region:          "some-region",
 						},
+						Stack: storage.Stack{
+							LBType: "concourse",
+						},
 					}, tempDirectory)
 					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
 					stderr := session.Err.Contents()
@@ -348,7 +351,8 @@ var _ = Describe("load balancers", func() {
 							Region:          "some-region",
 						},
 						Stack: storage.Stack{
-							Name: "some-stack-name",
+							Name:   "some-stack-name",
+							LBType: "concourse",
 						},
 					}, tempDirectory)
 

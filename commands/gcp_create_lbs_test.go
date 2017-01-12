@@ -349,10 +349,13 @@ resource "google_compute_target_https_proxy" "cf-https-lb-proxy" {
 }
 
 resource "google_compute_ssl_certificate" "cf-cert" {
-  name        = "${var.env_id}-lb-cert"
+  name_prefix = "${var.env_id}-lb-cert"
   description = "user provided ssl private key / ssl certificate pair"
   private_key = "${file(var.ssl_certificate_private_key)}"
   certificate = "${file(var.ssl_certificate)}"
+  lifecycle {
+	create_before_destroy = true
+  }
 }
 
 resource "google_compute_url_map" "cf-https-lb-url-map" {
@@ -1086,7 +1089,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				}, storage.State{
 					IAAS: "gcp",
 				})
-				Expect(err).To(MatchError("error with the director"))
+				Expect(err).To(MatchError(commands.BBLNotFound))
 
 				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
 			})
