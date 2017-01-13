@@ -42,6 +42,7 @@ var _ = Describe("Commands Usage", func() {
   [--cert]            Path to SSL certificate (required when type="cf")
   [--key]             Path to SSL certificate key (required when type="cf")
   [--chain]           Path to SSL certificate chain (optional)
+  [--domain]          Creates a nameserver with a zone for given domain
   [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)`))
 			})
 		})
@@ -57,6 +58,7 @@ var _ = Describe("Commands Usage", func() {
   --cert               Path to SSL certificate
   --key                Path to SSL certificate key
   [--chain]            Path to SSL certificate chain (optional)
+  [--domain]           Updates domain in the nameserver zone
   [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`))
 			})
 		})
