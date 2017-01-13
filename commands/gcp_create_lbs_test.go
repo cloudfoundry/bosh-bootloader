@@ -349,7 +349,7 @@ resource "google_compute_target_https_proxy" "cf-https-lb-proxy" {
 }
 
 resource "google_compute_ssl_certificate" "cf-cert" {
-  name_prefix = "${var.env_id}-lb-cert"
+  name_prefix = "${var.env_id}"
   description = "user provided ssl private key / ssl certificate pair"
   private_key = "${file(var.ssl_certificate_private_key)}"
   certificate = "${file(var.ssl_certificate)}"

@@ -24,9 +24,10 @@ var _ = Describe("GCP Update LBs", func() {
 		state = storage.State{
 			IAAS: "gcp",
 			LB: storage.LB{
-				Type: "cf",
-				Cert: "some-cert",
-				Key:  "some-key",
+				Type:         "cf",
+				Cert:         "some-cert",
+				Key:          "some-key",
+				SystemDomain: "some-system-domain",
 			},
 		}
 	})
@@ -34,16 +35,44 @@ var _ = Describe("GCP Update LBs", func() {
 	Describe("Execute", func() {
 		It("calls out to GCP Create LBs", func() {
 			config := commands.GCPCreateLBsConfig{
-				CertPath: "some-cert-path",
-				KeyPath:  "some-key-path",
-				LBType:   "cf",
+				CertPath:     "some-cert-path",
+				KeyPath:      "some-key-path",
+				LBType:       "cf",
+				SystemDomain: "some-domain",
 			}
 			err := command.Execute(config, state)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(gcpCreateLBs.ExecuteCall.CallCount).To(Equal(1))
-			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).To(Equal(config))
+			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).To(Equal(commands.GCPCreateLBsConfig{
+				CertPath:     "some-cert-path",
+				KeyPath:      "some-key-path",
+				LBType:       "cf",
+				SystemDomain: "some-domain",
+			}))
 			Expect(gcpCreateLBs.ExecuteCall.Receives.State).To(Equal(state))
+		})
+
+		Context("when config does not contain system domain", func() {
+			It("passes system domain from the state", func() {
+				config := commands.GCPCreateLBsConfig{
+					CertPath:     "some-cert-path",
+					KeyPath:      "some-key-path",
+					LBType:       "cf",
+					SystemDomain: "",
+				}
+				err := command.Execute(config, state)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gcpCreateLBs.ExecuteCall.CallCount).To(Equal(1))
+				Expect(gcpCreateLBs.ExecuteCall.Receives.Config).To(Equal(commands.GCPCreateLBsConfig{
+					CertPath:     "some-cert-path",
+					KeyPath:      "some-key-path",
+					LBType:       "cf",
+					SystemDomain: "some-system-domain",
+				}))
+				Expect(gcpCreateLBs.ExecuteCall.Receives.State).To(Equal(state))
+			})
 		})
 	})
 })

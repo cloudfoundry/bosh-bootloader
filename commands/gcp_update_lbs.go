@@ -13,5 +13,9 @@ func NewGCPUpdateLBs(gcpCreateLBs gcpCreateLBs) GCPUpdateLBs {
 }
 
 func (g GCPUpdateLBs) Execute(config GCPCreateLBsConfig, state storage.State) error {
+	if config.SystemDomain == "" {
+		config.SystemDomain = state.LB.SystemDomain
+	}
+
 	return g.gcpCreateLBs.Execute(config, state)
 }
