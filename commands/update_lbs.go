@@ -11,7 +11,7 @@ type updateLBConfig struct {
 	certPath      string
 	keyPath       string
 	chainPath     string
-	systemDomain  string
+	domain        string
 	skipIfMissing bool
 }
 
@@ -72,10 +72,10 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 	switch state.IAAS {
 	case "gcp":
 		if err := c.gcpUpdateLBs.Execute(GCPCreateLBsConfig{
-			LBType:       state.LB.Type,
-			CertPath:     config.certPath,
-			KeyPath:      config.keyPath,
-			SystemDomain: config.systemDomain,
+			LBType:   state.LB.Type,
+			CertPath: config.certPath,
+			KeyPath:  config.keyPath,
+			Domain:   config.domain,
 		}, state); err != nil {
 			return err
 		}
@@ -99,7 +99,7 @@ func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
-	lbFlags.String(&config.systemDomain, "d", "")
+	lbFlags.String(&config.domain, "domain", "")
 	lbFlags.Bool(&config.skipIfMissing, "skip-if-missing", "", false)
 
 	err := lbFlags.Parse(subcommandFlags)

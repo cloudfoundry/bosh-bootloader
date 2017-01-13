@@ -47,7 +47,7 @@ var _ = Describe("create-lbs", func() {
 				"--type", "cf",
 				"--cert", "my-cert",
 				"--key", "my-key",
-				"-d", "some-system-domain",
+				"--domain", "some-domain",
 				"--skip-if-exists",
 			}, storage.State{
 				IAAS: "gcp",
@@ -57,7 +57,7 @@ var _ = Describe("create-lbs", func() {
 				LBType:       "cf",
 				CertPath:     "my-cert",
 				KeyPath:      "my-key",
-				SystemDomain: "some-system-domain",
+				Domain:       "some-domain",
 				SkipIfExists: true,
 			}))
 		})

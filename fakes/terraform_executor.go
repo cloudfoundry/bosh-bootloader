@@ -4,16 +4,16 @@ type TerraformExecutor struct {
 	ApplyCall struct {
 		CallCount int
 		Receives  struct {
-			Credentials  string
-			EnvID        string
-			ProjectID    string
-			Zone         string
-			Region       string
-			Cert         string
-			Key          string
-			SystemDomain string
-			Template     string
-			TFState      string
+			Credentials string
+			EnvID       string
+			ProjectID   string
+			Zone        string
+			Region      string
+			Cert        string
+			Key         string
+			Domain      string
+			Template    string
+			TFState     string
 		}
 		Returns struct {
 			TFState string
@@ -38,7 +38,7 @@ type TerraformExecutor struct {
 	}
 }
 
-func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, cert, key, systemDomain, template, tfState string) (string, error) {
+func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, cert, key, domain, template, tfState string) (string, error) {
 	t.ApplyCall.CallCount++
 	t.ApplyCall.Receives.Credentials = credentials
 	t.ApplyCall.Receives.EnvID = envID
@@ -47,7 +47,7 @@ func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, c
 	t.ApplyCall.Receives.Region = region
 	t.ApplyCall.Receives.Cert = cert
 	t.ApplyCall.Receives.Key = key
-	t.ApplyCall.Receives.SystemDomain = systemDomain
+	t.ApplyCall.Receives.Domain = domain
 	t.ApplyCall.Receives.Template = template
 	t.ApplyCall.Receives.TFState = tfState
 	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error

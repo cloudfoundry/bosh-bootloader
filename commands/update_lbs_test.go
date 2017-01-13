@@ -66,7 +66,7 @@ var _ = Describe("Update LBs", func() {
 			err := command.Execute([]string{
 				"--cert", "my-cert",
 				"--key", "my-key",
-				"-d", "some-system-domain",
+				"--domain", "some-domain",
 			}, storage.State{
 				IAAS: "gcp",
 				LB: storage.LB{
@@ -75,10 +75,10 @@ var _ = Describe("Update LBs", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(gcpUpdateLBs.ExecuteCall.Receives.Config).To(Equal(commands.GCPCreateLBsConfig{
-				LBType:       "cf",
-				CertPath:     "my-cert",
-				KeyPath:      "my-key",
-				SystemDomain: "some-system-domain",
+				LBType:   "cf",
+				CertPath: "my-cert",
+				KeyPath:  "my-key",
+				Domain:   "some-domain",
 			}))
 		})
 

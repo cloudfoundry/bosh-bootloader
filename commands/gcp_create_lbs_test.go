@@ -642,10 +642,10 @@ var _ = Describe("GCPCreateLBs", func() {
 					zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
 
 					err := command.Execute(commands.GCPCreateLBsConfig{
-						LBType:       "cf",
-						CertPath:     certPath,
-						KeyPath:      keyPath,
-						SystemDomain: "some-system-domain",
+						LBType:   "cf",
+						CertPath: certPath,
+						KeyPath:  keyPath,
+						Domain:   "some-domain",
 					}, storage.State{
 						IAAS:    "gcp",
 						EnvID:   "some-env-id",
@@ -668,7 +668,7 @@ var _ = Describe("GCPCreateLBs", func() {
 					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
 					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(certificate))
 					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(key))
-					Expect(terraformExecutor.ApplyCall.Receives.SystemDomain).To(Equal("some-system-domain"))
+					Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal("some-domain"))
 					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(strings.Join([]string{expectedCFTemplate, dnsTemplate}, "\n")))
 
 					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
@@ -703,7 +703,7 @@ var _ = Describe("GCPCreateLBs", func() {
 					Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("some-region"))
 					Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(certificate))
 					Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(key))
-					Expect(terraformExecutor.ApplyCall.Receives.SystemDomain).To(Equal(""))
+					Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal(""))
 					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
 					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
 				})

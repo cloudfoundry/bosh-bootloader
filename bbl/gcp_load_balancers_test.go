@@ -166,14 +166,14 @@ var _ = Describe("load balancers", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("creates and attaches a cf lb type and dns when -d is provided", func() {
+			It("creates and attaches a cf lb type and ns when domain is provided", func() {
 				args := []string{
 					"--state-dir", tempDirectory,
 					"create-lbs",
 					"--type", "cf",
 					"--cert", certPath,
 					"--key", keyPath,
-					"-d", "cf.example.com",
+					"--domain", "cf.example.com",
 				}
 
 				executeCommand(args, 0)
@@ -185,10 +185,10 @@ var _ = Describe("load balancers", func() {
 				Expect(state.LB.Type).To(Equal("cf"))
 				Expect(state.LB.Cert).To(Equal("cert-contents"))
 				Expect(state.LB.Key).To(Equal("key-contents"))
-				Expect(state.LB.SystemDomain).To(Equal("cf.example.com"))
+				Expect(state.LB.Domain).To(Equal("cf.example.com"))
 			})
 
-			It("creates and attaches only a cf lb type when -d is not provided", func() {
+			It("creates and attaches only a cf lb type when domain is not provided", func() {
 				args := []string{
 					"--state-dir", tempDirectory,
 					"create-lbs",
@@ -206,7 +206,7 @@ var _ = Describe("load balancers", func() {
 				Expect(state.LB.Type).To(Equal("cf"))
 				Expect(state.LB.Cert).To(Equal("cert-contents"))
 				Expect(state.LB.Key).To(Equal("key-contents"))
-				Expect(state.LB.SystemDomain).To(Equal(""))
+				Expect(state.LB.Domain).To(Equal(""))
 			})
 		})
 

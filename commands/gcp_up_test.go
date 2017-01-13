@@ -618,10 +618,10 @@ var _ = Describe("gcp up", func() {
 				Region:                "some-region",
 			}, storage.State{
 				LB: storage.LB{
-					Type:         "cf",
-					Cert:         "some-cert",
-					Key:          "some-key",
-					SystemDomain: "some-system-domain",
+					Type:   "cf",
+					Cert:   "some-cert",
+					Key:    "some-key",
+					Domain: "some-domain",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -630,7 +630,7 @@ var _ = Describe("gcp up", func() {
 			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
 			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
 			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
-			Expect(terraformExecutor.ApplyCall.Receives.SystemDomain).To(Equal("some-system-domain"))
+			Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal("some-domain"))
 		})
 
 		It("applies the correct concourse template and args for concourse lb type", func() {
@@ -650,7 +650,7 @@ var _ = Describe("gcp up", func() {
 			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
 			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(""))
 			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(""))
-			Expect(terraformExecutor.ApplyCall.Receives.SystemDomain).To(Equal(""))
+			Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal(""))
 		})
 	})
 

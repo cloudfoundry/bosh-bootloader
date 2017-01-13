@@ -26,7 +26,7 @@ type GCPCreateLBsConfig struct {
 	LBType       string
 	CertPath     string
 	KeyPath      string
-	SystemDomain string
+	Domain       string
 	SkipIfExists bool
 }
 
@@ -69,7 +69,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	case "cf":
 		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
 		instanceGroups := generateInstanceGroups(zones)
-		if config.SystemDomain != "" {
+		if config.Domain != "" {
 			lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
 		} else {
 			lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
@@ -88,7 +88,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
 	tfState, err := c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-		state.GCP.Region, string(cert), string(key), config.SystemDomain, templateWithLB, state.TFState)
+		state.GCP.Region, string(cert), string(key), config.Domain, templateWithLB, state.TFState)
 	switch err.(type) {
 	case terraform.TerraformApplyError:
 		taError := err.(terraform.TerraformApplyError)
@@ -181,7 +181,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	if config.LBType == "cf" {
 		state.LB.Cert = string(cert)
 		state.LB.Key = string(key)
-		state.LB.SystemDomain = config.SystemDomain
+		state.LB.Domain = config.Domain
 	}
 
 	if err := c.stateStore.Set(state); err != nil {
