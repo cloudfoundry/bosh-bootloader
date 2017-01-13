@@ -38,14 +38,14 @@ func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	if config.skipIfMissing && !lbExists(state.Stack.LBType) {
-		d.logger.Println("no lb type exists, skipping...")
-		return nil
-	}
-
 	err = d.stateValidator.Validate()
 	if err != nil {
 		return err
+	}
+
+	if config.skipIfMissing && !lbExists(state.Stack.LBType) && !lbExists(state.LB.Type) {
+		d.logger.Println("no lb type exists, skipping...")
+		return nil
 	}
 
 	switch state.IAAS {

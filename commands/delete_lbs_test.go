@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -35,11 +36,17 @@ var _ = Describe("DeleteLBs", func() {
 			It("calls gcp delete lbs", func() {
 				err := command.Execute([]string{}, storage.State{
 					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
 				Expect(gcpDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
 					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
 				}))
 				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
 			})
@@ -49,28 +56,71 @@ var _ = Describe("DeleteLBs", func() {
 			It("calls aws delete lbs", func() {
 				err := command.Execute([]string{}, storage.State{
 					IAAS: "aws",
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
 				Expect(awsDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
 					IAAS: "aws",
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
 				}))
 				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
 			})
 		})
 
 		Context("when --skip-if-missing is provided", func() {
-			It("no-ops when lb does not exist", func() {
+			DescribeTable("no-ops", func(state storage.State) {
 				err := command.Execute([]string{
 					"--skip-if-missing",
-				}, storage.State{})
+				}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
 				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
 
 				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
-			})
+			},
+				Entry("no-ops when LB type does not exist in state stack", storage.State{
+					Stack: storage.Stack{
+						LBType: "",
+					},
+				}),
+				Entry("no-ops when LB type does not exist in state LB", storage.State{
+					LB: storage.LB{
+						Type: "",
+					},
+				}),
+			)
+
+			DescribeTable("deletes the LB", func(state storage.State) {
+				err := command.Execute([]string{
+					"--skip-if-missing",
+				}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				if state.IAAS == "aws" {
+					Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
+				} else {
+					Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
+				}
+			},
+				Entry("deletes the LB when LB type exists in state stack", storage.State{
+					IAAS: "aws",
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
+				}),
+				Entry("deletes the LB when LB type exists in state LB", storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				}),
+			)
 		})
 
 		Context("failure cases", func() {
