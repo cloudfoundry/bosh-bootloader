@@ -40,7 +40,6 @@ func (b BBL) Up(iaas IAAS) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"up",
-		"--name", "bbl-ci-env",
 	}
 
 	switch iaas {
