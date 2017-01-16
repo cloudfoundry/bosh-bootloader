@@ -5,6 +5,7 @@ import (
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -37,6 +38,7 @@ var _ = Describe("up test", func() {
 			envID           string
 			directorAddress string
 			caCertPath      string
+			urlToSSLCert    string
 		)
 
 		By("calling bbl up", func() {
@@ -71,21 +73,70 @@ var _ = Describe("up test", func() {
 		})
 
 		By("creating a load balancer", func() {
-			bbl.CreateGCPLB("concourse")
+			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
+
+			chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+			Expect(err).NotTo(HaveOccurred())
+
+			bbl.CreateLB("cf", certPath, keyPath, chainPath)
 		})
 
-		By("checking that the target pool exists", func() {
-			targetPool, err := gcp.GetTargetPool(envID + "-concourse")
+		By("confirming that target pools exists", func() {
+			targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
+			for _, p := range targetPools {
+				targetPool, err := gcp.GetTargetPool(p)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(targetPool.Name).NotTo(BeNil())
+				Expect(targetPool.Name).To(Equal(p))
+			}
+
+			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(envID + "-https-proxy")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(targetPool.Name).NotTo(BeNil())
-			Expect(targetPool.Name).To(Equal(envID + "-concourse"))
+
+			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
+			urlToSSLCert = targetHTTPSProxy.SslCertificates[0]
+		})
+
+		By("updating the load balancer", func() {
+			otherCertPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
+
+			otherKeyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
+
+			bbl.UpdateLB(otherCertPath, otherKeyPath)
+		})
+
+		By("confirming that the cert gets updated", func() {
+			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(envID + "-https-proxy")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
+			Expect(targetHTTPSProxy.SslCertificates[0]).NotTo(BeEmpty())
+			Expect(targetHTTPSProxy.SslCertificates[0]).NotTo(Equal(urlToSSLCert))
+		})
+
+		By("deleting lbs", func() {
+			bbl.DeleteLBs()
+		})
+
+		By("confirming that the target pools do not exist", func() {
+			targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
+			for _, p := range targetPools {
+				_, err := gcp.GetTargetPool(p)
+				Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + p + `' was not found`)))
+			}
 		})
 
 		By("calling bbl destroy", func() {
 			bbl.Destroy()
 		})
 
-		By("checking the ssh key does not exist", func() {
+		By("confirming the ssh key does not exist", func() {
 			actualSSHKeys, err := gcp.SSHKey()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualSSHKeys).NotTo(ContainSubstring(expectedSSHKey))
@@ -118,13 +169,8 @@ var _ = Describe("up test", func() {
 		})
 
 		By("checking that the health service monitor does not exist", func() {
-			healthCheck, _ := gcp.GetHealthCheck(envID + "-concourse")
+			healthCheck, _ := gcp.GetHealthCheck(envID + "-cf")
 			Expect(healthCheck).To(BeNil())
-		})
-
-		By("checking that the target pool does not exists", func() {
-			targetPool, _ := gcp.GetTargetPool(envID + "-concourse")
-			Expect(targetPool).To(BeNil())
 		})
 	})
 })

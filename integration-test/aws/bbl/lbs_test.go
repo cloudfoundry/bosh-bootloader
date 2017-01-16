@@ -83,7 +83,7 @@ var _ = Describe("load balancer tests", func() {
 		stdout := session.Out.Contents()
 		Expect(stdout).To(ContainSubstring(fmt.Sprintf("Concourse LB: %s", aws.LoadBalancers(stackName)["ConcourseLoadBalancer"])))
 
-		bbl.DeleteLB()
+		bbl.DeleteLBs()
 		Expect(aws.LoadBalancers(stackName)).NotTo(HaveKey("ConcourseLoadBalancer"))
 		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(BeEmpty())
 

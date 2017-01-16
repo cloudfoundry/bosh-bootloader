@@ -170,7 +170,7 @@ func (b BBL) UpdateLB(certPath, keyPath string) {
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
-func (b BBL) DeleteLB() {
+func (b BBL) DeleteLBs() {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"delete-lbs",

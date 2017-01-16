@@ -116,6 +116,10 @@ func (g GCP) GetTargetPool(targetPoolName string) (*compute.TargetPool, error) {
 	return g.service.TargetPools.Get(g.projectID, g.region, targetPoolName).Do()
 }
 
+func (g GCP) GetTargetHTTPSProxy(name string) (*compute.TargetHttpsProxy, error) {
+	return g.service.TargetHttpsProxies.Get(g.projectID, name).Do()
+}
+
 func (g GCP) GetHealthCheck(healthCheckName string) (*compute.HttpHealthCheck, error) {
 	return g.service.HttpHealthChecks.Get(g.projectID, healthCheckName).Do()
 }
