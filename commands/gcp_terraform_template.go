@@ -186,6 +186,10 @@ output "tcp_router_lb_ip" {
     value = "${google_compute_address.cf-tcp-router.address}"
 }
 
+output "ws_lb_ip" {
+    value = "${google_compute_address.cf-ws.address}"
+}
+
 resource "google_compute_firewall" "firewall-cf" {
   name       = "${var.env_id}-cf-open"
   depends_on = ["google_compute_network.bbl-network"]
@@ -351,6 +355,36 @@ resource "google_compute_forwarding_rule" "cf-tcp-router" {
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-tcp-router.address}"
 }
+
+output "ws_target_pool" {
+  value = "${google_compute_target_pool.cf-ws.name}"
+}
+
+resource "google_compute_address" "cf-ws" {
+  name = "${var.env_id}-cf-ws"
+}
+
+resource "google_compute_target_pool" "cf-ws" {
+  name = "${var.env_id}-cf-ws"
+
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
+}
+
+resource "google_compute_forwarding_rule" "cf-ws-https" {
+  name        = "${var.env_id}-cf-ws-https"
+  target      = "${google_compute_target_pool.cf-ws.self_link}"
+  port_range  = "443"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-ws.address}"
+}
+
+resource "google_compute_forwarding_rule" "cf-ws-http" {
+  name        = "${var.env_id}-cf-ws-http"
+  target      = "${google_compute_target_pool.cf-ws.self_link}"
+  port_range  = "80"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-ws.address}"
+}
 `
 
 const terraformCFDNSTemplate = `
@@ -406,5 +440,38 @@ resource "google_dns_record_set" "tcp-dns" {
   managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
 
   rrdatas = ["${google_compute_address.cf-tcp-router.address}"]
+}
+
+resource "google_dns_record_set" "doppler-dns" {
+  name       = "doppler.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ws"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ws.address}"]
+}
+
+resource "google_dns_record_set" "loggregator-dns" {
+  name       = "loggregator.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ws"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ws.address}"]
+}
+
+resource "google_dns_record_set" "wildcard-ws-dns" {
+  name       = "*.ws.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ws"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ws.address}"]
 }
 `

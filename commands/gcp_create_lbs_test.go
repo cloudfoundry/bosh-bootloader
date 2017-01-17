@@ -302,6 +302,10 @@ output "tcp_router_lb_ip" {
     value = "${google_compute_address.cf-tcp-router.address}"
 }
 
+output "ws_lb_ip" {
+    value = "${google_compute_address.cf-ws.address}"
+}
+
 resource "google_compute_firewall" "firewall-cf" {
   name       = "${var.env_id}-cf-open"
   depends_on = ["google_compute_network.bbl-network"]
@@ -468,6 +472,36 @@ resource "google_compute_forwarding_rule" "cf-tcp-router" {
   ip_address  = "${google_compute_address.cf-tcp-router.address}"
 }
 
+output "ws_target_pool" {
+  value = "${google_compute_target_pool.cf-ws.name}"
+}
+
+resource "google_compute_address" "cf-ws" {
+  name = "${var.env_id}-cf-ws"
+}
+
+resource "google_compute_target_pool" "cf-ws" {
+  name = "${var.env_id}-cf-ws"
+
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
+}
+
+resource "google_compute_forwarding_rule" "cf-ws-https" {
+  name        = "${var.env_id}-cf-ws-https"
+  target      = "${google_compute_target_pool.cf-ws.self_link}"
+  port_range  = "443"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-ws.address}"
+}
+
+resource "google_compute_forwarding_rule" "cf-ws-http" {
+  name        = "${var.env_id}-cf-ws-http"
+  target      = "${google_compute_target_pool.cf-ws.self_link}"
+  port_range  = "80"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.cf-ws.address}"
+}
+
 resource "google_compute_instance_group" "router-lb-0" {
   name        = "${var.env_id}-router-some-zone"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"
@@ -552,6 +586,39 @@ resource "google_dns_record_set" "tcp-dns" {
   managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
 
   rrdatas = ["${google_compute_address.cf-tcp-router.address}"]
+}
+
+resource "google_dns_record_set" "doppler-dns" {
+  name       = "doppler.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ws"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ws.address}"]
+}
+
+resource "google_dns_record_set" "loggregator-dns" {
+  name       = "loggregator.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ws"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ws.address}"]
+}
+
+resource "google_dns_record_set" "wildcard-ws-dns" {
+  name       = "*.ws.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.cf-ws"]
+  type       = "A"
+  ttl        = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.cf-ws.address}"]
 }
 `
 
@@ -785,11 +852,13 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("when creating a cf lb", func() {
-			It("creates a cloud-config with router-lb, ssh-proxy-lb, and cf-tcp-router-network-properties vm extensions", func() {
+			It("creates a cloud-config with router-lb, ssh-proxy-lb, cf-ws and cf-tcp-router-network-properties vm extensions", func() {
 				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
 					switch output {
 					case "router_backend_service":
 						return "env-id-cf-https-lb", nil
+					case "ws_target_pool":
+						return "env-id-cf-ws", nil
 					case "ssh_proxy_target_pool":
 						return "env-id-cf-ssh-proxy-lb", nil
 					case "tcp_router_target_pool":
@@ -816,11 +885,12 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformOutputter.GetCall.CallCount).To(Equal(6))
+				Expect(terraformOutputter.GetCall.CallCount).To(Equal(7))
 				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("env-id-cf-https-lb"))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("env-id-cf-ssh-proxy-lb"))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.TCPRouter).To(Equal("env-id-cf-tcp-router-network-properties"))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.WS).To(Equal("env-id-cf-ws"))
 
 				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
 					"generating cloud config", "applying cloud config",
@@ -1025,7 +1095,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(err).To(MatchError("failed to save state"))
 			})
 
-			DescribeTable("returns an error when we fail to get an output", func(outputName string) {
+			DescribeTable("returns an error when we fail to get an output", func(outputName, lbType string) {
 				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
 					if output == outputName {
 						return "", errors.New("failed to get output")
@@ -1034,14 +1104,20 @@ var _ = Describe("GCPCreateLBs", func() {
 				}
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
+					LBType:   lbType,
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, storage.State{IAAS: "gcp"})
 				Expect(err).To(MatchError("failed to get output"))
 			},
-				Entry("failed to get network_name", "network_name"),
-				Entry("failed to get subnetwork_name", "subnetwork_name"),
-				Entry("failed to get internal_tag_name", "internal_tag_name"),
-				Entry("failed to get concourse_target_pool", "concourse_target_pool"),
+				Entry("failed to get network_name", "network_name", "cf"),
+				Entry("failed to get subnetwork_name", "subnetwork_name", "cf"),
+				Entry("failed to get internal_tag_name", "internal_tag_name", "cf"),
+				Entry("failed to get concourse_target_pool", "concourse_target_pool", "concourse"),
+				Entry("failed to get router_backend_service", "router_backend_service", "cf"),
+				Entry("failed to get ssh_proxy_target_pool", "ssh_proxy_target_pool", "cf"),
+				Entry("failed to get tcp_router_target_pool", "tcp_router_target_pool", "cf"),
+				Entry("failed to get ws_target_pool", "ws_target_pool", "cf"),
 			)
 
 			It("returns an error when the cloud config fails to be generated", func() {

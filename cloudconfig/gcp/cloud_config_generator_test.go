@@ -74,6 +74,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 					Router:    "router-backend-service",
 					SSHProxy:  "ssh-proxy-target-pool",
 					TCPRouter: "tcp-router-target-pool",
+					WS:        "ws-target-pool",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())

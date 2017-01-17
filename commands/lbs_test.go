@@ -137,6 +137,8 @@ var _ = Describe("LBs", func() {
 						return "some-tcp-router-lb-ip", nil
 					case "concourse_lb_ip":
 						return "some-concourse-lb-ip", nil
+					case "ws_lb_ip":
+						return "some-ws-lb-ip", nil
 					default:
 						return "", nil
 					}
@@ -157,6 +159,7 @@ var _ = Describe("LBs", func() {
 				Expect(stdout.String()).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
 				Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
 				Expect(stdout.String()).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
+				Expect(stdout.String()).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
 			})
 
 			It("prints LB ips for lb type concourse", func() {
@@ -217,6 +220,22 @@ var _ = Describe("LBs", func() {
 					}
 					err := lbsCommand.Execute([]string{}, incomingState)
 					Expect(err).To(MatchError("failed to return tcp_router_lb_ip"))
+				})
+
+				It("returns an error when terraform outputter fails to return ws_lb_ip", func() {
+					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+						switch output {
+						case "ws_lb_ip":
+							return "", errors.New("failed to return ws_lb_ip")
+						default:
+							return "", nil
+						}
+					}
+					incomingState.LB = storage.LB{
+						Type: "cf",
+					}
+					err := lbsCommand.Execute([]string{}, incomingState)
+					Expect(err).To(MatchError("failed to return ws_lb_ip"))
 				})
 
 				It("returns an error when terraform outputter fails to return concourse_lb_ip", func() {

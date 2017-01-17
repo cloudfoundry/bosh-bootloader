@@ -75,9 +75,15 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 				return err
 			}
 
+			webSocketLB, err := c.terraformOutputter.Get(state.TFState, "ws_lb_ip")
+			if err != nil {
+				return err
+			}
+
 			fmt.Fprintf(c.stdout, "CF Router LB: %s\n", routerLB)
 			fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", sshProxyLB)
 			fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", tcpRouterLB)
+			fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", webSocketLB)
 		case "concourse":
 			concourseLB, err := c.terraformOutputter.Get(state.TFState, "concourse_lb_ip")
 			if err != nil {

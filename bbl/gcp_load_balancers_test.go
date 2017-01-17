@@ -81,6 +81,8 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("ssh-proxy-target-pool"))
 			case "/output/tcp_router_target_pool":
 				responseWriter.Write([]byte("tcp-router-target-pool"))
+			case "/output/ws_target_pool":
+				responseWriter.Write([]byte("ws-target-pool"))
 			case "/output/router_lb_ip":
 				responseWriter.Write([]byte("some-router-lb-ip"))
 			case "/output/ssh_proxy_lb_ip":
@@ -89,6 +91,8 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("some-tcp-router-lb-ip"))
 			case "/output/concourse_lb_ip":
 				responseWriter.Write([]byte("some-concourse-lb-ip"))
+			case "/output/ws_lb_ip":
+				responseWriter.Write([]byte("some-ws-lb-ip"))
 			}
 		}))
 
@@ -519,6 +523,7 @@ var _ = Describe("load balancers", func() {
 				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
+				Expect(stdout).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
 			})
 		})
 

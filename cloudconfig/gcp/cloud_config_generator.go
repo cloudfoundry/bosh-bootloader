@@ -17,6 +17,7 @@ type CFBackends struct {
 	Router    string
 	SSHProxy  string
 	TCPRouter string
+	WS        string
 }
 
 type VMExtension struct {
@@ -75,7 +76,8 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 			Name: "cf-router-network-properties",
 			CloudProperties: VMExtensionCloudProperties{
 				BackendService: input.CFBackends.Router,
-				Tags:           []string{input.CFBackends.Router},
+				TargetPool:     input.CFBackends.WS,
+				Tags:           []string{input.CFBackends.Router, input.CFBackends.WS},
 			},
 		})
 	}
