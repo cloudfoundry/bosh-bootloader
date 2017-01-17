@@ -16,6 +16,7 @@ type CommandLineConfiguration struct {
 	SubcommandFlags  []string
 	EndpointOverride string
 	StateDir         string
+	Debug            bool
 
 	help    bool
 	version bool
@@ -86,6 +87,7 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 
 	globalFlags.String(&commandLineConfiguration.EndpointOverride, "endpoint-override", "")
 	globalFlags.String(&commandLineConfiguration.StateDir, "state-dir", "")
+	globalFlags.Bool(&commandLineConfiguration.Debug, "d", "debug", false)
 
 	globalFlags.Bool(&commandLineConfiguration.help, "h", "help", false)
 	globalFlags.Bool(&commandLineConfiguration.version, "v", "version", false)

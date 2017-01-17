@@ -5,6 +5,7 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 type GlobalConfiguration struct {
 	EndpointOverride string
 	StateDir         string
+	Debug            bool
 }
 
 type StringSlice []string

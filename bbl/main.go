@@ -161,7 +161,7 @@ func main() {
 
 	// Terraform
 	terraformCmd := terraform.NewCmd(os.Stderr)
-	terraformExecutor := terraform.NewExecutor(terraformCmd)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
 	terraformOutputter := terraform.NewOutputter(terraformCmd)
 
 	// BOSH

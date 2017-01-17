@@ -37,6 +37,7 @@ var _ = Describe("ConfigurationParser", func() {
 				SubcommandFlags:  []string{"--some-flag", "some-value"},
 				StateDir:         "some/state/dir",
 				EndpointOverride: "some-endpoint-override",
+				Debug:            true,
 			}
 			configuration, err := configurationParser.Parse([]string{"up"})
 			Expect(err).NotTo(HaveOccurred())
@@ -46,6 +47,7 @@ var _ = Describe("ConfigurationParser", func() {
 			Expect(configuration.Global).To(Equal(application.GlobalConfiguration{
 				EndpointOverride: "some-endpoint-override",
 				StateDir:         "some/state/dir",
+				Debug:            true,
 			}))
 
 			Expect(commandLineParser.ParseCall.Receives.Arguments).To(Equal([]string{"up"}))

@@ -36,6 +36,7 @@ var _ = Describe("CommandLineParser", func() {
 			args := []string{
 				"--endpoint-override=some-endpoint-override",
 				"--state-dir", "some/state/dir",
+				"--debug",
 				"up",
 				"--subcommand-flag", "some-value",
 			}
@@ -44,6 +45,7 @@ var _ = Describe("CommandLineParser", func() {
 
 			Expect(commandLineConfiguration.EndpointOverride).To(Equal("some-endpoint-override"))
 			Expect(commandLineConfiguration.StateDir).To(Equal("some/state/dir"))
+			Expect(commandLineConfiguration.Debug).To(BeTrue())
 		})
 
 		It("returns a command line configuration with correct command with subcommand flags based on arguments passed in", func() {

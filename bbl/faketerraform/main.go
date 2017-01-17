@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -44,7 +45,17 @@ func main() {
 	}
 
 	if os.Args[1] == "apply" || os.Args[1] == "destroy" {
-		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), os.ModePerm)
+		postArgs, err := json.Marshal(os.Args[1:])
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = http.Post(fmt.Sprintf("%s/args", backendURL), "application/json", strings.NewReader(string(postArgs)))
+		if err != nil {
+			panic(err)
+		}
+
+		err = ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), os.ModePerm)
 		if err != nil {
 			panic(err)
 		}

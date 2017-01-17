@@ -15,11 +15,14 @@ func NewCmd(stderr io.Writer) Cmd {
 	}
 }
 
-func (cmd Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+func (cmd Cmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
 	runCommand := exec.Command("terraform", args...)
 	runCommand.Dir = workingDirectory
-	runCommand.Stdout = stdout
-	runCommand.Stderr = cmd.stderr
+
+	if debug {
+		runCommand.Stdout = stdout
+		runCommand.Stderr = cmd.stderr
+	}
 
 	return runCommand.Run()
 }

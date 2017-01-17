@@ -28,7 +28,7 @@ func (o Outputter) Get(tfState, outputName string) (string, error) {
 
 	args := []string{"output", outputName}
 	buffer := bytes.NewBuffer([]byte{})
-	err = o.cmd.Run(buffer, templateDir, args)
+	err = o.cmd.Run(buffer, templateDir, args, true)
 	if err != nil {
 		return "", err
 	}

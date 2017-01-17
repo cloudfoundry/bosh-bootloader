@@ -215,6 +215,7 @@ var _ = Describe("bbl up gcp", func() {
 	It("calls out to terraform", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
+			"--debug",
 			"up",
 			"--iaas", "gcp",
 			"--gcp-service-account-key", serviceAccountKeyPath,

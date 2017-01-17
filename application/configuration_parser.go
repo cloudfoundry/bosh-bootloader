@@ -32,6 +32,7 @@ func (p ConfigurationParser) Parse(arguments []string) (Configuration, error) {
 		Global: GlobalConfiguration{
 			StateDir:         commandLineConfiguration.StateDir,
 			EndpointOverride: commandLineConfiguration.EndpointOverride,
+			Debug:            commandLineConfiguration.Debug,
 		},
 		Command:         commandLineConfiguration.Command,
 		SubcommandFlags: commandLineConfiguration.SubcommandFlags,

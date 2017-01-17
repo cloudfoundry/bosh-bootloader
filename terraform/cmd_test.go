@@ -2,7 +2,9 @@ package terraform_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,6 +31,9 @@ var _ = Describe("Cmd", func() {
 		pathToTerraform            string
 		fastFailTerraform          bool
 		fastFailTerraformMutex     sync.Mutex
+
+		terraformArgs      []string
+		terraformArgsMutex sync.Mutex
 	)
 
 	var setFastFailTerraform = func(on bool) {
@@ -53,6 +58,20 @@ var _ = Describe("Cmd", func() {
 			if getFastFailTerraform() {
 				responseWriter.WriteHeader(http.StatusInternalServerError)
 			}
+
+			if request.Method == "POST" {
+				terraformArgsMutex.Lock()
+				defer terraformArgsMutex.Unlock()
+				body, err := ioutil.ReadAll(request.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				err = json.Unmarshal(body, &terraformArgs)
+				if err != nil {
+					panic(err)
+				}
+			}
 		}))
 
 		var err error
@@ -68,7 +87,19 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("runs terraform with args", func() {
-		err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"})
+		err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"}, false)
+		Expect(err).NotTo(HaveOccurred())
+
+		terraformArgsMutex.Lock()
+		defer terraformArgsMutex.Unlock()
+		Expect(terraformArgs).To(Equal([]string{"apply", "some-arg"}))
+
+		Expect(stdout).NotTo(MatchRegexp("working directory: (.*)/tmp"))
+		Expect(stdout).NotTo(ContainSubstring("apply some-arg"))
+	})
+
+	It("redirects command stdout to provided stdout when debug is true", func() {
+		err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"}, true)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(stdout).To(MatchRegexp("working directory: (.*)/tmp"))
@@ -85,9 +116,12 @@ var _ = Describe("Cmd", func() {
 		})
 
 		It("returns an error when terraform fails", func() {
-			err := cmd.Run(stdout, "", []string{"fast-fail"})
+			err := cmd.Run(stdout, "", []string{"fast-fail"}, false)
 			Expect(err).To(MatchError("exit status 1"))
+		})
 
+		It("redirects command stderr to provided stderr when debug is true", func() {
+			_ = cmd.Run(stdout, "", []string{"fast-fail"}, true)
 			Expect(stderr).To(ContainSubstring("failed to terraform"))
 		})
 	})

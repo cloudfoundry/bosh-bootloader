@@ -56,6 +56,7 @@ var _ = Describe("Outputter", func() {
 
 		Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
 		Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip"}))
+		Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 	})
 
 	Context("failure cases", func() {

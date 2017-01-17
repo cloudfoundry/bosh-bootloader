@@ -25,7 +25,7 @@ var _ = Describe("Executor", func() {
 	BeforeEach(func() {
 		cmd = &fakes.TerraformCmd{}
 
-		executor = terraform.NewExecutor(cmd)
+		executor = terraform.NewExecutor(cmd, true)
 
 		terraform.SetTempDir(func(dir, prefix string) (string, error) {
 			var err error
@@ -151,6 +151,7 @@ var _ = Describe("Executor", func() {
 				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
 				"-var", "system_domain=some-domain",
 			}))
+			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
 		It("reads and returns the terraform state written by the command", func() {
@@ -335,6 +336,7 @@ var _ = Describe("Executor", func() {
 				"-var", "zone=some-zone",
 				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
 			}))
+			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
 		It("reads and returns the tf state", func() {

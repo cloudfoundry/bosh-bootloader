@@ -105,6 +105,7 @@ var _ = Describe("bbl destroy gcp", func() {
 	It("calls out to terraform", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
+			"--debug",
 			"destroy", "--no-confirm",
 		}
 		session := executeCommand(args, 0)
