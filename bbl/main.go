@@ -130,15 +130,13 @@ func main() {
 	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
 	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
 	boshinitManifestBuilder := manifests.NewManifestBuilder(manifests.ManifestBuilderInput{
-		AWSBOSHURL:      constants.AWSBOSHURL,
-		AWSBOSHSHA1:     constants.AWSBOSHSHA1,
+		BOSHURL:         constants.BOSHURL,
+		BOSHSHA1:        constants.BOSHSHA1,
 		BOSHAWSCPIURL:   constants.BOSHAWSCPIURL,
 		BOSHAWSCPISHA1:  constants.BOSHAWSCPISHA1,
 		AWSStemcellURL:  constants.AWSStemcellURL,
 		AWSStemcellSHA1: constants.AWSStemcellSHA1,
 
-		GCPBOSHURL:      constants.GCPBOSHURL,
-		GCPBOSHSHA1:     constants.GCPBOSHSHA1,
 		BOSHGCPCPIURL:   constants.BOSHGCPCPIURL,
 		BOSHGCPCPISHA1:  constants.BOSHGCPCPISHA1,
 		GCPStemcellURL:  constants.GCPStemcellURL,

@@ -65,10 +65,8 @@ type ManifestBuilder struct {
 }
 
 type ManifestBuilderInput struct {
-	AWSBOSHURL      string
-	AWSBOSHSHA1     string
-	GCPBOSHURL      string
-	GCPBOSHSHA1     string
+	BOSHURL         string
+	BOSHSHA1        string
 	BOSHAWSCPIURL   string
 	BOSHAWSCPISHA1  string
 	BOSHGCPCPIURL   string
@@ -117,30 +115,18 @@ func (m ManifestBuilder) Build(iaas string, manifestProperties ManifestPropertie
 		return Manifest{}, ManifestProperties{}, err
 	}
 
-	boshURL, boshSHA1 := getBOSHRelease(iaas, m.input.AWSBOSHURL, m.input.AWSBOSHSHA1, m.input.GCPBOSHURL, m.input.GCPBOSHSHA1)
 	cpiName, cpiURL, cpiSHA1 := getCPIRelease(iaas, m.input.BOSHAWSCPIURL, m.input.BOSHAWSCPISHA1, m.input.BOSHGCPCPIURL, m.input.BOSHGCPCPISHA1)
 	stemcellURL, stemcellSHA1 := getStemcell(iaas, m.input.AWSStemcellURL, m.input.AWSStemcellSHA1, m.input.GCPStemcellURL, m.input.GCPStemcellSHA1)
 
 	return Manifest{
 		Name:          "bosh",
-		Releases:      releaseManifestBuilder.Build(boshURL, boshSHA1, cpiName, cpiURL, cpiSHA1),
+		Releases:      releaseManifestBuilder.Build(m.input.BOSHURL, m.input.BOSHSHA1, cpiName, cpiURL, cpiSHA1),
 		ResourcePools: resourcePoolsManifestBuilder.Build(iaas, manifestProperties, stemcellURL, stemcellSHA1),
 		DiskPools:     diskPoolsManifestBuilder.Build(iaas),
 		Networks:      networksManifestBuilder.Build(manifestProperties),
 		Jobs:          jobs,
 		CloudProvider: cloudProvider,
 	}, manifestProperties, nil
-}
-
-func getBOSHRelease(iaas, awsURL, awsSHA1, gcpURL, gcpSHA1 string) (url, sha1 string) {
-	switch iaas {
-	case "aws":
-		return awsURL, awsSHA1
-	case "gcp":
-		return gcpURL, gcpSHA1
-	default:
-		return "", ""
-	}
 }
 
 func getCPIRelease(iaas, awsURL, awsSHA1, gcpURL, gcpSHA1 string) (name, url, sha1 string) {
