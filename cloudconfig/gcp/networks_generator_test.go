@@ -91,6 +91,74 @@ var _ = Describe("NetworksGenerator", func() {
 						},
 					},
 				},
+				gcp.Network{
+					Name: "default",
+					Type: "manual",
+					Subnets: []gcp.NetworkSubnet{
+						{
+							AZ:      "z1",
+							Gateway: "10.0.16.1",
+							Range:   "10.0.16.0/20",
+							Reserved: []string{
+								"10.0.16.2-10.0.16.3",
+								"10.0.31.255",
+							},
+							Static: []string{
+								"10.0.31.190-10.0.31.254",
+							},
+							CloudProperties: gcp.SubnetCloudProperties{
+								EphemeralExternalIP: true,
+								NetworkName:         "some-network-name",
+								SubnetworkName:      "some-subnetwork-name",
+								Tags: []string{
+									"some-tag",
+									"some-other-tag",
+								},
+							},
+						},
+						{
+							AZ:      "z2",
+							Gateway: "10.0.32.1",
+							Range:   "10.0.32.0/20", Reserved: []string{
+								"10.0.32.2-10.0.32.3",
+								"10.0.47.255",
+							},
+							Static: []string{
+								"10.0.47.190-10.0.47.254",
+							},
+							CloudProperties: gcp.SubnetCloudProperties{
+								EphemeralExternalIP: true,
+								NetworkName:         "some-network-name",
+								SubnetworkName:      "some-subnetwork-name",
+								Tags: []string{
+									"some-tag",
+									"some-other-tag",
+								},
+							},
+						},
+						{
+							AZ:      "z3",
+							Gateway: "10.0.48.1",
+							Range:   "10.0.48.0/20",
+							Reserved: []string{
+								"10.0.48.2-10.0.48.3",
+								"10.0.63.255",
+							},
+							Static: []string{
+								"10.0.63.190-10.0.63.254",
+							},
+							CloudProperties: gcp.SubnetCloudProperties{
+								EphemeralExternalIP: true,
+								NetworkName:         "some-network-name",
+								SubnetworkName:      "some-subnetwork-name",
+								Tags: []string{
+									"some-tag",
+									"some-other-tag",
+								},
+							},
+						},
+					},
+				},
 			))
 		})
 

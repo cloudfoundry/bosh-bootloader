@@ -45,8 +45,13 @@ func NewNetworksGenerator(networkName, subnetworkName string, tags, azs []string
 }
 
 func (n NetworksGenerator) Generate() ([]Network, error) {
-	network := Network{
+	privateNetwork := Network{
 		Name: "private",
+		Type: "manual",
+	}
+
+	defaultNetwork := Network{
+		Name: "default",
 		Type: "manual",
 	}
 
@@ -86,9 +91,11 @@ func (n NetworksGenerator) Generate() ([]Network, error) {
 				Tags:                n.tags,
 			},
 		}
-		network.Subnets = append(network.Subnets, networkSubnet)
+		privateNetwork.Subnets = append(privateNetwork.Subnets, networkSubnet)
+		defaultNetwork.Subnets = append(defaultNetwork.Subnets, networkSubnet)
 	}
 	return []Network{
-		network,
+		privateNetwork,
+		defaultNetwork,
 	}, nil
 }

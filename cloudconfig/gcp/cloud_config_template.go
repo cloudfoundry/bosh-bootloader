@@ -48,6 +48,12 @@ disk_types:
     encrypted: true
 
 vm_types:
+- name: default
+  cloud_properties:
+    machine_type: n1-standard-1
+    root_disk_size_gb: 10
+    root_disk_type: pd-ssd
+
 - name: n1-standard-2
   cloud_properties:
     machine_type: n1-standard-2

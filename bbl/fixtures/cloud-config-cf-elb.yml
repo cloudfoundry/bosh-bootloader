@@ -95,8 +95,53 @@ networks:
     static:
     - 10.0.63.190-10.0.63.254
   type: manual
+- name: default
+  subnets:
+  - az: z1
+    cloud_properties:
+      security_groups:
+      - some-internal-security-group
+      subnet: some-subnet-1
+    gateway: 10.0.16.1
+    range: 10.0.16.0/20
+    reserved:
+    - 10.0.16.2-10.0.16.3
+    - 10.0.31.255
+    static:
+    - 10.0.31.190-10.0.31.254
+  - az: z2
+    cloud_properties:
+      security_groups:
+      - some-internal-security-group
+      subnet: some-subnet-2
+    gateway: 10.0.32.1
+    range: 10.0.32.0/20
+    reserved:
+    - 10.0.32.2-10.0.32.3
+    - 10.0.47.255
+    static:
+    - 10.0.47.190-10.0.47.254
+  - az: z3
+    cloud_properties:
+      security_groups:
+      - some-internal-security-group
+      subnet: some-subnet-3
+    gateway: 10.0.48.1
+    range: 10.0.48.0/20
+    reserved:
+    - 10.0.48.2-10.0.48.3
+    - 10.0.63.255
+    static:
+    - 10.0.63.190-10.0.63.254
+  type: manual
 
 vm_types:
+- name: default
+  cloud_properties:
+    instance_type: m3.medium
+    ephemeral_disk:
+      size: 1024
+      type: gp2
 - name: m3.medium
   cloud_properties:
     instance_type: m3.medium

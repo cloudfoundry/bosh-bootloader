@@ -41,6 +41,17 @@ var _ = Describe("VMTypes Generator", func() {
 			ExpectToContainVMType(vmTypes, "t2.small")
 			ExpectToContainVMType(vmTypes, "t2.medium")
 			ExpectToContainVMType(vmTypes, "t2.large")
+			Expect(vmTypes).To(ContainElement(
+				bosh.VMType{
+					Name: "default",
+					CloudProperties: &bosh.VMTypeCloudProperties{
+						InstanceType: "m3.medium",
+						EphemeralDisk: &bosh.EphemeralDisk{
+							Size: 1024,
+							Type: "gp2",
+						},
+					},
+				}))
 		})
 	})
 })

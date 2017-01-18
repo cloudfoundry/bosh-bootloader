@@ -37,10 +37,15 @@ func NewNetworksGenerator(inputs []SubnetInput, azAssociations map[string]string
 func (n NetworksGenerator) Generate() ([]Network, error) {
 	const MINIMUM_CIDR_SIZE = 5
 
-	network := Network{
+	privateNetwork := Network{
 		Name: "private",
 		Type: "manual",
 	}
+	defaultNetwork := Network{
+		Name: "default",
+		Type: "manual",
+	}
+
 	for _, subnet := range n.subnetInputs {
 		parsedCidr, err := ParseCIDRBlock(subnet.CIDR)
 		if err != nil {
@@ -74,9 +79,11 @@ func (n NetworksGenerator) Generate() ([]Network, error) {
 				SecurityGroups: subnet.SecurityGroups,
 			},
 		}
-		network.Subnets = append(network.Subnets, networkSubnet)
+		privateNetwork.Subnets = append(privateNetwork.Subnets, networkSubnet)
+		defaultNetwork.Subnets = append(defaultNetwork.Subnets, networkSubnet)
 	}
 	return []Network{
-		network,
+		privateNetwork,
+		defaultNetwork,
 	}, nil
 }
