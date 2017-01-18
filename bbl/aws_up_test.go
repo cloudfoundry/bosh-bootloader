@@ -182,8 +182,8 @@ var _ = Describe("bbl up aws", func() {
 				boshAWSCPIRelease := boshManifest.Releases[1]
 				stemcell := boshManifest.ResourcePools[0].Stemcell
 
-				Expect(boshRelease.URL).To(Equal(constants.AWSBOSHURL))
-				Expect(boshRelease.SHA1).To(Equal(constants.AWSBOSHSHA1))
+				Expect(boshRelease.URL).To(Equal(constants.BOSHURL))
+				Expect(boshRelease.SHA1).To(Equal(constants.BOSHSHA1))
 
 				Expect(boshAWSCPIRelease.URL).To(Equal(constants.BOSHAWSCPIURL))
 				Expect(boshAWSCPIRelease.SHA1).To(Equal(constants.BOSHAWSCPISHA1))

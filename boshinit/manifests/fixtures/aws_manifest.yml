@@ -3,8 +3,8 @@ name: bosh
 
 releases:
 - name: bosh
-  url: some-aws-bosh-url
-  sha1: some-aws-bosh-sha1
+  url: some-bosh-url
+  sha1: some-bosh-sha1
 - name: bosh-aws-cpi
   url: some-bosh-aws-cpi-url
   sha1: some-bosh-aws-cpi-sha1

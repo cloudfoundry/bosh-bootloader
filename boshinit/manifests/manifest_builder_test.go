@@ -36,10 +36,8 @@ var _ = Describe("ManifestBuilder", func() {
 		cloudProviderManifestBuilder = manifests.NewCloudProviderManifestBuilder(stringGenerator)
 		jobsManifestBuilder = manifests.NewJobsManifestBuilder(stringGenerator)
 		input = manifests.ManifestBuilderInput{
-			AWSBOSHURL:      "some-aws-bosh-url",
-			AWSBOSHSHA1:     "some-aws-bosh-sha1",
-			GCPBOSHURL:      "some-google-bosh-url",
-			GCPBOSHSHA1:     "some-google-bosh-sha1",
+			BOSHURL:         "some-bosh-url",
+			BOSHSHA1:        "some-bosh-sha1",
 			BOSHAWSCPIURL:   "some-bosh-aws-cpi-url",
 			BOSHAWSCPISHA1:  "some-bosh-aws-cpi-sha1",
 			BOSHGCPCPIURL:   "some-bosh-google-cpi-url",
@@ -184,8 +182,8 @@ var _ = Describe("ManifestBuilder", func() {
 
 			Expect(manifest.Releases[0]).To(Equal(manifests.Release{
 				Name: "bosh",
-				URL:  "some-aws-bosh-url",
-				SHA1: "some-aws-bosh-sha1"},
+				URL:  "some-bosh-url",
+				SHA1: "some-bosh-sha1"},
 			))
 
 			Expect(manifest.Releases[1]).To(Equal(manifests.Release{
@@ -222,8 +220,8 @@ var _ = Describe("ManifestBuilder", func() {
 
 			Expect(manifest.Releases[0]).To(Equal(manifests.Release{
 				Name: "bosh",
-				URL:  "some-google-bosh-url",
-				SHA1: "some-google-bosh-sha1"},
+				URL:  "some-bosh-url",
+				SHA1: "some-bosh-sha1"},
 			))
 
 			Expect(manifest.Releases[1]).To(Equal(manifests.Release{

@@ -3,8 +3,8 @@ name: bosh
 
 releases:
 - name: bosh
-  url: some-google-bosh-url
-  sha1: some-google-bosh-sha1
+  url: some-bosh-url
+  sha1: some-bosh-sha1
 - name: bosh-google-cpi
   url: some-bosh-google-cpi-url
   sha1: some-bosh-google-cpi-sha1
