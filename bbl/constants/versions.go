@@ -4,7 +4,7 @@ package constants
 
 const (
 	BOSHURL         = "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-260.3-on-ubuntu-trusty-stemcell-3312.15.tgz"
-	BOSHSHA1        = "16a9d5c26caf43564952285c5db8bb9bff782b91"
+	BOSHSHA1        = "78c3c5712af13b695a9c3f9bcfc5670a0e64d7ac"
 	BOSHAWSCPIURL   = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=62"
 	BOSHAWSCPISHA1  = "f36967927ceae09e5663a41fdda199edfe649dc6"
 	AWSStemcellURL  = "https://s3.amazonaws.com/bosh-aws-light-stemcells/light-bosh-stemcell-3312.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz"
