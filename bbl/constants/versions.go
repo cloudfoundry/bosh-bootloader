@@ -3,8 +3,8 @@ package constants
 // THIS FILE IS GENERATED AUTOMATICALLY, NO TOUCHING!!!!!
 
 const (
-	BOSHURL         = "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-260.4-on-ubuntu-trusty-stemcell-3312.15.tgz"
-	BOSHSHA1        = "1ddc797d157d4c83b37d702019dc764d8f8715ce"
+	BOSHURL         = "https://s3.amazonaws.com/bbl-precompiled-bosh-releases/release-bosh-260.5-on-ubuntu-trusty-stemcell-3312.15.tgz"
+	BOSHSHA1        = "2d6cdb684f1fc536d71ce076b90bc78a1ba190a4"
 	BOSHAWSCPIURL   = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=62"
 	BOSHAWSCPISHA1  = "f36967927ceae09e5663a41fdda199edfe649dc6"
 	AWSStemcellURL  = "https://s3.amazonaws.com/bosh-aws-light-stemcells/light-bosh-stemcell-3312.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz"
