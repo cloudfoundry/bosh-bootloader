@@ -300,10 +300,10 @@ vm_extensions:
     ephemeral_external_ip: false
 - name: cf-router-network-properties
   cloud_properties:
-    backend_service: router-backend-service
+    backend_service: cf-router-backend-service
     target_pool: ws-target-pool
     tags:
-    - router-backend-service
+    - cf-router-backend-service
     - ws-target-pool
 - name: diego-ssh-proxy-network-properties
   cloud_properties:

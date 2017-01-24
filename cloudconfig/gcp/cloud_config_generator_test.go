@@ -47,11 +47,12 @@ var _ = Describe("CloudConfigGenerator", func() {
 
 		It("generates a cloud config with a concourse load balancer", func() {
 			cloudConfig, err := cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-				AZs:                 []string{"us-east1-b", "us-east1-c", "us-east1-d"},
-				Tags:                []string{"some-tag"},
-				NetworkName:         "some-network-name",
-				SubnetworkName:      "some-subnetwork-name",
-				ConcourseTargetPool: "concourse-target-pool",
+				AZs:                        []string{"us-east1-b", "us-east1-c", "us-east1-d"},
+				Tags:                       []string{"some-tag"},
+				NetworkName:                "some-network-name",
+				SubnetworkName:             "some-subnetwork-name",
+				ConcourseSSHTargetPool:     "ssh-target-pool",
+				ConcourseWebBackendService: "concourse-web-backend-service",
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -71,7 +72,7 @@ var _ = Describe("CloudConfigGenerator", func() {
 				NetworkName:    "some-network-name",
 				SubnetworkName: "some-subnetwork-name",
 				CFBackends: gcp.CFBackends{
-					Router:    "router-backend-service",
+					Router:    "cf-router-backend-service",
 					SSHProxy:  "ssh-proxy-target-pool",
 					TCPRouter: "tcp-router-target-pool",
 					WS:        "ws-target-pool",

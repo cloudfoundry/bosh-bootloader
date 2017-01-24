@@ -28,6 +28,8 @@ var _ = Describe("load balancers", func() {
 		serviceAccountKeyPath      string
 		pathToFakeTerraform        string
 		pathToTerraform            string
+		certPath                   string
+		keyPath                    string
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
@@ -69,14 +71,16 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("some-tag"))
 			case "/output/bosh_open_tag_name":
 				responseWriter.Write([]byte("some-bosh-open-tag"))
-			case "/output/concourse_target_pool":
-				responseWriter.Write([]byte("concourse-target-pool"))
+			case "/output/ssh_target_pool":
+				responseWriter.Write([]byte("ssh-target-pool"))
+			case "/output/web_backend_service":
+				responseWriter.Write([]byte("concourse-web-backend-service"))
 			case "/fastfail":
 				if getFastFailTerraform() {
 					responseWriter.WriteHeader(http.StatusInternalServerError)
 				}
 			case "/output/router_backend_service":
-				responseWriter.Write([]byte("router-backend-service"))
+				responseWriter.Write([]byte("cf-router-backend-service"))
 			case "/output/ssh_proxy_target_pool":
 				responseWriter.Write([]byte("ssh-proxy-target-pool"))
 			case "/output/tcp_router_target_pool":
@@ -116,6 +120,14 @@ var _ = Describe("load balancers", func() {
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
+		certPath = filepath.Join(tempDirectory, "some-cert")
+		err = ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath = filepath.Join(tempDirectory, "some-key")
+		err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
 		executeCommand([]string{
 			"--state-dir", tempDirectory,
 			"up",
@@ -140,6 +152,8 @@ var _ = Describe("load balancers", func() {
 				"--state-dir", tempDirectory,
 				"create-lbs",
 				"--type", "concourse",
+				"--cert", certPath,
+				"--key", keyPath,
 			}
 
 			executeCommand(args, 0)
@@ -149,23 +163,15 @@ var _ = Describe("load balancers", func() {
 			state := readStateJson(tempDirectory)
 			Expect(state.LB).NotTo(BeNil())
 			Expect(state.LB.Type).To(Equal("concourse"))
-			Expect(state.LB.Cert).To(Equal(""))
-			Expect(state.LB.Key).To(Equal(""))
+			Expect(state.LB.Cert).To(Equal("cert-contents"))
+			Expect(state.LB.Key).To(Equal("key-contents"))
 		})
 
 		Context("cf lb", func() {
-			var certPath, keyPath string
 			var contents []byte
 
 			BeforeEach(func() {
-				certPath = filepath.Join(tempDirectory, "some-cert")
-				err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				keyPath = filepath.Join(tempDirectory, "some-key")
-				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
+				var err error
 				contents, err = ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-cf-lb.yml")
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -219,6 +225,8 @@ var _ = Describe("load balancers", func() {
 				"--state-dir", tempDirectory,
 				"create-lbs",
 				"--type", "concourse",
+				"--cert", certPath,
+				"--key", keyPath,
 			}
 
 			session := executeCommand(args, 0)
@@ -234,6 +242,8 @@ var _ = Describe("load balancers", func() {
 				"--state-dir", tempDirectory,
 				"create-lbs",
 				"--type", "concourse",
+				"--cert", certPath,
+				"--key", keyPath,
 			}
 			executeCommand(args, 0)
 
@@ -241,6 +251,8 @@ var _ = Describe("load balancers", func() {
 				"--state-dir", tempDirectory,
 				"create-lbs",
 				"--type", "concourse",
+				"--cert", certPath,
+				"--key", keyPath,
 				"--skip-if-exists",
 			}
 			session := executeCommand(args, 0)
@@ -424,6 +436,8 @@ var _ = Describe("load balancers", func() {
 					"--state-dir", tempDirectory,
 					"create-lbs",
 					"--type", "concourse",
+					"--cert", certPath,
+					"--key", keyPath,
 				}
 
 				session = executeCommand(args, 0)
@@ -464,6 +478,8 @@ var _ = Describe("load balancers", func() {
 					"--state-dir", tempDirectory,
 					"create-lbs",
 					"--type", "concourse",
+					"--cert", certPath,
+					"--key", keyPath,
 				}
 
 				session = executeCommand(args, 0)
@@ -533,6 +549,8 @@ var _ = Describe("load balancers", func() {
 					"--state-dir", tempDirectory,
 					"create-lbs",
 					"--type", "concourse",
+					"--cert", certPath,
+					"--key", keyPath,
 				}
 
 				executeCommand(args, 0)

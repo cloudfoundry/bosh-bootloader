@@ -5,12 +5,13 @@ import yaml "gopkg.in/yaml.v2"
 type CloudConfigGenerator struct{}
 
 type CloudConfigInput struct {
-	AZs                 []string
-	Tags                []string
-	NetworkName         string
-	SubnetworkName      string
-	ConcourseTargetPool string
-	CFBackends          CFBackends
+	AZs                        []string
+	Tags                       []string
+	NetworkName                string
+	SubnetworkName             string
+	ConcourseSSHTargetPool     string
+	ConcourseWebBackendService string
+	CFBackends                 CFBackends
 }
 
 type CFBackends struct {
@@ -62,11 +63,13 @@ func (c CloudConfigGenerator) Generate(input CloudConfigInput) (CloudConfig, err
 		return CloudConfig{}, err
 	}
 
-	if input.ConcourseTargetPool != "" {
+	if input.ConcourseSSHTargetPool != "" {
 		cloudConfig.VMExtensions = append(cloudConfig.VMExtensions, VMExtension{
 			Name: "lb",
 			CloudProperties: VMExtensionCloudProperties{
-				TargetPool: input.ConcourseTargetPool,
+				TargetPool:     input.ConcourseSSHTargetPool,
+				BackendService: input.ConcourseWebBackendService,
+				Tags:           []string{input.ConcourseWebBackendService, input.ConcourseSSHTargetPool},
 			},
 		})
 	}

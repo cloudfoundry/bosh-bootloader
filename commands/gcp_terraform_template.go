@@ -103,62 +103,125 @@ resource "google_compute_firewall" "internal" {
 }
 `
 
-const terraformConcourseLBTemplate = `output "concourse_target_pool" {
-	value = "${google_compute_target_pool.target-pool.name}"
+const terraformConcourseLBTemplate = `variable "ssl_certificate" {
+  type = "string"
+}
+
+variable "ssl_certificate_private_key" {
+  type = "string"
+}
+
+output "web_backend_service" {
+  value = "${google_compute_backend_service.concourse-lb-backend-service.name}"
+}
+
+output "ssh_target_pool" {
+	value = "${google_compute_target_pool.ssh-target-pool.name}"
 }
 
 output "concourse_lb_ip" {
-    value = "${google_compute_address.concourse-address.address}"
+    value = "${google_compute_global_address.concourse-address.address}"
 }
 
-resource "google_compute_firewall" "firewall-concourse" {
-  name    = "${var.env_id}-concourse-open"
+resource "google_compute_firewall" "firewall-web" {
+  name    = "${var.env_id}-concourse-web-open"
   network = "${google_compute_network.bbl-network.name}"
 
   allow {
     protocol = "tcp"
-    ports    = ["443", "2222"]
+    ports    = ["443"]
   }
 
-  target_tags = ["concourse"]
+  target_tags = ["${google_compute_backend_service.concourse-lb-backend-service.name}"]
 }
 
-resource "google_compute_address" "concourse-address" {
+resource "google_compute_firewall" "firewall-ssh" {
+  name    = "${var.env_id}-concourse-ssh-open"
+  network = "${google_compute_network.bbl-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["2222"]
+  }
+
+  target_tags = ["${google_compute_target_pool.ssh-target-pool.name}"]
+}
+
+resource "google_compute_global_address" "concourse-address" {
   name = "${var.env_id}-concourse"
 }
 
-resource "google_compute_http_health_check" "health-check" {
+resource "google_compute_address" "concourse-ssh-address" {
+  name = "${var.env_id}-concourse-ssh"
+}
+
+resource "google_compute_target_pool" "ssh-target-pool" {
+  name = "${var.env_id}-concourse"
+
+  health_checks = ["${google_compute_http_health_check.concourse-health-check.name}"]
+}
+
+resource "google_compute_ssl_certificate" "concourse-cert" {
+  name_prefix = "${var.env_id}"
+  private_key = "${file(var.ssl_certificate_private_key)}"
+  certificate = "${file(var.ssl_certificate)}"
+  lifecycle {
+	create_before_destroy = true
+  }
+}
+
+resource "google_compute_global_forwarding_rule" "concourse-https-forwarding-rule" {
+  name       = "${var.env_id}-concourse-https"
+  ip_address = "${google_compute_global_address.concourse-address.address}"
+  target     = "${google_compute_target_https_proxy.concourse-https-lb-proxy.self_link}"
+  port_range = "443"
+}
+
+resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
+  name        = "${var.env_id}-concourse-ssh"
+  target      = "${google_compute_target_pool.ssh-target-pool.self_link}"
+  port_range  = "2222"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.concourse-ssh-address.address}"
+}
+
+resource "google_compute_target_https_proxy" "concourse-https-lb-proxy" {
+  name             = "${var.env_id}-https-proxy"
+  url_map          = "${google_compute_url_map.concourse-https-lb-url-map.self_link}"
+  ssl_certificates = ["${google_compute_ssl_certificate.concourse-cert.self_link}"]
+}
+
+resource "google_compute_url_map" "concourse-https-lb-url-map" {
+  name = "${var.env_id}-concourse-https"
+
+  default_service = "${google_compute_backend_service.concourse-lb-backend-service.self_link}"
+}
+
+resource "google_compute_http_health_check" "concourse-health-check" {
   name               = "${var.env_id}-concourse"
   request_path       = "/login"
-  port               = 443
+  port               = 80
   check_interval_sec  = 30
   timeout_sec         = 5
   healthy_threshold   = 10
   unhealthy_threshold = 2
 }
 
-resource "google_compute_target_pool" "target-pool" {
-  name = "${var.env_id}-concourse"
+resource "google_compute_firewall" "concourse-health-check" {
+  name       = "${var.env_id}-concourse-health-check"
+  depends_on = ["google_compute_network.bbl-network"]
+  network    = "${google_compute_network.bbl-network.name}"
 
-  health_checks = [
-    "${google_compute_http_health_check.health-check.name}",
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+
+  source_ranges = ["130.211.0.0/22"]
+  target_tags   = [
+    "${google_compute_backend_service.concourse-lb-backend-service.name}",
+    "${google_compute_target_pool.ssh-target-pool.name}"
   ]
-}
-
-resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
-  name        = "${var.env_id}-concourse-ssh"
-  target      = "${google_compute_target_pool.target-pool.self_link}"
-  port_range  = "2222"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-address.address}"
-}
-
-resource "google_compute_forwarding_rule" "https-forwarding-rule" {
-  name        = "${var.env_id}-concourse-https"
-  target      = "${google_compute_target_pool.target-pool.self_link}"
-  port_range  = "443"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-address.address}"
 }
 `
 
@@ -171,7 +234,7 @@ variable "ssl_certificate_private_key" {
 }
 
 output "router_backend_service" {
-  value = "${google_compute_backend_service.router-lb-backend-service.name}"
+  value = "${google_compute_backend_service.cf-router-lb-backend-service.name}"
 }
 
 output "router_lb_ip" {
@@ -202,7 +265,7 @@ resource "google_compute_firewall" "firewall-cf" {
 
   source_ranges = ["0.0.0.0/0"]
 
-  target_tags = ["${google_compute_backend_service.router-lb-backend-service.name}"]
+  target_tags = ["${google_compute_backend_service.cf-router-lb-backend-service.name}"]
 }
 
 resource "google_compute_global_address" "cf-address" {
@@ -249,10 +312,10 @@ resource "google_compute_ssl_certificate" "cf-cert" {
 resource "google_compute_url_map" "cf-https-lb-url-map" {
   name = "${var.env_id}-cf-http"
 
-  default_service = "${google_compute_backend_service.router-lb-backend-service.self_link}"
+  default_service = "${google_compute_backend_service.cf-router-lb-backend-service.self_link}"
 }
 
-resource "google_compute_http_health_check" "cf-public-health-check" {
+resource "google_compute_http_health_check" "cf-router-health-check" {
   name                = "${var.env_id}-cf"
   port                = 8080
   request_path        = "/health"
@@ -273,7 +336,7 @@ resource "google_compute_firewall" "cf-health-check" {
   }
 
   source_ranges = ["130.211.0.0/22"]
-  target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
+  target_tags   = ["${google_compute_backend_service.cf-router-lb-backend-service.name}"]
 }
 
 output "ssh_proxy_target_pool" {
@@ -367,7 +430,7 @@ resource "google_compute_address" "cf-ws" {
 resource "google_compute_target_pool" "cf-ws" {
   name = "${var.env_id}-cf-ws"
 
-  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
+  health_checks = ["${google_compute_http_health_check.cf-router-health-check.name}"]
 }
 
 resource "google_compute_forwarding_rule" "cf-ws-https" {
