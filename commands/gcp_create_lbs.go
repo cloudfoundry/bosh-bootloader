@@ -61,28 +61,30 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	var err error
 
 	var lbTemplate string
-	var cert, key []byte
 	zones := c.zones.Get(state.GCP.Region)
+
+	cert, err := ioutil.ReadFile(config.CertPath)
+	if err != nil {
+		return err
+	}
+
+	key, err := ioutil.ReadFile(config.KeyPath)
+	if err != nil {
+		return err
+	}
+
 	switch config.LBType {
 	case "concourse":
-		lbTemplate = terraformConcourseLBTemplate
+		terraformConcourseLBBackendService := generateBackendServiceTerraform("concourse", len(zones))
+		instanceGroups := generateInstanceGroups("concourse", zones)
+		lbTemplate = strings.Join([]string{terraformConcourseLBTemplate, instanceGroups, terraformConcourseLBBackendService}, "\n")
 	case "cf":
-		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
-		instanceGroups := generateInstanceGroups(zones)
+		terraformCFLBBackendService := generateBackendServiceTerraform("cf-router", len(zones))
+		instanceGroups := generateInstanceGroups("cf-router", zones)
 		if config.Domain != "" {
 			lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
 		} else {
 			lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
-		}
-
-		cert, err = ioutil.ReadFile(config.CertPath)
-		if err != nil {
-			return err
-		}
-
-		key, err = ioutil.ReadFile(config.KeyPath)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -125,9 +127,15 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	concourseTargetPool := ""
+	concourseSSHTargetPool := ""
+	concourseWebBackendService := ""
 	if config.LBType == "concourse" {
-		concourseTargetPool, err = c.terraformOutputter.Get(state.TFState, "concourse_target_pool")
+		concourseSSHTargetPool, err = c.terraformOutputter.Get(state.TFState, "ssh_target_pool")
+		if err != nil {
+			return err
+		}
+
+		concourseWebBackendService, err = c.terraformOutputter.Get(state.TFState, "web_backend_service")
 		if err != nil {
 			return err
 		}
@@ -157,11 +165,12 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	c.logger.Step("generating cloud config")
 	cloudConfig, err := c.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:                 zones,
-		Tags:                []string{internalTag},
-		NetworkName:         network,
-		SubnetworkName:      subnetwork,
-		ConcourseTargetPool: concourseTargetPool,
+		AZs:                        zones,
+		Tags:                       []string{internalTag},
+		NetworkName:                network,
+		SubnetworkName:             subnetwork,
+		ConcourseSSHTargetPool:     concourseSSHTargetPool,
+		ConcourseWebBackendService: concourseWebBackendService,
 		CFBackends: gcp.CFBackends{
 			Router:    routerBackendService,
 			SSHProxy:  sshProxyTargetPool,
@@ -184,9 +193,10 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 
 	state.LB.Type = config.LBType
+	state.LB.Cert = string(cert)
+	state.LB.Key = string(key)
+
 	if config.LBType == "cf" {
-		state.LB.Cert = string(cert)
-		state.LB.Key = string(key)
 		state.LB.Domain = config.Domain
 	}
 
@@ -218,23 +228,23 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 	return nil
 }
 
-func generateBackendServiceTerraform(count int) string {
-	backendResourceStart := `resource "google_compute_backend_service" "router-lb-backend-service" {
-  name        = "${var.env_id}-router-lb"
+func generateBackendServiceTerraform(name string, count int) string {
+	backendResourceStart := fmt.Sprintf(`resource "google_compute_backend_service" "%[1]s-lb-backend-service" {
+  name        = "${var.env_id}-%[1]s-lb"
   port_name   = "http"
   protocol    = "HTTP"
   timeout_sec = 900
   enable_cdn  = false
-`
-	backendResourceEnd := `  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
+`, name)
+	backendResourceEnd := fmt.Sprintf(`  health_checks = ["${google_compute_http_health_check.%s-health-check.self_link}"]
 }
-`
+`, name)
 	backendStrings := []string{}
 	for i := 0; i < count; i++ {
 		backendString := fmt.Sprintf(`  backend {
-    group = "${google_compute_instance_group.router-lb-%d.self_link}"
+    group = "${google_compute_instance_group.%s-lb-%d.self_link}"
   }
-`, i)
+`, name, i)
 		backendStrings = append(backendStrings, backendString)
 	}
 
@@ -244,15 +254,14 @@ func generateBackendServiceTerraform(count int) string {
 	return strings.Join(backendServiceTemplate, "\n")
 }
 
-func generateInstanceGroups(zones []string) string {
+func generateInstanceGroups(name string, zones []string) string {
 	var groups []string
 	for i, zone := range zones {
-		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
-  name        = "${var.env_id}-router-%[2]s"
-  description = "terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "%[2]s"
+		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "%[1]s-lb-%[2]d" {
+  name        = "${var.env_id}-%[1]s-%[3]s"
+  zone        = "%[3]s"
 }
-`, i, zone))
+`, name, i, zone))
 	}
 
 	return strings.Join(groups, "\n")

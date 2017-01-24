@@ -349,7 +349,7 @@ var _ = Describe("gcp up", func() {
 			})
 
 			Context("failure cases", func() {
-				DescribeTable("returns an error when we fail to get an output", func(outputName string) {
+				DescribeTable("returns an error when we fail to get an output", func(outputName, lb string) {
 					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
 						if output == outputName {
 							return "", errors.New("failed to get output")
@@ -362,15 +362,25 @@ var _ = Describe("gcp up", func() {
 						ProjectID:             "some-project-id",
 						Zone:                  "some-zone",
 						Region:                "us-west1",
-					}, storage.State{})
+					}, storage.State{
+						LB: storage.LB{
+							Type: lb,
+						},
+					})
 					Expect(err).To(MatchError("failed to get output"))
 				},
-					Entry("failed to get external_ip", "external_ip"),
-					Entry("failed to get network_name", "network_name"),
-					Entry("failed to get subnetwork_name", "subnetwork_name"),
-					Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name"),
-					Entry("failed to get internal_tag_name", "internal_tag_name"),
-					Entry("failed to get director_address", "director_address"),
+					Entry("failed to get external_ip", "external_ip", ""),
+					Entry("failed to get network_name", "network_name", ""),
+					Entry("failed to get subnetwork_name", "subnetwork_name", ""),
+					Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name", ""),
+					Entry("failed to get internal_tag_name", "internal_tag_name", ""),
+					Entry("failed to get director_address", "director_address", ""),
+					Entry("failed to get router_backend_service", "router_backend_service", "cf"),
+					Entry("failed to get ssh_proxy_target_pool", "ssh_proxy_target_pool", "cf"),
+					Entry("failed to get tcp_router_target_pool", "tcp_router_target_pool", "cf"),
+					Entry("failed to get ws_target_pool", "ws_target_pool", "cf"),
+					Entry("failed to get ssh_target_pool", "ssh_target_pool", "concourse"),
+					Entry("failed to get web_backend_service", "web_backend_service", "concourse"),
 				)
 
 				It("returns an error if applier fails with non terraform apply error", func() {
@@ -435,8 +445,11 @@ var _ = Describe("gcp up", func() {
 	})
 
 	Context("cloud config", func() {
-		It("generates and uploads a cloud config", func() {
+		BeforeEach(func() {
 			zones.GetCall.Returns.Zones = []string{"zone-1", "zone-2", "zone-3"}
+		})
+
+		It("generates and uploads a cloud config", func() {
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
@@ -463,6 +476,84 @@ var _ = Describe("gcp up", func() {
 			}))
 
 			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
+		})
+
+		Context("when a cf lb exists", func() {
+			BeforeEach(func() {
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					switch output {
+					case "router_backend_service":
+						return "env-id-cf-https-lb", nil
+					case "ws_target_pool":
+						return "env-id-cf-ws", nil
+					case "ssh_proxy_target_pool":
+						return "env-id-cf-ssh-proxy-lb", nil
+					case "tcp_router_target_pool":
+						return "env-id-cf-tcp-router-network-properties", nil
+					default:
+						return "", nil
+					}
+				}
+			})
+
+			It("generates a cloud config with cf lb information", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{
+					EnvID: "bbl-lake-time:stamp",
+					LB: storage.LB{
+						Type:   "cf",
+						Cert:   "some-cert",
+						Key:    "some-key",
+						Domain: "some-domain",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("env-id-cf-https-lb"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("env-id-cf-ssh-proxy-lb"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.TCPRouter).To(Equal("env-id-cf-tcp-router-network-properties"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.WS).To(Equal("env-id-cf-ws"))
+			})
+		})
+
+		Context("when a concourse lb exists", func() {
+			BeforeEach(func() {
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					switch output {
+					case "ssh_target_pool":
+						return "env-id-ssh-target-pool", nil
+					case "web_backend_service":
+						return "env-id-web-backend-service", nil
+					default:
+						return "", nil
+					}
+				}
+			})
+
+			It("generates a cloud config with concourse lb information", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{
+					EnvID: "bbl-lake-time:stamp",
+					LB: storage.LB{
+						Type:   "concourse",
+						Cert:   "some-cert",
+						Key:    "some-key",
+						Domain: "some-domain",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseSSHTargetPool).To(Equal("env-id-ssh-target-pool"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseWebBackendService).To(Equal("env-id-web-backend-service"))
+			})
 		})
 
 		Context("failure cases", func() {
@@ -634,6 +725,7 @@ var _ = Describe("gcp up", func() {
 		})
 
 		It("applies the correct concourse template and args for concourse lb type", func() {
+			zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
@@ -642,14 +734,16 @@ var _ = Describe("gcp up", func() {
 			}, storage.State{
 				LB: storage.LB{
 					Type: "concourse",
+					Cert: "some-cert",
+					Key:  "some-key",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
-			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(""))
-			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(""))
+			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
+			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
 			Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal(""))
 		})
 	})
