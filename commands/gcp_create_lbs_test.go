@@ -539,7 +539,7 @@ resource "google_compute_address" "cf-tcp-router" {
 
 resource "google_compute_http_health_check" "cf-tcp-router" {
   name                = "${var.env_id}-cf-tcp-router"
-  port                = 8080
+  port                = 80
   request_path        = "/health"
   check_interval_sec  = 30
   timeout_sec         = 5
