@@ -32,7 +32,7 @@ const (
 )
 
 var _ = Describe("concourse deployment test", func() {
-	var deployConcourseTest = func(bbl actors.BBL, stemcellURL, stemcellName, lbURL string) {
+	var deployConcourseTest = func(bbl actors.BBL, stemcellURL, stemcellName, lbURL string, bindPort int) {
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
@@ -70,6 +70,7 @@ var _ = Describe("concourse deployment test", func() {
 			stemcellVersion:         stemcell.Latest(),
 			concourseReleaseVersion: concourseRelease.Latest(),
 			gardenReleaseVersion:    gardenRelease.Latest(),
+			bindPort:                bindPort,
 		}
 		concourseManifest, err := populateManifest(concourseExampleManifest, concourseManifestInputs)
 		Expect(err).NotTo(HaveOccurred())
@@ -142,7 +143,7 @@ var _ = Describe("concourse deployment test", func() {
 		})
 
 		It("is able to deploy concourse", func() {
-			deployConcourseTest(bbl, AWSStemcellURL, AWSStemcellName, lbURL)
+			deployConcourseTest(bbl, AWSStemcellURL, AWSStemcellName, lbURL, 8080)
 		})
 	})
 
@@ -181,7 +182,7 @@ var _ = Describe("concourse deployment test", func() {
 		})
 
 		It("is able to deploy concourse", func() {
-			deployConcourseTest(bbl, GCPStemcellURL, GCPStemcellName, lbURL)
+			deployConcourseTest(bbl, GCPStemcellURL, GCPStemcellName, lbURL, 80)
 		})
 	})
 
