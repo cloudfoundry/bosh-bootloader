@@ -32,7 +32,7 @@ const (
 )
 
 var _ = Describe("concourse deployment test", func() {
-	var deployConcourseTest = func(bbl actors.BBL, stemcellURL, stemcellName, lbURL string, tlsMode bool, tlsBindPort int) {
+	var deployConcourseTest = func(bbl actors.BBL, stemcellURL, stemcellName, lbURL string) {
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
@@ -67,8 +67,6 @@ var _ = Describe("concourse deployment test", func() {
 		concourseManifestInputs := concourseManifestInputs{
 			boshDirectorUUID:        info.UUID,
 			webExternalURL:          lbURL,
-			tlsMode:                 tlsMode,
-			tlsBindPort:             tlsBindPort,
 			stemcellVersion:         stemcell.Latest(),
 			concourseReleaseVersion: concourseRelease.Latest(),
 			gardenReleaseVersion:    gardenRelease.Latest(),
@@ -92,10 +90,15 @@ var _ = Describe("concourse deployment test", func() {
 		}
 		client := &http.Client{Transport: tr}
 
-		resp, err := client.Get(lbURL)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		var resp *http.Response
+		Eventually(func() (int, error) {
+			var err error
+			resp, err = client.Get(lbURL)
+			if err != nil {
+				return 0, err
+			}
+			return resp.StatusCode, nil
+		}, "10m", "30s").Should(Equal(http.StatusOK))
 
 		body, err := ioutil.ReadAll(resp.Body)
 		Expect(err).NotTo(HaveOccurred())
@@ -139,7 +142,7 @@ var _ = Describe("concourse deployment test", func() {
 		})
 
 		It("is able to deploy concourse", func() {
-			deployConcourseTest(bbl, AWSStemcellURL, AWSStemcellName, lbURL, false, 0)
+			deployConcourseTest(bbl, AWSStemcellURL, AWSStemcellName, lbURL)
 		})
 	})
 
@@ -162,7 +165,13 @@ var _ = Describe("concourse deployment test", func() {
 
 			bbl.Up(actors.GCPIAAS)
 
-			bbl.CreateGCPLB("concourse")
+			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
+
+			bbl.CreateLB("concourse", certPath, keyPath, "")
 
 			envID := bbl.EnvID()
 			address, err := gcp.GetAddress(envID + "-concourse")
@@ -172,7 +181,7 @@ var _ = Describe("concourse deployment test", func() {
 		})
 
 		It("is able to deploy concourse", func() {
-			deployConcourseTest(bbl, GCPStemcellURL, GCPStemcellName, lbURL, true, 443)
+			deployConcourseTest(bbl, GCPStemcellURL, GCPStemcellName, lbURL)
 		})
 	})
 

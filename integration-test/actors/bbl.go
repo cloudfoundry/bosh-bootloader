@@ -135,17 +135,6 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
-func (b BBL) CreateGCPLB(loadBalancerType string) {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"create-lbs",
-		"--type", loadBalancerType,
-	}
-
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-}
-
 func (b BBL) LBs() *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
