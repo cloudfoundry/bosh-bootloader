@@ -35,6 +35,15 @@ func NewVMExtensionsGenerator(loadBalancerExtensions []LoadBalancerExtension) VM
 func (g VMExtensionsGenerators) Generate() []VMExtension {
 	vmExtensions := []VMExtension{
 		{
+			Name: "1GB_ephemeral_disk",
+			CloudProperties: VMExtensionCloudProperties{
+				EphemeralDisk: &VMExtensionEphemeralDisk{
+					Size: 1024,
+					Type: "gp2",
+				},
+			},
+		},
+		{
 			Name: "5GB_ephemeral_disk",
 			CloudProperties: VMExtensionCloudProperties{
 				EphemeralDisk: &VMExtensionEphemeralDisk{

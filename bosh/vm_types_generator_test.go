@@ -47,7 +47,7 @@ var _ = Describe("VMTypes Generator", func() {
 					CloudProperties: &bosh.VMTypeCloudProperties{
 						InstanceType: "m3.medium",
 						EphemeralDisk: &bosh.EphemeralDisk{
-							Size: 1024,
+							Size: 10240,
 							Type: "gp2",
 						},
 					},
@@ -63,7 +63,7 @@ func ExpectToContainVMType(vmTypes []bosh.VMType, vmType string) {
 			CloudProperties: &bosh.VMTypeCloudProperties{
 				InstanceType: vmType,
 				EphemeralDisk: &bosh.EphemeralDisk{
-					Size: 1024,
+					Size: 10240,
 					Type: "gp2",
 				},
 			},

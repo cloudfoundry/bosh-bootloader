@@ -67,7 +67,7 @@ func createVMTypeWithCustomName(name, instanceType string) VMType {
 		CloudProperties: &VMTypeCloudProperties{
 			InstanceType: instanceType,
 			EphemeralDisk: &EphemeralDisk{
-				Size: 1024,
+				Size: 10240,
 				Type: "gp2",
 			},
 		},

@@ -27,8 +27,17 @@ var _ = Describe("VMExtensionsGenerator", func() {
 
 			vmExtensions := bosh.NewVMExtensionsGenerator(input).Generate()
 
-			Expect(vmExtensions).To(HaveLen(8))
+			Expect(vmExtensions).To(HaveLen(9))
 			Expect(vmExtensions).To(Equal([]bosh.VMExtension{
+				{
+					Name: "1GB_ephemeral_disk",
+					CloudProperties: bosh.VMExtensionCloudProperties{
+						EphemeralDisk: &bosh.VMExtensionEphemeralDisk{
+							Size: 1024,
+							Type: "gp2",
+						},
+					},
+				},
 				{
 					Name: "5GB_ephemeral_disk",
 					CloudProperties: bosh.VMExtensionCloudProperties{
