@@ -8,7 +8,6 @@ type concourseManifestInputs struct {
 	stemcellVersion         string
 	concourseReleaseVersion string
 	gardenReleaseVersion    string
-	bindPort                int
 }
 
 type concourseManifest struct {
@@ -82,7 +81,7 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.BasicAuthUsername = "admin"
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.BasicAuthPassword = "admin"
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.ExternalURL = concourseManifestInputs.webExternalURL
-			concourseManifest.InstanceGroups[i].Jobs[0].Properties.BindPort = concourseManifestInputs.bindPort
+			concourseManifest.InstanceGroups[i].Jobs[0].Properties.BindPort = 80
 		case "worker":
 			concourseManifest.InstanceGroups[i].VMExtensions = []string{"50GB_ephemeral_disk"}
 		case "db":
