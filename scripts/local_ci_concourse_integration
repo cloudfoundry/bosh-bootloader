@@ -10,15 +10,9 @@ function main {
       -e AWS_REGION="${AWS_REGION}" \
       -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
       -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
-      -e GCP_PROJECT_ID="${GCP_PROJECT_ID}" \
-      -e GCP_REGION="${GCP_REGION}" \
-      -e GCP_SERVICE_ACCOUNT_KEY="${GCP_SERVICE_ACCOUNT_KEY}" \
-      -e GCP_ZONE="${GCP_ZONE}" \
-      -e STATE_DIR="/tmp/state" \
-      -v ${PWD}:/bosh-bootloader \
-      -v ${CIPATH:-"${GOPATH}/src/github.com/cloudfoundry/infrastructure-ci"}:/ci \
-      -v ${STATE_DIR}:/tmp/state \
-      cfinfrastructure/deployment ${TEST_TASK:-"/ci/scripts/bosh-bootloader/concourse-integration/task"}
+      -v $PWD:/bosh-bootloader \
+      -v ${MEGA_CI:-"${GOPATH}/src/github.com/cloudfoundry/mega-ci"}:/mega-ci \
+      cfinfrastructure/deployment ${TEST_TASK:-"/mega-ci/scripts/ci/bosh-bootloader/concourse_integration"}
   popd
 }
 

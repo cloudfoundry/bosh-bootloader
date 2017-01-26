@@ -2,6 +2,7 @@ package actors
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -90,12 +91,21 @@ func (g GCP) GetSubnet(subnetName string) (*compute.Subnetwork, error) {
 }
 
 func (g GCP) GetAddress(addressName string) (*compute.Address, error) {
-	address, err := g.service.GlobalAddresses.Get(g.projectID, addressName).Do()
+	aggregatedList, err := g.service.Addresses.AggregatedList(g.projectID).Filter(fmt.Sprintf("name eq %s", addressName)).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return address, nil
+	items, ok := aggregatedList.Items["regions/"+g.region]
+	if !ok {
+		return nil, nil
+	}
+
+	if len(items.Addresses) == 0 {
+		return nil, nil
+	}
+
+	return items.Addresses[0], nil
 }
 
 func (g GCP) GetFirewallRule(firewallRuleName string) (*compute.Firewall, error) {
