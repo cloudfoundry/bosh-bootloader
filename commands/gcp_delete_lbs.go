@@ -95,7 +95,7 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 
 	state.TFState = tfState
 
-	state.Stack.LBType = ""
+	state.LB.Type = ""
 	err = g.stateStore.Set(state)
 	if err != nil {
 		return err

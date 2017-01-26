@@ -168,8 +168,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 			It("removes the lb from the state", func() {
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
