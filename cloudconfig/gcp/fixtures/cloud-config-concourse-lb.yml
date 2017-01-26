@@ -300,8 +300,5 @@ vm_extensions:
     ephemeral_external_ip: false
 - name: lb
   cloud_properties:
-    backend_service: concourse-web-backend-service
-    target_pool: ssh-target-pool
-    tags:
-    - concourse-web-backend-service
-    - ssh-target-pool
+    target_pool: concourse-target-pool
+
