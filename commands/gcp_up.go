@@ -131,12 +131,10 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	zones := u.zones.Get(state.GCP.Region)
 	switch state.LB.Type {
 	case "concourse":
-		terraformConcourseLBBackendService := generateBackendServiceTerraform("concourse", len(zones))
-		instanceGroups := generateInstanceGroups("concourse", zones)
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate, instanceGroups, terraformConcourseLBBackendService}, "\n")
+		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
 	case "cf":
-		terraformCFLBBackendService := generateBackendServiceTerraform("cf-router", len(zones))
-		instanceGroups := generateInstanceGroups("cf-router", zones)
+		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
+		instanceGroups := generateInstanceGroups(zones)
 		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
 	default:
 		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
@@ -239,56 +237,12 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 		state.BOSH.DirectorPassword)
 
-	concourseSSHTargetPool := ""
-	concourseWebBackendService := ""
-	if state.LB.Type == "concourse" {
-		concourseSSHTargetPool, err = u.terraformOutputter.Get(state.TFState, "ssh_target_pool")
-		if err != nil {
-			return err
-		}
-
-		concourseWebBackendService, err = u.terraformOutputter.Get(state.TFState, "web_backend_service")
-		if err != nil {
-			return err
-		}
-	}
-
-	routerBackendService := ""
-	sshProxyTargetPool := ""
-	tcpRouterTargetPool := ""
-	wsTargetPool := ""
-	if state.LB.Type == "cf" {
-		if routerBackendService, err = u.terraformOutputter.Get(state.TFState, "router_backend_service"); err != nil {
-			return err
-		}
-
-		if sshProxyTargetPool, err = u.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool"); err != nil {
-			return err
-		}
-
-		if tcpRouterTargetPool, err = u.terraformOutputter.Get(state.TFState, "tcp_router_target_pool"); err != nil {
-			return err
-		}
-
-		if wsTargetPool, err = u.terraformOutputter.Get(state.TFState, "ws_target_pool"); err != nil {
-			return err
-		}
-	}
-
 	u.logger.Step("generating cloud config")
 	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:                        zones,
-		Tags:                       []string{internalTag},
-		NetworkName:                networkName,
-		SubnetworkName:             subnetworkName,
-		ConcourseSSHTargetPool:     concourseSSHTargetPool,
-		ConcourseWebBackendService: concourseWebBackendService,
-		CFBackends: gcp.CFBackends{
-			Router:    routerBackendService,
-			SSHProxy:  sshProxyTargetPool,
-			TCPRouter: tcpRouterTargetPool,
-			WS:        wsTargetPool,
-		},
+		AZs:            zones,
+		Tags:           []string{internalTag},
+		NetworkName:    networkName,
+		SubnetworkName: subnetworkName,
 	})
 	if err != nil {
 		return err

@@ -118,153 +118,62 @@ resource "google_compute_firewall" "internal" {
   source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }
 
-variable "ssl_certificate" {
-  type = "string"
-}
-
-variable "ssl_certificate_private_key" {
-  type = "string"
-}
-
-output "web_backend_service" {
-  value = "${google_compute_backend_service.concourse-lb-backend-service.name}"
-}
-
-output "ssh_target_pool" {
-	value = "${google_compute_target_pool.ssh-target-pool.name}"
+output "concourse_target_pool" {
+	value = "${google_compute_target_pool.target-pool.name}"
 }
 
 output "concourse_lb_ip" {
-    value = "${google_compute_global_address.concourse-address.address}"
+    value = "${google_compute_address.concourse-address.address}"
 }
 
-resource "google_compute_firewall" "firewall-web" {
-  name    = "${var.env_id}-concourse-web-open"
+resource "google_compute_firewall" "firewall-concourse" {
+  name    = "${var.env_id}-concourse-open"
   network = "${google_compute_network.bbl-network.name}"
 
   allow {
     protocol = "tcp"
-    ports    = ["443"]
+    ports    = ["443", "2222"]
   }
 
-  target_tags = ["${google_compute_backend_service.concourse-lb-backend-service.name}"]
+  target_tags = ["concourse"]
 }
 
-resource "google_compute_firewall" "firewall-ssh" {
-  name    = "${var.env_id}-concourse-ssh-open"
-  network = "${google_compute_network.bbl-network.name}"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["2222"]
-  }
-
-  target_tags = ["${google_compute_target_pool.ssh-target-pool.name}"]
-}
-
-resource "google_compute_global_address" "concourse-address" {
+resource "google_compute_address" "concourse-address" {
   name = "${var.env_id}-concourse"
 }
 
-resource "google_compute_address" "concourse-ssh-address" {
-  name = "${var.env_id}-concourse-ssh"
-}
-
-resource "google_compute_target_pool" "ssh-target-pool" {
-  name = "${var.env_id}-concourse"
-
-  health_checks = ["${google_compute_http_health_check.concourse-health-check.name}"]
-}
-
-resource "google_compute_ssl_certificate" "concourse-cert" {
-  name_prefix = "${var.env_id}"
-  private_key = "${file(var.ssl_certificate_private_key)}"
-  certificate = "${file(var.ssl_certificate)}"
-  lifecycle {
-	create_before_destroy = true
-  }
-}
-
-resource "google_compute_global_forwarding_rule" "concourse-https-forwarding-rule" {
-  name       = "${var.env_id}-concourse-https"
-  ip_address = "${google_compute_global_address.concourse-address.address}"
-  target     = "${google_compute_target_https_proxy.concourse-https-lb-proxy.self_link}"
-  port_range = "443"
-}
-
-resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
-  name        = "${var.env_id}-concourse-ssh"
-  target      = "${google_compute_target_pool.ssh-target-pool.self_link}"
-  port_range  = "2222"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-ssh-address.address}"
-}
-
-resource "google_compute_target_https_proxy" "concourse-https-lb-proxy" {
-  name             = "${var.env_id}-https-proxy"
-  url_map          = "${google_compute_url_map.concourse-https-lb-url-map.self_link}"
-  ssl_certificates = ["${google_compute_ssl_certificate.concourse-cert.self_link}"]
-}
-
-resource "google_compute_url_map" "concourse-https-lb-url-map" {
-  name = "${var.env_id}-concourse-https"
-
-  default_service = "${google_compute_backend_service.concourse-lb-backend-service.self_link}"
-}
-
-resource "google_compute_http_health_check" "concourse-health-check" {
+resource "google_compute_http_health_check" "health-check" {
   name               = "${var.env_id}-concourse"
   request_path       = "/login"
-  port               = 80
+  port               = 443
   check_interval_sec  = 30
   timeout_sec         = 5
   healthy_threshold   = 10
   unhealthy_threshold = 2
 }
 
-resource "google_compute_firewall" "concourse-health-check" {
-  name       = "${var.env_id}-concourse-health-check"
-  depends_on = ["google_compute_network.bbl-network"]
-  network    = "${google_compute_network.bbl-network.name}"
+resource "google_compute_target_pool" "target-pool" {
+  name = "${var.env_id}-concourse"
 
-  allow {
-    protocol = "tcp"
-    ports    = ["80"]
-  }
-
-  source_ranges = ["130.211.0.0/22"]
-  target_tags   = [
-    "${google_compute_backend_service.concourse-lb-backend-service.name}",
-    "${google_compute_target_pool.ssh-target-pool.name}"
+  health_checks = [
+    "${google_compute_http_health_check.health-check.name}",
   ]
 }
 
-resource "google_compute_instance_group" "concourse-lb-0" {
-  name        = "${var.env_id}-concourse-some-zone"
-  zone        = "some-zone"
+resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
+  name        = "${var.env_id}-concourse-ssh"
+  target      = "${google_compute_target_pool.target-pool.self_link}"
+  port_range  = "2222"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.concourse-address.address}"
 }
 
-resource "google_compute_instance_group" "concourse-lb-1" {
-  name        = "${var.env_id}-concourse-some-other-zone"
-  zone        = "some-other-zone"
-}
-
-resource "google_compute_backend_service" "concourse-lb-backend-service" {
-  name        = "${var.env_id}-concourse-lb"
-  port_name   = "http"
-  protocol    = "HTTP"
-  timeout_sec = 900
-  enable_cdn  = false
-
-  backend {
-    group = "${google_compute_instance_group.concourse-lb-0.self_link}"
-  }
-
-  backend {
-    group = "${google_compute_instance_group.concourse-lb-1.self_link}"
-  }
-
-  health_checks = ["${google_compute_http_health_check.concourse-health-check.self_link}"]
+resource "google_compute_forwarding_rule" "https-forwarding-rule" {
+  name        = "${var.env_id}-concourse-https"
+  target      = "${google_compute_target_pool.target-pool.self_link}"
+  port_range  = "443"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.concourse-address.address}"
 }
 `
 
@@ -378,7 +287,7 @@ variable "ssl_certificate_private_key" {
 }
 
 output "router_backend_service" {
-  value = "${google_compute_backend_service.cf-router-lb-backend-service.name}"
+  value = "${google_compute_backend_service.router-lb-backend-service.name}"
 }
 
 output "router_lb_ip" {
@@ -409,7 +318,7 @@ resource "google_compute_firewall" "firewall-cf" {
 
   source_ranges = ["0.0.0.0/0"]
 
-  target_tags = ["${google_compute_backend_service.cf-router-lb-backend-service.name}"]
+  target_tags = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 
 resource "google_compute_global_address" "cf-address" {
@@ -456,10 +365,10 @@ resource "google_compute_ssl_certificate" "cf-cert" {
 resource "google_compute_url_map" "cf-https-lb-url-map" {
   name = "${var.env_id}-cf-http"
 
-  default_service = "${google_compute_backend_service.cf-router-lb-backend-service.self_link}"
+  default_service = "${google_compute_backend_service.router-lb-backend-service.self_link}"
 }
 
-resource "google_compute_http_health_check" "cf-router-health-check" {
+resource "google_compute_http_health_check" "cf-public-health-check" {
   name                = "${var.env_id}-cf"
   port                = 8080
   request_path        = "/health"
@@ -480,7 +389,7 @@ resource "google_compute_firewall" "cf-health-check" {
   }
 
   source_ranges = ["130.211.0.0/22"]
-  target_tags   = ["${google_compute_backend_service.cf-router-lb-backend-service.name}"]
+  target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 
 output "ssh_proxy_target_pool" {
@@ -574,7 +483,7 @@ resource "google_compute_address" "cf-ws" {
 resource "google_compute_target_pool" "cf-ws" {
   name = "${var.env_id}-cf-ws"
 
-  health_checks = ["${google_compute_http_health_check.cf-router-health-check.name}"]
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
 }
 
 resource "google_compute_forwarding_rule" "cf-ws-https" {
@@ -593,32 +502,34 @@ resource "google_compute_forwarding_rule" "cf-ws-http" {
   ip_address  = "${google_compute_address.cf-ws.address}"
 }
 
-resource "google_compute_instance_group" "cf-router-lb-0" {
-  name        = "${var.env_id}-cf-router-some-zone"
+resource "google_compute_instance_group" "router-lb-0" {
+  name        = "${var.env_id}-router-some-zone"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
   zone        = "some-zone"
 }
 
-resource "google_compute_instance_group" "cf-router-lb-1" {
-  name        = "${var.env_id}-cf-router-some-other-zone"
+resource "google_compute_instance_group" "router-lb-1" {
+  name        = "${var.env_id}-router-some-other-zone"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
   zone        = "some-other-zone"
 }
 
-resource "google_compute_backend_service" "cf-router-lb-backend-service" {
-  name        = "${var.env_id}-cf-router-lb"
+resource "google_compute_backend_service" "router-lb-backend-service" {
+  name        = "${var.env_id}-router-lb"
   port_name   = "http"
   protocol    = "HTTP"
   timeout_sec = 900
   enable_cdn  = false
 
   backend {
-    group = "${google_compute_instance_group.cf-router-lb-0.self_link}"
+    group = "${google_compute_instance_group.router-lb-0.self_link}"
   }
 
   backend {
-    group = "${google_compute_instance_group.cf-router-lb-1.self_link}"
+    group = "${google_compute_instance_group.router-lb-1.self_link}"
   }
 
-  health_checks = ["${google_compute_http_health_check.cf-router-health-check.self_link}"]
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
 }
 `
 
@@ -765,13 +676,9 @@ var _ = Describe("GCPCreateLBs", func() {
 	Describe("Execute", func() {
 		Context("terraform apply call", func() {
 			Context("when called with the concourse lb type", func() {
-				It("creates and applies concourse lbs", func() {
-					zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
-
+				It("creates and applies a concourse target pool", func() {
 					err := command.Execute(commands.GCPCreateLBsConfig{
-						LBType:   "concourse",
-						CertPath: certPath,
-						KeyPath:  keyPath,
+						LBType: "concourse",
 					}, storage.State{
 						IAAS:    "gcp",
 						EnvID:   "some-env-id",
@@ -874,9 +781,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{
 					IAAS:    "gcp",
 					EnvID:   "some-env-id",
@@ -904,10 +809,8 @@ var _ = Describe("GCPCreateLBs", func() {
 						return "some-subnetwork-name", nil
 					case "internal_tag_name":
 						return "some-internal-tag", nil
-					case "ssh_target_pool":
-						return "env-id-ssh-target-pool", nil
-					case "web_backend_service":
-						return "env-id-web-backend-service", nil
+					case "concourse_target_pool":
+						return "env-id-concourse-target-pool", nil
 					default:
 						return "", nil
 					}
@@ -916,9 +819,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				zones.GetCall.Returns.Zones = []string{"region1", "region2"}
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
@@ -935,15 +836,14 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(zones.GetCall.CallCount).To(Equal(1))
 				Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
 
-				Expect(terraformOutputter.GetCall.CallCount).To(Equal(5))
+				Expect(terraformOutputter.GetCall.CallCount).To(Equal(4))
 
 				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.AZs).To(Equal([]string{"region1", "region2"}))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.Tags).To(Equal([]string{"some-internal-tag"}))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.NetworkName).To(Equal("some-network-name"))
 				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.SubnetworkName).To(Equal("some-subnetwork-name"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseSSHTargetPool).To(Equal("env-id-ssh-target-pool"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseWebBackendService).To(Equal("env-id-web-backend-service"))
+				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseTargetPool).To(Equal("env-id-concourse-target-pool"))
 
 				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
 					"generating cloud config", "applying cloud config",
@@ -1000,9 +900,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 		It("uploads a new cloud-config to the bosh director", func() {
 			err := command.Execute(commands.GCPCreateLBsConfig{
-				LBType:   "concourse",
-				CertPath: certPath,
-				KeyPath:  keyPath,
+				LBType: "concourse",
 			}, storage.State{
 				IAAS: "gcp",
 				BOSH: storage.BOSH{
@@ -1039,19 +937,17 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("state manipulation", func() {
-			It("saves the concourse lb type, cert, and key", func() {
+			It("saves the concourse lb type", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{
 					IAAS: "gcp",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stateStore.SetCall.Receives.State.LB.Type).To(Equal("concourse"))
-				Expect(stateStore.SetCall.Receives.State.LB.Cert).To(Equal("some-cert"))
-				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal("some-key"))
+				Expect(stateStore.SetCall.Receives.State.LB.Cert).To(Equal(""))
+				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal(""))
 			})
 
 			It("saves the cf lb type, cert, and key", func() {
@@ -1072,9 +968,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			It("saves the updated tfstate", func() {
 				terraformExecutor.ApplyCall.Returns.TFState = "some-new-tfstate"
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{
 					IAAS:    "gcp",
 					TFState: "some-old-tfstate",
@@ -1163,9 +1057,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			It("returns an error when the terraform executor fails", func() {
 				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply terraform")
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("failed to apply terraform"))
@@ -1174,9 +1066,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			It("returns an error when the state store fails to save the state after applying terraform", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("failed to save state"))
@@ -1188,9 +1078,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
@@ -1201,9 +1089,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			It("returns an error when the state store fails to save the state after writing lb type", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: nil}, fakes.SetCallReturn{Error: errors.New("failed to save state")}}
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("failed to save state"))
@@ -1227,21 +1113,18 @@ var _ = Describe("GCPCreateLBs", func() {
 				Entry("failed to get network_name", "network_name", "cf"),
 				Entry("failed to get subnetwork_name", "subnetwork_name", "cf"),
 				Entry("failed to get internal_tag_name", "internal_tag_name", "cf"),
+				Entry("failed to get concourse_target_pool", "concourse_target_pool", "concourse"),
 				Entry("failed to get router_backend_service", "router_backend_service", "cf"),
 				Entry("failed to get ssh_proxy_target_pool", "ssh_proxy_target_pool", "cf"),
 				Entry("failed to get tcp_router_target_pool", "tcp_router_target_pool", "cf"),
 				Entry("failed to get ws_target_pool", "ws_target_pool", "cf"),
-				Entry("failed to get ssh_target_pool", "ssh_target_pool", "concourse"),
-				Entry("failed to get web_backend_service", "web_backend_service", "concourse"),
 			)
 
 			It("returns an error when the cloud config fails to be generated", func() {
 				cloudConfigGenerator.GenerateCall.Returns.Error = errors.New("failed to generate cloud config")
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 				Expect(err).To(MatchError("failed to generate cloud config"))
 			})
@@ -1252,9 +1135,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 				Expect(err).To(MatchError("failed to marshal"))
 			})
@@ -1263,18 +1144,14 @@ var _ = Describe("GCPCreateLBs", func() {
 				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update cloud config")
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{IAAS: "gcp"})
 				Expect(err).To(MatchError("failed to update cloud config"))
 			})
 
 			It("returns an error when the iaas type is not gcp", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
+					LBType: "concourse",
 				}, storage.State{
 					IAAS: "aws",
 				})
