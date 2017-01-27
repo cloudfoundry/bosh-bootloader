@@ -222,6 +222,12 @@ var _ = Describe("gcp up", func() {
 						Region:            "us-west1",
 					},
 					EnvID: "bbl-lake-time:stamp",
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{
+							"new-key": "new-value",
+						},
+						Variables: variablesYAML,
+					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -239,6 +245,10 @@ var _ = Describe("gcp up", func() {
 					ExternalIP:      "some-external-ip",
 					CredentialsJSON: serviceAccountKey,
 					PrivateKey:      "some-private-key",
+					BOSHState: map[string]interface{}{
+						"new-key": "new-value",
+					},
+					Variables: variablesYAML,
 				}))
 			})
 
@@ -272,43 +282,7 @@ var _ = Describe("gcp up", func() {
 				})
 
 				Context("when the state file exists", func() {
-					It("does not override the bosh credentials", func() {
-						err := gcpUp.Execute(commands.GCPUpConfig{
-							ServiceAccountKeyPath: serviceAccountKeyPath,
-							ProjectID:             "some-project-id",
-							Zone:                  "some-zone",
-							Region:                "us-west1",
-						}, storage.State{
-							EnvID: "bbl-lake-time:stamp",
-							BOSH: storage.BOSH{
-								DirectorName:           "old-director-name",
-								DirectorUsername:       "old-director-username",
-								DirectorPassword:       "old-director-password",
-								DirectorAddress:        "some--oldexternal-ip",
-								DirectorSSLCA:          "old-ca",
-								DirectorSSLCertificate: "old-certificate",
-								DirectorSSLPrivateKey:  "old-private-key",
-								Credentials:            map[string]string{"old": "credentials"},
-							},
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
-							DirectorName:           "old-director-name",
-							DirectorUsername:       "old-director-username",
-							DirectorPassword:       "old-director-password",
-							DirectorAddress:        "some--oldexternal-ip",
-							DirectorSSLCA:          "old-ca",
-							DirectorSSLCertificate: "old-certificate",
-							DirectorSSLPrivateKey:  "old-private-key",
-							Credentials:            map[string]string{"old": "credentials"},
-							State: map[string]interface{}{
-								"new-key": "new-value",
-							},
-						}))
-					})
-
-					It("updates the bosh manifest and state", func() {
+					It("updates the bosh state", func() {
 						err := gcpUp.Execute(commands.GCPUpConfig{
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
