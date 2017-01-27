@@ -237,12 +237,53 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 		state.BOSH.DirectorPassword)
 
+	cfHTTPSRouterBackendService := ""
+	cfSSHProxyTargetPool := ""
+	cfTCPRouterTargetPool := ""
+	cfWSTargetPool := ""
+	if state.LB.Type == "cf" {
+		cfHTTPSRouterBackendService, err = u.terraformOutputter.Get(state.TFState, "router_backend_service")
+		if err != nil {
+			return err
+		}
+
+		cfSSHProxyTargetPool, err = u.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool")
+		if err != nil {
+			return err
+		}
+
+		cfTCPRouterTargetPool, err = u.terraformOutputter.Get(state.TFState, "tcp_router_target_pool")
+		if err != nil {
+			return err
+		}
+
+		cfWSTargetPool, err = u.terraformOutputter.Get(state.TFState, "ws_target_pool")
+		if err != nil {
+			return err
+		}
+	}
+
+	concourseTargetPool := ""
+	if state.LB.Type == "concourse" {
+		concourseTargetPool, err = u.terraformOutputter.Get(state.TFState, "concourse_target_pool")
+		if err != nil {
+			return err
+		}
+	}
+
 	u.logger.Step("generating cloud config")
 	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:            zones,
-		Tags:           []string{internalTag},
-		NetworkName:    networkName,
-		SubnetworkName: subnetworkName,
+		AZs:                 zones,
+		Tags:                []string{internalTag},
+		NetworkName:         networkName,
+		SubnetworkName:      subnetworkName,
+		ConcourseTargetPool: concourseTargetPool,
+		CFBackends: gcp.CFBackends{
+			Router:    cfHTTPSRouterBackendService,
+			SSHProxy:  cfSSHProxyTargetPool,
+			TCPRouter: cfTCPRouterTargetPool,
+			WS:        cfWSTargetPool,
+		},
 	})
 	if err != nil {
 		return err
