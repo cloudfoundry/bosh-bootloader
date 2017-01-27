@@ -142,22 +142,8 @@ resource "google_compute_address" "concourse-address" {
   name = "${var.env_id}-concourse"
 }
 
-resource "google_compute_http_health_check" "health-check" {
-  name               = "${var.env_id}-concourse"
-  request_path       = "/login"
-  port               = 443
-  check_interval_sec  = 30
-  timeout_sec         = 5
-  healthy_threshold   = 10
-  unhealthy_threshold = 2
-}
-
 resource "google_compute_target_pool" "target-pool" {
   name = "${var.env_id}-concourse"
-
-  health_checks = [
-    "${google_compute_http_health_check.health-check.name}",
-  ]
 }
 
 resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
