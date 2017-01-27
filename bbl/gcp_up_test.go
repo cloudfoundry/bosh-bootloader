@@ -260,6 +260,26 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
 	})
 
+	It("can invoke the bosh cli idempotently", func() {
+		args := []string{
+			"--state-dir", tempDirectory,
+			"--debug",
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKeyPath,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "us-west1",
+		}
+
+		session := executeCommand(args, 0)
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+
+		session = executeCommand(args, 0)
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+		Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
+	})
+
 	DescribeTable("cloud config", func(fixtureLocation string) {
 		contents, err := ioutil.ReadFile(fixtureLocation)
 		Expect(err).NotTo(HaveOccurred())

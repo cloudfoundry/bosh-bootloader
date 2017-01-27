@@ -217,34 +217,33 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		ExternalIP:      externalIP,
 		CredentialsJSON: state.GCP.ServiceAccountKey,
 		PrivateKey:      state.KeyPair.PrivateKey,
+		BOSHState:       state.BOSH.State,
+		Variables:       state.BOSH.Variables,
 	}
 	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
 		return err
 	}
 
-	if state.BOSH.IsEmpty() {
-		directorOutputs := getDirectorOutputs(deployOutput.Variables)
+	directorOutputs := getDirectorOutputs(deployOutput.Variables)
 
-		variablesYAMLContents, err := marshal(deployOutput.Variables)
-		if err != nil {
-			return err
-		}
-		variablesYAML := string(variablesYAMLContents)
-
-		state.BOSH = storage.BOSH{
-			DirectorName:           deployInput.DirectorName,
-			DirectorAddress:        directorAddress,
-			DirectorUsername:       DIRECTOR_USERNAME,
-			DirectorPassword:       directorOutputs.directorPassword,
-			DirectorSSLCA:          directorOutputs.directorSSLCA,
-			DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
-			DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
-			Variables:              variablesYAML,
-		}
+	variablesYAMLContents, err := marshal(deployOutput.Variables)
+	if err != nil {
+		return err
 	}
+	variablesYAML := string(variablesYAMLContents)
 
-	state.BOSH.State = deployOutput.BOSHState
+	state.BOSH = storage.BOSH{
+		DirectorName:           deployInput.DirectorName,
+		DirectorAddress:        directorAddress,
+		DirectorUsername:       DIRECTOR_USERNAME,
+		DirectorPassword:       directorOutputs.directorPassword,
+		DirectorSSLCA:          directorOutputs.directorSSLCA,
+		DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
+		DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
+		Variables:              variablesYAML,
+		State:                  deployOutput.BOSHState,
+	}
 
 	err = u.stateStore.Set(state)
 	if err != nil {
