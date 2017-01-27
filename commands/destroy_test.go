@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -19,7 +21,7 @@ import (
 var _ = Describe("Destroy", func() {
 	var (
 		destroy                 commands.Destroy
-		boshDeleter             *fakes.BOSHDeleter
+		boshExecutor            *fakes.BOSHExecutor
 		stackManager            *fakes.StackManager
 		infrastructureManager   *fakes.InfrastructureManager
 		vpcStatusChecker        *fakes.VPCStatusChecker
@@ -44,7 +46,7 @@ var _ = Describe("Destroy", func() {
 		vpcStatusChecker = &fakes.VPCStatusChecker{}
 		stackManager = &fakes.StackManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
-		boshDeleter = &fakes.BOSHDeleter{}
+		boshExecutor = &fakes.BOSHExecutor{}
 		awsKeyPairDeleter = &fakes.AWSKeyPairDeleter{}
 		gcpKeyPairDeleter = &fakes.GCPKeyPairDeleter{}
 		certificateDeleter = &fakes.CertificateDeleter{}
@@ -53,10 +55,11 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformExecutor = &fakes.TerraformExecutor{}
-		terraformOutputter = &fakes.TerraformOutputter{}
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
-		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshDeleter,
+		terraformOutputter = &fakes.TerraformOutputter{}
+
+		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshExecutor,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
 			stateValidator, terraformExecutor, terraformOutputter, networkInstancesChecker)
@@ -93,10 +96,10 @@ var _ = Describe("Destroy", func() {
 				Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
 
 				if proceed {
-					Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
+					Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
 				} else {
 					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
-					Expect(boshDeleter.DeleteCall.CallCount).To(Equal(0))
+					Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(0))
 				}
 			},
 			Entry("responding with 'yes'", "yes", true),
@@ -119,7 +122,7 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
+				Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
 			},
 				Entry("--no-confirm", "--no-confirm"),
 				Entry("-n", "-n"),
@@ -154,16 +157,16 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
-			Context("when the bosh delete fails", func() {
+			Context("when the bosh delete-env fails", func() {
 				It("returns an error", func() {
-					boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
+					boshExecutor.ExecuteCall.Returns.Error = errors.New("bosh delete-env failed")
 
 					err := destroy.Execute([]string{}, storage.State{
 						BOSH: storage.BOSH{
 							DirectorName: "some-director",
 						},
 					})
-					Expect(err).To(MatchError("BOSH Delete Failed"))
+					Expect(err).To(MatchError("bosh delete-env failed"))
 				})
 			})
 
@@ -236,13 +239,13 @@ var _ = Describe("Destroy", func() {
 							},
 							DirectorSSLCertificate: "some-certificate",
 							DirectorSSLPrivateKey:  "some-private-key",
-							Manifest:               "bosh-init-manifest",
 						},
 						Stack: storage.Stack{
 							Name:            "some-stack-name",
 							LBType:          "some-lb-type",
 							CertificateName: "some-certificate-name",
 						},
+						EnvID: "bbl-lake-time:stamp",
 					}
 				})
 
@@ -262,7 +265,7 @@ var _ = Describe("Destroy", func() {
 					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
 				})
 
-				It("invokes bosh-init delete", func() {
+				It("invokes bosh delete-env", func() {
 					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
 						Name:   "some-stack-name",
 						Status: "some-stack-status",
@@ -270,8 +273,8 @@ var _ = Describe("Destroy", func() {
 							"BOSHSubnet":              "some-subnet-id",
 							"BOSHSubnetAZ":            "some-availability-zone",
 							"BOSHEIP":                 "some-elastic-ip",
-							"BOSHUserAccessKey":       "some-access-key-id",
-							"BOSHUserSecretAccessKey": "some-secret-access-key",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key-id",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 							"BOSHSecurityGroup":       "some-security-group",
 						},
 					}
@@ -281,9 +284,25 @@ var _ = Describe("Destroy", func() {
 
 					Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-					Expect(boshDeleter.DeleteCall.Receives.BOSHInitManifest).To(Equal("bosh-init-manifest"))
-					Expect(boshDeleter.DeleteCall.Receives.BOSHInitState).To(Equal(boshinit.State{"key": "value"}))
-					Expect(boshDeleter.DeleteCall.Receives.EC2PrivateKey).To(Equal("some-private-key"))
+					Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
+					Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
+						IAAS:                  "aws",
+						Command:               "delete-env",
+						DirectorName:          "bosh-bbl-lake-time:stamp",
+						AZ:                    "some-availability-zone",
+						AccessKeyID:           "some-bosh-user-access-key-id",
+						SecretAccessKey:       "some-bosh-user-secret-access-key",
+						Region:                "some-aws-region",
+						DefaultKeyName:        "some-ec2-key-pair-name",
+						DefaultSecurityGroups: []string{"some-security-group"},
+						SubnetID:              "some-subnet-id",
+						ExternalIP:            "some-elastic-ip",
+						PrivateKey:            "some-private-key",
+						Variables:             "",
+						BOSHState: map[string]interface{}{
+							"key": "value",
+						},
+					}))
 				})
 
 				It("deletes the stack", func() {
@@ -317,6 +336,13 @@ var _ = Describe("Destroy", func() {
 					Expect(awsKeyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
 				})
 
+				It("logs the bosh deletion", func() {
+					err := destroy.Execute([]string{}, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.StepCall.Messages).To(ContainElement("destroying bosh director"))
+				})
+
 				Context("reentrance", func() {
 					Context("when the stack fails to delete", func() {
 						It("removes the bosh properties from state and returns an error", func() {
@@ -344,6 +370,7 @@ var _ = Describe("Destroy", func() {
 									LBType:          "some-lb-type",
 									CertificateName: "some-certificate-name",
 								},
+								EnvID: "bbl-lake-time:stamp",
 							}))
 						})
 					})
@@ -355,7 +382,8 @@ var _ = Describe("Destroy", func() {
 							Expect(err).NotTo(HaveOccurred())
 
 							Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
-							Expect(boshDeleter.DeleteCall.CallCount).To(Equal(0))
+							Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
+							Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(0))
 						})
 					})
 
@@ -385,6 +413,7 @@ var _ = Describe("Destroy", func() {
 									LBType:          "",
 									CertificateName: "some-certificate-name",
 								},
+								EnvID: "bbl-lake-time:stamp",
 							}))
 						})
 					})
@@ -415,6 +444,7 @@ var _ = Describe("Destroy", func() {
 									LBType:          "",
 									CertificateName: "",
 								},
+								EnvID: "bbl-lake-time:stamp",
 							}))
 						})
 					})
@@ -515,6 +545,37 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("when iaas is gcp", func() {
+			var serviceAccountKeyPath string
+			var serviceAccountKey string
+			BeforeEach(func() {
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					switch output {
+					case "network_name":
+						return "bbl-lake-time:stamp-network", nil
+					case "subnetwork_name":
+						return "bbl-lake-time:stamp-subnet", nil
+					case "bosh_open_tag_name":
+						return "bbl-lake-time:stamp-bosh-open", nil
+					case "internal_tag_name":
+						return "bbl-lake-time:stamp-internal", nil
+					case "external_ip":
+						return "some-external-ip", nil
+					case "director_address":
+						return "some-director-address", nil
+					default:
+						return "", nil
+					}
+				}
+
+				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
+				Expect(err).NotTo(HaveOccurred())
+				serviceAccountKeyPath = tempFile.Name()
+				serviceAccountKey = `{"real": "json"}`
+				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+
 			It("returns an error when gcp credential validator fails", func() {
 				credentialValidator.ValidateGCPCall.Returns.Error = errors.New("gcp credentials validator failed")
 
@@ -523,6 +584,54 @@ var _ = Describe("Destroy", func() {
 				})
 
 				Expect(err).To(MatchError("gcp credentials validator failed"))
+			})
+
+			It("invokes bosh delete-env", func() {
+				stdin.Write([]byte("yes\n"))
+
+				state := storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+					KeyPair: storage.KeyPair{
+						PrivateKey: "some-private-key",
+					},
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{
+							"new-key": "new-value",
+						},
+						Variables: variablesYAML,
+					},
+					EnvID: "bbl-lake-time:stamp",
+				}
+				err := destroy.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
+				Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
+					IAAS:         "gcp",
+					Command:      "delete-env",
+					DirectorName: "bosh-bbl-lake-time:stamp",
+					Zone:         "some-zone",
+					Network:      "bbl-lake-time:stamp-network",
+					Subnetwork:   "bbl-lake-time:stamp-subnet",
+					Tags: []string{
+						"bbl-lake-time:stamp-bosh-open",
+						"bbl-lake-time:stamp-internal",
+					},
+					ProjectID:       "some-project-id",
+					ExternalIP:      "some-external-ip",
+					CredentialsJSON: serviceAccountKey,
+					PrivateKey:      "some-private-key",
+					BOSHState: map[string]interface{}{
+						"new-key": "new-value",
+					},
+					Variables: variablesYAML,
+				}))
 			})
 
 			It("calls terraform destroy", func() {
@@ -587,7 +696,6 @@ var _ = Describe("Destroy", func() {
 
 			It("returns an error when instances exist in the gcp network", func() {
 				networkInstancesChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
-				terraformOutputter.GetCall.Returns.Output = "some-network-name"
 
 				projectID := "some-project-id"
 				zone := "some-zone"
@@ -607,7 +715,7 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
 				Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
 
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("bbl-lake-time:stamp-network"))
 				Expect(err).To(MatchError("validation failed"))
 			})
 		})
@@ -630,6 +738,32 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("failure cases", func() {
+			DescribeTable("returns an error when we fail to get an output", func(outputName string) {
+				stdin.Write([]byte("yes\n"))
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					if output == outputName {
+						return "", errors.New("failed to get output")
+					}
+					return "", nil
+				}
+
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{
+							"key": "value",
+						},
+					},
+				})
+				Expect(err).To(MatchError("failed to get output"))
+			},
+				Entry("failed to get external_ip", "external_ip"),
+				Entry("failed to get network_name", "network_name"),
+				Entry("failed to get subnetwork_name", "subnetwork_name"),
+				Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name"),
+				Entry("failed to get internal_tag_name", "internal_tag_name"),
+			)
+
 			It("returns an error when terraform executor fails to destroy", func() {
 				stdin.Write([]byte("yes\n"))
 				terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to destroy")

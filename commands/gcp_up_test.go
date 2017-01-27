@@ -34,7 +34,7 @@ var _ = Describe("gcp up", func() {
 		gcpClientProvider       *fakes.GCPClientProvider
 		terraformExecutor       *fakes.TerraformExecutor
 		terraformOutputter      *fakes.TerraformOutputter
-		boshDeployer            *fakes.BOSHDeployer
+		boshExecutor            *fakes.BOSHExecutor
 		boshClientProvider      *fakes.BOSHClientProvider
 		boshClient              *fakes.BOSHClient
 		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
@@ -59,8 +59,8 @@ var _ = Describe("gcp up", func() {
 		gcpCloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
 
 		logger = &fakes.Logger{}
-		boshDeployer = &fakes.BOSHDeployer{}
-		boshDeployer.DeployCall.Returns.Output = bosh.DeployOutput{
+		boshExecutor = &fakes.BOSHExecutor{}
+		boshExecutor.ExecuteCall.Returns.Output = bosh.ExecutorOutput{
 			Variables: map[string]interface{}{
 				"admin_password": "some-admin-password",
 				"director_ssl": map[interface{}]interface{}{
@@ -94,7 +94,7 @@ var _ = Describe("gcp up", func() {
 			}
 		}
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer,
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshExecutor,
 			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
@@ -231,8 +231,9 @@ var _ = Describe("gcp up", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(bosh.DeployInput{
+				Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
 					IAAS:         "gcp",
+					Command:      "create-env",
 					DirectorName: "bosh-bbl-lake-time:stamp",
 					Zone:         "some-zone",
 					Network:      "bbl-lake-time:stamp-network",
@@ -357,7 +358,7 @@ var _ = Describe("gcp up", func() {
 				})
 
 				It("returns an error when boshdeployer fails to deploy", func() {
-					boshDeployer.DeployCall.Returns.Error = errors.New("failed to deploy")
+					boshExecutor.ExecuteCall.Returns.Error = errors.New("failed to deploy")
 
 					err := gcpUp.Execute(commands.GCPUpConfig{
 						ServiceAccountKeyPath: serviceAccountKeyPath,

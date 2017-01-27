@@ -11,12 +11,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/onsi/gomega/gexec"
 	"github.com/rosenhouse/awsfaker"
 
@@ -64,130 +63,16 @@ var _ = Describe("destroy", func() {
 		})
 	})
 
-	Context("asks for confirmation before it starts destroying things", func() {
-		var (
-			cmd            *exec.Cmd
-			stdin          io.WriteCloser
-			stdout         io.ReadCloser
-			fakeAWS        *awsbackend.Backend
-			fakeAWSServer  *httptest.Server
-			fakeBOSH       *fakeBOSHDirector
-			fakeBOSHServer *httptest.Server
-			tempDirectory  string
-		)
-
-		BeforeEach(func() {
-			fakeBOSH = &fakeBOSHDirector{}
-			fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				fakeBOSH.ServeHTTP(responseWriter, request)
-			}))
-
-			fakeAWS = awsbackend.New(fakeBOSHServer.URL)
-			fakeAWS.Stacks.Set(awsbackend.Stack{
-				Name: "some-stack-name",
-			})
-			fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
-				Name: "some-keypair-name",
-			})
-			fakeAWS.Instances.Set([]awsbackend.Instance{
-				{Name: "bosh/0", VPCID: "some-vpc-id"},
-				{Name: "NAT", VPCID: "some-vpc-id"},
-			})
-			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
-
-			var err error
-			tempDirectory, err = ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			buf, err := json.Marshal(storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					AccessKeyID:     "some-access-key",
-					SecretAccessKey: "some-access-secret",
-					Region:          "some-region",
-				},
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: testhelpers.BBL_KEY,
-				},
-				Stack: storage.Stack{
-					Name: "some-stack-name",
-				},
-				BOSH: storage.BOSH{
-					DirectorName: "some-bosh-director-name",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
-
-			args := []string{
-				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-				"--state-dir", tempDirectory,
-				"destroy",
-			}
-			cmd = exec.Command(pathToBBL, args...)
-
-			stdin, err = cmd.StdinPipe()
-			Expect(err).NotTo(HaveOccurred())
-
-			stdout, err = cmd.StdoutPipe()
-			Expect(err).NotTo(HaveOccurred())
-
-			err = cmd.Start()
-			Expect(err).NotTo(HaveOccurred())
-
-			Eventually(func() (string, error) {
-				bytes, err := bufio.NewReader(stdout).ReadBytes(':')
-				if err != nil {
-					return "", err
-				}
-
-				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("Are you sure you want to delete infrastructure for"))
-		})
-
-		It("continues with the destruction if you agree", func() {
-			_, err := stdin.Write([]byte("yes\n"))
-			Expect(err).NotTo(HaveOccurred())
-
-			Eventually(func() (string, error) {
-				bytes, err := bufio.NewReader(stdout).ReadBytes('\n')
-				if err != nil {
-					return "", err
-				}
-
-				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("step: destroying bosh director"))
-
-			Eventually(cmd.Wait).Should(Succeed())
-		})
-
-		It("does not destroy your infrastructure if you do not agree", func() {
-			_, err := stdin.Write([]byte("no\n"))
-			Expect(err).NotTo(HaveOccurred())
-
-			Eventually(func() (string, error) {
-				bytes, err := bufio.NewReader(stdout).ReadBytes('\n')
-				if err != nil {
-					return "", err
-				}
-
-				return string(bytes), nil
-			}, "10s", "10s").Should(ContainSubstring("step: exiting"))
-
-			Eventually(cmd.Wait).Should(Succeed())
-		})
-	})
-
 	Context("when the bosh director, cloudformation stack, certificate, and ec2 keypair exists", func() {
 		var (
-			fakeAWS        *awsbackend.Backend
-			fakeAWSServer  *httptest.Server
-			fakeBOSH       *fakeBOSHDirector
-			fakeBOSHServer *httptest.Server
-			tempDirectory  string
+			fakeAWS                  *awsbackend.Backend
+			fakeAWSServer            *httptest.Server
+			fakeBOSH                 *fakeBOSHDirector
+			fakeBOSHServer           *httptest.Server
+			tempDirectory            string
+			pathToFakeBOSH           string
+			pathToBOSH               string
+			fakeBOSHCLIBackendServer *httptest.Server
 		)
 
 		BeforeEach(func() {
@@ -212,9 +97,30 @@ var _ = Describe("destroy", func() {
 			})
 			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
+			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			}))
+
 			var err error
+			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+			err = os.Rename(pathToFakeBOSH, pathToBOSH)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+
 			tempDirectory, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
+
+			variables := `
+admin_password: rhkj9ys4l9guqfpc9vmp
+director_ssl:
+  certificate: some-certificate
+  private_key: some-private-key
+  ca: some-ca
+`
 
 			buf, err := json.Marshal(storage.State{
 				IAAS: "aws",
@@ -228,8 +134,9 @@ var _ = Describe("destroy", func() {
 					CertificateName: "some-certificate-name",
 				},
 				BOSH: storage.BOSH{
-					State: boshinit.State{
-						"key": "value",
+					Variables: variables,
+					State: map[string]interface{}{
+						"new-key": "new-value",
 					},
 				},
 			})
@@ -238,11 +145,77 @@ var _ = Describe("destroy", func() {
 			ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
 		})
 
-		It("invokes bosh-init delete", func() {
+		Context("asks for confirmation before it starts destroying things", func() {
+			var (
+				cmd    *exec.Cmd
+				stdin  io.WriteCloser
+				stdout io.ReadCloser
+			)
+
+			BeforeEach(func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"destroy",
+				}
+				cmd = exec.Command(pathToBBL, args...)
+
+				var err error
+				stdin, err = cmd.StdinPipe()
+				Expect(err).NotTo(HaveOccurred())
+
+				stdout, err = cmd.StdoutPipe()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = cmd.Start()
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() (string, error) {
+					bytes, err := bufio.NewReader(stdout).ReadBytes(':')
+					if err != nil {
+						return "", err
+					}
+
+					return string(bytes), nil
+				}, "10s", "10s").Should(ContainSubstring("Are you sure you want to delete infrastructure for"))
+			})
+
+			It("continues with the destruction if you agree", func() {
+				_, err := stdin.Write([]byte("yes\n"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() (string, error) {
+					bytes, err := bufio.NewReader(stdout).ReadBytes('\n')
+					if err != nil {
+						return "", err
+					}
+
+					return string(bytes), nil
+				}, "10s", "10s").Should(ContainSubstring("step: destroying bosh director"))
+
+				Eventually(cmd.Wait).Should(Succeed())
+			})
+
+			It("does not destroy your infrastructure if you do not agree", func() {
+				_, err := stdin.Write([]byte("no\n"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() (string, error) {
+					bytes, err := bufio.NewReader(stdout).ReadBytes('\n')
+					if err != nil {
+						return "", err
+					}
+
+					return string(bytes), nil
+				}, "10s", "10s").Should(ContainSubstring("step: exiting"))
+
+				Eventually(cmd.Wait).Should(Succeed())
+			})
+		})
+
+		It("invokes bosh delete-env", func() {
 			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
 			Expect(session.Out.Contents()).To(ContainSubstring("step: destroying bosh director"))
-			Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init delete bosh.yml]"))
-			Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value"}`))
 		})
 
 		It("deletes the stack", func() {
@@ -289,8 +262,6 @@ var _ = Describe("destroy", func() {
 					})
 					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
 					Expect(session.Out.Contents()).To(ContainSubstring("step: destroying bosh director"))
-					Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init delete bosh.yml]"))
-					Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value"}`))
 					Expect(session.Out.Contents()).To(ContainSubstring("step: deleting cloudformation stack"))
 
 					Expect(session.Out.Contents()).NotTo(ContainSubstring("step: finished deleting cloudformation stack"))
@@ -376,6 +347,7 @@ var _ = Describe("destroy", func() {
 func destroy(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
+		"--debug",
 		"--state-dir", tempDirectory,
 		"destroy",
 	}
