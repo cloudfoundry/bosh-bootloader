@@ -23,7 +23,7 @@ var _ = Describe("AWSUp", func() {
 	Describe("Execute", func() {
 		var (
 			command                   commands.AWSUp
-			boshDeployer              *fakes.BOSHDeployer
+			boshDeployer              *fakes.BOSHInitDeployer
 			infrastructureManager     *fakes.InfrastructureManager
 			keyPairSynchronizer       *fakes.KeyPairSynchronizer
 			stringGenerator           *fakes.StringGenerator
@@ -61,7 +61,7 @@ var _ = Describe("AWSUp", func() {
 				},
 			}
 
-			boshDeployer = &fakes.BOSHDeployer{}
+			boshDeployer = &fakes.BOSHInitDeployer{}
 			boshDeployer.DeployCall.Returns.Output = boshinit.DeployOutput{
 				DirectorSSLKeyPair: ssl.KeyPair{
 					CA:          []byte("updated-ca"),

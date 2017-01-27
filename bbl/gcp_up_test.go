@@ -25,6 +25,9 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath      string
 		pathToFakeTerraform        string
 		pathToTerraform            string
+		pathToFakeBOSH             string
+		pathToBOSH                 string
+		fakeBOSHCLIBackendServer   *httptest.Server
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
@@ -35,6 +38,9 @@ var _ = Describe("bbl up gcp", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
+		}))
+
+		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		}))
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -62,7 +68,15 @@ var _ = Describe("bbl up gcp", func() {
 		err = os.Rename(pathToFakeTerraform, pathToTerraform)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
+		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+		Expect(err).NotTo(HaveOccurred())
+
+		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+		err = os.Rename(pathToFakeBOSH, pathToBOSH)
+		Expect(err).NotTo(HaveOccurred())
+
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -229,9 +243,10 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
 	})
 
-	It("invokes bosh-init", func() {
+	It("invokes the bosh cli", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
+			"--debug",
 			"up",
 			"--iaas", "gcp",
 			"--gcp-service-account-key", serviceAccountKeyPath,
@@ -242,8 +257,7 @@ var _ = Describe("bbl up gcp", func() {
 
 		session := executeCommand(args, 0)
 
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
 	})
 
 	DescribeTable("cloud config", func(fixtureLocation string) {
