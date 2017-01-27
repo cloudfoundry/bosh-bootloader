@@ -1,25 +1,18 @@
 package main_test
 
 import (
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
-
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
-	"github.com/cloudfoundry/bosh-bootloader/bbl/constants"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/onsi/gomega/gexec"
@@ -96,14 +89,19 @@ func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request
 
 var _ = Describe("bbl up aws", func() {
 	var (
-		fakeAWS        *awsbackend.Backend
-		fakeAWSServer  *httptest.Server
-		fakeBOSHServer *httptest.Server
-		fakeBOSH       *fakeBOSHDirector
-		tempDirectory  string
-		lbCertPath     string
-		lbChainPath    string
-		lbKeyPath      string
+		fakeAWS                  *awsbackend.Backend
+		fakeAWSServer            *httptest.Server
+		fakeBOSHServer           *httptest.Server
+		fakeBOSHCLIBackendServer *httptest.Server
+		fakeBOSH                 *fakeBOSHDirector
+		pathToFakeBOSH           string
+		pathToBOSH               string
+		tempDirectory            string
+		lbCertPath               string
+		lbChainPath              string
+		lbKeyPath                string
+		fastFail                 bool
+		fastFailMutex            sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -112,10 +110,37 @@ var _ = Describe("bbl up aws", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
+		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/fastfail":
+				fastFailMutex.Lock()
+				defer fastFailMutex.Unlock()
+				if fastFail {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
+				}
+				return
+			default:
+				responseWriter.WriteHeader(http.StatusOK)
+				return
+			}
+		}))
+
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 		var err error
+		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+		Expect(err).NotTo(HaveOccurred())
+
+		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+		err = os.Rename(pathToFakeBOSH, pathToBOSH)
+		Expect(err).NotTo(HaveOccurred())
+
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -127,6 +152,10 @@ var _ = Describe("bbl up aws", func() {
 
 		lbKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
+
+		fastFailMutex.Lock()
+		defer fastFailMutex.Unlock()
+		fastFail = false
 	})
 
 	Describe("up", func() {
@@ -142,10 +171,7 @@ var _ = Describe("bbl up aws", func() {
 					"--iaas", "aws",
 				}
 
-				cmd := exec.Command(pathToBBL, args...)
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session, 10*time.Second).Should(gexec.Exit(0))
+				executeCommand(args, 0)
 
 				state := readStateJson(tempDirectory)
 				Expect(state.AWS).To(Equal(storage.AWS{
@@ -153,43 +179,6 @@ var _ = Describe("bbl up aws", func() {
 					SecretAccessKey: "some-access-secret",
 					Region:          "some-region",
 				}))
-			})
-		})
-
-		Context("when bosh/cpi/stemcell is provided via constants", func() {
-			It("creates a bosh with provided versions", func() {
-				upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-				state := readStateJson(tempDirectory)
-				var boshManifest struct {
-					Releases []struct {
-						Name string
-						URL  string
-						SHA1 string
-					}
-					ResourcePools []struct {
-						Stemcell struct {
-							URL  string
-							SHA1 string
-						}
-					} `yaml:"resource_pools"`
-				}
-
-				err := yaml.Unmarshal([]byte(state.BOSH.Manifest), &boshManifest)
-				Expect(err).NotTo(HaveOccurred())
-
-				boshRelease := boshManifest.Releases[0]
-				boshAWSCPIRelease := boshManifest.Releases[1]
-				stemcell := boshManifest.ResourcePools[0].Stemcell
-
-				Expect(boshRelease.URL).To(Equal(constants.BOSHURL))
-				Expect(boshRelease.SHA1).To(Equal(constants.BOSHSHA1))
-
-				Expect(boshAWSCPIRelease.URL).To(Equal(constants.BOSHAWSCPIURL))
-				Expect(boshAWSCPIRelease.SHA1).To(Equal(constants.BOSHAWSCPISHA1))
-
-				Expect(stemcell.URL).To(Equal(constants.AWSStemcellURL))
-				Expect(stemcell.SHA1).To(Equal(constants.AWSStemcellSHA1))
 			})
 		})
 
@@ -323,7 +312,7 @@ var _ = Describe("bbl up aws", func() {
 				Expect(template.Resources.BOSHUser.Properties.UserName).To(BeEmpty())
 			})
 
-			It("logs the steps and bosh-init manifest", func() {
+			It("logs the steps", func() {
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 				stdout := session.Out.Contents()
@@ -331,14 +320,11 @@ var _ = Describe("bbl up aws", func() {
 				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
-				Expect(stdout).To(ContainSubstring("step: generating bosh-init manifest"))
-				Expect(stdout).To(ContainSubstring("step: deploying bosh director"))
 			})
 
-			It("invokes bosh-init", func() {
+			It("invokes the bosh cli", func() {
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
 			})
 
 			It("names the bosh director with env id", func() {
@@ -369,43 +355,18 @@ var _ = Describe("bbl up aws", func() {
 					BOSH: storage.BOSH{
 						DirectorAddress: fakeBOSHServer.URL,
 					},
+					EnvID: "lakename",
 				}, tempDirectory)
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: my-bosh"))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-lakename"))
 			})
 
-			It("signs bosh-init cert and key with the generated CA cert", func() {
-				upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-				state := readStateJson(tempDirectory)
-
-				caCert := state.BOSH.DirectorSSLCA
-				cert := state.BOSH.DirectorSSLCertificate
-
-				rawCACertBlock, rest := pem.Decode([]byte(caCert))
-				Expect(rest).To(HaveLen(0))
-
-				rawCertBlock, rest := pem.Decode([]byte(cert))
-				Expect(rest).To(HaveLen(0))
-
-				rawCACert, err := x509.ParseCertificate(rawCACertBlock.Bytes)
-				Expect(err).NotTo(HaveOccurred())
-
-				rawCert, err := x509.ParseCertificate(rawCertBlock.Bytes)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = rawCert.CheckSignatureFrom(rawCACert)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("can invoke bosh-init idempotently", func() {
+			It("can invoke the bosh cli idempotently", func() {
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
 
 				session = upAWS(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
-				Expect(session.Out.Contents()).To(ContainSubstring(`bosh-state.json: {"key":"value","md5checksum":`))
+				Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
 				Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
 			})
 
@@ -592,31 +553,19 @@ var _ = Describe("bbl up aws", func() {
 				})
 			})
 
-			Context("when bosh init fails to create", func() {
+			Context("when the bosh cli fails to create", func() {
 				It("does not re-provision stack", func() {
-					originalPath := os.Getenv("PATH")
+					fastFailMutex.Lock()
+					fastFail = true
+					fastFailMutex.Unlock()
+					upAWS(fakeAWSServer.URL, tempDirectory, 1)
 
-					By("rebuilding bosh-init with fail fast flag", func() {
-						pathToFakeBOSHInit, err := gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit",
-							"-ldflags",
-							"-X main.FailFast=true")
-						Expect(err).NotTo(HaveOccurred())
+					fastFailMutex.Lock()
+					fastFail = false
+					fastFailMutex.Unlock()
+					upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
-						pathToBOSHInit = filepath.Join(filepath.Dir(pathToFakeBOSHInit), "bosh-init")
-						err = os.Rename(pathToFakeBOSHInit, pathToBOSHInit)
-						Expect(err).NotTo(HaveOccurred())
-
-						os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
-					})
-
-					By("running up twice and checking if it created one stack", func() {
-						upAWS(fakeAWSServer.URL, tempDirectory, 1)
-
-						os.Setenv("PATH", originalPath)
-						upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-						Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
-					})
+					Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
 				})
 			})
 
@@ -673,6 +622,7 @@ func upAWS(serverURL string, tempDirectory string, exitCode int) *gexec.Session 
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--state-dir", tempDirectory,
+		"--debug",
 		"up",
 		"--iaas", "aws",
 		"--aws-access-key-id", "some-access-key",

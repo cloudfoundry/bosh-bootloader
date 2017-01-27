@@ -5,7 +5,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
@@ -23,17 +26,20 @@ import (
 
 var _ = Describe("load balancers", func() {
 	var (
-		fakeAWS          *awsbackend.Backend
-		fakeAWSServer    *httptest.Server
-		fakeBOSHServer   *httptest.Server
-		fakeBOSH         *fakeBOSHDirector
-		tempDirectory    string
-		lbCertPath       string
-		lbChainPath      string
-		lbKeyPath        string
-		otherLBCertPath  string
-		otherLBChainPath string
-		otherLBKeyPath   string
+		fakeAWS                  *awsbackend.Backend
+		fakeAWSServer            *httptest.Server
+		fakeBOSHServer           *httptest.Server
+		fakeBOSHCLIBackendServer *httptest.Server
+		fakeBOSH                 *fakeBOSHDirector
+		tempDirectory            string
+		pathToFakeBOSH           string
+		pathToBOSH               string
+		lbCertPath               string
+		lbChainPath              string
+		lbKeyPath                string
+		otherLBCertPath          string
+		otherLBChainPath         string
+		otherLBKeyPath           string
 	)
 
 	BeforeEach(func() {
@@ -42,10 +48,23 @@ var _ = Describe("load balancers", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
+		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		}))
+
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 		var err error
+		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+		Expect(err).NotTo(HaveOccurred())
+
+		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+		err = os.Rename(pathToFakeBOSH, pathToBOSH)
+		Expect(err).NotTo(HaveOccurred())
+
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 

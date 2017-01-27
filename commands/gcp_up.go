@@ -10,7 +10,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -202,19 +201,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	directorAddress, err := u.terraformOutputter.Get(state.TFState, "director_address")
 	if err != nil {
 		return err
-	}
-
-	_ = boshinit.InfrastructureConfiguration{
-		ExternalIP: externalIP,
-		GCP: boshinit.InfrastructureConfigurationGCP{
-			Zone:           state.GCP.Zone,
-			NetworkName:    networkName,
-			SubnetworkName: subnetworkName,
-			BOSHTag:        boshTag,
-			InternalTag:    internalTag,
-			Project:        state.GCP.ProjectID,
-			JsonKey:        state.GCP.ServiceAccountKey,
-		},
 	}
 
 	deployInput := bosh.DeployInput{

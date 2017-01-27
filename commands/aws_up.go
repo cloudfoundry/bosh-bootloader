@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -27,10 +27,6 @@ type infrastructureManager interface {
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
 	Describe(stackName string) (cloudformation.Stack, error)
-}
-
-type boshinitDeployer interface {
-	Deploy(boshinit.DeployInput) (boshinit.DeployOutput, error)
 }
 
 type availabilityZoneRetriever interface {
@@ -64,8 +60,7 @@ type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
-	boshinitDeployer          boshinitDeployer
-	stringGenerator           stringGenerator
+	boshDeployer              boshDeployer
 	boshCloudConfigurator     boshCloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateDescriber      certificateDescriber
@@ -84,7 +79,7 @@ type AWSUpConfig struct {
 
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairSynchronizer keyPairSynchronizer, boshinitDeployer boshinitDeployer, stringGenerator stringGenerator,
+	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore,
@@ -94,8 +89,7 @@ func NewAWSUp(
 		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
-		boshinitDeployer:          boshinitDeployer,
-		stringGenerator:           stringGenerator,
+		boshDeployer:              boshDeployer,
 		boshCloudConfigurator:     boshCloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateDescriber:      certificateDescriber,
@@ -186,43 +180,49 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		ExternalIP: stack.Outputs["BOSHEIP"],
-		AWS: boshinit.InfrastructureConfigurationAWS{
-			AWSRegion:        state.AWS.Region,
-			SubnetID:         stack.Outputs["BOSHSubnet"],
-			AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
-			AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
-			SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
-			SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
-		},
+	deployInput := bosh.DeployInput{
+		IAAS:                  "aws",
+		DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
+		AZ:                    stack.Outputs["BOSHSubnetAZ"],
+		AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
+		SecretAccessKey:       stack.Outputs["BOSHUserSecretAccessKey"],
+		Region:                state.AWS.Region,
+		DefaultKeyName:        state.KeyPair.Name,
+		DefaultSecurityGroups: []string{stack.Outputs["BOSHSecurityGroup"]},
+		SubnetID:              stack.Outputs["BOSHSubnet"],
+		ExternalIP:            stack.Outputs["BOSHEIP"],
+		PrivateKey:            state.KeyPair.PrivateKey,
+		BOSHState:             state.BOSH.State,
+		Variables:             state.BOSH.Variables,
 	}
 
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID, "aws")
-	if err != nil {
-		return err
-	}
-
-	deployOutput, err := u.boshinitDeployer.Deploy(deployInput)
+	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
 		return err
 	}
 
 	if state.BOSH.IsEmpty() {
+		directorOutputs := getDirectorOutputs(deployOutput.Variables)
+
+		variablesYAMLContents, err := marshal(deployOutput.Variables)
+		if err != nil {
+			return err
+		}
+
+		variablesYAML := string(variablesYAMLContents)
 		state.BOSH = storage.BOSH{
 			DirectorName:           deployInput.DirectorName,
 			DirectorAddress:        stack.Outputs["BOSHURL"],
-			DirectorUsername:       deployInput.DirectorUsername,
-			DirectorPassword:       deployInput.DirectorPassword,
-			DirectorSSLCA:          string(deployOutput.DirectorSSLKeyPair.CA),
-			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            deployOutput.Credentials,
+			DirectorUsername:       DIRECTOR_USERNAME,
+			DirectorPassword:       directorOutputs.directorPassword,
+			DirectorSSLCA:          directorOutputs.directorSSLCA,
+			DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
+			DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
+			Variables:              variablesYAML,
 		}
 	}
 
-	state.BOSH.State = deployOutput.BOSHInitState
-	state.BOSH.Manifest = deployOutput.BOSHInitManifest
+	state.BOSH.State = deployOutput.BOSHState
 
 	err = u.stateStore.Set(state)
 	if err != nil {
