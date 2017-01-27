@@ -62,8 +62,8 @@ func NewExecutor(cmd command, tempDir func(string, string) (string, error), read
 	}
 }
 
-func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
-	tempDir, err := d.tempDir("", "")
+func (e Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
+	tempDir, err := e.tempDir("", "")
 	if err != nil {
 		return ExecutorOutput{}, err
 	}
@@ -76,18 +76,18 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 	externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
 
 	if executorInput.BOSHState != nil {
-		boshStateContents, err := d.marshalJSON(executorInput.BOSHState)
+		boshStateContents, err := e.marshalJSON(executorInput.BOSHState)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
-		err = d.writeFile(statePath, boshStateContents, os.ModePerm)
+		err = e.writeFile(statePath, boshStateContents, os.ModePerm)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
 	}
 
 	if executorInput.Variables != "" {
-		err = d.writeFile(variablesPath, []byte(executorInput.Variables), os.ModePerm)
+		err = e.writeFile(variablesPath, []byte(executorInput.Variables), os.ModePerm)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
@@ -98,7 +98,7 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 		//not tested
 		return ExecutorOutput{}, err
 	}
-	err = d.writeFile(boshManifestPath, boshManifestContents, os.ModePerm)
+	err = e.writeFile(boshManifestPath, boshManifestContents, os.ModePerm)
 	if err != nil {
 		return ExecutorOutput{}, err
 	}
@@ -108,7 +108,7 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 		//not tested
 		return ExecutorOutput{}, err
 	}
-	err = d.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
+	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
 	if err != nil {
 		return ExecutorOutput{}, err
 	}
@@ -128,12 +128,12 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 			return ExecutorOutput{}, err
 		}
 	}
-	err = d.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
+	err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
 	if err != nil {
 		return ExecutorOutput{}, err
 	}
 
-	err = d.writeFile(privateKeyPath, []byte(executorInput.PrivateKey), os.ModePerm)
+	err = e.writeFile(privateKeyPath, []byte(executorInput.PrivateKey), os.ModePerm)
 	if err != nil {
 		return ExecutorOutput{}, err
 	}
@@ -155,7 +155,7 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 	switch executorInput.IAAS {
 	case "gcp":
 		gcpCredentialsJSONPath := filepath.Join(tempDir, "gcp_credentials.json")
-		err = d.writeFile(gcpCredentialsJSONPath, []byte(executorInput.CredentialsJSON), os.ModePerm)
+		err = e.writeFile(gcpCredentialsJSONPath, []byte(executorInput.CredentialsJSON), os.ModePerm)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
@@ -185,7 +185,7 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 		)
 	}
 
-	err = d.command.Run(tempDir, args)
+	err = e.command.Run(tempDir, args)
 	if err != nil {
 		return ExecutorOutput{}, err
 	}
@@ -193,20 +193,20 @@ func (d Executor) Execute(executorInput ExecutorInput) (ExecutorOutput, error) {
 	variables := map[string]interface{}{}
 	state := map[string]interface{}{}
 	if executorInput.Command == "create-env" {
-		variablesContents, err := d.readFile(variablesPath)
+		variablesContents, err := e.readFile(variablesPath)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
-		err = d.unmarshalYAML(variablesContents, &variables)
+		err = e.unmarshalYAML(variablesContents, &variables)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
 
-		stateContents, err := d.readFile(statePath)
+		stateContents, err := e.readFile(statePath)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
-		err = d.unmarshalJSON(stateContents, &state)
+		err = e.unmarshalJSON(stateContents, &state)
 		if err != nil {
 			return ExecutorOutput{}, err
 		}
