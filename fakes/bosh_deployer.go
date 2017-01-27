@@ -1,20 +1,20 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/boshinit"
+import "github.com/cloudfoundry/bosh-bootloader/bosh"
 
 type BOSHDeployer struct {
 	DeployCall struct {
 		Receives struct {
-			Input boshinit.DeployInput
+			Input bosh.DeployInput
 		}
 		Returns struct {
-			Output boshinit.DeployOutput
+			Output bosh.DeployOutput
 			Error  error
 		}
 	}
 }
 
-func (d *BOSHDeployer) Deploy(input boshinit.DeployInput) (boshinit.DeployOutput, error) {
+func (d *BOSHDeployer) Deploy(input bosh.DeployInput) (bosh.DeployOutput, error) {
 	d.DeployCall.Receives.Input = input
 
 	return d.DeployCall.Returns.Output, d.DeployCall.Returns.Error

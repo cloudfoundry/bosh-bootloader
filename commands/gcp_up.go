@@ -9,6 +9,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/boshinit"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
@@ -20,12 +21,15 @@ var (
 	marshal = yaml.Marshal
 )
 
+const (
+	DIRECTOR_USERNAME = "admin"
+)
+
 type GCPUp struct {
 	stateStore           stateStore
 	keyPairUpdater       keyPairUpdater
 	gcpProvider          gcpProvider
 	boshDeployer         boshDeployer
-	stringGenerator      stringGenerator
 	logger               logger
 	boshClientProvider   boshClientProvider
 	cloudConfigGenerator gcpCloudConfigGenerator
@@ -39,6 +43,13 @@ type GCPUpConfig struct {
 	ProjectID             string
 	Zone                  string
 	Region                string
+}
+
+type directorOutputs struct {
+	directorPassword       string
+	directorSSLCA          string
+	directorSSLCertificate string
+	directorSSLPrivateKey  string
 }
 
 type gcpCloudConfigGenerator interface {
@@ -70,8 +81,12 @@ type zones interface {
 	Get(region string) []string
 }
 
+type boshDeployer interface {
+	Deploy(bosh.DeployInput) (bosh.DeployOutput, error)
+}
+
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshDeployer boshDeployer,
-	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
+	logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
 	terraformOutputter terraformOutputter, zones zones) GCPUp {
 	return GCPUp{
 		stateStore:           stateStore,
@@ -79,7 +94,6 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 		gcpProvider:          gcpProvider,
 		terraformExecutor:    terraformExecutor,
 		boshDeployer:         boshDeployer,
-		stringGenerator:      stringGenerator,
 		logger:               logger,
 		boshClientProvider:   boshClientProvider,
 		cloudConfigGenerator: cloudConfigGenerator,
@@ -190,7 +204,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
+	_ = boshinit.InfrastructureConfiguration{
 		ExternalIP: externalIP,
 		GCP: boshinit.InfrastructureConfigurationGCP{
 			Zone:           state.GCP.Zone,
@@ -203,31 +217,48 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		},
 	}
 
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID, "gcp")
-	if err != nil {
-		return err
+	deployInput := bosh.DeployInput{
+		IAAS:         "gcp",
+		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
+		Zone:         state.GCP.Zone,
+		Network:      networkName,
+		Subnetwork:   subnetworkName,
+		Tags: []string{
+			boshTag,
+			internalTag,
+		},
+		ProjectID:       state.GCP.ProjectID,
+		ExternalIP:      externalIP,
+		CredentialsJSON: state.GCP.ServiceAccountKey,
+		PrivateKey:      state.KeyPair.PrivateKey,
 	}
-
 	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
 		return err
 	}
 
 	if state.BOSH.IsEmpty() {
+		directorOutputs := getDirectorOutputs(deployOutput.Variables)
+
+		variablesYAMLContents, err := marshal(deployOutput.Variables)
+		if err != nil {
+			return err
+		}
+		variablesYAML := string(variablesYAMLContents)
+
 		state.BOSH = storage.BOSH{
 			DirectorName:           deployInput.DirectorName,
 			DirectorAddress:        directorAddress,
-			DirectorUsername:       deployInput.DirectorUsername,
-			DirectorPassword:       deployInput.DirectorPassword,
-			DirectorSSLCA:          string(deployOutput.DirectorSSLKeyPair.CA),
-			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            deployOutput.Credentials,
+			DirectorUsername:       DIRECTOR_USERNAME,
+			DirectorPassword:       directorOutputs.directorPassword,
+			DirectorSSLCA:          directorOutputs.directorSSLCA,
+			DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
+			DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
+			Variables:              variablesYAML,
 		}
 	}
 
-	state.BOSH.State = deployOutput.BOSHInitState
-	state.BOSH.Manifest = deployOutput.BOSHInitManifest
+	state.BOSH.State = deployOutput.BOSHState
 
 	err = u.stateStore.Set(state)
 	if err != nil {
@@ -291,7 +322,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	manifestYAML, err := marshal(cloudConfig)
 	if err != nil {
-		return err
+		return err // not tested
 	}
 
 	u.logger.Step("applying cloud config")
@@ -359,4 +390,19 @@ func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP stora
 	}
 
 	return nil
+}
+
+func getDirectorOutputs(variables map[string]interface{}) directorOutputs {
+	directorSSLInterfaceMap := variables["director_ssl"].(map[interface{}]interface{})
+	directorSSL := map[string]string{}
+	for k, v := range directorSSLInterfaceMap {
+		directorSSL[k.(string)] = v.(string)
+	}
+
+	return directorOutputs{
+		directorPassword:       variables["admin_password"].(string),
+		directorSSLCA:          directorSSL["ca"],
+		directorSSLCertificate: directorSSL["certificate"],
+		directorSSLPrivateKey:  directorSSL["private_key"],
+	}
 }
