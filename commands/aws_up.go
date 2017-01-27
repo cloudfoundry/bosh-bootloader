@@ -60,7 +60,7 @@ type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
-	boshDeployer              boshDeployer
+	boshExecutor              boshExecutor
 	boshCloudConfigurator     boshCloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateDescriber      certificateDescriber
@@ -79,7 +79,7 @@ type AWSUpConfig struct {
 
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer,
+	keyPairSynchronizer keyPairSynchronizer, boshExecutor boshExecutor,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore,
@@ -89,7 +89,7 @@ func NewAWSUp(
 		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
-		boshDeployer:              boshDeployer,
+		boshExecutor:              boshExecutor,
 		boshCloudConfigurator:     boshCloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateDescriber:      certificateDescriber,
@@ -180,8 +180,9 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	deployInput := bosh.DeployInput{
+	deployInput := bosh.ExecutorInput{
 		IAAS:                  "aws",
+		Command:               "create-env",
 		DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
 		AZ:                    stack.Outputs["BOSHSubnetAZ"],
 		AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
@@ -196,7 +197,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		Variables:             state.BOSH.Variables,
 	}
 
-	deployOutput, err := u.boshDeployer.Deploy(deployInput)
+	deployOutput, err := u.boshExecutor.Execute(deployInput)
 	if err != nil {
 		return err
 	}

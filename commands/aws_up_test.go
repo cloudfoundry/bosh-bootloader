@@ -20,7 +20,7 @@ var _ = Describe("AWSUp", func() {
 	Describe("Execute", func() {
 		var (
 			command                   commands.AWSUp
-			boshDeployer              *fakes.BOSHDeployer
+			boshExecutor              *fakes.BOSHExecutor
 			infrastructureManager     *fakes.InfrastructureManager
 			keyPairSynchronizer       *fakes.KeyPairSynchronizer
 			cloudConfigurator         *fakes.BoshCloudConfigurator
@@ -56,8 +56,8 @@ var _ = Describe("AWSUp", func() {
 				},
 			}
 
-			boshDeployer = &fakes.BOSHDeployer{}
-			boshDeployer.DeployCall.Returns.Output = bosh.DeployOutput{
+			boshExecutor = &fakes.BOSHExecutor{}
+			boshExecutor.ExecuteCall.Returns.Output = bosh.ExecutorOutput{
 				Variables: map[string]interface{}{
 					"admin_password": "some-admin-password",
 					"director_ssl": map[interface{}]interface{}{
@@ -89,7 +89,7 @@ var _ = Describe("AWSUp", func() {
 			clientProvider = &fakes.ClientProvider{}
 
 			command = commands.NewAWSUp(
-				credentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
+				credentialValidator, infrastructureManager, keyPairSynchronizer, boshExecutor,
 				cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 				cloudConfigManager, boshClientProvider, stateStore,
 				clientProvider,
@@ -192,8 +192,9 @@ var _ = Describe("AWSUp", func() {
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshDeployer.DeployCall.Receives.Input).To(Equal(bosh.DeployInput{
+			Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
 				IAAS:                  "aws",
+				Command:               "create-env",
 				DirectorName:          "bosh-bbl-lake-time:stamp",
 				AZ:                    "some-bosh-subnet-az",
 				AccessKeyID:           "some-bosh-user-access-key",
@@ -647,7 +648,7 @@ var _ = Describe("AWSUp", func() {
 					})
 
 					It("writes the updated bosh state", func() {
-						boshDeployer.DeployCall.Returns.Output = bosh.DeployOutput{
+						boshExecutor.ExecuteCall.Returns.Output = bosh.ExecutorOutput{
 							Variables: map[string]interface{}{
 								"admin_password": "some-admin-password",
 								"director_ssl": map[interface{}]interface{}{
@@ -755,8 +756,8 @@ var _ = Describe("AWSUp", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						state := stateStore.SetCall.Receives.State
-						Expect(boshDeployer.DeployCall.Receives.Input.Variables).To(Equal(variablesYAML))
-						Expect(boshDeployer.DeployCall.Receives.Input.BOSHState).To(Equal(boshState))
+						Expect(boshExecutor.ExecuteCall.Receives.Input.Variables).To(Equal(variablesYAML))
+						Expect(boshExecutor.ExecuteCall.Receives.Input.BOSHState).To(Equal(boshState))
 						Expect(state.BOSH.Variables).To(Equal(variablesYAML))
 						Expect(state.BOSH.State).To(Equal(boshState))
 					})
@@ -821,7 +822,7 @@ var _ = Describe("AWSUp", func() {
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
-				boshDeployer.DeployCall.Returns.Error = errors.New("cannot deploy bosh")
+				boshExecutor.ExecuteCall.Returns.Error = errors.New("cannot deploy bosh")
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
