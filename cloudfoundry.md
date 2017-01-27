@@ -37,7 +37,7 @@ system_domain: cf.example.com
 ```
 3. Check that the rest of the required credentials can autogenerate:
 ```
-bosh -n interpolate --vars-store cf-deployment-vars.yml -o operations/gcp.yml -o operations/disable-router-tls-termination.yml --var-errs cf-deployment.yml
+bosh -n interpolate --vars-store cf-deployment-vars.yml -o operations/gcp.yml --var-errs cf-deployment.yml
 ```
 
 ## Upload Stemcells
