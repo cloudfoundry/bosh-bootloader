@@ -10,42 +10,33 @@ import (
 )
 
 type GCPDeleteLBs struct {
-	zones                zones
-	terraformOutputter   terraformOutputter
-	cloudConfigGenerator gcpCloudConfigGenerator
-	logger               logger
-	boshClientProvider   boshClientProvider
-	stateStore           stateStore
-	terraformExecutor    terraformExecutor
+	zones                   zones
+	terraformOutputProvider terraformOutputProvider
+	cloudConfigGenerator    gcpCloudConfigGenerator
+	logger                  logger
+	boshClientProvider      boshClientProvider
+	stateStore              stateStore
+	terraformExecutor       terraformExecutor
 }
 
-func NewGCPDeleteLBs(terraformOutputter terraformOutputter, cloudConfigGenerator gcpCloudConfigGenerator,
+func NewGCPDeleteLBs(terraformOutputProvider terraformOutputProvider, cloudConfigGenerator gcpCloudConfigGenerator,
 	zones zones, logger logger, boshClientProvider boshClientProvider, stateStore stateStore,
 	terraformExecutor terraformExecutor) GCPDeleteLBs {
 	return GCPDeleteLBs{
-		zones:                zones,
-		terraformOutputter:   terraformOutputter,
-		cloudConfigGenerator: cloudConfigGenerator,
-		logger:               logger,
-		boshClientProvider:   boshClientProvider,
-		stateStore:           stateStore,
-		terraformExecutor:    terraformExecutor,
+		zones: zones,
+		terraformOutputProvider: terraformOutputProvider,
+		cloudConfigGenerator:    cloudConfigGenerator,
+		logger:                  logger,
+		boshClientProvider:      boshClientProvider,
+		stateStore:              stateStore,
+		terraformExecutor:       terraformExecutor,
 	}
 }
 
 func (g GCPDeleteLBs) Execute(state storage.State) error {
 	azs := g.zones.Get(state.GCP.Region)
-	networkName, err := g.terraformOutputter.Get(state.TFState, "network_name")
-	if err != nil {
-		return err
-	}
 
-	subnetworkName, err := g.terraformOutputter.Get(state.TFState, "subnetwork_name")
-	if err != nil {
-		return err
-	}
-
-	internalTagName, err := g.terraformOutputter.Get(state.TFState, "internal_tag_name")
+	terraformOutputs, err := g.terraformOutputProvider.Get(state.TFState, state.LB.Type)
 	if err != nil {
 		return err
 	}
@@ -53,9 +44,9 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 	g.logger.Step("generating cloud config")
 	cloudConfig, err := g.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
 		AZs:            azs,
-		Tags:           []string{internalTagName},
-		NetworkName:    networkName,
-		SubnetworkName: subnetworkName,
+		Tags:           []string{terraformOutputs.InternalTag},
+		NetworkName:    terraformOutputs.NetworkName,
+		SubnetworkName: terraformOutputs.SubnetworkName,
 	})
 
 	boshClient := g.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)

@@ -13,13 +13,13 @@ import (
 )
 
 type GCPCreateLBs struct {
-	terraformExecutor    terraformExecutor
-	terraformOutputter   terraformOutputter
-	cloudConfigGenerator gcpCloudConfigGenerator
-	boshClientProvider   boshClientProvider
-	zones                zones
-	stateStore           stateStore
-	logger               logger
+	terraformExecutor       terraformExecutor
+	terraformOutputProvider terraformOutputProvider
+	cloudConfigGenerator    gcpCloudConfigGenerator
+	boshClientProvider      boshClientProvider
+	zones                   zones
+	stateStore              stateStore
+	logger                  logger
 }
 
 type GCPCreateLBsConfig struct {
@@ -30,17 +30,17 @@ type GCPCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
-func NewGCPCreateLBs(terraformExecutor terraformExecutor, terraformOutputter terraformOutputter,
+func NewGCPCreateLBs(terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider,
 	cloudConfigGenerator gcpCloudConfigGenerator, boshClientProvider boshClientProvider, zones zones,
 	stateStore stateStore, logger logger) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformExecutor:    terraformExecutor,
-		terraformOutputter:   terraformOutputter,
-		cloudConfigGenerator: cloudConfigGenerator,
-		boshClientProvider:   boshClientProvider,
-		zones:                zones,
-		stateStore:           stateStore,
-		logger:               logger,
+		terraformExecutor:       terraformExecutor,
+		terraformOutputProvider: terraformOutputProvider,
+		cloudConfigGenerator:    cloudConfigGenerator,
+		boshClientProvider:      boshClientProvider,
+		zones:                   zones,
+		stateStore:              stateStore,
+		logger:                  logger,
 	}
 }
 
@@ -110,63 +110,23 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	network, err := c.terraformOutputter.Get(state.TFState, "network_name")
+	terraformOutputs, err := c.terraformOutputProvider.Get(state.TFState, config.LBType)
 	if err != nil {
 		return err
-	}
-
-	subnetwork, err := c.terraformOutputter.Get(state.TFState, "subnetwork_name")
-	if err != nil {
-		return err
-	}
-
-	internalTag, err := c.terraformOutputter.Get(state.TFState, "internal_tag_name")
-	if err != nil {
-		return err
-	}
-
-	concourseTargetPool := ""
-	if config.LBType == "concourse" {
-		concourseTargetPool, err = c.terraformOutputter.Get(state.TFState, "concourse_target_pool")
-		if err != nil {
-			return err
-		}
-	}
-
-	routerBackendService := ""
-	sshProxyTargetPool := ""
-	tcpRouterTargetPool := ""
-	wsTargetPool := ""
-	if config.LBType == "cf" {
-		if routerBackendService, err = c.terraformOutputter.Get(state.TFState, "router_backend_service"); err != nil {
-			return err
-		}
-
-		if sshProxyTargetPool, err = c.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool"); err != nil {
-			return err
-		}
-
-		if tcpRouterTargetPool, err = c.terraformOutputter.Get(state.TFState, "tcp_router_target_pool"); err != nil {
-			return err
-		}
-
-		if wsTargetPool, err = c.terraformOutputter.Get(state.TFState, "ws_target_pool"); err != nil {
-			return err
-		}
 	}
 
 	c.logger.Step("generating cloud config")
 	cloudConfig, err := c.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
 		AZs:                 zones,
-		Tags:                []string{internalTag},
-		NetworkName:         network,
-		SubnetworkName:      subnetwork,
-		ConcourseTargetPool: concourseTargetPool,
+		Tags:                []string{terraformOutputs.InternalTag},
+		NetworkName:         terraformOutputs.NetworkName,
+		SubnetworkName:      terraformOutputs.SubnetworkName,
+		ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
 		CFBackends: gcp.CFBackends{
-			Router:    routerBackendService,
-			SSHProxy:  sshProxyTargetPool,
-			TCPRouter: tcpRouterTargetPool,
-			WS:        wsTargetPool,
+			Router:    terraformOutputs.RouterBackendService,
+			SSHProxy:  terraformOutputs.SSHProxyTargetPool,
+			TCPRouter: terraformOutputs.TCPRouterTargetPool,
+			WS:        terraformOutputs.WSTargetPool,
 		},
 	})
 	if err != nil {

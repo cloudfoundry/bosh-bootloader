@@ -33,11 +33,11 @@ var _ = Describe("gcp up", func() {
 		keyPairUpdater          *fakes.GCPKeyPairUpdater
 		gcpClientProvider       *fakes.GCPClientProvider
 		terraformExecutor       *fakes.TerraformExecutor
-		terraformOutputter      *fakes.TerraformOutputter
 		boshExecutor            *fakes.BOSHExecutor
 		boshClientProvider      *fakes.BOSHClientProvider
 		boshClient              *fakes.BOSHClient
 		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
+		terraformOutputProvider *fakes.TerraformOutputProvider
 		logger                  *fakes.Logger
 		zones                   *fakes.Zones
 
@@ -57,6 +57,15 @@ var _ = Describe("gcp up", func() {
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 		gcpCloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
+		terraformOutputProvider = &fakes.TerraformOutputProvider{}
+		terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+			ExternalIP:      "some-external-ip",
+			NetworkName:     "some-network-name",
+			SubnetworkName:  "some-subnetwork-name",
+			BOSHTag:         "some-bosh-open-tag-name",
+			InternalTag:     "some-internal-tag-name",
+			DirectorAddress: "some-director-address",
+		}
 
 		logger = &fakes.Logger{}
 		boshExecutor = &fakes.BOSHExecutor{}
@@ -74,28 +83,8 @@ var _ = Describe("gcp up", func() {
 			},
 		}
 
-		terraformOutputter = &fakes.TerraformOutputter{}
-		terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-			switch output {
-			case "network_name":
-				return "bbl-lake-time:stamp-network", nil
-			case "subnetwork_name":
-				return "bbl-lake-time:stamp-subnet", nil
-			case "bosh_open_tag_name":
-				return "bbl-lake-time:stamp-bosh-open", nil
-			case "internal_tag_name":
-				return "bbl-lake-time:stamp-internal", nil
-			case "external_ip":
-				return "some-external-ip", nil
-			case "director_address":
-				return "some-director-address", nil
-			default:
-				return "", nil
-			}
-		}
-
 		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshExecutor,
-			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
+			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -236,11 +225,11 @@ var _ = Describe("gcp up", func() {
 					Command:      "create-env",
 					DirectorName: "bosh-bbl-lake-time:stamp",
 					Zone:         "some-zone",
-					Network:      "bbl-lake-time:stamp-network",
-					Subnetwork:   "bbl-lake-time:stamp-subnet",
+					Network:      "some-network-name",
+					Subnetwork:   "some-subnetwork-name",
 					Tags: []string{
-						"bbl-lake-time:stamp-bosh-open",
-						"bbl-lake-time:stamp-internal",
+						"some-bosh-open-tag-name",
+						"some-internal-tag-name",
 					},
 					ProjectID:       "some-project-id",
 					ExternalIP:      "some-external-ip",
@@ -307,39 +296,6 @@ var _ = Describe("gcp up", func() {
 			})
 
 			Context("failure cases", func() {
-				DescribeTable("returns an error when we fail to get an output", func(outputName, lb string) {
-					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-						if output == outputName {
-							return "", errors.New("failed to get output")
-						}
-						return "", nil
-					}
-
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKeyPath: serviceAccountKeyPath,
-						ProjectID:             "some-project-id",
-						Zone:                  "some-zone",
-						Region:                "us-west1",
-					}, storage.State{
-						LB: storage.LB{
-							Type: lb,
-						},
-					})
-					Expect(err).To(MatchError("failed to get output"))
-				},
-					Entry("failed to get external_ip", "external_ip", ""),
-					Entry("failed to get network_name", "network_name", ""),
-					Entry("failed to get subnetwork_name", "subnetwork_name", ""),
-					Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name", ""),
-					Entry("failed to get internal_tag_name", "internal_tag_name", ""),
-					Entry("failed to get director_address", "director_address", ""),
-					Entry("failed to get router_backend_service", "router_backend_service", "cf"),
-					Entry("failed to get ssh_proxy_target_pool", "ssh_proxy_target_pool", "cf"),
-					Entry("failed to get tcp_router_target_pool", "tcp_router_target_pool", "cf"),
-					Entry("failed to get ws_target_pool", "ws_target_pool", "cf"),
-					Entry("failed to get concourse_target_pool", "concourse_target_pool", "concourse"),
-				)
-
 				It("returns an error if applier fails with non terraform apply error", func() {
 					terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
 					err := gcpUp.Execute(commands.GCPUpConfig{
@@ -407,9 +363,9 @@ var _ = Describe("gcp up", func() {
 			gcpCloudConfigGenerator.GenerateCall.Returns.CloudConfig = gcp.CloudConfig{}
 			Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(gcp.CloudConfigInput{
 				AZs:            []string{"zone-1", "zone-2", "zone-3"},
-				Tags:           []string{"bbl-lake-time:stamp-internal"},
-				NetworkName:    "bbl-lake-time:stamp-network",
-				SubnetworkName: "bbl-lake-time:stamp-subnet",
+				Tags:           []string{"some-internal-tag-name"},
+				NetworkName:    "some-network-name",
+				SubnetworkName: "some-subnetwork-name",
 			}))
 
 			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
@@ -417,22 +373,10 @@ var _ = Describe("gcp up", func() {
 
 		Context("when a cf lb exists", func() {
 			BeforeEach(func() {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					switch output {
-					case "router_backend_service":
-						return "env-id-cf-https-lb", nil
-					case "ws_target_pool":
-						return "env-id-cf-ws", nil
-					case "ssh_proxy_target_pool":
-						return "env-id-cf-ssh-proxy-lb", nil
-					case "tcp_router_target_pool":
-						return "env-id-cf-tcp-router-network-properties", nil
-					case "concourse_target_pool":
-						return "", errors.New("output does not exist")
-					default:
-						return "", nil
-					}
-				}
+				terraformOutputProvider.GetCall.Returns.Outputs.RouterBackendService = "some-router-backend-service"
+				terraformOutputProvider.GetCall.Returns.Outputs.SSHProxyTargetPool = "some-ssh-proxy-target-pool"
+				terraformOutputProvider.GetCall.Returns.Outputs.TCPRouterTargetPool = "some-tcp-router-target-pool"
+				terraformOutputProvider.GetCall.Returns.Outputs.WSTargetPool = "some-ws-target-pool"
 			})
 
 			It("generates a cloud config with cf lb information", func() {
@@ -452,31 +396,16 @@ var _ = Describe("gcp up", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("env-id-cf-https-lb"))
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("env-id-cf-ssh-proxy-lb"))
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.TCPRouter).To(Equal("env-id-cf-tcp-router-network-properties"))
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.WS).To(Equal("env-id-cf-ws"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("some-router-backend-service"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("some-ssh-proxy-target-pool"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.TCPRouter).To(Equal("some-tcp-router-target-pool"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.WS).To(Equal("some-ws-target-pool"))
 			})
 		})
 
 		Context("when a concourse lb exists", func() {
 			BeforeEach(func() {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					switch output {
-					case "concourse_target_pool":
-						return "env-id-concourse-target-pool", nil
-					case "router_backend_service":
-						return "", errors.New("output does not exist")
-					case "ws_target_pool":
-						return "", errors.New("output does not exist")
-					case "ssh_proxy_target_pool":
-						return "", errors.New("output does not exist")
-					case "tcp_router_target_pool":
-						return "", errors.New("output does not exist")
-					default:
-						return "", nil
-					}
-				}
+				terraformOutputProvider.GetCall.Returns.Outputs.ConcourseTargetPool = "some-concourse-target-pool"
 			})
 
 			It("generates a cloud config with concourse lb information", func() {
@@ -493,7 +422,7 @@ var _ = Describe("gcp up", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseTargetPool).To(Equal("env-id-concourse-target-pool"))
+				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseTargetPool).To(Equal("some-concourse-target-pool"))
 			})
 		})
 
@@ -922,6 +851,18 @@ var _ = Describe("gcp up", func() {
 				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("state failed to be set"))
+		})
+
+		It("returns an error when terraform output provider fails", func() {
+			terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+			Expect(err).To(MatchError("terraform output provider failed"))
 		})
 	})
 })

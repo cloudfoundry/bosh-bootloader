@@ -12,21 +12,20 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("GCPDeleteLBs", func() {
 	var (
-		cloudConfigGenerator *fakes.GCPCloudConfigGenerator
-		terraformOutputter   *fakes.TerraformOutputter
-		stateStore           *fakes.StateStore
-		zones                *fakes.Zones
-		logger               *fakes.Logger
-		boshClientProvider   *fakes.BOSHClientProvider
-		boshClient           *fakes.BOSHClient
-		terraformExecutor    *fakes.TerraformExecutor
+		cloudConfigGenerator    *fakes.GCPCloudConfigGenerator
+		terraformOutputProvider *fakes.TerraformOutputProvider
+		stateStore              *fakes.StateStore
+		zones                   *fakes.Zones
+		logger                  *fakes.Logger
+		boshClientProvider      *fakes.BOSHClientProvider
+		boshClient              *fakes.BOSHClient
+		terraformExecutor       *fakes.TerraformExecutor
 
 		command commands.GCPDeleteLBs
 
@@ -36,7 +35,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 	Describe("Execute", func() {
 		BeforeEach(func() {
 			cloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
-			terraformOutputter = &fakes.TerraformOutputter{}
+			terraformOutputProvider = &fakes.TerraformOutputProvider{}
 			stateStore = &fakes.StateStore{}
 			zones = &fakes.Zones{}
 			logger = &fakes.Logger{}
@@ -45,7 +44,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 			terraformExecutor = &fakes.TerraformExecutor{}
 
-			command = commands.NewGCPDeleteLBs(terraformOutputter, cloudConfigGenerator, zones, logger, boshClientProvider, stateStore, terraformExecutor)
+			command = commands.NewGCPDeleteLBs(terraformOutputProvider, cloudConfigGenerator, zones, logger, boshClientProvider, stateStore, terraformExecutor)
 
 			body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
 			Expect(err).NotTo(HaveOccurred())
@@ -54,25 +53,11 @@ var _ = Describe("GCPDeleteLBs", func() {
 		})
 
 		It("updates the cloud config", func() {
-			networkCallCount := 0
-			subnetworkCallCount := 0
-			internalTagNameCallCount := 0
-			terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-				switch output {
-				case "network_name":
-					networkCallCount++
-					return "some-network-name", nil
-				case "subnetwork_name":
-					subnetworkCallCount++
-					return "some-subnetwork-name", nil
-				case "internal_tag_name":
-					internalTagNameCallCount++
-					return "some-internal-tag", nil
-				default:
-					return "", nil
-				}
+			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+				NetworkName:    "some-network-name",
+				SubnetworkName: "some-subnetwork-name",
+				InternalTag:    "some-internal-tag",
 			}
-
 			zones.GetCall.Returns.Zones = []string{"region1", "region2"}
 
 			expectedCloudConfig := gcp.CloudConfig{
@@ -105,10 +90,6 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 			Expect(zones.GetCall.CallCount).To(Equal(1))
 			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
-
-			Expect(networkCallCount).To(Equal(1))
-			Expect(subnetworkCallCount).To(Equal(1))
-			Expect(internalTagNameCallCount).To(Equal(1))
 
 			Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
 			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(gcp.CloudConfigInput{
@@ -237,28 +218,16 @@ var _ = Describe("GCPDeleteLBs", func() {
 				})
 			})
 
-			DescribeTable("when terraform outputter fails", func(expectedOutput string, expectedErr error) {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					switch output {
-					case expectedOutput:
-						return "", expectedErr
-					default:
-						return "", nil
-					}
-				}
+			It("returns an error when terraform output provider fails", func() {
+				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to return terraform output")
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					Stack: storage.Stack{
 						LBType: "concourse",
 					},
 				})
-				Expect(err).To(MatchError(expectedErr))
-
-			},
-				Entry("returns an error when terraform outputter fails to get network_name", "network_name", errors.New("failed to get network name")),
-				Entry("returns an error when terraform outputter fails to get subnetwork_name", "subnetwork_name", errors.New("failed to get subnetwork name")),
-				Entry("returns an error when terraform outputter fails to get internal_tag_name", "internal_tag_name", errors.New("failed to get internal tag name")),
-			)
+				Expect(err).To(MatchError("failed to return terraform output"))
+			})
 
 			Context("when marshaling the cloud config fails", func() {
 				BeforeEach(func() {

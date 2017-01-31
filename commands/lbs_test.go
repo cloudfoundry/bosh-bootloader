@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,23 +16,30 @@ import (
 
 var _ = Describe("LBs", func() {
 	var (
-		credentialValidator   *fakes.CredentialValidator
-		infrastructureManager *fakes.InfrastructureManager
-		stateValidator        *fakes.StateValidator
-		terraformOutputter    *fakes.TerraformOutputter
-		lbsCommand            commands.LBs
-		stdout                *bytes.Buffer
-		incomingState         storage.State
+		credentialValidator     *fakes.CredentialValidator
+		infrastructureManager   *fakes.InfrastructureManager
+		stateValidator          *fakes.StateValidator
+		terraformOutputProvider *fakes.TerraformOutputProvider
+		lbsCommand              commands.LBs
+		stdout                  *bytes.Buffer
+		incomingState           storage.State
 	)
 
 	BeforeEach(func() {
 		credentialValidator = &fakes.CredentialValidator{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		stateValidator = &fakes.StateValidator{}
-		terraformOutputter = &fakes.TerraformOutputter{}
+		terraformOutputProvider = &fakes.TerraformOutputProvider{}
+		terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+			RouterLBIP:    "some-router-lb-ip",
+			SSHProxyLBIP:  "some-ssh-proxy-lb-ip",
+			TCPRouterLBIP: "some-tcp-router-lb-ip",
+			WebSocketLBIP: "some-ws-lb-ip",
+			ConcourseLBIP: "some-concourse-lb-ip",
+		}
 		stdout = bytes.NewBuffer([]byte{})
 
-		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputter, stdout)
+		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputProvider, stdout)
 	})
 
 	Describe("Execute", func() {
@@ -127,22 +135,6 @@ var _ = Describe("LBs", func() {
 
 		Context("when bbl'd up on gcp", func() {
 			BeforeEach(func() {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					switch output {
-					case "router_lb_ip":
-						return "some-router-lb-ip", nil
-					case "ssh_proxy_lb_ip":
-						return "some-ssh-proxy-lb-ip", nil
-					case "tcp_router_lb_ip":
-						return "some-tcp-router-lb-ip", nil
-					case "concourse_lb_ip":
-						return "some-concourse-lb-ip", nil
-					case "ws_lb_ip":
-						return "some-ws-lb-ip", nil
-					default:
-						return "", nil
-					}
-				}
 				incomingState = storage.State{
 					IAAS: "gcp",
 				}
@@ -174,87 +166,13 @@ var _ = Describe("LBs", func() {
 			})
 
 			Context("failure cases", func() {
-				It("returns an error when terraform outputter fails to return router_lb_ip", func() {
-					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-						switch output {
-						case "router_lb_ip":
-							return "", errors.New("failed to return router_lb_ip")
-						default:
-							return "", nil
-						}
-					}
-					incomingState.LB = storage.LB{
-						Type: "cf",
-					}
+				It("returns an error when terraform output provider fails", func() {
+					terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to return terraform output")
 					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("failed to return router_lb_ip"))
+					Expect(err).To(MatchError("failed to return terraform output"))
 				})
 
-				It("returns an error when terraform outputter fails to return ssh_proxy_lb_ip", func() {
-					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-						switch output {
-						case "ssh_proxy_lb_ip":
-							return "", errors.New("failed to return ssh_proxy_lb_ip")
-						default:
-							return "", nil
-						}
-					}
-					incomingState.LB = storage.LB{
-						Type: "cf",
-					}
-					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("failed to return ssh_proxy_lb_ip"))
-				})
-
-				It("returns an error when terraform outputter fails to return ssh_proxy_lb_ip", func() {
-					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-						switch output {
-						case "tcp_router_lb_ip":
-							return "", errors.New("failed to return tcp_router_lb_ip")
-						default:
-							return "", nil
-						}
-					}
-					incomingState.LB = storage.LB{
-						Type: "cf",
-					}
-					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("failed to return tcp_router_lb_ip"))
-				})
-
-				It("returns an error when terraform outputter fails to return ws_lb_ip", func() {
-					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-						switch output {
-						case "ws_lb_ip":
-							return "", errors.New("failed to return ws_lb_ip")
-						default:
-							return "", nil
-						}
-					}
-					incomingState.LB = storage.LB{
-						Type: "cf",
-					}
-					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("failed to return ws_lb_ip"))
-				})
-
-				It("returns an error when terraform outputter fails to return concourse_lb_ip", func() {
-					terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-						switch output {
-						case "concourse_lb_ip":
-							return "", errors.New("failed to return concourse_lb_ip")
-						default:
-							return "", nil
-						}
-					}
-					incomingState.LB = storage.LB{
-						Type: "concourse",
-					}
-					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("failed to return concourse_lb_ip"))
-				})
-
-				It("returns an error when terraform outputter fails to return concourse_lb_ip", func() {
+				It("returns an nice error message when no lb type is found", func() {
 					incomingState.LB = storage.LB{
 						Type: "",
 					}

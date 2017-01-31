@@ -12,6 +12,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -34,7 +35,7 @@ var _ = Describe("Destroy", func() {
 		stateStore              *fakes.StateStore
 		stateValidator          *fakes.StateValidator
 		terraformExecutor       *fakes.TerraformExecutor
-		terraformOutputter      *fakes.TerraformOutputter
+		terraformOutputProvider *fakes.TerraformOutputProvider
 		networkInstancesChecker *fakes.NetworkInstancesChecker
 		stdin                   *bytes.Buffer
 	)
@@ -57,12 +58,12 @@ var _ = Describe("Destroy", func() {
 		terraformExecutor = &fakes.TerraformExecutor{}
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
-		terraformOutputter = &fakes.TerraformOutputter{}
+		terraformOutputProvider = &fakes.TerraformOutputProvider{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshExecutor,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
-			stateValidator, terraformExecutor, terraformOutputter, networkInstancesChecker)
+			stateValidator, terraformExecutor, terraformOutputProvider, networkInstancesChecker)
 	})
 
 	Describe("Execute", func() {
@@ -548,23 +549,13 @@ var _ = Describe("Destroy", func() {
 			var serviceAccountKeyPath string
 			var serviceAccountKey string
 			BeforeEach(func() {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					switch output {
-					case "network_name":
-						return "bbl-lake-time:stamp-network", nil
-					case "subnetwork_name":
-						return "bbl-lake-time:stamp-subnet", nil
-					case "bosh_open_tag_name":
-						return "bbl-lake-time:stamp-bosh-open", nil
-					case "internal_tag_name":
-						return "bbl-lake-time:stamp-internal", nil
-					case "external_ip":
-						return "some-external-ip", nil
-					case "director_address":
-						return "some-director-address", nil
-					default:
-						return "", nil
-					}
+				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+					ExternalIP:      "some-external-ip",
+					NetworkName:     "some-network-name",
+					SubnetworkName:  "some-subnetwork-name",
+					BOSHTag:         "some-bosh-open-tag-name",
+					InternalTag:     "some-internal-tag-name",
+					DirectorAddress: "some-director-address",
 				}
 
 				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
@@ -617,11 +608,11 @@ var _ = Describe("Destroy", func() {
 					Command:      "delete-env",
 					DirectorName: "bosh-bbl-lake-time:stamp",
 					Zone:         "some-zone",
-					Network:      "bbl-lake-time:stamp-network",
-					Subnetwork:   "bbl-lake-time:stamp-subnet",
+					Network:      "some-network-name",
+					Subnetwork:   "some-subnetwork-name",
 					Tags: []string{
-						"bbl-lake-time:stamp-bosh-open",
-						"bbl-lake-time:stamp-internal",
+						"some-bosh-open-tag-name",
+						"some-internal-tag-name",
 					},
 					ProjectID:       "some-project-id",
 					ExternalIP:      "some-external-ip",
@@ -712,10 +703,7 @@ var _ = Describe("Destroy", func() {
 					TFState: tfState,
 				})
 
-				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
-				Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
-
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("bbl-lake-time:stamp-network"))
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
 				Expect(err).To(MatchError("validation failed"))
 			})
 		})
@@ -738,32 +726,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("failure cases", func() {
-			DescribeTable("returns an error when we fail to get an output", func(outputName string) {
-				stdin.Write([]byte("yes\n"))
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					if output == outputName {
-						return "", errors.New("failed to get output")
-					}
-					return "", nil
-				}
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{
-							"key": "value",
-						},
-					},
-				})
-				Expect(err).To(MatchError("failed to get output"))
-			},
-				Entry("failed to get external_ip", "external_ip"),
-				Entry("failed to get network_name", "network_name"),
-				Entry("failed to get subnetwork_name", "subnetwork_name"),
-				Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name"),
-				Entry("failed to get internal_tag_name", "internal_tag_name"),
-			)
-
 			It("returns an error when terraform executor fails to destroy", func() {
 				stdin.Write([]byte("yes\n"))
 				terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to destroy")
@@ -795,24 +757,14 @@ var _ = Describe("Destroy", func() {
 				Expect(err).To(MatchError("failed to destroy"))
 			})
 
-			It("returns an error when terraform outputter fails", func() {
-				terraformOutputter.GetCall.Returns.Error = errors.New("terraform outputter failed")
+			It("returns an error when terraform output provider fails", func() {
+				terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
 
 				err := destroy.Execute([]string{}, storage.State{
 					IAAS: "gcp",
 				})
 
-				Expect(err).To(MatchError("terraform outputter failed"))
-			})
-
-			It("returns an error when network instances retreiver fails", func() {
-				terraformOutputter.GetCall.Returns.Error = errors.New("network instances retreiver failed")
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-				})
-
-				Expect(err).To(MatchError("network instances retreiver failed"))
+				Expect(err).To(MatchError("terraform output provider failed"))
 			})
 		})
 	})

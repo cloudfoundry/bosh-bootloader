@@ -116,6 +116,7 @@ func main() {
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
 	terraformOutputter := terraform.NewOutputter(terraformCmd)
+	terraformOutputProvider := terraform.NewOutputProvider(terraformOutputter)
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stdout, os.Stderr, configuration.Global.Debug)
@@ -137,7 +138,7 @@ func main() {
 		uuidGenerator, stateStore,
 	)
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputProvider, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)
@@ -148,10 +149,10 @@ func main() {
 		credentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
 	)
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputter, gcpCloudConfigGenerator, zones, logger,
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputProvider, gcpCloudConfigGenerator, zones, logger,
 		boshClientProvider, stateStore, terraformExecutor)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshExecutor, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshExecutor, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
 	envGetter := commands.NewEnvGetter()
 
 	// Commands
@@ -163,13 +164,13 @@ func main() {
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshExecutor, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
-		stateStore, stateValidator, terraformExecutor, terraformOutputter, gcpNetworkInstancesChecker,
+		stateStore, stateValidator, terraformExecutor, terraformOutputProvider, gcpNetworkInstancesChecker,
 	)
 
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
-	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputter, os.Stdout)
+	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputProvider, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
 		return state.BOSH.DirectorAddress
 	})

@@ -25,16 +25,16 @@ const (
 )
 
 type GCPUp struct {
-	stateStore           stateStore
-	keyPairUpdater       keyPairUpdater
-	gcpProvider          gcpProvider
-	boshExecutor         boshExecutor
-	logger               logger
-	boshClientProvider   boshClientProvider
-	cloudConfigGenerator gcpCloudConfigGenerator
-	terraformOutputter   terraformOutputter
-	terraformExecutor    terraformExecutor
-	zones                zones
+	stateStore              stateStore
+	keyPairUpdater          keyPairUpdater
+	gcpProvider             gcpProvider
+	boshExecutor            boshExecutor
+	logger                  logger
+	boshClientProvider      boshClientProvider
+	cloudConfigGenerator    gcpCloudConfigGenerator
+	terraformOutputProvider terraformOutputProvider
+	terraformExecutor       terraformExecutor
+	zones                   zones
 }
 
 type GCPUpConfig struct {
@@ -72,8 +72,8 @@ type terraformExecutor interface {
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
 }
 
-type terraformOutputter interface {
-	Get(tfState, outputName string) (string, error)
+type terraformOutputProvider interface {
+	Get(tfState, lbType string) (terraform.Outputs, error)
 }
 
 type zones interface {
@@ -86,18 +86,18 @@ type boshExecutor interface {
 
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshExecutor boshExecutor,
 	logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
-	terraformOutputter terraformOutputter, zones zones) GCPUp {
+	terraformOutputProvider terraformOutputProvider, zones zones) GCPUp {
 	return GCPUp{
-		stateStore:           stateStore,
-		keyPairUpdater:       keyPairUpdater,
-		gcpProvider:          gcpProvider,
-		terraformExecutor:    terraformExecutor,
-		boshExecutor:         boshExecutor,
-		logger:               logger,
-		boshClientProvider:   boshClientProvider,
-		cloudConfigGenerator: cloudConfigGenerator,
-		terraformOutputter:   terraformOutputter,
-		zones:                zones,
+		stateStore:              stateStore,
+		keyPairUpdater:          keyPairUpdater,
+		gcpProvider:             gcpProvider,
+		terraformExecutor:       terraformExecutor,
+		boshExecutor:            boshExecutor,
+		logger:                  logger,
+		boshClientProvider:      boshClientProvider,
+		cloudConfigGenerator:    cloudConfigGenerator,
+		terraformOutputProvider: terraformOutputProvider,
+		zones: zones,
 	}
 }
 
@@ -177,28 +177,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	externalIP, err := u.terraformOutputter.Get(state.TFState, "external_ip")
-	if err != nil {
-		return err
-	}
-
-	networkName, err := u.terraformOutputter.Get(state.TFState, "network_name")
-	if err != nil {
-		return err
-	}
-	subnetworkName, err := u.terraformOutputter.Get(state.TFState, "subnetwork_name")
-	if err != nil {
-		return err
-	}
-	boshTag, err := u.terraformOutputter.Get(state.TFState, "bosh_open_tag_name")
-	if err != nil {
-		return err
-	}
-	internalTag, err := u.terraformOutputter.Get(state.TFState, "internal_tag_name")
-	if err != nil {
-		return err
-	}
-	directorAddress, err := u.terraformOutputter.Get(state.TFState, "director_address")
+	terraformOutputs, err := u.terraformOutputProvider.Get(state.TFState, state.LB.Type)
 	if err != nil {
 		return err
 	}
@@ -208,14 +187,14 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		Command:      "create-env",
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 		Zone:         state.GCP.Zone,
-		Network:      networkName,
-		Subnetwork:   subnetworkName,
+		Network:      terraformOutputs.NetworkName,
+		Subnetwork:   terraformOutputs.SubnetworkName,
 		Tags: []string{
-			boshTag,
-			internalTag,
+			terraformOutputs.BOSHTag,
+			terraformOutputs.InternalTag,
 		},
 		ProjectID:       state.GCP.ProjectID,
-		ExternalIP:      externalIP,
+		ExternalIP:      terraformOutputs.ExternalIP,
 		CredentialsJSON: state.GCP.ServiceAccountKey,
 		PrivateKey:      state.KeyPair.PrivateKey,
 		BOSHState:       state.BOSH.State,
@@ -236,7 +215,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	state.BOSH = storage.BOSH{
 		DirectorName:           deployInput.DirectorName,
-		DirectorAddress:        directorAddress,
+		DirectorAddress:        terraformOutputs.DirectorAddress,
 		DirectorUsername:       DIRECTOR_USERNAME,
 		DirectorPassword:       directorOutputs.directorPassword,
 		DirectorSSLCA:          directorOutputs.directorSSLCA,
@@ -254,52 +233,18 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 		state.BOSH.DirectorPassword)
 
-	cfHTTPSRouterBackendService := ""
-	cfSSHProxyTargetPool := ""
-	cfTCPRouterTargetPool := ""
-	cfWSTargetPool := ""
-	if state.LB.Type == "cf" {
-		cfHTTPSRouterBackendService, err = u.terraformOutputter.Get(state.TFState, "router_backend_service")
-		if err != nil {
-			return err
-		}
-
-		cfSSHProxyTargetPool, err = u.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool")
-		if err != nil {
-			return err
-		}
-
-		cfTCPRouterTargetPool, err = u.terraformOutputter.Get(state.TFState, "tcp_router_target_pool")
-		if err != nil {
-			return err
-		}
-
-		cfWSTargetPool, err = u.terraformOutputter.Get(state.TFState, "ws_target_pool")
-		if err != nil {
-			return err
-		}
-	}
-
-	concourseTargetPool := ""
-	if state.LB.Type == "concourse" {
-		concourseTargetPool, err = u.terraformOutputter.Get(state.TFState, "concourse_target_pool")
-		if err != nil {
-			return err
-		}
-	}
-
 	u.logger.Step("generating cloud config")
 	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
 		AZs:                 zones,
-		Tags:                []string{internalTag},
-		NetworkName:         networkName,
-		SubnetworkName:      subnetworkName,
-		ConcourseTargetPool: concourseTargetPool,
+		Tags:                []string{terraformOutputs.InternalTag},
+		NetworkName:         terraformOutputs.NetworkName,
+		SubnetworkName:      terraformOutputs.SubnetworkName,
+		ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
 		CFBackends: gcp.CFBackends{
-			Router:    cfHTTPSRouterBackendService,
-			SSHProxy:  cfSSHProxyTargetPool,
-			TCPRouter: cfTCPRouterTargetPool,
-			WS:        cfWSTargetPool,
+			Router:    terraformOutputs.RouterBackendService,
+			SSHProxy:  terraformOutputs.SSHProxyTargetPool,
+			TCPRouter: terraformOutputs.TCPRouterTargetPool,
+			WS:        terraformOutputs.WSTargetPool,
 		},
 	})
 	if err != nil {

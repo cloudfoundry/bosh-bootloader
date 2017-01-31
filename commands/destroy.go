@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 const (
@@ -32,7 +33,7 @@ type Destroy struct {
 	stateStore              stateStore
 	stateValidator          stateValidator
 	terraformExecutor       terraformExecutor
-	terraformOutputter      terraformOutputter
+	terraformOutputProvider terraformOutputProvider
 	networkInstancesChecker networkInstancesChecker
 }
 
@@ -77,7 +78,7 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 	boshExecutor boshExecutor, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformExecutor terraformExecutor, terraformOutputter terraformOutputter, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
 		logger:                  logger,
@@ -93,7 +94,7 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		stateStore:              stateStore,
 		stateValidator:          stateValidator,
 		terraformExecutor:       terraformExecutor,
-		terraformOutputter:      terraformOutputter,
+		terraformOutputProvider: terraformOutputProvider,
 		networkInstancesChecker: networkInstancesChecker,
 	}
 }
@@ -127,13 +128,14 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
+	var terraformOutputs terraform.Outputs
 	if state.IAAS == "gcp" {
-		networkName, err := d.terraformOutputter.Get(state.TFState, "network_name")
+		terraformOutputs, err = d.terraformOutputProvider.Get(state.TFState, state.LB.Type)
 		if err != nil {
 			return err
 		}
 
-		err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
+		err = d.networkInstancesChecker.ValidateSafeToDelete(terraformOutputs.NetworkName)
 		if err != nil {
 			return err
 		}
@@ -174,7 +176,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	state, err = d.deleteBOSH(state, stack)
+	state, err = d.deleteBOSH(state, stack, terraformOutputs)
 	if err != nil {
 		return err
 	}
@@ -262,7 +264,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, terraformOutputs terraform.Outputs) (storage.State, error) {
 	emptyBOSH := storage.BOSH{}
 	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
 		d.logger.Println("no BOSH director, skipping...")
@@ -274,42 +276,19 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack) (st
 	var deleteInput bosh.ExecutorInput
 	switch state.IAAS {
 	case "gcp":
-		externalIP, err := d.terraformOutputter.Get(state.TFState, "external_ip")
-		if err != nil {
-			return state, err
-		}
-
-		networkName, err := d.terraformOutputter.Get(state.TFState, "network_name")
-		if err != nil {
-			//not tested
-			return state, err
-		}
-		subnetworkName, err := d.terraformOutputter.Get(state.TFState, "subnetwork_name")
-		if err != nil {
-			return state, err
-		}
-		boshTag, err := d.terraformOutputter.Get(state.TFState, "bosh_open_tag_name")
-		if err != nil {
-			return state, err
-		}
-		internalTag, err := d.terraformOutputter.Get(state.TFState, "internal_tag_name")
-		if err != nil {
-			return state, err
-		}
-
 		deleteInput = bosh.ExecutorInput{
 			IAAS:         "gcp",
 			Command:      "delete-env",
 			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 			Zone:         state.GCP.Zone,
-			Network:      networkName,
-			Subnetwork:   subnetworkName,
+			Network:      terraformOutputs.NetworkName,
+			Subnetwork:   terraformOutputs.SubnetworkName,
 			Tags: []string{
-				boshTag,
-				internalTag,
+				terraformOutputs.BOSHTag,
+				terraformOutputs.InternalTag,
 			},
 			ProjectID:       state.GCP.ProjectID,
-			ExternalIP:      externalIP,
+			ExternalIP:      terraformOutputs.ExternalIP,
 			CredentialsJSON: state.GCP.ServiceAccountKey,
 			PrivateKey:      state.KeyPair.PrivateKey,
 			BOSHState:       state.BOSH.State,
