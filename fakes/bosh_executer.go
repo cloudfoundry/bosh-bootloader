@@ -3,7 +3,18 @@ package fakes
 import "github.com/cloudfoundry/bosh-bootloader/bosh"
 
 type BOSHExecutor struct {
-	ExecuteCall struct {
+	CreateEnvCall struct {
+		CallCount int
+		Receives  struct {
+			Input bosh.ExecutorInput
+		}
+		Returns struct {
+			Output bosh.ExecutorOutput
+			Error  error
+		}
+	}
+
+	DeleteEnvCall struct {
 		CallCount int
 		Receives  struct {
 			Input bosh.ExecutorInput
@@ -15,9 +26,16 @@ type BOSHExecutor struct {
 	}
 }
 
-func (e *BOSHExecutor) Execute(input bosh.ExecutorInput) (bosh.ExecutorOutput, error) {
-	e.ExecuteCall.CallCount++
-	e.ExecuteCall.Receives.Input = input
+func (e *BOSHExecutor) CreateEnv(input bosh.ExecutorInput) (bosh.ExecutorOutput, error) {
+	e.CreateEnvCall.CallCount++
+	e.CreateEnvCall.Receives.Input = input
 
-	return e.ExecuteCall.Returns.Output, e.ExecuteCall.Returns.Error
+	return e.CreateEnvCall.Returns.Output, e.CreateEnvCall.Returns.Error
+}
+
+func (e *BOSHExecutor) DeleteEnv(input bosh.ExecutorInput) (bosh.ExecutorOutput, error) {
+	e.DeleteEnvCall.CallCount++
+	e.DeleteEnvCall.Receives.Input = input
+
+	return e.DeleteEnvCall.Returns.Output, e.DeleteEnvCall.Returns.Error
 }

@@ -97,10 +97,10 @@ var _ = Describe("Destroy", func() {
 				Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
 
 				if proceed {
-					Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
+					Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(1))
 				} else {
 					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
-					Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(0))
+					Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(0))
 				}
 			},
 			Entry("responding with 'yes'", "yes", true),
@@ -123,7 +123,7 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
+				Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(1))
 			},
 				Entry("--no-confirm", "--no-confirm"),
 				Entry("-n", "-n"),
@@ -160,7 +160,7 @@ var _ = Describe("Destroy", func() {
 
 			Context("when the bosh delete-env fails", func() {
 				It("returns an error", func() {
-					boshExecutor.ExecuteCall.Returns.Error = errors.New("bosh delete-env failed")
+					boshExecutor.DeleteEnvCall.Returns.Error = errors.New("bosh delete-env failed")
 
 					err := destroy.Execute([]string{}, storage.State{
 						BOSH: storage.BOSH{
@@ -285,10 +285,9 @@ var _ = Describe("Destroy", func() {
 
 					Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-					Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
-					Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
+					Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(1))
+					Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.ExecutorInput{
 						IAAS:                  "aws",
-						Command:               "delete-env",
 						DirectorName:          "bosh-bbl-lake-time:stamp",
 						AZ:                    "some-availability-zone",
 						AccessKeyID:           "some-bosh-user-access-key-id",
@@ -384,7 +383,7 @@ var _ = Describe("Destroy", func() {
 
 							Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
 							Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
-							Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(0))
+							Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(0))
 						})
 					})
 
@@ -602,10 +601,9 @@ var _ = Describe("Destroy", func() {
 				err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshExecutor.ExecuteCall.CallCount).To(Equal(1))
-				Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
+				Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(1))
+				Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.ExecutorInput{
 					IAAS:         "gcp",
-					Command:      "delete-env",
 					DirectorName: "bosh-bbl-lake-time:stamp",
 					Zone:         "some-zone",
 					Network:      "some-network-name",

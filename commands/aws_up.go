@@ -182,7 +182,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 
 	deployInput := bosh.ExecutorInput{
 		IAAS:                  "aws",
-		Command:               "create-env",
 		DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
 		AZ:                    stack.Outputs["BOSHSubnetAZ"],
 		AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
@@ -197,7 +196,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		Variables:             state.BOSH.Variables,
 	}
 
-	deployOutput, err := u.boshExecutor.Execute(deployInput)
+	deployOutput, err := u.boshExecutor.CreateEnv(deployInput)
 	if err != nil {
 		return err
 	}

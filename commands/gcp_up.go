@@ -81,7 +81,8 @@ type zones interface {
 }
 
 type boshExecutor interface {
-	Execute(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
+	CreateEnv(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
+	DeleteEnv(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
 }
 
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshExecutor boshExecutor,
@@ -184,7 +185,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	deployInput := bosh.ExecutorInput{
 		IAAS:         "gcp",
-		Command:      "create-env",
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 		Zone:         state.GCP.Zone,
 		Network:      terraformOutputs.NetworkName,
@@ -200,7 +200,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		BOSHState:       state.BOSH.State,
 		Variables:       state.BOSH.Variables,
 	}
-	deployOutput, err := u.boshExecutor.Execute(deployInput)
+	deployOutput, err := u.boshExecutor.CreateEnv(deployInput)
 	if err != nil {
 		return err
 	}

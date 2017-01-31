@@ -119,8 +119,9 @@ func main() {
 	terraformOutputProvider := terraform.NewOutputProvider(terraformOutputter)
 
 	// BOSH
-	boshCommand := bosh.NewCmd(os.Stdout, os.Stderr, configuration.Global.Debug)
-	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+	boshCommand := bosh.NewCmd(os.Stderr)
+	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal,
+		json.Marshal, ioutil.WriteFile, configuration.Global.Debug)
 	boshClientProvider := bosh.NewClientProvider()
 	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)

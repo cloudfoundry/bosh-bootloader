@@ -6,25 +6,21 @@ import (
 )
 
 type Cmd struct {
-	stdout io.Writer
 	stderr io.Writer
-	debug  bool
 }
 
-func NewCmd(stdout, stderr io.Writer, debug bool) Cmd {
+func NewCmd(stderr io.Writer) Cmd {
 	return Cmd{
-		stdout: stdout,
 		stderr: stderr,
-		debug:  debug,
 	}
 }
 
-func (c Cmd) Run(workingDirectory string, args []string) error {
+func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
 	command := exec.Command("bosh", args...)
 	command.Dir = workingDirectory
 
-	if c.debug {
-		command.Stdout = c.stdout
+	if debug {
+		command.Stdout = stdout
 		command.Stderr = c.stderr
 	}
 

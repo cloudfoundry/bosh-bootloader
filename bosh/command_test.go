@@ -24,8 +24,7 @@ var _ = Describe("Cmd", func() {
 		stdout *bytes.Buffer
 		stderr *bytes.Buffer
 
-		cmd          bosh.Cmd
-		cmdWithDebug bosh.Cmd
+		cmd bosh.Cmd
 
 		fakeBOSHBackendServer *httptest.Server
 		pathToFakeBOSH        string
@@ -54,8 +53,7 @@ var _ = Describe("Cmd", func() {
 		stdout = bytes.NewBuffer([]byte{})
 		stderr = bytes.NewBuffer([]byte{})
 
-		cmd = bosh.NewCmd(stdout, stderr, false)
-		cmdWithDebug = bosh.NewCmd(stdout, stderr, true)
+		cmd = bosh.NewCmd(stderr)
 
 		fakeBOSHBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			if getFastFailBOSH() {
@@ -90,7 +88,7 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("runs bosh with args", func() {
-		err := cmd.Run("/tmp", []string{"create-env", "some-arg"})
+		err := cmd.Run(stdout, "/tmp", []string{"create-env", "some-arg"}, false)
 		Expect(err).NotTo(HaveOccurred())
 
 		boshArgsMutex.Lock()
@@ -102,7 +100,7 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("redirects command stdout to provided stdout when debug is true", func() {
-		err := cmdWithDebug.Run("/tmp", []string{"create-env", "some-arg"})
+		err := cmd.Run(stdout, "/tmp", []string{"create-env", "some-arg"}, true)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(stdout.String()).To(MatchRegexp("working directory: (.*)/tmp"))
@@ -119,12 +117,12 @@ var _ = Describe("Cmd", func() {
 		})
 
 		It("returns an error when terraform fails", func() {
-			err := cmd.Run("", []string{})
+			err := cmd.Run(stdout, "", []string{}, false)
 			Expect(err).To(MatchError("exit status 1"))
 		})
 
 		It("redirects command stderr to provided stderr when debug is true", func() {
-			_ = cmdWithDebug.Run("", []string{})
+			_ = cmd.Run(stdout, "", []string{}, true)
 			Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
 		})
 	})

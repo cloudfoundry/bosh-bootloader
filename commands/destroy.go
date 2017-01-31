@@ -278,7 +278,6 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 	case "gcp":
 		deleteInput = bosh.ExecutorInput{
 			IAAS:         "gcp",
-			Command:      "delete-env",
 			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 			Zone:         state.GCP.Zone,
 			Network:      terraformOutputs.NetworkName,
@@ -297,7 +296,6 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 	case "aws":
 		deleteInput = bosh.ExecutorInput{
 			IAAS:                  "aws",
-			Command:               "delete-env",
 			DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
 			AZ:                    stack.Outputs["BOSHSubnetAZ"],
 			AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
@@ -313,7 +311,7 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 		}
 	}
 
-	_, err := d.boshExecutor.Execute(deleteInput)
+	_, err := d.boshExecutor.DeleteEnv(deleteInput)
 	if err != nil {
 		return state, err
 	}

@@ -69,7 +69,7 @@ var _ = Describe("gcp up", func() {
 
 		logger = &fakes.Logger{}
 		boshExecutor = &fakes.BOSHExecutor{}
-		boshExecutor.ExecuteCall.Returns.Output = bosh.ExecutorOutput{
+		boshExecutor.CreateEnvCall.Returns.Output = bosh.ExecutorOutput{
 			Variables: map[string]interface{}{
 				"admin_password": "some-admin-password",
 				"director_ssl": map[interface{}]interface{}{
@@ -220,9 +220,8 @@ var _ = Describe("gcp up", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshExecutor.ExecuteCall.Receives.Input).To(Equal(bosh.ExecutorInput{
+				Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.ExecutorInput{
 					IAAS:         "gcp",
-					Command:      "create-env",
 					DirectorName: "bosh-bbl-lake-time:stamp",
 					Zone:         "some-zone",
 					Network:      "some-network-name",
@@ -314,7 +313,7 @@ var _ = Describe("gcp up", func() {
 				})
 
 				It("returns an error when boshdeployer fails to deploy", func() {
-					boshExecutor.ExecuteCall.Returns.Error = errors.New("failed to deploy")
+					boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to deploy")
 
 					err := gcpUp.Execute(commands.GCPUpConfig{
 						ServiceAccountKeyPath: serviceAccountKeyPath,
