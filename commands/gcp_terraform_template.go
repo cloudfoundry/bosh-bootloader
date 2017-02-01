@@ -242,10 +242,6 @@ resource "google_compute_http_health_check" "cf-public-health-check" {
   name                = "${var.env_id}-cf"
   port                = 8080
   request_path        = "/health"
-  check_interval_sec  = 30
-  timeout_sec         = 5
-  healthy_threshold   = 10
-  unhealthy_threshold = 2
 }
 
 resource "google_compute_firewall" "cf-health-check" {
@@ -320,10 +316,6 @@ resource "google_compute_http_health_check" "cf-tcp-router" {
   name                = "${var.env_id}-cf-tcp-router"
   port                = 80
   request_path        = "/health"
-  check_interval_sec  = 30
-  timeout_sec         = 5
-  healthy_threshold   = 10
-  unhealthy_threshold = 2
 }
 
 resource "google_compute_target_pool" "cf-tcp-router" {
