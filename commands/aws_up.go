@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -60,7 +59,7 @@ type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
-	boshExecutor              boshExecutor
+	boshManager               boshManager
 	boshCloudConfigurator     boshCloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateDescriber      certificateDescriber
@@ -79,7 +78,7 @@ type AWSUpConfig struct {
 
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairSynchronizer keyPairSynchronizer, boshExecutor boshExecutor,
+	keyPairSynchronizer keyPairSynchronizer, boshManager boshManager,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore,
@@ -89,7 +88,7 @@ func NewAWSUp(
 		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
-		boshExecutor:              boshExecutor,
+		boshManager:               boshManager,
 		boshCloudConfigurator:     boshCloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateDescriber:      certificateDescriber,
@@ -180,45 +179,9 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	deployInput := bosh.ExecutorInput{
-		IAAS:                  "aws",
-		DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
-		AZ:                    stack.Outputs["BOSHSubnetAZ"],
-		AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
-		SecretAccessKey:       stack.Outputs["BOSHUserSecretAccessKey"],
-		Region:                state.AWS.Region,
-		DefaultKeyName:        state.KeyPair.Name,
-		DefaultSecurityGroups: []string{stack.Outputs["BOSHSecurityGroup"]},
-		SubnetID:              stack.Outputs["BOSHSubnet"],
-		ExternalIP:            stack.Outputs["BOSHEIP"],
-		PrivateKey:            state.KeyPair.PrivateKey,
-		BOSHState:             state.BOSH.State,
-		Variables:             state.BOSH.Variables,
-	}
-
-	deployOutput, err := u.boshExecutor.CreateEnv(deployInput)
+	state, err = u.boshManager.Create(state)
 	if err != nil {
 		return err
-	}
-
-	directorOutputs := getDirectorOutputs(deployOutput.Variables)
-
-	variablesYAMLContents, err := marshal(deployOutput.Variables)
-	if err != nil {
-		return err
-	}
-
-	variablesYAML := string(variablesYAMLContents)
-	state.BOSH = storage.BOSH{
-		DirectorName:           deployInput.DirectorName,
-		DirectorAddress:        stack.Outputs["BOSHURL"],
-		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorOutputs.directorPassword,
-		DirectorSSLCA:          directorOutputs.directorSSLCA,
-		DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
-		Variables:              variablesYAML,
-		State:                  deployOutput.BOSHState,
 	}
 
 	err = u.stateStore.Set(state)

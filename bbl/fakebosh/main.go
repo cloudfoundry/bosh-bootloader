@@ -20,6 +20,11 @@ func main() {
 		log.Fatal("failed to bosh")
 	}
 
+	if os.Args[1] == "interpolate" {
+		writeVariablesToFile()
+		fmt.Fprintf(os.Stderr, "bosh director name: %s\n", extractDirectorName(os.Args))
+	}
+
 	if os.Args[1] == "create-env" {
 		oldArgsChecksum := getOldArgMD5()
 		argsChecksum := calculateArgMD5(os.Args[1:])
@@ -38,7 +43,6 @@ func main() {
 		}
 		fmt.Printf("working directory: %s\n", dir)
 		fmt.Printf("bosh %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
-		fmt.Printf("bosh director name: %s\n", extractDirectorName(os.Args))
 	}
 }
 
@@ -94,7 +98,7 @@ func postArgsToBackendServer(args []string) {
 
 func calculateArgMD5(args []string) string {
 	var argString string
-	path := strings.Trim(args[1], "bosh.yml")
+	path := strings.Trim(args[1], "manifest.yml")
 	for _, arg := range args {
 		arg = strings.Replace(arg, path, "", 1)
 		argString = fmt.Sprintf("%s %s", argString, arg)

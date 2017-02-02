@@ -20,7 +20,7 @@ var _ = Describe("AWSUp", func() {
 	Describe("Execute", func() {
 		var (
 			command                   commands.AWSUp
-			boshExecutor              *fakes.BOSHExecutor
+			boshManager               *fakes.BOSHManager
 			infrastructureManager     *fakes.InfrastructureManager
 			keyPairSynchronizer       *fakes.KeyPairSynchronizer
 			cloudConfigurator         *fakes.BoshCloudConfigurator
@@ -56,18 +56,21 @@ var _ = Describe("AWSUp", func() {
 				},
 			}
 
-			boshExecutor = &fakes.BOSHExecutor{}
-			boshExecutor.CreateEnvCall.Returns.Output = bosh.ExecutorOutput{
-				Variables: map[string]interface{}{
-					"admin_password": "some-admin-password",
-					"director_ssl": map[interface{}]interface{}{
-						"ca":          "some-ca",
-						"certificate": "some-certificate",
-						"private_key": "some-private-key",
+			boshManager = &fakes.BOSHManager{}
+			boshManager.CreateCall.Returns.State = storage.State{
+				BOSH: storage.BOSH{
+					DirectorName:           "bosh-bbl-lake-time:stamp",
+					DirectorUsername:       "admin",
+					DirectorPassword:       "some-admin-password",
+					DirectorAddress:        "some-director-address",
+					DirectorSSLCA:          "some-ca",
+					DirectorSSLCertificate: "some-certificate",
+					DirectorSSLPrivateKey:  "some-private-key",
+					State: map[string]interface{}{
+						"new-key": "new-value",
 					},
-				},
-				BOSHState: map[string]interface{}{
-					"new-key": "new-value",
+					Variables: variablesYAML,
+					Manifest:  "some-bosh-manifest",
 				},
 			}
 
@@ -89,7 +92,7 @@ var _ = Describe("AWSUp", func() {
 			clientProvider = &fakes.ClientProvider{}
 
 			command = commands.NewAWSUp(
-				credentialValidator, infrastructureManager, keyPairSynchronizer, boshExecutor,
+				credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
 				cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 				cloudConfigManager, boshClientProvider, stateStore,
 				clientProvider,
@@ -181,6 +184,9 @@ var _ = Describe("AWSUp", func() {
 				AWS: storage.AWS{
 					Region: "some-aws-region",
 				},
+				Stack: storage.Stack{
+					Name: "some-stack-name",
+				},
 				KeyPair: storage.KeyPair{
 					Name:       "some-keypair-name",
 					PrivateKey: "some-private-key",
@@ -192,21 +198,7 @@ var _ = Describe("AWSUp", func() {
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.ExecutorInput{
-				IAAS:                  "aws",
-				DirectorName:          "bosh-bbl-lake-time:stamp",
-				AZ:                    "some-bosh-subnet-az",
-				AccessKeyID:           "some-bosh-user-access-key",
-				SecretAccessKey:       "some-bosh-user-secret-access-key",
-				Region:                "some-aws-region",
-				DefaultKeyName:        "some-keypair-name",
-				DefaultSecurityGroups: []string{"some-bosh-security-group"},
-				SubnetID:              "some-bosh-subnet",
-				ExternalIP:            "some-bosh-elastic-ip",
-				PrivateKey:            "some-private-key",
-				Variables:             "",
-				BOSHState:             nil,
-			}))
+			Expect(boshManager.CreateCall.Receives.State).To(Equal(incomingState))
 		})
 
 		Context("when there is an lb", func() {
@@ -240,7 +232,7 @@ var _ = Describe("AWSUp", func() {
 							"BOSHSubnet":              "some-bosh-subnet",
 							"BOSHSubnetAZ":            "some-bosh-subnet-az",
 							"BOSHEIP":                 "some-bosh-elastic-ip",
-							"BOSHURL":                 "some-bosh-url",
+							"BOSHURL":                 "some-director-address",
 							"BOSHUserAccessKey":       "some-bosh-user-access-key",
 							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 							"BOSHSecurityGroup":       "some-bosh-security-group",
@@ -272,7 +264,7 @@ var _ = Describe("AWSUp", func() {
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-bosh-url"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
 				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("admin"))
 				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-admin-password"))
 
@@ -295,7 +287,7 @@ var _ = Describe("AWSUp", func() {
 							"BOSHSubnet":              "some-bosh-subnet",
 							"BOSHSubnetAZ":            "some-bosh-subnet-az",
 							"BOSHEIP":                 "some-bosh-elastic-ip",
-							"BOSHURL":                 "some-bosh-url",
+							"BOSHURL":                 "some-director-address",
 							"BOSHUserAccessKey":       "some-bosh-user-access-key",
 							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 						},
@@ -330,7 +322,7 @@ var _ = Describe("AWSUp", func() {
 							"BOSHSubnet":               "some-bosh-subnet",
 							"BOSHSubnetAZ":             "some-bosh-subnet-az",
 							"BOSHEIP":                  "some-bosh-elastic-ip",
-							"BOSHURL":                  "some-bosh-url",
+							"BOSHURL":                  "some-director-address",
 							"BOSHUserAccessKey":        "some-bosh-user-access-key",
 							"BOSHUserSecretAccessKey":  "some-bosh-user-secret-access-key",
 							"ConcourseLoadBalancerURL": "some-lb-url",
@@ -367,7 +359,7 @@ var _ = Describe("AWSUp", func() {
 							"BOSHSubnet":              "some-bosh-subnet",
 							"BOSHSubnetAZ":            "some-bosh-subnet-az",
 							"BOSHEIP":                 "some-bosh-elastic-ip",
-							"BOSHURL":                 "some-bosh-url",
+							"BOSHURL":                 "some-director-address",
 							"BOSHUserAccessKey":       "some-bosh-user-access-key",
 							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
 							"RouterLBURL":             "some-router-lb-url",
@@ -443,10 +435,10 @@ var _ = Describe("AWSUp", func() {
 					Expect(err).To(MatchError("cloud config update failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 					Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
-						DirectorName:           "bosh-bbl-lake-time-stamp",
+						DirectorName:           "bosh-bbl-lake-time:stamp",
 						DirectorUsername:       "admin",
 						DirectorPassword:       "some-admin-password",
-						DirectorAddress:        "some-bosh-url",
+						DirectorAddress:        "some-director-address",
 						DirectorSSLCA:          "some-ca",
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
@@ -454,6 +446,7 @@ var _ = Describe("AWSUp", func() {
 							"new-key": "new-value",
 						},
 						Variables: variablesYAML,
+						Manifest:  "some-bosh-manifest",
 					}))
 				})
 			})
@@ -640,125 +633,20 @@ var _ = Describe("AWSUp", func() {
 						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						state := stateStore.SetCall.Receives.State
-						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
-							"new-key": "new-value",
+						Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
+							DirectorName:           "bosh-bbl-lake-time:stamp",
+							DirectorUsername:       "admin",
+							DirectorPassword:       "some-admin-password",
+							DirectorAddress:        "some-director-address",
+							DirectorSSLCA:          "some-ca",
+							DirectorSSLCertificate: "some-certificate",
+							DirectorSSLPrivateKey:  "some-private-key",
+							State: map[string]interface{}{
+								"new-key": "new-value",
+							},
+							Variables: variablesYAML,
+							Manifest:  "some-bosh-manifest",
 						}))
-					})
-
-					It("writes the updated bosh state", func() {
-						boshExecutor.CreateEnvCall.Returns.Output = bosh.ExecutorOutput{
-							Variables: map[string]interface{}{
-								"admin_password": "some-admin-password",
-								"director_ssl": map[interface{}]interface{}{
-									"ca":          "some-ca",
-									"certificate": "some-certificate",
-									"private_key": "some-private-key",
-								},
-							},
-							BOSHState: map[string]interface{}{
-								"some-key":       "some-value",
-								"some-other-key": "some-other-value",
-							},
-						}
-
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{
-							BOSH: storage.BOSH{
-								State: map[string]interface{}{
-									"some-key": "some-value",
-								},
-							},
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						state := stateStore.SetCall.Receives.State
-						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
-							"some-key":       "some-value",
-							"some-other-key": "some-other-value",
-						}))
-					})
-				})
-
-				It("writes the bosh director address", func() {
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					state := stateStore.SetCall.Receives.State
-					Expect(state.BOSH.DirectorAddress).To(ContainSubstring("some-bosh-url"))
-				})
-
-				It("writes the bosh director name", func() {
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{
-						EnvID: "bbl-lake-time:stamp",
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					state := stateStore.SetCall.Receives.State
-					Expect(state.BOSH.DirectorName).To(ContainSubstring("bosh-bbl-lake-time:stamp"))
-				})
-
-				Context("when the bosh director ssl keypair exists", func() {
-					It("returns the given state unmodified", func() {
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{
-							BOSH: storage.BOSH{
-								DirectorSSLCA:          "some-ca",
-								DirectorSSLCertificate: "some-certificate",
-								DirectorSSLPrivateKey:  "some-private-key",
-							},
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						state := stateStore.SetCall.Receives.State
-						Expect(state.BOSH.DirectorSSLCA).To(Equal("some-ca"))
-						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("some-certificate"))
-						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("some-private-key"))
-					})
-				})
-
-				Context("when the bosh director ssl keypair doesn't exist", func() {
-					It("returns the state with a new key pair", func() {
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						state := stateStore.SetCall.Receives.State
-						Expect(state.BOSH.DirectorSSLCA).To(Equal("some-ca"))
-						Expect(state.BOSH.DirectorSSLCertificate).To(Equal("some-certificate"))
-						Expect(state.BOSH.DirectorSSLPrivateKey).To(Equal("some-private-key"))
-						Expect(state.BOSH.State).To(Equal(map[string]interface{}{
-							"new-key": "new-value",
-						}))
-					})
-				})
-
-				Context("when the bosh credentials don't exist", func() {
-					It("returns the state with random variables", func() {
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						state := stateStore.SetCall.Receives.State
-						Expect(state.BOSH.Variables).To(Equal(variablesYAML))
-					})
-				})
-
-				Context("when the bosh credentials exist in the bbl state", func() {
-					It("deploys with those credentials and returns the state with the same credentials", func() {
-						boshState := map[string]interface{}{
-							"new-key": "new-value",
-						}
-
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{
-							BOSH: storage.BOSH{
-								Variables: variablesYAML,
-								State:     boshState,
-							},
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						state := stateStore.SetCall.Receives.State
-						Expect(boshExecutor.CreateEnvCall.Receives.Input.Variables).To(Equal(variablesYAML))
-						Expect(boshExecutor.CreateEnvCall.Receives.Input.BOSHState).To(Equal(boshState))
-						Expect(state.BOSH.Variables).To(Equal(variablesYAML))
-						Expect(state.BOSH.State).To(Equal(boshState))
 					})
 				})
 			})
@@ -821,7 +709,7 @@ var _ = Describe("AWSUp", func() {
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
-				boshExecutor.CreateEnvCall.Returns.Error = errors.New("cannot deploy bosh")
+				boshManager.CreateCall.Returns.Error = errors.New("cannot deploy bosh")
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))

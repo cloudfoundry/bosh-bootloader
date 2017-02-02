@@ -1,6 +1,7 @@
 package bosh
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,16 @@ type Executor struct {
 	marshalJSON   func(interface{}) ([]byte, error)
 	writeFile     func(string, []byte, os.FileMode) error
 	debug         bool
+}
+
+type CreateEnvInput struct {
+	Manifest  string
+	Variables string
+	State     map[string]interface{}
+}
+
+type CreateEnvOutput struct {
+	State map[string]interface{}
 }
 
 type ExecutorOutput struct {
@@ -45,6 +56,33 @@ type ExecutorInput struct {
 	BOSHState             map[string]interface{}
 }
 
+type InterpolateInput struct {
+	IAAS                  string
+	DirectorName          string
+	Zone                  string
+	Network               string
+	Subnetwork            string
+	Tags                  []string
+	ProjectID             string
+	ExternalIP            string
+	CredentialsJSON       string
+	PrivateKey            string
+	DefaultKeyName        string
+	DefaultSecurityGroups []string
+	SubnetID              string
+	AZ                    string
+	Region                string
+	SecretAccessKey       string
+	AccessKeyID           string
+	BOSHState             map[string]interface{}
+	Variables             string
+}
+
+type InterpolateOutput struct {
+	Variables map[interface{}]interface{}
+	Manifest  string
+}
+
 type command interface {
 	Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error
 }
@@ -64,159 +102,198 @@ func NewExecutor(cmd command, tempDir func(string, string) (string, error), read
 	}
 }
 
-func (e Executor) CreateEnv(executorInput ExecutorInput) (ExecutorOutput, error) {
+func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 
-	statePath := fmt.Sprintf("%s/state.json", tempDir)
 	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
-	privateKeyPath := filepath.Join(tempDir, "private_key")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
 	externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
 
-	if executorInput.BOSHState != nil {
-		boshStateContents, err := e.marshalJSON(executorInput.BOSHState)
+	if interpolateInput.Variables != "" {
+		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
 		if err != nil {
-			return ExecutorOutput{}, err
-		}
-		err = e.writeFile(statePath, boshStateContents, os.ModePerm)
-		if err != nil {
-			return ExecutorOutput{}, err
-		}
-	}
-
-	if executorInput.Variables != "" {
-		err = e.writeFile(variablesPath, []byte(executorInput.Variables), os.ModePerm)
-		if err != nil {
-			return ExecutorOutput{}, err
+			return InterpolateOutput{}, err
 		}
 	}
 
 	boshManifestContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml")
 	if err != nil {
 		//not tested
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 	err = e.writeFile(boshManifestPath, boshManifestContents, os.ModePerm)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 
-	cpiOpsFileContents, err := Asset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", executorInput.IAAS))
+	cpiOpsFileContents, err := Asset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS))
 	if err != nil {
 		//not tested
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 
 	var externalIPNotRecommendedOpsFileContents []byte
-	switch executorInput.IAAS {
+	switch interpolateInput.IAAS {
 	case "gcp":
 		externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml")
 		if err != nil {
 			//not tested
-			return ExecutorOutput{}, err
+			return InterpolateOutput{}, err
 		}
 	case "aws":
 		externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml")
 		if err != nil {
 			//not tested
-			return ExecutorOutput{}, err
+			return InterpolateOutput{}, err
 		}
 	}
 	err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
 	if err != nil {
-		return ExecutorOutput{}, err
-	}
-
-	err = e.writeFile(privateKeyPath, []byte(executorInput.PrivateKey), os.ModePerm)
-	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 
 	args := []string{
-		"create-env", boshManifestPath,
-		"--state", statePath,
+		"interpolate", boshManifestPath,
+		"--var-errs",
+		"--var-errs-unused",
 		"-o", cpiOpsFilePath,
 		"-o", externalIPNotRecommendedOpsFilePath,
 		"--vars-store", variablesPath,
 		"-v", "internal_cidr=10.0.0.0/24",
 		"-v", "internal_gw=10.0.0.1",
 		"-v", "internal_ip=10.0.0.6",
-		"-v", fmt.Sprintf("external_ip=%s", executorInput.ExternalIP),
-		"-v", fmt.Sprintf("director_name=%s", executorInput.DirectorName),
-		"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
+		"-v", fmt.Sprintf("external_ip=%s", interpolateInput.ExternalIP),
+		"-v", fmt.Sprintf("director_name=%s", interpolateInput.DirectorName),
 	}
 
-	switch executorInput.IAAS {
+	switch interpolateInput.IAAS {
 	case "gcp":
 		gcpCredentialsJSONPath := filepath.Join(tempDir, "gcp_credentials.json")
-		err = e.writeFile(gcpCredentialsJSONPath, []byte(executorInput.CredentialsJSON), os.ModePerm)
+		err = e.writeFile(gcpCredentialsJSONPath, []byte(interpolateInput.CredentialsJSON), os.ModePerm)
 		if err != nil {
-			return ExecutorOutput{}, err
+			return InterpolateOutput{}, err
 		}
 
-		tags := executorInput.Tags[0]
-		for _, tag := range executorInput.Tags[1:] {
+		tags := interpolateInput.Tags[0]
+		for _, tag := range interpolateInput.Tags[1:] {
 			tags = fmt.Sprintf("%s,%s", tags, tag)
 		}
 
 		args = append(args,
-			"-v", fmt.Sprintf("zone=%s", executorInput.Zone),
-			"-v", fmt.Sprintf("network=%s", executorInput.Network),
-			"-v", fmt.Sprintf("subnetwork=%s", executorInput.Subnetwork),
+			"-v", fmt.Sprintf("zone=%s", interpolateInput.Zone),
+			"-v", fmt.Sprintf("network=%s", interpolateInput.Network),
+			"-v", fmt.Sprintf("subnetwork=%s", interpolateInput.Subnetwork),
 			"-v", fmt.Sprintf("tags=[%s]", tags),
-			"-v", fmt.Sprintf("project_id=%s", executorInput.ProjectID),
+			"-v", fmt.Sprintf("project_id=%s", interpolateInput.ProjectID),
 			"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsJSONPath),
 		)
 	case "aws":
+		privateKeyPath := filepath.Join(tempDir, "private_key")
+		err = e.writeFile(privateKeyPath, []byte(interpolateInput.PrivateKey), os.ModePerm)
+		if err != nil {
+			return InterpolateOutput{}, err
+		}
+
 		args = append(args,
-			"-v", fmt.Sprintf("access_key_id=%s", executorInput.AccessKeyID),
-			"-v", fmt.Sprintf("secret_access_key=%s", executorInput.SecretAccessKey),
-			"-v", fmt.Sprintf("region=%s", executorInput.Region),
-			"-v", fmt.Sprintf("az=%s", executorInput.AZ),
-			"-v", fmt.Sprintf("default_key_name=%s", executorInput.DefaultKeyName),
-			"-v", fmt.Sprintf("default_security_groups=%s", executorInput.DefaultSecurityGroups),
-			"-v", fmt.Sprintf("subnet_id=%s", executorInput.SubnetID),
+			"-v", fmt.Sprintf("access_key_id=%s", interpolateInput.AccessKeyID),
+			"-v", fmt.Sprintf("secret_access_key=%s", interpolateInput.SecretAccessKey),
+			"-v", fmt.Sprintf("region=%s", interpolateInput.Region),
+			"-v", fmt.Sprintf("az=%s", interpolateInput.AZ),
+			"-v", fmt.Sprintf("default_key_name=%s", interpolateInput.DefaultKeyName),
+			"-v", fmt.Sprintf("default_security_groups=%s", interpolateInput.DefaultSecurityGroups),
+			"-v", fmt.Sprintf("subnet_id=%s", interpolateInput.SubnetID),
+			"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
 		)
 	}
 
-	err = e.command.Run(os.Stdout, tempDir, args, e.debug)
+	buffer := bytes.NewBuffer([]byte{})
+	err = e.command.Run(buffer, tempDir, args, true)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 
 	variablesContents, err := e.readFile(variablesPath)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
 	}
 
-	variables := map[string]interface{}{}
+	var variables map[interface{}]interface{}
 	err = e.unmarshalYAML(variablesContents, &variables)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return InterpolateOutput{}, err
+	}
+
+	return InterpolateOutput{
+		Variables: variables,
+		Manifest:  buffer.String(),
+	}, nil
+}
+
+func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, error) {
+	tempDir, err := e.tempDir("", "")
+	if err != nil {
+		return CreateEnvOutput{}, err
+	}
+
+	statePath := fmt.Sprintf("%s/state.json", tempDir)
+	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
+	boshManifestPath := filepath.Join(tempDir, "manifest.yml")
+
+	if createEnvInput.State != nil {
+		boshStateContents, err := e.marshalJSON(createEnvInput.State)
+		if err != nil {
+			return CreateEnvOutput{}, err
+		}
+		err = e.writeFile(statePath, boshStateContents, os.ModePerm)
+		if err != nil {
+			return CreateEnvOutput{}, err
+		}
+	}
+
+	err = e.writeFile(variablesPath, []byte(createEnvInput.Variables), os.ModePerm)
+	if err != nil {
+		// not tested
+		return CreateEnvOutput{}, err
+	}
+
+	err = e.writeFile(boshManifestPath, []byte(createEnvInput.Manifest), os.ModePerm)
+	if err != nil {
+		// not tested
+		return CreateEnvOutput{}, err
+	}
+
+	args := []string{
+		"create-env", boshManifestPath,
+		"--vars-store", variablesPath,
+		"--state", statePath,
+	}
+
+	err = e.command.Run(os.Stdout, tempDir, args, e.debug)
+	if err != nil {
+		return CreateEnvOutput{}, err
 	}
 
 	stateContents, err := e.readFile(statePath)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return CreateEnvOutput{}, err
 	}
 
-	state := map[string]interface{}{}
+	var state map[string]interface{}
 	err = e.unmarshalJSON(stateContents, &state)
 	if err != nil {
-		return ExecutorOutput{}, err
+		return CreateEnvOutput{}, err
 	}
 
-	return ExecutorOutput{
-		BOSHState: state,
-		Variables: variables,
+	return CreateEnvOutput{
+		State: state,
 	}, nil
 }
 

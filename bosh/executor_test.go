@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -18,7 +19,7 @@ import (
 )
 
 var _ = Describe("Executor", func() {
-	Describe("CreateEnv", func() {
+	Describe("Interpolate", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -31,6 +32,9 @@ var _ = Describe("Executor", func() {
 			stateJSONContents    string
 			variablesYMLContents string
 			gcpCredentialsPath   string
+			privateKeyPath       string
+			awsInterpolateInput  bosh.InterpolateInput
+			gcpInterpolateInput  bosh.InterpolateInput
 		)
 
 		BeforeEach(func() {
@@ -48,68 +52,7 @@ var _ = Describe("Executor", func() {
 			stateJSONContents = `{"key":"value"}`
 			variablesYMLContents = "key: value"
 
-			gcpCredentialsPath = fmt.Sprintf("%s/gcp_credentials.json", tempDir)
-
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-		})
-
-		AfterEach(func() {
-			tempDirCallCount = 0
-		})
-
-		DescribeTable("deploys a bosh", func(deployInput bosh.ExecutorInput, iaasSpecificArgs []string) {
-			deployOutput, err := executor.CreateEnv(deployInput)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
-			Expect(tempDirCallCount).To(Equal(1))
-
-			if deployInput.IAAS == "gcp" {
-				iaasSpecificArgs = append(iaasSpecificArgs, []string{"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsPath)}...)
-				credentialsContents, err := ioutil.ReadFile(gcpCredentialsPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(credentialsContents)).To(Equal(`{"key":"value"}`))
-			}
-
-			privateKeyPath := fmt.Sprintf("%s/private_key", tempDir)
-
-			expectedArgs := append([]string{
-				"create-env", fmt.Sprintf("%s/bosh.yml", tempDir),
-				"--state", fmt.Sprintf("%s/state.json", tempDir),
-				"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
-				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-				"-v", "internal_cidr=10.0.0.0/24",
-				"-v", "internal_gw=10.0.0.1",
-				"-v", "internal_ip=10.0.0.6",
-				"-v", "external_ip=some-external-ip",
-				"-v", "director_name=some-director-name",
-				"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
-			}, iaasSpecificArgs...)
-
-			Expect(cmd.RunCall.Receives.Stdout).To(Equal(os.Stdout))
-			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
-			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
-
-			privateKeyContents, err := ioutil.ReadFile(privateKeyPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(privateKeyContents)).To(Equal("some-ssh-key"))
-
-			Expect(deployOutput).To(Equal(bosh.ExecutorOutput{
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: map[string]interface{}{
-					"admin_password": "some-admin-password",
-					"director_ssl": map[interface{}]interface{}{
-						"certificate": "some-certificate",
-						"private_key": "some-private-key",
-						"ca":          "some-ca",
-					},
-				},
-			}))
-		},
-			Entry("on aws", bosh.ExecutorInput{
+			awsInterpolateInput = bosh.InterpolateInput{
 				IAAS:                  "aws",
 				DirectorName:          "some-director-name",
 				AccessKeyID:           "some-access-key-id",
@@ -124,22 +67,10 @@ var _ = Describe("Executor", func() {
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
-				Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-			}, []string{
-				"-v", "access_key_id=some-access-key-id",
-				"-v", "secret_access_key=some-secret-access-key",
-				"-v", "region=some-region",
-				"-v", "az=some-az",
-				"-v", "default_key_name=some-key-name",
-				"-v", "default_security_groups=[some-security-group]",
-				"-v", "subnet_id=some-subnet",
-			}),
-			Entry("on gcp", bosh.ExecutorInput{
+				Variables: variablesYMLContents,
+			}
+
+			gcpInterpolateInput = bosh.InterpolateInput{
 				IAAS:         "gcp",
 				DirectorName: "some-director-name",
 				Zone:         "some-zone",
@@ -156,20 +87,107 @@ director_ssl:
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
-				Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-			}, []string{
-				"-v", "zone=some-zone",
-				"-v", "network=some-network",
-				"-v", "subnetwork=some-subnetwork",
-				"-v", `tags=[some-internal-tag,some-bosh-open-tag]`,
-				"-v", `project_id=some-project-id`,
+				Variables: variablesYMLContents,
+			}
+
+			gcpCredentialsPath = fmt.Sprintf("%s/gcp_credentials.json", tempDir)
+			privateKeyPath = fmt.Sprintf("%s/private_key", tempDir)
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+		})
+
+		AfterEach(func() {
+			tempDirCallCount = 0
+		})
+
+		Context("when iaas is gcp", func() {
+			It("writes gcp credentials to a file in the temp dir", func() {
+				_, err := executor.Interpolate(gcpInterpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				credentialsContents, err := ioutil.ReadFile(gcpCredentialsPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(credentialsContents)).To(Equal(`{"key":"value"}`))
+			})
+		})
+
+		Context("when iaas is aws", func() {
+			It("writes private key to a file in the temp dir", func() {
+				_, err := executor.Interpolate(awsInterpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				privateKeyContents, err := ioutil.ReadFile(privateKeyPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(privateKeyContents)).To(Equal("some-ssh-key"))
+			})
+		})
+
+		DescribeTable("generates a bosh manifest", func(interpolateInputFunc func() bosh.InterpolateInput, expectedIAASArgsFunc func() []string) {
+			cmd.RunCall.Stub = func(stdout io.Writer) {
+				stdout.Write([]byte("some-manifest"))
+			}
+
+			interpolateOutput, err := executor.Interpolate(interpolateInputFunc())
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmd.RunCall.CallCount).To(Equal(1))
+			Expect(tempDirCallCount).To(Equal(1))
+
+			expectedArgs := append([]string{
+				"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
+				"--var-errs",
+				"--var-errs-unused",
+				"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
+				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+				"-v", "internal_cidr=10.0.0.0/24",
+				"-v", "internal_gw=10.0.0.1",
+				"-v", "internal_ip=10.0.0.6",
+				"-v", "external_ip=some-external-ip",
+				"-v", "director_name=some-director-name",
+			}, expectedIAASArgsFunc()...)
+
+			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
+			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
+			Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
+			Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
+				"key": "value",
+			}))
+		},
+			Entry("on aws", func() bosh.InterpolateInput {
+				return awsInterpolateInput
+			}, func() []string {
+				return []string{
+					"-v", "access_key_id=some-access-key-id",
+					"-v", "secret_access_key=some-secret-access-key",
+					"-v", "region=some-region",
+					"-v", "az=some-az",
+					"-v", "default_key_name=some-key-name",
+					"-v", "default_security_groups=[some-security-group]",
+					"-v", "subnet_id=some-subnet",
+					"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
+				}
+			}),
+			Entry("on gcp", func() bosh.InterpolateInput {
+				return gcpInterpolateInput
+			}, func() []string {
+				return []string{
+					"-v", "zone=some-zone",
+					"-v", "network=some-network",
+					"-v", "subnetwork=some-subnetwork",
+					"-v", `tags=[some-internal-tag,some-bosh-open-tag]`,
+					"-v", `project_id=some-project-id`,
+					"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsPath),
+				}
 			}),
 		)
+
+		It("does not pass in false to run command on interpolate", func() {
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, false)
+			_, err := executor.Interpolate(awsInterpolateInput)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
+		})
 
 		Describe("failure cases", func() {
 			It("fails when the temporary directory cannot be created", func() {
@@ -178,32 +196,8 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{})
+				_, err := executor.Interpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to create temp dir"))
-			})
-
-			It("fails when the bosh state cannot be marshaled", func() {
-				marshalJSONFunc := func(boshState interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal bosh state")
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalJSONFunc, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					BOSHState: map[string]interface{}{},
-				})
-				Expect(err).To(MatchError("failed to marshal bosh state"))
-			})
-
-			It("fails when the passed in bosh state cannot be written", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					return errors.New("failed to write bosh state")
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					BOSHState: map[string]interface{}{},
-				})
-				Expect(err).To(MatchError("failed to write bosh state"))
 			})
 
 			It("fails when the passed in variables cannot be written", func() {
@@ -215,9 +209,7 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					Variables: "some-vars",
-				})
+				_, err := executor.Interpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to write variables"))
 			})
 
@@ -230,7 +222,7 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{})
+				_, err := executor.Interpolate(bosh.InterpolateInput{})
 				Expect(err).To(MatchError("failed to write bosh manifest"))
 			})
 
@@ -243,7 +235,7 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
+				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write CPI Ops file"))
@@ -258,7 +250,7 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
+				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write external ip not recommended Ops file"))
@@ -273,8 +265,8 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					IAAS: "gcp",
+				_, err := executor.Interpolate(bosh.InterpolateInput{
+					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("failed to write private key"))
 			})
@@ -288,7 +280,7 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
+				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write GCP credentials"))
@@ -298,7 +290,7 @@ director_ssl:
 				cmd.RunCall.Returns.Error = errors.New("failed to run command")
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
+				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("failed to run command"))
@@ -310,7 +302,7 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
+				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("failed to read variables file"))
@@ -322,57 +314,16 @@ director_ssl:
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, unmarshalFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					IAAS: "aws",
-					Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
+				_, err := executor.Interpolate(bosh.InterpolateInput{
+					IAAS:      "aws",
+					Variables: variablesYMLContents,
 				})
 				Expect(err).To(MatchError("failed to unmarshal variables"))
-			})
-
-			It("fails when the state file fails to be read", func() {
-				readFileFunc := func(path string) ([]byte, error) {
-					if path == fmt.Sprintf("%s/state.json", tempDir) {
-						return []byte{}, errors.New("failed to read state file")
-					}
-					return []byte{}, nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					IAAS: "aws",
-				})
-				Expect(err).To(MatchError("failed to read state file"))
-			})
-
-			It("fails when the state file fails to be unmarshaled", func() {
-				unmarshalFunc := func(contents []byte, output interface{}) error {
-					return errors.New("failed to unmarshal state file")
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(bosh.ExecutorInput{
-					IAAS: "aws",
-					Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-					BOSHState: map[string]interface{}{
-						"key": "value",
-					},
-				})
-				Expect(err).To(MatchError("failed to unmarshal state file"))
 			})
 		})
 	})
 
-	Describe("DeleteEnv", func() {
+	Describe("CreateEnv", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -382,7 +333,10 @@ director_ssl:
 
 			executor bosh.Executor
 
-			gcpCredentialsPath string
+			createEnvInput bosh.CreateEnvInput
+			manifestPath   string
+			variablesPath  string
+			statePath      string
 		)
 
 		BeforeEach(func() {
@@ -397,257 +351,114 @@ director_ssl:
 				return tempDir, nil
 			}
 
-			gcpCredentialsPath = fmt.Sprintf("%s/gcp_credentials.json", tempDir)
-
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+
+			createEnvInput = bosh.CreateEnvInput{
+				Manifest:  "some-manifest",
+				Variables: "some-variables",
+				State:     map[string]interface{}{},
+			}
+
+			manifestPath = fmt.Sprintf("%s/manifest.yml", tempDir)
+			variablesPath = fmt.Sprintf("%s/variables.yml", tempDir)
+			statePath = fmt.Sprintf("%s/state.json", tempDir)
+
+			cmd.RunCall.Stub = func(io.Writer) {
+				err = ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			}
 		})
 
 		AfterEach(func() {
 			tempDirCallCount = 0
 		})
 
-		DescribeTable("deletes a bosh", func(deleteInput bosh.ExecutorInput, iaasSpecificArgs []string) {
-			stateFile := fmt.Sprintf("%s/state.json", tempDir)
-			variablesFile := fmt.Sprintf("%s/variables.yml", tempDir)
-			cmd.RunCall.Stub = func() {
-				err := os.Remove(stateFile)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = os.Remove(variablesFile)
-				Expect(err).NotTo(HaveOccurred())
-			}
-
-			_, err := executor.DeleteEnv(deleteInput)
+		It("creates a bosh environment", func() {
+			createEnvOutput, err := executor.CreateEnv(createEnvInput)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
 			Expect(tempDirCallCount).To(Equal(1))
 
-			if deleteInput.IAAS == "gcp" {
-				iaasSpecificArgs = append(iaasSpecificArgs, []string{"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsPath)}...)
-				credentialsContents, err := ioutil.ReadFile(gcpCredentialsPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(credentialsContents)).To(Equal(`{"key":"value"}`))
-			}
+			manifestContents, err := ioutil.ReadFile(manifestPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(manifestContents)).To(Equal("some-manifest"))
 
-			privateKeyPath := fmt.Sprintf("%s/private_key", tempDir)
-
-			expectedArgs := append([]string{
-				"delete-env", fmt.Sprintf("%s/bosh.yml", tempDir),
-				"--state", stateFile,
-				"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
-				"--vars-store", variablesFile,
-				"-v", "internal_cidr=10.0.0.0/24",
-				"-v", "internal_gw=10.0.0.1",
-				"-v", "internal_ip=10.0.0.6",
-				"-v", "external_ip=some-external-ip",
-				"-v", "director_name=some-director-name",
-				"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
-			}, iaasSpecificArgs...)
+			variablesContents, err := ioutil.ReadFile(variablesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(variablesContents)).To(Equal("some-variables"))
 
 			Expect(cmd.RunCall.Receives.Stdout).To(Equal(os.Stdout))
-			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+				"create-env", manifestPath,
+				"--vars-store", variablesPath,
+				"--state", statePath,
+			}))
 			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
 
-			privateKeyContents, err := ioutil.ReadFile(privateKeyPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(privateKeyContents)).To(Equal("some-ssh-key"))
-		},
-			Entry("on aws", bosh.ExecutorInput{
-				IAAS:                  "aws",
-				DirectorName:          "some-director-name",
-				AccessKeyID:           "some-access-key-id",
-				SecretAccessKey:       "some-secret-access-key",
-				Region:                "some-region",
-				AZ:                    "some-az",
-				DefaultKeyName:        "some-key-name",
-				DefaultSecurityGroups: []string{"some-security-group"},
-				SubnetID:              "some-subnet",
-				PrivateKey:            "some-ssh-key",
-				ExternalIP:            "some-external-ip",
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-			}, []string{
-				"-v", "access_key_id=some-access-key-id",
-				"-v", "secret_access_key=some-secret-access-key",
-				"-v", "region=some-region",
-				"-v", "az=some-az",
-				"-v", "default_key_name=some-key-name",
-				"-v", "default_security_groups=[some-security-group]",
-				"-v", "subnet_id=some-subnet",
-			}),
-			Entry("on gcp", bosh.ExecutorInput{
-				IAAS:         "gcp",
-				DirectorName: "some-director-name",
-				Zone:         "some-zone",
-				Network:      "some-network",
-				Subnetwork:   "some-subnetwork",
-				Tags: []string{
-					"some-internal-tag",
-					"some-bosh-open-tag",
-				},
-				ProjectID:       "some-project-id",
-				ExternalIP:      "some-external-ip",
-				CredentialsJSON: `{"key":"value"}`,
-				PrivateKey:      "some-ssh-key",
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-			}, []string{
-				"-v", "zone=some-zone",
-				"-v", "network=some-network",
-				"-v", "subnetwork=some-subnetwork",
-				"-v", `tags=[some-internal-tag,some-bosh-open-tag]`,
-				"-v", `project_id=some-project-id`,
-			}),
-		)
+			Expect(createEnvOutput.State).To(Equal(map[string]interface{}{
+				"key": "value",
+			}))
+		})
 
-		Describe("failure cases", func() {
+		Context("failure cases", func() {
 			It("fails when the temporary directory cannot be created", func() {
 				tempDirFunc = func(prefix, dir string) (string, error) {
 					return "", errors.New("failed to create temp dir")
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{})
+				_, err := executor.CreateEnv(createEnvInput)
 				Expect(err).To(MatchError("failed to create temp dir"))
 			})
 
-			It("fails when the bosh state cannot be marshaled", func() {
-				marshalJSONFunc := func(boshState interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal bosh state")
+			It("fails when the state fails to marshal", func() {
+				marshalFunc := func(input interface{}) ([]byte, error) {
+					return []byte{}, errors.New("failed to marshal state")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalJSONFunc, ioutil.WriteFile, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					BOSHState: map[string]interface{}{},
-				})
-				Expect(err).To(MatchError("failed to marshal bosh state"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalFunc, ioutil.WriteFile, true)
+				_, err := executor.CreateEnv(createEnvInput)
+				Expect(err).To(MatchError("failed to marshal state"))
 			})
 
-			It("fails when the passed in bosh state cannot be written", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					return errors.New("failed to write bosh state")
+			It("fails when the state cannot be written to a file", func() {
+				writeFile := func(filename string, contents []byte, mode os.FileMode) error {
+					return errors.New("failed to write file")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					BOSHState: map[string]interface{}{},
-				})
-				Expect(err).To(MatchError("failed to write bosh state"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFile, true)
+				_, err := executor.CreateEnv(createEnvInput)
+				Expect(err).To(MatchError("failed to write file"))
 			})
 
-			It("fails when the passed in variables cannot be written", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/variables.yml", tempDir) {
-						return errors.New("failed to write variables")
-					}
-					return nil
+			It("fails when the run command returns an error", func() {
+				cmd.RunCall.Returns.Error = errors.New("failed to run")
+
+				_, err := executor.CreateEnv(createEnvInput)
+				Expect(err).To(MatchError("failed to run"))
+			})
+
+			It("fails when the state cannot be read", func() {
+				readFile := func(filename string) ([]byte, error) {
+					return []byte{}, errors.New("failed to read file")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					Variables: "some-vars",
-				})
-				Expect(err).To(MatchError("failed to write variables"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				_, err := executor.CreateEnv(createEnvInput)
+				Expect(err).To(MatchError("failed to read file"))
 			})
 
-			It("fails when trying to write the bosh manifest file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/bosh.yml", tempDir) {
-						return errors.New("failed to write bosh manifest")
-					}
-					return nil
+			It("fails when the state cannot be unmarshaled", func() {
+				unmarshalFunc := func(contents []byte, output interface{}) error {
+					return errors.New("failed to unmarshal")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{})
-				Expect(err).To(MatchError("failed to write bosh manifest"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile, true)
+				_, err := executor.CreateEnv(createEnvInput)
+				Expect(err).To(MatchError("failed to unmarshal"))
 			})
 
-			It("fails when trying to write the CPI Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/cpi.yml", tempDir) {
-						return errors.New("failed to write CPI Ops file")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write CPI Ops file"))
-			})
-
-			It("fails when trying to write the external ip not recommended Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir) {
-						return errors.New("failed to write external ip not recommended Ops file")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write external ip not recommended Ops file"))
-			})
-
-			It("fails when trying to write the private key", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/private_key", tempDir) {
-						return errors.New("failed to write private key")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write private key"))
-			})
-
-			It("fails when trying to write GCP credentials", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/gcp_credentials.json", tempDir) {
-						return errors.New("failed to write GCP credentials")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write GCP credentials"))
-			})
-
-			It("fails when trying to run command", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run command")
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
-				_, err := executor.DeleteEnv(bosh.ExecutorInput{
-					IAAS: "aws",
-				})
-				Expect(err).To(MatchError("failed to run command"))
-			})
 		})
 	})
 })

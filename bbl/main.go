@@ -122,6 +122,7 @@ func main() {
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile, configuration.Global.Debug)
+	boshManager := bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
 	boshClientProvider := bosh.NewClientProvider()
 	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
@@ -129,7 +130,7 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		credentialValidator, infrastructureManager, keyPairSynchronizer, boshExecutor,
+		credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
 		cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
@@ -153,7 +154,7 @@ func main() {
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputProvider, gcpCloudConfigGenerator, zones, logger,
 		boshClientProvider, stateStore, terraformExecutor)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshExecutor, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshManager, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
 	envGetter := commands.NewEnvGetter()
 
 	// Commands

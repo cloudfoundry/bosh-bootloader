@@ -329,7 +329,7 @@ var _ = Describe("bbl up aws", func() {
 
 			It("names the bosh director with env id", func() {
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-bbl-"))
+				Expect(session.Err.Contents()).To(ContainSubstring("bosh director name: bosh-bbl-"))
 			})
 
 			It("does not change the bosh director name when state exists", func() {
@@ -358,7 +358,7 @@ var _ = Describe("bbl up aws", func() {
 					EnvID: "lakename",
 				}, tempDirectory)
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 0)
-				Expect(session.Out.Contents()).To(ContainSubstring("bosh director name: bosh-lakename"))
+				Expect(session.Err.Contents()).To(ContainSubstring("bosh director name: bosh-lakename"))
 			})
 
 			It("can invoke the bosh cli idempotently", func() {

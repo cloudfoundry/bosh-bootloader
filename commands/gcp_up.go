@@ -28,7 +28,7 @@ type GCPUp struct {
 	stateStore              stateStore
 	keyPairUpdater          keyPairUpdater
 	gcpProvider             gcpProvider
-	boshExecutor            boshExecutor
+	boshManager             boshManager
 	logger                  logger
 	boshClientProvider      boshClientProvider
 	cloudConfigGenerator    gcpCloudConfigGenerator
@@ -42,13 +42,6 @@ type GCPUpConfig struct {
 	ProjectID             string
 	Zone                  string
 	Region                string
-}
-
-type directorOutputs struct {
-	directorPassword       string
-	directorSSLCA          string
-	directorSSLCertificate string
-	directorSSLPrivateKey  string
 }
 
 type gcpCloudConfigGenerator interface {
@@ -81,19 +74,22 @@ type zones interface {
 }
 
 type boshExecutor interface {
-	CreateEnv(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
 	DeleteEnv(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshExecutor boshExecutor,
-	logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
+type boshManager interface {
+	Create(storage.State) (storage.State, error)
+}
+
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor,
+	boshManager boshManager, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
 	terraformOutputProvider terraformOutputProvider, zones zones) GCPUp {
 	return GCPUp{
 		stateStore:              stateStore,
 		keyPairUpdater:          keyPairUpdater,
 		gcpProvider:             gcpProvider,
 		terraformExecutor:       terraformExecutor,
-		boshExecutor:            boshExecutor,
+		boshManager:             boshManager,
 		logger:                  logger,
 		boshClientProvider:      boshClientProvider,
 		cloudConfigGenerator:    cloudConfigGenerator,
@@ -183,46 +179,9 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	deployInput := bosh.ExecutorInput{
-		IAAS:         "gcp",
-		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-		Zone:         state.GCP.Zone,
-		Network:      terraformOutputs.NetworkName,
-		Subnetwork:   terraformOutputs.SubnetworkName,
-		Tags: []string{
-			terraformOutputs.BOSHTag,
-			terraformOutputs.InternalTag,
-		},
-		ProjectID:       state.GCP.ProjectID,
-		ExternalIP:      terraformOutputs.ExternalIP,
-		CredentialsJSON: state.GCP.ServiceAccountKey,
-		PrivateKey:      state.KeyPair.PrivateKey,
-		BOSHState:       state.BOSH.State,
-		Variables:       state.BOSH.Variables,
-	}
-	deployOutput, err := u.boshExecutor.CreateEnv(deployInput)
+	state, err = u.boshManager.Create(state)
 	if err != nil {
 		return err
-	}
-
-	directorOutputs := getDirectorOutputs(deployOutput.Variables)
-
-	variablesYAMLContents, err := marshal(deployOutput.Variables)
-	if err != nil {
-		return err
-	}
-	variablesYAML := string(variablesYAMLContents)
-
-	state.BOSH = storage.BOSH{
-		DirectorName:           deployInput.DirectorName,
-		DirectorAddress:        terraformOutputs.DirectorAddress,
-		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorOutputs.directorPassword,
-		DirectorSSLCA:          directorOutputs.directorSSLCA,
-		DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
-		Variables:              variablesYAML,
-		State:                  deployOutput.BOSHState,
 	}
 
 	err = u.stateStore.Set(state)
@@ -321,19 +280,4 @@ func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP stora
 	}
 
 	return nil
-}
-
-func getDirectorOutputs(variables map[string]interface{}) directorOutputs {
-	directorSSLInterfaceMap := variables["director_ssl"].(map[interface{}]interface{})
-	directorSSL := map[string]string{}
-	for k, v := range directorSSLInterfaceMap {
-		directorSSL[k.(string)] = v.(string)
-	}
-
-	return directorOutputs{
-		directorPassword:       variables["admin_password"].(string),
-		directorSSLCA:          directorSSL["ca"],
-		directorSSLCertificate: directorSSL["certificate"],
-		directorSSLPrivateKey:  directorSSL["private_key"],
-	}
 }

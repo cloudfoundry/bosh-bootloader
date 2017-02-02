@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -33,7 +32,7 @@ var _ = Describe("gcp up", func() {
 		keyPairUpdater          *fakes.GCPKeyPairUpdater
 		gcpClientProvider       *fakes.GCPClientProvider
 		terraformExecutor       *fakes.TerraformExecutor
-		boshExecutor            *fakes.BOSHExecutor
+		boshManager             *fakes.BOSHManager
 		boshClientProvider      *fakes.BOSHClientProvider
 		boshClient              *fakes.BOSHClient
 		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
@@ -68,22 +67,24 @@ var _ = Describe("gcp up", func() {
 		}
 
 		logger = &fakes.Logger{}
-		boshExecutor = &fakes.BOSHExecutor{}
-		boshExecutor.CreateEnvCall.Returns.Output = bosh.ExecutorOutput{
-			Variables: map[string]interface{}{
-				"admin_password": "some-admin-password",
-				"director_ssl": map[interface{}]interface{}{
-					"ca":          "some-ca",
-					"certificate": "some-certificate",
-					"private_key": "some-private-key",
+		boshManager = &fakes.BOSHManager{}
+		boshManager.CreateCall.Returns.State = storage.State{
+			BOSH: storage.BOSH{
+				DirectorName:           "bosh-bbl-lake-time:stamp",
+				DirectorUsername:       "admin",
+				DirectorPassword:       "some-admin-password",
+				DirectorAddress:        "some-director-address",
+				DirectorSSLCA:          "some-ca",
+				DirectorSSLCertificate: "some-certificate",
+				DirectorSSLPrivateKey:  "some-private-key",
+				State: map[string]interface{}{
+					"new-key": "new-value",
 				},
-			},
-			BOSHState: map[string]interface{}{
-				"new-key": "new-value",
+				Variables: variablesYAML,
+				Manifest:  "some-bosh-manifest",
 			},
 		}
-
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshExecutor,
+		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshManager,
 			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
@@ -196,14 +197,13 @@ var _ = Describe("gcp up", func() {
 		})
 
 		Context("bosh", func() {
-			It("deploys a bosh", func() {
-				keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				}
-
+			It("creates a bosh", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
+					KeyPair: storage.KeyPair{
+						PublicKey:  "some-public-key",
+						PrivateKey: "some-private-key",
+					},
 					GCP: storage.GCP{
 						ServiceAccountKey: serviceAccountKey,
 						ProjectID:         "some-project-id",
@@ -220,30 +220,32 @@ var _ = Describe("gcp up", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.ExecutorInput{
-					IAAS:         "gcp",
-					DirectorName: "bosh-bbl-lake-time:stamp",
-					Zone:         "some-zone",
-					Network:      "some-network-name",
-					Subnetwork:   "some-subnetwork-name",
-					Tags: []string{
-						"some-bosh-open-tag-name",
-						"some-internal-tag-name",
+				Expect(boshManager.CreateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "gcp",
+					KeyPair: storage.KeyPair{
+						PublicKey:  "some-public-key",
+						PrivateKey: "some-private-key",
 					},
-					ProjectID:       "some-project-id",
-					ExternalIP:      "some-external-ip",
-					CredentialsJSON: serviceAccountKey,
-					PrivateKey:      "some-private-key",
-					BOSHState: map[string]interface{}{
-						"new-key": "new-value",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
 					},
-					Variables: variablesYAML,
+					EnvID: "bbl-lake-time:stamp",
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{
+							"new-key": "new-value",
+						},
+						Variables: variablesYAML,
+					},
+					TFState: "some-tf-state",
 				}))
 			})
 
 			Context("state manipulation", func() {
 				Context("when the state file does not exist", func() {
-					It("saves the bosh create-env state and variables", func() {
+					It("saves the bosh manager create state and variables", func() {
 						err := gcpUp.Execute(commands.GCPUpConfig{
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
@@ -266,6 +268,7 @@ var _ = Describe("gcp up", func() {
 								"new-key": "new-value",
 							},
 							Variables: variablesYAML,
+							Manifest:  "some-bosh-manifest",
 						}))
 					})
 				})
@@ -312,8 +315,8 @@ var _ = Describe("gcp up", func() {
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 				})
 
-				It("returns an error when boshdeployer fails to deploy", func() {
-					boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to deploy")
+				It("returns an error when bosh manager fails to create a bosh", func() {
+					boshManager.CreateCall.Returns.Error = errors.New("failed to create")
 
 					err := gcpUp.Execute(commands.GCPUpConfig{
 						ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -321,7 +324,7 @@ var _ = Describe("gcp up", func() {
 						Zone:                  "some-zone",
 						Region:                "us-west1",
 					}, storage.State{})
-					Expect(err).To(MatchError("failed to deploy"))
+					Expect(err).To(MatchError("failed to create"))
 				})
 
 				It("returns an error when the state fails to be set after deploying bosh", func() {

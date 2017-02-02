@@ -9,7 +9,8 @@ import (
 
 type StackManager struct {
 	DescribeCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			StackName string
 		}
 		Returns struct {
@@ -98,6 +99,7 @@ func (m *StackManager) WaitForCompletion(stackName string, sleepInterval time.Du
 }
 
 func (m *StackManager) Describe(stackName string) (cloudformation.Stack, error) {
+	m.DescribeCall.CallCount++
 	m.DescribeCall.Receives.StackName = stackName
 
 	if m.DescribeCall.Stub != nil {

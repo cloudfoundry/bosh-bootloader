@@ -12,7 +12,7 @@ type BOSHCommand struct {
 			Debug            bool
 		}
 
-		Stub func()
+		Stub func(stdout io.Writer)
 
 		Returns struct {
 			Error error
@@ -28,7 +28,7 @@ func (c *BOSHCommand) Run(stdout io.Writer, workingDirectory string, args []stri
 	c.RunCall.Receives.Debug = debug
 
 	if c.RunCall.Stub != nil {
-		c.RunCall.Stub()
+		c.RunCall.Stub(stdout)
 	}
 
 	return c.RunCall.Returns.Error
