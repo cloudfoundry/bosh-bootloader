@@ -153,7 +153,7 @@ MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
 To login:
 
 ```
-$ bosh target <INSERT TARGET NAME> 23.248.87.55 --skip-ssl-validation
+$ bosh target 23.248.87.55 <INSERT TARGET NAME>
 Username: user-d3783rk
 Password: p-23dah71sk1
 ```
