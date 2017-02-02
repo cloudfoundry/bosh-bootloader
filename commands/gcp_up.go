@@ -9,7 +9,6 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -73,12 +72,9 @@ type zones interface {
 	Get(region string) []string
 }
 
-type boshExecutor interface {
-	DeleteEnv(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
-}
-
 type boshManager interface {
 	Create(storage.State) (storage.State, error)
+	Delete(storage.State) error
 }
 
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor,

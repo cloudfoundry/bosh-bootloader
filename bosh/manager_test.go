@@ -325,4 +325,48 @@ var _ = Describe("Manager", func() {
 			})
 		})
 	})
+
+	Describe("Delete", func() {
+		var (
+			stackManager            *fakes.StackManager
+			boshExecutor            *fakes.BOSHExecutor
+			terraformOutputProvider *fakes.TerraformOutputProvider
+			boshManager             bosh.Manager
+		)
+
+		BeforeEach(func() {
+			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			stackManager = &fakes.StackManager{}
+			boshExecutor = &fakes.BOSHExecutor{}
+			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+		})
+
+		It("calls delete env", func() {
+			err := boshManager.Delete(storage.State{
+				BOSH: storage.BOSH{
+					Manifest: "some-manifest",
+					State: map[string]interface{}{
+						"key": "value",
+					},
+					Variables: variablesYAML,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
+				Manifest: "some-manifest",
+				State: map[string]interface{}{
+					"key": "value",
+				},
+				Variables: variablesYAML,
+			}))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the delete env fails", func() {
+				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+				err := boshManager.Delete(storage.State{})
+				Expect(err).To(MatchError("failed to delete"))
+			})
+		})
+	})
 })

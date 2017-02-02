@@ -36,6 +36,7 @@ type iaasInputs struct {
 type executor interface {
 	Interpolate(InterpolateInput) (InterpolateOutput, error)
 	CreateEnv(CreateEnvInput) (CreateEnvOutput, error)
+	DeleteEnv(DeleteEnvInput) error
 }
 
 type terraformOutputProvider interface {
@@ -91,6 +92,14 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 	}
 
 	return state, nil
+}
+
+func (m Manager) Delete(state storage.State) error {
+	return m.executor.DeleteEnv(DeleteEnvInput{
+		Manifest:  state.BOSH.Manifest,
+		State:     state.BOSH.State,
+		Variables: state.BOSH.Variables,
+	})
 }
 
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {

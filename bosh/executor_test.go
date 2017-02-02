@@ -323,6 +323,71 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
+	var createEnvDeleteEnvFailureCases = func(callback func(executor bosh.Executor) error) {
+		var (
+			cmd *fakes.BOSHCommand
+
+			tempDir          string
+			tempDirFunc      func(string, string) (string, error)
+			tempDirCallCount int
+
+			executor bosh.Executor
+		)
+
+		BeforeEach(func() {
+			var err error
+
+			cmd = &fakes.BOSHCommand{}
+			tempDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			tempDirFunc = func(prefix, dir string) (string, error) {
+				tempDirCallCount++
+				return tempDir, nil
+			}
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+
+		})
+
+		It("fails when the temporary directory cannot be created", func() {
+			tempDirFunc = func(prefix, dir string) (string, error) {
+				return "", errors.New("failed to create temp dir")
+			}
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+			err := callback(executor)
+			Expect(err).To(MatchError("failed to create temp dir"))
+		})
+
+		It("fails when the state fails to marshal", func() {
+			marshalFunc := func(input interface{}) ([]byte, error) {
+				return []byte{}, errors.New("failed to marshal state")
+			}
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalFunc, ioutil.WriteFile, true)
+			err := callback(executor)
+			Expect(err).To(MatchError("failed to marshal state"))
+		})
+
+		It("fails when the state cannot be written to a file", func() {
+			writeFile := func(filename string, contents []byte, mode os.FileMode) error {
+				return errors.New("failed to write file")
+			}
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFile, true)
+			err := callback(executor)
+			Expect(err).To(MatchError("failed to write file"))
+		})
+
+		It("fails when the run command returns an error", func() {
+			cmd.RunCall.Returns.Error = errors.New("failed to run")
+			err := callback(executor)
+			Expect(err).To(MatchError("failed to run"))
+		})
+
+	}
+
 	Describe("CreateEnv", func() {
 		var (
 			cmd *fakes.BOSHCommand
@@ -402,41 +467,14 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("failure cases", func() {
-			It("fails when the temporary directory cannot be created", func() {
-				tempDirFunc = func(prefix, dir string) (string, error) {
-					return "", errors.New("failed to create temp dir")
+			createEnvDeleteEnvFailureCases(func(executor bosh.Executor) error {
+				createEnvInput := bosh.CreateEnvInput{
+					Manifest:  "some-manifest",
+					Variables: "some-variables",
+					State:     map[string]interface{}{},
 				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
 				_, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("failed to create temp dir"))
-			})
-
-			It("fails when the state fails to marshal", func() {
-				marshalFunc := func(input interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal state")
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalFunc, ioutil.WriteFile, true)
-				_, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("failed to marshal state"))
-			})
-
-			It("fails when the state cannot be written to a file", func() {
-				writeFile := func(filename string, contents []byte, mode os.FileMode) error {
-					return errors.New("failed to write file")
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFile, true)
-				_, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("failed to write file"))
-			})
-
-			It("fails when the run command returns an error", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run")
-
-				_, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("failed to run"))
+				return err
 			})
 
 			It("fails when the state cannot be read", func() {
@@ -458,7 +496,92 @@ var _ = Describe("Executor", func() {
 				_, err := executor.CreateEnv(createEnvInput)
 				Expect(err).To(MatchError("failed to unmarshal"))
 			})
+		})
+	})
 
+	Describe("DeleteEnv", func() {
+		var (
+			cmd *fakes.BOSHCommand
+
+			tempDir          string
+			tempDirFunc      func(string, string) (string, error)
+			tempDirCallCount int
+
+			executor bosh.Executor
+
+			deleteEnvInput bosh.DeleteEnvInput
+			manifestPath   string
+			variablesPath  string
+			statePath      string
+		)
+
+		BeforeEach(func() {
+			var err error
+
+			cmd = &fakes.BOSHCommand{}
+			tempDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			tempDirFunc = func(prefix, dir string) (string, error) {
+				tempDirCallCount++
+				return tempDir, nil
+			}
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+
+			deleteEnvInput = bosh.DeleteEnvInput{
+				Manifest:  "some-manifest",
+				Variables: "some-variables",
+				State:     map[string]interface{}{},
+			}
+
+			manifestPath = fmt.Sprintf("%s/manifest.yml", tempDir)
+			variablesPath = fmt.Sprintf("%s/variables.yml", tempDir)
+			statePath = fmt.Sprintf("%s/state.json", tempDir)
+
+			cmd.RunCall.Stub = func(io.Writer) {
+				err = ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
+
+		AfterEach(func() {
+			tempDirCallCount = 0
+		})
+
+		It("deletes a bosh environment", func() {
+			err := executor.DeleteEnv(deleteEnvInput)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tempDirCallCount).To(Equal(1))
+
+			manifestContents, err := ioutil.ReadFile(manifestPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(manifestContents)).To(Equal("some-manifest"))
+
+			variablesContents, err := ioutil.ReadFile(variablesPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(variablesContents)).To(Equal("some-variables"))
+
+			Expect(cmd.RunCall.Receives.Stdout).To(Equal(os.Stdout))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+				"delete-env", manifestPath,
+				"--vars-store", variablesPath,
+				"--state", statePath,
+			}))
+			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
+		})
+
+		Context("failure cases", func() {
+			createEnvDeleteEnvFailureCases(func(executor bosh.Executor) error {
+				deleteEnvInput := bosh.DeleteEnvInput{
+					Manifest:  "some-manifest",
+					Variables: "some-variables",
+					State:     map[string]interface{}{},
+				}
+				return executor.DeleteEnv(deleteEnvInput)
+			})
 		})
 	})
 })

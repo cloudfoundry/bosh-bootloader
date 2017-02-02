@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -22,7 +21,7 @@ type Destroy struct {
 	credentialValidator     credentialValidator
 	logger                  logger
 	stdin                   io.Reader
-	boshExecutor            boshExecutor
+	boshManager             boshManager
 	vpcStatusChecker        vpcStatusChecker
 	stackManager            stackManager
 	stringGenerator         stringGenerator
@@ -75,7 +74,7 @@ type networkInstancesChecker interface {
 }
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
-	boshExecutor boshExecutor, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
+	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
 	terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider, networkInstancesChecker networkInstancesChecker) Destroy {
@@ -83,7 +82,7 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		credentialValidator:     credentialValidator,
 		logger:                  logger,
 		stdin:                   stdin,
-		boshExecutor:            boshExecutor,
+		boshManager:             boshManager,
 		vpcStatusChecker:        vpcStatusChecker,
 		stackManager:            stackManager,
 		stringGenerator:         stringGenerator,
@@ -273,45 +272,7 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 
 	d.logger.Step("destroying bosh director")
 
-	var deleteInput bosh.ExecutorInput
-	switch state.IAAS {
-	case "gcp":
-		deleteInput = bosh.ExecutorInput{
-			IAAS:         "gcp",
-			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-			Zone:         state.GCP.Zone,
-			Network:      terraformOutputs.NetworkName,
-			Subnetwork:   terraformOutputs.SubnetworkName,
-			Tags: []string{
-				terraformOutputs.BOSHTag,
-				terraformOutputs.InternalTag,
-			},
-			ProjectID:       state.GCP.ProjectID,
-			ExternalIP:      terraformOutputs.ExternalIP,
-			CredentialsJSON: state.GCP.ServiceAccountKey,
-			PrivateKey:      state.KeyPair.PrivateKey,
-			BOSHState:       state.BOSH.State,
-			Variables:       state.BOSH.Variables,
-		}
-	case "aws":
-		deleteInput = bosh.ExecutorInput{
-			IAAS:                  "aws",
-			DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
-			AZ:                    stack.Outputs["BOSHSubnetAZ"],
-			AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
-			SecretAccessKey:       stack.Outputs["BOSHUserSecretAccessKey"],
-			Region:                state.AWS.Region,
-			DefaultKeyName:        state.KeyPair.Name,
-			DefaultSecurityGroups: []string{stack.Outputs["BOSHSecurityGroup"]},
-			SubnetID:              stack.Outputs["BOSHSubnet"],
-			ExternalIP:            stack.Outputs["BOSHEIP"],
-			PrivateKey:            state.KeyPair.PrivateKey,
-			BOSHState:             state.BOSH.State,
-			Variables:             state.BOSH.Variables,
-		}
-	}
-
-	_, err := d.boshExecutor.DeleteEnv(deleteInput)
+	err := d.boshManager.Delete(state)
 	if err != nil {
 		return state, err
 	}

@@ -164,7 +164,7 @@ func main() {
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
-		credentialValidator, logger, os.Stdin, boshExecutor, vpcStatusChecker, stackManager,
+		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
 		stateStore, stateValidator, terraformExecutor, terraformOutputProvider, gcpNetworkInstancesChecker,
 	)

@@ -17,11 +17,10 @@ type BOSHExecutor struct {
 	DeleteEnvCall struct {
 		CallCount int
 		Receives  struct {
-			Input bosh.ExecutorInput
+			Input bosh.DeleteEnvInput
 		}
 		Returns struct {
-			Output bosh.ExecutorOutput
-			Error  error
+			Error error
 		}
 	}
 
@@ -44,11 +43,11 @@ func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) (bosh.CreateEnvOutpu
 	return e.CreateEnvCall.Returns.Output, e.CreateEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) DeleteEnv(input bosh.ExecutorInput) (bosh.ExecutorOutput, error) {
+func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
 	e.DeleteEnvCall.CallCount++
 	e.DeleteEnvCall.Receives.Input = input
 
-	return e.DeleteEnvCall.Returns.Output, e.DeleteEnvCall.Returns.Error
+	return e.DeleteEnvCall.Returns.Error
 }
 
 func (e *BOSHExecutor) Interpolate(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
