@@ -24,8 +24,8 @@ func (BOSHCLI) DirectorExists(address, caCertPath string) (bool, error) {
 func (BOSHCLI) CloudConfig(address, caCertPath, username, password string) (string, error) {
 	cloudConfig, err := exec.Command("bosh",
 		"--ca-cert", caCertPath,
-		"--user", username,
-		"--password", password,
+		"--client", username,
+		"--client-secret", password,
 		"-e", address,
 		"cloud-config",
 	).Output()
