@@ -11,7 +11,6 @@ type BOSH struct {
 	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
 	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
 	Credentials            map[string]string      `json:"credentials"`
-	Variables              string                 `json:"variables"`
 	State                  map[string]interface{} `json:"state"`
 	Manifest               string                 `json:"manifest"`
 }

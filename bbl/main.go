@@ -3,13 +3,10 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
-
-	yaml "gopkg.in/yaml.v2"
 
 	"golang.org/x/crypto/ssh"
 
@@ -166,8 +163,6 @@ func main() {
 	terraformOutputter := terraform.NewOutputter(terraformCmd)
 
 	// BOSH
-	boshCommand := bosh.NewCmd(os.Stdout, os.Stderr, configuration.Global.Debug)
-	boshDeployer := bosh.NewDeployer(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal)
 	boshClientProvider := bosh.NewClientProvider()
 	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
@@ -199,7 +194,7 @@ func main() {
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputter, gcpCloudConfigGenerator, zones, logger,
 		boshClientProvider, stateStore, terraformExecutor)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshDeployer, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
 	envGetter := commands.NewEnvGetter()
 
 	// Commands

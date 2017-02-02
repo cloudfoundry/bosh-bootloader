@@ -148,7 +148,6 @@ var _ = Describe("Store", func() {
 						"blobstoreAgentPassword": "some-blobstore-agent-password",
 						"hmPassword": "some-hm-password"
 					},
-					"variables": "",
 					"manifest": "name: bosh",
 					"state": {
 						"key": "value"

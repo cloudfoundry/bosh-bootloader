@@ -29,7 +29,7 @@ type infrastructureManager interface {
 	Describe(stackName string) (cloudformation.Stack, error)
 }
 
-type boshinitDeployer interface {
+type boshDeployer interface {
 	Deploy(boshinit.DeployInput) (boshinit.DeployOutput, error)
 }
 
@@ -64,7 +64,7 @@ type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
-	boshinitDeployer          boshinitDeployer
+	boshDeployer              boshDeployer
 	stringGenerator           stringGenerator
 	boshCloudConfigurator     boshCloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
@@ -84,7 +84,7 @@ type AWSUpConfig struct {
 
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairSynchronizer keyPairSynchronizer, boshinitDeployer boshinitDeployer, stringGenerator stringGenerator,
+	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore,
@@ -94,7 +94,7 @@ func NewAWSUp(
 		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
-		boshinitDeployer:          boshinitDeployer,
+		boshDeployer:              boshDeployer,
 		stringGenerator:           stringGenerator,
 		boshCloudConfigurator:     boshCloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
@@ -203,7 +203,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	deployOutput, err := u.boshinitDeployer.Deploy(deployInput)
+	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
 		return err
 	}
