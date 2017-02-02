@@ -28,7 +28,7 @@ type GCPUp struct {
 	stateStore           stateStore
 	keyPairUpdater       keyPairUpdater
 	gcpProvider          gcpProvider
-	boshExecutor         boshExecutor
+	boshDeployer         boshDeployer
 	logger               logger
 	boshClientProvider   boshClientProvider
 	cloudConfigGenerator gcpCloudConfigGenerator
@@ -80,11 +80,11 @@ type zones interface {
 	Get(region string) []string
 }
 
-type boshExecutor interface {
-	Execute(bosh.ExecutorInput) (bosh.ExecutorOutput, error)
+type boshDeployer interface {
+	Deploy(bosh.DeployInput) (bosh.DeployOutput, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshExecutor boshExecutor,
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshDeployer boshDeployer,
 	logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
 	terraformOutputter terraformOutputter, zones zones) GCPUp {
 	return GCPUp{
@@ -92,7 +92,7 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 		keyPairUpdater:       keyPairUpdater,
 		gcpProvider:          gcpProvider,
 		terraformExecutor:    terraformExecutor,
-		boshExecutor:         boshExecutor,
+		boshDeployer:         boshDeployer,
 		logger:               logger,
 		boshClientProvider:   boshClientProvider,
 		cloudConfigGenerator: cloudConfigGenerator,
@@ -203,9 +203,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	deployInput := bosh.ExecutorInput{
+	deployInput := bosh.DeployInput{
 		IAAS:         "gcp",
-		Command:      "create-env",
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 		Zone:         state.GCP.Zone,
 		Network:      networkName,
@@ -221,7 +220,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		BOSHState:       state.BOSH.State,
 		Variables:       state.BOSH.Variables,
 	}
-	deployOutput, err := u.boshExecutor.Execute(deployInput)
+	deployOutput, err := u.boshDeployer.Deploy(deployInput)
 	if err != nil {
 		return err
 	}

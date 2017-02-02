@@ -19,16 +19,12 @@ import (
 
 var _ = Describe("bbl destroy gcp", func() {
 	var (
-		state                    storage.State
-		tempDirectory            string
-		statePath                string
-		pathToFakeTerraform      string
-		pathToTerraform          string
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		fakeBOSHCLIBackendServer *httptest.Server
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
+		tempDirectory       string
+		statePath           string
+		pathToFakeTerraform string
+		pathToTerraform     string
+		fakeBOSHServer      *httptest.Server
+		fakeBOSH            *fakeBOSHDirector
 	)
 
 	BeforeEach(func() {
@@ -37,9 +33,6 @@ var _ = Describe("bbl destroy gcp", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		}))
 
 		fakeTerraformBackendServer := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -67,28 +60,12 @@ var _ = Describe("bbl destroy gcp", func() {
 		err = os.Rename(pathToFakeTerraform, pathToTerraform)
 		Expect(err).NotTo(HaveOccurred())
 
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		variables := `
-admin_password: rhkj9ys4l9guqfpc9vmp
-director_ssl:
-  certificate: some-certificate
-  private_key: some-private-key
-  ca: some-ca
-`
-
-		state = storage.State{
+		state := storage.State{
 			IAAS:    "gcp",
 			TFState: `{"key": "value"}`,
 			GCP: storage.GCP{
@@ -103,10 +80,6 @@ director_ssl:
 			},
 			BOSH: storage.BOSH{
 				DirectorName: "some-bosh-director-name",
-				Variables:    variables,
-				State: map[string]interface{}{
-					"new-key": "new-value",
-				},
 			},
 		}
 
@@ -142,8 +115,23 @@ director_ssl:
 
 	Context("bbl re-entrance", func() {
 		It("saves the tf state when terraform destroy fails", func() {
-			state.GCP.Region = "fail-to-terraform"
-
+			state := storage.State{
+				IAAS:    "gcp",
+				TFState: `{"key": "value"}`,
+				GCP: storage.GCP{
+					ProjectID:         "some-project-id",
+					ServiceAccountKey: serviceAccountKey,
+					Region:            "fail-to-terraform",
+					Zone:              "some-zone",
+				},
+				KeyPair: storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: testhelpers.BBL_KEY,
+				},
+				BOSH: storage.BOSH{
+					DirectorName: "some-bosh-director-name",
+				},
+			}
 			stateContents, err := json.Marshal(state)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -151,7 +139,6 @@ director_ssl:
 			err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 			args := []string{
-				"--debug",
 				"--state-dir", tempDirectory,
 				"destroy", "--no-confirm",
 			}
