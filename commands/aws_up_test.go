@@ -648,14 +648,6 @@ var _ = Describe("AWSUp", func() {
 
 					It("writes the updated bosh state", func() {
 						boshDeployer.DeployCall.Returns.Output = bosh.DeployOutput{
-							Variables: map[string]interface{}{
-								"admin_password": "some-admin-password",
-								"director_ssl": map[interface{}]interface{}{
-									"ca":          "some-ca",
-									"certificate": "some-certificate",
-									"private_key": "some-private-key",
-								},
-							},
 							BOSHState: map[string]interface{}{
 								"some-key":       "some-value",
 								"some-other-key": "some-other-value",

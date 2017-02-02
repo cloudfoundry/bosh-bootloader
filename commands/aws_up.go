@@ -201,25 +201,28 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	directorOutputs := getDirectorOutputs(deployOutput.Variables)
+	if state.BOSH.IsEmpty() {
+		directorOutputs := getDirectorOutputs(deployOutput.Variables)
 
-	variablesYAMLContents, err := marshal(deployOutput.Variables)
-	if err != nil {
-		return err
+		variablesYAMLContents, err := marshal(deployOutput.Variables)
+		if err != nil {
+			return err
+		}
+
+		variablesYAML := string(variablesYAMLContents)
+		state.BOSH = storage.BOSH{
+			DirectorName:           deployInput.DirectorName,
+			DirectorAddress:        stack.Outputs["BOSHURL"],
+			DirectorUsername:       DIRECTOR_USERNAME,
+			DirectorPassword:       directorOutputs.directorPassword,
+			DirectorSSLCA:          directorOutputs.directorSSLCA,
+			DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
+			DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
+			Variables:              variablesYAML,
+		}
 	}
 
-	variablesYAML := string(variablesYAMLContents)
-	state.BOSH = storage.BOSH{
-		DirectorName:           deployInput.DirectorName,
-		DirectorAddress:        stack.Outputs["BOSHURL"],
-		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorOutputs.directorPassword,
-		DirectorSSLCA:          directorOutputs.directorSSLCA,
-		DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
-		Variables:              variablesYAML,
-		State:                  deployOutput.BOSHState,
-	}
+	state.BOSH.State = deployOutput.BOSHState
 
 	err = u.stateStore.Set(state)
 	if err != nil {
