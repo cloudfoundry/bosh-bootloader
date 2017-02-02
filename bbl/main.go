@@ -167,7 +167,7 @@ func main() {
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stdout, os.Stderr, configuration.Global.Debug)
-	boshDeployer := bosh.NewDeployer(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+	boshDeployer := bosh.NewDeployer(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal)
 	boshClientProvider := bosh.NewClientProvider()
 	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
 	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
@@ -175,8 +175,8 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		credentialValidator, infrastructureManager, keyPairSynchronizer, boshDeployer,
-		cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
+		credentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
+		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(

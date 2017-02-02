@@ -2,7 +2,6 @@ package bosh_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -30,7 +29,7 @@ var _ = Describe("Deployer", func() {
 
 			stateJSONContents    string
 			variablesYMLContents string
-			gcpCredentialsPath   string
+			credentialsPath      string
 		)
 
 		BeforeEach(func() {
@@ -48,9 +47,13 @@ var _ = Describe("Deployer", func() {
 			stateJSONContents = `{"key":"value"}`
 			variablesYMLContents = "key: value"
 
-			gcpCredentialsPath = fmt.Sprintf("%s/gcp_credentials.json", tempDir)
+			err = ioutil.WriteFile(fmt.Sprintf("%s/state.json", tempDir), []byte(stateJSONContents), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(fmt.Sprintf("%s/variables.yml", tempDir), []byte(variablesYMLContents), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+			credentialsPath = fmt.Sprintf("%s/credentials.json", tempDir)
 
-			deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+			deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal)
 		})
 
 		AfterEach(func() {
@@ -65,14 +68,13 @@ var _ = Describe("Deployer", func() {
 			Expect(tempDirCallCount).To(Equal(1))
 
 			if deployInput.IAAS == "gcp" {
-				iaasSpecificArgs = append(iaasSpecificArgs, []string{"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsPath)}...)
-				credentialsContents, err := ioutil.ReadFile(gcpCredentialsPath)
+				iaasSpecificArgs = append(iaasSpecificArgs, []string{"--var-file", fmt.Sprintf("gcp_credentials_json=%s", credentialsPath)}...)
+				credentialsContents, err := ioutil.ReadFile(credentialsPath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(credentialsContents)).To(Equal(`{"key":"value"}`))
 			}
 
 			privateKeyPath := fmt.Sprintf("%s/private_key", tempDir)
-
 			expectedArgs := append([]string{
 				"create-env", fmt.Sprintf("%s/bosh.yml", tempDir),
 				"--state", fmt.Sprintf("%s/state.json", tempDir),
@@ -82,11 +84,9 @@ var _ = Describe("Deployer", func() {
 				"-v", "internal_cidr=10.0.0.0/24",
 				"-v", "internal_gw=10.0.0.1",
 				"-v", "internal_ip=10.0.0.6",
-				"-v", "external_ip=some-external-ip",
 				"-v", "director_name=some-director-name",
 				"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
 			}, iaasSpecificArgs...)
-
 			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
 			privateKeyContents, err := ioutil.ReadFile(privateKeyPath)
 			Expect(err).NotTo(HaveOccurred())
@@ -97,43 +97,28 @@ var _ = Describe("Deployer", func() {
 					"key": "value",
 				},
 				Variables: map[string]interface{}{
-					"admin_password": "some-admin-password",
-					"director_ssl": map[interface{}]interface{}{
-						"certificate": "some-certificate",
-						"private_key": "some-private-key",
-						"ca":          "some-ca",
-					},
+					"key": "value",
 				},
 			}))
 		},
 			Entry("on aws", bosh.DeployInput{
-				IAAS:                  "aws",
-				DirectorName:          "some-director-name",
-				AccessKeyID:           "some-access-key-id",
-				SecretAccessKey:       "some-secret-access-key",
-				Region:                "some-region",
-				AZ:                    "some-az",
-				DefaultKeyName:        "some-key-name",
-				DefaultSecurityGroups: []string{"some-security-group"},
-				SubnetID:              "some-subnet",
-				PrivateKey:            "some-ssh-key",
-				ExternalIP:            "some-external-ip",
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
+				IAAS:                 "aws",
+				DirectorName:         "some-director-name",
+				AccessKeyID:          "some-access-key-id",
+				SecretAccessKey:      "some-secret-access-key",
+				Region:               "some-region",
+				AZ:                   "some-az",
+				DefaultKeyName:       "some-key-name",
+				DefaultSecurityGroup: "some-security-group",
+				SubnetID:             "some-subnet",
+				PrivateKey:           "some-ssh-key",
 			}, []string{
 				"-v", "access_key_id=some-access-key-id",
 				"-v", "secret_access_key=some-secret-access-key",
 				"-v", "region=some-region",
 				"-v", "az=some-az",
 				"-v", "default_key_name=some-key-name",
-				"-v", "default_security_groups=[some-security-group]",
+				"-v", "default_security_group=some-security-group",
 				"-v", "subnet_id=some-subnet",
 			}),
 			Entry("on gcp", bosh.DeployInput{
@@ -150,208 +135,14 @@ director_ssl:
 				ExternalIP:      "some-external-ip",
 				CredentialsJSON: `{"key":"value"}`,
 				PrivateKey:      "some-ssh-key",
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
 			}, []string{
 				"-v", "zone=some-zone",
 				"-v", "network=some-network",
 				"-v", "subnetwork=some-subnetwork",
 				"-v", `tags=[some-internal-tag,some-bosh-open-tag]`,
 				"-v", `project_id=some-project-id`,
+				"-v", `external_ip=some-external-ip`,
 			}),
 		)
-
-		Describe("failure cases", func() {
-			It("fails when the temporary directory cannot be created", func() {
-				tempDirFunc = func(prefix, dir string) (string, error) {
-					return "", errors.New("failed to create temp dir")
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to create temp dir"))
-			})
-
-			It("fails when the bosh state cannot be marshaled", func() {
-				marshalJSONFunc := func(boshState interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal bosh state")
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalJSONFunc, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{
-					BOSHState: map[string]interface{}{},
-				})
-				Expect(err).To(MatchError("failed to marshal bosh state"))
-			})
-
-			It("fails when the passed in bosh state cannot be written", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					return errors.New("failed to write bosh state")
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{
-					BOSHState: map[string]interface{}{},
-				})
-				Expect(err).To(MatchError("failed to write bosh state"))
-			})
-
-			It("fails when the passed in variables cannot be written", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/variables.yml", tempDir) {
-						return errors.New("failed to write variables")
-					}
-					return nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{
-					Variables: "some-vars",
-				})
-				Expect(err).To(MatchError("failed to write variables"))
-			})
-
-			It("fails when trying to write the bosh manifest file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/bosh.yml", tempDir) {
-						return errors.New("failed to write bosh manifest")
-					}
-					return nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to write bosh manifest"))
-			})
-
-			It("fails when trying to write the CPI Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/cpi.yml", tempDir) {
-						return errors.New("failed to write CPI Ops file")
-					}
-					return nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to write CPI Ops file"))
-			})
-
-			It("fails when trying to write the external ip not recommended Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir) {
-						return errors.New("failed to write external ip not recommended Ops file")
-					}
-					return nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to write external ip not recommended Ops file"))
-			})
-
-			It("fails when trying to write the private key", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/private_key", tempDir) {
-						return errors.New("failed to write private key")
-					}
-					return nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to write private key"))
-			})
-
-			It("fails when trying to write GCP credentials", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/gcp_credentials.json", tempDir) {
-						return errors.New("failed to write GCP credentials")
-					}
-					return nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := deployer.Deploy(bosh.DeployInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write GCP credentials"))
-			})
-
-			It("fails when trying to run command", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run command")
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to run command"))
-			})
-
-			It("fails when the variables file fails to be read", func() {
-				readFileFunc := func(path string) ([]byte, error) {
-					return []byte{}, errors.New("failed to read variables file")
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, readFileFunc, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to read variables file"))
-			})
-
-			It("fails when the variables fail to be unmarshaled", func() {
-				unmarshalFunc := func(contents []byte, output interface{}) error {
-					return errors.New("failed to unmarshal variables")
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, unmarshalFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{
-					Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-				})
-				Expect(err).To(MatchError("failed to unmarshal variables"))
-			})
-
-			It("fails when the state file fails to be read", func() {
-				readFileFunc := func(path string) ([]byte, error) {
-					if path == fmt.Sprintf("%s/state.json", tempDir) {
-						return []byte{}, errors.New("failed to read state file")
-					}
-					return []byte{}, nil
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, readFileFunc, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{})
-				Expect(err).To(MatchError("failed to read state file"))
-			})
-
-			It("fails when the state file fails to be unmarshaled", func() {
-				unmarshalFunc := func(contents []byte, output interface{}) error {
-					return errors.New("failed to unmarshal state file")
-				}
-
-				deployer = bosh.NewDeployer(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile)
-				_, err := deployer.Deploy(bosh.DeployInput{
-					Variables: `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`,
-					BOSHState: map[string]interface{}{
-						"key": "value",
-					},
-				})
-				Expect(err).To(MatchError("failed to unmarshal state file"))
-			})
-		})
 	})
 })

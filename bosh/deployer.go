@@ -2,6 +2,7 @@ package bosh
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -12,8 +13,6 @@ type Deployer struct {
 	readFile      func(string) ([]byte, error)
 	unmarshalYAML func([]byte, interface{}) error
 	unmarshalJSON func([]byte, interface{}) error
-	marshalJSON   func(interface{}) ([]byte, error)
-	writeFile     func(string, []byte, os.FileMode) error
 }
 
 type DeployOutput struct {
@@ -22,25 +21,23 @@ type DeployOutput struct {
 }
 
 type DeployInput struct {
-	IAAS                  string
-	DirectorName          string
-	Zone                  string
-	Network               string
-	Subnetwork            string
-	Tags                  []string
-	ProjectID             string
-	ExternalIP            string
-	CredentialsJSON       string
-	PrivateKey            string
-	DefaultKeyName        string
-	DefaultSecurityGroups []string
-	SubnetID              string
-	AZ                    string
-	Region                string
-	SecretAccessKey       string
-	AccessKeyID           string
-	Variables             string
-	BOSHState             map[string]interface{}
+	IAAS                 string
+	DirectorName         string
+	Zone                 string
+	Network              string
+	Subnetwork           string
+	Tags                 []string
+	ProjectID            string
+	ExternalIP           string
+	CredentialsJSON      string
+	PrivateKey           string
+	DefaultKeyName       string
+	DefaultSecurityGroup string
+	SubnetID             string
+	AZ                   string
+	Region               string
+	SecretAccessKey      string
+	AccessKeyID          string
 }
 
 type command interface {
@@ -48,23 +45,20 @@ type command interface {
 }
 
 func NewDeployer(cmd command, tempDir func(string, string) (string, error), readFile func(string) ([]byte, error),
-	unmarshalYAML func([]byte, interface{}) error, unmarshalJSON func([]byte, interface{}) error,
-	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error) Deployer {
+	unmarshalYAML func([]byte, interface{}) error, unmarshalJSON func([]byte, interface{}) error) Deployer {
 	return Deployer{
 		command:       cmd,
 		tempDir:       tempDir,
 		readFile:      readFile,
 		unmarshalYAML: unmarshalYAML,
 		unmarshalJSON: unmarshalJSON,
-		marshalJSON:   marshalJSON,
-		writeFile:     writeFile,
 	}
 }
 
 func (d Deployer) Deploy(deployInput DeployInput) (DeployOutput, error) {
 	tempDir, err := d.tempDir("", "")
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
 	statePath := fmt.Sprintf("%s/state.json", tempDir)
@@ -74,67 +68,36 @@ func (d Deployer) Deploy(deployInput DeployInput) (DeployOutput, error) {
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
 	externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
 
-	if deployInput.BOSHState != nil {
-		boshStateContents, err := d.marshalJSON(deployInput.BOSHState)
-		if err != nil {
-			return DeployOutput{}, err
-		}
-		err = d.writeFile(statePath, boshStateContents, os.ModePerm)
-		if err != nil {
-			return DeployOutput{}, err
-		}
-	}
-
-	if deployInput.Variables != "" {
-		err = d.writeFile(variablesPath, []byte(deployInput.Variables), os.ModePerm)
-		if err != nil {
-			return DeployOutput{}, err
-		}
-	}
-
 	boshManifestContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml")
 	if err != nil {
-		//not tested
-		return DeployOutput{}, err
+		panic(err)
 	}
-	err = d.writeFile(boshManifestPath, boshManifestContents, os.ModePerm)
+	err = ioutil.WriteFile(boshManifestPath, boshManifestContents, os.ModePerm)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
 	cpiOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/gcp/cpi.yml")
 	if err != nil {
-		//not tested
-		return DeployOutput{}, err
+		panic(err)
 	}
-	err = d.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
+	err = ioutil.WriteFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
-	var externalIPNotRecommendedOpsFileContents []byte
-	switch deployInput.IAAS {
-	case "gcp":
-		externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml")
-		if err != nil {
-			//not tested
-			return DeployOutput{}, err
-		}
-	case "aws":
-		externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml")
-		if err != nil {
-			//not tested
-			return DeployOutput{}, err
-		}
-	}
-	err = d.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
+	externalIPNotRecommendedOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml")
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
+	}
+	err = ioutil.WriteFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
+	if err != nil {
+		panic(err)
 	}
 
-	err = d.writeFile(privateKeyPath, []byte(deployInput.PrivateKey), os.ModePerm)
+	err = ioutil.WriteFile(privateKeyPath, []byte(deployInput.PrivateKey), os.ModePerm)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
 	args := []string{
@@ -146,17 +109,16 @@ func (d Deployer) Deploy(deployInput DeployInput) (DeployOutput, error) {
 		"-v", "internal_cidr=10.0.0.0/24",
 		"-v", "internal_gw=10.0.0.1",
 		"-v", "internal_ip=10.0.0.6",
-		"-v", fmt.Sprintf("external_ip=%s", deployInput.ExternalIP),
 		"-v", fmt.Sprintf("director_name=%s", deployInput.DirectorName),
 		"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
 	}
 
 	switch deployInput.IAAS {
 	case "gcp":
-		gcpCredentialsJSONPath := filepath.Join(tempDir, "gcp_credentials.json")
-		err = d.writeFile(gcpCredentialsJSONPath, []byte(deployInput.CredentialsJSON), os.ModePerm)
+		gcpCredentialsJSONPath := filepath.Join(tempDir, "credentials.json")
+		err = ioutil.WriteFile(gcpCredentialsJSONPath, []byte(deployInput.CredentialsJSON), os.ModePerm)
 		if err != nil {
-			return DeployOutput{}, err
+			panic(err)
 		}
 
 		tags := deployInput.Tags[0]
@@ -170,6 +132,7 @@ func (d Deployer) Deploy(deployInput DeployInput) (DeployOutput, error) {
 			"-v", fmt.Sprintf("subnetwork=%s", deployInput.Subnetwork),
 			"-v", fmt.Sprintf("tags=[%s]", tags),
 			"-v", fmt.Sprintf("project_id=%s", deployInput.ProjectID),
+			"-v", fmt.Sprintf("external_ip=%s", deployInput.ExternalIP),
 			"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsJSONPath),
 		)
 	case "aws":
@@ -179,34 +142,34 @@ func (d Deployer) Deploy(deployInput DeployInput) (DeployOutput, error) {
 			"-v", fmt.Sprintf("region=%s", deployInput.Region),
 			"-v", fmt.Sprintf("az=%s", deployInput.AZ),
 			"-v", fmt.Sprintf("default_key_name=%s", deployInput.DefaultKeyName),
-			"-v", fmt.Sprintf("default_security_groups=%s", deployInput.DefaultSecurityGroups),
+			"-v", fmt.Sprintf("default_security_group=%s", deployInput.DefaultSecurityGroup),
 			"-v", fmt.Sprintf("subnet_id=%s", deployInput.SubnetID),
 		)
 	}
 
 	err = d.command.Run(tempDir, args)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
 	variablesContents, err := d.readFile(variablesPath)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 	variables := map[string]interface{}{}
 	err = d.unmarshalYAML(variablesContents, &variables)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
 	stateContents, err := d.readFile(statePath)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 	state := map[string]interface{}{}
 	err = d.unmarshalJSON(stateContents, &state)
 	if err != nil {
-		return DeployOutput{}, err
+		panic(err)
 	}
 
 	return DeployOutput{
