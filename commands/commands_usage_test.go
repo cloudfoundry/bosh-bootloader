@@ -111,6 +111,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("bosh-ca-cert", newStateQuery("bosh ca cert"), "Prints BOSH director CA certificate"),
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
 		Entry("ssh-key", newStateQuery("ssh key"), "Prints SSH private key"),
+		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("version", commands.Version{}, "Prints version"),
 	)
 })
