@@ -118,7 +118,7 @@ var _ = Describe("load balancers", func() {
 		err = os.Rename(pathToFakeBOSH, pathToBOSH)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -142,6 +142,7 @@ var _ = Describe("load balancers", func() {
 	})
 
 	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
 		setFastFailTerraform(false)
 	})
 

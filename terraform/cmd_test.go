@@ -83,7 +83,11 @@ var _ = Describe("Cmd", func() {
 		err = os.Rename(pathToFakeTerraform, pathToTerraform)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
+	})
+
+	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
 	})
 
 	It("runs terraform with args", func() {

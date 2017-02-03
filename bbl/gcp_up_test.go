@@ -76,7 +76,7 @@ var _ = Describe("bbl up gcp", func() {
 		err = os.Rename(pathToFakeBOSH, pathToBOSH)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -87,6 +87,10 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
 	})
 
 	It("writes gcp details to state", func() {

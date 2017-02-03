@@ -139,7 +139,7 @@ var _ = Describe("bbl up aws", func() {
 		err = os.Rename(pathToFakeBOSH, pathToBOSH)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -156,6 +156,10 @@ var _ = Describe("bbl up aws", func() {
 		fastFailMutex.Lock()
 		defer fastFailMutex.Unlock()
 		fastFail = false
+	})
+
+	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
 	})
 
 	Describe("up", func() {

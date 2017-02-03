@@ -109,7 +109,7 @@ var _ = Describe("destroy", func() {
 			err = os.Rename(pathToFakeBOSH, pathToBOSH)
 			Expect(err).NotTo(HaveOccurred())
 
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), os.Getenv("PATH")}, ":"))
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 			tempDirectory, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
@@ -143,6 +143,10 @@ director_ssl:
 			Expect(err).NotTo(HaveOccurred())
 
 			ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
 		})
 
 		Context("asks for confirmation before it starts destroying things", func() {

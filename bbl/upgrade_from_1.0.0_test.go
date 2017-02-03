@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
@@ -30,10 +31,13 @@ var _ = Describe("upgrade from 1.0.0", func() {
 		envID       string
 		pathToBBLv1 string
 
-		fakeBOSH       *fakeBOSHDirector
-		fakeBOSHServer *httptest.Server
-		fakeAWS        *awsbackend.Backend
-		fakeAWSServer  *httptest.Server
+		fakeBOSH                 *fakeBOSHDirector
+		fakeBOSHServer           *httptest.Server
+		fakeAWS                  *awsbackend.Backend
+		fakeAWSServer            *httptest.Server
+		pathToFakeBOSH           string
+		pathToBOSH               string
+		fakeBOSHCLIBackendServer *httptest.Server
 	)
 
 	BeforeEach(func() {
@@ -47,8 +51,21 @@ var _ = Describe("upgrade from 1.0.0", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
+		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		}))
+
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
+
+		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+		Expect(err).NotTo(HaveOccurred())
+
+		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+		err = os.Rename(pathToFakeBOSH, pathToBOSH)
+		Expect(err).NotTo(HaveOccurred())
+
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 	})
 
 	bblUp := func(bbl string) (*gexec.Session, error) {
