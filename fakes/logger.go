@@ -22,6 +22,7 @@ type Logger struct {
 		Receives  struct {
 			Message string
 		}
+		Messages []string
 	}
 
 	PromptCall struct {
@@ -51,6 +52,8 @@ func (l *Logger) Println(message string) {
 	if l.PrintlnCall.Stub != nil {
 		l.PrintlnCall.Stub(message)
 	}
+
+	l.PrintlnCall.Messages = append(l.PrintlnCall.Messages, message)
 }
 
 func (l *Logger) Prompt(message string) {

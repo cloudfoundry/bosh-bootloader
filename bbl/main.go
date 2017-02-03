@@ -54,6 +54,7 @@ func main() {
 		commands.DeleteLBsCommand:        nil,
 		commands.LBsCommand:              nil,
 		commands.EnvIDCommand:            nil,
+		commands.PrintEnvCommand:         nil,
 	}
 
 	// Utilities
@@ -235,6 +236,7 @@ func main() {
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, commands.EnvIDPropertyName, func(state storage.State) string {
 		return state.EnvID
 	})
+	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 
