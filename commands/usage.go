@@ -16,8 +16,9 @@ Usage:
   bbl [GLOBAL OPTIONS] %s [OPTIONS]
 
 Global Options:
-  --help      [-h]       Print usage
+  --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
+  --debug                Prints debugging output
 %s
 `
 	CommandUsage = `
