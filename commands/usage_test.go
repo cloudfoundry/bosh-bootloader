@@ -31,8 +31,9 @@ Usage:
   bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
 
 Global Options:
-  --help      [-h]       Print usage
+  --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
+  --debug                Prints debugging output
 
 Commands:
   bosh-ca-cert           Prints BOSH director CA certificate
@@ -63,8 +64,9 @@ Commands:
   bbl [GLOBAL OPTIONS] my-command [OPTIONS]
 
 Global Options:
-  --help      [-h]       Print usage
+  --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
+  --debug                Prints debugging output
 
 [my-command command options]
   some message
