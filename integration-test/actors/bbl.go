@@ -39,6 +39,7 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 func (b BBL) Up(iaas IAAS) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"up",
 	}
 
