@@ -55,11 +55,13 @@ func NewManager(executor executor, terraformOutputProvider terraformOutputProvid
 	}
 }
 
-func (m Manager) Create(state storage.State) (storage.State, error) {
+func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, error) {
 	iaasInputs, err := m.generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
 	}
+
+	iaasInputs.InterpolateInput.OpsFile = opsFile
 
 	interpolateOutputs, err := m.executor.Interpolate(iaasInputs.InterpolateInput)
 	if err != nil {

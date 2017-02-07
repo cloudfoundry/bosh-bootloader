@@ -22,6 +22,7 @@ func main() {
 
 	if os.Args[1] == "interpolate" {
 		writeVariablesToFile()
+		postArgsToBackendServer("interpolate", os.Args[1:])
 		fmt.Fprintf(os.Stderr, "bosh director name: %s\n", extractDirectorName(os.Args))
 	}
 
@@ -29,7 +30,7 @@ func main() {
 		oldArgsChecksum := getOldArgMD5()
 		argsChecksum := calculateArgMD5(os.Args[1:])
 
-		postArgsToBackendServer(os.Args[1:])
+		postArgsToBackendServer("createenv", os.Args[1:])
 		writeStateToFile(argsChecksum)
 		writeVariablesToFile()
 
@@ -84,13 +85,13 @@ func writeStateToFile(argsChecksum string) {
 	}
 }
 
-func postArgsToBackendServer(args []string) {
+func postArgsToBackendServer(command string, args []string) {
 	postArgs, err := json.Marshal(args)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = http.Post(fmt.Sprintf("%s/args", backendURL), "application/json", strings.NewReader(string(postArgs)))
+	_, err = http.Post(fmt.Sprintf("%s/%s/args", backendURL, command), "application/json", strings.NewReader(string(postArgs)))
 	if err != nil {
 		panic(err)
 	}

@@ -128,7 +128,7 @@ var _ = Describe("Manager", func() {
 
 		Context("when iaas is gcp", func() {
 			It("queries values from terraform output provider", func() {
-				_, err := boshManager.Create(incomingGCPState)
+				_, err := boshManager.Create(incomingGCPState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stackManager.DescribeCall.CallCount).To(Equal(0))
@@ -139,7 +139,7 @@ var _ = Describe("Manager", func() {
 
 		Context("when iaas is aws", func() {
 			It("queries values from stack", func() {
-				_, err := boshManager.Create(incomingAWSState)
+				_, err := boshManager.Create(incomingAWSState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformOutputProvider.GetCall.CallCount).To(Equal(0))
@@ -149,7 +149,7 @@ var _ = Describe("Manager", func() {
 
 		DescribeTable("generates a bosh manifest", func(incomingStateFunc func() storage.State,
 			expectedInterpolateInput bosh.InterpolateInput) {
-			_, err := boshManager.Create(incomingStateFunc())
+			_, err := boshManager.Create(incomingStateFunc(), []byte("some-ops-file"))
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(expectedInterpolateInput))
@@ -174,6 +174,7 @@ var _ = Describe("Manager", func() {
 					"some-key": "some-value",
 				},
 				Variables: "",
+				OpsFile:   []byte("some-ops-file"),
 			}),
 			Entry("for aws", func() storage.State {
 				return incomingAWSState
@@ -193,11 +194,12 @@ var _ = Describe("Manager", func() {
 					"some-key": "some-value",
 				},
 				Variables: "",
+				OpsFile:   []byte("some-ops-file"),
 			}),
 		)
 
 		It("creates a bosh environment", func() {
-			_, err := boshManager.Create(incomingGCPState)
+			_, err := boshManager.Create(incomingGCPState, []byte{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
@@ -211,7 +213,7 @@ var _ = Describe("Manager", func() {
 
 		Context("for gcp", func() {
 			It("returns a state with a proper bosh state", func() {
-				state, err := boshManager.Create(incomingGCPState)
+				state, err := boshManager.Create(incomingGCPState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
@@ -249,7 +251,7 @@ var _ = Describe("Manager", func() {
 
 		Context("for aws", func() {
 			It("returns a state with a proper bosh state", func() {
-				state, err := boshManager.Create(incomingAWSState)
+				state, err := boshManager.Create(incomingAWSState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
@@ -291,7 +293,7 @@ var _ = Describe("Manager", func() {
 				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "gcp",
-				})
+				}, []byte{})
 				Expect(err).To(MatchError("failed to output"))
 			})
 
@@ -299,12 +301,12 @@ var _ = Describe("Manager", func() {
 				stackManager.DescribeCall.Returns.Error = errors.New("failed to get stack")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "aws",
-				})
+				}, []byte{})
 				Expect(err).To(MatchError("failed to get stack"))
 			})
 
 			It("returns an error when an invalid iaas is provided", func() {
-				_, err := boshManager.Create(storage.State{})
+				_, err := boshManager.Create(storage.State{}, []byte{})
 				Expect(err).To(MatchError("A valid IAAS was not provided"))
 			})
 
@@ -312,7 +314,7 @@ var _ = Describe("Manager", func() {
 				boshExecutor.InterpolateCall.Returns.Error = errors.New("failed to interpolate")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "gcp",
-				})
+				}, []byte{})
 				Expect(err).To(MatchError("failed to interpolate"))
 			})
 
@@ -320,7 +322,7 @@ var _ = Describe("Manager", func() {
 				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "aws",
-				})
+				}, []byte{})
 				Expect(err).To(MatchError("failed to create"))
 			})
 		})

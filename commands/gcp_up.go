@@ -41,6 +41,7 @@ type GCPUpConfig struct {
 	ProjectID             string
 	Zone                  string
 	Region                string
+	OpsFilePath           string
 }
 
 type gcpCloudConfigGenerator interface {
@@ -73,7 +74,7 @@ type zones interface {
 }
 
 type boshManager interface {
-	Create(storage.State) (storage.State, error)
+	Create(storage.State, []byte) (storage.State, error)
 	Delete(storage.State) error
 }
 
@@ -95,8 +96,11 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
+	var opsFileContents []byte
 	if !upConfig.empty() {
-		gcpDetails, err := u.parseUpConfig(upConfig)
+		var gcpDetails storage.GCP
+		var err error
+		gcpDetails, opsFileContents, err = u.parseUpConfig(upConfig)
 		if err != nil {
 			return err
 		}
@@ -175,7 +179,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	state, err = u.boshManager.Create(state)
+	state, err = u.boshManager.Create(state, opsFileContents)
 	if err != nil {
 		return err
 	}
@@ -234,20 +238,28 @@ func (u GCPUp) validateState(state storage.State) error {
 	return nil
 }
 
-func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
+func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) {
 	if upConfig.ServiceAccountKeyPath == "" {
-		return storage.GCP{}, errors.New("GCP service account key must be provided")
+		return storage.GCP{}, []byte{}, errors.New("GCP service account key must be provided")
 	}
 
 	sak, err := ioutil.ReadFile(upConfig.ServiceAccountKeyPath)
 	if err != nil {
-		return storage.GCP{}, fmt.Errorf("error reading service account key: %v", err)
+		return storage.GCP{}, []byte{}, fmt.Errorf("error reading service account key: %v", err)
 	}
 
 	var tmp interface{}
 	err = json.Unmarshal(sak, &tmp)
 	if err != nil {
-		return storage.GCP{}, fmt.Errorf("error parsing service account key: %v", err)
+		return storage.GCP{}, []byte{}, fmt.Errorf("error parsing service account key: %v", err)
+	}
+
+	var opsFileContents []byte
+	if upConfig.OpsFilePath != "" {
+		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFilePath)
+		if err != nil {
+			return storage.GCP{}, []byte{}, fmt.Errorf("error reading ops-file contents: %v", err)
+		}
 	}
 
 	return storage.GCP{
@@ -255,7 +267,7 @@ func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
 		ProjectID:         upConfig.ProjectID,
 		Zone:              upConfig.Zone,
 		Region:            upConfig.Region,
-	}, nil
+	}, opsFileContents, nil
 }
 
 func (c GCPUpConfig) empty() bool {

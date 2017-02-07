@@ -149,6 +149,29 @@ var _ = Describe("gcp up", func() {
 			Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(1))
 		})
 
+		Context("when ops file are passed in via --ops-file flag", func() {
+			It("passes the ops file contents to the bosh manager", func() {
+				opsFile, err := ioutil.TempFile("", "ops-file")
+				Expect(err).NotTo(HaveOccurred())
+
+				opsFilePath := opsFile.Name()
+				opsFileContents := "some-ops-file-contents"
+				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "us-west1",
+					OpsFilePath:           opsFilePath,
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshManager.CreateCall.Receives.OpsFile).To(Equal([]byte("some-ops-file-contents")))
+			})
+		})
+
 		Context("terraform apply", func() {
 			It("creates gcp resources via terraform", func() {
 				gcpUpConfig := commands.GCPUpConfig{
@@ -313,6 +336,14 @@ var _ = Describe("gcp up", func() {
 					})
 					Expect(err).To(MatchError("failed to apply"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				})
+
+				It("returns an error when the ops file cannot be read", func() {
+					err := gcpUp.Execute(commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						OpsFilePath:           "some/fake/path",
+					}, storage.State{})
+					Expect(err).To(MatchError("error reading ops-file contents: open some/fake/path: no such file or directory"))
 				})
 
 				It("returns an error when bosh manager fails to create a bosh", func() {

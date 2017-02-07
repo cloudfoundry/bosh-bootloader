@@ -39,6 +39,7 @@ type InterpolateInput struct {
 	AccessKeyID           string
 	BOSHState             map[string]interface{}
 	Variables             string
+	OpsFile               []byte
 }
 
 type InterpolateOutput struct {
@@ -87,7 +88,8 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
-	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
+	userOpsFilePath := filepath.Join(tempDir, "user-ops-file.yml")
+	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
 	externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
@@ -97,6 +99,11 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		if err != nil {
 			return InterpolateOutput{}, err
 		}
+	}
+
+	err = e.writeFile(userOpsFilePath, interpolateInput.OpsFile, os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, err
 	}
 
 	boshManifestContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml")
@@ -145,6 +152,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		"--var-errs-unused",
 		"-o", cpiOpsFilePath,
 		"-o", externalIPNotRecommendedOpsFilePath,
+		"-o", userOpsFilePath,
 		"--vars-store", variablesPath,
 		"-v", "internal_cidr=10.0.0.0/24",
 		"-v", "internal_gw=10.0.0.1",

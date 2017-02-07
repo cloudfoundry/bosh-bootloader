@@ -102,6 +102,8 @@ var _ = Describe("bbl up aws", func() {
 		lbKeyPath                string
 		fastFail                 bool
 		fastFailMutex            sync.Mutex
+
+		interpolateArgs string
 	)
 
 	BeforeEach(func() {
@@ -112,6 +114,10 @@ var _ = Describe("bbl up aws", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/interpolate/args":
+				body, err := ioutil.ReadAll(request.Body)
+				Expect(err).NotTo(HaveOccurred())
+				interpolateArgs = string(body)
 			case "/fastfail":
 				fastFailMutex.Lock()
 				defer fastFailMutex.Unlock()
@@ -222,6 +228,26 @@ var _ = Describe("bbl up aws", func() {
 
 					Expect(session.Err.Contents()).To(ContainSubstring("The iaas type cannot be changed for an existing environment. The current iaas type is aws."))
 				})
+			})
+		})
+
+		Context("when ops files are provides via --ops-file flag", func() {
+			It("passes those ops files to bosh create env", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--iaas", "aws",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+					"--ops-file", "fixtures/ops-file.yml",
+				}
+
+				executeCommand(args, 0)
+
+				Expect(interpolateArgs).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 			})
 		})
 

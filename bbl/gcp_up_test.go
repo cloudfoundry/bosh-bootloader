@@ -31,6 +31,9 @@ var _ = Describe("bbl up gcp", func() {
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
+
+		createEnvArgs   string
+		interpolateArgs string
 	)
 
 	BeforeEach(func() {
@@ -41,6 +44,16 @@ var _ = Describe("bbl up gcp", func() {
 		}))
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/createenv/args":
+				body, err := ioutil.ReadAll(request.Body)
+				Expect(err).NotTo(HaveOccurred())
+				createEnvArgs = string(body)
+			case "/interpolate/args":
+				body, err := ioutil.ReadAll(request.Body)
+				Expect(err).NotTo(HaveOccurred())
+				interpolateArgs = string(body)
+			}
 		}))
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -116,6 +129,26 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.GCP.Region).To(Equal("us-west1"))
 		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
+	})
+
+	Context("when ops files are provides via --ops-file flag", func() {
+		It("passes those ops files to bosh create env", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+				"--ops-file", "fixtures/ops-file.yml",
+			}
+
+			executeCommand(args, 0)
+
+			Expect(interpolateArgs).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+		})
 	})
 
 	Context("when gcp details are provided via env vars", func() {

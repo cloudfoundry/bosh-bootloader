@@ -4,7 +4,8 @@ const (
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
   --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
-  --name                     Name to assign to your BOSH Director (optional, will be randomly generated)
+  [--name]                   Name to assign to your BOSH Director (optional, will be randomly generated)
+  [--ops-file]               Path to BOSH ops file (optional)
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
@@ -34,7 +35,7 @@ const (
   --cert               Path to SSL certificate
   --key                Path to SSL certificate key
   [--chain]            Path to SSL certificate chain (optional)
-  [--domain]           Updates domain in the nameserver zone
+  [--domain]           Updates domain in the nameserver zone (optional)
   [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`
 
 	DeleteLBsCommandUsage = `Deletes load balancer(s)

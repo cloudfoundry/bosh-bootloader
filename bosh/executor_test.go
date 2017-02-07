@@ -68,6 +68,7 @@ var _ = Describe("Executor", func() {
 					"key": "value",
 				},
 				Variables: variablesYMLContents,
+				OpsFile:   []byte("some-ops-file"),
 			}
 
 			gcpInterpolateInput = bosh.InterpolateInput{
@@ -88,6 +89,7 @@ var _ = Describe("Executor", func() {
 					"key": "value",
 				},
 				Variables: variablesYMLContents,
+				OpsFile:   []byte("some-ops-file"),
 			}
 
 			gcpCredentialsPath = fmt.Sprintf("%s/gcp_credentials.json", tempDir)
@@ -139,6 +141,7 @@ var _ = Describe("Executor", func() {
 				"--var-errs-unused",
 				"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
+				"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
 				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 				"-v", "internal_cidr=10.0.0.0/24",
 				"-v", "internal_gw=10.0.0.1",
@@ -149,6 +152,11 @@ var _ = Describe("Executor", func() {
 
 			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
 			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
+
+			opsFileContents, err := ioutil.ReadFile(fmt.Sprintf("%s/user-ops-file.yml", tempDir))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(opsFileContents).To(Equal([]byte("some-ops-file")))
+
 			Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 			Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
 				"key": "value",
@@ -211,6 +219,19 @@ var _ = Describe("Executor", func() {
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
 				_, err := executor.Interpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to write variables"))
+			})
+
+			It("fails when trying to write the user ops file", func() {
+				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
+					if path == fmt.Sprintf("%s/user-ops-file.yml", tempDir) {
+						return errors.New("failed to write user ops file")
+					}
+					return nil
+				}
+
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				_, err := executor.Interpolate(bosh.InterpolateInput{})
+				Expect(err).To(MatchError("failed to write user ops file"))
 			})
 
 			It("fails when trying to write the bosh manifest file", func() {

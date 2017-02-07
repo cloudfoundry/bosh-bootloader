@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -74,6 +75,7 @@ type AWSUpConfig struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	Region          string
+	OpsFilePath     string
 }
 
 func NewAWSUp(
@@ -179,7 +181,15 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	state, err = u.boshManager.Create(state)
+	opsFile := []byte{}
+	if config.OpsFilePath != "" {
+		opsFile, err = ioutil.ReadFile(config.OpsFilePath)
+		if err != nil {
+			return err
+		}
+	}
+
+	state, err = u.boshManager.Create(state, opsFile)
 	if err != nil {
 		return err
 	}

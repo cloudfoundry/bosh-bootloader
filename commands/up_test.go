@@ -98,6 +98,52 @@ var _ = Describe("Up", func() {
 			)
 		})
 
+		Context("when an ops-file is provided via command line flag", func() {
+			It("populates the aws config with the correct ops-file path", func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_AWS_ACCESS_KEY_ID":     "access-key-id-from-env",
+					"BBL_AWS_SECRET_ACCESS_KEY": "secret-access-key-from-env",
+					"BBL_AWS_REGION":            "region-from-env",
+				}
+
+				err := command.Execute([]string{
+					"--iaas", "aws",
+					"--ops-file", "some-ops-file-path",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
+					AccessKeyID:     "access-key-id-from-env",
+					SecretAccessKey: "secret-access-key-from-env",
+					Region:          "region-from-env",
+					OpsFilePath:     "some-ops-file-path",
+				}))
+			})
+
+			It("populates the gcp config with the correct ops-file path", func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_GCP_SERVICE_ACCOUNT_KEY": "some-service-account-key-env",
+					"BBL_GCP_PROJECT_ID":          "some-project-id-env",
+					"BBL_GCP_ZONE":                "some-zone-env",
+					"BBL_GCP_REGION":              "some-region-env",
+				}
+
+				err := command.Execute([]string{
+					"--iaas", "gcp",
+					"--ops-file", "some-ops-file-path",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+					ServiceAccountKeyPath: "some-service-account-key-env",
+					ProjectID:             "some-project-id-env",
+					Zone:                  "some-zone-env",
+					Region:                "some-region-env",
+					OpsFilePath:           "some-ops-file-path",
+				}))
+			})
+		})
+
 		Context("env id", func() {
 			Context("when the env id doesn't exist", func() {
 				It("populates a new bbl env id", func() {

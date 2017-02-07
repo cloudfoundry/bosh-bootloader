@@ -2,6 +2,8 @@ package commands_test
 
 import (
 	"errors"
+	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -199,6 +201,30 @@ var _ = Describe("AWSUp", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshManager.CreateCall.Receives.State).To(Equal(incomingState))
+		})
+
+		Context("when ops file are passed in via --ops-file flag", func() {
+			It("passes the ops file contents to the bosh manager", func() {
+				opsFile, err := ioutil.TempFile("", "ops-file")
+				Expect(err).NotTo(HaveOccurred())
+
+				opsFilePath := opsFile.Name()
+				opsFileContents := "some-ops-file-contents"
+				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = command.Execute(commands.AWSUpConfig{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+					OpsFilePath:     opsFilePath,
+				}, storage.State{
+					EnvID: "bbl-lake-time-stamp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshManager.CreateCall.Receives.OpsFile).To(Equal([]byte("some-ops-file-contents")))
+			})
 		})
 
 		Context("when there is an lb", func() {
@@ -478,22 +504,6 @@ var _ = Describe("AWSUp", func() {
 							Region:          "some-aws-region",
 						}))
 					})
-
-					Context("failure cases", func() {
-						It("returns an error when saving the state fails", func() {
-							stateStore.SetCall.Returns = []fakes.SetCallReturn{
-								{
-									Error: errors.New("saving the state failed"),
-								},
-							}
-							err := command.Execute(commands.AWSUpConfig{
-								AccessKeyID:     "some-aws-access-key-id",
-								SecretAccessKey: "some-aws-secret-access-key",
-								Region:          "some-aws-region",
-							}, storage.State{})
-							Expect(err).To(MatchError("saving the state failed"))
-						})
-					})
 				})
 				Context("when the credentials do exist", func() {
 					It("overrides the credentials when they're passed in", func() {
@@ -653,6 +663,20 @@ var _ = Describe("AWSUp", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when saving the state fails", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{
+					{
+						Error: errors.New("saving the state failed"),
+					},
+				}
+				err := command.Execute(commands.AWSUpConfig{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("saving the state failed"))
+			})
+
 			It("returns an error when the certificate cannot be described", func() {
 				certificateDescriber.DescribeCall.Returns.Error = errors.New("failed to describe")
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{
@@ -706,6 +730,13 @@ var _ = Describe("AWSUp", func() {
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("infrastructure creation failed"))
+			})
+
+			It("returns an error when the ops file cannot be read", func() {
+				err := command.Execute(commands.AWSUpConfig{
+					OpsFilePath: "some/fake/path",
+				}, storage.State{})
+				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {

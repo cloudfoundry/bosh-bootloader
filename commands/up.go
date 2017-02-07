@@ -41,6 +41,7 @@ type upConfig struct {
 	gcpRegion            string
 	iaas                 string
 	name                 string
+	opsFile              string
 }
 
 func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter,
@@ -97,6 +98,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			AccessKeyID:     config.awsAccessKeyID,
 			SecretAccessKey: config.awsSecretAccessKey,
 			Region:          config.awsRegion,
+			OpsFilePath:     config.opsFile,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
@@ -104,6 +106,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			ProjectID:             config.gcpProjectID,
 			Zone:                  config.gcpZone,
 			Region:                config.gcpRegion,
+			OpsFilePath:           config.opsFile,
 		}, state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)
@@ -133,6 +136,7 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.gcpRegion, "gcp-region", u.envGetter.Get("BBL_GCP_REGION"))
 
 	upFlags.String(&config.name, "name", "")
+	upFlags.String(&config.opsFile, "ops-file", "")
 
 	err := upFlags.Parse(args)
 	if err != nil {
