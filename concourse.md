@@ -21,7 +21,7 @@ bbl create-lbs --type concourse
 Scale instance types, disks and instance count based on your needs. Other sizes are available, see ```bosh cloud-config```.
 
 1. Start with the sample manifest from the [Concourse documentation](http://concourse.ci/clusters-with-bosh.html)
-2. Replace all ```vm_type: REPLACE_ME``` with ```vm_type: n1-standard-1```.
+2. Replace all ```vm_type: REPLACE_ME``` with ```vm_type: default```.
 3. Add the vm_extension ```lb``` to the instance_group "web"
 4. Add the property ```tls_bind_port: 443``` to the instance_group "web"
 5. Add the vm_extension ```50GB_ephemeral_disk``` to the instance_group "worker"
