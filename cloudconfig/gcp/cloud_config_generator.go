@@ -32,6 +32,7 @@ type VMExtensionCloudProperties struct {
 	EphemeralExternalIP *bool    `yaml:"ephemeral_external_ip,omitempty"`
 	BackendService      string   `yaml:"backend_service,omitempty"`
 	Tags                []string `yaml:"tags,omitempty"`
+	Preemptible         *bool    `yaml:"preemptible,omitempty"`
 }
 
 type CloudConfig struct {
