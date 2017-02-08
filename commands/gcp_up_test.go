@@ -25,7 +25,7 @@ director_ssl:
 `
 )
 
-var _ = Describe("gcp up", func() {
+var _ = Describe("GCPUp", func() {
 	var (
 		gcpUp                   commands.GCPUp
 		stateStore              *fakes.StateStore
@@ -105,7 +105,7 @@ var _ = Describe("gcp up", func() {
 		commands.ResetMarshal()
 	})
 
-	Context("Execute", func() {
+	Describe("Execute", func() {
 		It("saves gcp details to the state", func() {
 			keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
 				PrivateKey: "some-private-key",
@@ -172,54 +172,31 @@ var _ = Describe("gcp up", func() {
 			})
 		})
 
-		Context("terraform apply", func() {
-			It("creates gcp resources via terraform", func() {
-				gcpUpConfig := commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "us-west1",
-				}
+		It("creates gcp resources via terraform", func() {
+			gcpUpConfig := commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}
 
-				err := gcpUp.Execute(gcpUpConfig, storage.State{
-					EnvID: "some-env-id",
-				})
-
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal(serviceAccountKey))
-				Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
-				Expect(terraformExecutor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-				Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("us-west1"))
-				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedTerraformTemplate))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+			err := gcpUp.Execute(gcpUpConfig, storage.State{
+				EnvID: "some-env-id",
 			})
 
-			It("saves the tf state even if the applier fails", func() {
-				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
-				terraformExecutor.ApplyCall.Returns.Error = expectedError
+			Expect(err).NotTo(HaveOccurred())
 
-				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					},
-					EnvID: "bbl-lake-time:stamp",
-				})
-
-				Expect(err).To(MatchError("failed to apply"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(3))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
-
-			})
+			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal(serviceAccountKey))
+			Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+			Expect(terraformExecutor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
+			Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+			Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal("us-west1"))
+			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedTerraformTemplate))
+			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 		})
 
-		Context("bosh", func() {
+		Describe("bosh", func() {
 			It("creates a bosh", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
@@ -266,9 +243,9 @@ var _ = Describe("gcp up", func() {
 				}))
 			})
 
-			Context("state manipulation", func() {
+			Describe("state manipulation", func() {
 				Context("when the state file does not exist", func() {
-					It("saves the bosh manager create state and variables", func() {
+					BeforeEach(func() {
 						err := gcpUp.Execute(commands.GCPUpConfig{
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
@@ -278,7 +255,9 @@ var _ = Describe("gcp up", func() {
 							EnvID: "bbl-lake-time:stamp",
 						})
 						Expect(err).NotTo(HaveOccurred())
+					})
 
+					It("saves the bosh manager create state and variables", func() {
 						Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
 							DirectorName:           "bosh-bbl-lake-time:stamp",
 							DirectorUsername:       "admin",
@@ -297,7 +276,7 @@ var _ = Describe("gcp up", func() {
 				})
 
 				Context("when the state file exists", func() {
-					It("updates the bosh state", func() {
+					BeforeEach(func() {
 						err := gcpUp.Execute(commands.GCPUpConfig{
 							ServiceAccountKeyPath: serviceAccountKeyPath,
 							ProjectID:             "some-project-id",
@@ -312,7 +291,9 @@ var _ = Describe("gcp up", func() {
 							},
 						})
 						Expect(err).NotTo(HaveOccurred())
+					})
 
+					It("updates the bosh state", func() {
 						Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(map[string]interface{}{
 							"new-key": "new-value",
 						}))
@@ -320,24 +301,7 @@ var _ = Describe("gcp up", func() {
 				})
 			})
 
-			Context("failure cases", func() {
-				It("returns an error if applier fails with non terraform apply error", func() {
-					terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKeyPath: serviceAccountKeyPath,
-						ProjectID:             "some-project-id",
-						Zone:                  "some-zone",
-						Region:                "us-west1",
-					}, storage.State{
-						IAAS: "gcp",
-						Stack: storage.Stack{
-							LBType: "concourse",
-						},
-					})
-					Expect(err).To(MatchError("failed to apply"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				})
-
+			Describe("bosh-related failure cases", func() {
 				It("returns an error when the ops file cannot be read", func() {
 					err := gcpUp.Execute(commands.GCPUpConfig{
 						ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -373,7 +337,7 @@ var _ = Describe("gcp up", func() {
 		})
 	})
 
-	Context("cloud config", func() {
+	Describe("cloud config", func() {
 		It("generates and uploads a cloud config", func() {
 			zones.GetCall.Returns.Zones = []string{"zone-1", "zone-2", "zone-3"}
 			err := gcpUp.Execute(commands.GCPUpConfig{
@@ -459,7 +423,7 @@ var _ = Describe("gcp up", func() {
 			})
 		})
 
-		Context("failure cases", func() {
+		Describe("cloud config-related failure cases", func() {
 			It("returns an error when the cloud config fails to be generated", func() {
 				gcpCloudConfigGenerator.GenerateCall.Returns.Error = errors.New("failed to generate cloud config")
 
@@ -603,53 +567,78 @@ var _ = Describe("gcp up", func() {
 	})
 
 	Context("when lb type exists in the state", func() {
-		It("applies the correct cf template and args for cf lb type", func() {
-			zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "some-region",
-			}, storage.State{
-				LB: storage.LB{
-					Type:   "cf",
-					Cert:   "some-cert",
-					Key:    "some-key",
-					Domain: "some-domain",
-				},
+		Context("when a cf lb exists in the state", func() {
+			BeforeEach(func() {
+				zones.GetCall.Returns.Zones = []string{"some-zone", "some-other-zone"}
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{
+					LB: storage.LB{
+						Type:   "cf",
+						Cert:   "some-cert",
+						Key:    "some-key",
+						Domain: "some-domain",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
 			})
-			Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
-			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
-			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
-			Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal("some-domain"))
+			It("applies the correct cf template and args for cf lb type", func() {
+				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
+				Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
+				Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
+				Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal("some-domain"))
+			})
 		})
 
-		It("applies the correct concourse template and args for concourse lb type", func() {
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "some-region",
-			}, storage.State{
-				LB: storage.LB{
-					Type: "concourse",
-				},
+		Context("when a concourse lb exists in the state", func() {
+			BeforeEach(func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "some-region",
+				}, storage.State{
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
 			})
-			Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
-			Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(""))
-			Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(""))
-			Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal(""))
+			It("applies the correct concourse template and args for concourse lb type", func() {
+				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedConcourseTemplate))
+				Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal(""))
+				Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal(""))
+				Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal(""))
+			})
 		})
 	})
 
 	Context("failure cases", func() {
-		Context("when calling up with different gcp flags then the state", func() {
+		It("returns an error if applier fails with non terraform apply error", func() {
+			terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{
+				IAAS: "gcp",
+				Stack: storage.Stack{
+					LBType: "concourse",
+				},
+			})
+			Expect(err).To(MatchError("failed to apply"))
+			Expect(stateStore.SetCall.CallCount).To(Equal(2))
+		})
+
+		Describe("calling up with different gcp flags then the state", func() {
 			It("returns an error when the --gcp-region is different", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -838,6 +827,26 @@ var _ = Describe("gcp up", func() {
 				Region:                "us-west1",
 			}, storage.State{})
 			Expect(err).To(MatchError("terraform executor failed"))
+		})
+
+		It("saves the tf state when the applier fails", func() {
+			expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+			terraformExecutor.ApplyCall.Returns.Error = expectedError
+
+			err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+				IAAS: "gcp",
+				GCP: storage.GCP{
+					ServiceAccountKey: serviceAccountKey,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+				},
+				EnvID: "bbl-lake-time:stamp",
+			})
+
+			Expect(err).To(MatchError("failed to apply"))
+			Expect(stateStore.SetCall.CallCount).To(Equal(3))
+			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 		})
 
 		It("returns an error when the state fails to be set after updating keypair", func() {
