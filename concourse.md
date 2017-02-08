@@ -53,5 +53,5 @@ bosh upload-release ~/Downloads/concourse-2.5.1.tgz
 ## Deploy
 
 ```
-bosh -n concourse deploy concourse.yml
+bosh -d concourse deploy concourse.yml
 ```
