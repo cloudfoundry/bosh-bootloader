@@ -303,4 +303,6 @@ vm_extensions:
 - name: internet-not-required
   cloud_properties:
     ephemeral_external_ip: false
-
+- name: preemptible
+  cloud_properties:
+    preemptible: true

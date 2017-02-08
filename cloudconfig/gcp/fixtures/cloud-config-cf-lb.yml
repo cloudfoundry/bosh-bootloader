@@ -303,6 +303,9 @@ vm_extensions:
 - name: internet-not-required
   cloud_properties:
     ephemeral_external_ip: false
+- name: preemptible
+  cloud_properties:
+    preemptible: true
 - name: cf-router-network-properties
   cloud_properties:
     backend_service: router-backend-service
