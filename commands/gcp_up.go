@@ -7,9 +7,10 @@ import (
 	"io/ioutil"
 	"strings"
 
+	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -45,7 +46,7 @@ type GCPUpConfig struct {
 }
 
 type gcpCloudConfigGenerator interface {
-	Generate(gcp.CloudConfigInput) (gcp.CloudConfig, error)
+	Generate(gcpcloudconfig.CloudConfigInput) (gcpcloudconfig.CloudConfig, error)
 }
 
 type gcpKeyPairCreator interface {
@@ -58,6 +59,7 @@ type keyPairUpdater interface {
 
 type gcpProvider interface {
 	SetConfig(serviceAccountKey, projectID, zone string) error
+	Client() gcp.Client
 }
 
 type terraformExecutor interface {
@@ -118,11 +120,23 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
+	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone); err != nil {
 		return err
 	}
 
-	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone); err != nil {
+	if state.EnvID != "" {
+		gcpClient := u.gcpProvider.Client()
+		networkName := state.EnvID + "-network"
+		networkList, err := gcpClient.GetNetworks(networkName)
+		if err != nil {
+			return err
+		}
+		if len(networkList.Items) > 0 {
+			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", state.EnvID))
+		}
+	}
+
+	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
@@ -193,13 +207,13 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		state.BOSH.DirectorPassword)
 
 	u.logger.Step("generating cloud config")
-	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
+	cloudConfig, err := u.cloudConfigGenerator.Generate(gcpcloudconfig.CloudConfigInput{
 		AZs:                 zones,
 		Tags:                []string{terraformOutputs.InternalTag},
 		NetworkName:         terraformOutputs.NetworkName,
 		SubnetworkName:      terraformOutputs.SubnetworkName,
 		ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
-		CFBackends: gcp.CFBackends{
+		CFBackends: gcpcloudconfig.CFBackends{
 			Router:    terraformOutputs.RouterBackendService,
 			SSHProxy:  terraformOutputs.SSHProxyTargetPool,
 			TCPRouter: terraformOutputs.TCPRouterTargetPool,

@@ -352,6 +352,35 @@ var _ = Describe("bbl up gcp", func() {
 		Entry("generates a cloud config with no lb type", "../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml"),
 	)
 
+	Context("when there is an environment with the same name", func() {
+		var session *gexec.Session
+
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+				"--name", "existing",
+			}
+
+			session = executeCommand(args, 1)
+		})
+
+		It("fast fails and prints a helpful message", func() {
+			Expect(session.Err.Contents()).To(ContainSubstring("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
+		})
+
+		It("does not save the env id to the state", func() {
+			_, err := os.Stat(filepath.Join(tempDirectory, "bbl-state.json"))
+			Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+		})
+	})
+
 	Context("bbl re-entrance", func() {
 		It("saves the tf state when terraform apply fails", func() {
 			args := []string{

@@ -121,7 +121,7 @@ var _ = Describe("concourse deployment test", func() {
 			configuration, err := integration.LoadAWSConfig()
 			Expect(err).NotTo(HaveOccurred())
 
-			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
+			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-concourse-env")
 			aws = actors.NewAWS(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
@@ -156,7 +156,7 @@ var _ = Describe("concourse deployment test", func() {
 			configuration, err := integration.LoadGCPConfig()
 			Expect(err).NotTo(HaveOccurred())
 
-			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
+			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-concourse-env")
 			gcp = actors.NewGCP(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 

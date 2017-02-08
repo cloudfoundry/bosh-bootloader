@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	compute "google.golang.org/api/compute/v1"
+
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -31,6 +33,7 @@ var _ = Describe("GCPUp", func() {
 		stateStore              *fakes.StateStore
 		keyPairUpdater          *fakes.GCPKeyPairUpdater
 		gcpClientProvider       *fakes.GCPClientProvider
+		gcpClient               *fakes.GCPClient
 		terraformExecutor       *fakes.TerraformExecutor
 		boshManager             *fakes.BOSHManager
 		boshClientProvider      *fakes.BOSHClientProvider
@@ -49,6 +52,9 @@ var _ = Describe("GCPUp", func() {
 		stateStore = &fakes.StateStore{}
 		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
 		gcpClientProvider = &fakes.GCPClientProvider{}
+		gcpClient = &fakes.GCPClient{}
+		gcpClientProvider.ClientCall.Returns.Client = gcpClient
+		gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{}
 		terraformExecutor = &fakes.TerraformExecutor{}
 		zones = &fakes.Zones{}
 		terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
@@ -106,6 +112,35 @@ var _ = Describe("GCPUp", func() {
 	})
 
 	Describe("Execute", func() {
+		It("gets a gcp client from the client provider when a name is provided", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{
+				EnvID: "some-env-id",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
+		})
+
+		It("checks for existing gcp environments when name is provided", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{
+				EnvID: "some-env-id",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(gcpClient.GetNetworksCall.CallCount).To(Equal(1))
+			Expect(gcpClient.GetNetworksCall.Receives.Name).To(Equal("some-env-id-network"))
+		})
+
 		It("saves gcp details to the state", func() {
 			keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
 				PrivateKey: "some-private-key",
@@ -621,6 +656,54 @@ var _ = Describe("GCPUp", func() {
 	})
 
 	Context("failure cases", func() {
+		Context("when a gcp environment with the same name already exists", func() {
+			var err error
+
+			BeforeEach(func() {
+				gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{
+					Items: []*compute.Network{
+						&compute.Network{},
+					},
+				}
+				err = gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "us-west1",
+				}, storage.State{
+					EnvID: "existing",
+				})
+			})
+
+			It("calls gcpClient.GetNetworks", func() {
+				Expect(gcpClient.GetNetworksCall.CallCount).To(Equal(1))
+				Expect(gcpClient.GetNetworksCall.Receives.Name).To(Equal("existing-network"))
+			})
+
+			It("returns without saving the state", func() {
+				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+			})
+
+			It("returns a descriptive error", func() {
+				Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
+			})
+		})
+
+		It("returns an error if gcpClient.GetNetworks fails", func() {
+			gcpClient.GetNetworksCall.Returns.Error = errors.New("failed to get network list")
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{
+				EnvID: "some-env-id",
+			})
+
+			Expect(err).To(MatchError("failed to get network list"))
+		})
+
 		It("returns an error if applier fails with non terraform apply error", func() {
 			terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
 			err := gcpUp.Execute(commands.GCPUpConfig{

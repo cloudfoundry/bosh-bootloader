@@ -26,7 +26,7 @@ var _ = Describe("up test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		state = integration.NewState(configuration.StateFileDir)
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-ci-env")
 		gcp = actors.NewGCP(configuration)
 		terraform = actors.NewTerraform(configuration)
 		boshcli = actors.NewBOSHCLI()

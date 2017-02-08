@@ -24,15 +24,17 @@ type BBL struct {
 	stateDirectory string
 	pathToBBL      string
 	configuration  integration.Config
+	envID          string
 }
 
 type IAAS int
 
-func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config) BBL {
+func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config, envID string) BBL {
 	return BBL{
 		stateDirectory: stateDirectory,
 		pathToBBL:      pathToBBL,
 		configuration:  configuration,
+		envID:          envID,
 	}
 }
 
@@ -41,6 +43,7 @@ func (b BBL) Up(iaas IAAS) {
 		"--state-dir", b.stateDirectory,
 		"--debug",
 		"up",
+		"--name", b.envID,
 	}
 
 	switch iaas {

@@ -65,6 +65,13 @@ func (g *GCPBackend) StartFakeGCPBackend() (*httptest.Server, string) {
 				w.Write([]byte(`{}`))
 			}
 			return
+		case "/some-project-id/global/networks":
+			w.WriteHeader(http.StatusOK)
+			if req.URL.Query().Get("filter") == "name eq existing-network" {
+				w.Write([]byte(`{"items":[{"id":"1234"}]}`))
+			} else {
+				w.Write([]byte(`{}`))
+			}
 		default:
 			log.Println("unexpected request recieved: ", req.URL.Path)
 			w.WriteHeader(http.StatusTeapot)

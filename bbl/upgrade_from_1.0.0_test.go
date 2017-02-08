@@ -68,6 +68,10 @@ var _ = Describe("upgrade from 1.0.0", func() {
 		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 	})
 
+	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
+	})
+
 	bblUp := func(bbl string) (*gexec.Session, error) {
 		args := []string{
 			fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
