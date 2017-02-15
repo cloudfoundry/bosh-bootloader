@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	"github.com/cloudfoundry/multierror"
 )
 
 type GCPCreateLBs struct {
@@ -164,6 +166,19 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 
 	if config.LBType != "concourse" && config.LBType != "cf" {
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse, cf", config.LBType)
+	}
+
+	if config.LBType == "cf" {
+		errs := multierror.NewMultiError("create-lbs")
+		if config.CertPath == "" {
+			errs.Add(errors.New("--cert is required"))
+		}
+		if config.KeyPath == "" {
+			errs.Add(errors.New("--key is required"))
+		}
+		if errs.Length() > 0 {
+			return errs
+		}
 	}
 
 	if state.IAAS != "gcp" {

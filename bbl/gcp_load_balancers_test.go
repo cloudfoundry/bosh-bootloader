@@ -18,6 +18,7 @@ import (
 	"github.com/square/certstrap/pkix"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
@@ -226,6 +227,36 @@ var _ = Describe("load balancers", func() {
 				Expect(state.LB.Cert).To(Equal("cert-contents"))
 				Expect(state.LB.Key).To(Equal("key-contents"))
 				Expect(state.LB.Domain).To(Equal(""))
+			})
+
+			Describe("failure cases", func() {
+				DescribeTable("missing required flags", func(extraArgs, expectedOutputs []string) {
+					args := []string{
+						"--state-dir", tempDirectory,
+						"create-lbs",
+						"--type", "cf",
+					}
+					args = append(args, extraArgs...)
+
+					session := executeCommand(args, 1)
+					output := session.Err.Contents()
+					for _, expectedOutput := range expectedOutputs {
+						Expect(output).To(ContainSubstring(expectedOutput))
+					}
+				},
+					Entry("cert and key are not provided",
+						[]string{},
+						[]string{"--cert is required", "--key is required"},
+					),
+					Entry("cert is not provided",
+						[]string{"--key", "some-key"},
+						[]string{"--cert is required"},
+					),
+					Entry("key is not provided",
+						[]string{"--cert", "some-cert"},
+						[]string{"--key is required"},
+					),
+				)
 			})
 		})
 

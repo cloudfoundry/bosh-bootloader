@@ -10,8 +10,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	"github.com/cloudfoundry/multierror"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
@@ -751,6 +753,54 @@ var _ = Describe("GCPCreateLBs", func() {
 					Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
 					Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal("some-prev-tf-state"))
 				})
+
+				DescribeTable("missing required flags", func(gcpCreateLBsConfig commands.GCPCreateLBsConfig, expectedErrFunc func() error) {
+					err := command.Execute(gcpCreateLBsConfig, storage.State{
+						IAAS:    "gcp",
+						EnvID:   "some-env-id",
+						TFState: "some-prev-tf-state",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+					})
+					Expect(err).To(MatchError(expectedErrFunc()))
+				},
+					Entry("cert and key are not provided",
+						commands.GCPCreateLBsConfig{
+							LBType: "cf",
+						},
+						func() error {
+							expectedErr := multierror.NewMultiError("create-lbs")
+							expectedErr.Add(errors.New("--cert is required"))
+							expectedErr.Add(errors.New("--key is required"))
+							return expectedErr
+						},
+					),
+					Entry("cert is not provided",
+						commands.GCPCreateLBsConfig{
+							LBType:  "cf",
+							KeyPath: "some-key-path",
+						},
+						func() error {
+							expectedErr := multierror.NewMultiError("create-lbs")
+							expectedErr.Add(errors.New("--cert is required"))
+							return expectedErr
+						},
+					),
+					Entry("key is not provided",
+						commands.GCPCreateLBsConfig{
+							LBType:   "cf",
+							CertPath: "some-cert-path",
+						},
+						func() error {
+							expectedErr := multierror.NewMultiError("create-lbs")
+							expectedErr.Add(errors.New("--key is required"))
+							return expectedErr
+						},
+					),
+				)
 			})
 
 			It("saves the tf state even if the applier fails", func() {
@@ -984,6 +1034,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType:   "cf",
 					CertPath: "some/fake/path",
+					KeyPath:  keyPath,
 				}, storage.State{IAAS: "gcp"})
 				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
 			})
