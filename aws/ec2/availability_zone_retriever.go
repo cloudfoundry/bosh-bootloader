@@ -37,7 +37,9 @@ func (r AvailabilityZoneRetriever) Retrieve(region string) ([]string, error) {
 			return []string{}, errors.New("aws returned availability zone with nil zone name")
 		}
 
-		azList = append(azList, *az.ZoneName)
+		if *az.ZoneName != "us-east-1d" {
+			azList = append(azList, *az.ZoneName)
+		}
 	}
 
 	return azList, nil
