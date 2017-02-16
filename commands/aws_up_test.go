@@ -195,7 +195,7 @@ var _ = Describe("AWSUp", func() {
 
 			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-time-stamp"))
 			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("keypair-bbl-lake-time-stamp"))
-			Expect(infrastructureManager.CreateCall.Receives.NumberOfAvailabilityZones).To(Equal(1))
+			Expect(infrastructureManager.CreateCall.Receives.AZs).To(Equal([]string{"some-retrieved-az"}))
 			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-time-stamp"))
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
 		})
@@ -268,7 +268,7 @@ var _ = Describe("AWSUp", func() {
 
 		Describe("cloud configurator", func() {
 			BeforeEach(func() {
-				infrastructureManager.CreateCall.Stub = func(keyPairName string, numberOfAZs int, stackName, lbType, envID string) (cloudformation.Stack, error) {
+				infrastructureManager.CreateCall.Stub = func(keyPairName string, azs []string, stackName, lbType, envID string) (cloudformation.Stack, error) {
 					stack := cloudformation.Stack{
 						Name: "bbl-aws-some-random-string",
 						Outputs: map[string]string{

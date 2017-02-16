@@ -148,10 +148,10 @@ type EIP struct {
 }
 
 type Subnet struct {
-	AvailabilityZone map[string]interface{} `json:",omitempty"`
-	CidrBlock        interface{}            `json:",omitempty"`
-	VpcId            interface{}            `json:",omitempty"`
-	Tags             []Tag                  `json:",omitempty"`
+	AvailabilityZone string      `json:",omitempty"`
+	CidrBlock        interface{} `json:",omitempty"`
+	VpcId            interface{} `json:",omitempty"`
+	Tags             []Tag       `json:",omitempty"`
 }
 
 type RouteTable struct {

@@ -115,7 +115,7 @@ var _ = Describe("Delete LBs", func() {
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-keypair"))
-			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
+			Expect(infrastructureManager.UpdateCall.Receives.AZs).To(Equal([]string{"a", "b", "c"}))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal(""))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal(""))

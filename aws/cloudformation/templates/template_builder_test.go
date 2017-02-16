@@ -14,11 +14,18 @@ import (
 
 var _ = Describe("TemplateBuilder", func() {
 	var (
+		azs     []string
 		builder templates.TemplateBuilder
 		logger  *fakes.Logger
 	)
 
 	BeforeEach(func() {
+		azs = []string{
+			"us-east-1a",
+			"us-east-1b",
+			"us-east-1c",
+			"us-east-1d",
+		}
 		logger = &fakes.Logger{}
 		builder = templates.NewTemplateBuilder(logger)
 	})
@@ -26,7 +33,7 @@ var _ = Describe("TemplateBuilder", func() {
 	Describe("Build", func() {
 		Context("concourse elb template", func() {
 			It("builds a cloudformation template", func() {
-				template := builder.Build("keypair-name", 5, "concourse", "", "", "")
+				template := builder.Build("keypair-name", azs, "concourse", "", "", "")
 				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with a Concourse ELB."))
 
@@ -39,7 +46,6 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("InternalSubnet2"))
 				Expect(template.Resources).To(HaveKey("InternalSubnet3"))
 				Expect(template.Resources).To(HaveKey("InternalSubnet4"))
-				Expect(template.Resources).To(HaveKey("InternalSubnet5"))
 				Expect(template.Resources).To(HaveKey("InternalSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("BOSHSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("BOSHEIP"))
@@ -47,7 +53,6 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet2"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet3"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet4"))
-				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).To(HaveKey("ConcourseSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("ConcourseInternalSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("ConcourseLoadBalancer"))
@@ -56,7 +61,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 		Context("cf elb template", func() {
 			It("builds a cloudformation template", func() {
-				template := builder.Build("keypair-name", 5, "cf", "", "", "")
+				template := builder.Build("keypair-name", azs, "cf", "", "", "")
 				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment with a CloudFoundry ELB."))
 
@@ -69,7 +74,6 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("InternalSubnet2"))
 				Expect(template.Resources).To(HaveKey("InternalSubnet3"))
 				Expect(template.Resources).To(HaveKey("InternalSubnet4"))
-				Expect(template.Resources).To(HaveKey("InternalSubnet5"))
 				Expect(template.Resources).To(HaveKey("InternalSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("BOSHSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("BOSHEIP"))
@@ -77,7 +81,6 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet2"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet3"))
 				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet4"))
-				Expect(template.Resources).To(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).To(HaveKey("CFRouterSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("CFRouterInternalSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("CFRouterLoadBalancer"))
@@ -89,7 +92,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 		Context("no elb template", func() {
 			It("builds a cloudformation template", func() {
-				template := builder.Build("keypair-name", 5, "", "", "", "")
+				template := builder.Build("keypair-name", azs, "", "", "", "")
 				Expect(template.AWSTemplateFormatVersion).To(Equal("2010-09-09"))
 				Expect(template.Description).To(Equal("Infrastructure for a BOSH deployment."))
 
@@ -102,7 +105,6 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).To(HaveKey("InternalSubnet2"))
 				Expect(template.Resources).To(HaveKey("InternalSubnet3"))
 				Expect(template.Resources).To(HaveKey("InternalSubnet4"))
-				Expect(template.Resources).To(HaveKey("InternalSubnet5"))
 				Expect(template.Resources).To(HaveKey("InternalSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("BOSHSecurityGroup"))
 				Expect(template.Resources).To(HaveKey("BOSHEIP"))
@@ -111,7 +113,6 @@ var _ = Describe("TemplateBuilder", func() {
 				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet2"))
 				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet3"))
 				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet4"))
-				Expect(template.Resources).NotTo(HaveKey("LoadBalancerSubnet5"))
 				Expect(template.Resources).NotTo(HaveKey("ConcourseSecurityGroup"))
 				Expect(template.Resources).NotTo(HaveKey("ConcourseLoadBalancer"))
 				Expect(template.Resources).NotTo(HaveKey("CFRouterSecurityGroup"))
@@ -122,7 +123,7 @@ var _ = Describe("TemplateBuilder", func() {
 		})
 
 		It("logs that the cloudformation template is being generated", func() {
-			builder.Build("keypair-name", 0, "", "", "", "")
+			builder.Build("keypair-name", []string{}, "", "", "", "")
 
 			Expect(logger.StepCall.Receives.Message).To(Equal("generating cloudformation template"))
 		})
@@ -130,7 +131,7 @@ var _ = Describe("TemplateBuilder", func() {
 
 	Describe("template marshaling", func() {
 		DescribeTable("marshals template to JSON", func(lbType string, fixture string) {
-			template := builder.Build("keypair-name", 4, lbType, "some-certificate-arn", "bosh-iam-user-some-env-id", "bbl-env-id")
+			template := builder.Build("keypair-name", azs, lbType, "some-certificate-arn", "bosh-iam-user-some-env-id", "bbl-env-id")
 
 			buf, err := ioutil.ReadFile("fixtures/" + fixture)
 			Expect(err).NotTo(HaveOccurred())

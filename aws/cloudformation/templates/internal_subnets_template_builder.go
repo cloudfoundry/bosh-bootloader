@@ -8,15 +8,15 @@ func NewInternalSubnetsTemplateBuilder() InternalSubnetsTemplateBuilder {
 	return InternalSubnetsTemplateBuilder{}
 }
 
-func (InternalSubnetsTemplateBuilder) InternalSubnets(numberOfAvailabilityZones int) Template {
+func (InternalSubnetsTemplateBuilder) InternalSubnets(availabilityZones []string) Template {
 	internalSubnetTemplateBuilder := NewInternalSubnetTemplateBuilder()
 
 	template := Template{}
-	for index := 1; index <= numberOfAvailabilityZones; index++ {
+	for index, az := range availabilityZones {
 		template = template.Merge(internalSubnetTemplateBuilder.InternalSubnet(
-			index-1,
-			fmt.Sprintf("%d", index),
-			fmt.Sprintf("10.0.%d.0/20", 16*(index)),
+			az,
+			fmt.Sprintf("%d", index+1),
+			fmt.Sprintf("10.0.%d.0/20", 16*(index+1)),
 		))
 	}
 

@@ -11,7 +11,7 @@ import (
 const bblTagKey = "bbl-env-id"
 
 type templateBuilder interface {
-	Build(keypairName string, numberOfAvailabilityZones int, lbType string, lbCertificateARN string, iamUserName string, envID string) templates.Template
+	Build(keypairName string, azs []string, lbType string, lbCertificateARN string, iamUserName string, envID string) templates.Template
 }
 
 type stackManager interface {
@@ -35,7 +35,7 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 	}
 }
 
-func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZones int, stackName,
+func (m InfrastructureManager) Create(keyPairName string, azs []string, stackName,
 	lbType, lbCertificateARN, envID string) (Stack, error) {
 
 	iamUserName := generateIAMUserName(envID)
@@ -52,7 +52,7 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 		}
 	}
 
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName, envID)
+	template := m.templateBuilder.Build(keyPairName, azs, lbType, lbCertificateARN, iamUserName, envID)
 	tags := Tags{
 		{
 			Key:   bblTagKey,
@@ -71,7 +71,7 @@ func (m InfrastructureManager) Create(keyPairName string, numberOfAvailabilityZo
 	return m.stackManager.Describe(stackName)
 }
 
-func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZones int, stackName, lbType,
+func (m InfrastructureManager) Update(keyPairName string, azs []string, stackName, lbType,
 	lbCertificateARN, envID string) (Stack, error) {
 
 	iamUserName, err := m.stackManager.GetPhysicalIDForResource(stackName, "BOSHUser")
@@ -79,7 +79,7 @@ func (m InfrastructureManager) Update(keyPairName string, numberOfAvailabilityZo
 		return Stack{}, err
 	}
 
-	template := m.templateBuilder.Build(keyPairName, numberOfAvailabilityZones, lbType, lbCertificateARN, iamUserName, envID)
+	template := m.templateBuilder.Build(keyPairName, azs, lbType, lbCertificateARN, iamUserName, envID)
 
 	if err := m.stackManager.Update(stackName, template, Tags{{Key: bblTagKey, Value: envID}}); err != nil {
 		return Stack{}, err

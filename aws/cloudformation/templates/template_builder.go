@@ -15,7 +15,7 @@ func NewTemplateBuilder(logger logger) TemplateBuilder {
 	}
 }
 
-func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int, lbType, lbCertificateARN string, iamUserName string, envID string) Template {
+func (t TemplateBuilder) Build(keyPairName string, availablityZones []string, lbType, lbCertificateARN string, iamUserName string, envID string) Template {
 	t.logger.Step("generating cloudformation template")
 
 	boshIAMTemplateBuilder := NewBOSHIAMTemplateBuilder()
@@ -33,7 +33,7 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 		AWSTemplateFormatVersion: "2010-09-09",
 		Description:              "Infrastructure for a BOSH deployment.",
 	}.Merge(
-		internalSubnetsTemplateBuilder.InternalSubnets(numberOfAvailabilityZones),
+		internalSubnetsTemplateBuilder.InternalSubnets(availablityZones),
 		sshKeyPairTemplateBuilder.SSHKeyPairName(keyPairName),
 		boshIAMTemplateBuilder.BOSHIAMUser(iamUserName),
 		natTemplateBuilder.NAT(),
@@ -47,9 +47,9 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 	if lbType == "concourse" {
 		template.Description = "Infrastructure for a BOSH deployment with a Concourse ELB."
 
-		lbTemplate := loadBalancerTemplateBuilder.ConcourseLoadBalancer(numberOfAvailabilityZones, lbCertificateARN)
+		lbTemplate := loadBalancerTemplateBuilder.ConcourseLoadBalancer(len(availablityZones), lbCertificateARN)
 		template.Merge(
-			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
+			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(availablityZones),
 			lbTemplate,
 			securityGroupTemplateBuilder.LBSecurityGroup("ConcourseSecurityGroup", "Concourse", "ConcourseLoadBalancer", lbTemplate),
 			securityGroupTemplateBuilder.LBInternalSecurityGroup("ConcourseInternalSecurityGroup", "ConcourseSecurityGroup", "ConcourseInternal", "ConcourseLoadBalancer", lbTemplate),
@@ -58,10 +58,10 @@ func (t TemplateBuilder) Build(keyPairName string, numberOfAvailabilityZones int
 
 	if lbType == "cf" {
 		template.Description = "Infrastructure for a BOSH deployment with a CloudFoundry ELB."
-		routerLBTemplate := loadBalancerTemplateBuilder.CFRouterLoadBalancer(numberOfAvailabilityZones, lbCertificateARN)
-		sshLBTemplate := loadBalancerTemplateBuilder.CFSSHProxyLoadBalancer(numberOfAvailabilityZones)
+		routerLBTemplate := loadBalancerTemplateBuilder.CFRouterLoadBalancer(len(availablityZones), lbCertificateARN)
+		sshLBTemplate := loadBalancerTemplateBuilder.CFSSHProxyLoadBalancer(len(availablityZones))
 		template.Merge(
-			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(numberOfAvailabilityZones),
+			loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(availablityZones),
 
 			routerLBTemplate,
 			securityGroupTemplateBuilder.LBSecurityGroup("CFRouterSecurityGroup", "Router", "CFRouterLoadBalancer", routerLBTemplate),

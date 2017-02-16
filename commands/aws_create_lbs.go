@@ -154,7 +154,7 @@ func (c AWSCreateLBs) updateStackAndBOSH(
 
 	certificate, err := c.certificateManager.Describe(certificateName)
 
-	stack, err := c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, envID)
+	stack, err := c.infrastructureManager.Update(keyPairName, availabilityZones, stackName, lbType, certificate.ARN, envID)
 	if err != nil {
 		return err
 	}
