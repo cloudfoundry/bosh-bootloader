@@ -22,8 +22,8 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, numberOfAZs int, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
-	Update(keyPairName string, numberOfAZs int, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
+	Create(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
+	Update(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
 	Describe(stackName string) (cloudformation.Stack, error)
@@ -176,7 +176,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, len(availabilityZones), state.Stack.Name, state.Stack.LBType, certificateARN, state.EnvID)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
 		return err
 	}

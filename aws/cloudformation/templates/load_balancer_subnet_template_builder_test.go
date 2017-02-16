@@ -1,9 +1,9 @@
 package templates_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 )
 
 var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
@@ -15,7 +15,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 
 	Describe("LoadBalancerSubnet", func() {
 		It("returns a template with all fields for the load balancer subnet", func() {
-			subnet := builder.LoadBalancerSubnet(0, "1", "10.0.2.0/24")
+			subnet := builder.LoadBalancerSubnet("some-zone-1", "1", "10.0.2.0/24")
 
 			Expect(subnet.Parameters).To(HaveLen(1))
 			Expect(subnet.Parameters).To(HaveKeyWithValue("LoadBalancerSubnet1CIDR", templates.Parameter{
@@ -28,16 +28,9 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 			Expect(subnet.Resources).To(HaveKeyWithValue("LoadBalancerSubnet1", templates.Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: templates.Subnet{
-					AvailabilityZone: map[string]interface{}{
-						"Fn::Select": []interface{}{
-							"0",
-							map[string]templates.Ref{
-								"Fn::GetAZs": templates.Ref{"AWS::Region"},
-							},
-						},
-					},
-					CidrBlock: templates.Ref{"LoadBalancerSubnet1CIDR"},
-					VpcId:     templates.Ref{"VPC"},
+					AvailabilityZone: "some-zone-1",
+					CidrBlock:        templates.Ref{"LoadBalancerSubnet1CIDR"},
+					VpcId:            templates.Ref{"VPC"},
 					Tags: []templates.Tag{
 						{
 							Key:   "Name",
@@ -74,7 +67,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 		})
 
 		It("returns subnet with az 1", func() {
-			subnet := builder.LoadBalancerSubnet(1, "1", "10.0.3.0/24")
+			subnet := builder.LoadBalancerSubnet("some-zone-1", "1", "10.0.3.0/24")
 
 			Expect(subnet.Parameters).To(HaveLen(1))
 			Expect(subnet.Parameters).To(HaveKeyWithValue("LoadBalancerSubnet1CIDR", templates.Parameter{
@@ -86,16 +79,9 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 			Expect(subnet.Resources).To(HaveKeyWithValue("LoadBalancerSubnet1", templates.Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: templates.Subnet{
-					AvailabilityZone: map[string]interface{}{
-						"Fn::Select": []interface{}{
-							"1",
-							map[string]templates.Ref{
-								"Fn::GetAZs": templates.Ref{"AWS::Region"},
-							},
-						},
-					},
-					CidrBlock: templates.Ref{"LoadBalancerSubnet1CIDR"},
-					VpcId:     templates.Ref{"VPC"},
+					AvailabilityZone: "some-zone-1",
+					CidrBlock:        templates.Ref{"LoadBalancerSubnet1CIDR"},
+					VpcId:            templates.Ref{"VPC"},
 					Tags: []templates.Tag{
 						{
 							Key:   "Name",

@@ -19,7 +19,10 @@ var _ = Describe("LoadBalancerSubnetsTemplateBuilder", func() {
 
 	Describe("LoadBalancerSubnets", func() {
 		It("creates load balancer subnets for each availability zone", func() {
-			template := loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets(2)
+			template := loadBalancerSubnetsTemplateBuilder.LoadBalancerSubnets([]string{
+				"some-zone-1",
+				"some-zone-2",
+			})
 
 			Expect(template.Parameters).To(HaveLen(2))
 			Expect(template.Parameters["LoadBalancerSubnet1CIDR"].Default).To(Equal("10.0.2.0/24"))
@@ -32,22 +35,15 @@ var _ = Describe("LoadBalancerSubnetsTemplateBuilder", func() {
 })
 
 func hasLBSubnetWithAvailabilityZoneIndex(template templates.Template, index int) bool {
-	azIndex := fmt.Sprintf("%d", index)
+	az := fmt.Sprintf("some-zone-%d", index+1)
 	subnetName := fmt.Sprintf("LoadBalancerSubnet%d", index+1)
 	subnetCIDRName := fmt.Sprintf("%sCIDR", subnetName)
 	tagName := fmt.Sprintf("LoadBalancer%d", index+1)
 
 	return reflect.DeepEqual(template.Resources[subnetName].Properties, templates.Subnet{
-		AvailabilityZone: map[string]interface{}{
-			"Fn::Select": []interface{}{
-				azIndex,
-				map[string]templates.Ref{
-					"Fn::GetAZs": templates.Ref{"AWS::Region"},
-				},
-			},
-		},
-		CidrBlock: templates.Ref{subnetCIDRName},
-		VpcId:     templates.Ref{"VPC"},
+		AvailabilityZone: az,
+		CidrBlock:        templates.Ref{subnetCIDRName},
+		VpcId:            templates.Ref{"VPC"},
 		Tags: []templates.Tag{
 			{
 				Key:   "Name",

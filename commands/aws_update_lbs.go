@@ -124,7 +124,7 @@ func (c AWSUpdateLBs) updateStack(certificateName string, keyPairName string, st
 		return err
 	}
 
-	_, err = c.infrastructureManager.Update(keyPairName, len(availabilityZones), stackName, lbType, certificate.ARN, envID)
+	_, err = c.infrastructureManager.Update(keyPairName, availabilityZones, stackName, lbType, certificate.ARN, envID)
 	if err != nil {
 		return err
 	}

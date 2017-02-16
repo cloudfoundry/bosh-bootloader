@@ -77,7 +77,7 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	_, err = c.infrastructureManager.Update(state.KeyPair.Name, len(azs), state.Stack.Name, "", "", state.EnvID)
+	_, err = c.infrastructureManager.Update(state.KeyPair.Name, azs, state.Stack.Name, "", "", state.EnvID)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ func NewInternalSubnetTemplateBuilder() InternalSubnetTemplateBuilder {
 	return InternalSubnetTemplateBuilder{}
 }
 
-func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrBlock string) Template {
+func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock string) Template {
 	subnetName := fmt.Sprintf("InternalSubnet%s", suffix)
 	subnetTag := fmt.Sprintf("Internal%s", suffix)
 	subnetCIDRName := fmt.Sprintf("%sCIDR", subnetName)
@@ -43,16 +43,9 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(azIndex int, suffix, cidrB
 			subnetName: Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: Subnet{
-					AvailabilityZone: map[string]interface{}{
-						"Fn::Select": []interface{}{
-							fmt.Sprintf("%d", azIndex),
-							map[string]Ref{
-								"Fn::GetAZs": Ref{"AWS::Region"},
-							},
-						},
-					},
-					CidrBlock: Ref{subnetCIDRName},
-					VpcId:     Ref{"VPC"},
+					AvailabilityZone: az,
+					CidrBlock:        Ref{subnetCIDRName},
+					VpcId:            Ref{"VPC"},
 					Tags: []Tag{
 						{
 							Key:   "Name",

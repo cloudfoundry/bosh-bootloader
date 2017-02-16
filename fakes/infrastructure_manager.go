@@ -5,14 +5,14 @@ import "github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 type InfrastructureManager struct {
 	CreateCall struct {
 		CallCount int
-		Stub      func(string, int, string, string, string) (cloudformation.Stack, error)
+		Stub      func(string, []string, string, string, string) (cloudformation.Stack, error)
 		Receives  struct {
-			KeyPairName               string
-			StackName                 string
-			LBType                    string
-			LBCertificateARN          string
-			NumberOfAvailabilityZones int
-			EnvID                     string
+			KeyPairName      string
+			StackName        string
+			LBType           string
+			LBCertificateARN string
+			AZs              []string
+			EnvID            string
 		}
 		Returns struct {
 			Stack cloudformation.Stack
@@ -23,12 +23,12 @@ type InfrastructureManager struct {
 	UpdateCall struct {
 		CallCount int
 		Receives  struct {
-			KeyPairName               string
-			NumberOfAvailabilityZones int
-			StackName                 string
-			LBType                    string
-			LBCertificateARN          string
-			EnvID                     string
+			KeyPairName      string
+			AZs              []string
+			StackName        string
+			LBType           string
+			LBCertificateARN string
+			EnvID            string
 		}
 		Returns struct {
 			Stack cloudformation.Stack
@@ -67,26 +67,26 @@ type InfrastructureManager struct {
 	}
 }
 
-func (m *InfrastructureManager) Create(keyPairName string, numberOfAZs int, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
+func (m *InfrastructureManager) Create(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
 	m.CreateCall.CallCount++
 	m.CreateCall.Receives.StackName = stackName
 	m.CreateCall.Receives.LBType = lbType
 	m.CreateCall.Receives.LBCertificateARN = lbCertificateARN
 	m.CreateCall.Receives.KeyPairName = keyPairName
-	m.CreateCall.Receives.NumberOfAvailabilityZones = numberOfAZs
+	m.CreateCall.Receives.AZs = azs
 	m.CreateCall.Receives.EnvID = envID
 
 	if m.CreateCall.Stub != nil {
-		return m.CreateCall.Stub(keyPairName, numberOfAZs, stackName, lbType, envID)
+		return m.CreateCall.Stub(keyPairName, azs, stackName, lbType, envID)
 	}
 
 	return m.CreateCall.Returns.Stack, m.CreateCall.Returns.Error
 }
 
-func (m *InfrastructureManager) Update(keyPairName string, numberOfAZs int, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
+func (m *InfrastructureManager) Update(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
 	m.UpdateCall.CallCount++
 	m.UpdateCall.Receives.KeyPairName = keyPairName
-	m.UpdateCall.Receives.NumberOfAvailabilityZones = numberOfAZs
+	m.UpdateCall.Receives.AZs = azs
 	m.UpdateCall.Receives.StackName = stackName
 	m.UpdateCall.Receives.LBType = lbType
 	m.UpdateCall.Receives.LBCertificateARN = lbCertificateARN

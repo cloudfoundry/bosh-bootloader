@@ -136,7 +136,7 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 
 			Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
-			Expect(infrastructureManager.UpdateCall.Receives.NumberOfAvailabilityZones).To(Equal(3))
+			Expect(infrastructureManager.UpdateCall.Receives.AZs).To(Equal([]string{"a", "b", "c"}))
 			Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))

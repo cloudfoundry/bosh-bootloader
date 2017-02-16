@@ -416,9 +416,7 @@
         },
         "InternalSubnet1": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1a",
                 "CidrBlock": {"Ref": "InternalSubnet1CIDR"},
                 "Tags": [{"Key": "Name", "Value": "Internal1"}],
                 "VpcId": {"Ref": "VPC"}
@@ -434,9 +432,7 @@
         },
         "InternalSubnet2": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1b",
                 "CidrBlock": {"Ref": "InternalSubnet2CIDR"},
                 "Tags": [{"Key": "Name", "Value": "Internal2"}],
                 "VpcId": {"Ref": "VPC"}
@@ -452,9 +448,7 @@
         },
         "InternalSubnet3": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1c",
                 "CidrBlock": {"Ref": "InternalSubnet3CIDR"},
                 "Tags": [{"Key": "Name", "Value": "Internal3"}],
                 "VpcId": {"Ref": "VPC"}
@@ -470,9 +464,7 @@
         },
         "InternalSubnet4": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["3", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1d",
                 "CidrBlock": {"Ref": "InternalSubnet4CIDR"},
                 "Tags": [{"Key": "Name", "Value": "Internal4"}],
                 "VpcId": {"Ref": "VPC"}
@@ -501,9 +493,7 @@
         },
         "LoadBalancerSubnet1": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1a",
                 "CidrBlock": {"Ref": "LoadBalancerSubnet1CIDR"},
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer1"}],
                 "VpcId": {"Ref": "VPC"}
@@ -519,9 +509,7 @@
         },
         "LoadBalancerSubnet2": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1b",
                 "CidrBlock": {"Ref": "LoadBalancerSubnet2CIDR"},
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer2"}],
                 "VpcId": {"Ref": "VPC"}
@@ -537,9 +525,7 @@
         },
         "LoadBalancerSubnet3": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["2", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1c",
                 "CidrBlock": {"Ref": "LoadBalancerSubnet3CIDR"},
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer3"}],
                 "VpcId": {"Ref": "VPC"}
@@ -555,9 +541,7 @@
         },
         "LoadBalancerSubnet4": {
             "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": ["3", {"Fn::GetAZs": {"Ref": "AWS::Region"}}]
-                },
+                "AvailabilityZone": "us-east-1d",
                 "CidrBlock": {"Ref": "LoadBalancerSubnet4CIDR"},
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer4"}],
                 "VpcId": {"Ref": "VPC"}
