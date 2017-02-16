@@ -64,7 +64,7 @@ func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.LBType, state.AWS.Region, state.EnvID); err != nil {
+	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, state.AWS.Region, state.EnvID); err != nil {
 		return err
 	}
 
@@ -113,7 +113,7 @@ func (c AWSUpdateLBs) checkCertificateAndChain(certPath string, chainPath string
 	return true, nil
 }
 
-func (c AWSUpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, lbType string, awsRegion, envID string) error {
+func (c AWSUpdateLBs) updateStack(certificateName string, keyPairName string, stackName string, boshAZ string, lbType string, awsRegion, envID string) error {
 	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (c AWSUpdateLBs) updateStack(certificateName string, keyPairName string, st
 		return err
 	}
 
-	_, err = c.infrastructureManager.Update(keyPairName, availabilityZones, stackName, lbType, certificate.ARN, envID)
+	_, err = c.infrastructureManager.Update(keyPairName, availabilityZones, stackName, boshAZ, lbType, certificate.ARN, envID)
 	if err != nil {
 		return err
 	}

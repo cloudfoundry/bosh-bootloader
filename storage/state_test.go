@@ -92,6 +92,7 @@ var _ = Describe("Store", func() {
 					Name:            "some-stack-name",
 					LBType:          "some-lb-type",
 					CertificateName: "some-certificate-name",
+					BOSHAZ:          "some-bosh-az",
 				},
 				EnvID:   "some-env-id",
 				TFState: "some-tf-state",
@@ -157,7 +158,8 @@ var _ = Describe("Store", func() {
 				"stack": {
 					"name": "some-stack-name",
 					"lbType": "some-lb-type",
-					"certificateName": "some-certificate-name"
+					"certificateName": "some-certificate-name",
+					"boshAZ": "some-bosh-az"
 				},
 				"envID": "some-env-id",
 				"tfState": "some-tf-state"

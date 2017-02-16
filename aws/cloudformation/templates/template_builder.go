@@ -15,7 +15,7 @@ func NewTemplateBuilder(logger logger) TemplateBuilder {
 	}
 }
 
-func (t TemplateBuilder) Build(keyPairName string, availablityZones []string, lbType, lbCertificateARN string, iamUserName string, envID string) Template {
+func (t TemplateBuilder) Build(keyPairName string, availablityZones []string, lbType, lbCertificateARN string, iamUserName string, envID string, boshAZ string) Template {
 	t.logger.Step("generating cloudformation template")
 
 	boshIAMTemplateBuilder := NewBOSHIAMTemplateBuilder()
@@ -38,7 +38,7 @@ func (t TemplateBuilder) Build(keyPairName string, availablityZones []string, lb
 		boshIAMTemplateBuilder.BOSHIAMUser(iamUserName),
 		natTemplateBuilder.NAT(),
 		vpcTemplateBuilder.VPC(envID),
-		boshSubnetTemplateBuilder.BOSHSubnet(),
+		boshSubnetTemplateBuilder.BOSHSubnet(boshAZ),
 		securityGroupTemplateBuilder.InternalSecurityGroup(),
 		securityGroupTemplateBuilder.BOSHSecurityGroup(),
 		boshEIPTemplateBuilder.BOSHEIP(),

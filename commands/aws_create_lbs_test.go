@@ -57,7 +57,8 @@ var _ = Describe("AWS Create LBs", func() {
 
 			incomingState = storage.State{
 				Stack: storage.Stack{
-					Name: "some-stack",
+					Name:   "some-stack",
+					BOSHAZ: "some-bosh-az",
 				},
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
@@ -141,6 +142,7 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id-timestamp"))
+			Expect(infrastructureManager.UpdateCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
 		})
 
 		It("names the loadbalancer without EnvID when EnvID is not set", func() {

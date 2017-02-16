@@ -40,6 +40,7 @@ type Stack struct {
 	Name            string `json:"name"`
 	LBType          string `json:"lbType"`
 	CertificateName string `json:"certificateName"`
+	BOSHAZ          string `json:"boshAZ"`
 }
 
 type LB struct {

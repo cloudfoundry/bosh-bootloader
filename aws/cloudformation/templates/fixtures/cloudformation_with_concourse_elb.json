@@ -186,7 +186,8 @@
             "Properties": {
                 "CidrBlock": {"Ref": "BOSHSubnetCIDR"},
                 "Tags": [{"Key": "Name", "Value": "BOSH"}],
-                "VpcId": {"Ref": "VPC"}
+                "VpcId": {"Ref": "VPC"},
+                "AvailabilityZone": "us-east-1a"
             },
             "Type": "AWS::EC2::Subnet"
         },
