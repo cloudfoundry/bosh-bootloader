@@ -142,6 +142,38 @@ vm_types:
     ephemeral_disk:
       size: 10240
       type: gp2
+
+- name: extra-small
+  cloud_properties:
+    instance_type: t2.small
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+- name: small
+  cloud_properties:
+    instance_type: m3.large
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+- name: medium
+  cloud_properties:
+    instance_type: m4.xlarge
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+- name: large
+  cloud_properties:
+    instance_type: m4.2xlarge
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+- name: extra-large
+  cloud_properties:
+    instance_type: m4.4xlarge
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+
 - name: m3.medium
   cloud_properties:
     instance_type: m3.medium

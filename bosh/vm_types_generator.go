@@ -25,6 +25,11 @@ func NewVMTypesGenerator() VMTypesGenerator {
 func (g VMTypesGenerator) Generate() []VMType {
 	return []VMType{
 		createVMTypeWithCustomName("default", "m3.medium"),
+		createVMTypeWithCustomName("extra-small", "t2.small"),
+		createVMTypeWithCustomName("small", "m3.large"),
+		createVMTypeWithCustomName("medium", "m4.xlarge"),
+		createVMTypeWithCustomName("large", "m4.2xlarge"),
+		createVMTypeWithCustomName("extra-large", "m4.4xlarge"),
 		createVMType("m3.medium"),
 		createVMType("m3.large"),
 		createVMType("m3.xlarge"),
