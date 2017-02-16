@@ -6,7 +6,7 @@ func NewBOSHSubnetTemplateBuilder() BOSHSubnetTemplateBuilder {
 	return BOSHSubnetTemplateBuilder{}
 }
 
-func (BOSHSubnetTemplateBuilder) BOSHSubnet() Template {
+func (BOSHSubnetTemplateBuilder) BOSHSubnet(availabilityZone string) Template {
 	return Template{
 		Parameters: map[string]Parameter{
 			"BOSHSubnetCIDR": Parameter{
@@ -19,8 +19,9 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet() Template {
 			"BOSHSubnet": Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: Subnet{
-					VpcId:     Ref{"VPC"},
-					CidrBlock: Ref{"BOSHSubnetCIDR"},
+					VpcId:            Ref{"VPC"},
+					CidrBlock:        Ref{"BOSHSubnetCIDR"},
+					AvailabilityZone: availabilityZone,
 					Tags: []Tag{
 						{
 							Key:   "Name",

@@ -232,6 +232,64 @@ var _ = Describe("bbl up aws", func() {
 			})
 		})
 
+		Context("when ops files are provides via --ops-file flag", func() {
+			It("passes those ops files to bosh create env", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--iaas", "aws",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+					"--ops-file", "fixtures/ops-file.yml",
+				}
+
+				executeCommand(args, 0)
+
+				Expect(interpolateArgs).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+			})
+		})
+
+		Context("when an az is provided for bosh via --aws-bosh-az flag", func() {
+			It("creates a bosh subnet in the stack with provided az", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--iaas", "aws",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+					"--aws-bosh-az", "some-bosh-az",
+				}
+
+				executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+
+				var stack awsbackend.Stack
+				var ok bool
+				stack, ok = fakeAWS.Stacks.Get(state.Stack.Name)
+				Expect(ok).To(BeTrue())
+
+				var template struct {
+					Resources struct {
+						BOSHSubnet struct {
+							Properties templates.Subnet
+							Type       string
+						}
+					}
+				}
+
+				err := json.Unmarshal([]byte(stack.Template), &template)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(template.Resources.BOSHSubnet.Properties.AvailabilityZone).To(Equal("some-bosh-az"))
+			})
+		})
+
 		Context("when the cloudformation stack does not exist", func() {
 			var stack awsbackend.Stack
 

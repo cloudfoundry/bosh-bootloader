@@ -51,13 +51,14 @@ var _ = Describe("InfrastructureManager", func() {
 				return cloudformation.Stack{Name: "some-stack-name"}, nil
 			}
 
-			stack, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name",
+			stack, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az",
 				"some-lb-type", "some-lb-certificate-arn", "some-env-id-time-stamp")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stack).To(Equal(cloudformation.Stack{Name: "some-stack-name"}))
 			Expect(builder.BuildCall.Receives.KeyPairName).To(Equal("some-key-pair-name"))
 			Expect(builder.BuildCall.Receives.AZs).To(Equal(azs))
+			Expect(builder.BuildCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
 			Expect(builder.BuildCall.Receives.LBType).To(Equal("some-lb-type"))
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 			Expect(builder.BuildCall.Receives.IAMUserName).To(Equal("bosh-iam-user-some-env-id-time-stamp"))
@@ -85,7 +86,7 @@ var _ = Describe("InfrastructureManager", func() {
 		It("honors the iam user name from an existing stack", func() {
 			stackManager.GetPhysicalIDForResourceCall.Returns.PhysicalResourceID = "some-bosh-user-id"
 
-			_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name",
+			_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az",
 				"some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -99,21 +100,21 @@ var _ = Describe("InfrastructureManager", func() {
 			It("returns an error when stack can't be created or updated", func() {
 				stackManager.CreateOrUpdateCall.Returns.Error = errors.New("stack create or update failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "", "", "")
+				_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "", "", "")
 				Expect(err).To(MatchError("stack create or update failed"))
 			})
 
 			It("returns an error when waiting for stack completion fails", func() {
 				stackManager.WaitForCompletionCall.Returns.Error = errors.New("stack wait for completion failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "", "", "")
+				_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "", "", "")
 				Expect(err).To(MatchError("stack wait for completion failed"))
 			})
 
 			It("returns an error when getting physical id for resource fails", func() {
 				stackManager.GetPhysicalIDForResourceCall.Returns.Error = errors.New("get physical id for resource failed")
 
-				_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name",
+				_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az",
 					"some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 				Expect(err).To(MatchError("get physical id for resource failed"))
 
@@ -123,7 +124,7 @@ var _ = Describe("InfrastructureManager", func() {
 				It("returns an error when describing the stack fails", func() {
 					stackManager.DescribeCall.Returns.Error = errors.New("stack describe failed")
 
-					_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "", "", "")
+					_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "", "", "")
 					Expect(err).To(MatchError("stack describe failed"))
 				})
 			})
@@ -139,7 +140,7 @@ var _ = Describe("InfrastructureManager", func() {
 						return cloudformation.Stack{}, errors.New("stack describe failed")
 					}
 
-					_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "", "", "")
+					_, err := infrastructureManager.Create("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "", "", "")
 					Expect(err).To(MatchError("stack describe failed"))
 				})
 			})
@@ -154,7 +155,7 @@ var _ = Describe("InfrastructureManager", func() {
 		It("updates the stack and returns the stack", func() {
 			stackManager.GetPhysicalIDForResourceCall.Returns.PhysicalResourceID = "some-bosh-user-id"
 
-			stack, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+			stack, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stackManager.GetPhysicalIDForResourceCall.Receives.StackName).To(Equal("some-stack-name"))
@@ -167,6 +168,7 @@ var _ = Describe("InfrastructureManager", func() {
 			Expect(builder.BuildCall.Receives.LBCertificateARN).To(Equal("some-lb-certificate-arn"))
 			Expect(builder.BuildCall.Receives.IAMUserName).To(Equal("some-bosh-user-id"))
 			Expect(builder.BuildCall.Receives.EnvID).To(Equal("some-env-id-time:stamp"))
+			Expect(builder.BuildCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
 
 			Expect(stackManager.UpdateCall.Receives.StackName).To(Equal("some-stack-name"))
 			Expect(stackManager.UpdateCall.Receives.Template).To(Equal(templates.Template{
@@ -191,21 +193,21 @@ var _ = Describe("InfrastructureManager", func() {
 			It("returns an error when it cannot get physical id for BOSHUser", func() {
 				stackManager.GetPhysicalIDForResourceCall.Returns.Error = errors.New("failed to get physical id for resource")
 
-				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 				Expect(err).To(MatchError("failed to get physical id for resource"))
 			})
 
 			It("returns an error when the update stack call fails", func() {
 				stackManager.UpdateCall.Returns.Error = errors.New("stack update call failed")
 
-				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 				Expect(err).To(MatchError("stack update call failed"))
 			})
 
 			It("returns an error when the wait for completion call fails", func() {
 				stackManager.WaitForCompletionCall.Returns.Error = errors.New("failed to wait for completion")
 
-				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
 				Expect(err).To(MatchError("failed to wait for completion"))
 			})
 		})

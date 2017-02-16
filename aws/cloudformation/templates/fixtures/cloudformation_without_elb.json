@@ -157,6 +157,7 @@
         },
         "BOSHSubnet": {
             "Properties": {
+                "AvailabilityZone": "us-east-1a",
                 "CidrBlock": {"Ref": "BOSHSubnetCIDR"},
                 "Tags": [{"Key": "Name", "Value": "BOSH"}],
                 "VpcId": {"Ref": "VPC"}

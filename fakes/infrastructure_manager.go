@@ -12,6 +12,7 @@ type InfrastructureManager struct {
 			LBType           string
 			LBCertificateARN string
 			AZs              []string
+			BOSHAZ           string
 			EnvID            string
 		}
 		Returns struct {
@@ -28,6 +29,7 @@ type InfrastructureManager struct {
 			StackName        string
 			LBType           string
 			LBCertificateARN string
+			BOSHAZ           string
 			EnvID            string
 		}
 		Returns struct {
@@ -67,13 +69,14 @@ type InfrastructureManager struct {
 	}
 }
 
-func (m *InfrastructureManager) Create(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
+func (m *InfrastructureManager) Create(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
 	m.CreateCall.CallCount++
 	m.CreateCall.Receives.StackName = stackName
 	m.CreateCall.Receives.LBType = lbType
 	m.CreateCall.Receives.LBCertificateARN = lbCertificateARN
 	m.CreateCall.Receives.KeyPairName = keyPairName
 	m.CreateCall.Receives.AZs = azs
+	m.CreateCall.Receives.BOSHAZ = boshAZ
 	m.CreateCall.Receives.EnvID = envID
 
 	if m.CreateCall.Stub != nil {
@@ -83,13 +86,14 @@ func (m *InfrastructureManager) Create(keyPairName string, azs []string, stackNa
 	return m.CreateCall.Returns.Stack, m.CreateCall.Returns.Error
 }
 
-func (m *InfrastructureManager) Update(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
+func (m *InfrastructureManager) Update(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error) {
 	m.UpdateCall.CallCount++
 	m.UpdateCall.Receives.KeyPairName = keyPairName
 	m.UpdateCall.Receives.AZs = azs
 	m.UpdateCall.Receives.StackName = stackName
 	m.UpdateCall.Receives.LBType = lbType
 	m.UpdateCall.Receives.LBCertificateARN = lbCertificateARN
+	m.UpdateCall.Receives.BOSHAZ = boshAZ
 	m.UpdateCall.Receives.EnvID = envID
 	return m.UpdateCall.Returns.Stack, m.UpdateCall.Returns.Error
 }

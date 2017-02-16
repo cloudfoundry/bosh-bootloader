@@ -22,6 +22,7 @@ var _ = Describe("Commands Usage", func() {
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
   --aws-region               AWS region to use (Defaults to environment variable BBL_AWS_REGION)
+  [--aws-bosh-az]            AWS availability zone to use for BOSH director (Defaults to environment variable BBL_AWS_BOSH_AZ)
 
   --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
   --gcp-project-id           GCP Project ID to use (Defaults to environment variable BBL_GCP_PROJECT_ID)

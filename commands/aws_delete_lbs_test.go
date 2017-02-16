@@ -49,6 +49,7 @@ var _ = Describe("Delete LBs", func() {
 				LBType:          "concourse",
 				CertificateName: "some-certificate",
 				Name:            "some-stack-name",
+				BOSHAZ:          "some-bosh-az",
 			},
 			BOSH: storage.BOSH{
 				DirectorAddress:  "some-director-address",
@@ -120,6 +121,7 @@ var _ = Describe("Delete LBs", func() {
 			Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal(""))
 			Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal(""))
 			Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id"))
+			Expect(infrastructureManager.UpdateCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
 
 			Expect(certificateManager.DeleteCall.Receives.CertificateName).To(Equal("some-certificate"))
 

@@ -331,6 +331,7 @@ var _ = Describe("Up", func() {
 						"--aws-access-key-id", "some-access-key-id",
 						"--aws-secret-access-key", "some-secret-access-key",
 						"--aws-region", "some-region",
+						"--aws-bosh-az", "some-bosh-az",
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -339,12 +340,12 @@ var _ = Describe("Up", func() {
 						AccessKeyID:     "some-access-key-id",
 						SecretAccessKey: "some-secret-access-key",
 						Region:          "some-region",
+						BOSHAZ:          "some-bosh-az",
 					}))
 					Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
 						EnvID: "bbl-lake-time:stamp",
 					}))
 				})
-
 			})
 
 			Context("when iaas is not provided", func() {

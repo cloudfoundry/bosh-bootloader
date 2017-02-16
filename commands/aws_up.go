@@ -22,8 +22,8 @@ type keyPairSynchronizer interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
-	Update(keyPairName string, azs []string, stackName, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
+	Create(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
+	Update(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
 	Describe(stackName string) (cloudformation.Stack, error)
@@ -80,6 +80,7 @@ type AWSUpConfig struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	Region          string
+	BOSHAZ          string
 }
 
 func NewAWSUp(
@@ -130,7 +131,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return u.awsMissingCredentials(config)
 	}
 
-	err := u.checkForFastFails(state)
+	err := u.checkForFastFails(state, config)
 	if err != nil {
 		return err
 	}
@@ -166,6 +167,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 
 	if state.Stack.Name == "" {
 		state.Stack.Name = fmt.Sprintf("stack-%s", strings.Replace(state.EnvID, ":", "-", -1))
+		state.Stack.BOSHAZ = config.BOSHAZ
 
 		if err := u.stateStore.Set(state); err != nil {
 			return err
@@ -181,7 +183,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.LBType, certificateARN, state.EnvID)
+	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
 		return err
 	}
@@ -247,7 +249,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	return nil
 }
 
-func (u AWSUp) checkForFastFails(state storage.State) error {
+func (u AWSUp) checkForFastFails(state storage.State, config AWSUpConfig) error {
 	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name)
 	if err != nil {
 		return err
@@ -259,6 +261,10 @@ func (u AWSUp) checkForFastFails(state storage.State) error {
 				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
 				"https://github.com/cloudfoundry/bosh-bootloader/issues/new if you need assistance.",
 			state.Stack.Name, state.AWS.Region)
+	}
+
+	if state.Stack.Name != "" && state.Stack.BOSHAZ != config.BOSHAZ {
+		return errors.New("The --aws-bosh-az cannot be changed for existing environments.")
 	}
 
 	return nil

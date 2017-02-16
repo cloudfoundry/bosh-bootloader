@@ -1,9 +1,9 @@
 package templates_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 )
 
 var _ = Describe("BOSHSubnetTemplateBuilder", func() {
@@ -15,14 +15,15 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 
 	Describe("BOSHSubnet", func() {
 		It("returns a template with all fields for the BOSH subnet", func() {
-			subnet := builder.BOSHSubnet()
+			subnet := builder.BOSHSubnet("some-availability-zone")
 
 			Expect(subnet.Resources).To(HaveLen(4))
 			Expect(subnet.Resources).To(HaveKeyWithValue("BOSHSubnet", templates.Resource{
 				Type: "AWS::EC2::Subnet",
 				Properties: templates.Subnet{
-					VpcId:     templates.Ref{"VPC"},
-					CidrBlock: templates.Ref{"BOSHSubnetCIDR"},
+					VpcId:            templates.Ref{"VPC"},
+					CidrBlock:        templates.Ref{"BOSHSubnetCIDR"},
+					AvailabilityZone: "some-availability-zone",
 					Tags: []templates.Tag{
 						{
 							Key:   "Name",

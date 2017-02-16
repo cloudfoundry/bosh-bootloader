@@ -35,6 +35,7 @@ type upConfig struct {
 	awsAccessKeyID       string
 	awsSecretAccessKey   string
 	awsRegion            string
+	awsBOSHAZ            string
 	gcpServiceAccountKey string
 	gcpProjectID         string
 	gcpZone              string
@@ -97,6 +98,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			AccessKeyID:     config.awsAccessKeyID,
 			SecretAccessKey: config.awsSecretAccessKey,
 			Region:          config.awsRegion,
+			BOSHAZ:          config.awsBOSHAZ,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
@@ -126,6 +128,7 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", u.envGetter.Get("BBL_AWS_ACCESS_KEY_ID"))
 	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", u.envGetter.Get("BBL_AWS_SECRET_ACCESS_KEY"))
 	upFlags.String(&config.awsRegion, "aws-region", u.envGetter.Get("BBL_AWS_REGION"))
+	upFlags.String(&config.awsBOSHAZ, "aws-bosh-az", u.envGetter.Get("BBL_AWS_BOSH_AZ"))
 
 	upFlags.String(&config.gcpServiceAccountKey, "gcp-service-account-key", u.envGetter.Get("BBL_GCP_SERVICE_ACCOUNT_KEY"))
 	upFlags.String(&config.gcpProjectID, "gcp-project-id", u.envGetter.Get("BBL_GCP_PROJECT_ID"))
