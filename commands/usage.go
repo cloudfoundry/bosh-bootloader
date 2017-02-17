@@ -37,6 +37,7 @@ Commands:
   director-password      Prints BOSH director password
   director-ca-cert       Prints BOSH director CA certificate
   env-id                 Prints environment ID
+  print-env              Prints BOSH friendly environment variables
   help                   Prints usage
   lbs                    Prints attached load balancer(s)
   ssh-key                Prints SSH private key
