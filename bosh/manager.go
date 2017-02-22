@@ -74,7 +74,16 @@ func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, err
 		State:     state.BOSH.State,
 		Variables: string(variables),
 	})
-	if err != nil {
+	switch err.(type) {
+	case CreateEnvError:
+		ceErr := err.(CreateEnvError)
+		state.BOSH = storage.BOSH{
+			Variables: string(variables),
+			State:     ceErr.BOSHState(),
+			Manifest:  interpolateOutputs.Manifest,
+		}
+		return storage.State{}, NewManagerCreateError(state, err)
+	case error:
 		return storage.State{}, err
 	}
 

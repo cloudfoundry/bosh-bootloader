@@ -872,6 +872,48 @@ var _ = Describe("AWSUp", func() {
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
+
+			Context("when the bosh manager fails with BOSHManagerCreate error", func() {
+				var (
+					incomingState     storage.State
+					expectedBOSHState map[string]interface{}
+				)
+
+				BeforeEach(func() {
+					incomingState = storage.State{
+						IAAS: "aws",
+						AWS: storage.AWS{
+							Region:          "some-aws-region",
+							SecretAccessKey: "some-secret-access-key",
+							AccessKeyID:     "some-access-key-id",
+						},
+						EnvID: "bbl-lake-time:stamp",
+					}
+					expectedBOSHState = map[string]interface{}{
+						"partial": "bosh-state",
+					}
+
+					newState := incomingState
+					newState.BOSH.State = expectedBOSHState
+					expectedError := bosh.NewManagerCreateError(newState, errors.New("failed to create"))
+					boshManager.CreateCall.Returns.Error = expectedError
+				})
+
+				It("returns the error and saves the state", func() {
+					err := command.Execute(commands.AWSUpConfig{}, incomingState)
+					Expect(err).To(MatchError("failed to create"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(expectedBOSHState))
+				})
+
+				It("returns a compound error when it fails to save the state", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+					err := command.Execute(commands.AWSUpConfig{}, incomingState)
+					Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(expectedBOSHState))
+				})
+			})
 		})
 	})
 })

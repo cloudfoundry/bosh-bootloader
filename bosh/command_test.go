@@ -2,7 +2,6 @@ package bosh_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -33,7 +32,7 @@ var _ = Describe("Cmd", func() {
 		fastFailBOSH      bool
 		fastFailBOSHMutex sync.Mutex
 
-		boshArgs      []string
+		boshArgs      string
 		boshArgsMutex sync.Mutex
 	)
 
@@ -56,22 +55,22 @@ var _ = Describe("Cmd", func() {
 		cmd = bosh.NewCmd(stderr)
 
 		fakeBOSHBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			if getFastFailBOSH() {
-				responseWriter.WriteHeader(http.StatusInternalServerError)
-			}
-
-			if request.Method == "POST" {
+			switch request.URL.Path {
+			case "/create-env/args":
 				boshArgsMutex.Lock()
 				defer boshArgsMutex.Unlock()
 				body, err := ioutil.ReadAll(request.Body)
-				if err != nil {
-					panic(err)
+				Expect(err).NotTo(HaveOccurred())
+				boshArgs = string(body)
+			case "/create-env/fastfail":
+				if getFastFailBOSH() {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
 				}
-
-				err = json.Unmarshal(body, &boshArgs)
-				if err != nil {
-					panic(err)
-				}
+				return
+			default:
+				responseWriter.WriteHeader(http.StatusOK)
 			}
 		}))
 
@@ -97,7 +96,7 @@ var _ = Describe("Cmd", func() {
 
 		boshArgsMutex.Lock()
 		defer boshArgsMutex.Unlock()
-		Expect(boshArgs).To(Equal([]string{"create-env", "some-arg"}))
+		Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
 
 		Expect(stdout).NotTo(MatchRegexp("working directory: (.*)/tmp"))
 		Expect(stdout).NotTo(ContainSubstring("create-env some-arg"))
@@ -121,12 +120,12 @@ var _ = Describe("Cmd", func() {
 		})
 
 		It("returns an error when terraform fails", func() {
-			err := cmd.Run(stdout, "", []string{}, false)
+			err := cmd.Run(stdout, "", []string{"create-env"}, false)
 			Expect(err).To(MatchError("exit status 1"))
 		})
 
 		It("redirects command stderr to provided stderr when debug is true", func() {
-			_ = cmd.Run(stdout, "", []string{}, true)
+			_ = cmd.Run(stdout, "", []string{"create-env"}, true)
 			Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
 		})
 	})

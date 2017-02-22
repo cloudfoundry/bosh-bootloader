@@ -406,7 +406,6 @@ var _ = Describe("Executor", func() {
 			err := callback(executor)
 			Expect(err).To(MatchError("failed to run"))
 		})
-
 	}
 
 	Describe("CreateEnv", func() {
@@ -496,6 +495,51 @@ var _ = Describe("Executor", func() {
 				}
 				_, err := executor.CreateEnv(createEnvInput)
 				return err
+			})
+
+			Context("when command run fails", func() {
+				BeforeEach(func() {
+					cmd.RunCall.Returns.Error = errors.New("failed to run")
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				})
+
+				It("returns a create env error with a valid bosh state", func() {
+					expectedError := bosh.NewCreateEnvError(map[string]interface{}{
+						"key": "value",
+					}, errors.New("failed to run"))
+					_, err := executor.CreateEnv(createEnvInput)
+					Expect(err).To(MatchError(expectedError))
+				})
+
+				Context("when the state cannot be read", func() {
+					BeforeEach(func() {
+						readFile := func(filename string) ([]byte, error) {
+							return []byte{}, errors.New("failed to read file")
+						}
+
+						executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+					})
+
+					It("returns an error", func() {
+						_, err := executor.CreateEnv(createEnvInput)
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to run,\nfailed to read file"))
+					})
+				})
+
+				Context("when the state cannot be unmarshaled", func() {
+					BeforeEach(func() {
+						unmarshalFunc := func(contents []byte, output interface{}) error {
+							return errors.New("failed to unmarshal")
+						}
+
+						executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile, true)
+					})
+
+					It("returns an error", func() {
+						_, err := executor.CreateEnv(createEnvInput)
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to run,\nfailed to unmarshal"))
+					})
+				})
 			})
 
 			It("fails when the state cannot be read", func() {

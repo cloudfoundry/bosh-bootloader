@@ -7,6 +7,7 @@ import (
 
 	compute "google.golang.org/api/compute/v1"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -899,6 +900,49 @@ var _ = Describe("GCPUp", func() {
 			Expect(err).To(MatchError("failed to apply"))
 			Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+		})
+
+		Context("when the bosh manager fails with BOSHManagerCreate error", func() {
+			var (
+				incomingState     storage.State
+				expectedBOSHState map[string]interface{}
+			)
+
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKey,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+					EnvID: "bbl-lake-time:stamp",
+				}
+				expectedBOSHState = map[string]interface{}{
+					"partial": "bosh-state",
+				}
+
+				newState := incomingState
+				newState.BOSH.State = expectedBOSHState
+				expectedError := bosh.NewManagerCreateError(newState, errors.New("failed to create"))
+				boshManager.CreateCall.Returns.Error = expectedError
+			})
+
+			It("returns the error and saves the state", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)
+				Expect(err).To(MatchError("failed to create"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(expectedBOSHState))
+			})
+
+			It("returns a compound error when it fails to save the state", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+				err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)
+				Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(expectedBOSHState))
+			})
 		})
 
 		It("returns an error when the state fails to be set after updating keypair", func() {

@@ -318,12 +318,45 @@ var _ = Describe("Manager", func() {
 				Expect(err).To(MatchError("failed to interpolate"))
 			})
 
-			It("returns an error when the executor's create env call fails", func() {
+			It("returns an error when the executor's create env call fails with non create env error", func() {
 				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
 				_, err := boshManager.Create(storage.State{
-					IAAS: "aws",
+					IAAS: "gcp",
 				}, []byte{})
 				Expect(err).To(MatchError("failed to create"))
+			})
+
+			Context("when the executor's create env call fails with create env error", func() {
+				var (
+					incomingState storage.State
+					expectedError bosh.ManagerCreateError
+					expectedState storage.State
+				)
+
+				BeforeEach(func() {
+					incomingState = storage.State{
+						IAAS: "aws",
+					}
+
+					boshState := map[string]interface{}{
+						"partial": "bosh-state",
+					}
+					createEnvError := bosh.NewCreateEnvError(boshState, errors.New("failed to create env"))
+					boshExecutor.CreateEnvCall.Returns.Error = createEnvError
+
+					expectedState = incomingState
+					expectedState.BOSH = storage.BOSH{
+						Manifest:  "some-manifest",
+						State:     boshState,
+						Variables: variablesYAML,
+					}
+					expectedError = bosh.NewManagerCreateError(expectedState, createEnvError)
+				})
+
+				It("returns a bosh manager create error with a valid state", func() {
+					_, err := boshManager.Create(incomingState, []byte{})
+					Expect(err).To(MatchError(expectedError))
+				})
 			})
 		})
 	})

@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
 type Executor struct {
@@ -242,16 +244,18 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, err
 
 	err = e.command.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
-		return CreateEnvOutput{}, err
+		state, readErr := e.readBOSHState(statePath)
+		if readErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(readErr)
+			return CreateEnvOutput{}, errorList
+		}
+
+		return CreateEnvOutput{}, NewCreateEnvError(state, err)
 	}
 
-	stateContents, err := e.readFile(statePath)
-	if err != nil {
-		return CreateEnvOutput{}, err
-	}
-
-	var state map[string]interface{}
-	err = e.unmarshalJSON(stateContents, &state)
+	state, err := e.readBOSHState(statePath)
 	if err != nil {
 		return CreateEnvOutput{}, err
 	}
@@ -259,6 +263,21 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, err
 	return CreateEnvOutput{
 		State: state,
 	}, nil
+}
+
+func (e Executor) readBOSHState(statePath string) (map[string]interface{}, error) {
+	stateContents, err := e.readFile(statePath)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	var state map[string]interface{}
+	err = e.unmarshalJSON(stateContents, &state)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	return state, nil
 }
 
 func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {

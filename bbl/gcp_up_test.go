@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
@@ -31,6 +32,8 @@ var _ = Describe("bbl up gcp", func() {
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
+		fastFail                   bool
+		fastFailMutex              sync.Mutex
 
 		createEnvArgs   string
 		interpolateArgs string
@@ -45,7 +48,7 @@ var _ = Describe("bbl up gcp", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
-			case "/createenv/args":
+			case "/create-env/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
 				createEnvArgs = string(body)
@@ -53,6 +56,15 @@ var _ = Describe("bbl up gcp", func() {
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
 				interpolateArgs = string(body)
+			case "/create-env/fastfail":
+				fastFailMutex.Lock()
+				defer fastFailMutex.Unlock()
+				if fastFail {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
+				}
+				return
 			}
 		}))
 
@@ -100,6 +112,10 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+
+		fastFailMutex.Lock()
+		defer fastFailMutex.Unlock()
+		fastFail = false
 	})
 
 	AfterEach(func() {
@@ -433,6 +449,33 @@ var _ = Describe("bbl up gcp", func() {
 
 			state := readStateJson(tempDirectory)
 			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+		})
+
+		Context("when bosh fails", func() {
+			BeforeEach(func() {
+				fastFailMutex.Lock()
+				fastFail = true
+				fastFailMutex.Unlock()
+
+				args := []string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "some-region",
+				}
+
+				executeCommand(args, 1)
+			})
+
+			It("stores a partial bosh state", func() {
+				state := readStateJson(tempDirectory)
+				Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+					"partial": "bosh-state",
+				}))
+			})
 		})
 	})
 })

@@ -16,22 +16,21 @@ var (
 )
 
 func main() {
-	if checkFastFail() {
-		log.Fatal("failed to bosh")
-	}
-
 	if os.Args[1] == "interpolate" {
 		writeVariablesToFile()
-		postArgsToBackendServer("interpolate", os.Args[1:])
+		postArgsToBackendServer(os.Args[1], os.Args[1:])
 		fmt.Fprintf(os.Stderr, "bosh director name: %s\n", extractDirectorName(os.Args))
 	}
 
 	if os.Args[1] == "create-env" {
+		if checkFastFail(os.Args[1]) {
+			log.Fatal("failed to bosh")
+		}
 		oldArgsChecksum := getOldArgMD5()
 		argsChecksum := calculateArgMD5(os.Args[1:])
 
-		postArgsToBackendServer("createenv", os.Args[1:])
-		writeStateToFile(argsChecksum)
+		postArgsToBackendServer(os.Args[1], os.Args[1:])
+		writeStateToFile(fmt.Sprintf(`{"key":"value", "md5checksum": "%s"}`, argsChecksum))
 		writeVariablesToFile()
 
 		if oldArgsChecksum == argsChecksum {
@@ -50,7 +49,6 @@ func main() {
 func getOldArgMD5() string {
 	contents, err := ioutil.ReadFile("state.json")
 	if err != nil {
-		fmt.Println(err)
 		return ""
 	}
 
@@ -77,8 +75,7 @@ director_ssl:
 	}
 }
 
-func writeStateToFile(argsChecksum string) {
-	stateContents := fmt.Sprintf(`{"key":"value", "md5checksum": "%s"}`, argsChecksum)
+func writeStateToFile(stateContents string) {
 	err := ioutil.WriteFile("state.json", []byte(stateContents), os.ModePerm)
 	if err != nil {
 		panic(err)
@@ -114,10 +111,14 @@ func removeBrackets(contents string) string {
 	return contents
 }
 
-func checkFastFail() bool {
-	resp, err := http.Get(fmt.Sprintf("%s/fastfail", backendURL))
+func checkFastFail(command string) bool {
+	resp, err := http.Get(fmt.Sprintf("%s/%s/fastfail", backendURL, command))
 	if err != nil {
 		panic(err)
+	}
+
+	if resp.StatusCode == http.StatusInternalServerError {
+		writeStateToFile(`{"partial":"bosh-state"}`)
 	}
 
 	return resp.StatusCode == http.StatusInternalServerError

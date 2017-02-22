@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	yaml "gopkg.in/yaml.v2"
 
@@ -194,7 +195,17 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	state, err = u.boshManager.Create(state, opsFileContents)
-	if err != nil {
+	switch err.(type) {
+	case bosh.ManagerCreateError:
+		bcErr := err.(bosh.ManagerCreateError)
+		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
+		return err
+	case error:
 		return err
 	}
 

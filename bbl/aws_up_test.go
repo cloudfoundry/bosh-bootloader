@@ -118,7 +118,7 @@ var _ = Describe("bbl up aws", func() {
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
 				interpolateArgs = string(body)
-			case "/fastfail":
+			case "/create-env/fastfail":
 				fastFailMutex.Lock()
 				defer fastFailMutex.Unlock()
 				if fastFail {
@@ -634,6 +634,18 @@ var _ = Describe("bbl up aws", func() {
 					upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 					Expect(fakeAWS.CreateStackCallCount).To(Equal(int64(1)))
+				})
+
+				It("stores a partial bosh state", func() {
+					fastFailMutex.Lock()
+					fastFail = true
+					fastFailMutex.Unlock()
+					upAWS(fakeAWSServer.URL, tempDirectory, 1)
+
+					state := readStateJson(tempDirectory)
+					Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+						"partial": "bosh-state",
+					}))
 				})
 			})
 

@@ -10,6 +10,8 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -201,7 +203,17 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	}
 
 	state, err = u.boshManager.Create(state, opsFile)
-	if err != nil {
+	switch err.(type) {
+	case bosh.ManagerCreateError:
+		bcErr := err.(bosh.ManagerCreateError)
+		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
+		return err
+	case error:
 		return err
 	}
 
