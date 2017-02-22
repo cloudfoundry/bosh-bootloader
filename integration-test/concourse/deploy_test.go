@@ -160,7 +160,7 @@ var _ = Describe("concourse deployment test", func() {
 			gcp = actors.NewGCP(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
-			bbl.Up(actors.GCPIAAS)
+			bbl.Up(actors.GCPIAAS, true)
 
 			bbl.CreateGCPLB("concourse")
 
