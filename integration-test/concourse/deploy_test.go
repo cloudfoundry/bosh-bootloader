@@ -125,7 +125,7 @@ var _ = Describe("concourse deployment test", func() {
 			aws = actors.NewAWS(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
-			bbl.Up(actors.AWSIAAS)
+			bbl.Up(actors.AWSIAAS, true)
 
 			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 			Expect(err).NotTo(HaveOccurred())
