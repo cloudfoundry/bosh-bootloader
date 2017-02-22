@@ -66,9 +66,9 @@ type AWSUp struct {
 	certificateDescriber      certificateDescriber
 	cloudConfigManager        cloudConfigManager
 	boshClientProvider        boshClientProvider
-	envIDGenerator            envIDGenerator
 	stateStore                stateStore
 	configProvider            configProvider
+	envIDManager              envIDManager
 }
 
 type AWSUpConfig struct {
@@ -77,6 +77,7 @@ type AWSUpConfig struct {
 	Region          string
 	OpsFilePath     string
 	BOSHAZ          string
+	Name            string
 }
 
 func NewAWSUp(
@@ -85,7 +86,7 @@ func NewAWSUp(
 	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore,
-	configProvider configProvider) AWSUp {
+	configProvider configProvider, envIDManager envIDManager) AWSUp {
 
 	return AWSUp{
 		credentialValidator:       credentialValidator,
@@ -99,6 +100,7 @@ func NewAWSUp(
 		boshClientProvider:        boshClientProvider,
 		stateStore:                stateStore,
 		configProvider:            configProvider,
+		envIDManager:              envIDManager,
 	}
 }
 
@@ -130,6 +132,13 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	if err != nil {
 		return err
 	}
+
+	envID, err := u.envIDManager.Sync(state, config.Name)
+	if err != nil {
+		return err
+	}
+
+	state.EnvID = envID
 
 	if state.KeyPair.Name == "" {
 		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)

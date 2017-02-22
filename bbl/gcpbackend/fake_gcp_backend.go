@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 )
 
@@ -30,6 +31,7 @@ const (
 type GCPBackend struct {
 	handleListInstances func(http.ResponseWriter, *http.Request)
 	handlerMutex        sync.Mutex
+	Network             Network
 }
 
 func (g *GCPBackend) StartFakeGCPBackend() (*httptest.Server, string) {
@@ -67,7 +69,8 @@ func (g *GCPBackend) StartFakeGCPBackend() (*httptest.Server, string) {
 			return
 		case "/some-project-id/global/networks":
 			w.WriteHeader(http.StatusOK)
-			if req.URL.Query().Get("filter") == "name eq existing-network" {
+			networkName := strings.Split(req.URL.Query().Get("filter"), " ")[2]
+			if g.Network.Exists(networkName) {
 				w.Write([]byte(`{"items":[{"id":"1234"}]}`))
 			} else {
 				w.Write([]byte(`{}`))

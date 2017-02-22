@@ -34,6 +34,7 @@ var _ = Describe("AWSUp", func() {
 			boshClient                *fakes.BOSHClient
 			stateStore                *fakes.StateStore
 			clientProvider            *fakes.ClientProvider
+			envIDManager              *fakes.EnvIDManager
 		)
 
 		BeforeEach(func() {
@@ -93,11 +94,14 @@ var _ = Describe("AWSUp", func() {
 			stateStore = &fakes.StateStore{}
 			clientProvider = &fakes.ClientProvider{}
 
+			envIDManager = &fakes.EnvIDManager{}
+			envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time-stamp"
+
 			command = commands.NewAWSUp(
 				credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
 				cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
 				cloudConfigManager, boshClientProvider, stateStore,
-				clientProvider,
+				clientProvider, envIDManager,
 			)
 		})
 
@@ -112,9 +116,7 @@ var _ = Describe("AWSUp", func() {
 				AccessKeyID:     "new-aws-access-key-id",
 				SecretAccessKey: "new-aws-secret-access-key",
 				Region:          "new-aws-region",
-			}, storage.State{
-				EnvID: "bbl-lake-time-stamp",
-			})
+			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
@@ -124,6 +126,33 @@ var _ = Describe("AWSUp", func() {
 				AccessKeyID:     "new-aws-access-key-id",
 			}))
 			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
+		})
+
+		It("calls the env id manager and saves the env id", func() {
+			err := command.Execute(commands.AWSUpConfig{
+				AccessKeyID:     "new-aws-access-key-id",
+				SecretAccessKey: "new-aws-secret-access-key",
+				Region:          "new-aws-region",
+			}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
+			Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("bbl-lake-time-stamp"))
+		})
+
+		Context("when a name is passed in for env-id", func() {
+			It("passes that name in for the env id manager to use", func() {
+				err := command.Execute(commands.AWSUpConfig{
+					AccessKeyID:     "new-aws-access-key-id",
+					SecretAccessKey: "new-aws-secret-access-key",
+					Region:          "new-aws-region",
+					Name:            "some-other-env-id",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
+				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-other-env-id"))
+			})
 		})
 
 		It("syncs the keypair", func() {
@@ -194,7 +223,7 @@ var _ = Describe("AWSUp", func() {
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				EnvID: "bbl-lake-time:stamp",
+				EnvID: "bbl-lake-time-stamp",
 			}
 
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
@@ -436,12 +465,10 @@ var _ = Describe("AWSUp", func() {
 				It("saves the keypair name and returns an error", func() {
 					keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
 
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{
-						EnvID: "bbl-lake-time:stamp",
-					})
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("error syncing key pair"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time:stamp"))
+					Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
 				})
 			})
 
@@ -618,9 +645,9 @@ var _ = Describe("AWSUp", func() {
 							PublicKey:  "some-public-key",
 						}
 
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{
-							EnvID: "bbl-lake-time:stamp",
-						})
+						envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time:stamp"
+
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
@@ -697,6 +724,18 @@ var _ = Describe("AWSUp", func() {
 		})
 
 		Context("failure cases", func() {
+			It("returns an error when the env id manager fails", func() {
+				envIDManager.SyncCall.Returns.Error = errors.New("env id manager failed")
+
+				err := command.Execute(commands.AWSUpConfig{
+					AccessKeyID:     "some-aws-access-key-id",
+					SecretAccessKey: "some-aws-secret-access-key",
+					Region:          "some-aws-region",
+				}, storage.State{})
+				Expect(err).To(MatchError("env id manager failed"))
+
+			})
+
 			It("returns an error when saving the state fails", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{
 					{

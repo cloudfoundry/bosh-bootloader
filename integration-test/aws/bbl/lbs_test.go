@@ -35,7 +35,7 @@ var _ = Describe("load balancer tests", func() {
 	})
 
 	It("creates, updates and deletes an LB with the specified cert and key", func() {
-		bbl.Up(actors.AWSIAAS)
+		bbl.Up(actors.AWSIAAS, true)
 
 		stackName := state.StackName()
 		directorAddress := bbl.DirectorAddress()

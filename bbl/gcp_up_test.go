@@ -131,6 +131,41 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
 	})
 
+	Context("when a bbl enviornment already exists", func() {
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--name", "some-bbl-env",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			executeCommand(args, 0)
+
+			gcpBackend.Network.Add("some-bbl-env-network")
+		})
+
+		It("can bbl up a second time idempotently", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			executeCommand(args, 0)
+		})
+	})
+
 	Context("when ops files are provides via --ops-file flag", func() {
 		It("passes those ops files to bosh create env", func() {
 			args := []string{
@@ -352,7 +387,7 @@ var _ = Describe("bbl up gcp", func() {
 		Entry("generates a cloud config with no lb type", "../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml"),
 	)
 
-	Context("when there is an environment with the same name", func() {
+	Context("when there is a different environment with the same name", func() {
 		var session *gexec.Session
 
 		BeforeEach(func() {
@@ -368,6 +403,7 @@ var _ = Describe("bbl up gcp", func() {
 				"--name", "existing",
 			}
 
+			gcpBackend.Network.Add("existing-network")
 			session = executeCommand(args, 1)
 		})
 

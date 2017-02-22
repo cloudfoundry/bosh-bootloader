@@ -40,6 +40,7 @@ var _ = Describe("GCPUp", func() {
 		boshClient              *fakes.BOSHClient
 		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
 		terraformOutputProvider *fakes.TerraformOutputProvider
+		envIDManager            *fakes.EnvIDManager
 		logger                  *fakes.Logger
 		zones                   *fakes.Zones
 
@@ -57,6 +58,7 @@ var _ = Describe("GCPUp", func() {
 		gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{}
 		terraformExecutor = &fakes.TerraformExecutor{}
 		zones = &fakes.Zones{}
+		envIDManager = &fakes.EnvIDManager{}
 		terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClient = &fakes.BOSHClient{}
@@ -71,6 +73,7 @@ var _ = Describe("GCPUp", func() {
 			InternalTag:     "some-internal-tag-name",
 			DirectorAddress: "some-director-address",
 		}
+		envIDManager.SyncCall.Returns.EnvID = "some-env-id"
 
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
@@ -91,7 +94,7 @@ var _ = Describe("GCPUp", func() {
 			},
 		}
 		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshManager,
-			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
+			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones, envIDManager)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -112,35 +115,6 @@ var _ = Describe("GCPUp", func() {
 	})
 
 	Describe("Execute", func() {
-		It("gets a gcp client from the client provider when a name is provided", func() {
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "us-west1",
-			}, storage.State{
-				EnvID: "some-env-id",
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
-		})
-
-		It("checks for existing gcp environments when name is provided", func() {
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "us-west1",
-			}, storage.State{
-				EnvID: "some-env-id",
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(gcpClient.GetNetworksCall.CallCount).To(Equal(1))
-			Expect(gcpClient.GetNetworksCall.Receives.Name).To(Equal("some-env-id-network"))
-		})
-
 		It("saves gcp details to the state", func() {
 			keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
 				PrivateKey: "some-private-key",
@@ -170,6 +144,35 @@ var _ = Describe("GCPUp", func() {
 			Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(`{"real": "json"}`))
 			Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
 			Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
+		})
+
+		It("calls env id manager and saves the resulting state", func() {
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
+			Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("some-env-id"))
+		})
+
+		Context("when a name is passed in for env-id", func() {
+			It("passes that name in for the env id manager to use", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "us-west1",
+					Name:                  "some-other-env-id",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
+				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-other-env-id"))
+			})
 		})
 
 		It("uploads the ssh keys", func() {
@@ -233,6 +236,8 @@ var _ = Describe("GCPUp", func() {
 
 		Describe("bosh", func() {
 			It("creates a bosh", func() {
+				envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time:stamp"
+
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
 					KeyPair: storage.KeyPair{
@@ -656,52 +661,16 @@ var _ = Describe("GCPUp", func() {
 	})
 
 	Context("failure cases", func() {
-		Context("when a gcp environment with the same name already exists", func() {
-			var err error
-
-			BeforeEach(func() {
-				gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{
-					Items: []*compute.Network{
-						&compute.Network{},
-					},
-				}
-				err = gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "us-west1",
-				}, storage.State{
-					EnvID: "existing",
-				})
-			})
-
-			It("calls gcpClient.GetNetworks", func() {
-				Expect(gcpClient.GetNetworksCall.CallCount).To(Equal(1))
-				Expect(gcpClient.GetNetworksCall.Receives.Name).To(Equal("existing-network"))
-			})
-
-			It("returns without saving the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
-			})
-
-			It("returns a descriptive error", func() {
-				Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
-			})
-		})
-
-		It("returns an error if gcpClient.GetNetworks fails", func() {
-			gcpClient.GetNetworksCall.Returns.Error = errors.New("failed to get network list")
-
+		It("fast fails if a gcp environment with the same name already exists", func() {
+			envIDManager.SyncCall.Returns.Error = errors.New("environment already exists")
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
 				Region:                "us-west1",
-			}, storage.State{
-				EnvID: "some-env-id",
-			})
+			}, storage.State{})
 
-			Expect(err).To(MatchError("failed to get network list"))
+			Expect(err).To(MatchError("environment already exists"))
 		})
 
 		It("returns an error if applier fails with non terraform apply error", func() {

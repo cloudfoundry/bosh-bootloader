@@ -113,6 +113,9 @@ func main() {
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
 	zones := gcp.NewZones()
 
+	// EnvID
+	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
+
 	// Terraform
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
@@ -133,7 +136,7 @@ func main() {
 	awsUp := commands.NewAWSUp(
 		credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
 		cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
+		cloudConfigManager, boshClientProvider, stateStore, clientProvider, envIDManager)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,
@@ -155,14 +158,15 @@ func main() {
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputProvider, gcpCloudConfigGenerator, zones, logger,
 		boshClientProvider, stateStore, terraformExecutor)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshManager, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshManager, logger, boshClientProvider,
+		gcpCloudConfigGenerator, terraformOutputProvider, zones, envIDManager)
 	envGetter := commands.NewEnvGetter()
 
 	// Commands
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
 
-	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
+	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,

@@ -10,7 +10,6 @@ import (
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -35,6 +34,7 @@ type GCPUp struct {
 	terraformOutputProvider terraformOutputProvider
 	terraformExecutor       terraformExecutor
 	zones                   zones
+	envIDManager            envIDManager
 }
 
 type GCPUpConfig struct {
@@ -43,6 +43,7 @@ type GCPUpConfig struct {
 	Zone                  string
 	Region                string
 	OpsFilePath           string
+	Name                  string
 }
 
 type gcpCloudConfigGenerator interface {
@@ -59,7 +60,6 @@ type keyPairUpdater interface {
 
 type gcpProvider interface {
 	SetConfig(serviceAccountKey, projectID, zone string) error
-	Client() gcp.Client
 }
 
 type terraformExecutor interface {
@@ -80,9 +80,13 @@ type boshManager interface {
 	Delete(storage.State) error
 }
 
+type envIDManager interface {
+	Sync(storage.State, string) (string, error)
+}
+
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor,
 	boshManager boshManager, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
-	terraformOutputProvider terraformOutputProvider, zones zones) GCPUp {
+	terraformOutputProvider terraformOutputProvider, zones zones, envIDManager envIDManager) GCPUp {
 	return GCPUp{
 		stateStore:              stateStore,
 		keyPairUpdater:          keyPairUpdater,
@@ -93,7 +97,8 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 		boshClientProvider:      boshClientProvider,
 		cloudConfigGenerator:    cloudConfigGenerator,
 		terraformOutputProvider: terraformOutputProvider,
-		zones: zones,
+		zones:        zones,
+		envIDManager: envIDManager,
 	}
 }
 
@@ -124,17 +129,12 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if state.EnvID != "" {
-		gcpClient := u.gcpProvider.Client()
-		networkName := state.EnvID + "-network"
-		networkList, err := gcpClient.GetNetworks(networkName)
-		if err != nil {
-			return err
-		}
-		if len(networkList.Items) > 0 {
-			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", state.EnvID))
-		}
+	envID, err := u.envIDManager.Sync(state, upConfig.Name)
+	if err != nil {
+		return err
 	}
+
+	state.EnvID = envID
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err

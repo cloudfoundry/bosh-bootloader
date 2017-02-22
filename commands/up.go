@@ -9,10 +9,9 @@ import (
 )
 
 type Up struct {
-	awsUp          awsUp
-	gcpUp          gcpUp
-	envGetter      envGetter
-	envIDGenerator envIDGenerator
+	awsUp     awsUp
+	gcpUp     gcpUp
+	envGetter envGetter
 }
 
 type awsUp interface {
@@ -25,10 +24,6 @@ type gcpUp interface {
 
 type envGetter interface {
 	Get(name string) string
-}
-
-type envIDGenerator interface {
-	Generate() (string, error)
 }
 
 type upConfig struct {
@@ -45,13 +40,11 @@ type upConfig struct {
 	opsFile              string
 }
 
-func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter,
-	envIDGenerator envIDGenerator) Up {
+func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter) Up {
 	return Up{
-		awsUp:          awsUp,
-		gcpUp:          gcpUp,
-		envGetter:      envGetter,
-		envIDGenerator: envIDGenerator,
+		awsUp:     awsUp,
+		gcpUp:     gcpUp,
+		envGetter: envGetter,
 	}
 }
 
@@ -82,17 +75,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
 
-	if state.EnvID == "" {
-		if config.name == "" {
-			state.EnvID, err = u.envIDGenerator.Generate()
-			if err != nil {
-				return err
-			}
-		} else {
-			state.EnvID = config.name
-		}
-	}
-
 	switch desiredIAAS {
 	case "aws":
 		err = u.awsUp.Execute(AWSUpConfig{
@@ -101,6 +83,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			Region:          config.awsRegion,
 			BOSHAZ:          config.awsBOSHAZ,
 			OpsFilePath:     config.opsFile,
+			Name:            config.name,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
@@ -109,6 +92,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			Zone:                  config.gcpZone,
 			Region:                config.gcpRegion,
 			OpsFilePath:           config.opsFile,
+			Name:                  config.name,
 		}, state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)

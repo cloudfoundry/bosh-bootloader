@@ -16,11 +16,10 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
-		fakeAWSUp          *fakes.AWSUp
-		fakeGCPUp          *fakes.GCPUp
-		fakeEnvGetter      *fakes.EnvGetter
-		fakeEnvIDGenerator *fakes.EnvIDGenerator
-		state              storage.State
+		fakeAWSUp     *fakes.AWSUp
+		fakeGCPUp     *fakes.GCPUp
+		fakeEnvGetter *fakes.EnvGetter
+		state         storage.State
 	)
 
 	BeforeEach(func() {
@@ -28,10 +27,7 @@ var _ = Describe("Up", func() {
 		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
 		fakeEnvGetter = &fakes.EnvGetter{}
 
-		fakeEnvIDGenerator = &fakes.EnvIDGenerator{}
-		fakeEnvIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
-
-		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter, fakeEnvIDGenerator)
+		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter)
 	})
 
 	Describe("Execute", func() {
@@ -57,7 +53,6 @@ var _ = Describe("Up", func() {
 				}))
 				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
 					Version: 999,
-					EnvID:   "bbl-lake-time:stamp",
 				}))
 			})
 
@@ -67,9 +62,6 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(expectedConfig))
-				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-					EnvID: "bbl-lake-time:stamp",
-				}))
 			},
 				Entry("precedence to aws access key id",
 					[]string{"--aws-access-key-id", "access-key-id-from-args"},
@@ -144,74 +136,6 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("env id", func() {
-			Context("when the env id doesn't exist", func() {
-				It("populates a new bbl env id", func() {
-					fakeEnvIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
-
-					err := command.Execute([]string{
-						"--iaas", "aws",
-					}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(fakeEnvIDGenerator.GenerateCall.CallCount).To(Equal(1))
-					Expect(fakeAWSUp.ExecuteCall.Receives.State.EnvID).To(Equal("bbl-lake-time:stamp"))
-				})
-			})
-
-			Context("when the env id exists", func() {
-				It("does not modify the state", func() {
-					incomingState := storage.State{
-						EnvID: "bbl-lake-time:stamp",
-					}
-
-					err := command.Execute([]string{
-						"--iaas", "aws",
-					}, incomingState)
-					Expect(err).NotTo(HaveOccurred())
-
-					state := fakeAWSUp.ExecuteCall.Receives.State
-					Expect(state.EnvID).To(Equal("bbl-lake-time:stamp"))
-				})
-			})
-
-			Context("when the user provides the name flag", func() {
-				It("uses the name flag instead of generating one", func() {
-					fakeEnvIDGenerator.GenerateCall.Returns.EnvID = "bbl-lake-time:stamp"
-
-					err := command.Execute([]string{
-						"--iaas", "aws",
-						"--name", "a-better-name",
-					}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(fakeEnvIDGenerator.GenerateCall.CallCount).To(Equal(0))
-					Expect(fakeAWSUp.ExecuteCall.Receives.State.EnvID).To(Equal("a-better-name"))
-				})
-			})
-
-			Context("failure cases", func() {
-				It("returns an error when env id generator fails", func() {
-					fakeEnvIDGenerator.GenerateCall.Returns.Error = errors.New("env id generation failed")
-
-					err := command.Execute([]string{
-						"--iaas", "aws",
-					}, storage.State{})
-					Expect(err).To(MatchError("env id generation failed"))
-				})
-
-				It("returns an error when name is passed for an existing env", func() {
-					err := command.Execute([]string{
-						"--iaas", "aws",
-						"--name", "a-bad-name",
-					}, storage.State{
-						EnvID: "a-name",
-					})
-					Expect(err).To(MatchError("The director name cannot be changed for an existing environment. Current name is a-name."))
-				})
-			})
-		})
-
 		Context("when gcp args are provided through environment variables", func() {
 			BeforeEach(func() {
 				fakeEnvGetter.Values = map[string]string{
@@ -236,7 +160,6 @@ var _ = Describe("Up", func() {
 				}))
 				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
 					Version: 999,
-					EnvID:   "bbl-lake-time:stamp",
 				}))
 			})
 
@@ -247,9 +170,6 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(expectedConfig))
-				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-					EnvID: "bbl-lake-time:stamp",
-				}))
 			},
 				Entry("precedence to service account key",
 					[]string{"--gcp-service-account-key", "some-service-account-key-from-args"},
@@ -340,9 +260,6 @@ var _ = Describe("Up", func() {
 						Zone:                  "some-zone",
 						Region:                "some-region",
 					}))
-					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-						EnvID: "bbl-lake-time:stamp",
-					}))
 				})
 
 				It("executes the GCP up with gcp details from env vars", func() {
@@ -364,9 +281,6 @@ var _ = Describe("Up", func() {
 						Zone:                  "some-zone",
 						Region:                "some-region",
 					}))
-					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-						EnvID: "bbl-lake-time:stamp",
-					}))
 				})
 			})
 
@@ -387,9 +301,6 @@ var _ = Describe("Up", func() {
 						SecretAccessKey: "some-secret-access-key",
 						Region:          "some-region",
 						BOSHAZ:          "some-bosh-az",
-					}))
-					Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-						EnvID: "bbl-lake-time:stamp",
 					}))
 				})
 			})
@@ -450,7 +361,6 @@ var _ = Describe("Up", func() {
 							SecretAccessKey: "some-secret-access-key",
 							Region:          "some-region",
 						},
-						EnvID: "bbl-lake-time:stamp",
 					}))
 				})
 
@@ -463,8 +373,7 @@ var _ = Describe("Up", func() {
 
 					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
 					Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-						IAAS:  "gcp",
-						EnvID: "bbl-lake-time:stamp",
+						IAAS: "gcp",
 					}))
 				})
 			})
@@ -482,6 +391,18 @@ var _ = Describe("Up", func() {
 					err := command.Execute([]string{}, storage.State{IAAS: "gcp"})
 					Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
 				})
+			})
+		})
+
+		Context("when the user provides the name flag", func() {
+			It("passes the name flag in the up config", func() {
+				err := command.Execute([]string{
+					"--iaas", "aws",
+					"--name", "a-better-name",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Name).To(Equal("a-better-name"))
 			})
 		})
 	})
