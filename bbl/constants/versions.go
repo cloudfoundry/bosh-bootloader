@@ -11,6 +11,6 @@ const (
 	AWSStemcellSHA1 = "671b49cf788d36500e12a8120efb2ada8813c3fd"
 	BOSHGCPCPIURL   = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-google-cpi-release?v=25.6.2"
 	BOSHGCPCPISHA1  = "b4865397d867655fdcc112bc5a7f9a5025cdf311"
-	GCPStemcellURL  = "https://s3.amazonaws.com/bosh-gce-light-stemcells/light-bosh-stemcell-3363.1-google-kvm-ubuntu-trusty-go_agent.tgz"
-	GCPStemcellSHA1 = "279768e7cf49fc4096cdbc38880de8c03f521497"
+	GCPStemcellURL  = "https://s3.amazonaws.com/bosh-gce-light-stemcells/light-bosh-stemcell-3363.9-google-kvm-ubuntu-trusty-go_agent.tgz"
+	GCPStemcellSHA1 = "dc0b2d32d004e999acf7f4805c34f7d31b67203c"
 )
