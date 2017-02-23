@@ -34,6 +34,8 @@ var _ = Describe("Cmd", func() {
 
 		boshArgs      string
 		boshArgsMutex sync.Mutex
+
+		tempDir string
 	)
 
 	var setFastFailBOSH = func(on bool) {
@@ -84,6 +86,9 @@ var _ = Describe("Cmd", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
+
+		tempDir, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -91,22 +96,22 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("runs bosh with args", func() {
-		err := cmd.Run(stdout, "/tmp", []string{"create-env", "some-arg"}, false)
+		err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"}, false)
 		Expect(err).NotTo(HaveOccurred())
 
 		boshArgsMutex.Lock()
 		defer boshArgsMutex.Unlock()
 		Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
 
-		Expect(stdout).NotTo(MatchRegexp("working directory: (.*)/tmp"))
+		Expect(stdout).NotTo(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
 		Expect(stdout).NotTo(ContainSubstring("create-env some-arg"))
 	})
 
 	It("redirects command stdout to provided stdout when debug is true", func() {
-		err := cmd.Run(stdout, "/tmp", []string{"create-env", "some-arg"}, true)
+		err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"}, true)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(stdout.String()).To(MatchRegexp("working directory: (.*)/tmp"))
+		Expect(stdout.String()).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
 		Expect(stdout.String()).To(ContainSubstring("create-env some-arg"))
 	})
 
@@ -119,13 +124,13 @@ var _ = Describe("Cmd", func() {
 			setFastFailBOSH(false)
 		})
 
-		It("returns an error when terraform fails", func() {
-			err := cmd.Run(stdout, "", []string{"create-env"}, false)
+		It("returns an error when bosh fails", func() {
+			err := cmd.Run(stdout, tempDir, []string{"create-env"}, false)
 			Expect(err).To(MatchError("exit status 1"))
 		})
 
 		It("redirects command stderr to provided stderr when debug is true", func() {
-			_ = cmd.Run(stdout, "", []string{"create-env"}, true)
+			_ = cmd.Run(stdout, tempDir, []string{"create-env"}, true)
 			Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
 		})
 	})
