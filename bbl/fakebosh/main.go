@@ -44,6 +44,12 @@ func main() {
 		fmt.Printf("working directory: %s\n", dir)
 		fmt.Printf("bosh %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
 	}
+
+	if os.Args[1] == "delete-env" {
+		if checkFastFail(os.Args[1]) {
+			log.Fatal("failed to bosh")
+		}
+	}
 }
 
 func getOldArgMD5() string {

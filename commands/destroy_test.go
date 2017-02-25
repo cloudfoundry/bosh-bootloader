@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -514,6 +515,60 @@ var _ = Describe("Destroy", func() {
 							},
 						})
 						Expect(err).To(MatchError("failed to set state"))
+					})
+				})
+
+				Context("when bosh fails to delete the director", func() {
+					var (
+						state storage.State
+					)
+					BeforeEach(func() {
+						state = storage.State{
+							BOSH: storage.BOSH{
+								State: map[string]interface{}{"hello": "world"},
+							},
+							IAAS: "aws",
+							Stack: storage.Stack{
+								CertificateName: "some-certificate-name",
+							},
+						}
+					})
+					Context("when bosh delete returns a bosh manager delete error", func() {
+						var (
+							errState storage.State
+						)
+						BeforeEach(func() {
+							errState = storage.State{
+								BOSH: storage.BOSH{
+									State: map[string]interface{}{"error": "state"},
+								},
+								IAAS: "aws",
+								Stack: storage.Stack{
+									CertificateName: "some-certificate-name",
+								},
+							}
+							boshManager.DeleteCall.Returns.Error = bosh.NewManagerDeleteError(errState, errors.New("deletion failed"))
+						})
+
+						It("saves the bosh state and returns an error", func() {
+							err := destroy.Execute([]string{}, state)
+							Expect(err).To(MatchError("deletion failed"))
+							Expect(stateStore.SetCall.Receives.State).To(Equal(errState))
+						})
+
+						It("returns an error when it can't set the state", func() {
+							stateStore.SetCall.Returns = []fakes.SetCallReturn{{
+								errors.New("saving state failed"),
+							}}
+							err := destroy.Execute([]string{}, state)
+							Expect(err).To(MatchError("the following errors occurred:\ndeletion failed,\nsaving state failed"))
+						})
+					})
+
+					It("returns an error", func() {
+						boshManager.DeleteCall.Returns.Error = errors.New("deletion failed")
+						err := destroy.Execute([]string{}, state)
+						Expect(err).To(MatchError("deletion failed"))
 					})
 				})
 			})

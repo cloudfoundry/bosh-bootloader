@@ -647,6 +647,41 @@ var _ = Describe("Executor", func() {
 				}
 				return executor.DeleteEnv(deleteEnvInput)
 			})
+
+			Context("when command run fails", func() {
+				BeforeEach(func() {
+					cmd.RunCall.Stub = func(io.Writer) {
+						err := ioutil.WriteFile(statePath, []byte(`{"partial": "state"}`), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+					}
+
+					cmd.RunCall.Returns.Error = errors.New("failed to run")
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				})
+
+				It("returns a create env error with a valid bosh state", func() {
+					expectedError := bosh.NewDeleteEnvError(map[string]interface{}{
+						"partial": "state",
+					}, errors.New("failed to run"))
+					err := executor.DeleteEnv(deleteEnvInput)
+					Expect(err).To(MatchError(expectedError))
+				})
+
+				Context("when the state cannot be read", func() {
+					BeforeEach(func() {
+						readFile := func(filename string) ([]byte, error) {
+							return []byte{}, errors.New("failed to read file")
+						}
+
+						executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+					})
+
+					It("returns an error", func() {
+						err := executor.DeleteEnv(deleteEnvInput)
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to run,\nfailed to read file"))
+					})
+				})
+			})
 		})
 	})
 })

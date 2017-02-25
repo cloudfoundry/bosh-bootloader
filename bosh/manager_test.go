@@ -397,6 +397,46 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("failure cases", func() {
+			Context("when the executor's delete env call fails with delete env error", func() {
+				var (
+					incomingState storage.State
+					expectedError bosh.ManagerDeleteError
+					expectedState storage.State
+				)
+
+				BeforeEach(func() {
+					incomingState = storage.State{
+						IAAS: "aws",
+						BOSH: storage.BOSH{
+							Manifest: "some-manifest",
+							State: map[string]interface{}{
+								"key": "value",
+							},
+							Variables: variablesYAML,
+						},
+					}
+
+					boshState := map[string]interface{}{
+						"partial": "bosh-state",
+					}
+					deleteEnvError := bosh.NewDeleteEnvError(boshState, errors.New("failed to delete env"))
+					boshExecutor.DeleteEnvCall.Returns.Error = deleteEnvError
+
+					expectedState = incomingState
+					expectedState.BOSH = storage.BOSH{
+						Manifest:  "some-manifest",
+						State:     boshState,
+						Variables: variablesYAML,
+					}
+					expectedError = bosh.NewManagerDeleteError(expectedState, deleteEnvError)
+				})
+
+				It("returns a bosh manager delete error with a valid state", func() {
+					err := boshManager.Delete(incomingState)
+					Expect(err).To(MatchError(expectedError))
+				})
+			})
+
 			It("returns an error when the delete env fails", func() {
 				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
 				err := boshManager.Delete(storage.State{})

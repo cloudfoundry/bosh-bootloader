@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -176,7 +177,18 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	state, err = d.deleteBOSH(state, stack, terraformOutputs)
-	if err != nil {
+	switch err.(type) {
+	case bosh.ManagerDeleteError:
+		mdErr := err.(bosh.ManagerDeleteError)
+		setErr := d.stateStore.Set(mdErr.State())
+		if setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
+		return err
+	case error:
 		return err
 	}
 

@@ -298,8 +298,16 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 
 	err = e.command.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
-		return err
+		state, readErr := e.readBOSHState(statePath)
+		if readErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(readErr)
+			return errorList
+		}
+		return NewDeleteEnvError(state, err)
 	}
+
 	return nil
 }
 

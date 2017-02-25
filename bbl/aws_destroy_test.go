@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
@@ -73,6 +74,9 @@ var _ = Describe("destroy", func() {
 			pathToFakeBOSH           string
 			pathToBOSH               string
 			fakeBOSHCLIBackendServer *httptest.Server
+
+			fastFail      bool
+			fastFailMutex sync.Mutex
 		)
 
 		BeforeEach(func() {
@@ -98,6 +102,17 @@ var _ = Describe("destroy", func() {
 			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/delete-env/fastfail":
+					fastFailMutex.Lock()
+					defer fastFailMutex.Unlock()
+					if fastFail {
+						responseWriter.WriteHeader(http.StatusInternalServerError)
+					} else {
+						responseWriter.WriteHeader(http.StatusOK)
+					}
+					return
+				}
 			}))
 
 			var err error
@@ -342,6 +357,29 @@ director_ssl:
 				It("skips deleting aws stack", func() {
 					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
 					Expect(session.Out.Contents()).To(ContainSubstring("no AWS stack, skipping..."))
+				})
+			})
+
+			Context("when bosh fails", func() {
+				BeforeEach(func() {
+					fastFailMutex.Lock()
+					fastFail = true
+					fastFailMutex.Unlock()
+
+					destroy(fakeAWSServer.URL, tempDirectory, 1)
+				})
+
+				AfterEach(func() {
+					fastFailMutex.Lock()
+					fastFail = false
+					fastFailMutex.Unlock()
+				})
+
+				It("stores a partial bosh state", func() {
+					state := readStateJson(tempDirectory)
+					Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+						"partial": "bosh-state",
+					}))
 				})
 			})
 		})

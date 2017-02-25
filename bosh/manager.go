@@ -106,11 +106,21 @@ func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, err
 }
 
 func (m Manager) Delete(state storage.State) error {
-	return m.executor.DeleteEnv(DeleteEnvInput{
+	err := m.executor.DeleteEnv(DeleteEnvInput{
 		Manifest:  state.BOSH.Manifest,
 		State:     state.BOSH.State,
 		Variables: state.BOSH.Variables,
 	})
+	switch err.(type) {
+	case DeleteEnvError:
+		deErr := err.(DeleteEnvError)
+		state.BOSH.State = deErr.BOSHState()
+		return NewManagerDeleteError(state, err)
+	case error:
+		return err
+	}
+
+	return nil
 }
 
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {

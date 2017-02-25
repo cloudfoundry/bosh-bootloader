@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -29,6 +30,8 @@ var _ = Describe("bbl destroy gcp", func() {
 		fakeBOSHCLIBackendServer *httptest.Server
 		fakeBOSHServer           *httptest.Server
 		fakeBOSH                 *fakeBOSHDirector
+		fastFail                 bool
+		fastFailMutex            sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -40,6 +43,17 @@ var _ = Describe("bbl destroy gcp", func() {
 		}))
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/delete-env/fastfail":
+				fastFailMutex.Lock()
+				defer fastFailMutex.Unlock()
+				if fastFail {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
+				}
+				return
+			}
 		}))
 
 		fakeTerraformBackendServer := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -164,6 +178,35 @@ director_ssl:
 
 			state = readStateJson(tempDirectory)
 			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+		})
+
+		Context("when bosh fails", func() {
+			BeforeEach(func() {
+				fastFailMutex.Lock()
+				fastFail = true
+				fastFailMutex.Unlock()
+
+				args := []string{
+					"--debug",
+					"--state-dir", tempDirectory,
+					"destroy", "--no-confirm",
+				}
+
+				executeCommand(args, 1)
+			})
+
+			AfterEach(func() {
+				fastFailMutex.Lock()
+				fastFail = false
+				fastFailMutex.Unlock()
+			})
+
+			It("stores a partial bosh state", func() {
+				state := readStateJson(tempDirectory)
+				Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+					"partial": "bosh-state",
+				}))
+			})
 		})
 	})
 
