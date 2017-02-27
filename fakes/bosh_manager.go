@@ -4,7 +4,8 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type BOSHManager struct {
 	CreateCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			State   storage.State
 			OpsFile []byte
 		}
@@ -25,6 +26,7 @@ type BOSHManager struct {
 }
 
 func (b *BOSHManager) Create(state storage.State, opsFile []byte) (storage.State, error) {
+	b.CreateCall.CallCount++
 	b.CreateCall.Receives.State = state
 	b.CreateCall.Receives.OpsFile = opsFile
 	state.BOSH = b.CreateCall.Returns.State.BOSH

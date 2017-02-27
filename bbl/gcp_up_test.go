@@ -433,6 +433,47 @@ var _ = Describe("bbl up gcp", func() {
 		})
 	})
 
+	Context("when the --no-director flag is provided", func() {
+		It("creates the infrastructure for a bosh director", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+
+		})
+
+		It("does not invoke the bosh cli or create a cloud config", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).NotTo(ContainSubstring("bosh create-env"))
+			Expect(session.Out.Contents()).NotTo(ContainSubstring("step: generating cloud config"))
+			Expect(session.Out.Contents()).NotTo(ContainSubstring("step: applying cloud config"))
+		})
+	})
+
 	Context("bbl re-entrance", func() {
 		It("saves the tf state when terraform apply fails", func() {
 			args := []string{

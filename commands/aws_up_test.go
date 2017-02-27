@@ -209,6 +209,60 @@ var _ = Describe("AWSUp", func() {
 			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
 		})
 
+		Context("when the no-director flag is provided", func() {
+			It("does not create a bosh or cloud config", func() {
+				err := command.Execute(commands.AWSUpConfig{
+					AccessKeyID:     "new-aws-access-key-id",
+					SecretAccessKey: "new-aws-secret-access-key",
+					Region:          "new-aws-region",
+					NoDirector:      true,
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
+				Expect(keyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+			})
+
+			Context("when a bbl environment exists with no bosh director", func() {
+				It("does not create a bosh director on subsequent runs", func() {
+					err := command.Execute(commands.AWSUpConfig{
+						AccessKeyID:     "new-aws-access-key-id",
+						SecretAccessKey: "new-aws-secret-access-key",
+						Region:          "new-aws-region",
+					}, storage.State{
+						NoDirector: true,
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+					Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
+					Expect(keyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				})
+			})
+
+			Context("when a bbl environment exists with a bosh director", func() {
+				It("fast fails before creating any infrastructure", func() {
+					err := command.Execute(commands.AWSUpConfig{
+						AccessKeyID:     "new-aws-access-key-id",
+						SecretAccessKey: "new-aws-secret-access-key",
+						Region:          "new-aws-region",
+						NoDirector:      true,
+					}, storage.State{
+						BOSH: storage.BOSH{
+							DirectorName: "some-director",
+						},
+					})
+
+					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
+				})
+			})
+		})
+
 		It("deploys bosh", func() {
 			incomingState := storage.State{
 				IAAS: "aws",

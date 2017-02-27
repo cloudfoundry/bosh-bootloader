@@ -38,6 +38,7 @@ type upConfig struct {
 	iaas                 string
 	name                 string
 	opsFile              string
+	noDirector           bool
 }
 
 func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter) Up {
@@ -84,6 +85,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			BOSHAZ:          config.awsBOSHAZ,
 			OpsFilePath:     config.opsFile,
 			Name:            config.name,
+			NoDirector:      config.noDirector,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
@@ -93,6 +95,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			Region:                config.gcpRegion,
 			OpsFilePath:           config.opsFile,
 			Name:                  config.name,
+			NoDirector:            config.noDirector,
 		}, state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)
@@ -124,6 +127,7 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 
 	upFlags.String(&config.name, "name", "")
 	upFlags.String(&config.opsFile, "ops-file", "")
+	upFlags.Bool(&config.noDirector, "", "no-director", false)
 
 	err := upFlags.Parse(args)
 	if err != nil {

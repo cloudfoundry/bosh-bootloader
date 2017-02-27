@@ -21,10 +21,18 @@ var _ = Describe("idempotent test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-ci-reentrant-env")
 	})
 
-	It("is able to bbl up idempotently", func() {
-		bbl.Up(actors.GCPIAAS, true)
+	It("is able to bbl up idempotently with a director", func() {
+		bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-ci-reentrant-env"})
 
-		bbl.Up(actors.GCPIAAS, false)
+		bbl.Up(actors.GCPIAAS, []string{})
+
+		bbl.Destroy()
+	})
+
+	It("is able to bbl up idempotently with no director", func() {
+		bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-ci-reentrant-env", "--no-director"})
+
+		bbl.Up(actors.GCPIAAS, []string{})
 
 		bbl.Destroy()
 	})

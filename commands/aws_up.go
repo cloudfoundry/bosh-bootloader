@@ -80,6 +80,7 @@ type AWSUpConfig struct {
 	OpsFilePath     string
 	BOSHAZ          string
 	Name            string
+	NoDirector      bool
 }
 
 func NewAWSUp(
@@ -128,6 +129,14 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		}
 	} else {
 		return u.awsMissingCredentials(config)
+	}
+
+	if config.NoDirector {
+		if !state.BOSH.IsEmpty() {
+			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
+		}
+
+		state.NoDirector = true
 	}
 
 	err := u.checkForFastFails(state, config)
@@ -194,49 +203,50 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	opsFile := []byte{}
-	if config.OpsFilePath != "" {
-		opsFile, err = ioutil.ReadFile(config.OpsFilePath)
+	if !state.NoDirector {
+		opsFile := []byte{}
+		if config.OpsFilePath != "" {
+			opsFile, err = ioutil.ReadFile(config.OpsFilePath)
+			if err != nil {
+				return err
+			}
+		}
+
+		state, err = u.boshManager.Create(state, opsFile)
+		switch err.(type) {
+		case bosh.ManagerCreateError:
+			bcErr := err.(bosh.ManagerCreateError)
+			if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+				errorList := helpers.Errors{}
+				errorList.Add(err)
+				errorList.Add(setErr)
+				return errorList
+			}
+			return err
+		case error:
+			return err
+		}
+
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
+
+		boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+			state.BOSH.DirectorPassword)
+
+		cloudConfigInput := u.boshCloudConfigurator.Configure(stack, availabilityZones)
+
+		err = u.cloudConfigManager.Update(cloudConfigInput, boshClient)
+		if err != nil {
+			return err
+		}
+
+		err = u.stateStore.Set(state)
 		if err != nil {
 			return err
 		}
 	}
-
-	state, err = u.boshManager.Create(state, opsFile)
-	switch err.(type) {
-	case bosh.ManagerCreateError:
-		bcErr := err.(bosh.ManagerCreateError)
-		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(setErr)
-			return errorList
-		}
-		return err
-	case error:
-		return err
-	}
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
-	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
-
-	cloudConfigInput := u.boshCloudConfigurator.Configure(stack, availabilityZones)
-
-	err = u.cloudConfigManager.Update(cloudConfigInput, boshClient)
-	if err != nil {
-		return err
-	}
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

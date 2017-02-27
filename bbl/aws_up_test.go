@@ -552,6 +552,53 @@ var _ = Describe("bbl up aws", func() {
 			Entry("generates a cloud config with concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 		)
 
+		Context("when the --no-director flag is provided", func() {
+			It("creates the infrastructure for a bosh director", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--no-director",
+					"--iaas", "aws",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+				}
+
+				session := executeCommand(args, 0)
+
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(MatchRegexp(`step: checking if keypair "keypair-bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z" exists`))
+				Expect(stdout).To(ContainSubstring("step: creating keypair"))
+				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+				Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
+				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
+			})
+
+			It("does not invoke the bosh cli or create a cloud config", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--no-director",
+					"--iaas", "aws",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+				}
+
+				session := executeCommand(args, 0)
+
+				Expect(session.Out.Contents()).NotTo(ContainSubstring("bosh create-env"))
+				Expect(session.Err.Contents()).NotTo(ContainSubstring("bosh director name: bosh-bbl-"))
+				Expect(session.Err.Contents()).NotTo(ContainSubstring("step: generating cloud config"))
+				Expect(session.Err.Contents()).NotTo(ContainSubstring("step: applying cloud config"))
+			})
+		})
+
 		Describe("reentrant", func() {
 			Context("when the keypair fails to create", func() {
 				It("saves the keypair name to the state", func() {

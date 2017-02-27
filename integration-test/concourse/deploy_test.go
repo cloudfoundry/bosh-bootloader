@@ -125,7 +125,7 @@ var _ = Describe("concourse deployment test", func() {
 			aws = actors.NewAWS(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
-			bbl.Up(actors.AWSIAAS, true)
+			bbl.Up(actors.AWSIAAS, []string{"--name", "bbl-concourse-env"})
 
 			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 			Expect(err).NotTo(HaveOccurred())
@@ -160,7 +160,7 @@ var _ = Describe("concourse deployment test", func() {
 			gcp = actors.NewGCP(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
-			bbl.Up(actors.GCPIAAS, true)
+			bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-concourse-env"})
 
 			bbl.CreateGCPLB("concourse")
 

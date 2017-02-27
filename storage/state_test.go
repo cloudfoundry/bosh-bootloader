@@ -104,6 +104,7 @@ var _ = Describe("Store", func() {
 			Expect(data).To(MatchJSON(`{
 				"version": 2,
 				"iaas": "aws",
+				"noDirector": false,
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",
 					"secretAccessKey": "some-aws-secret-access-key",

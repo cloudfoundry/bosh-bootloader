@@ -405,5 +405,27 @@ var _ = Describe("Up", func() {
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Name).To(Equal("a-better-name"))
 			})
 		})
+
+		Context("when the user provides the no-director", func() {
+			It("passes no-director as true in the up config", func() {
+				err := command.Execute([]string{
+					"--iaas", "aws",
+					"--no-director",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.NoDirector).To(Equal(true))
+			})
+
+			It("passes no-director as true in the up config", func() {
+				err := command.Execute([]string{
+					"--iaas", "gcp",
+					"--no-director",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.NoDirector).To(Equal(true))
+			})
+		})
 	})
 })

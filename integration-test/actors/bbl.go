@@ -38,16 +38,14 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 	}
 }
 
-func (b BBL) Up(iaas IAAS, useName bool) {
+func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"--debug",
 		"up",
 	}
 
-	if useName {
-		args = append(args, []string{"--name", b.envID}...)
-	}
+	args = append(args, additionalArgs...)
 
 	switch iaas {
 	case AWSIAAS:

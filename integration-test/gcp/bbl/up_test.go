@@ -42,7 +42,7 @@ var _ = Describe("up test", func() {
 		)
 
 		By("calling bbl up", func() {
-			bbl.Up(actors.GCPIAAS, true)
+			bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-ci-env"})
 
 			envID = state.EnvID()
 		})

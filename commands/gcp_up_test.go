@@ -235,6 +235,71 @@ var _ = Describe("GCPUp", func() {
 			Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
 		})
 
+		Context("when the no-director flag is provided", func() {
+			It("does not create a bosh or cloud config", func() {
+				gcpUpConfig := commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "us-west1",
+					NoDirector:            true,
+				}
+
+				err := gcpUp.Execute(gcpUpConfig, storage.State{})
+
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+				Expect(gcpCloudConfigGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(stateStore.SetCall.CallCount).To(Equal(3))
+				Expect(stateStore.SetCall.Receives.State.NoDirector).To(Equal(true))
+			})
+
+			Context("when a bbl environment exists with a bosh director", func() {
+				It("fast fails before creating any infrastructure", func() {
+					gcpUpConfig := commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "some-project-id",
+						Zone:                  "some-zone",
+						Region:                "us-west1",
+						NoDirector:            true,
+					}
+
+					err := gcpUp.Execute(gcpUpConfig, storage.State{
+						BOSH: storage.BOSH{
+							DirectorName: "some-director",
+						},
+					})
+
+					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
+				})
+			})
+
+			Context("when re-bbling up an environment with no director", func() {
+				It("is does not create a bosh director", func() {
+					gcpUpConfig := commands.GCPUpConfig{
+						ServiceAccountKeyPath: serviceAccountKeyPath,
+						ProjectID:             "some-project-id",
+						Zone:                  "some-zone",
+						Region:                "us-west1",
+					}
+
+					err := gcpUp.Execute(gcpUpConfig, storage.State{
+						NoDirector: true,
+					})
+
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
+					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+					Expect(gcpCloudConfigGenerator.GenerateCall.CallCount).To(Equal(0))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives.State.NoDirector).To(Equal(true))
+				})
+			})
+		})
+
 		Describe("bosh", func() {
 			It("creates a bosh", func() {
 				envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time:stamp"

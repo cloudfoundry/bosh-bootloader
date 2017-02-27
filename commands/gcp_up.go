@@ -45,6 +45,7 @@ type GCPUpConfig struct {
 	Region                string
 	OpsFilePath           string
 	Name                  string
+	NoDirector            bool
 }
 
 type gcpCloudConfigGenerator interface {
@@ -117,6 +118,14 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 		if err := u.fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
 			return err
+		}
+
+		if upConfig.NoDirector {
+			if !state.BOSH.IsEmpty() {
+				return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
+			}
+
+			state.NoDirector = true
 		}
 
 		state.GCP = gcpDetails
@@ -194,57 +203,59 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	state, err = u.boshManager.Create(state, opsFileContents)
-	switch err.(type) {
-	case bosh.ManagerCreateError:
-		bcErr := err.(bosh.ManagerCreateError)
-		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(setErr)
-			return errorList
+	if !state.NoDirector {
+		state, err = u.boshManager.Create(state, opsFileContents)
+		switch err.(type) {
+		case bosh.ManagerCreateError:
+			bcErr := err.(bosh.ManagerCreateError)
+			if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+				errorList := helpers.Errors{}
+				errorList.Add(err)
+				errorList.Add(setErr)
+				return errorList
+			}
+			return err
+		case error:
+			return err
 		}
-		return err
-	case error:
-		return err
+
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
+
+		boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+			state.BOSH.DirectorPassword)
+
+		u.logger.Step("generating cloud config")
+		cloudConfig, err := u.cloudConfigGenerator.Generate(gcpcloudconfig.CloudConfigInput{
+			AZs:                 zones,
+			Tags:                []string{terraformOutputs.InternalTag},
+			NetworkName:         terraformOutputs.NetworkName,
+			SubnetworkName:      terraformOutputs.SubnetworkName,
+			ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
+			CFBackends: gcpcloudconfig.CFBackends{
+				Router:    terraformOutputs.RouterBackendService,
+				SSHProxy:  terraformOutputs.SSHProxyTargetPool,
+				TCPRouter: terraformOutputs.TCPRouterTargetPool,
+				WS:        terraformOutputs.WSTargetPool,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		manifestYAML, err := marshal(cloudConfig)
+		if err != nil {
+			return err // not tested
+		}
+
+		u.logger.Step("applying cloud config")
+		if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
+			return err
+		}
+
 	}
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
-	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
-
-	u.logger.Step("generating cloud config")
-	cloudConfig, err := u.cloudConfigGenerator.Generate(gcpcloudconfig.CloudConfigInput{
-		AZs:                 zones,
-		Tags:                []string{terraformOutputs.InternalTag},
-		NetworkName:         terraformOutputs.NetworkName,
-		SubnetworkName:      terraformOutputs.SubnetworkName,
-		ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
-		CFBackends: gcpcloudconfig.CFBackends{
-			Router:    terraformOutputs.RouterBackendService,
-			SSHProxy:  terraformOutputs.SSHProxyTargetPool,
-			TCPRouter: terraformOutputs.TCPRouterTargetPool,
-			WS:        terraformOutputs.WSTargetPool,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	manifestYAML, err := marshal(cloudConfig)
-	if err != nil {
-		return err // not tested
-	}
-
-	u.logger.Step("applying cloud config")
-	if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
-		return err
-	}
-
 	return nil
 }
 
