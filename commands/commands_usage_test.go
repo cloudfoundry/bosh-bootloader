@@ -114,6 +114,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
 		Entry("ssh-key", newStateQuery("ssh key"), "Prints SSH private key"),
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
+		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
 		Entry("version", commands.Version{}, "Prints version"),
 	)
 })

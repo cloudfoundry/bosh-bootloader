@@ -36,22 +36,23 @@ var (
 func main() {
 	// Command Set
 	commandSet := application.CommandSet{
-		commands.HelpCommand:             nil,
-		commands.VersionCommand:          nil,
-		commands.UpCommand:               nil,
-		commands.DestroyCommand:          nil,
-		commands.DirectorAddressCommand:  nil,
-		commands.DirectorUsernameCommand: nil,
-		commands.DirectorPasswordCommand: nil,
-		commands.DirectorCACertCommand:   nil,
-		commands.BOSHCACertCommand:       nil,
-		commands.SSHKeyCommand:           nil,
-		commands.CreateLBsCommand:        nil,
-		commands.UpdateLBsCommand:        nil,
-		commands.DeleteLBsCommand:        nil,
-		commands.LBsCommand:              nil,
-		commands.EnvIDCommand:            nil,
-		commands.PrintEnvCommand:         nil,
+		commands.HelpCommand:               nil,
+		commands.VersionCommand:            nil,
+		commands.UpCommand:                 nil,
+		commands.DestroyCommand:            nil,
+		commands.DirectorAddressCommand:    nil,
+		commands.DirectorUsernameCommand:   nil,
+		commands.DirectorPasswordCommand:   nil,
+		commands.DirectorCACertCommand:     nil,
+		commands.BOSHCACertCommand:         nil,
+		commands.SSHKeyCommand:             nil,
+		commands.CreateLBsCommand:          nil,
+		commands.UpdateLBsCommand:          nil,
+		commands.DeleteLBsCommand:          nil,
+		commands.LBsCommand:                nil,
+		commands.EnvIDCommand:              nil,
+		commands.PrintEnvCommand:           nil,
+		commands.BOSHDeploymentVarsCommand: nil,
 	}
 
 	// Utilities
@@ -201,6 +202,8 @@ func main() {
 		return state.EnvID
 	})
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
+
+	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

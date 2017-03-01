@@ -62,6 +62,8 @@ const (
 	DirectorCACertCommandUsage = "Prints BOSH director CA certificate"
 
 	PrintEnvCommandUsage = "Prints required BOSH environment variables"
+
+	BOSHDeploymentVarsCommandUsage = "Prints required variables for BOSH deployment"
 )
 
 func (Up) Usage() string { return UpCommandUsage }
@@ -81,6 +83,8 @@ func (Version) Usage() string { return VersionCommandUsage }
 func (Usage) Usage() string { return UsageCommandUsage }
 
 func (PrintEnv) Usage() string { return PrintEnvCommandUsage }
+
+func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage }
 
 func (s StateQuery) Usage() string {
 	switch s.propertyName {

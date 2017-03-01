@@ -3,6 +3,7 @@ package bosh
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -121,6 +122,50 @@ func (m Manager) Delete(state storage.State) error {
 	}
 
 	return nil
+}
+
+func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
+	iaasInputs, err := m.generateIAASInputs(state)
+	if err != nil {
+		return "", err
+	}
+
+	vars := `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6`
+	switch iaasInputs.InterpolateInput.IAAS {
+	case "gcp":
+		tags := iaasInputs.InterpolateInput.Tags[0]
+		for _, tag := range iaasInputs.InterpolateInput.Tags[1:] {
+			tags = fmt.Sprintf("%s, %s", tags, tag)
+		}
+
+		vars = strings.Join([]string{vars,
+			fmt.Sprintf("director_name: %s", iaasInputs.InterpolateInput.DirectorName),
+			fmt.Sprintf("external_ip: %s", iaasInputs.InterpolateInput.ExternalIP),
+			fmt.Sprintf("zone: %s", iaasInputs.InterpolateInput.Zone),
+			fmt.Sprintf("network: %s", iaasInputs.InterpolateInput.Network),
+			fmt.Sprintf("subnetwork: %s", iaasInputs.InterpolateInput.Subnetwork),
+			fmt.Sprintf("tags: [%s]", tags),
+			fmt.Sprintf("project_id: %s", iaasInputs.InterpolateInput.ProjectID),
+			fmt.Sprintf("gcp_credentials_json: '%s'", iaasInputs.InterpolateInput.CredentialsJSON),
+		}, "\n")
+	case "aws":
+		vars = strings.Join([]string{vars,
+			fmt.Sprintf("director_name: %s", iaasInputs.InterpolateInput.DirectorName),
+			fmt.Sprintf("external_ip: %s", iaasInputs.InterpolateInput.ExternalIP),
+			fmt.Sprintf("az: %s", iaasInputs.InterpolateInput.AZ),
+			fmt.Sprintf("subnet_id: %s", iaasInputs.InterpolateInput.SubnetID),
+			fmt.Sprintf("access_key_id: %s", iaasInputs.InterpolateInput.AccessKeyID),
+			fmt.Sprintf("secret_access_key: %s", iaasInputs.InterpolateInput.SecretAccessKey),
+			fmt.Sprintf("default_key_name: %s", iaasInputs.InterpolateInput.DefaultKeyName),
+			fmt.Sprintf("default_security_groups: %s", iaasInputs.InterpolateInput.DefaultSecurityGroups),
+			fmt.Sprintf("region: %s", iaasInputs.InterpolateInput.Region),
+			fmt.Sprintf("private_key: |-\n  %s", strings.Replace(iaasInputs.InterpolateInput.PrivateKey, "\n", "\n  ", -1)),
+		}, "\n")
+	}
+
+	return strings.TrimSuffix(vars, "\n"), nil
 }
 
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {

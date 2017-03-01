@@ -444,4 +444,135 @@ var _ = Describe("Manager", func() {
 			})
 		})
 	})
+
+	Describe("GetDeploymentVars", func() {
+		var (
+			stackManager            *fakes.StackManager
+			boshExecutor            *fakes.BOSHExecutor
+			terraformOutputProvider *fakes.TerraformOutputProvider
+			boshManager             bosh.Manager
+			incomingGCPState        storage.State
+			incomingAWSState        storage.State
+		)
+
+		BeforeEach(func() {
+			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			stackManager = &fakes.StackManager{}
+			boshExecutor = &fakes.BOSHExecutor{}
+			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+
+			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+				NetworkName:     "some-network",
+				SubnetworkName:  "some-subnetwork",
+				BOSHTag:         "some-bosh-open-tag",
+				InternalTag:     "some-internal-tag",
+				ExternalIP:      "some-external-ip",
+				DirectorAddress: "some-director-address",
+			}
+
+			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+				Outputs: map[string]string{
+					"BOSHSubnetAZ":            "some-bosh-subnet-az",
+					"BOSHUserAccessKey":       "some-bosh-user-access-key",
+					"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+					"BOSHSecurityGroup":       "some-bosh-security-group",
+					"BOSHSubnet":              "some-bosh-subnet",
+					"BOSHEIP":                 "some-bosh-elastic-ip",
+					"BOSHURL":                 "some-bosh-url",
+				},
+			}
+
+			incomingGCPState = storage.State{
+				IAAS:  "gcp",
+				EnvID: "some-env-id",
+				KeyPair: storage.KeyPair{
+					PrivateKey: "some-private-key",
+				},
+				GCP: storage.GCP{
+					Zone:              "some-zone",
+					ProjectID:         "some-project-id",
+					ServiceAccountKey: "some-credential-json",
+				},
+				BOSH: storage.BOSH{
+					State: map[string]interface{}{
+						"some-key": "some-value",
+					},
+				},
+				TFState: "some-tf-state",
+				LB: storage.LB{
+					Type: "cf",
+				},
+			}
+
+			incomingAWSState = storage.State{
+				IAAS:  "aws",
+				EnvID: "some-env-id",
+				KeyPair: storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: "some-private-key",
+				},
+				AWS: storage.AWS{
+					Region: "some-region",
+				},
+				Stack: storage.Stack{
+					Name: "some-stack",
+				},
+				BOSH: storage.BOSH{
+					State: map[string]interface{}{
+						"some-key": "some-value",
+					},
+				},
+				LB: storage.LB{
+					Type: "cf",
+				},
+			}
+		})
+
+		Context("gcp", func() {
+			It("returns a correct yaml string of bosh deployment variables", func() {
+				vars, err := boshManager.GetDeploymentVars(incomingGCPState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-bosh-open-tag, some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`))
+			})
+		})
+
+		Context("aws", func() {
+			It("returns a correct yaml string of bosh deployment variables", func() {
+				vars, err := boshManager.GetDeploymentVars(incomingAWSState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-bosh-elastic-ip
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-bosh-user-access-key
+secret_access_key: some-bosh-user-secret-access-key
+default_key_name: some-keypair-name
+default_security_groups: [some-bosh-security-group]
+region: some-region
+private_key: |-
+  some-private-key`))
+			})
+		})
+
+		It("returns an error when iaas inputs cannot be generated fails", func() {
+			terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
+			_, err := boshManager.GetDeploymentVars(storage.State{
+				IAAS: "gcp",
+			})
+			Expect(err).To(MatchError("failed to output"))
+		})
+	})
 })
