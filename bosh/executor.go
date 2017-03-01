@@ -22,26 +22,11 @@ type Executor struct {
 }
 
 type InterpolateInput struct {
-	IAAS                  string
-	DirectorName          string
-	Zone                  string
-	Network               string
-	Subnetwork            string
-	Tags                  []string
-	ProjectID             string
-	ExternalIP            string
-	CredentialsJSON       string
-	PrivateKey            string
-	DefaultKeyName        string
-	DefaultSecurityGroups []string
-	SubnetID              string
-	AZ                    string
-	Region                string
-	SecretAccessKey       string
-	AccessKeyID           string
-	BOSHState             map[string]interface{}
-	Variables             string
-	OpsFile               []byte
+	IAAS           string
+	DeploymentVars string
+	BOSHState      map[string]interface{}
+	Variables      string
+	OpsFile        []byte
 }
 
 type InterpolateOutput struct {
@@ -90,6 +75,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
+	deploymentVarsPath := filepath.Join(tempDir, "deployment-vars.yml")
 	userOpsFilePath := filepath.Join(tempDir, "user-ops-file.yml")
 	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
@@ -101,6 +87,11 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		if err != nil {
 			return InterpolateOutput{}, err
 		}
+	}
+
+	err = e.writeFile(deploymentVarsPath, []byte(interpolateInput.DeploymentVars), os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, err
 	}
 
 	err = e.writeFile(userOpsFilePath, interpolateInput.OpsFile, os.ModePerm)
@@ -156,51 +147,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		"-o", externalIPNotRecommendedOpsFilePath,
 		"-o", userOpsFilePath,
 		"--vars-store", variablesPath,
-		"-v", "internal_cidr=10.0.0.0/24",
-		"-v", "internal_gw=10.0.0.1",
-		"-v", "internal_ip=10.0.0.6",
-		"-v", fmt.Sprintf("external_ip=%s", interpolateInput.ExternalIP),
-		"-v", fmt.Sprintf("director_name=%s", interpolateInput.DirectorName),
-	}
-
-	switch interpolateInput.IAAS {
-	case "gcp":
-		gcpCredentialsJSONPath := filepath.Join(tempDir, "gcp_credentials.json")
-		err = e.writeFile(gcpCredentialsJSONPath, []byte(interpolateInput.CredentialsJSON), os.ModePerm)
-		if err != nil {
-			return InterpolateOutput{}, err
-		}
-
-		tags := interpolateInput.Tags[0]
-		for _, tag := range interpolateInput.Tags[1:] {
-			tags = fmt.Sprintf("%s,%s", tags, tag)
-		}
-
-		args = append(args,
-			"-v", fmt.Sprintf("zone=%s", interpolateInput.Zone),
-			"-v", fmt.Sprintf("network=%s", interpolateInput.Network),
-			"-v", fmt.Sprintf("subnetwork=%s", interpolateInput.Subnetwork),
-			"-v", fmt.Sprintf("tags=[%s]", tags),
-			"-v", fmt.Sprintf("project_id=%s", interpolateInput.ProjectID),
-			"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsJSONPath),
-		)
-	case "aws":
-		privateKeyPath := filepath.Join(tempDir, "private_key")
-		err = e.writeFile(privateKeyPath, []byte(interpolateInput.PrivateKey), os.ModePerm)
-		if err != nil {
-			return InterpolateOutput{}, err
-		}
-
-		args = append(args,
-			"-v", fmt.Sprintf("access_key_id=%s", interpolateInput.AccessKeyID),
-			"-v", fmt.Sprintf("secret_access_key=%s", interpolateInput.SecretAccessKey),
-			"-v", fmt.Sprintf("region=%s", interpolateInput.Region),
-			"-v", fmt.Sprintf("az=%s", interpolateInput.AZ),
-			"-v", fmt.Sprintf("default_key_name=%s", interpolateInput.DefaultKeyName),
-			"-v", fmt.Sprintf("default_security_groups=%s", interpolateInput.DefaultSecurityGroups),
-			"-v", fmt.Sprintf("subnet_id=%s", interpolateInput.SubnetID),
-			"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
-		)
+		"--vars-file", deploymentVarsPath,
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

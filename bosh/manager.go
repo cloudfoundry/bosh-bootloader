@@ -29,6 +29,25 @@ type directorOutputs struct {
 	directorSSLPrivateKey  string
 }
 
+type deploymentVariables struct {
+	DirectorName          string
+	Zone                  string
+	Network               string
+	Subnetwork            string
+	Tags                  []string
+	ProjectID             string
+	ExternalIP            string
+	CredentialsJSON       string
+	PrivateKey            string
+	DefaultKeyName        string
+	DefaultSecurityGroups []string
+	SubnetID              string
+	AZ                    string
+	Region                string
+	SecretAccessKey       string
+	AccessKeyID           string
+}
+
 type iaasInputs struct {
 	InterpolateInput InterpolateInput
 	DirectorAddress  string
@@ -59,6 +78,12 @@ func NewManager(executor executor, terraformOutputProvider terraformOutputProvid
 func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, error) {
 	iaasInputs, err := m.generateIAASInputs(state)
 	if err != nil {
+		return storage.State{}, err
+	}
+
+	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
+	if err != nil {
+		//not tested
 		return storage.State{}, err
 	}
 
@@ -125,43 +150,44 @@ func (m Manager) Delete(state storage.State) error {
 }
 
 func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
-	iaasInputs, err := m.generateIAASInputs(state)
-	if err != nil {
-		return "", err
-	}
-
 	vars := `internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6`
-	switch iaasInputs.InterpolateInput.IAAS {
+
+	switch state.IAAS {
 	case "gcp":
-		tags := iaasInputs.InterpolateInput.Tags[0]
-		for _, tag := range iaasInputs.InterpolateInput.Tags[1:] {
-			tags = fmt.Sprintf("%s, %s", tags, tag)
+		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		if err != nil {
+			return "", err
 		}
 
 		vars = strings.Join([]string{vars,
-			fmt.Sprintf("director_name: %s", iaasInputs.InterpolateInput.DirectorName),
-			fmt.Sprintf("external_ip: %s", iaasInputs.InterpolateInput.ExternalIP),
-			fmt.Sprintf("zone: %s", iaasInputs.InterpolateInput.Zone),
-			fmt.Sprintf("network: %s", iaasInputs.InterpolateInput.Network),
-			fmt.Sprintf("subnetwork: %s", iaasInputs.InterpolateInput.Subnetwork),
-			fmt.Sprintf("tags: [%s]", tags),
-			fmt.Sprintf("project_id: %s", iaasInputs.InterpolateInput.ProjectID),
-			fmt.Sprintf("gcp_credentials_json: '%s'", iaasInputs.InterpolateInput.CredentialsJSON),
+			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+			fmt.Sprintf("external_ip: %s", terraformOutputs.ExternalIP),
+			fmt.Sprintf("zone: %s", state.GCP.Zone),
+			fmt.Sprintf("network: %s", terraformOutputs.NetworkName),
+			fmt.Sprintf("subnetwork: %s", terraformOutputs.SubnetworkName),
+			fmt.Sprintf("tags: [%s, %s]", terraformOutputs.BOSHTag, terraformOutputs.InternalTag),
+			fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
+			fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
 		}, "\n")
 	case "aws":
+		stack, err := m.stackManager.Describe(state.Stack.Name)
+		if err != nil {
+			return "", err
+		}
+
 		vars = strings.Join([]string{vars,
-			fmt.Sprintf("director_name: %s", iaasInputs.InterpolateInput.DirectorName),
-			fmt.Sprintf("external_ip: %s", iaasInputs.InterpolateInput.ExternalIP),
-			fmt.Sprintf("az: %s", iaasInputs.InterpolateInput.AZ),
-			fmt.Sprintf("subnet_id: %s", iaasInputs.InterpolateInput.SubnetID),
-			fmt.Sprintf("access_key_id: %s", iaasInputs.InterpolateInput.AccessKeyID),
-			fmt.Sprintf("secret_access_key: %s", iaasInputs.InterpolateInput.SecretAccessKey),
-			fmt.Sprintf("default_key_name: %s", iaasInputs.InterpolateInput.DefaultKeyName),
-			fmt.Sprintf("default_security_groups: %s", iaasInputs.InterpolateInput.DefaultSecurityGroups),
-			fmt.Sprintf("region: %s", iaasInputs.InterpolateInput.Region),
-			fmt.Sprintf("private_key: |-\n  %s", strings.Replace(iaasInputs.InterpolateInput.PrivateKey, "\n", "\n  ", -1)),
+			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+			fmt.Sprintf("external_ip: %s", stack.Outputs["BOSHEIP"]),
+			fmt.Sprintf("az: %s", stack.Outputs["BOSHSubnetAZ"]),
+			fmt.Sprintf("subnet_id: %s", stack.Outputs["BOSHSubnet"]),
+			fmt.Sprintf("access_key_id: %s", stack.Outputs["BOSHUserAccessKey"]),
+			fmt.Sprintf("secret_access_key: %s", stack.Outputs["BOSHUserSecretAccessKey"]),
+			fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
+			fmt.Sprintf("default_security_groups: [%s]", stack.Outputs["BOSHSecurityGroup"]),
+			fmt.Sprintf("region: %s", state.AWS.Region),
+			fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
 		}, "\n")
 	}
 
@@ -177,21 +203,9 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 		}
 		return iaasInputs{
 			InterpolateInput: InterpolateInput{
-				IAAS:         state.IAAS,
-				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-				Zone:         state.GCP.Zone,
-				Network:      terraformOutputs.NetworkName,
-				Subnetwork:   terraformOutputs.SubnetworkName,
-				Tags: []string{
-					terraformOutputs.BOSHTag,
-					terraformOutputs.InternalTag,
-				},
-				ProjectID:       state.GCP.ProjectID,
-				ExternalIP:      terraformOutputs.ExternalIP,
-				CredentialsJSON: state.GCP.ServiceAccountKey,
-				PrivateKey:      state.KeyPair.PrivateKey,
-				BOSHState:       state.BOSH.State,
-				Variables:       state.BOSH.Variables,
+				IAAS:      state.IAAS,
+				BOSHState: state.BOSH.State,
+				Variables: state.BOSH.Variables,
 			},
 			DirectorAddress: terraformOutputs.DirectorAddress,
 		}, nil
@@ -202,19 +216,9 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 		}
 		return iaasInputs{
 			InterpolateInput: InterpolateInput{
-				IAAS:                  state.IAAS,
-				DirectorName:          fmt.Sprintf("bosh-%s", state.EnvID),
-				AZ:                    stack.Outputs["BOSHSubnetAZ"],
-				AccessKeyID:           stack.Outputs["BOSHUserAccessKey"],
-				SecretAccessKey:       stack.Outputs["BOSHUserSecretAccessKey"],
-				Region:                state.AWS.Region,
-				DefaultKeyName:        state.KeyPair.Name,
-				DefaultSecurityGroups: []string{stack.Outputs["BOSHSecurityGroup"]},
-				SubnetID:              stack.Outputs["BOSHSubnet"],
-				ExternalIP:            stack.Outputs["BOSHEIP"],
-				PrivateKey:            state.KeyPair.PrivateKey,
-				BOSHState:             state.BOSH.State,
-				Variables:             state.BOSH.Variables,
+				IAAS:      state.IAAS,
+				BOSHState: state.BOSH.State,
+				Variables: state.BOSH.Variables,
 			},
 			DirectorAddress: stack.Outputs["BOSHURL"],
 		}, nil

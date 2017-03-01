@@ -31,8 +31,6 @@ var _ = Describe("Executor", func() {
 
 			stateJSONContents    string
 			variablesYMLContents string
-			gcpCredentialsPath   string
-			privateKeyPath       string
 			awsInterpolateInput  bosh.InterpolateInput
 			gcpInterpolateInput  bosh.InterpolateInput
 		)
@@ -53,17 +51,21 @@ var _ = Describe("Executor", func() {
 			variablesYMLContents = "key: value"
 
 			awsInterpolateInput = bosh.InterpolateInput{
-				IAAS:                  "aws",
-				DirectorName:          "some-director-name",
-				AccessKeyID:           "some-access-key-id",
-				SecretAccessKey:       "some-secret-access-key",
-				Region:                "some-region",
-				AZ:                    "some-az",
-				DefaultKeyName:        "some-key-name",
-				DefaultSecurityGroups: []string{"some-security-group"},
-				SubnetID:              "some-subnet",
-				PrivateKey:            "some-ssh-key",
-				ExternalIP:            "some-external-ip",
+				IAAS: "aws",
+				DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-bosh-elastic-ip
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-bosh-user-access-key
+secret_access_key: some-bosh-user-secret-access-key
+default_key_name: some-keypair-name
+default_security_groups: [some-bosh-security-group]
+region: some-region
+private_key: |-
+  some-private-key`,
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
@@ -72,28 +74,24 @@ var _ = Describe("Executor", func() {
 			}
 
 			gcpInterpolateInput = bosh.InterpolateInput{
-				IAAS:         "gcp",
-				DirectorName: "some-director-name",
-				Zone:         "some-zone",
-				Network:      "some-network",
-				Subnetwork:   "some-subnetwork",
-				Tags: []string{
-					"some-internal-tag",
-					"some-bosh-open-tag",
-				},
-				ProjectID:       "some-project-id",
-				ExternalIP:      "some-external-ip",
-				CredentialsJSON: `{"key":"value"}`,
-				PrivateKey:      "some-ssh-key",
+				IAAS: "gcp",
+				DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-bosh-open-tag, some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`,
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
 				Variables: variablesYMLContents,
 				OpsFile:   []byte("some-ops-file"),
 			}
-
-			gcpCredentialsPath = fmt.Sprintf("%s/gcp_credentials.json", tempDir)
-			privateKeyPath = fmt.Sprintf("%s/private_key", tempDir)
 
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
 		})
@@ -102,29 +100,7 @@ var _ = Describe("Executor", func() {
 			tempDirCallCount = 0
 		})
 
-		Context("when iaas is gcp", func() {
-			It("writes gcp credentials to a file in the temp dir", func() {
-				_, err := executor.Interpolate(gcpInterpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				credentialsContents, err := ioutil.ReadFile(gcpCredentialsPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(credentialsContents)).To(Equal(`{"key":"value"}`))
-			})
-		})
-
-		Context("when iaas is aws", func() {
-			It("writes private key to a file in the temp dir", func() {
-				_, err := executor.Interpolate(awsInterpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				privateKeyContents, err := ioutil.ReadFile(privateKeyPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(privateKeyContents)).To(Equal("some-ssh-key"))
-			})
-		})
-
-		DescribeTable("generates a bosh manifest", func(interpolateInputFunc func() bosh.InterpolateInput, expectedIAASArgsFunc func() []string) {
+		DescribeTable("generates a bosh manifest", func(interpolateInputFunc func() bosh.InterpolateInput) {
 			cmd.RunCall.Stub = func(stdout io.Writer) {
 				stdout.Write([]byte("some-manifest"))
 			}
@@ -143,12 +119,7 @@ var _ = Describe("Executor", func() {
 				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
 				"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
 				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-				"-v", "internal_cidr=10.0.0.0/24",
-				"-v", "internal_gw=10.0.0.1",
-				"-v", "internal_ip=10.0.0.6",
-				"-v", "external_ip=some-external-ip",
-				"-v", "director_name=some-director-name",
-			}, expectedIAASArgsFunc()...)
+				"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
 
 			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
 			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
@@ -164,29 +135,9 @@ var _ = Describe("Executor", func() {
 		},
 			Entry("on aws", func() bosh.InterpolateInput {
 				return awsInterpolateInput
-			}, func() []string {
-				return []string{
-					"-v", "access_key_id=some-access-key-id",
-					"-v", "secret_access_key=some-secret-access-key",
-					"-v", "region=some-region",
-					"-v", "az=some-az",
-					"-v", "default_key_name=some-key-name",
-					"-v", "default_security_groups=[some-security-group]",
-					"-v", "subnet_id=some-subnet",
-					"--var-file", fmt.Sprintf("private_key=%s", privateKeyPath),
-				}
 			}),
 			Entry("on gcp", func() bosh.InterpolateInput {
 				return gcpInterpolateInput
-			}, func() []string {
-				return []string{
-					"-v", "zone=some-zone",
-					"-v", "network=some-network",
-					"-v", "subnetwork=some-subnetwork",
-					"-v", `tags=[some-internal-tag,some-bosh-open-tag]`,
-					"-v", `project_id=some-project-id`,
-					"--var-file", fmt.Sprintf("gcp_credentials_json=%s", gcpCredentialsPath),
-				}
 			}),
 		)
 
@@ -277,10 +228,10 @@ var _ = Describe("Executor", func() {
 				Expect(err).To(MatchError("failed to write external ip not recommended Ops file"))
 			})
 
-			It("fails when trying to write the private key", func() {
+			It("fails when trying to write the deployment vars", func() {
 				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/private_key", tempDir) {
-						return errors.New("failed to write private key")
+					if path == fmt.Sprintf("%s/deployment-vars.yml", tempDir) {
+						return errors.New("failed to write deployment vars")
 					}
 					return nil
 				}
@@ -289,22 +240,7 @@ var _ = Describe("Executor", func() {
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
-				Expect(err).To(MatchError("failed to write private key"))
-			})
-
-			It("fails when trying to write GCP credentials", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/gcp_credentials.json", tempDir) {
-						return errors.New("failed to write GCP credentials")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write GCP credentials"))
+				Expect(err).To(MatchError("failed to write deployment vars"))
 			})
 
 			It("fails when trying to run command", func() {

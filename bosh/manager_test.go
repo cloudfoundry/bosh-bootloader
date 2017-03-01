@@ -157,19 +157,18 @@ var _ = Describe("Manager", func() {
 			Entry("for gcp", func() storage.State {
 				return incomingGCPState
 			}, bosh.InterpolateInput{
-				IAAS:         "gcp",
-				DirectorName: "bosh-some-env-id",
-				Zone:         "some-zone",
-				Network:      "some-network",
-				Subnetwork:   "some-subnetwork",
-				Tags: []string{
-					"some-bosh-open-tag",
-					"some-internal-tag",
-				},
-				ProjectID:       "some-project-id",
-				ExternalIP:      "some-external-ip",
-				CredentialsJSON: "some-credential-json",
-				PrivateKey:      "some-private-key",
+				IAAS: "gcp",
+				DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-bosh-open-tag, some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`,
 				BOSHState: map[string]interface{}{
 					"some-key": "some-value",
 				},
@@ -179,17 +178,21 @@ var _ = Describe("Manager", func() {
 			Entry("for aws", func() storage.State {
 				return incomingAWSState
 			}, bosh.InterpolateInput{
-				IAAS:                  "aws",
-				DirectorName:          "bosh-some-env-id",
-				AZ:                    "some-bosh-subnet-az",
-				AccessKeyID:           "some-bosh-user-access-key",
-				SecretAccessKey:       "some-bosh-user-secret-access-key",
-				Region:                "some-region",
-				DefaultKeyName:        "some-keypair-name",
-				DefaultSecurityGroups: []string{"some-bosh-security-group"},
-				SubnetID:              "some-bosh-subnet",
-				ExternalIP:            "some-bosh-elastic-ip",
-				PrivateKey:            "some-private-key",
+				IAAS: "aws",
+				DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-bosh-elastic-ip
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-bosh-user-access-key
+secret_access_key: some-bosh-user-secret-access-key
+default_key_name: some-keypair-name
+default_security_groups: [some-bosh-security-group]
+region: some-region
+private_key: |-
+  some-private-key`,
 				BOSHState: map[string]interface{}{
 					"some-key": "some-value",
 				},
@@ -567,12 +570,22 @@ private_key: |-
 			})
 		})
 
-		It("returns an error when iaas inputs cannot be generated fails", func() {
-			terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
-			_, err := boshManager.GetDeploymentVars(storage.State{
-				IAAS: "gcp",
+		Context("failure cases", func() {
+			It("returns an error when the terraform output provider fails", func() {
+				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
+				_, err := boshManager.GetDeploymentVars(storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).To(MatchError("failed to output"))
 			})
-			Expect(err).To(MatchError("failed to output"))
+
+			It("returns an error when the stack manager fails", func() {
+				stackManager.DescribeCall.Returns.Error = errors.New("failed to describe")
+				_, err := boshManager.GetDeploymentVars(storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).To(MatchError("failed to describe"))
+			})
 		})
 	})
 })

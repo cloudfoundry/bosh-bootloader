@@ -132,10 +132,19 @@ func checkFastFail(command string) bool {
 
 func extractDirectorName(args []string) string {
 	for _, arg := range args {
-		if strings.HasPrefix(arg, "director_name=") {
-			return strings.TrimLeft(arg, "director_name=")
+		if strings.Contains(arg, "deployment-vars") {
+			contents, err := ioutil.ReadFile(arg)
+			if err != nil {
+				panic(err)
+			}
+
+			variables := strings.Split(string(contents), "\n")
+			for _, variable := range variables {
+				if strings.HasPrefix(variable, "director_name") {
+					return strings.TrimLeft(variable, "director_name: ")
+				}
+			}
 		}
 	}
-
 	return ""
 }
