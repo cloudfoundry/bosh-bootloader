@@ -21,7 +21,7 @@ support bootstrapping a CloudFoundry installation on AWS.
 The following should be installed on your local machine
 - Golang >= 1.7 (install with `brew install go`)
 - bosh-init ([installation instructions](http://bosh.io/docs/install-bosh-init.html))
-- terraform ([download here](https://www.terraform.io/downloads.html))
+- terraform >= 0.8.7 ([download here](https://www.terraform.io/downloads.html))
 
 ### Install bosh-bootloader
 
