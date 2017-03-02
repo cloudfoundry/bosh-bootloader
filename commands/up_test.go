@@ -308,7 +308,7 @@ var _ = Describe("Up", func() {
 			Context("when iaas is not provided", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("--iaas [gcp, aws] must be provided"))
+					Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
 				})
 			})
 

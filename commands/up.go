@@ -59,7 +59,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 
 	switch {
 	case state.IAAS == "" && config.iaas == "":
-		return errors.New("--iaas [gcp, aws] must be provided")
+		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
 	case state.IAAS == "" && config.iaas != "":
 		desiredIAAS = config.iaas
 	case state.IAAS != "" && config.iaas == "":
