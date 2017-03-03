@@ -20,18 +20,19 @@ import (
 
 var _ = Describe("bbl destroy gcp", func() {
 	var (
-		state                    storage.State
-		tempDirectory            string
-		statePath                string
-		pathToFakeTerraform      string
-		pathToTerraform          string
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		fakeBOSHCLIBackendServer *httptest.Server
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
-		fastFail                 bool
-		fastFailMutex            sync.Mutex
+		state                      storage.State
+		tempDirectory              string
+		statePath                  string
+		pathToFakeTerraform        string
+		pathToTerraform            string
+		pathToFakeBOSH             string
+		pathToBOSH                 string
+		fakeBOSHCLIBackendServer   *httptest.Server
+		fakeTerraformBackendServer *httptest.Server
+		fakeBOSHServer             *httptest.Server
+		fakeBOSH                   *fakeBOSHDirector
+		fastFail                   bool
+		fastFailMutex              sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -56,7 +57,7 @@ var _ = Describe("bbl destroy gcp", func() {
 			}
 		}))
 
-		fakeTerraformBackendServer := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/output/external_ip":
 				responseWriter.Write([]byte("127.0.0.1"))
@@ -70,6 +71,8 @@ var _ = Describe("bbl destroy gcp", func() {
 				responseWriter.Write([]byte("some-tag"))
 			case "/output/bosh_open_tag_name":
 				responseWriter.Write([]byte("some-bosh-open-tag"))
+			case "/version":
+				responseWriter.Write([]byte("0.8.6"))
 			}
 		}))
 
@@ -207,6 +210,39 @@ director_ssl:
 					"partial": "bosh-state",
 				}))
 			})
+		})
+	})
+
+	Context("when the terraform version is <0.8.5", func() {
+		BeforeEach(func() {
+			fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("0.8.4"))
+				}
+			}))
+			var err error
+			pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+			err = os.Rename(pathToFakeTerraform, pathToTerraform)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
+
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
 		})
 	})
 

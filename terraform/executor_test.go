@@ -3,6 +3,7 @@ package terraform_test
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -428,6 +429,45 @@ var _ = Describe("Executor", func() {
 
 				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to read tf state file"))
+			})
+
+		})
+	})
+
+	Describe("Version", func() {
+		BeforeEach(func() {
+			cmd.RunCall.Stub = func(stdout io.Writer) {
+				stdout.Write([]byte("some-text v0.8.9 some-other-text"))
+			}
+		})
+
+		It("passes the correct args and dir to run command", func() {
+			_, err := executor.Version()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"version"}))
+			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+		})
+
+		It("returns the correctly trimmed version", func() {
+			version, err := executor.Version()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal("0.8.9"))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the run command fails", func() {
+				cmd.RunCall.Returns.Error = errors.New("run cmd failed")
+				_, err := executor.Version()
+				Expect(err).To(MatchError("run cmd failed"))
+			})
+
+			It("returns an error when the version cannot be parsed", func() {
+				cmd.RunCall.Stub = func(stdout io.Writer) {
+					stdout.Write([]byte(""))
+				}
+				_, err := executor.Version()
+				Expect(err).To(MatchError("Terraform version could not be parsed"))
 			})
 
 		})

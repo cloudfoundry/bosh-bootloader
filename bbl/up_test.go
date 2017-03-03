@@ -44,6 +44,8 @@ var _ = Describe("bbl up", func() {
 				responseWriter.Write([]byte("127.0.0.1"))
 			case "/output/director_address":
 				responseWriter.Write([]byte(fakeBOSHServer.URL))
+			case "/version":
+				responseWriter.Write([]byte("0.8.6"))
 			}
 		}))
 

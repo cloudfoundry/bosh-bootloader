@@ -56,6 +56,7 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformExecutor = &fakes.TerraformExecutor{}
+		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
 		terraformOutputProvider = &fakes.TerraformOutputProvider{}
@@ -163,6 +164,14 @@ var _ = Describe("Destroy", func() {
 		Context("failure cases", func() {
 			BeforeEach(func() {
 				stdin.Write([]byte("yes\n"))
+			})
+
+			It("fast fails if the terraform installed is less than v0.8.5", func() {
+				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+				err := destroy.Execute([]string{}, storage.State{})
+
+				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
 			})
 
 			Context("when an invalid command line flag is supplied", func() {

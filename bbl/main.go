@@ -203,7 +203,7 @@ func main() {
 	})
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
 
-	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)
+	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, terraformExecutor)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

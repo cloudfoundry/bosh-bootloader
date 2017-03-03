@@ -34,6 +34,10 @@ func NewGCPDeleteLBs(terraformOutputProvider terraformOutputProvider, cloudConfi
 }
 
 func (g GCPDeleteLBs) Execute(state storage.State) error {
+	err := fastFailTerraformVersion(g.terraformExecutor)
+	if err != nil {
+		return err
+	}
 	azs := g.zones.Get(state.GCP.Region)
 
 	terraformOutputs, err := g.terraformOutputProvider.Get(state.TFState, state.LB.Type)

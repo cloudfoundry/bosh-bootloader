@@ -58,6 +58,7 @@ var _ = Describe("GCPUp", func() {
 		gcpClientProvider.ClientCall.Returns.Client = gcpClient
 		gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{}
 		terraformExecutor = &fakes.TerraformExecutor{}
+		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		zones = &fakes.Zones{}
 		envIDManager = &fakes.EnvIDManager{}
 		terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
@@ -737,6 +738,71 @@ var _ = Describe("GCPUp", func() {
 			}, storage.State{})
 
 			Expect(err).To(MatchError("environment already exists"))
+		})
+
+		It("fast fails if the terraform installed is less than v0.8.5", func() {
+			terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+
+			Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+		})
+
+		It("fast fails if the terraform executor fails to get the version", func() {
+			terraformExecutor.VersionCall.Returns.Error = errors.New("cannot get version")
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+
+			Expect(err).To(MatchError("cannot get version"))
+		})
+
+		It("fast fails when the major version cannot be converted to an int", func() {
+			terraformExecutor.VersionCall.Returns.Version = "lol.5.2"
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+
+			Expect(err).To(MatchError("strconv.ParseInt: parsing \"lol\": invalid syntax"))
+		})
+
+		It("fast fails when the minor version cannot be converted to an int", func() {
+			terraformExecutor.VersionCall.Returns.Version = "0.lol.2"
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+
+			Expect(err).To(MatchError("strconv.ParseInt: parsing \"lol\": invalid syntax"))
+		})
+
+		It("fast fails when the patch version cannot be converted to an int", func() {
+			terraformExecutor.VersionCall.Returns.Version = "0.5.lol"
+
+			err := gcpUp.Execute(commands.GCPUpConfig{
+				ServiceAccountKeyPath: serviceAccountKeyPath,
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "us-west1",
+			}, storage.State{})
+
+			Expect(err).To(MatchError("strconv.ParseInt: parsing \"lol\": invalid syntax"))
 		})
 
 		It("returns an error if applier fails with non terraform apply error", func() {

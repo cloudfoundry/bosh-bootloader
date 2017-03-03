@@ -620,6 +620,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 	BeforeEach(func() {
 		terraformExecutor = &fakes.TerraformExecutor{}
+		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		cloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
 		terraformOutputProvider = &fakes.TerraformOutputProvider{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
@@ -992,6 +993,18 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("fast fails if the terraform installed is less than v0.8.5", func() {
+				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+			})
+
 			It("returns an error if the command fails to save the certificate in the state", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
 				err := command.Execute(commands.GCPCreateLBsConfig{

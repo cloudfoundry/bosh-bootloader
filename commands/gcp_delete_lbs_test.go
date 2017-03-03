@@ -43,6 +43,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 			boshClientProvider = &fakes.BOSHClientProvider{}
 			boshClientProvider.ClientCall.Returns.Client = boshClient
 			terraformExecutor = &fakes.TerraformExecutor{}
+			terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 
 			command = commands.NewGCPDeleteLBs(terraformOutputProvider, cloudConfigGenerator, zones, logger, boshClientProvider, stateStore, terraformExecutor)
 
@@ -188,6 +189,18 @@ var _ = Describe("GCPDeleteLBs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("fast fails if the terraform installed is less than v0.8.5", func() {
+				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+				err := command.Execute(storage.State{
+					IAAS: "gcp",
+					Stack: storage.Stack{
+						LBType: "concourse",
+					},
+				})
+
+				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+			})
 			It("returns an error if applier fails with non terraform apply error", func() {
 				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
 				err := command.Execute(storage.State{

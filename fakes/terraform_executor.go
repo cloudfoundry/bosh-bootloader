@@ -36,6 +36,13 @@ type TerraformExecutor struct {
 			Error   error
 		}
 	}
+	VersionCall struct {
+		CallCount int
+		Returns   struct {
+			Version string
+			Error   error
+		}
+	}
 }
 
 func (t *TerraformExecutor) Apply(credentials, envID, projectID, zone, region, cert, key, domain, template, tfState string) (string, error) {
@@ -63,4 +70,9 @@ func (t *TerraformExecutor) Destroy(credentials, envID, projectID, zone, region,
 	t.DestroyCall.Receives.Template = template
 	t.DestroyCall.Receives.TFState = tfState
 	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error
+}
+
+func (t *TerraformExecutor) Version() (string, error) {
+	t.VersionCall.CallCount++
+	return t.VersionCall.Returns.Version, t.VersionCall.Returns.Error
 }

@@ -47,10 +47,15 @@ func NewGCPCreateLBs(terraformExecutor terraformExecutor, terraformOutputProvide
 }
 
 func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) error {
+	err := fastFailTerraformVersion(c.terraformExecutor)
+	if err != nil {
+		return err
+	}
+
 	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 		state.BOSH.DirectorPassword)
 
-	if err := c.checkFastFails(config, state, boshClient); err != nil {
+	if err = c.checkFastFails(config, state, boshClient); err != nil {
 		return err
 	}
 
@@ -60,7 +65,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 
 	c.logger.Step("generating terraform template")
-	var err error
 
 	var lbTemplate string
 	var cert, key []byte

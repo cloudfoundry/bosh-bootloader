@@ -30,6 +30,21 @@ func main() {
 		log.Fatal("failed to terraform")
 	}
 
+	if os.Args[1] == "version" {
+		resp, err := http.Get(fmt.Sprintf("%s/version", backendURL))
+		if err != nil {
+			panic(err)
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("some-text v%s some-more-text", string(body))
+	}
+
 	if os.Args[1] == "output" {
 		resp, err := http.Get(fmt.Sprintf("%s/output/%s", backendURL, os.Args[2]))
 		if err != nil {

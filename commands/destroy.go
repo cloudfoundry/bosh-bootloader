@@ -100,6 +100,11 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 }
 
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
+	err := fastFailTerraformVersion(d.terraformExecutor)
+	if err != nil {
+		return err
+	}
+
 	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
