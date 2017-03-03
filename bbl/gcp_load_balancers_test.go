@@ -250,7 +250,6 @@ var _ = Describe("load balancers", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
-
 					})
 
 					It("fast fails with a helpful error message", func() {
@@ -265,6 +264,10 @@ var _ = Describe("load balancers", func() {
 						session := executeCommand(args, 1)
 
 						Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
+					})
+
+					AfterEach(func() {
+						os.Setenv("PATH", originalPath)
 					})
 				})
 

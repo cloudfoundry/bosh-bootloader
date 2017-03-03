@@ -186,6 +186,10 @@ var _ = Describe("bbl up gcp", func() {
 
 			Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
 		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
 	})
 
 	Context("when a bbl enviornment already exists", func() {

@@ -776,7 +776,7 @@ var _ = Describe("GCPUp", func() {
 				Region:                "us-west1",
 			}, storage.State{})
 
-			Expect(err).To(MatchError("strconv.ParseInt: parsing \"lol\": invalid syntax"))
+			Expect(err).To(MatchError(`strconv.Atoi: parsing "lol": invalid syntax`))
 		})
 
 		It("fast fails when the minor version cannot be converted to an int", func() {
@@ -789,7 +789,7 @@ var _ = Describe("GCPUp", func() {
 				Region:                "us-west1",
 			}, storage.State{})
 
-			Expect(err).To(MatchError("strconv.ParseInt: parsing \"lol\": invalid syntax"))
+			Expect(err).To(MatchError(`strconv.Atoi: parsing "lol": invalid syntax`))
 		})
 
 		It("fast fails when the patch version cannot be converted to an int", func() {
@@ -802,7 +802,7 @@ var _ = Describe("GCPUp", func() {
 				Region:                "us-west1",
 			}, storage.State{})
 
-			Expect(err).To(MatchError("strconv.ParseInt: parsing \"lol\": invalid syntax"))
+			Expect(err).To(MatchError(`strconv.Atoi: parsing "lol": invalid syntax`))
 		})
 
 		It("returns an error if applier fails with non terraform apply error", func() {
