@@ -83,7 +83,7 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-bosh-open-tag, some-internal-tag]
+tags: [some-bosh-tag, some-internal-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`,
 				BOSHState: map[string]interface{}{

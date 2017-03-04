@@ -100,10 +100,13 @@ var _ = Describe("bbl up aws", func() {
 		lbCertPath               string
 		lbChainPath              string
 		lbKeyPath                string
+
 		fastFail                 bool
 		fastFailMutex            sync.Mutex
+		callRealInterpolate      bool
+		callRealInterpolateMutex sync.Mutex
 
-		interpolateArgs string
+		interpolateArgs []string
 	)
 
 	BeforeEach(func() {
@@ -114,10 +117,12 @@ var _ = Describe("bbl up aws", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/path":
+				responseWriter.Write([]byte(originalPath))
 			case "/interpolate/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
-				interpolateArgs = string(body)
+				interpolateArgs = append(interpolateArgs, string(body))
 			case "/create-env/fastfail":
 				fastFailMutex.Lock()
 				defer fastFailMutex.Unlock()
@@ -127,6 +132,14 @@ var _ = Describe("bbl up aws", func() {
 					responseWriter.WriteHeader(http.StatusOK)
 				}
 				return
+			case "/call-real-interpolate":
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				if callRealInterpolate {
+					responseWriter.Write([]byte("true"))
+				} else {
+					responseWriter.Write([]byte("false"))
+				}
 			default:
 				responseWriter.WriteHeader(http.StatusOK)
 				return
@@ -247,7 +260,7 @@ var _ = Describe("bbl up aws", func() {
 
 				executeCommand(args, 0)
 
-				Expect(interpolateArgs).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+				Expect(interpolateArgs[0]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 			})
 		})
 
@@ -523,6 +536,12 @@ var _ = Describe("bbl up aws", func() {
 		})
 
 		DescribeTable("cloud config", func(lbType, fixtureLocation string) {
+			By("allowing the call of real interpolate in fake bosh", func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = true
+			})
+
 			contents, err := ioutil.ReadFile(fixtureLocation)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -545,6 +564,12 @@ var _ = Describe("bbl up aws", func() {
 
 				executeCommand(args, 0)
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+			})
+
+			By("disabling the call of real interpolate in fake bosh", func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = false
 			})
 		},
 			Entry("generates a cloud config with no lb type", "", "fixtures/cloud-config-no-elb.yml"),

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
@@ -40,6 +41,9 @@ var _ = Describe("load balancers", func() {
 		otherLBCertPath          string
 		otherLBChainPath         string
 		otherLBKeyPath           string
+
+		callRealInterpolate      bool
+		callRealInterpolateMutex sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -49,6 +53,18 @@ var _ = Describe("load balancers", func() {
 		}))
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/path":
+				responseWriter.Write([]byte(originalPath))
+			case "/call-real-interpolate":
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				if callRealInterpolate {
+					responseWriter.Write([]byte("true"))
+				} else {
+					responseWriter.Write([]byte("false"))
+				}
+			}
 		}))
 
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
@@ -94,6 +110,18 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("create-lbs", func() {
+		BeforeEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
+
+		AfterEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
+
 		DescribeTable("creates lbs with the specified cert, key, and chain attached",
 			func(lbType, fixtureLocation string) {
 				contents, err := ioutil.ReadFile(fixtureLocation)
@@ -409,6 +437,18 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("delete-lbs", func() {
+		BeforeEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
+
+		AfterEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
+
 		It("deletes the load balancer", func() {
 			cloudformationNoELB, err := ioutil.ReadFile("fixtures/cloudformation-no-elb.json")
 			Expect(err).NotTo(HaveOccurred())

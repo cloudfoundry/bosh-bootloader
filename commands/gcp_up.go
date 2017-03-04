@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
@@ -26,17 +25,15 @@ const (
 )
 
 type GCPUp struct {
-	stateStore              stateStore
-	keyPairUpdater          keyPairUpdater
-	gcpProvider             gcpProvider
-	boshManager             boshManager
-	logger                  logger
-	boshClientProvider      boshClientProvider
-	cloudConfigGenerator    gcpCloudConfigGenerator
-	terraformOutputProvider terraformOutputProvider
-	terraformExecutor       terraformExecutor
-	zones                   zones
-	envIDManager            envIDManager
+	stateStore         stateStore
+	keyPairUpdater     keyPairUpdater
+	gcpProvider        gcpProvider
+	boshManager        boshManager
+	cloudConfigManager cloudConfigManager
+	logger             logger
+	terraformExecutor  terraformExecutor
+	zones              zones
+	envIDManager       envIDManager
 }
 
 type GCPUpConfig struct {
@@ -47,10 +44,6 @@ type GCPUpConfig struct {
 	OpsFilePath           string
 	Name                  string
 	NoDirector            bool
-}
-
-type gcpCloudConfigGenerator interface {
-	Generate(gcpcloudconfig.CloudConfigInput) (gcpcloudconfig.CloudConfig, error)
 }
 
 type gcpKeyPairCreator interface {
@@ -71,10 +64,6 @@ type terraformExecutor interface {
 	Version() (string, error)
 }
 
-type terraformOutputProvider interface {
-	Get(tfState, lbType string) (terraform.Outputs, error)
-}
-
 type zones interface {
 	Get(region string) []string
 }
@@ -90,20 +79,17 @@ type envIDManager interface {
 }
 
 func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor,
-	boshManager boshManager, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
-	terraformOutputProvider terraformOutputProvider, zones zones, envIDManager envIDManager) GCPUp {
+	boshManager boshManager, logger logger, zones zones, envIDManager envIDManager, cloudConfigManager cloudConfigManager) GCPUp {
 	return GCPUp{
-		stateStore:              stateStore,
-		keyPairUpdater:          keyPairUpdater,
-		gcpProvider:             gcpProvider,
-		terraformExecutor:       terraformExecutor,
-		boshManager:             boshManager,
-		logger:                  logger,
-		boshClientProvider:      boshClientProvider,
-		cloudConfigGenerator:    cloudConfigGenerator,
-		terraformOutputProvider: terraformOutputProvider,
-		zones:        zones,
-		envIDManager: envIDManager,
+		stateStore:         stateStore,
+		keyPairUpdater:     keyPairUpdater,
+		gcpProvider:        gcpProvider,
+		terraformExecutor:  terraformExecutor,
+		boshManager:        boshManager,
+		cloudConfigManager: cloudConfigManager,
+		logger:             logger,
+		zones:              zones,
+		envIDManager:       envIDManager,
 	}
 }
 
@@ -206,11 +192,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	terraformOutputs, err := u.terraformOutputProvider.Get(state.TFState, state.LB.Type)
-	if err != nil {
-		return err
-	}
-
 	if !state.NoDirector {
 		state, err = u.boshManager.Create(state, opsFileContents)
 		switch err.(type) {
@@ -232,37 +213,10 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 			return err
 		}
 
-		boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-			state.BOSH.DirectorPassword)
-
-		u.logger.Step("generating cloud config")
-		cloudConfig, err := u.cloudConfigGenerator.Generate(gcpcloudconfig.CloudConfigInput{
-			AZs:                 zones,
-			Tags:                []string{terraformOutputs.InternalTag},
-			NetworkName:         terraformOutputs.NetworkName,
-			SubnetworkName:      terraformOutputs.SubnetworkName,
-			ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
-			CFBackends: gcpcloudconfig.CFBackends{
-				Router:    terraformOutputs.RouterBackendService,
-				SSHProxy:  terraformOutputs.SSHProxyTargetPool,
-				TCPRouter: terraformOutputs.TCPRouterTargetPool,
-				WS:        terraformOutputs.WSTargetPool,
-			},
-		})
+		err := u.cloudConfigManager.Update(state)
 		if err != nil {
 			return err
 		}
-
-		manifestYAML, err := marshal(cloudConfig)
-		if err != nil {
-			return err // not tested
-		}
-
-		u.logger.Step("applying cloud config")
-		if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
-			return err
-		}
-
 	}
 	return nil
 }

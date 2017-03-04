@@ -68,9 +68,9 @@ var _ = Describe("bbl destroy gcp", func() {
 			case "/output/subnetwork_name":
 				responseWriter.Write([]byte("some-subnetwork-name"))
 			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-tag"))
+				responseWriter.Write([]byte("some-internal-tag"))
 			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-open-tag"))
+				responseWriter.Write([]byte("some-bosh-tag"))
 			case "/version":
 				responseWriter.Write([]byte("0.8.6"))
 			}

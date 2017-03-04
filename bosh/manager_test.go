@@ -44,7 +44,7 @@ var _ = Describe("Manager", func() {
 			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:     "some-network",
 				SubnetworkName:  "some-subnetwork",
-				BOSHTag:         "some-bosh-open-tag",
+				BOSHTag:         "some-bosh-tag",
 				InternalTag:     "some-internal-tag",
 				ExternalIP:      "some-external-ip",
 				DirectorAddress: "some-director-address",
@@ -166,7 +166,7 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-bosh-open-tag, some-internal-tag]
+tags: [some-bosh-tag, some-internal-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`,
 				BOSHState: map[string]interface{}{
@@ -467,7 +467,7 @@ private_key: |-
 			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:     "some-network",
 				SubnetworkName:  "some-subnetwork",
-				BOSHTag:         "some-bosh-open-tag",
+				BOSHTag:         "some-bosh-tag",
 				InternalTag:     "some-internal-tag",
 				ExternalIP:      "some-external-ip",
 				DirectorAddress: "some-director-address",
@@ -543,7 +543,7 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-bosh-open-tag, some-internal-tag]
+tags: [some-bosh-tag, some-internal-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`))
 			})

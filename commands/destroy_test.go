@@ -591,7 +591,7 @@ var _ = Describe("Destroy", func() {
 					ExternalIP:      "some-external-ip",
 					NetworkName:     "some-network-name",
 					SubnetworkName:  "some-subnetwork-name",
-					BOSHTag:         "some-bosh-open-tag-name",
+					BOSHTag:         "some-bosh-tag-name",
 					InternalTag:     "some-internal-tag-name",
 					DirectorAddress: "some-director-address",
 				}

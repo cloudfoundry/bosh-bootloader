@@ -8,7 +8,6 @@ import (
 	compute "google.golang.org/api/compute/v1"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -30,20 +29,17 @@ director_ssl:
 
 var _ = Describe("GCPUp", func() {
 	var (
-		gcpUp                   commands.GCPUp
-		stateStore              *fakes.StateStore
-		keyPairUpdater          *fakes.GCPKeyPairUpdater
-		gcpClientProvider       *fakes.GCPClientProvider
-		gcpClient               *fakes.GCPClient
-		terraformExecutor       *fakes.TerraformExecutor
-		boshManager             *fakes.BOSHManager
-		boshClientProvider      *fakes.BOSHClientProvider
-		boshClient              *fakes.BOSHClient
-		gcpCloudConfigGenerator *fakes.GCPCloudConfigGenerator
-		terraformOutputProvider *fakes.TerraformOutputProvider
-		envIDManager            *fakes.EnvIDManager
-		logger                  *fakes.Logger
-		zones                   *fakes.Zones
+		gcpUp              commands.GCPUp
+		stateStore         *fakes.StateStore
+		keyPairUpdater     *fakes.GCPKeyPairUpdater
+		gcpClientProvider  *fakes.GCPClientProvider
+		gcpClient          *fakes.GCPClient
+		terraformExecutor  *fakes.TerraformExecutor
+		boshManager        *fakes.BOSHManager
+		cloudConfigManager *fakes.CloudConfigManager
+		envIDManager       *fakes.EnvIDManager
+		logger             *fakes.Logger
+		zones              *fakes.Zones
 
 		serviceAccountKeyPath     string
 		serviceAccountKey         string
@@ -62,19 +58,6 @@ var _ = Describe("GCPUp", func() {
 		zones = &fakes.Zones{}
 		envIDManager = &fakes.EnvIDManager{}
 		terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
-		boshClientProvider = &fakes.BOSHClientProvider{}
-		boshClient = &fakes.BOSHClient{}
-		boshClientProvider.ClientCall.Returns.Client = boshClient
-		gcpCloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
-		terraformOutputProvider = &fakes.TerraformOutputProvider{}
-		terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
-			ExternalIP:      "some-external-ip",
-			NetworkName:     "some-network-name",
-			SubnetworkName:  "some-subnetwork-name",
-			BOSHTag:         "some-bosh-open-tag-name",
-			InternalTag:     "some-internal-tag-name",
-			DirectorAddress: "some-director-address",
-		}
 		envIDManager.SyncCall.Returns.EnvID = "some-env-id"
 
 		logger = &fakes.Logger{}
@@ -95,8 +78,9 @@ var _ = Describe("GCPUp", func() {
 				Manifest:  "some-bosh-manifest",
 			},
 		}
+		cloudConfigManager = &fakes.CloudConfigManager{}
 		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformExecutor, boshManager,
-			logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputProvider, zones, envIDManager)
+			logger, zones, envIDManager, cloudConfigManager)
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -252,7 +236,7 @@ var _ = Describe("GCPUp", func() {
 
 				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
-				Expect(gcpCloudConfigGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				Expect(stateStore.SetCall.Receives.State.NoDirector).To(Equal(true))
 			})
@@ -294,7 +278,7 @@ var _ = Describe("GCPUp", func() {
 
 					Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
 					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
-					Expect(gcpCloudConfigGenerator.GenerateCall.CallCount).To(Equal(0))
+					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives.State.NoDirector).To(Equal(true))
 				})
@@ -445,7 +429,7 @@ var _ = Describe("GCPUp", func() {
 	})
 
 	Describe("cloud config", func() {
-		It("generates and uploads a cloud config", func() {
+		It("updates the cloud config", func() {
 			zones.GetCall.Returns.Zones = []string{"zone-1", "zone-2", "zone-3"}
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
@@ -457,117 +441,37 @@ var _ = Describe("GCPUp", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("admin"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-admin-password"))
-
-			Expect(zones.GetCall.CallCount).To(Equal(1))
-			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
-
-			gcpCloudConfigGenerator.GenerateCall.Returns.CloudConfig = gcp.CloudConfig{}
-			Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(gcp.CloudConfigInput{
-				AZs:            []string{"zone-1", "zone-2", "zone-3"},
-				Tags:           []string{"some-internal-tag-name"},
-				NetworkName:    "some-network-name",
-				SubnetworkName: "some-subnetwork-name",
+			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
+				IAAS: "gcp",
+				GCP: storage.GCP{
+					ServiceAccountKey: serviceAccountKey,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					Name:       "",
+					PrivateKey: "",
+					PublicKey:  "",
+				},
+				BOSH: storage.BOSH{
+					DirectorName:           "bosh-bbl-lake-time:stamp",
+					DirectorUsername:       "admin",
+					DirectorPassword:       "some-admin-password",
+					DirectorAddress:        "some-director-address",
+					DirectorSSLCA:          "some-ca",
+					DirectorSSLCertificate: "some-certificate",
+					DirectorSSLPrivateKey:  "some-private-key",
+					Variables:              variablesYAML,
+					State: map[string]interface{}{
+						"new-key": "new-value",
+					},
+					Manifest: "some-bosh-manifest",
+				},
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
 			}))
-
-			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
-		})
-
-		Context("when a cf lb exists", func() {
-			BeforeEach(func() {
-				terraformOutputProvider.GetCall.Returns.Outputs.RouterBackendService = "some-router-backend-service"
-				terraformOutputProvider.GetCall.Returns.Outputs.SSHProxyTargetPool = "some-ssh-proxy-target-pool"
-				terraformOutputProvider.GetCall.Returns.Outputs.TCPRouterTargetPool = "some-tcp-router-target-pool"
-				terraformOutputProvider.GetCall.Returns.Outputs.WSTargetPool = "some-ws-target-pool"
-			})
-
-			It("generates a cloud config with cf lb information", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "some-region",
-				}, storage.State{
-					EnvID: "bbl-lake-time:stamp",
-					LB: storage.LB{
-						Type:   "cf",
-						Cert:   "some-cert",
-						Key:    "some-key",
-						Domain: "some-domain",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("some-router-backend-service"))
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("some-ssh-proxy-target-pool"))
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.TCPRouter).To(Equal("some-tcp-router-target-pool"))
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.WS).To(Equal("some-ws-target-pool"))
-			})
-		})
-
-		Context("when a concourse lb exists", func() {
-			BeforeEach(func() {
-				terraformOutputProvider.GetCall.Returns.Outputs.ConcourseTargetPool = "some-concourse-target-pool"
-			})
-
-			It("generates a cloud config with concourse lb information", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "some-region",
-				}, storage.State{
-					EnvID: "bbl-lake-time:stamp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(gcpCloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseTargetPool).To(Equal("some-concourse-target-pool"))
-			})
-		})
-
-		Describe("cloud config-related failure cases", func() {
-			It("returns an error when the cloud config fails to be generated", func() {
-				gcpCloudConfigGenerator.GenerateCall.Returns.Error = errors.New("failed to generate cloud config")
-
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "us-west1",
-				}, storage.State{})
-				Expect(err).To(MatchError("failed to generate cloud config"))
-			})
-
-			It("returns an error when the variables fails to be marshaled", func() {
-				commands.SetMarshal(func(interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal")
-				})
-
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "us-west1",
-				}, storage.State{})
-				Expect(err).To(MatchError("failed to marshal"))
-			})
-
-			It("returns an error when the cloud config fails to be updated", func() {
-				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update cloud config")
-
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKeyPath: serviceAccountKeyPath,
-					ProjectID:             "some-project-id",
-					Zone:                  "some-zone",
-					Region:                "us-west1",
-				}, storage.State{})
-				Expect(err).To(MatchError("failed to update cloud config"))
-			})
 		})
 	})
 
@@ -1122,16 +1026,15 @@ var _ = Describe("GCPUp", func() {
 			Expect(err).To(MatchError("state failed to be set"))
 		})
 
-		It("returns an error when terraform output provider fails", func() {
-			terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
-
+		It("returns an error when the cloud config manager fails to update", func() {
+			cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
 				Region:                "us-west1",
 			}, storage.State{})
-			Expect(err).To(MatchError("terraform output provider failed"))
+			Expect(err).To(MatchError("failed to update"))
 		})
 	})
 })

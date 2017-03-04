@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -15,13 +14,12 @@ import (
 )
 
 type GCPCreateLBs struct {
-	terraformExecutor       terraformExecutor
-	terraformOutputProvider terraformOutputProvider
-	cloudConfigGenerator    gcpCloudConfigGenerator
-	boshClientProvider      boshClientProvider
-	zones                   zones
-	stateStore              stateStore
-	logger                  logger
+	terraformExecutor  terraformExecutor
+	boshClientProvider boshClientProvider
+	cloudConfigManager cloudConfigManager
+	zones              zones
+	stateStore         stateStore
+	logger             logger
 }
 
 type GCPCreateLBsConfig struct {
@@ -32,17 +30,16 @@ type GCPCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
-func NewGCPCreateLBs(terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider,
-	cloudConfigGenerator gcpCloudConfigGenerator, boshClientProvider boshClientProvider, zones zones,
+func NewGCPCreateLBs(terraformExecutor terraformExecutor,
+	boshClientProvider boshClientProvider, cloudConfigManager cloudConfigManager, zones zones,
 	stateStore stateStore, logger logger) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformExecutor:       terraformExecutor,
-		terraformOutputProvider: terraformOutputProvider,
-		cloudConfigGenerator:    cloudConfigGenerator,
-		boshClientProvider:      boshClientProvider,
-		zones:                   zones,
-		stateStore:              stateStore,
-		logger:                  logger,
+		terraformExecutor:  terraformExecutor,
+		boshClientProvider: boshClientProvider,
+		cloudConfigManager: cloudConfigManager,
+		zones:              zones,
+		stateStore:         stateStore,
+		logger:             logger,
 	}
 }
 
@@ -116,44 +113,16 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	terraformOutputs, err := c.terraformOutputProvider.Get(state.TFState, config.LBType)
-	if err != nil {
-		return err
-	}
-
-	c.logger.Step("generating cloud config")
-	cloudConfig, err := c.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:                 zones,
-		Tags:                []string{terraformOutputs.InternalTag},
-		NetworkName:         terraformOutputs.NetworkName,
-		SubnetworkName:      terraformOutputs.SubnetworkName,
-		ConcourseTargetPool: terraformOutputs.ConcourseTargetPool,
-		CFBackends: gcp.CFBackends{
-			Router:    terraformOutputs.RouterBackendService,
-			SSHProxy:  terraformOutputs.SSHProxyTargetPool,
-			TCPRouter: terraformOutputs.TCPRouterTargetPool,
-			WS:        terraformOutputs.WSTargetPool,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	manifestYAML, err := marshal(cloudConfig)
-	if err != nil {
-		return err
-	}
-
-	c.logger.Step("applying cloud config")
-	if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
-		return err
-	}
-
 	state.LB.Type = config.LBType
 	if config.LBType == "cf" {
 		state.LB.Cert = string(cert)
 		state.LB.Key = string(key)
 		state.LB.Domain = config.Domain
+	}
+
+	err = c.cloudConfigManager.Update(state)
+	if err != nil {
+		return err
 	}
 
 	if err := c.stateStore.Set(state); err != nil {

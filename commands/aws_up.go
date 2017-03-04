@@ -58,16 +58,18 @@ type configProvider interface {
 	SetConfig(config aws.Config)
 }
 
+type cloudConfigManager interface {
+	Update(state storage.State) error
+}
+
 type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
 	boshManager               boshManager
-	boshCloudConfigurator     boshCloudConfigurator
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateDescriber      certificateDescriber
 	cloudConfigManager        cloudConfigManager
-	boshClientProvider        boshClientProvider
 	stateStore                stateStore
 	configProvider            configProvider
 	envIDManager              envIDManager
@@ -86,9 +88,9 @@ type AWSUpConfig struct {
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
 	keyPairSynchronizer keyPairSynchronizer, boshManager boshManager,
-	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
+	availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, stateStore stateStore,
+	stateStore stateStore,
 	configProvider configProvider, envIDManager envIDManager) AWSUp {
 
 	return AWSUp{
@@ -96,11 +98,9 @@ func NewAWSUp(
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
 		boshManager:               boshManager,
-		boshCloudConfigurator:     boshCloudConfigurator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateDescriber:      certificateDescriber,
 		cloudConfigManager:        cloudConfigManager,
-		boshClientProvider:        boshClientProvider,
 		stateStore:                stateStore,
 		configProvider:            configProvider,
 		envIDManager:              envIDManager,
@@ -198,7 +198,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
+	_, err = u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
 		return err
 	}
@@ -232,17 +232,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 			return err
 		}
 
-		boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-			state.BOSH.DirectorPassword)
-
-		cloudConfigInput := u.boshCloudConfigurator.Configure(stack, availabilityZones)
-
-		err = u.cloudConfigManager.Update(cloudConfigInput, boshClient)
-		if err != nil {
-			return err
-		}
-
-		err = u.stateStore.Set(state)
+		err = u.cloudConfigManager.Update(state)
 		if err != nil {
 			return err
 		}

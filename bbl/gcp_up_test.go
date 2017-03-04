@@ -32,11 +32,14 @@ var _ = Describe("bbl up gcp", func() {
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
-		fastFail                   bool
-		fastFailMutex              sync.Mutex
+
+		fastFail                 bool
+		fastFailMutex            sync.Mutex
+		callRealInterpolate      bool
+		callRealInterpolateMutex sync.Mutex
 
 		createEnvArgs   string
-		interpolateArgs string
+		interpolateArgs []string
 	)
 
 	BeforeEach(func() {
@@ -48,6 +51,8 @@ var _ = Describe("bbl up gcp", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/path":
+				responseWriter.Write([]byte(originalPath))
 			case "/create-env/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
@@ -55,7 +60,7 @@ var _ = Describe("bbl up gcp", func() {
 			case "/interpolate/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
-				interpolateArgs = string(body)
+				interpolateArgs = append(interpolateArgs, string(body))
 			case "/create-env/fastfail":
 				fastFailMutex.Lock()
 				defer fastFailMutex.Unlock()
@@ -65,6 +70,14 @@ var _ = Describe("bbl up gcp", func() {
 					responseWriter.WriteHeader(http.StatusOK)
 				}
 				return
+			case "/call-real-interpolate":
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				if callRealInterpolate {
+					responseWriter.Write([]byte("true"))
+				} else {
+					responseWriter.Write([]byte("false"))
+				}
 			}
 		}))
 
@@ -79,9 +92,9 @@ var _ = Describe("bbl up gcp", func() {
 			case "/output/subnetwork_name":
 				responseWriter.Write([]byte("some-subnetwork-name"))
 			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-tag"))
+				responseWriter.Write([]byte("some-internal-tag"))
 			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-open-tag"))
+				responseWriter.Write([]byte("some-bosh-tag"))
 			case "/version":
 				responseWriter.Write([]byte("0.8.6"))
 			}
@@ -243,7 +256,7 @@ var _ = Describe("bbl up gcp", func() {
 
 			executeCommand(args, 0)
 
-			Expect(interpolateArgs).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+			Expect(interpolateArgs[0]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 		})
 	})
 
@@ -415,6 +428,12 @@ var _ = Describe("bbl up gcp", func() {
 	})
 
 	DescribeTable("cloud config", func(fixtureLocation string) {
+		By("allowing the bosh interpolate call to be run", func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
+
 		contents, err := ioutil.ReadFile(fixtureLocation)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -444,8 +463,14 @@ var _ = Describe("bbl up gcp", func() {
 			executeCommand(args, 0)
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 		})
+
+		By("resetting the ability to call interpolate to false", func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
 	},
-		Entry("generates a cloud config with no lb type", "../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml"),
+		Entry("generates a cloud config with no lb type", "../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml"),
 	)
 
 	Context("when there is a different environment with the same name", func() {

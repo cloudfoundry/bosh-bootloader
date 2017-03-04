@@ -4,12 +4,10 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	yaml "gopkg.in/yaml.v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,14 +16,10 @@ import (
 
 var _ = Describe("GCPDeleteLBs", func() {
 	var (
-		cloudConfigGenerator    *fakes.GCPCloudConfigGenerator
-		terraformOutputProvider *fakes.TerraformOutputProvider
-		stateStore              *fakes.StateStore
-		zones                   *fakes.Zones
-		logger                  *fakes.Logger
-		boshClientProvider      *fakes.BOSHClientProvider
-		boshClient              *fakes.BOSHClient
-		terraformExecutor       *fakes.TerraformExecutor
+		cloudConfigManager *fakes.CloudConfigManager
+		stateStore         *fakes.StateStore
+		logger             *fakes.Logger
+		terraformExecutor  *fakes.TerraformExecutor
 
 		command commands.GCPDeleteLBs
 
@@ -34,18 +28,13 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 	Describe("Execute", func() {
 		BeforeEach(func() {
-			cloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
-			terraformOutputProvider = &fakes.TerraformOutputProvider{}
 			stateStore = &fakes.StateStore{}
-			zones = &fakes.Zones{}
 			logger = &fakes.Logger{}
-			boshClient = &fakes.BOSHClient{}
-			boshClientProvider = &fakes.BOSHClientProvider{}
-			boshClientProvider.ClientCall.Returns.Client = boshClient
 			terraformExecutor = &fakes.TerraformExecutor{}
 			terraformExecutor.VersionCall.Returns.Version = "0.8.7"
+			cloudConfigManager = &fakes.CloudConfigManager{}
 
-			command = commands.NewGCPDeleteLBs(terraformOutputProvider, cloudConfigGenerator, zones, logger, boshClientProvider, stateStore, terraformExecutor)
+			command = commands.NewGCPDeleteLBs(logger, stateStore, terraformExecutor, cloudConfigManager)
 
 			body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
 			Expect(err).NotTo(HaveOccurred())
@@ -54,29 +43,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 		})
 
 		It("updates the cloud config", func() {
-			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
-				NetworkName:    "some-network-name",
-				SubnetworkName: "some-subnetwork-name",
-				InternalTag:    "some-internal-tag",
-			}
-			zones.GetCall.Returns.Zones = []string{"region1", "region2"}
-
-			expectedCloudConfig := gcp.CloudConfig{
-				AZs: []gcp.AZ{
-					{
-						Name: "region1",
-					},
-					{
-						Name: "region2",
-					},
-				},
-			}
-			cloudConfigGenerator.GenerateCall.Returns.CloudConfig = expectedCloudConfig
-
-			expectedCloudConfigYAML, err := yaml.Marshal(expectedCloudConfig)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = command.Execute(storage.State{
+			err := command.Execute(storage.State{
 				IAAS: "gcp",
 				BOSH: storage.BOSH{
 					DirectorUsername: "some-director-username",
@@ -86,29 +53,22 @@ var _ = Describe("GCPDeleteLBs", func() {
 				GCP: storage.GCP{
 					Region: "some-region",
 				},
+				LB: storage.LB{
+					Type: "cf",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(zones.GetCall.CallCount).To(Equal(1))
-			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
-
-			Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
-			Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput).To(Equal(gcp.CloudConfigInput{
-				AZs:            []string{"region1", "region2"},
-				Tags:           []string{"some-internal-tag"},
-				NetworkName:    "some-network-name",
-				SubnetworkName: "some-subnetwork-name",
-			}))
-
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
-			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(MatchYAML(expectedCloudConfigYAML))
-
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-				"generating cloud config", "applying cloud config",
+			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
+				IAAS: "gcp",
+				BOSH: storage.BOSH{
+					DirectorUsername: "some-director-username",
+					DirectorPassword: "some-director-password",
+					DirectorAddress:  "some-director-address",
+				},
+				GCP: storage.GCP{
+					Region: "some-region",
+				},
 			}))
 		})
 
@@ -231,41 +191,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 				})
 			})
 
-			It("returns an error when terraform output provider fails", func() {
-				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to return terraform output")
-				err := command.Execute(storage.State{
-					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
-					},
-				})
-				Expect(err).To(MatchError("failed to return terraform output"))
-			})
-
-			Context("when marshaling the cloud config fails", func() {
-				BeforeEach(func() {
-					commands.SetMarshal(func(interface{}) ([]byte, error) {
-						return nil, errors.New("failed to marshal")
-					})
-				})
-
-				AfterEach(func() {
-					commands.ResetMarshal()
-				})
-
-				It("returns an error", func() {
-					err := command.Execute(storage.State{
-						IAAS: "gcp",
-						Stack: storage.Stack{
-							LBType: "concourse",
-						},
-					})
-					Expect(err).To(MatchError("failed to marshal"))
-				})
-			})
-
 			It("returns an error when updating cloud config fails", func() {
-				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("updating cloud config failed")
+				cloudConfigManager.UpdateCall.Returns.Error = errors.New("updating cloud config failed")
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					Stack: storage.Stack{

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -15,14 +14,9 @@ type AWSDeleteLBs struct {
 	certificateManager        certificateManager
 	infrastructureManager     infrastructureManager
 	logger                    logger
-	boshCloudConfigurator     boshCloudConfigurator
 	cloudConfigManager        cloudConfigManager
 	boshClientProvider        boshClientProvider
 	stateStore                stateStore
-}
-
-type cloudConfigManager interface {
-	Update(cloudConfigInput bosh.CloudConfigInput, boshClient bosh.Client) error
 }
 
 type deleteLBsConfig struct {
@@ -31,7 +25,7 @@ type deleteLBsConfig struct {
 
 func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
-	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager,
+	cloudConfigManager cloudConfigManager,
 	boshClientProvider boshClientProvider, stateStore stateStore,
 ) AWSDeleteLBs {
 	return AWSDeleteLBs{
@@ -40,7 +34,6 @@ func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRe
 		certificateManager:        certificateManager,
 		infrastructureManager:     infrastructureManager,
 		logger:                    logger,
-		boshCloudConfigurator:     boshCloudConfigurator,
 		cloudConfigManager:        cloudConfigManager,
 		boshClientProvider:        boshClientProvider,
 		stateStore:                stateStore,
@@ -62,22 +55,24 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	stack, err := c.infrastructureManager.Describe(state.Stack.Name)
+	_, err = c.infrastructureManager.Describe(state.Stack.Name)
 	if err != nil {
 		return err
 	}
 
-	cloudConfigInput := c.boshCloudConfigurator.Configure(stack, azs)
-	cloudConfigInput.LBs = nil
+	state.Stack.LBType = "none"
 
-	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
-
-	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
+	err = c.cloudConfigManager.Update(state)
 	if err != nil {
 		return err
 	}
 
 	_, err = c.infrastructureManager.Update(state.KeyPair.Name, azs, state.Stack.Name, state.Stack.BOSHAZ, "", "", state.EnvID)
+	if err != nil {
+		return err
+	}
+
+	err = c.stateStore.Set(state)
 	if err != nil {
 		return err
 	}
@@ -88,7 +83,6 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	state.Stack.LBType = "none"
 	state.Stack.CertificateName = ""
 
 	err = c.stateStore.Set(state)

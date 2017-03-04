@@ -1,0 +1,6 @@
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: lb
+    cloud_properties:
+      target_pool: concourse-target-pool

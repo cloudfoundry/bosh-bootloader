@@ -4,9 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -25,7 +23,6 @@ var _ = Describe("AWS Create LBs", func() {
 			boshClient                *fakes.BOSHClient
 			boshClientProvider        *fakes.BOSHClientProvider
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-			boshCloudConfigurator     *fakes.BoshCloudConfigurator
 			credentialValidator       *fakes.CredentialValidator
 			logger                    *fakes.Logger
 			cloudConfigManager        *fakes.CloudConfigManager
@@ -39,7 +36,6 @@ var _ = Describe("AWS Create LBs", func() {
 			certificateManager = &fakes.CertificateManager{}
 			infrastructureManager = &fakes.InfrastructureManager{}
 			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
-			boshCloudConfigurator = &fakes.BoshCloudConfigurator{}
 			boshClient = &fakes.BOSHClient{}
 			boshClientProvider = &fakes.BOSHClientProvider{}
 			credentialValidator = &fakes.CredentialValidator{}
@@ -77,7 +73,7 @@ var _ = Describe("AWS Create LBs", func() {
 			}
 
 			command = commands.NewAWSCreateLBs(logger, credentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, boshClientProvider, boshCloudConfigurator, cloudConfigManager, certificateValidator, guidGenerator,
+				availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator, guidGenerator,
 				stateStore)
 		})
 
@@ -164,15 +160,7 @@ var _ = Describe("AWS Create LBs", func() {
 
 		})
 
-		It("updates the cloud config with lb type", func() {
-			infrastructureManager.UpdateCall.Returns.Stack = cloudformation.Stack{
-				Name: "some-stack",
-			}
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-			boshCloudConfigurator.ConfigureCall.Returns.CloudConfigInput = bosh.CloudConfigInput{
-				AZs: []string{"a", "b", "c"},
-			}
-
+		It("updates the cloud config with a state that has lb type", func() {
 			err := command.Execute(commands.AWSCreateLBsConfig{
 				LBType:   "concourse",
 				CertPath: "temp/some-cert.crt",
@@ -180,14 +168,7 @@ var _ = Describe("AWS Create LBs", func() {
 			}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshCloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
-				Name: "some-stack",
-			}))
-			Expect(boshCloudConfigurator.ConfigureCall.Receives.AZs).To(Equal([]string{"a", "b", "c"}))
-
-			Expect(cloudConfigManager.UpdateCall.Receives.CloudConfigInput).To(Equal(bosh.CloudConfigInput{
-				AZs: []string{"a", "b", "c"},
-			}))
+			Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("concourse"))
 		})
 
 		Context("when --skip-if-exists is provided", func() {

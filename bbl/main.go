@@ -20,12 +20,15 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+
+	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
+	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 )
 
 var (
@@ -109,7 +112,6 @@ func main() {
 	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey, configuration.State.GCP.ProjectID, configuration.State.GCP.Zone)
 
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
-	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
 	zones := gcp.NewZones()
@@ -129,23 +131,26 @@ func main() {
 		json.Marshal, ioutil.WriteFile, configuration.Global.Debug)
 	boshManager := bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
 	boshClientProvider := bosh.NewClientProvider()
-	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
-	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
-	cloudConfigManager := bosh.NewCloudConfigManager(logger, cloudConfigGenerator)
+
+	// Cloud Config
+	awsOpsGenerator := awscloudconfig.NewOpsGenerator(availabilityZoneRetriever, infrastructureManager)
+	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformOutputProvider, zones)
+	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsOpsGenerator, gcpOpsGenerator)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider)
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
 		credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
-		cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, boshClientProvider, stateStore, clientProvider, envIDManager)
+		availabilityZoneRetriever, certificateDescriber,
+		cloudConfigManager, stateStore, clientProvider, envIDManager)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore,
 	)
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputProvider, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)
@@ -154,13 +159,12 @@ func main() {
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
 		credentialValidator, availabilityZoneRetriever, certificateManager,
-		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
+		infrastructureManager, logger, cloudConfigManager, boshClientProvider, stateStore,
 	)
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputProvider, gcpCloudConfigGenerator, zones, logger,
-		boshClientProvider, stateStore, terraformExecutor)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(logger, stateStore, terraformExecutor, cloudConfigManager)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshManager, logger, boshClientProvider,
-		gcpCloudConfigGenerator, terraformOutputProvider, zones, envIDManager)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshManager, logger,
+		zones, envIDManager, cloudConfigManager)
 	envGetter := commands.NewEnvGetter()
 
 	// Commands

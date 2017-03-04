@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -20,6 +21,11 @@ func main() {
 		writeVariablesToFile()
 		postArgsToBackendServer(os.Args[1], os.Args[1:])
 		fmt.Fprintf(os.Stderr, "bosh director name: %s\n", extractDirectorName(os.Args))
+
+		if callRealInterpolate() {
+			fmt.Fprintf(os.Stderr, "running real interpolate")
+			runRealInterpolate(os.Args[1:])
+		}
 	}
 
 	if os.Args[1] == "create-env" {
@@ -147,4 +153,44 @@ func extractDirectorName(args []string) string {
 		}
 	}
 	return ""
+}
+
+func callRealInterpolate() bool {
+	resp, err := http.Get(fmt.Sprintf("%s/call-real-interpolate", backendURL))
+	if err != nil {
+		panic(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(body) == "true"
+}
+
+func runRealInterpolate(args []string) {
+	originalPath := getOriginalPath()
+	os.Setenv("PATH", originalPath)
+	cmd := exec.Command("bosh", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func getOriginalPath() string {
+	resp, err := http.Get(fmt.Sprintf("%s/path", backendURL))
+	if err != nil {
+		panic(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(body)
 }

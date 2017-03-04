@@ -37,6 +37,8 @@ var _ = Describe("load balancers", func() {
 		fakeBOSH                   *fakeBOSHDirector
 		fastFailTerraform          bool
 		fastFailTerraformMutex     sync.Mutex
+		callRealInterpolate        bool
+		callRealInterpolateMutex   sync.Mutex
 	)
 
 	var setFastFailTerraform = func(on bool) {
@@ -59,6 +61,18 @@ var _ = Describe("load balancers", func() {
 		}))
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/path":
+				responseWriter.Write([]byte(originalPath))
+			case "/call-real-interpolate":
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				if callRealInterpolate {
+					responseWriter.Write([]byte("true"))
+				} else {
+					responseWriter.Write([]byte("false"))
+				}
+			}
 		}))
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -73,9 +87,9 @@ var _ = Describe("load balancers", func() {
 			case "/output/subnetwork_name":
 				responseWriter.Write([]byte("some-subnetwork-name"))
 			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-tag"))
+				responseWriter.Write([]byte("some-internal-tag"))
 			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-open-tag"))
+				responseWriter.Write([]byte("some-bosh-tag"))
 			case "/output/concourse_target_pool":
 				responseWriter.Write([]byte("concourse-target-pool"))
 			case "/fastfail":
@@ -150,8 +164,20 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("create-lbs", func() {
+		BeforeEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
+
+		AfterEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
+
 		It("creates and attaches a concourse lb type", func() {
-			contents, err := ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-concourse-lb.yml")
+			contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-concourse-lb.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			args := []string{
@@ -184,7 +210,7 @@ var _ = Describe("load balancers", func() {
 				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
-				contents, err = ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-cf-lb.yml")
+				contents, err = ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-cf-lb.yml")
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -502,6 +528,18 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("delete-lbs", func() {
+		BeforeEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
+
+		AfterEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
+
 		It("deletes lbs", func() {
 			var session *gexec.Session
 			var stdout []byte
@@ -534,7 +572,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			By("removing the lb vm_extention from cloud config", func() {
-				contents, err := ioutil.ReadFile("../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml")
+				contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))

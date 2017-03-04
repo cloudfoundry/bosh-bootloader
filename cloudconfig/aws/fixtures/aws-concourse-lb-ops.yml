@@ -1,0 +1,9 @@
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: lb
+    cloud_properties:
+      elbs: [some-concourse-lb]
+      security_groups:
+      - some-concourse-internal-security-group
+      - some-internal-security-group

@@ -603,34 +603,32 @@ resource "google_dns_record_set" "wildcard-ws-dns" {
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (
-		cloudConfigGenerator    *fakes.GCPCloudConfigGenerator
-		terraformExecutor       *fakes.TerraformExecutor
-		terraformOutputProvider *fakes.TerraformOutputProvider
-		boshClientProvider      *fakes.BOSHClientProvider
-		boshClient              *fakes.BOSHClient
-		zones                   *fakes.Zones
-		stateStore              *fakes.StateStore
-		logger                  *fakes.Logger
-		command                 commands.GCPCreateLBs
-		certPath                string
-		keyPath                 string
-		certificate             string
-		key                     string
+		terraformExecutor  *fakes.TerraformExecutor
+		boshClientProvider *fakes.BOSHClientProvider
+		boshClient         *fakes.BOSHClient
+		cloudConfigManager *fakes.CloudConfigManager
+		zones              *fakes.Zones
+		stateStore         *fakes.StateStore
+		logger             *fakes.Logger
+		command            commands.GCPCreateLBs
+		certPath           string
+		keyPath            string
+		certificate        string
+		key                string
 	)
 
 	BeforeEach(func() {
 		terraformExecutor = &fakes.TerraformExecutor{}
 		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
-		cloudConfigGenerator = &fakes.GCPCloudConfigGenerator{}
-		terraformOutputProvider = &fakes.TerraformOutputProvider{}
-		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClient = &fakes.BOSHClient{}
+		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClientProvider.ClientCall.Returns.Client = boshClient
+		cloudConfigManager = &fakes.CloudConfigManager{}
 		zones = &fakes.Zones{}
 		stateStore = &fakes.StateStore{}
 		logger = &fakes.Logger{}
 
-		command = commands.NewGCPCreateLBs(terraformExecutor, terraformOutputProvider, cloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
+		command = commands.NewGCPCreateLBs(terraformExecutor, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
@@ -827,86 +825,6 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 		})
 
-		Context("when creating a concourse lb", func() {
-			It("creates a cloud-config with concourse lb vm extension", func() {
-				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
-					NetworkName:         "some-network-name",
-					SubnetworkName:      "some-subnetwork-name",
-					ConcourseTargetPool: "env-id-concourse-target-pool",
-					InternalTag:         "some-internal-tag-name",
-				}
-
-				zones.GetCall.Returns.Zones = []string{"region1", "region2"}
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						Region: "some-region",
-					},
-					BOSH: storage.BOSH{
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-						DirectorAddress:  "some-director-address",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(zones.GetCall.CallCount).To(Equal(1))
-				Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
-
-				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.AZs).To(Equal([]string{"region1", "region2"}))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.Tags).To(Equal([]string{"some-internal-tag-name"}))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.NetworkName).To(Equal("some-network-name"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.SubnetworkName).To(Equal("some-subnetwork-name"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.ConcourseTargetPool).To(Equal("env-id-concourse-target-pool"))
-
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-					"generating cloud config", "applying cloud config",
-				}))
-			})
-		})
-
-		Context("when creating a cf lb", func() {
-			It("creates a cloud-config with router-lb, ssh-proxy-lb, cf-ws and cf-tcp-router-network-properties vm extensions", func() {
-				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
-					RouterBackendService: "env-id-cf-https-lb",
-					WSTargetPool:         "env-id-cf-ws",
-					SSHProxyTargetPool:   "env-id-cf-ssh-proxy-lb",
-					TCPRouterTargetPool:  "env-id-cf-tcp-router-network-properties",
-				}
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						Region: "some-region",
-					},
-					BOSH: storage.BOSH{
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-						DirectorAddress:  "some-director-address",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cloudConfigGenerator.GenerateCall.CallCount).To(Equal(1))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.Router).To(Equal("env-id-cf-https-lb"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.SSHProxy).To(Equal("env-id-cf-ssh-proxy-lb"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.TCPRouter).To(Equal("env-id-cf-tcp-router-network-properties"))
-				Expect(cloudConfigGenerator.GenerateCall.Receives.CloudConfigInput.CFBackends.WS).To(Equal("env-id-cf-ws"))
-
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-					"generating cloud config", "applying cloud config",
-				}))
-			})
-		})
-
 		It("uploads a new cloud-config to the bosh director", func() {
 			err := command.Execute(commands.GCPCreateLBsConfig{
 				LBType: "concourse",
@@ -920,11 +838,18 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
+				IAAS: "gcp",
+				BOSH: storage.BOSH{
+					DirectorUsername: "some-director-username",
+					DirectorPassword: "some-director-password",
+					DirectorAddress:  "some-director-address",
+				},
+				LB: storage.LB{
+					Type: "concourse",
+				},
+			}))
 		})
 
 		It("no-ops if SkipIfExists is supplied and the LBType does not change", func() {
@@ -941,7 +866,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 			Expect(logger.StepCall.Messages).To(ContainElement(`lb type "concourse" exists, skipping...`))
 			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(0))
-			Expect(boshClient.UpdateCloudConfigCall.CallCount).To(Equal(0))
+			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 		})
 
 		Context("state manipulation", func() {
@@ -1025,22 +950,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("failed to save state"))
-			})
-
-			It("returns an error if terraform output provider fails", func() {
-				terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, storage.State{
-					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
-					},
-				})
-				Expect(err).To(MatchError("terraform output provider failed"))
 			})
 
 			It("returns an error if the command fails to read the certificate", func() {
@@ -1132,28 +1041,8 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(err).To(MatchError("failed to save state"))
 			})
 
-			It("returns an error when the cloud config fails to be generated", func() {
-				cloudConfigGenerator.GenerateCall.Returns.Error = errors.New("failed to generate cloud config")
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("failed to generate cloud config"))
-			})
-
-			It("returns an error when the cloud-config fails to marshal", func() {
-				commands.SetMarshal(func(interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal")
-				})
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("failed to marshal"))
-			})
-
 			It("returns an error when the cloud config fails to be updated", func() {
-				boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update cloud config")
+				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
@@ -1176,8 +1065,17 @@ var _ = Describe("GCPCreateLBs", func() {
 					LBType: "concourse",
 				}, storage.State{
 					IAAS: "gcp",
+					BOSH: storage.BOSH{
+						DirectorAddress:  "some-director-address",
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+					},
 				})
 				Expect(err).To(MatchError(commands.BBLNotFound))
+
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
 
 				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
 			})

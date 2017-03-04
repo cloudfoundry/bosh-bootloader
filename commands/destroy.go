@@ -37,6 +37,10 @@ type Destroy struct {
 	networkInstancesChecker networkInstancesChecker
 }
 
+type terraformOutputProvider interface {
+	Get(tfState, lbType string) (terraform.Outputs, error)
+}
+
 type destroyConfig struct {
 	NoConfirm     bool
 	SkipIfMissing bool
