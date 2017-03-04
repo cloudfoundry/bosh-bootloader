@@ -166,12 +166,20 @@ var _ = Describe("Destroy", func() {
 				stdin.Write([]byte("yes\n"))
 			})
 
-			It("fast fails if the terraform installed is less than v0.8.5", func() {
+			It("fast fails on gcp if the terraform installed is less than v0.8.5", func() {
 				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
 
-				err := destroy.Execute([]string{}, storage.State{})
+				err := destroy.Execute([]string{}, storage.State{IAAS: "gcp"})
 
 				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+			})
+
+			It("does not fast fail on aws if the terraform installed is less than v0.8.5", func() {
+				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+				err := destroy.Execute([]string{}, storage.State{IAAS: "aws"})
+
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			Context("when an invalid command line flag is supplied", func() {
