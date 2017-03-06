@@ -9,7 +9,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -416,28 +415,6 @@ var _ = Describe("Store", func() {
 					storage.ResetRename()
 				})
 
-				It("renames state.json to bbl-state.json and returns its state", func() {
-					state, err := storage.GetState(tempDir)
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = os.Stat(filepath.Join(tempDir, "state.json"))
-					Expect(err).To(gomegamatchers.BeAnOsIsNotExistError())
-
-					_, err = os.Stat(filepath.Join(tempDir, "bbl-state.json"))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(state).To(Equal(storage.State{
-						Version: 2,
-						AWS: storage.AWS{
-							AccessKeyID:     "some-aws-access-key-id",
-							SecretAccessKey: "some-aws-secret-access-key",
-							Region:          "some-aws-region",
-						},
-					}))
-					Expect(logger.PrintlnCall.CallCount).To(Equal(1))
-					Expect(logger.PrintlnCall.Receives.Message).To(Equal("renaming state.json to bbl-state.json"))
-				})
-
 				Context("failure cases", func() {
 					Context("when checking if state file exists fails", func() {
 						It("returns an error", func() {
@@ -446,17 +423,6 @@ var _ = Describe("Store", func() {
 
 							_, err = storage.GetState(tempDir)
 							Expect(err).To(MatchError(ContainSubstring("permission denied")))
-						})
-					})
-
-					Context("when renaming the file fails", func() {
-						It("returns an error", func() {
-							storage.SetRename(func(src, dst string) error {
-								return errors.New("renaming failed")
-							})
-
-							_, err := storage.GetState(tempDir)
-							Expect(err).To(MatchError("renaming failed"))
 						})
 					})
 				})
@@ -483,18 +449,6 @@ var _ = Describe("Store", func() {
 
 				_, err = storage.GetState(tempDir)
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
-			})
-
-			It("returns error when bbl-state.json and state.json exists", func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{}`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = storage.GetState(tempDir)
-				Expect(err).To(MatchError(ContainSubstring("Cannot proceed with state.json and bbl-state.json present. Please delete one of the files.")))
-
 			})
 		})
 	})

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -115,20 +114,6 @@ func GetState(dir string) (State, error) {
 	state := State{}
 
 	_, err := os.Stat(dir)
-	if err != nil {
-		return state, err
-	}
-
-	bothExist, err := stateAndBBLStateExist(dir)
-	if err != nil {
-		return state, err
-	}
-
-	if bothExist {
-		return state, errors.New("Cannot proceed with state.json and bbl-state.json present. Please delete one of the files.")
-	}
-
-	err = renameStateToBBLState(dir)
 	if err != nil {
 		return state, err
 	}
