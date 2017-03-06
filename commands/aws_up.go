@@ -60,6 +60,7 @@ type configProvider interface {
 
 type cloudConfigManager interface {
 	Update(state storage.State) error
+	Generate(state storage.State) (string, error)
 }
 
 type AWSUp struct {

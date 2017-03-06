@@ -55,6 +55,7 @@ func main() {
 		commands.LBsCommand:                nil,
 		commands.EnvIDCommand:              nil,
 		commands.PrintEnvCommand:           nil,
+		commands.CloudConfigCommand:        nil,
 		commands.BOSHDeploymentVarsCommand: nil,
 	}
 
@@ -206,6 +207,7 @@ func main() {
 		return state.EnvID
 	})
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
+	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, terraformExecutor)
 

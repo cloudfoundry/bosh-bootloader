@@ -64,6 +64,8 @@ const (
 	PrintEnvCommandUsage = "Prints required BOSH environment variables"
 
 	BOSHDeploymentVarsCommandUsage = "Prints required variables for BOSH deployment"
+
+	CloudConfigUsage = "Prints suggested cloud configuration for BOSH environment"
 )
 
 func (Up) Usage() string { return UpCommandUsage }
@@ -83,6 +85,8 @@ func (Version) Usage() string { return VersionCommandUsage }
 func (Usage) Usage() string { return UsageCommandUsage }
 
 func (PrintEnv) Usage() string { return PrintEnvCommandUsage }
+
+func (CloudConfig) Usage() string { return CloudConfigUsage }
 
 func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage }
 

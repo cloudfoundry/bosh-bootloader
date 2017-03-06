@@ -116,6 +116,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
 		Entry("version", commands.Version{}, "Prints version"),
+		Entry("cloud-config", commands.CloudConfig{}, "Prints suggested cloud configuration for BOSH environment"),
 	)
 })
 
