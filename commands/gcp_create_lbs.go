@@ -49,11 +49,17 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
-
-	if err = c.checkFastFails(config, state, boshClient); err != nil {
+	if err = c.checkFastFails(config, state); err != nil {
 		return err
+	}
+
+	if !state.NoDirector {
+		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+			state.BOSH.DirectorPassword)
+
+		if err = c.checkBOSHClient(boshClient); err != nil {
+			return err
+		}
 	}
 
 	if config.SkipIfExists && config.LBType == state.LB.Type {
@@ -120,9 +126,11 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		state.LB.Domain = config.Domain
 	}
 
-	err = c.cloudConfigManager.Update(state)
-	if err != nil {
-		return err
+	if !state.NoDirector {
+		err = c.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := c.stateStore.Set(state); err != nil {
@@ -132,7 +140,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	return nil
 }
 
-func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State, boshClient bosh.Client) error {
+func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State) error {
 	if config.LBType == "" {
 		return fmt.Errorf("--type is a required flag")
 	}
@@ -158,6 +166,10 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 		return fmt.Errorf("iaas type must be gcp")
 	}
 
+	return nil
+}
+
+func (GCPCreateLBs) checkBOSHClient(boshClient bosh.Client) error {
 	_, err := boshClient.Info()
 	if err != nil {
 		return BBLNotFound

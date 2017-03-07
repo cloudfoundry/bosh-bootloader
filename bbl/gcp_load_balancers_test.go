@@ -146,16 +146,6 @@ var _ = Describe("load balancers", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
-
-		executeCommand([]string{
-			"--state-dir", tempDirectory,
-			"up",
-			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKeyPath,
-			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "us-east1-a",
-			"--gcp-region", "us-east1",
-		}, 0)
 	})
 
 	AfterEach(func() {
@@ -177,6 +167,16 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("creates and attaches a concourse lb type", func() {
+			executeCommand([]string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "us-east1-a",
+				"--gcp-region", "us-east1",
+			}, 0)
+
 			contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-concourse-lb.yml")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -202,6 +202,16 @@ var _ = Describe("load balancers", func() {
 			var contents []byte
 
 			BeforeEach(func() {
+				executeCommand([]string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "us-east1-a",
+					"--gcp-region", "us-east1",
+				}, 0)
+
 				certPath = filepath.Join(tempDirectory, "some-cert")
 				err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
@@ -328,6 +338,16 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("logs all the steps", func() {
+			executeCommand([]string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "us-east1-a",
+				"--gcp-region", "us-east1",
+			}, 0)
+
 			args := []string{
 				"--state-dir", tempDirectory,
 				"create-lbs",
@@ -343,6 +363,16 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
+			executeCommand([]string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "us-east1-a",
+				"--gcp-region", "us-east1",
+			}, 0)
+
 			args := []string{
 				"--state-dir", tempDirectory,
 				"create-lbs",
@@ -401,6 +431,16 @@ var _ = Describe("load balancers", func() {
 			newKeyPath = filepath.Join(tempDirectory, "some-new-key")
 			err = ioutil.WriteFile(newKeyPath, newKey, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
+
+			executeCommand([]string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "us-east1-a",
+				"--gcp-region", "us-east1",
+			}, 0)
 		})
 
 		Context("when a cf lb exists", func() {
@@ -529,6 +569,16 @@ var _ = Describe("load balancers", func() {
 
 	Describe("delete-lbs", func() {
 		BeforeEach(func() {
+			executeCommand([]string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "us-east1-a",
+				"--gcp-region", "us-east1",
+			}, 0)
+
 			callRealInterpolateMutex.Lock()
 			defer callRealInterpolateMutex.Unlock()
 			callRealInterpolate = true
@@ -630,6 +680,16 @@ var _ = Describe("load balancers", func() {
 				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
+				executeCommand([]string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "us-east1-a",
+					"--gcp-region", "us-east1",
+				}, 0)
+
 				args := []string{
 					"--state-dir", tempDirectory,
 					"create-lbs",
@@ -654,6 +714,16 @@ var _ = Describe("load balancers", func() {
 
 		Context("when concourse lb was created", func() {
 			BeforeEach(func() {
+				executeCommand([]string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "us-east1-a",
+					"--gcp-region", "us-east1",
+				}, 0)
+
 				args := []string{
 					"--state-dir", tempDirectory,
 					"create-lbs",
@@ -668,6 +738,161 @@ var _ = Describe("load balancers", func() {
 				stdout := session.Out.Contents()
 
 				Expect(stdout).To(ContainSubstring("Concourse LB: some-concourse-lb-ip"))
+			})
+		})
+	})
+
+	Describe("when no bosh director exists", func() {
+		BeforeEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+
+			executeCommand([]string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "us-east1-a",
+				"--gcp-region", "us-east1",
+			}, 0)
+		})
+
+		AfterEach(func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
+
+		It("creates and attaches a lb", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "concourse",
+			}
+
+			executeCommand(args, 0)
+
+			state := readStateJson(tempDirectory)
+			Expect(state.LB).NotTo(BeNil())
+			Expect(state.LB.Type).To(Equal("concourse"))
+			Expect(state.LB.Cert).To(Equal(""))
+			Expect(state.LB.Key).To(Equal(""))
+		})
+
+		Context("when a cf lb exists", func() {
+			var (
+				cert        []byte
+				key         []byte
+				certPath    string
+				keyPath     string
+				newCertPath string
+				newKeyPath  string
+				newCert     []byte
+				newKey      []byte
+			)
+
+			BeforeEach(func() {
+				keyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
+				keyPair, err := keyPairGenerator.Generate("127.0.0.1", "127.0.0.1")
+				Expect(err).NotTo(HaveOccurred())
+				cert = keyPair.Certificate
+				key = keyPair.PrivateKey
+
+				newKeyPair, err := keyPairGenerator.Generate("127.0.0.2", "127.0.0.2")
+				Expect(err).NotTo(HaveOccurred())
+				newCert = newKeyPair.Certificate
+				newKey = newKeyPair.PrivateKey
+
+				certPath = filepath.Join(tempDirectory, "some-cert")
+				err = ioutil.WriteFile(certPath, cert, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				keyPath = filepath.Join(tempDirectory, "some-key")
+				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), key, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				newCertPath = filepath.Join(tempDirectory, "some-new-cert")
+				err = ioutil.WriteFile(newCertPath, newCert, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				newKeyPath = filepath.Join(tempDirectory, "some-new-key")
+				err = ioutil.WriteFile(newKeyPath, newKey, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "cf",
+					"--cert", certPath,
+					"--key", keyPath,
+				}
+
+				executeCommand(args, 0)
+			})
+
+			It("updates the load balancer with the given cert and key", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"update-lbs",
+					"--cert", newCertPath,
+					"--key", newKeyPath,
+				}
+
+				executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+				Expect(state.LB.Cert).To(Equal(string(newCert)))
+				Expect(state.LB.Key).To(Equal(string(newKey)))
+			})
+
+			It("does nothing if the certificate is unchanged", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"update-lbs",
+					"--cert", certPath,
+					"--key", keyPath,
+				}
+
+				executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+				Expect(state.LB.Cert).To(Equal(string(cert)))
+				Expect(state.LB.Key).To(Equal(string(key)))
+			})
+		})
+
+		It("deletes lbs", func() {
+			var session *gexec.Session
+			var stdout []byte
+
+			By("running create-lbs", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "concourse",
+				}
+
+				session = executeCommand(args, 0)
+			})
+
+			By("running delete-lbs", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"delete-lbs",
+				}
+
+				session := executeCommand(args, 0)
+				stdout = session.Out.Contents()
+			})
+
+			By("logging the steps", func() {
+				Expect(stdout).To(ContainSubstring("step: generating terraform template"))
+				Expect(stdout).To(ContainSubstring("step: finished applying terraform template"))
+				Expect(stdout).NotTo(ContainSubstring("step: generating cloud config"))
+				Expect(stdout).NotTo(ContainSubstring("step: applying cloud config"))
 			})
 		})
 	})

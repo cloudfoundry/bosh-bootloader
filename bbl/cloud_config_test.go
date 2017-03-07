@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,10 +12,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cloudfoundry/bosh-bootloader/ssl"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
+	"github.com/square/certstrap/pkix"
 )
 
 var _ = Describe("bbl cloud-config", func() {
@@ -164,6 +167,69 @@ var _ = Describe("bbl cloud-config", func() {
 		contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml")
 		Expect(err).NotTo(HaveOccurred())
 		args := []string{
+			"--state-dir", tempDirectory,
+			"cloud-config",
+		}
+
+		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+	})
+
+	It("returns the cloud config of a bbl environment with concourse lb", func() {
+		contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-concourse-lb.yml")
+		Expect(err).NotTo(HaveOccurred())
+		args := []string{
+			"--state-dir", tempDirectory,
+			"create-lbs",
+			"--type", "concourse",
+		}
+
+		executeCommand(args, 0)
+
+		args = []string{
+			"--state-dir", tempDirectory,
+			"cloud-config",
+		}
+
+		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+	})
+
+	It("returns the cloud config of a bbl environment with cf lb", func() {
+		contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-cf-lb.yml")
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
+		keyPair, err := keyPairGenerator.Generate("127.0.0.1", "127.0.0.1")
+		Expect(err).NotTo(HaveOccurred())
+		cert := keyPair.Certificate
+		key := keyPair.PrivateKey
+
+		certPath := filepath.Join(tempDirectory, "some-cert")
+		err = ioutil.WriteFile(certPath, cert, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath := filepath.Join(tempDirectory, "some-key")
+		err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), key, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		args := []string{
+			"--state-dir", tempDirectory,
+			"create-lbs",
+			"--type", "cf",
+			"--cert", certPath,
+			"--key", keyPath,
+		}
+
+		executeCommand(args, 0)
+
+		args = []string{
 			"--state-dir", tempDirectory,
 			"cloud-config",
 		}

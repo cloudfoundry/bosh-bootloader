@@ -62,9 +62,11 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 
 	state.Stack.LBType = "none"
 
-	err = c.cloudConfigManager.Update(state)
-	if err != nil {
-		return err
+	if !state.NoDirector {
+		err = c.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	_, err = c.infrastructureManager.Update(state.KeyPair.Name, azs, state.Stack.Name, state.Stack.BOSHAZ, "", "", state.EnvID)

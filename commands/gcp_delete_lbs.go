@@ -32,9 +32,11 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 	}
 	state.LB.Type = ""
 
-	err = g.cloudConfigManager.Update(state)
-	if err != nil {
-		return err
+	if !state.NoDirector {
+		err = g.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	template := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")

@@ -70,22 +70,72 @@ var _ = Describe("Delete LBs", func() {
 	})
 
 	Describe("Execute", func() {
-		It("updates cloud config", func() {
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-az"}
-			infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-				Name: "some-stack-name",
-			}
+		Context("when the bbl env has a bosh director", func() {
+			It("updates cloud config", func() {
+				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-az"}
+				infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+					Name: "some-stack-name",
+				}
 
-			err := command.Execute(incomingState)
-			Expect(err).NotTo(HaveOccurred())
+				err := command.Execute(incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
 
-			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
+				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-			Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("none"))
+				Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("none"))
+			})
+		})
+
+		Context("when the bbl env was created without a bosh director", func() {
+			It("does not try to update the cloud config", func() {
+				state := storage.State{
+					Stack: storage.Stack{
+						LBType:          "concourse",
+						CertificateName: "some-certificate",
+						Name:            "some-stack-name",
+						BOSHAZ:          "some-bosh-az",
+					},
+					NoDirector: true,
+					AWS: storage.AWS{
+						Region: "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair",
+					},
+					EnvID: "some-env-id",
+				}
+				err := command.Execute(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+			})
+
+			It("does not check for the existence of a bosh director", func() {
+				state := storage.State{
+					Stack: storage.Stack{
+						LBType:          "concourse",
+						CertificateName: "some-certificate",
+						Name:            "some-stack-name",
+						BOSHAZ:          "some-bosh-az",
+					},
+					NoDirector: true,
+					AWS: storage.AWS{
+						Region: "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair",
+					},
+					EnvID: "some-env-id",
+				}
+				err := command.Execute(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
+			})
 		})
 
 		It("delete lbs from cloudformation and deletes certificate", func() {

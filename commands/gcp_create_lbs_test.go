@@ -917,6 +917,50 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 		})
 
+		Context("when there is no BOSH director", func() {
+			It("creates the LBs", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS:       "gcp",
+					EnvID:      "some-env-id",
+					TFState:    "some-prev-tf-state",
+					NoDirector: true,
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					"generating terraform template", "finished applying terraform template",
+				}))
+			})
+
+			It("does not call the CloudConfigManager", func() {
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{
+					IAAS:       "gcp",
+					EnvID:      "some-env-id",
+					TFState:    "some-prev-tf-state",
+					NoDirector: true,
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+			})
+
+		})
+
 		Context("failure cases", func() {
 			It("fast fails if the terraform installed is less than v0.8.5", func() {
 				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
@@ -1057,27 +1101,6 @@ var _ = Describe("GCPCreateLBs", func() {
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("iaas type must be gcp"))
-			})
-
-			It("returns an error when the BOSH director does not exist", func() {
-				boshClient.InfoCall.Returns.Error = errors.New("error with the director")
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}, storage.State{
-					IAAS: "gcp",
-					BOSH: storage.BOSH{
-						DirectorAddress:  "some-director-address",
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-					},
-				})
-				Expect(err).To(MatchError(commands.BBLNotFound))
-
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
 			})
 		})
 	})

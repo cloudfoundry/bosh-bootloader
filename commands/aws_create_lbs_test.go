@@ -160,15 +160,73 @@ var _ = Describe("AWS Create LBs", func() {
 
 		})
 
-		It("updates the cloud config with a state that has lb type", func() {
-			err := command.Execute(commands.AWSCreateLBsConfig{
-				LBType:   "concourse",
-				CertPath: "temp/some-cert.crt",
-				KeyPath:  "temp/some-key.key",
-			}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
+		Context("when the bbl environment has a BOSH director", func() {
+			It("updates the cloud config with a state that has lb type", func() {
+				err := command.Execute(commands.AWSCreateLBsConfig{
+					LBType:   "concourse",
+					CertPath: "temp/some-cert.crt",
+					KeyPath:  "temp/some-key.key",
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("concourse"))
+				Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("concourse"))
+			})
+		})
+
+		Context("when the bbl environment does not have a BOSH director", func() {
+			It("does not create a BOSH client", func() {
+				incomingState = storage.State{
+					NoDirector: true,
+					Stack: storage.Stack{
+						Name:   "some-stack",
+						BOSHAZ: "some-bosh-az",
+					},
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-key-pair",
+					},
+					EnvID: "some-env-id-timestamp",
+				}
+				err := command.Execute(commands.AWSCreateLBsConfig{
+					LBType:   "concourse",
+					CertPath: "temp/some-cert.crt",
+					KeyPath:  "temp/some-key.key",
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
+			})
+
+			It("does not call cloudConfigManager", func() {
+				incomingState = storage.State{
+					NoDirector: true,
+					Stack: storage.Stack{
+						Name:   "some-stack",
+						BOSHAZ: "some-bosh-az",
+					},
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-key-pair",
+					},
+					EnvID: "some-env-id-timestamp",
+				}
+				err := command.Execute(commands.AWSCreateLBsConfig{
+					LBType:   "concourse",
+					CertPath: "temp/some-cert.crt",
+					KeyPath:  "temp/some-key.key",
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+			})
 		})
 
 		Context("when --skip-if-exists is provided", func() {

@@ -82,9 +82,14 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return nil
 	}
 
-	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+	if !state.NoDirector {
+		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+		if err := c.checkBOSHClient(state.Stack.Name, boshClient); err != nil {
+			return err
+		}
+	}
 
-	if err := c.checkFastFails(config.LBType, state.Stack.LBType, state.Stack.Name, boshClient); err != nil {
+	if err := c.checkFastFails(config.LBType, state.Stack.LBType); err != nil {
 		return err
 	}
 
@@ -112,9 +117,11 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	err = c.cloudConfigManager.Update(state)
-	if err != nil {
-		return err
+	if !state.NoDirector {
+		err = c.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -124,7 +131,11 @@ func (AWSCreateLBs) isValidLBType(lbType string) bool {
 	return lbType == "concourse" || lbType == "cf"
 }
 
-func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client) error {
+func (c AWSCreateLBs) checkBOSHClient(stackName string, boshClient bosh.Client) error {
+	return bblExists(stackName, c.infrastructureManager, boshClient)
+}
+
+func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) error {
 	if newLBType == "" {
 		return fmt.Errorf("--type is a required flag")
 	}
@@ -137,7 +148,7 @@ func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string, sta
 		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
 	}
 
-	return bblExists(stackName, c.infrastructureManager, boshClient)
+	return nil
 }
 
 func (c AWSCreateLBs) updateStack(

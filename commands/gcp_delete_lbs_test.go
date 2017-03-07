@@ -42,34 +42,54 @@ var _ = Describe("GCPDeleteLBs", func() {
 			expectedTerraformTemplate = string(body)
 		})
 
-		It("updates the cloud config", func() {
-			err := command.Execute(storage.State{
-				IAAS: "gcp",
-				BOSH: storage.BOSH{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					DirectorAddress:  "some-director-address",
-				},
-				GCP: storage.GCP{
-					Region: "some-region",
-				},
-				LB: storage.LB{
-					Type: "cf",
-				},
+		Context("when bbl has a bosh director", func() {
+			It("updates the cloud config", func() {
+				err := command.Execute(storage.State{
+					IAAS: "gcp",
+					BOSH: storage.BOSH{
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+						DirectorAddress:  "some-director-address",
+					},
+					GCP: storage.GCP{
+						Region: "some-region",
+					},
+					LB: storage.LB{
+						Type: "cf",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "gcp",
+					BOSH: storage.BOSH{
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+						DirectorAddress:  "some-director-address",
+					},
+					GCP: storage.GCP{
+						Region: "some-region",
+					},
+				}))
 			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
-			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
-				IAAS: "gcp",
-				BOSH: storage.BOSH{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					DirectorAddress:  "some-director-address",
-				},
-				GCP: storage.GCP{
-					Region: "some-region",
-				},
-			}))
+		})
+
+		Context("when bbl does not have a bosh director", func() {
+			It("does not update the cloud config", func() {
+				err := command.Execute(storage.State{
+					IAAS:       "gcp",
+					NoDirector: true,
+					GCP: storage.GCP{
+						Region: "some-region",
+					},
+					LB: storage.LB{
+						Type: "cf",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+
+			})
 		})
 
 		It("runs terraform apply", func() {

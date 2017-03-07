@@ -84,8 +84,6 @@ var _ = Describe("load balancers", func() {
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
 		lbCertPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -111,6 +109,8 @@ var _ = Describe("load balancers", func() {
 
 	Describe("create-lbs", func() {
 		BeforeEach(func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
 			callRealInterpolateMutex.Lock()
 			defer callRealInterpolateMutex.Unlock()
 			callRealInterpolate = true
@@ -252,6 +252,8 @@ var _ = Describe("load balancers", func() {
 
 	Describe("update-lbs", func() {
 		It("updates the load balancer with the given cert, key and chain", func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
 			writeStateJson(storage.State{
 				IAAS: "aws",
 				AWS: storage.AWS{
@@ -297,6 +299,8 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("does nothing if the certificate is unchanged", func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
 			writeStateJson(storage.State{
 				IAAS: "aws",
 				AWS: storage.AWS{
@@ -337,6 +341,8 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("logs all the steps", func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
 			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 			session := updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath, otherLBKeyPath, "", 0, false)
 			stdout := session.Out.Contents()
@@ -348,6 +354,8 @@ var _ = Describe("load balancers", func() {
 		})
 
 		It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
 			certificates := fakeAWS.Certificates.All()
 			Expect(certificates).To(HaveLen(0))
 
@@ -361,6 +369,10 @@ var _ = Describe("load balancers", func() {
 		})
 
 		Context("failure cases", func() {
+			BeforeEach(func() {
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
+			})
+
 			Context("when an lb type does not exist", func() {
 				It("exits 1", func() {
 					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
@@ -438,6 +450,8 @@ var _ = Describe("load balancers", func() {
 
 	Describe("delete-lbs", func() {
 		BeforeEach(func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
 			callRealInterpolateMutex.Lock()
 			defer callRealInterpolateMutex.Unlock()
 			callRealInterpolate = true
@@ -584,6 +598,10 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("lbs", func() {
+		BeforeEach(func() {
+			upAWS(fakeAWSServer.URL, tempDirectory, 0)
+		})
+
 		It("prints out the currently attached lb names and urls", func() {
 			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
@@ -614,6 +632,124 @@ var _ = Describe("load balancers", func() {
 			})
 		})
 	})
+
+	Describe("when no bosh director exists", func() {
+		BeforeEach(func() {
+			args := []string{
+				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--no-director",
+				"--iaas", "aws",
+				"--aws-access-key-id", "some-access-key",
+				"--aws-secret-access-key", "some-access-secret",
+				"--aws-region", "some-region",
+			}
+
+			executeCommand(args, 0)
+
+		})
+
+		It("creates a concourse lb", func() {
+			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
+
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(1))
+			Expect(certificates[0].CertificateBody).To(Equal(testhelpers.BBL_CERT))
+			Expect(certificates[0].PrivateKey).To(Equal(testhelpers.BBL_KEY))
+			Expect(certificates[0].Chain).To(Equal(testhelpers.BBL_CHAIN))
+			Expect(certificates[0].Name).To(MatchRegexp(`concourse-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+		})
+
+		It("updates a cf lb", func() {
+			writeStateJson(storage.State{
+				IAAS: "aws",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
+				Stack: storage.Stack{
+					Name:            "some-stack-name",
+					LBType:          "cf",
+					CertificateName: "bbl-cert-old-certificate",
+				},
+				BOSH: storage.BOSH{
+					DirectorUsername: "admin",
+					DirectorPassword: "admin",
+					DirectorAddress:  fakeBOSHServer.URL,
+				},
+			}, tempDirectory)
+
+			fakeAWS.Stacks.Set(awsbackend.Stack{
+				Name: "some-stack-name",
+			})
+
+			fakeAWS.Certificates.Set(awsbackend.Certificate{
+				Name:            "bbl-cert-old-certificate",
+				CertificateBody: "some-old-certificate-body",
+				PrivateKey:      "some-old-private-key",
+			})
+
+			updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath,
+				otherLBKeyPath, otherLBChainPath, 0, false)
+
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(1))
+			Expect(certificates[0].Chain).To(Equal(testhelpers.OTHER_BBL_CHAIN))
+			Expect(certificates[0].CertificateBody).To(Equal(testhelpers.OTHER_BBL_CERT))
+			Expect(certificates[0].PrivateKey).To(Equal(testhelpers.OTHER_BBL_KEY))
+			Expect(certificates[0].Name).To(MatchRegexp(`cf-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+
+			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeTrue())
+			Expect(stack.WasUpdated).To(BeTrue())
+		})
+
+		It("deletes lbs", func() {
+			writeStateJson(storage.State{
+				IAAS: "aws",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
+				Stack: storage.Stack{
+					Name:            "some-stack-name",
+					LBType:          "cf",
+					CertificateName: "bbl-cert-old-certificate",
+				},
+				BOSH: storage.BOSH{
+					DirectorUsername: "admin",
+					DirectorPassword: "admin",
+					DirectorAddress:  fakeBOSHServer.URL,
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-keypair-name",
+				},
+				EnvID: "bbl-env-lake-timestamp",
+			}, tempDirectory)
+
+			fakeAWS.Stacks.Set(awsbackend.Stack{
+				Name: "some-stack-name",
+			})
+
+			fakeAWS.Certificates.Set(awsbackend.Certificate{
+				Name: "bbl-cert-old-certificate",
+			})
+
+			deleteLBs(fakeAWSServer.URL, tempDirectory, 0, false)
+
+			certificates := fakeAWS.Certificates.All()
+			Expect(certificates).To(HaveLen(0))
+
+			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeTrue())
+			Expect(stack.WasUpdated).To(BeTrue())
+		})
+	})
+
 })
 
 func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Session {
