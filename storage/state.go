@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,7 +20,6 @@ type logger interface {
 
 var (
 	encode func(io.Writer, interface{}) error = encodeFile
-	rename func(string, string) error         = os.Rename
 )
 
 type AWS struct {
@@ -70,7 +70,7 @@ type Store struct {
 
 func NewStore(dir string) Store {
 	return Store{
-		version:   2,
+		version:   3,
 		stateFile: filepath.Join(dir, StateFileName),
 	}
 }
@@ -131,35 +131,11 @@ func GetState(dir string) (State, error) {
 		return state, err
 	}
 
-	if state.Version == 1 {
-		state = migrateV1ToV2(state)
+	if state.Version < 3 {
+		return state, errors.New("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue.")
 	}
 
 	return state, nil
-}
-
-func migrateV1ToV2(state State) State {
-	state.Version = 2
-	state.IAAS = "aws"
-	return state
-}
-
-func renameStateToBBLState(dir string) error {
-	stateFile := filepath.Join(dir, "state.json")
-	_, err := os.Stat(stateFile)
-	switch {
-	case os.IsNotExist(err):
-		return nil
-	case err == nil:
-		GetStateLogger.Println("renaming state.json to bbl-state.json")
-		err := rename(stateFile, filepath.Join(dir, StateFileName))
-		if err != nil {
-			return err
-		}
-		return nil
-	default:
-		return err
-	}
 }
 
 func stateAndBBLStateExist(dir string) (bool, error) {

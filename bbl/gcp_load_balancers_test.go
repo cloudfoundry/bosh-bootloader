@@ -521,7 +521,8 @@ var _ = Describe("load balancers", func() {
 			Context("when bbl environment is not up", func() {
 				It("exits 1 when the BOSH director does not exist", func() {
 					writeStateJson(storage.State{
-						IAAS: "gcp",
+						Version: 3,
+						IAAS:    "gcp",
 						GCP: storage.GCP{
 							ProjectID:         "some-project-id",
 							ServiceAccountKey: "some-service-account-key",

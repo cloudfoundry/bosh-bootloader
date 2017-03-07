@@ -101,7 +101,7 @@ var _ = Describe("Store", func() {
 			data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(MatchJSON(`{
-				"version": 2,
+				"version": 3,
 				"iaas": "aws",
 				"noDirector": false,
 				"aws": {
@@ -263,10 +263,24 @@ var _ = Describe("Store", func() {
 			storage.GetStateLogger = logger
 		})
 
-		Context("when there is a v2 state file", func() {
+		Context("when there is a pre v3 state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 2,
+					"version": 2
+				}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns an error", func() {
+				_, err := storage.GetState(tempDir)
+				Expect(err).To(MatchError("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue."))
+			})
+		})
+
+		Context("when there is a v3 state file", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
+					"version": 3,
 					"iaas": "aws",
 					"aws": {
 						"accessKeyId": "some-aws-access-key-id",
@@ -299,70 +313,7 @@ var _ = Describe("Store", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version: 2,
-					IAAS:    "aws",
-					AWS: storage.AWS{
-						AccessKeyID:     "some-aws-access-key-id",
-						SecretAccessKey: "some-aws-secret-access-key",
-						Region:          "some-aws-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name:       "some-name",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
-					BOSH: storage.BOSH{
-						DirectorAddress:        "some-director-address",
-						DirectorSSLCA:          "some-bosh-ssl-ca",
-						DirectorSSLCertificate: "some-bosh-ssl-certificate",
-						DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
-						Manifest:               "name: bosh",
-					},
-					Stack: storage.Stack{
-						Name:            "some-stack-name",
-						LBType:          "some-lb",
-						CertificateName: "some-certificate-name",
-					},
-				}))
-			})
-		})
-
-		Context("when there is a v1 state file", func() {
-			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 1,
-					"aws": {
-						"accessKeyId": "some-aws-access-key-id",
-						"secretAccessKey": "some-aws-secret-access-key",
-						"region": "some-aws-region"
-					},
-					"keyPair": {
-						"name": "some-name",
-						"privateKey": "some-private-key",
-						"publicKey": "some-public-key"
-					},
-					"bosh": {
-						"directorAddress": "some-director-address",
-						"directorSSLCA": "some-bosh-ssl-ca",
-						"directorSSLCertificate": "some-bosh-ssl-certificate",
-						"directorSSLPrivateKey": "some-bosh-ssl-private-key",
-						"manifest": "name: bosh"
-					},
-					"stack": {
-						"name": "some-stack-name",
-						"lbType": "some-lb",
-						"certificateName": "some-certificate-name"
-					}
-				}`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("migrates the state file with a default of iaas: aws", func() {
-				state, err := storage.GetState(tempDir)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(state).To(Equal(storage.State{
-					Version: 2,
+					Version: 3,
 					IAAS:    "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",
@@ -409,10 +360,6 @@ var _ = Describe("Store", func() {
 						}
 					}`), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
-				})
-
-				AfterEach(func() {
-					storage.ResetRename()
 				})
 
 				Context("failure cases", func() {

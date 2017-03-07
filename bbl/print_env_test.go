@@ -26,6 +26,7 @@ var _ = Describe("bbl", func() {
 
 	It("prints the bosh environment variables when print-env is called to be sourced", func() {
 		state := []byte(`{
+			"version": 3,
 			"bosh": {
 				"directorAddress": "some-director-address",
 				"directorUsername": "some-director-username",

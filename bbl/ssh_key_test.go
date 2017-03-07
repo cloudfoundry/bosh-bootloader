@@ -27,6 +27,7 @@ var _ = Describe("ssh-key", func() {
 
 	It("returns the ssh key from the given state file", func() {
 		state := []byte(`{
+			"version": 3,
 			"keyPair": {
 				"privateKey": "some-ssh-private-key"
 			}
@@ -66,7 +67,7 @@ var _ = Describe("ssh-key", func() {
 		})
 
 		It("returns a non zero exit code when the ssh key does not exist", func() {
-			state := []byte(`{}`)
+			state := []byte(`{"version":3}`)
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

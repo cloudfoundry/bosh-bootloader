@@ -152,7 +152,7 @@ var _ = Describe("bbl up gcp", func() {
 		executeCommand(args, 0)
 
 		state := readStateJson(tempDirectory)
-		Expect(state.Version).To(Equal(2))
+		Expect(state.Version).To(Equal(3))
 		Expect(state.IAAS).To(Equal("gcp"))
 		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
@@ -285,7 +285,7 @@ var _ = Describe("bbl up gcp", func() {
 			executeCommand(args, 0)
 
 			state := readStateJson(tempDirectory)
-			Expect(state.Version).To(Equal(2))
+			Expect(state.Version).To(Equal(3))
 			Expect(state.IAAS).To(Equal("gcp"))
 			Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 			Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
@@ -297,7 +297,8 @@ var _ = Describe("bbl up gcp", func() {
 	Context("when bbl-state.json contains gcp details", func() {
 		BeforeEach(func() {
 			buf, err := json.Marshal(storage.State{
-				IAAS: "gcp",
+				Version: 3,
+				IAAS:    "gcp",
 				GCP: storage.GCP{
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",

@@ -27,6 +27,7 @@ var _ = Describe("director-username", func() {
 
 	It("returns the director username from the given state file", func() {
 		state := []byte(`{
+			"version": 3,
 			"bosh": {
 				"directorUsername": "some-director-user"
 			}
@@ -66,7 +67,7 @@ var _ = Describe("director-username", func() {
 		})
 
 		It("returns a non zero exit code when the username does not exist", func() {
-			state := []byte(`{}`)
+			state := []byte(`{"version":3}`)
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

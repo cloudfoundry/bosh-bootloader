@@ -27,6 +27,7 @@ var _ = Describe("director-address", func() {
 
 	It("returns the director address from the given state file", func() {
 		state := []byte(`{
+			"version": 3,
 			"bosh": {
 				"directorAddress": "some-director-url"
 			}
@@ -66,7 +67,7 @@ var _ = Describe("director-address", func() {
 		})
 
 		It("returns a non zero exit code when the address does not exist", func() {
-			state := []byte(`{}`)
+			state := []byte(`{"version":3}`)
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

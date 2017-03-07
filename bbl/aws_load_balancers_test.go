@@ -205,7 +205,8 @@ var _ = Describe("load balancers", func() {
 
 				It("exits 1 when the BOSH director does not exist", func() {
 					writeStateJson(storage.State{
-						IAAS: "aws",
+						Version: 3,
+						IAAS:    "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",
@@ -255,7 +256,8 @@ var _ = Describe("load balancers", func() {
 			upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 			writeStateJson(storage.State{
-				IAAS: "aws",
+				Version: 3,
+				IAAS:    "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -302,7 +304,8 @@ var _ = Describe("load balancers", func() {
 			upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
 			writeStateJson(storage.State{
-				IAAS: "aws",
+				Version: 3,
+				IAAS:    "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -385,7 +388,8 @@ var _ = Describe("load balancers", func() {
 			Context("when bbl environment is not up", func() {
 				It("exits 1 when the cloudformation stack does not exist", func() {
 					writeStateJson(storage.State{
-						IAAS: "aws",
+						Version: 3,
+						IAAS:    "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",
@@ -407,7 +411,8 @@ var _ = Describe("load balancers", func() {
 					})
 
 					writeStateJson(storage.State{
-						IAAS: "aws",
+						Version: 3,
+						IAAS:    "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",
@@ -471,7 +476,8 @@ var _ = Describe("load balancers", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			writeStateJson(storage.State{
-				IAAS: "aws",
+				Version: 3,
+				IAAS:    "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -557,7 +563,8 @@ var _ = Describe("load balancers", func() {
 					})
 
 					writeStateJson(storage.State{
-						IAAS: "aws",
+						Version: 3,
+						IAAS:    "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key",
 							SecretAccessKey: "some-access-secret",
@@ -664,7 +671,8 @@ var _ = Describe("load balancers", func() {
 
 		It("updates a cf lb", func() {
 			writeStateJson(storage.State{
-				IAAS: "aws",
+				Version: 3,
+				IAAS:    "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
@@ -709,7 +717,8 @@ var _ = Describe("load balancers", func() {
 
 		It("deletes lbs", func() {
 			writeStateJson(storage.State{
-				IAAS: "aws",
+				Version: 3,
+				IAAS:    "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",

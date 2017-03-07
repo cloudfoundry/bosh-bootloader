@@ -106,6 +106,7 @@ director_ssl:
 `
 
 		state = storage.State{
+			Version: 3,
 			IAAS:    "gcp",
 			TFState: `{"key": "value"}`,
 			GCP: storage.GCP{

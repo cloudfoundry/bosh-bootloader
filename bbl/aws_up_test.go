@@ -208,7 +208,8 @@ var _ = Describe("bbl up aws", func() {
 		Context("when bbl-state.json contains aws details", func() {
 			BeforeEach(func() {
 				buf, err := json.Marshal(storage.State{
-					IAAS: "aws",
+					Version: 3,
+					IAAS:    "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-access-key-id",
 						SecretAccessKey: "some-access-key",
@@ -354,6 +355,7 @@ var _ = Describe("bbl up aws", func() {
 				})
 
 				writeStateJson(storage.State{
+					Version: 3,
 					AWS: storage.AWS{
 						AccessKeyID:     "some-access-key-id",
 						SecretAccessKey: "some-secret-access-key",
@@ -422,6 +424,7 @@ var _ = Describe("bbl up aws", func() {
 				})
 
 				writeStateJson(storage.State{
+					Version: 3,
 					AWS: storage.AWS{
 						AccessKeyID:     "some-access-key-id",
 						SecretAccessKey: "some-secret-access-key",
@@ -452,7 +455,7 @@ var _ = Describe("bbl up aws", func() {
 			})
 
 			It("fast fails if the bosh state exists", func() {
-				writeStateJson(storage.State{BOSH: storage.BOSH{DirectorAddress: "some-director-address"}}, tempDirectory)
+				writeStateJson(storage.State{Version: 3, BOSH: storage.BOSH{DirectorAddress: "some-director-address"}}, tempDirectory)
 				session := upAWS(fakeAWSServer.URL, tempDirectory, 1)
 				Expect(session.Err.Contents()).To(ContainSubstring("Found BOSH data in state directory"))
 			})
@@ -470,6 +473,7 @@ var _ = Describe("bbl up aws", func() {
 
 			It("updates the stack with the cloudformation template", func() {
 				buf, err := json.Marshal(storage.State{
+					Version: 3,
 					KeyPair: storage.KeyPair{
 						Name:       "some-keypair-name",
 						PrivateKey: testhelpers.BBL_KEY,

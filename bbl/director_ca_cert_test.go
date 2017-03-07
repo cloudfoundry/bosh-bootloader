@@ -22,6 +22,7 @@ var _ = Describe("director-ca-cert", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			state := []byte(`{
+				"version": 3,
 				"bosh": {
 					"directorSSLCA": "some-ca-contents"
 				}
@@ -85,7 +86,7 @@ var _ = Describe("director-ca-cert", func() {
 			tempDirectory, err := ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			state := []byte(`{}`)
+			state := []byte(`{"version":3}`)
 			err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

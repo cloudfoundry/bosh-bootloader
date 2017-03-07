@@ -27,6 +27,7 @@ var _ = Describe("director-password", func() {
 
 	It("returns the director password from the given state file", func() {
 		state := []byte(`{
+			"version": 3,
 			"bosh": {
 				"directorPassword": "some-director-password"
 			}
@@ -66,7 +67,7 @@ var _ = Describe("director-password", func() {
 		})
 
 		It("returns a non zero exit code when the password does not exist", func() {
-			state := []byte(`{}`)
+			state := []byte(`{"version":3}`)
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

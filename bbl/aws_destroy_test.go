@@ -138,7 +138,8 @@ director_ssl:
 `
 
 			buf, err := json.Marshal(storage.State{
-				IAAS: "aws",
+				Version: 3,
+				IAAS:    "aws",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key",
 					SecretAccessKey: "some-access-secret",
