@@ -25,11 +25,7 @@ The following should be installed on your local machine
 
 ### Install bosh-bootloader
 
-bosh-bootloader can be installed with go get:
-
-```
-go get github.com/cloudfoundry/bosh-bootloader/bbl
-```
+bosh-bootloader can be installed by downloading the [latest Github release](https://github.com/cloudfoundry/bosh-bootloader/releases/latest).
 
 ### Configure AWS
 
