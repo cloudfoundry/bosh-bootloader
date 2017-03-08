@@ -18,6 +18,8 @@ var _ = Describe("up test", func() {
 		terraform actors.Terraform
 		boshcli   actors.BOSHCLI
 		state     integration.State
+
+		envID string
 	)
 
 	BeforeEach(func() {
@@ -25,8 +27,9 @@ var _ = Describe("up test", func() {
 		configuration, err := integration.LoadGCPConfig()
 		Expect(err).NotTo(HaveOccurred())
 
+		envID = configuration.GCPEnvPrefix + "bbl-ci-env"
 		state = integration.NewState(configuration.StateFileDir)
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-ci-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envID)
 		gcp = actors.NewGCP(configuration)
 		terraform = actors.NewTerraform(configuration)
 		boshcli = actors.NewBOSHCLI()
@@ -42,7 +45,7 @@ var _ = Describe("up test", func() {
 		)
 
 		By("calling bbl up", func() {
-			bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-ci-env"})
+			bbl.Up(actors.GCPIAAS, []string{"--name", envID})
 
 			envID = state.EnvID()
 		})

@@ -11,6 +11,8 @@ import (
 var _ = Describe("idempotent test", func() {
 	var (
 		bbl actors.BBL
+
+		envID string
 	)
 
 	BeforeEach(func() {
@@ -18,11 +20,12 @@ var _ = Describe("idempotent test", func() {
 		configuration, err := integration.LoadGCPConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-ci-reentrant-env")
+		envID = configuration.GCPEnvPrefix + "bbl-ci-reentrant-env"
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envID)
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
-		bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-ci-reentrant-env"})
+		bbl.Up(actors.GCPIAAS, []string{"--name", envID})
 
 		bbl.Up(actors.GCPIAAS, []string{})
 
@@ -30,7 +33,7 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	It("is able to bbl up idempotently with no director", func() {
-		bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-ci-reentrant-env", "--no-director"})
+		bbl.Up(actors.GCPIAAS, []string{"--name", envID, "--no-director"})
 
 		bbl.Up(actors.GCPIAAS, []string{})
 

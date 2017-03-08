@@ -15,6 +15,8 @@ var _ = Describe("no director test", func() {
 		bbl   actors.BBL
 		gcp   actors.GCP
 		state integration.State
+
+		envID string
 	)
 
 	BeforeEach(func() {
@@ -22,8 +24,9 @@ var _ = Describe("no director test", func() {
 		configuration, err := integration.LoadGCPConfig()
 		Expect(err).NotTo(HaveOccurred())
 
+		envID = configuration.GCPEnvPrefix + "bbl-no-director-env"
 		state = integration.NewState(configuration.StateFileDir)
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-no-director-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envID)
 		gcp = actors.NewGCP(configuration)
 	})
 
@@ -35,7 +38,7 @@ var _ = Describe("no director test", func() {
 		)
 
 		By("calling bbl up", func() {
-			bbl.Up(actors.GCPIAAS, []string{"--name", "bbl-no-director-env", "--no-director"})
+			bbl.Up(actors.GCPIAAS, []string{"--name", envID, "--no-director"})
 
 			envID = state.EnvID()
 		})
