@@ -24,9 +24,8 @@ var _ = Describe("no director test", func() {
 		configuration, err := integration.LoadGCPConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		envID = configuration.GCPEnvPrefix + "bbl-no-director-env"
 		state = integration.NewState(configuration.StateFileDir)
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envID)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "no-director-env")
 		gcp = actors.NewGCP(configuration)
 	})
 

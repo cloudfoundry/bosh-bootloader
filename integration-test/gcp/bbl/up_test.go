@@ -27,9 +27,8 @@ var _ = Describe("up test", func() {
 		configuration, err := integration.LoadGCPConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		envID = configuration.GCPEnvPrefix + "bbl-ci-env"
 		state = integration.NewState(configuration.StateFileDir)
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envID)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		gcp = actors.NewGCP(configuration)
 		terraform = actors.NewTerraform(configuration)
 		boshcli = actors.NewBOSHCLI()

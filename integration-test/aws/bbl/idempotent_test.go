@@ -18,7 +18,7 @@ var _ = Describe("idempotent test", func() {
 		configuration, err := integration.LoadAWSConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-ci-reentrant-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "reentrant-env")
 	})
 
 	It("is able to bbl up idempotently with a director", func() {

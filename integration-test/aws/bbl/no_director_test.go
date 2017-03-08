@@ -20,7 +20,7 @@ var _ = Describe("no director test", func() {
 		configuration, err := integration.LoadAWSConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bbl-no-director-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "no-director-env")
 		aws = actors.NewAWS(configuration)
 		state = integration.NewState(configuration.StateFileDir)
 	})

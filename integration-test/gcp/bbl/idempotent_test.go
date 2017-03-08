@@ -20,8 +20,7 @@ var _ = Describe("idempotent test", func() {
 		configuration, err := integration.LoadGCPConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		envID = configuration.GCPEnvPrefix + "bbl-ci-reentrant-env"
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envID)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "reentrant-env")
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
