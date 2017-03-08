@@ -105,8 +105,6 @@ func (s StateQuery) Usage() string {
 		return DirectorAddressCommandUsage
 	case DirectorCACertPropertyName:
 		return DirectorCACertCommandUsage
-	case BOSHCACertPropertyName:
-		return DirectorCACertCommandUsage
 	}
 	return ""
 }

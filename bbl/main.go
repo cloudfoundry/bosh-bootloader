@@ -47,7 +47,6 @@ func main() {
 		commands.DirectorUsernameCommand:   nil,
 		commands.DirectorPasswordCommand:   nil,
 		commands.DirectorCACertCommand:     nil,
-		commands.BOSHCACertCommand:         nil,
 		commands.SSHKeyCommand:             nil,
 		commands.CreateLBsCommand:          nil,
 		commands.UpdateLBsCommand:          nil,
@@ -194,10 +193,6 @@ func main() {
 		return state.BOSH.DirectorPassword
 	})
 	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorCACertPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorSSLCA
-	})
-	commandSet[commands.BOSHCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.BOSHCACertPropertyName, func(state storage.State) string {
-		fmt.Fprintln(os.Stderr, "'bosh-ca-cert' has been deprecated and will be removed in future versions of bbl, please use 'director-ca-cert'")
 		return state.BOSH.DirectorSSLCA
 	})
 	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, commands.SSHKeyPropertyName, func(state storage.State) string {

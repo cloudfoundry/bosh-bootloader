@@ -13,7 +13,6 @@ const (
 	DirectorPasswordCommand = "director-password"
 	DirectorAddressCommand  = "director-address"
 	DirectorCACertCommand   = "director-ca-cert"
-	BOSHCACertCommand       = "bosh-ca-cert"
 
 	EnvIDPropertyName            = "environment id"
 	SSHKeyPropertyName           = "ssh key"
@@ -21,7 +20,6 @@ const (
 	DirectorPasswordPropertyName = "director password"
 	DirectorAddressPropertyName  = "director address"
 	DirectorCACertPropertyName   = "director ca cert"
-	BOSHCACertPropertyName       = "bosh ca cert"
 )
 
 type StateQuery struct {

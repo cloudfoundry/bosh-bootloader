@@ -28,7 +28,6 @@ Global Options:
 
 const GlobalUsage = `
 Commands:
-  bosh-ca-cert           Prints BOSH director CA certificate
   bosh-deployment-vars   Prints required variables for BOSH deployment
   cloud-config           Prints suggested cloud configuration for BOSH environment
   create-lbs             Attaches load balancer(s)
