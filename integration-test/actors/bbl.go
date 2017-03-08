@@ -44,6 +44,10 @@ func NewBBL(stateDirectory string, pathToBBL string, configuration integration.C
 	}
 }
 
+func (b BBL) PredefinedEnvID() string {
+	return b.envID
+}
+
 func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 	args := []string{
 		"--state-dir", b.stateDirectory,

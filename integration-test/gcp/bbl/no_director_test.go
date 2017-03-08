@@ -15,8 +15,6 @@ var _ = Describe("no director test", func() {
 		bbl   actors.BBL
 		gcp   actors.GCP
 		state integration.State
-
-		envID string
 	)
 
 	BeforeEach(func() {
@@ -36,7 +34,7 @@ var _ = Describe("no director test", func() {
 		)
 
 		By("calling bbl up", func() {
-			bbl.Up(actors.GCPIAAS, []string{"--name", envID, "--no-director"})
+			bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 		})
 
 		By("checking the ssh key exists", func() {
@@ -63,10 +61,10 @@ var _ = Describe("no director test", func() {
 		})
 
 		By("checking the network and subnet do not exist", func() {
-			network, _ := gcp.GetNetwork(envID + "-network")
+			network, _ := gcp.GetNetwork(bbl.PredefinedEnvID() + "-network")
 			Expect(network).To(BeNil())
 
-			subnet, _ := gcp.GetSubnet(envID + "-subnet")
+			subnet, _ := gcp.GetSubnet(bbl.PredefinedEnvID() + "-subnet")
 			Expect(subnet).To(BeNil())
 		})
 	})

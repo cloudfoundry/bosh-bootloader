@@ -11,8 +11,6 @@ import (
 var _ = Describe("idempotent test", func() {
 	var (
 		bbl actors.BBL
-
-		envID string
 	)
 
 	BeforeEach(func() {
@@ -24,7 +22,7 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
-		bbl.Up(actors.GCPIAAS, []string{"--name", envID})
+		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
 		bbl.Up(actors.GCPIAAS, []string{})
 
@@ -32,7 +30,7 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	It("is able to bbl up idempotently with no director", func() {
-		bbl.Up(actors.GCPIAAS, []string{"--name", envID, "--no-director"})
+		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 
 		bbl.Up(actors.GCPIAAS, []string{})
 

@@ -18,8 +18,6 @@ var _ = Describe("up test", func() {
 		terraform actors.Terraform
 		boshcli   actors.BOSHCLI
 		state     integration.State
-
-		envID string
 	)
 
 	BeforeEach(func() {
@@ -43,7 +41,7 @@ var _ = Describe("up test", func() {
 		)
 
 		By("calling bbl up", func() {
-			bbl.Up(actors.GCPIAAS, []string{"--name", envID})
+			bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID()})
 		})
 
 		By("checking the ssh key exists", func() {
@@ -85,7 +83,7 @@ var _ = Describe("up test", func() {
 		})
 
 		By("confirming that target pools exists", func() {
-			targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
+			targetPools := []string{bbl.PredefinedEnvID() + "-cf-ssh-proxy", bbl.PredefinedEnvID() + "-cf-tcp-router"}
 			for _, p := range targetPools {
 				targetPool, err := gcp.GetTargetPool(p)
 				Expect(err).NotTo(HaveOccurred())
@@ -93,7 +91,7 @@ var _ = Describe("up test", func() {
 				Expect(targetPool.Name).To(Equal(p))
 			}
 
-			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(envID + "-https-proxy")
+			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(bbl.PredefinedEnvID() + "-https-proxy")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
@@ -111,7 +109,7 @@ var _ = Describe("up test", func() {
 		})
 
 		By("confirming that the cert gets updated", func() {
-			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(envID + "-https-proxy")
+			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(bbl.PredefinedEnvID() + "-https-proxy")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
@@ -124,7 +122,7 @@ var _ = Describe("up test", func() {
 		})
 
 		By("confirming that the target pools do not exist", func() {
-			targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
+			targetPools := []string{bbl.PredefinedEnvID() + "-cf-ssh-proxy", bbl.PredefinedEnvID() + "-cf-tcp-router"}
 			for _, p := range targetPools {
 				_, err := gcp.GetTargetPool(p)
 				Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + p + `' was not found`)))
@@ -142,23 +140,23 @@ var _ = Describe("up test", func() {
 		})
 
 		By("checking the network and subnet do not exist", func() {
-			network, _ := gcp.GetNetwork(envID + "-network")
+			network, _ := gcp.GetNetwork(bbl.PredefinedEnvID() + "-network")
 			Expect(network).To(BeNil())
 
-			subnet, _ := gcp.GetSubnet(envID + "-subnet")
+			subnet, _ := gcp.GetSubnet(bbl.PredefinedEnvID() + "-subnet")
 			Expect(subnet).To(BeNil())
 		})
 
 		By("checking the static ip does not exist", func() {
-			address, _ := gcp.GetAddress(envID + "-bosh-external-ip")
+			address, _ := gcp.GetAddress(bbl.PredefinedEnvID() + "-bosh-external-ip")
 			Expect(address).To(BeNil())
 		})
 
 		By("checking the open and internal firewall rules do not exist", func() {
-			boshOpenFirewallRule, _ := gcp.GetFirewallRule(envID + "-bosh-open")
+			boshOpenFirewallRule, _ := gcp.GetFirewallRule(bbl.PredefinedEnvID() + "-bosh-open")
 			Expect(boshOpenFirewallRule).To(BeNil())
 
-			internalFirewallRule, _ := gcp.GetFirewallRule(envID + "-internal")
+			internalFirewallRule, _ := gcp.GetFirewallRule(bbl.PredefinedEnvID() + "-internal")
 			Expect(internalFirewallRule).To(BeNil())
 		})
 
@@ -168,7 +166,7 @@ var _ = Describe("up test", func() {
 		})
 
 		By("checking that the health service monitor does not exist", func() {
-			healthCheck, _ := gcp.GetHealthCheck(envID + "-cf")
+			healthCheck, _ := gcp.GetHealthCheck(bbl.PredefinedEnvID() + "-cf")
 			Expect(healthCheck).To(BeNil())
 		})
 	})

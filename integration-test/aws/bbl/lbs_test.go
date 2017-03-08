@@ -35,7 +35,7 @@ var _ = Describe("load balancer tests", func() {
 	})
 
 	It("creates, updates and deletes an LB with the specified cert and key", func() {
-		bbl.Up(actors.AWSIAAS, []string{"--name", "bbl-ci-env"})
+		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
 		stackName := state.StackName()
 		directorAddress := bbl.DirectorAddress()
@@ -51,7 +51,7 @@ var _ = Describe("load balancer tests", func() {
 		Expect(natInstanceID).NotTo(BeEmpty())
 
 		tags := aws.GetEC2InstanceTags(natInstanceID)
-		Expect(tags["bbl-env-id"]).To(Equal("bbl-ci-env"))
+		Expect(tags["bbl-env-id"]).To(Equal(bbl.PredefinedEnvID()))
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())

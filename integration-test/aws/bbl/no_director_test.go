@@ -31,7 +31,7 @@ var _ = Describe("no director test", func() {
 		)
 
 		By("calling bbl up with the no-director flag", func() {
-			bbl.Up(actors.AWSIAAS, []string{"--name", "bbl-no-director-env", "--no-director"})
+			bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 		})
 
 		By("checking that the stack exists", func() {
@@ -43,7 +43,7 @@ var _ = Describe("no director test", func() {
 			Expect(natInstanceID).NotTo(BeEmpty())
 
 			tags := aws.GetEC2InstanceTags(natInstanceID)
-			Expect(tags["bbl-env-id"]).To(Equal("bbl-no-director-env"))
+			Expect(tags["bbl-env-id"]).To(Equal(bbl.PredefinedEnvID()))
 		})
 
 		By("checking that the bosh director does not exists", func() {

@@ -22,7 +22,7 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
-		bbl.Up(actors.AWSIAAS, []string{"--name", "bbl-ci-reentrant-env"})
+		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
 		bbl.Up(actors.AWSIAAS, []string{})
 
@@ -30,7 +30,7 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	It("is able to bbl up idempotently with no director", func() {
-		bbl.Up(actors.AWSIAAS, []string{"--name", "bbl-ci-reentrant-env", "--no-director"})
+		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 
 		bbl.Up(actors.AWSIAAS, []string{})
 
