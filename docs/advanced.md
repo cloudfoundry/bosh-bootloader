@@ -1,4 +1,4 @@
-= Advanced BOSH Configuration
+# Advanced BOSH Configuration
 
 For many users, especially cloudfoundry core teams, you may want to specify configuration options for the bosh director that bosh-bootloader does not expose:
 * External Credential Store
@@ -8,7 +8,7 @@ For many users, especially cloudfoundry core teams, you may want to specify conf
 
 In previous versions of bosh-bootloader the only option was to allow bosh-bootloader to manage your bosh director entirely, but as of v3.0 we have introduced the option to only have bbl pave the IaaS but leave director management up to you.
 
-== Summary
+## Summary
 
 The process to create a director with custom is as follows:
 
@@ -18,7 +18,7 @@ The process to create a director with custom is as follows:
 4. Use ``bbl cloud-config`` and the bosh cli to upload a cloud config containing VM extensions for your load balancer(s)
 
 
-== A concrete example, with full arguments supplied
+## A concrete example, with full arguments supplied
 First we create our network and firewall rules. Important here is the ``--no-director`` flag.
 ```
 bbl up --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-project-14478532 --iaas gcp --no-director
