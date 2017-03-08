@@ -33,14 +33,11 @@ var _ = Describe("no director test", func() {
 	It("successfully bbls up and destroys with no director", func() {
 		var (
 			expectedSSHKey  string
-			envID           string
 			directorAddress string
 		)
 
 		By("calling bbl up", func() {
 			bbl.Up(actors.GCPIAAS, []string{"--name", envID, "--no-director"})
-
-			envID = state.EnvID()
 		})
 
 		By("checking the ssh key exists", func() {

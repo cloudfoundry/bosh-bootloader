@@ -38,7 +38,6 @@ var _ = Describe("up test", func() {
 	It("successfully bbls up and destroys", func() {
 		var (
 			expectedSSHKey  string
-			envID           string
 			directorAddress string
 			caCertPath      string
 			urlToSSLCert    string
@@ -46,8 +45,6 @@ var _ = Describe("up test", func() {
 
 		By("calling bbl up", func() {
 			bbl.Up(actors.GCPIAAS, []string{"--name", envID})
-
-			envID = state.EnvID()
 		})
 
 		By("checking the ssh key exists", func() {
