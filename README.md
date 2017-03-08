@@ -11,8 +11,9 @@ support bootstrapping a CloudFoundry installation on AWS.
 ## Guides
 
 - [Getting Started on AWS](docs/getting-started-aws.md)
-- [Deploying Concourse on GCP](concourse.md)
-- [Deploying Cloud Foundry on GCP](cloudfoundry.md)
+- [Deploying Concourse on GCP](docs/concourse.md)
+- [Deploying Cloud Foundry on GCP](docs/cloudfoundry.md)
+- [Advanced BOSH Configuration](docs/advanced.md)
 
 ## Prerequisites
 
