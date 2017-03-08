@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	compute "google.golang.org/api/compute/v1"
 
@@ -539,13 +540,14 @@ var _ = Describe("GCPUp", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		DescribeTable("up config contains subset of the details", func(upConfig func() commands.GCPUpConfig, expectedErr string) {
-			err := gcpUp.Execute(upConfig(), storage.State{
-				IAAS: "gcp",
-				GCP:  storage.GCP{},
-			})
-			Expect(err).To(MatchError(expectedErr))
-		},
+		DescribeTable("up config contains subset of the details",
+			func(upConfig func() commands.GCPUpConfig, expectedErr string) {
+				err := gcpUp.Execute(upConfig(), storage.State{
+					IAAS: "gcp",
+					GCP:  storage.GCP{},
+				})
+				Expect(err).To(MatchError(expectedErr))
+			},
 			Entry("returns an error when the service account key is not provided", func() commands.GCPUpConfig {
 				return commands.GCPUpConfig{
 					ProjectID: "new-project-id",
@@ -599,7 +601,7 @@ var _ = Describe("GCPUp", func() {
 
 			It("applies the correct cf template and args for cf lb type", func() {
 				Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedCFTemplate))
+				Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(strings.Join([]string{expectedCFTemplate, dnsTemplate}, "\n")))
 				Expect(terraformExecutor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
 				Expect(terraformExecutor.ApplyCall.Receives.Key).To(Equal("some-key"))
 				Expect(terraformExecutor.ApplyCall.Receives.Domain).To(Equal("some-domain"))

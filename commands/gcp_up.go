@@ -163,7 +163,12 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	case "cf":
 		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
 		instanceGroups := generateInstanceGroups(zones)
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
+
+		if state.LB.Domain != "" {
+			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
+		} else {
+			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
+		}
 	default:
 		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
 	}
