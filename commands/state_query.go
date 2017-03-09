@@ -24,18 +24,22 @@ const (
 )
 
 type StateQuery struct {
-	logger         logger
-	stateValidator stateValidator
-	propertyName   string
+	logger                  logger
+	stateValidator          stateValidator
+	terraformOutputProvider terraformOutputProvider
+	infrastructureManager   infrastructureManager
+	propertyName            string
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, stateValidator stateValidator, propertyName string) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, terraformOutputProvider terraformOutputProvider, infrastructureManager infrastructureManager, propertyName string) StateQuery {
 	return StateQuery{
-		logger:         logger,
-		stateValidator: stateValidator,
-		propertyName:   propertyName,
+		logger:                  logger,
+		stateValidator:          stateValidator,
+		terraformOutputProvider: terraformOutputProvider,
+		infrastructureManager:   infrastructureManager,
+		propertyName:            propertyName,
 	}
 }
 
@@ -45,14 +49,22 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 		return err
 	}
 
-	if state.NoDirector {
+	if state.NoDirector && s.propertyName != DirectorAddressPropertyName {
 		return errors.New("Error BBL does not manage this director.")
 	}
 
 	var propertyValue string
 	switch s.propertyName {
 	case DirectorAddressPropertyName:
-		propertyValue = state.BOSH.DirectorAddress
+		if !state.NoDirector {
+			propertyValue = state.BOSH.DirectorAddress
+		} else {
+			externalIP, err := s.getEIP(state)
+			if err != nil {
+				return err
+			}
+			propertyValue = externalIP
+		}
 	case DirectorUsernamePropertyName:
 		propertyValue = state.BOSH.DirectorUsername
 	case DirectorPasswordPropertyName:
@@ -71,4 +83,23 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 
 	s.logger.Println(propertyValue)
 	return nil
+}
+
+func (s StateQuery) getEIP(state storage.State) (string, error) {
+	switch state.IAAS {
+	case "aws":
+		stack, err := s.infrastructureManager.Describe(state.Stack.Name)
+		if err != nil {
+			return "", err
+		}
+		return stack.Outputs["BOSHEIP"], nil
+	case "gcp":
+		terraformOutputs, err := s.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		if err != nil {
+			return "", err
+		}
+		return terraformOutputs.ExternalIP, nil
+	}
+
+	return "", errors.New("Could not find external IP for given IAAS")
 }

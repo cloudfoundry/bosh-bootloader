@@ -3,14 +3,19 @@ package main_test
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/rosenhouse/awsfaker"
 )
 
 var _ = Describe("director-address", func() {
@@ -53,18 +58,96 @@ var _ = Describe("director-address", func() {
 	})
 
 	Context("when bbl does not manage the director", func() {
-		BeforeEach(func() {
-			state := []byte(`{"version":3,"noDirector": true}`)
-			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
+		var (
+			pathToFakeTerraform        string
+			pathToTerraform            string
+			fakeTerraformBackendServer *httptest.Server
+		)
+
+		Context("gcp", func() {
+			BeforeEach(func() {
+				var err error
+				fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					switch request.URL.Path {
+					case "/output/external_ip":
+						responseWriter.Write([]byte("some-external-ip"))
+					}
+				}))
+
+				pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+					"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
+				Expect(err).NotTo(HaveOccurred())
+
+				pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+				err = os.Rename(pathToFakeTerraform, pathToTerraform)
+				Expect(err).NotTo(HaveOccurred())
+
+				os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
+
+				state := []byte(`{"version":3,"iaas": "gcp", "noDirector": true}`)
+				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				os.Setenv("PATH", originalPath)
+			})
+
+			It("returns the eip reserved for the director", func() {
+				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(session.Out.Contents()).To(ContainSubstring("some-external-ip"))
+			})
 		})
 
-		It("returns a non zero exit code and prints a helpful error message", func() {
-			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
+		Context("aws", func() {
+			var (
+				fakeAWS       *awsbackend.Backend
+				fakeAWSServer *httptest.Server
 
-			Eventually(session).Should(gexec.Exit(1))
-			Expect(session.Err.Contents()).To(ContainSubstring("Error BBL does not manage this director."))
+				fakeBOSHServer *httptest.Server
+				fakeBOSH       *fakeBOSHDirector
+			)
+
+			BeforeEach(func() {
+				fakeBOSH = &fakeBOSHDirector{}
+				fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					fakeBOSH.ServeHTTP(responseWriter, request)
+				}))
+
+				fakeAWS = awsbackend.New(fakeBOSHServer.URL)
+				fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
+
+				upArgs := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--no-director",
+					"--iaas", "aws",
+					"--aws-access-key-id", "some-access-key",
+					"--aws-secret-access-key", "some-access-secret",
+					"--aws-region", "some-region",
+				}
+
+				executeCommand(upArgs, 0)
+			})
+
+			It("returns the eip reserved for the director", func() {
+				args = []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"director-address",
+				}
+				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(session.Out.Contents()).To(ContainSubstring("127.0.0.1"))
+			})
+
 		})
 	})
 
