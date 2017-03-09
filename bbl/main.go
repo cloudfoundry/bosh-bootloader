@@ -183,24 +183,12 @@ func main() {
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
 	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputProvider, os.Stdout)
-	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorAddress
-	})
-	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorUsernamePropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorUsername
-	})
-	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorPasswordPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorPassword
-	})
-	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorCACertPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorSSLCA
-	})
-	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, commands.SSHKeyPropertyName, func(state storage.State) string {
-		return state.KeyPair.PrivateKey
-	})
-	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, commands.EnvIDPropertyName, func(state storage.State) string {
-		return state.EnvID
-	})
+	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName)
+	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorUsernamePropertyName)
+	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorPasswordPropertyName)
+	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorCACertPropertyName)
+	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, commands.SSHKeyPropertyName)
+	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, commands.EnvIDPropertyName)
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 

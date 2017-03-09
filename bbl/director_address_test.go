@@ -25,33 +25,34 @@ var _ = Describe("director-address", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("returns the director address from the given state file", func() {
-		state := []byte(`{
-			"version": 3,
-			"bosh": {
-				"directorAddress": "some-director-url"
+	Context("when bbl manages the director", func() {
+		BeforeEach(func() {
+			state := []byte(`{
+				"version": 3,
+				"bosh": {
+					"directorAddress": "some-director-url"
+				}
+			}`)
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns the director address from the given state file", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"director-address",
 			}
-		}`)
-		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
 
-		args := []string{
-			"--state-dir", tempDirectory,
-			"director-address",
-		}
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 
-		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(ContainSubstring("some-director-url"))
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(ContainSubstring("some-director-url"))
+		})
 	})
 
 	Context("failure cases", func() {
 		It("returns a non zero exit code when the bbl-state.json does not exist", func() {
-			tempDirectory, err := ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
 			args := []string{
 				"--state-dir", tempDirectory,
 				"director-address",

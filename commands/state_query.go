@@ -26,17 +26,15 @@ type StateQuery struct {
 	logger         logger
 	stateValidator stateValidator
 	propertyName   string
-	getProperty    getPropertyFunc
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, stateValidator stateValidator, propertyName string, getProperty getPropertyFunc) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, propertyName string) StateQuery {
 	return StateQuery{
 		logger:         logger,
 		stateValidator: stateValidator,
 		propertyName:   propertyName,
-		getProperty:    getProperty,
 	}
 }
 
@@ -46,7 +44,22 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 		return err
 	}
 
-	propertyValue := s.getProperty(state)
+	var propertyValue string
+	switch s.propertyName {
+	case DirectorAddressPropertyName:
+		propertyValue = state.BOSH.DirectorAddress
+	case DirectorUsernamePropertyName:
+		propertyValue = state.BOSH.DirectorUsername
+	case DirectorPasswordPropertyName:
+		propertyValue = state.BOSH.DirectorPassword
+	case DirectorCACertPropertyName:
+		propertyValue = state.BOSH.DirectorSSLCA
+	case SSHKeyPropertyName:
+		propertyValue = state.KeyPair.PrivateKey
+	case EnvIDPropertyName:
+		propertyValue = state.EnvID
+	}
+
 	if propertyValue == "" {
 		return fmt.Errorf("Could not retrieve %s, please make sure you are targeting the proper state dir.", s.propertyName)
 	}
