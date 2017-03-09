@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -42,6 +43,10 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 	err := s.stateValidator.Validate()
 	if err != nil {
 		return err
+	}
+
+	if state.NoDirector {
+		return errors.New("Error BBL does not manage this director.")
 	}
 
 	var propertyValue string

@@ -56,6 +56,35 @@ var _ = Describe("StateQuery", func() {
 			)
 		})
 
+		Context("bbl does not manage the bosh director", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					NoDirector: true,
+					BOSH: storage.BOSH{
+						DirectorAddress:  "some-director-address",
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+						DirectorSSLCA:    "some-director-ssl-ca",
+					},
+				}
+			})
+
+			DescribeTable("prints out the director information",
+				func(propertyName string) {
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, propertyName)
+
+					err := command.Execute([]string{}, state)
+					Expect(err).To(MatchError("Error BBL does not manage this director."))
+				},
+				Entry("director-address", "director address"),
+				Entry("director-username", "director username"),
+				Entry("director-password", "director password"),
+				Entry("director-ssl-ca", "director ca cert"),
+			)
+		})
+
 		Context("failure cases", func() {
 			It("returns an error when the state validator fails", func() {
 				fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")

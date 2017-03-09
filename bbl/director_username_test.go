@@ -16,6 +16,7 @@ import (
 var _ = Describe("director-username", func() {
 	var (
 		tempDirectory string
+		args          []string
 	)
 
 	BeforeEach(func() {
@@ -23,45 +24,59 @@ var _ = Describe("director-username", func() {
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
-	})
 
-	It("returns the director username from the given state file", func() {
-		state := []byte(`{
-			"version": 3,
-			"bosh": {
-				"directorUsername": "some-director-user"
-			}
-		}`)
-		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
-
-		args := []string{
+		args = []string{
 			"--state-dir", tempDirectory,
 			"director-username",
 		}
+	})
 
-		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+	Context("when bbl manages the director", func() {
+		BeforeEach(func() {
+			state := []byte(`{
+				"version": 3,
+				"bosh": {
+					"directorUsername": "some-director-user"
+				}
+			}`)
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(ContainSubstring("some-director-user"))
+		It("returns the director username from the given state file", func() {
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(ContainSubstring("some-director-user"))
+		})
+	})
+
+	Context("when bbl does not manage the director", func() {
+		BeforeEach(func() {
+			state := []byte(`{
+				"version": 3,
+				"noDirector": true
+			}`)
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns the director username from the given state file", func() {
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(1))
+			Expect(session.Err.Contents()).To(ContainSubstring("Error BBL does not manage this director."))
+		})
 	})
 
 	Context("failure cases", func() {
 		It("returns a non zero exit code when the bbl-state.json does not exist", func() {
-			tempDirectory, err := ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			args := []string{
-				"--state-dir", tempDirectory,
-				"director-username",
-			}
-
 			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-
 			Expect(err).NotTo(HaveOccurred())
-			Eventually(session).Should(gexec.Exit(1))
 
+			Eventually(session).Should(gexec.Exit(1))
 			expectedErrorMessage := fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)
 			Expect(session.Err.Contents()).To(ContainSubstring(expectedErrorMessage))
 		})
@@ -71,14 +86,9 @@ var _ = Describe("director-username", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-			args := []string{
-				"--state-dir", tempDirectory,
-				"director-username",
-			}
-
 			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-
 			Expect(err).NotTo(HaveOccurred())
+
 			Eventually(session).Should(gexec.Exit(1))
 			Expect(session.Err.Contents()).To(ContainSubstring("Could not retrieve director username"))
 		})
