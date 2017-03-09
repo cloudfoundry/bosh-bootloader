@@ -113,6 +113,8 @@ var _ = Describe("load balancers", func() {
 				responseWriter.Write([]byte("some-concourse-lb-ip"))
 			case "/output/ws_lb_ip":
 				responseWriter.Write([]byte("some-ws-lb-ip"))
+			case "/output/system_domain_dns_servers":
+				responseWriter.Write([]byte(`["name-server-1.","name-server-2.","name-server-3."]`))
 			case "/version":
 				responseWriter.Write([]byte("0.8.6"))
 			}
@@ -709,6 +711,50 @@ var _ = Describe("load balancers", func() {
 				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
+			})
+		})
+
+		Context("when cf lb was created with a specified domain", func() {
+			BeforeEach(func() {
+				certPath := filepath.Join(tempDirectory, "some-cert")
+				err := ioutil.WriteFile(certPath, []byte("cert-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				keyPath := filepath.Join(tempDirectory, "some-key")
+				err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), []byte("key-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				executeCommand([]string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "us-east1-a",
+					"--gcp-region", "us-east1",
+				}, 0)
+
+				args := []string{
+					"--state-dir", tempDirectory,
+					"create-lbs",
+					"--type", "cf",
+					"--cert", certPath,
+					"--key", keyPath,
+					"--domain", "some-domain",
+				}
+
+				executeCommand(args, 0)
+			})
+
+			It("prints out the currently attached lb names and urls", func() {
+				session := lbs("", tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
+				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
+				Expect(stdout).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
+				Expect(stdout).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
+				Expect(stdout).To(ContainSubstring("Assigned DNS servers: name-server-1. name-server-2. name-server-3."))
 			})
 		})
 

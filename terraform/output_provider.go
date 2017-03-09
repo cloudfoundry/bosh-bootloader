@@ -1,22 +1,25 @@
 package terraform
 
+import "encoding/json"
+
 type Outputs struct {
-	ExternalIP           string
-	NetworkName          string
-	SubnetworkName       string
-	BOSHTag              string
-	InternalTag          string
-	DirectorAddress      string
-	RouterBackendService string
-	SSHProxyTargetPool   string
-	TCPRouterTargetPool  string
-	WSTargetPool         string
-	ConcourseTargetPool  string
-	RouterLBIP           string
-	SSHProxyLBIP         string
-	TCPRouterLBIP        string
-	WebSocketLBIP        string
-	ConcourseLBIP        string
+	ExternalIP             string
+	NetworkName            string
+	SubnetworkName         string
+	BOSHTag                string
+	InternalTag            string
+	DirectorAddress        string
+	RouterBackendService   string
+	SSHProxyTargetPool     string
+	TCPRouterTargetPool    string
+	WSTargetPool           string
+	ConcourseTargetPool    string
+	RouterLBIP             string
+	SSHProxyLBIP           string
+	TCPRouterLBIP          string
+	WebSocketLBIP          string
+	ConcourseLBIP          string
+	SystemDomainDNSServers []string
 }
 
 type outputter interface {
@@ -64,7 +67,19 @@ func (o OutputProvider) Get(tfState, lbType string) (Outputs, error) {
 		return Outputs{}, err
 	}
 
-	var routerBackendService, sshProxyTargetPool, tcpRouterTargetPool, wsTargetPool, routerLBIP, sshProxyLBIP, tcpRouterLBIP, webSocketLBIP string
+	var (
+		routerBackendService       string
+		sshProxyTargetPool         string
+		tcpRouterTargetPool        string
+		wsTargetPool               string
+		routerLBIP                 string
+		sshProxyLBIP               string
+		tcpRouterLBIP              string
+		webSocketLBIP              string
+		systemDomainDNSServersJSON string
+		systemDomainDNSServers     []string
+	)
+
 	if lbType == "cf" {
 		routerBackendService, err = o.outputter.Get(tfState, "router_backend_service")
 		if err != nil {
@@ -105,6 +120,18 @@ func (o OutputProvider) Get(tfState, lbType string) (Outputs, error) {
 		if err != nil {
 			return Outputs{}, err
 		}
+
+		systemDomainDNSServersJSON, err = o.outputter.Get(tfState, "system_domain_dns_servers")
+		if err != nil {
+			return Outputs{}, err
+		}
+
+		if systemDomainDNSServersJSON != "" {
+			err = json.Unmarshal([]byte(systemDomainDNSServersJSON), &systemDomainDNSServers)
+			if err != nil {
+				return Outputs{}, err
+			}
+		}
 	}
 
 	var concourseTargetPool, concourseLBIP string
@@ -121,21 +148,22 @@ func (o OutputProvider) Get(tfState, lbType string) (Outputs, error) {
 	}
 
 	return Outputs{
-		ExternalIP:           externalIP,
-		NetworkName:          networkName,
-		SubnetworkName:       subnetworkName,
-		BOSHTag:              boshTag,
-		InternalTag:          internalTag,
-		DirectorAddress:      directorAddress,
-		RouterBackendService: routerBackendService,
-		SSHProxyTargetPool:   sshProxyTargetPool,
-		TCPRouterTargetPool:  tcpRouterTargetPool,
-		WSTargetPool:         wsTargetPool,
-		RouterLBIP:           routerLBIP,
-		SSHProxyLBIP:         sshProxyLBIP,
-		TCPRouterLBIP:        tcpRouterLBIP,
-		WebSocketLBIP:        webSocketLBIP,
-		ConcourseTargetPool:  concourseTargetPool,
-		ConcourseLBIP:        concourseLBIP,
+		ExternalIP:             externalIP,
+		NetworkName:            networkName,
+		SubnetworkName:         subnetworkName,
+		BOSHTag:                boshTag,
+		InternalTag:            internalTag,
+		DirectorAddress:        directorAddress,
+		RouterBackendService:   routerBackendService,
+		SSHProxyTargetPool:     sshProxyTargetPool,
+		TCPRouterTargetPool:    tcpRouterTargetPool,
+		WSTargetPool:           wsTargetPool,
+		RouterLBIP:             routerLBIP,
+		SSHProxyLBIP:           sshProxyLBIP,
+		TCPRouterLBIP:          tcpRouterLBIP,
+		WebSocketLBIP:          webSocketLBIP,
+		SystemDomainDNSServers: systemDomainDNSServers,
+		ConcourseTargetPool:    concourseTargetPool,
+		ConcourseLBIP:          concourseLBIP,
 	}, nil
 }

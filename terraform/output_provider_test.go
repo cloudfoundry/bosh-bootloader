@@ -54,6 +54,8 @@ var _ = Describe("TerraformOutputProvider", func() {
 				return "some-concourse-target-pool", nil
 			case "concourse_lb_ip":
 				return "some-concourse-lb-ip", nil
+			case "system_domain_dns_servers":
+				return `["some-name-server-1", "some-name-server-2"]`, nil
 			default:
 				return "", nil
 			}
@@ -82,20 +84,21 @@ var _ = Describe("TerraformOutputProvider", func() {
 			terraformOutputs, err := terraformOutputProvider.Get("", "cf")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(terraformOutputs).To(Equal(terraform.Outputs{
-				ExternalIP:           "some-external-ip",
-				NetworkName:          "some-network-name",
-				SubnetworkName:       "some-subnetwork-name",
-				BOSHTag:              "some-bosh-open-tag-name",
-				InternalTag:          "some-internal-tag-name",
-				DirectorAddress:      "some-director-address",
-				RouterBackendService: "some-router-backend-service",
-				SSHProxyTargetPool:   "some-ssh-proxy-target-pool",
-				TCPRouterTargetPool:  "some-tcp-router-target-pool",
-				WSTargetPool:         "some-ws-target-pool",
-				RouterLBIP:           "some-router-lb-ip",
-				SSHProxyLBIP:         "some-ssh-proxy-lb-ip",
-				TCPRouterLBIP:        "some-tcp-router-lb-ip",
-				WebSocketLBIP:        "some-ws-lb-ip",
+				ExternalIP:             "some-external-ip",
+				NetworkName:            "some-network-name",
+				SubnetworkName:         "some-subnetwork-name",
+				BOSHTag:                "some-bosh-open-tag-name",
+				InternalTag:            "some-internal-tag-name",
+				DirectorAddress:        "some-director-address",
+				RouterBackendService:   "some-router-backend-service",
+				SSHProxyTargetPool:     "some-ssh-proxy-target-pool",
+				TCPRouterTargetPool:    "some-tcp-router-target-pool",
+				WSTargetPool:           "some-ws-target-pool",
+				RouterLBIP:             "some-router-lb-ip",
+				SSHProxyLBIP:           "some-ssh-proxy-lb-ip",
+				TCPRouterLBIP:          "some-tcp-router-lb-ip",
+				WebSocketLBIP:          "some-ws-lb-ip",
+				SystemDomainDNSServers: []string{"some-name-server-1", "some-name-server-2"},
 			}))
 		})
 	})
@@ -146,6 +149,21 @@ var _ = Describe("TerraformOutputProvider", func() {
 			Entry("failed to get ws_lb_ip", "ws_lb_ip", "cf"),
 			Entry("failed to get concourse_target_pool", "concourse_target_pool", "concourse"),
 			Entry("failed to get concourse_lb_ip", "concourse_lb_ip", "concourse"),
+			Entry("failed to get system_domain_dns_servers", "system_domain_dns_servers", "cf"),
 		)
+
+		Context("when the system_domain_dns_servers terraform output is not valid JSON", func() {
+			It("returns an error", func() {
+				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+					if output == "system_domain_dns_servers" {
+						return "%%%", nil
+					}
+					return "", nil
+				}
+
+				_, err := terraformOutputProvider.Get("system_domain_dns_servers", "cf")
+				Expect(err).To(MatchError("invalid character '%' looking for beginning of value"))
+			})
+		})
 	})
 })

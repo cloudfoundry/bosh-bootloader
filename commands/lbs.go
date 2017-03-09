@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -69,6 +70,10 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 			fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", terraformOutputs.SSHProxyLBIP)
 			fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", terraformOutputs.TCPRouterLBIP)
 			fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", terraformOutputs.WebSocketLBIP)
+
+			if len(terraformOutputs.SystemDomainDNSServers) > 0 {
+				fmt.Fprintf(c.stdout, "Assigned DNS servers: %s\n", strings.Join(terraformOutputs.SystemDomainDNSServers, " "))
+			}
 		case "concourse":
 			fmt.Fprintf(c.stdout, "Concourse LB: %s\n", terraformOutputs.ConcourseLBIP)
 		default:
