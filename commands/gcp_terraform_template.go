@@ -376,6 +376,10 @@ resource "google_dns_managed_zone" "env_dns_zone" {
   description = "DNS zone for the ${var.env_id} environment"
 }
 
+output "system_domain_dns_servers" {
+  value = "${google_dns_managed_zone.env_dns_zone.name_servers}"
+}
+
 resource "google_dns_record_set" "wildcard-dns" {
   name       = "*.${google_dns_managed_zone.env_dns_zone.dns_name}"
   depends_on = ["google_compute_global_address.cf-address"]
