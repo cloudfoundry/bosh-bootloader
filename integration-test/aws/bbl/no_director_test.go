@@ -47,8 +47,8 @@ var _ = Describe("no director test", func() {
 		})
 
 		By("checking that the bosh director does not exists", func() {
-			directorAddress := bbl.DirectorAddress()
-			Expect(directorAddress).To(Equal(""))
+			directorUsername := bbl.DirectorUsername()
+			Expect(directorUsername).To(Equal(""))
 		})
 
 		By("calling bbl destroy", func() {

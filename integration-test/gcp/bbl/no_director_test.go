@@ -29,8 +29,8 @@ var _ = Describe("no director test", func() {
 
 	It("successfully bbls up and destroys with no director", func() {
 		var (
-			expectedSSHKey  string
-			directorAddress string
+			expectedSSHKey   string
+			directorUsername string
 		)
 
 		By("calling bbl up", func() {
@@ -46,8 +46,8 @@ var _ = Describe("no director test", func() {
 		})
 
 		By("checking that the bosh director does not exists", func() {
-			directorAddress = bbl.DirectorAddress()
-			Expect(directorAddress).To(Equal(""))
+			directorUsername = bbl.DirectorUsername()
+			Expect(directorUsername).To(Equal(""))
 		})
 
 		By("calling bbl destroy", func() {
