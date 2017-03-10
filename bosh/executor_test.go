@@ -620,4 +620,72 @@ gcp_credentials_json: 'some-credential-json'`,
 			})
 		})
 	})
+
+	Describe("Version", func() {
+		var (
+			cmd              *fakes.BOSHCommand
+			tempDir          string
+			tempDirFunc      func(string, string) (string, error)
+			tempDirCallCount int
+
+			executor bosh.Executor
+		)
+		BeforeEach(func() {
+			cmd = &fakes.BOSHCommand{}
+			cmd.RunCall.Stub = func(stdout io.Writer) {
+				stdout.Write([]byte("some-text version 2.0.0 some-other-text"))
+			}
+
+			var err error
+			tempDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			tempDirFunc = func(prefix, dir string) (string, error) {
+				tempDirCallCount++
+				return tempDir, nil
+			}
+
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, false)
+		})
+
+		It("passes the correct args and dir to run command", func() {
+			_, err := executor.Version()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"-v"}))
+			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+		})
+
+		It("returns the correctly trimmed version", func() {
+			version, err := executor.Version()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal("2.0.0"))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the temporary directory cannot be created", func() {
+				tempDirFunc = func(prefix, dir string) (string, error) {
+					return "", errors.New("failed to create temp dir")
+				}
+
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				_, err := executor.Version()
+				Expect(err).To(MatchError("failed to create temp dir"))
+			})
+
+			It("returns an error when the run cmd fails", func() {
+				cmd.RunCall.Returns.Error = errors.New("failed to run cmd")
+				_, err := executor.Version()
+				Expect(err).To(MatchError("failed to run cmd"))
+			})
+
+			It("returns an error when the version cannot be parsed", func() {
+				cmd.RunCall.Stub = func(stdout io.Writer) {
+					stdout.Write([]byte(""))
+				}
+				_, err := executor.Version()
+				Expect(err).To(MatchError("BOSH version could not be parsed"))
+			})
+		})
+	})
 })

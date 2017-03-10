@@ -17,17 +17,46 @@ var _ = Describe("create-lbs", func() {
 		awsCreateLBs   *fakes.AWSCreateLBs
 		gcpCreateLBs   *fakes.GCPCreateLBs
 		stateValidator *fakes.StateValidator
+		boshManager    *fakes.BOSHManager
 	)
 
 	BeforeEach(func() {
 		awsCreateLBs = &fakes.AWSCreateLBs{}
 		gcpCreateLBs = &fakes.GCPCreateLBs{}
 		stateValidator = &fakes.StateValidator{}
+		boshManager = &fakes.BOSHManager{}
+		boshManager.VersionCall.Returns.Version = "2.0.0"
 
-		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
+		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
 	})
 
 	Describe("Execute", func() {
+		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+			It("returns a helpful error message", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := command.Execute([]string{
+					"--type", "concourse",
+				}, storage.State{
+					IAAS:       "gcp",
+					NoDirector: false,
+				})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
+		})
+
+		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+			It("does not fast fail", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := command.Execute([]string{
+					"--type", "concourse",
+				}, storage.State{
+					IAAS:       "gcp",
+					NoDirector: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		It("creates a GCP lb type if the iaas if GCP", func() {
 			err := command.Execute([]string{
 				"--type", "concourse",

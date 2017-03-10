@@ -54,6 +54,8 @@ var _ = Describe("load balancers", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("2.0.0"))
 			case "/path":
 				responseWriter.Write([]byte(originalPath))
 			case "/call-real-interpolate":
@@ -172,6 +174,37 @@ var _ = Describe("load balancers", func() {
 		})
 
 		Context("failure cases", func() {
+			Context("when the bosh cli version is <2.0", func() {
+				BeforeEach(func() {
+					fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+						switch request.URL.Path {
+						case "/version":
+							responseWriter.Write([]byte("1.9.0"))
+						}
+					}))
+
+					var err error
+					pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+						"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+					Expect(err).NotTo(HaveOccurred())
+
+					pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+					err = os.Rename(pathToFakeBOSH, pathToBOSH)
+					Expect(err).NotTo(HaveOccurred())
+
+					os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
+				})
+
+				AfterEach(func() {
+					os.Setenv("PATH", originalPath)
+				})
+
+				It("fast fails with a helpful error message", func() {
+					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
+					Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+				})
+			})
+
 			Context("when an lb already exists", func() {
 				BeforeEach(func() {
 					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
@@ -374,6 +407,37 @@ var _ = Describe("load balancers", func() {
 		Context("failure cases", func() {
 			BeforeEach(func() {
 				upAWS(fakeAWSServer.URL, tempDirectory, 0)
+			})
+
+			Context("when the bosh cli version is < 2.0.0", func() {
+				BeforeEach(func() {
+					fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+						switch request.URL.Path {
+						case "/version":
+							responseWriter.Write([]byte("1.9.0"))
+						}
+					}))
+
+					var err error
+					pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+						"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+					Expect(err).NotTo(HaveOccurred())
+
+					pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+					err = os.Rename(pathToFakeBOSH, pathToBOSH)
+					Expect(err).NotTo(HaveOccurred())
+
+					os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
+				})
+
+				AfterEach(func() {
+					os.Setenv("PATH", originalPath)
+				})
+
+				It("fast fails with a helpful error message", func() {
+					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
+					Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+				})
 			})
 
 			Context("when an lb type does not exist", func() {

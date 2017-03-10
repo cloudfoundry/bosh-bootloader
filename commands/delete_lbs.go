@@ -12,6 +12,7 @@ type DeleteLBs struct {
 	awsDeleteLBs   awsDeleteLBs
 	logger         logger
 	stateValidator stateValidator
+	boshManager    boshManager
 }
 
 type gcpDeleteLBs interface {
@@ -23,12 +24,13 @@ type awsDeleteLBs interface {
 }
 
 func NewDeleteLBs(gcpDeleteLBs gcpDeleteLBs, awsDeleteLBs awsDeleteLBs,
-	logger logger, stateValidator stateValidator) DeleteLBs {
+	logger logger, stateValidator stateValidator, boshManager boshManager) DeleteLBs {
 	return DeleteLBs{
 		gcpDeleteLBs:   gcpDeleteLBs,
 		awsDeleteLBs:   awsDeleteLBs,
 		logger:         logger,
 		stateValidator: stateValidator,
+		boshManager:    boshManager,
 	}
 }
 
@@ -41,6 +43,13 @@ func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 	err = d.stateValidator.Validate()
 	if err != nil {
 		return err
+	}
+
+	if !state.NoDirector {
+		err = fastFailBOSHVersion(d.boshManager)
+		if err != nil {
+			return err
+		}
 	}
 
 	if config.skipIfMissing && !lbExists(state.Stack.LBType) && !lbExists(state.LB.Type) {

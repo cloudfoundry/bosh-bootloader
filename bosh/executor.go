@@ -2,10 +2,12 @@ package bosh
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
@@ -256,6 +258,31 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 	}
 
 	return nil
+}
+
+func (e Executor) Version() (string, error) {
+	tempDir, err := e.tempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	args := []string{"-v"}
+
+	buffer := bytes.NewBuffer([]byte{})
+	err = e.command.Run(buffer, tempDir, args, true)
+	if err != nil {
+		return "", err
+	}
+
+	versionOutput := buffer.String()
+	regex := regexp.MustCompile(`\d+.\d+.\d+`)
+
+	version := regex.FindString(versionOutput)
+	if version == "" {
+		return "", errors.New("BOSH version could not be parsed")
+	}
+
+	return version, nil
 }
 
 func (e Executor) writePreviousFiles(state map[string]interface{}, variables, manifest string) (string, error) {

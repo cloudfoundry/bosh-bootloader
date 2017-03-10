@@ -51,6 +51,8 @@ var _ = Describe("bbl up gcp", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("v2.0.0"))
 			case "/path":
 				responseWriter.Write([]byte(originalPath))
 			case "/create-env/args":
@@ -179,8 +181,11 @@ var _ = Describe("bbl up gcp", func() {
 			err = os.Rename(pathToFakeTerraform, pathToTerraform)
 			Expect(err).NotTo(HaveOccurred())
 
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
 
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
 		})
 
 		It("fast fails with a helpful error message", func() {
@@ -198,10 +203,6 @@ var _ = Describe("bbl up gcp", func() {
 			session := executeCommand(args, 1)
 
 			Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
-		})
-
-		AfterEach(func() {
-			os.Setenv("PATH", originalPath)
 		})
 	})
 

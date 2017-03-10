@@ -104,6 +104,13 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 }
 
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
+	if !state.NoDirector {
+		err := fastFailBOSHVersion(d.boshManager)
+		if err != nil {
+			return err
+		}
+	}
+
 	if state.IAAS == "gcp" {
 		err := fastFailTerraformVersion(d.terraformExecutor)
 		if err != nil {

@@ -23,6 +23,7 @@ var _ = Describe("BOSHDeploymentVars", func() {
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
+		boshManager.VersionCall.Returns.Version = "2.0.0"
 		terraformExecutor = &fakes.TerraformExecutor{}
 		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 
@@ -35,6 +36,15 @@ var _ = Describe("BOSHDeploymentVars", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(boshManager.GetDeploymentVarsCall.CallCount).To(Equal(1))
 		Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
+	})
+
+	It("runs successfully if the version is less than 2.0.0 but the state has no director", func() {
+		boshManager.VersionCall.Returns.Version = "1.9.9"
+
+		err := boshDeploymentVars.Execute([]string{}, storage.State{
+			NoDirector: true,
+		})
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Context("failure cases", func() {
@@ -51,5 +61,11 @@ var _ = Describe("BOSHDeploymentVars", func() {
 			Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
 		})
 
+		It("fast fails if the bosh installed is less than v2.0.0", func() {
+			boshManager.VersionCall.Returns.Version = "1.9.9"
+
+			err := boshDeploymentVars.Execute([]string{}, storage.State{})
+			Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+		})
 	})
 })

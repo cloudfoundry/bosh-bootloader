@@ -14,6 +14,13 @@ type BOSHManager struct {
 			Error error
 		}
 	}
+	VersionCall struct {
+		CallCount int
+		Returns   struct {
+			Version string
+			Error   error
+		}
+	}
 	DeleteCall struct {
 		CallCount int
 		Receives  struct {
@@ -53,4 +60,9 @@ func (b *BOSHManager) GetDeploymentVars(state storage.State) (string, error) {
 	b.GetDeploymentVarsCall.CallCount++
 	b.GetDeploymentVarsCall.Receives.State = state
 	return b.GetDeploymentVarsCall.Returns.Vars, b.GetDeploymentVarsCall.Returns.Error
+}
+
+func (b *BOSHManager) Version() (string, error) {
+	b.VersionCall.CallCount++
+	return b.VersionCall.Returns.Version, b.VersionCall.Returns.Error
 }

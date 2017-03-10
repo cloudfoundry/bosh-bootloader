@@ -117,6 +117,8 @@ var _ = Describe("bbl up aws", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("2.0.0"))
 			case "/path":
 				responseWriter.Write([]byte(originalPath))
 			case "/interpolate/args":

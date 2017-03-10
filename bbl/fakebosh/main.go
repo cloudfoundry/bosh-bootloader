@@ -56,6 +56,21 @@ func main() {
 			log.Fatal("failed to bosh")
 		}
 	}
+
+	if os.Args[1] == "-v" {
+		resp, err := http.Get(fmt.Sprintf("%s/version", backendURL))
+		if err != nil {
+			panic(err)
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("some-text version %s some-more-text", string(body))
+	}
 }
 
 func getOldArgMD5() string {

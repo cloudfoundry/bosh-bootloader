@@ -57,6 +57,7 @@ type executor interface {
 	Interpolate(InterpolateInput) (InterpolateOutput, error)
 	CreateEnv(CreateEnvInput) (CreateEnvOutput, error)
 	DeleteEnv(DeleteEnvInput) error
+	Version() (string, error)
 }
 
 type terraformOutputProvider interface {
@@ -73,6 +74,10 @@ func NewManager(executor executor, terraformOutputProvider terraformOutputProvid
 		terraformOutputProvider: terraformOutputProvider,
 		stackManager:            stackManager,
 	}
+}
+
+func (m Manager) Version() (string, error) {
+	return m.executor.Version()
 }
 
 func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, error) {

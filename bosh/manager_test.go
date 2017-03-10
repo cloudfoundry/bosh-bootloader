@@ -588,4 +588,35 @@ private_key: |-
 			})
 		})
 	})
+
+	Describe("Version", func() {
+		var (
+			stackManager            *fakes.StackManager
+			boshExecutor            *fakes.BOSHExecutor
+			terraformOutputProvider *fakes.TerraformOutputProvider
+			boshManager             bosh.Manager
+		)
+
+		BeforeEach(func() {
+			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			stackManager = &fakes.StackManager{}
+			boshExecutor = &fakes.BOSHExecutor{}
+			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+
+			boshExecutor.VersionCall.Returns.Version = "2.0.0"
+		})
+
+		It("calls out to bosh executor version", func() {
+			version, err := boshManager.Version()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(boshExecutor.VersionCall.CallCount).To(Equal(1))
+			Expect(version).To(Equal("2.0.0"))
+		})
+
+		It("returns an error when executor fails", func() {
+			boshExecutor.VersionCall.Returns.Error = errors.New("failed to execute")
+			_, err := boshManager.Version()
+			Expect(err).To(MatchError("failed to execute"))
+		})
+	})
 })

@@ -36,6 +36,10 @@ var _ = Describe("bbl up", func() {
 		}))
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("2.0.0"))
+			}
 		}))
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -141,5 +145,46 @@ var _ = Describe("bbl up", func() {
 
 		session := executeCommand(args, 1)
 		Expect(session.Err.Contents()).To(ContainSubstring(`"bad-iaas-value" is an invalid iaas type, supported values are: [gcp, aws]`))
+	})
+
+	Context("when the bosh cli version is <2.0", func() {
+		BeforeEach(func() {
+			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("1.9.0"))
+				}
+			}))
+
+			var err error
+			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+			err = os.Rename(pathToFakeBOSH, pathToBOSH)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+		})
 	})
 })

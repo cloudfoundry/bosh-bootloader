@@ -25,6 +25,14 @@ func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
 	if err != nil {
 		return err
 	}
+
+	if !state.NoDirector {
+		err = fastFailBOSHVersion(b.boshManager)
+		if err != nil {
+			return err
+		}
+	}
+
 	vars, err := b.boshManager.GetDeploymentVars(state)
 	if err != nil {
 		return err

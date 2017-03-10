@@ -48,6 +48,7 @@ var _ = Describe("Destroy", func() {
 		stackManager = &fakes.StackManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		boshManager = &fakes.BOSHManager{}
+		boshManager.VersionCall.Returns.Version = "2.0.0"
 		awsKeyPairDeleter = &fakes.AWSKeyPairDeleter{}
 		gcpKeyPairDeleter = &fakes.GCPKeyPairDeleter{}
 		certificateDeleter = &fakes.CertificateDeleter{}
@@ -68,6 +69,27 @@ var _ = Describe("Destroy", func() {
 	})
 
 	Describe("Execute", func() {
+		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+			It("returns a helpful error message", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
+		})
+
+		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+			It("does not fast fail", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{
+					IAAS:       "aws",
+					NoDirector: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		It("returns when there is no state and --skip-if-missing flag is provided", func() {
 			err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{})
 

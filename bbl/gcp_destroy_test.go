@@ -45,6 +45,8 @@ var _ = Describe("bbl destroy gcp", func() {
 
 		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("2.0.0"))
 			case "/delete-env/fastfail":
 				fastFailMutex.Lock()
 				defer fastFailMutex.Unlock()
@@ -214,6 +216,43 @@ director_ssl:
 		})
 	})
 
+	Context("when the bosh cli version is <2.0", func() {
+		BeforeEach(func() {
+			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("1.9.0"))
+				}
+			}))
+
+			var err error
+			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+			err = os.Rename(pathToFakeBOSH, pathToBOSH)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+		})
+	})
+
 	Context("when the terraform version is <0.8.5", func() {
 		BeforeEach(func() {
 			fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -231,8 +270,11 @@ director_ssl:
 			err = os.Rename(pathToFakeTerraform, pathToTerraform)
 			Expect(err).NotTo(HaveOccurred())
 
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
 
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
 		})
 
 		It("fast fails with a helpful error message", func() {

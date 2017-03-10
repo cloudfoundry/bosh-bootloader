@@ -34,6 +34,14 @@ type BOSHExecutor struct {
 			Error  error
 		}
 	}
+
+	VersionCall struct {
+		CallCount int
+		Returns   struct {
+			Version string
+			Error   error
+		}
+	}
 }
 
 func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) (bosh.CreateEnvOutput, error) {
@@ -55,4 +63,9 @@ func (e *BOSHExecutor) Interpolate(input bosh.InterpolateInput) (bosh.Interpolat
 	e.InterpolateCall.Receives.InterpolateInput = input
 
 	return e.InterpolateCall.Returns.Output, e.InterpolateCall.Returns.Error
+}
+
+func (e *BOSHExecutor) Version() (string, error) {
+	e.VersionCall.CallCount++
+	return e.VersionCall.Returns.Version, e.VersionCall.Returns.Error
 }

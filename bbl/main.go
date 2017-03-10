@@ -171,7 +171,7 @@ func main() {
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
 
-	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter)
+	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
@@ -179,9 +179,9 @@ func main() {
 		stateStore, stateValidator, terraformExecutor, terraformOutputProvider, gcpNetworkInstancesChecker,
 	)
 
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
-	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger)
-	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
+	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
+	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
 	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputProvider, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorAddressPropertyName)
 	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorUsernamePropertyName)

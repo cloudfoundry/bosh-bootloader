@@ -21,6 +21,7 @@ var _ = Describe("DeleteLBs", func() {
 			awsDeleteLBs   *fakes.AWSDeleteLBs
 			stateValidator *fakes.StateValidator
 			logger         *fakes.Logger
+			boshManager    *fakes.BOSHManager
 		)
 
 		BeforeEach(func() {
@@ -28,8 +29,37 @@ var _ = Describe("DeleteLBs", func() {
 			awsDeleteLBs = &fakes.AWSDeleteLBs{}
 			stateValidator = &fakes.StateValidator{}
 			logger = &fakes.Logger{}
+			boshManager = &fakes.BOSHManager{}
+			boshManager.VersionCall.Returns.Version = "2.0.0"
 
-			command = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
+			command = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+		})
+
+		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+			It("returns a helpful error message", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := command.Execute([]string{}, storage.State{
+					IAAS: "aws",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
+		})
+
+		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+			It("does not fast fail", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := command.Execute([]string{}, storage.State{
+					IAAS:       "gcp",
+					NoDirector: true,
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
 		Context("when iaas is gcp", func() {

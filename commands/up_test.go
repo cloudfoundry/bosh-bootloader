@@ -16,21 +16,47 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
-		fakeAWSUp     *fakes.AWSUp
-		fakeGCPUp     *fakes.GCPUp
-		fakeEnvGetter *fakes.EnvGetter
-		state         storage.State
+		fakeAWSUp       *fakes.AWSUp
+		fakeGCPUp       *fakes.GCPUp
+		fakeEnvGetter   *fakes.EnvGetter
+		fakeBOSHManager *fakes.BOSHManager
+		state           storage.State
 	)
 
 	BeforeEach(func() {
 		fakeAWSUp = &fakes.AWSUp{Name: "aws"}
 		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
 		fakeEnvGetter = &fakes.EnvGetter{}
+		fakeBOSHManager = &fakes.BOSHManager{}
+		fakeBOSHManager.VersionCall.Returns.Version = "2.0.0"
 
-		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter)
+		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter, fakeBOSHManager)
 	})
 
 	Describe("Execute", func() {
+		Context("when the version of BOSH is lower than 2.0.0", func() {
+			It("returns a helpful error message when bbling up with a director", func() {
+				fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
+				err := command.Execute([]string{
+					"--iaas", "aws",
+				}, storage.State{Version: 999})
+
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
+
+			Context("when the no-director flag is specified", func() {
+				It("returns a helpful error message when bbling up with a director", func() {
+					fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
+					err := command.Execute([]string{
+						"--iaas", "aws",
+						"--no-director",
+					}, storage.State{Version: 999})
+
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+		})
+
 		Context("when aws args are provided through environment variables", func() {
 			BeforeEach(func() {
 				fakeEnvGetter.Values = map[string]string{
