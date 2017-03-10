@@ -94,7 +94,7 @@ var _ = Describe("StateQuery", func() {
 					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
 					err := command.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-external-ip"))
+					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
 				})
 			})
 
@@ -111,7 +111,7 @@ var _ = Describe("StateQuery", func() {
 					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
 					err := command.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-external-ip"))
+					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
 				})
 
 			})

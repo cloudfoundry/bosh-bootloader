@@ -63,7 +63,7 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 			if err != nil {
 				return err
 			}
-			propertyValue = externalIP
+			propertyValue = fmt.Sprintf("https://%s:25555", externalIP)
 		}
 	case DirectorUsernamePropertyName:
 		propertyValue = state.BOSH.DirectorUsername

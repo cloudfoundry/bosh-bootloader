@@ -189,7 +189,7 @@ func main() {
 	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorCACertPropertyName)
 	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.SSHKeyPropertyName)
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.EnvIDPropertyName)
-	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
+	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformOutputProvider, infrastructureManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, terraformExecutor)

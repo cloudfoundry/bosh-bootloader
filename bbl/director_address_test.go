@@ -58,13 +58,13 @@ var _ = Describe("director-address", func() {
 	})
 
 	Context("when bbl does not manage the director", func() {
-		var (
-			pathToFakeTerraform        string
-			pathToTerraform            string
-			fakeTerraformBackendServer *httptest.Server
-		)
-
 		Context("gcp", func() {
+			var (
+				pathToFakeTerraform        string
+				pathToTerraform            string
+				fakeTerraformBackendServer *httptest.Server
+			)
+
 			BeforeEach(func() {
 				var err error
 				fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -98,7 +98,7 @@ var _ = Describe("director-address", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("some-external-ip"))
+				Expect(session.Out.Contents()).To(ContainSubstring("https://some-external-ip:25555"))
 			})
 		})
 
@@ -145,7 +145,7 @@ var _ = Describe("director-address", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("127.0.0.1"))
+				Expect(session.Out.Contents()).To(ContainSubstring("https://127.0.0.1:25555"))
 			})
 
 		})

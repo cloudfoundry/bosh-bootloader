@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -11,18 +12,22 @@ const (
 )
 
 type PrintEnv struct {
-	stateValidator stateValidator
-	logger         logger
+	stateValidator          stateValidator
+	logger                  logger
+	terraformOutputProvider terraformOutputProvider
+	infrastructureManager   infrastructureManager
 }
 
 type envSetter interface {
 	Set(key, value string) error
 }
 
-func NewPrintEnv(logger logger, stateValidator stateValidator) PrintEnv {
+func NewPrintEnv(logger logger, stateValidator stateValidator, terraformOutputProvider terraformOutputProvider, infrastructureManager infrastructureManager) PrintEnv {
 	return PrintEnv{
-		stateValidator: stateValidator,
-		logger:         logger,
+		stateValidator:          stateValidator,
+		logger:                  logger,
+		terraformOutputProvider: terraformOutputProvider,
+		infrastructureManager:   infrastructureManager,
 	}
 }
 
@@ -32,10 +37,37 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	p.logger.Println(fmt.Sprintf("export BOSH_CLIENT=%s", state.BOSH.DirectorUsername))
-	p.logger.Println(fmt.Sprintf("export BOSH_CLIENT_SECRET=%s", state.BOSH.DirectorPassword))
-	p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
-	p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
+	if !state.NoDirector {
+		p.logger.Println(fmt.Sprintf("export BOSH_CLIENT=%s", state.BOSH.DirectorUsername))
+		p.logger.Println(fmt.Sprintf("export BOSH_CLIENT_SECRET=%s", state.BOSH.DirectorPassword))
+		p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
+		p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
+	} else {
+		directorAddress, err := p.getExternalIP(state)
+		if err != nil {
+			return err
+		}
+		p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=https://%s:25555", directorAddress))
+	}
 
 	return nil
+}
+
+func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
+	switch state.IAAS {
+	case "aws":
+		stack, err := p.infrastructureManager.Describe(state.Stack.Name)
+		if err != nil {
+			return "", err
+		}
+		return stack.Outputs["BOSHEIP"], nil
+	case "gcp":
+		terraformOutputs, err := p.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		if err != nil {
+			return "", err
+		}
+		return terraformOutputs.ExternalIP, nil
+	}
+
+	return "", errors.New("Could not find external IP for given IAAS")
 }
