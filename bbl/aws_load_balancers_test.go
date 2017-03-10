@@ -612,7 +612,7 @@ var _ = Describe("load balancers", func() {
 		It("prints out the currently attached lb names and urls", func() {
 			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
-			session := lbs(fakeAWSServer.URL, tempDirectory, 0)
+			session := lbs(fakeAWSServer.URL, []string{}, tempDirectory, 0)
 			stdout := session.Out.Contents()
 
 			Expect(stdout).To(ContainSubstring("CF Router LB: some-cf-router-lb [some-cf-router-lb-url]"))
@@ -761,14 +761,14 @@ var _ = Describe("load balancers", func() {
 
 })
 
-func lbs(endpointOverrideURL string, stateDir string, exitCode int) *gexec.Session {
+func lbs(endpointOverrideURL string, subcommandFlags []string, stateDir string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
 		"--state-dir", stateDir,
 		"lbs",
 	}
 
-	return executeCommand(args, exitCode)
+	return executeCommand(append(args, subcommandFlags...), exitCode)
 }
 
 func deleteLBs(endpointOverrideURL string, stateDir string, exitCode int, skipIfMissing bool) *gexec.Session {

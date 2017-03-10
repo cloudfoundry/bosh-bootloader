@@ -3,23 +3,23 @@ package terraform
 import "encoding/json"
 
 type Outputs struct {
-	ExternalIP             string
-	NetworkName            string
-	SubnetworkName         string
-	BOSHTag                string
-	InternalTag            string
-	DirectorAddress        string
-	RouterBackendService   string
-	SSHProxyTargetPool     string
-	TCPRouterTargetPool    string
-	WSTargetPool           string
-	ConcourseTargetPool    string
-	RouterLBIP             string
-	SSHProxyLBIP           string
-	TCPRouterLBIP          string
-	WebSocketLBIP          string
-	ConcourseLBIP          string
-	SystemDomainDNSServers []string
+	ExternalIP             string   `json:"-"`
+	NetworkName            string   `json:"-"`
+	SubnetworkName         string   `json:"-"`
+	BOSHTag                string   `json:"-"`
+	InternalTag            string   `json:"-"`
+	DirectorAddress        string   `json:"-"`
+	RouterBackendService   string   `json:"-"`
+	SSHProxyTargetPool     string   `json:"-"`
+	TCPRouterTargetPool    string   `json:"-"`
+	WSTargetPool           string   `json:"-"`
+	ConcourseTargetPool    string   `json:"-"`
+	RouterLBIP             string   `json:"cf_router_lb,omitempty"`
+	SSHProxyLBIP           string   `json:"cf_ssh_proxy_lb,omitempty"`
+	TCPRouterLBIP          string   `json:"cf_tcp_router_lb,omitempty"`
+	WebSocketLBIP          string   `json:"cf_websocket_lb,omitempty"`
+	ConcourseLBIP          string   `json:"-"`
+	SystemDomainDNSServers []string `json:"cf_system_domain_dns_servers,omitempty"`
 }
 
 type outputter interface {

@@ -704,7 +704,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			It("prints out the currently attached lb names and urls", func() {
-				session := lbs("", tempDirectory, 0)
+				session := lbs("", []string{}, tempDirectory, 0)
 				stdout := session.Out.Contents()
 
 				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
@@ -747,14 +747,31 @@ var _ = Describe("load balancers", func() {
 			})
 
 			It("prints out the currently attached lb names and urls", func() {
-				session := lbs("", tempDirectory, 0)
+				session := lbs("", []string{}, tempDirectory, 0)
 				stdout := session.Out.Contents()
 
 				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
 				Expect(stdout).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
-				Expect(stdout).To(ContainSubstring("Assigned DNS servers: name-server-1. name-server-2. name-server-3."))
+				Expect(stdout).To(ContainSubstring("CF System Domain DNS servers: name-server-1. name-server-2. name-server-3."))
+			})
+
+			It("prints out the currently attached lb names and urls in JSON", func() {
+				session := lbs("", []string{"--json"}, tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(MatchJSON(`{
+          "cf_router_lb": "some-router-lb-ip",
+          "cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
+          "cf_tcp_router_lb": "some-tcp-router-lb-ip",
+          "cf_websocket_lb": "some-ws-lb-ip",
+          "cf_system_domain_dns_servers": [
+            "name-server-1.",
+            "name-server-2.",
+            "name-server-3."
+          ]
+        }`))
 			})
 		})
 
@@ -780,7 +797,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			It("prints out the currently attached lb names and urls", func() {
-				session := lbs("", tempDirectory, 0)
+				session := lbs("", []string{}, tempDirectory, 0)
 				stdout := session.Out.Contents()
 
 				Expect(stdout).To(ContainSubstring("Concourse LB: some-concourse-lb-ip"))

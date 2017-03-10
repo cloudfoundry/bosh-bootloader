@@ -152,7 +152,7 @@ var _ = Describe("LBs", func() {
 				Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
 				Expect(stdout.String()).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
 				Expect(stdout.String()).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
-				Expect(stdout.String()).NotTo(ContainSubstring("Assigned DNS servers"))
+				Expect(stdout.String()).NotTo(ContainSubstring("CF System Domain DNS servers"))
 			})
 
 			Context("when the domain is specified", func() {
@@ -180,8 +180,27 @@ var _ = Describe("LBs", func() {
 					Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
 					Expect(stdout.String()).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
 					Expect(stdout.String()).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
-					Expect(stdout.String()).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
-					Expect(stdout.String()).To(ContainSubstring("Assigned DNS servers: name-server-1. name-server-2."))
+					Expect(stdout.String()).To(ContainSubstring("CF System Domain DNS servers: name-server-1. name-server-2."))
+				})
+
+				It("prints LB ips for lb type cf", func() {
+					incomingState.LB = storage.LB{
+						Type:   "cf",
+						Domain: "some-domain",
+					}
+					err := lbsCommand.Execute([]string{"--json"}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(stdout.String()).To(MatchJSON(`{
+						"cf_router_lb": "some-router-lb-ip",
+						"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
+						"cf_tcp_router_lb": "some-tcp-router-lb-ip",
+						"cf_websocket_lb": "some-ws-lb-ip",
+						"cf_system_domain_dns_servers": [
+							"name-server-1.",
+							"name-server-2."
+						]
+					}`))
 				})
 			})
 

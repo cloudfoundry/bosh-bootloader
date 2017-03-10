@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -66,13 +67,22 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 
 		switch state.LB.Type {
 		case "cf":
-			fmt.Fprintf(c.stdout, "CF Router LB: %s\n", terraformOutputs.RouterLBIP)
-			fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", terraformOutputs.SSHProxyLBIP)
-			fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", terraformOutputs.TCPRouterLBIP)
-			fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", terraformOutputs.WebSocketLBIP)
+			if len(subcommandFlags) > 0 && subcommandFlags[0] == "--json" {
+				lbOutput, err := json.Marshal(&terraformOutputs)
+				if err != nil {
+					panic(err)
+				}
 
-			if len(terraformOutputs.SystemDomainDNSServers) > 0 {
-				fmt.Fprintf(c.stdout, "Assigned DNS servers: %s\n", strings.Join(terraformOutputs.SystemDomainDNSServers, " "))
+				fmt.Fprintf(c.stdout, "%s\n", string(lbOutput))
+			} else {
+				fmt.Fprintf(c.stdout, "CF Router LB: %s\n", terraformOutputs.RouterLBIP)
+				fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", terraformOutputs.SSHProxyLBIP)
+				fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", terraformOutputs.TCPRouterLBIP)
+				fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", terraformOutputs.WebSocketLBIP)
+
+				if len(terraformOutputs.SystemDomainDNSServers) > 0 {
+					fmt.Fprintf(c.stdout, "CF System Domain DNS servers: %s\n", strings.Join(terraformOutputs.SystemDomainDNSServers, " "))
+				}
 			}
 		case "concourse":
 			fmt.Fprintf(c.stdout, "Concourse LB: %s\n", terraformOutputs.ConcourseLBIP)
