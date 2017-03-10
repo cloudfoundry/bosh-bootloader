@@ -17,7 +17,7 @@ type OpsGenerator struct {
 }
 
 type terraformOutputProvider interface {
-	Get(string, string) (terraform.Outputs, error)
+	Get(string, string, bool) (terraform.Outputs, error)
 }
 
 type zones interface {
@@ -122,7 +122,11 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		}))
 	}
 
-	outputs, err := o.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+	domainExists := false
+	if state.LB.Domain != "" {
+		domainExists = true
+	}
+	outputs, err := o.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
 	if err != nil {
 		return []op{}, err
 	}

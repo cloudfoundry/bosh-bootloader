@@ -60,7 +60,12 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 			return errors.New("no lbs found")
 		}
 	case "gcp":
-		terraformOutputs, err := c.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		domainExists := false
+		if state.LB.Domain != "" {
+			domainExists = true
+		}
+
+		terraformOutputs, err := c.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
 		if err != nil {
 			return err
 		}

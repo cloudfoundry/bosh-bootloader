@@ -94,7 +94,7 @@ func (s StateQuery) getEIP(state storage.State) (string, error) {
 		}
 		return stack.Outputs["BOSHEIP"], nil
 	case "gcp":
-		terraformOutputs, err := s.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		terraformOutputs, err := s.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return "", err
 		}

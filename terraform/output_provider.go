@@ -36,7 +36,7 @@ func NewOutputProvider(outputter outputter) OutputProvider {
 	}
 }
 
-func (o OutputProvider) Get(tfState, lbType string) (Outputs, error) {
+func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs, error) {
 	externalIP, err := o.outputter.Get(tfState, "external_ip")
 	if err != nil {
 		return Outputs{}, err
@@ -121,12 +121,12 @@ func (o OutputProvider) Get(tfState, lbType string) (Outputs, error) {
 			return Outputs{}, err
 		}
 
-		systemDomainDNSServersJSON, err = o.outputter.Get(tfState, "system_domain_dns_servers")
-		if err != nil {
-			return Outputs{}, err
-		}
+		if domainExists {
+			systemDomainDNSServersJSON, err = o.outputter.Get(tfState, "system_domain_dns_servers")
+			if err != nil {
+				return Outputs{}, err
+			}
 
-		if systemDomainDNSServersJSON != "" {
 			err = json.Unmarshal([]byte(systemDomainDNSServersJSON), &systemDomainDNSServers)
 			if err != nil {
 				return Outputs{}, err

@@ -62,7 +62,7 @@ func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
 		}
 		return stack.Outputs["BOSHEIP"], nil
 	case "gcp":
-		terraformOutputs, err := p.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		terraformOutputs, err := p.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return "", err
 		}

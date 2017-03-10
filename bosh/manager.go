@@ -60,7 +60,7 @@ type executor interface {
 }
 
 type terraformOutputProvider interface {
-	Get(tfState, lbType string) (terraform.Outputs, error)
+	Get(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type stackManager interface {
@@ -156,7 +156,7 @@ internal_ip: 10.0.0.6`
 
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return "", err
 		}
@@ -197,7 +197,7 @@ internal_ip: 10.0.0.6`
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return iaasInputs{}, err
 		}

@@ -38,7 +38,7 @@ type Destroy struct {
 }
 
 type terraformOutputProvider interface {
-	Get(tfState, lbType string) (terraform.Outputs, error)
+	Get(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type destroyConfig struct {
@@ -141,7 +141,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 	var terraformOutputs terraform.Outputs
 	if state.IAAS == "gcp" {
-		terraformOutputs, err = d.terraformOutputProvider.Get(state.TFState, state.LB.Type)
+		domainExists := false
+		if state.LB.Domain != "" {
+			domainExists = true
+		}
+
+		terraformOutputs, err = d.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
 		if err != nil {
 			return err
 		}

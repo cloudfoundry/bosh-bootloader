@@ -167,7 +167,7 @@ var _ = Describe("LBs", func() {
 					}
 				})
 
-				It("prints LB ips for lb type cf", func() {
+				It("prints LB ips for lb type cf in human readable format", func() {
 					incomingState.LB = storage.LB{
 						Type:   "cf",
 						Domain: "some-domain",
@@ -183,15 +183,16 @@ var _ = Describe("LBs", func() {
 					Expect(stdout.String()).To(ContainSubstring("CF System Domain DNS servers: name-server-1. name-server-2."))
 				})
 
-				It("prints LB ips for lb type cf", func() {
-					incomingState.LB = storage.LB{
-						Type:   "cf",
-						Domain: "some-domain",
-					}
-					err := lbsCommand.Execute([]string{"--json"}, incomingState)
-					Expect(err).NotTo(HaveOccurred())
+				Context("when the json flag is provided", func() {
+					It("prints LB ips for lb type cf in json format", func() {
+						incomingState.LB = storage.LB{
+							Type:   "cf",
+							Domain: "some-domain",
+						}
+						err := lbsCommand.Execute([]string{"--json"}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(stdout.String()).To(MatchJSON(`{
+						Expect(stdout.String()).To(MatchJSON(`{
 						"cf_router_lb": "some-router-lb-ip",
 						"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
 						"cf_tcp_router_lb": "some-tcp-router-lb-ip",
@@ -201,6 +202,7 @@ var _ = Describe("LBs", func() {
 							"name-server-2."
 						]
 					}`))
+					})
 				})
 			})
 
