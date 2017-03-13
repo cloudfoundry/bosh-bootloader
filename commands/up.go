@@ -3,8 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -146,69 +144,4 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	}
 
 	return config, nil
-}
-
-func fastFailBOSHVersion(boshManager boshManager) error {
-	type semver struct {
-		major int
-		minor int
-		patch int
-	}
-
-	lessThan := func(s, other semver) bool {
-		if s.major < other.major {
-			return true
-		}
-		if s.major > other.major {
-			return false
-		}
-		if s.minor < other.minor {
-			return true
-		}
-		if s.minor > other.minor {
-			return false
-		}
-		if s.patch < other.patch {
-			return true
-		}
-		return false
-	}
-
-	minimumVersion := semver{
-		major: 2,
-		minor: 0,
-		patch: 0,
-	}
-
-	version, err := boshManager.Version()
-	if err != nil {
-		return err
-	}
-	semverParts := strings.Split(version, ".")
-	majorVersion, err := strconv.Atoi(semverParts[0])
-	if err != nil {
-		return err
-	}
-
-	minorVersion, err := strconv.Atoi(semverParts[1])
-	if err != nil {
-		return err
-	}
-
-	patchVersion, err := strconv.Atoi(semverParts[2])
-	if err != nil {
-		return err
-	}
-
-	boshVersion := semver{
-		major: majorVersion,
-		minor: minorVersion,
-		patch: patchVersion,
-	}
-
-	if lessThan(boshVersion, minimumVersion) {
-		return errors.New("BOSH version must be at least v2.0.0")
-	}
-
-	return nil
 }

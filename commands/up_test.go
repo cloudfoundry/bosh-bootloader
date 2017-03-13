@@ -45,7 +45,7 @@ var _ = Describe("Up", func() {
 			})
 
 			Context("when the no-director flag is specified", func() {
-				It("returns a helpful error message when bbling up with a director", func() {
+				It("does not return an error", func() {
 					fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
 					err := command.Execute([]string{
 						"--iaas", "aws",
@@ -53,6 +53,30 @@ var _ = Describe("Up", func() {
 					}, storage.State{Version: 999})
 
 					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when the version of BOSH cannot be retrieved", func() {
+				It("returns an error", func() {
+					fakeBOSHManager.VersionCall.Returns.Error = errors.New("BOOM")
+					err := command.Execute([]string{
+						"--iaas", "aws",
+					}, storage.State{Version: 999})
+
+					Expect(err.Error()).To(ContainSubstring("BOOM"))
+				})
+			})
+
+			Context("when the version of BOSH is invalid", func() {
+				It("returns an error", func() {
+					fakeBOSHManager.VersionCall.Returns.Version = "lol.5.2"
+					err := command.Execute([]string{
+						"--iaas", "aws",
+					}, storage.State{Version: 999})
+
+					Expect(err.Error()).To(ContainSubstring("invalid syntax"))
 				})
 			})
 		})

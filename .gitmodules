@@ -43,3 +43,6 @@
 [submodule "vendor/github.com/cloudfoundry/bosh-deployment"]
 	path = vendor/github.com/cloudfoundry/bosh-deployment
 	url = https://github.com/cloudfoundry/bosh-deployment.git
+[submodule "vendor/github.com/coreos/go-semver"]
+	path = vendor/github.com/coreos/go-semver
+	url = https://github.com/coreos/go-semver.git

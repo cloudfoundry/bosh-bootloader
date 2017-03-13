@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"strconv"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -289,71 +288,6 @@ func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP stora
 
 	if stateGCP.ProjectID != "" && stateGCP.ProjectID != configGCP.ProjectID {
 		return errors.New(fmt.Sprintf("The project id cannot be changed for an existing environment. The current project id is %s.", stateGCP.ProjectID))
-	}
-
-	return nil
-}
-
-func fastFailTerraformVersion(terraformExecutor terraformExecutor) error {
-	type semver struct {
-		major int
-		minor int
-		patch int
-	}
-
-	lessThan := func(s, other semver) bool {
-		if s.major < other.major {
-			return true
-		}
-		if s.major > other.major {
-			return false
-		}
-		if s.minor < other.minor {
-			return true
-		}
-		if s.minor > other.minor {
-			return false
-		}
-		if s.patch < other.patch {
-			return true
-		}
-		return false
-	}
-
-	minimumVersion := semver{
-		major: 0,
-		minor: 8,
-		patch: 5,
-	}
-
-	version, err := terraformExecutor.Version()
-	if err != nil {
-		return err
-	}
-	semverParts := strings.Split(version, ".")
-	majorVersion, err := strconv.Atoi(semverParts[0])
-	if err != nil {
-		return err
-	}
-
-	minorVersion, err := strconv.Atoi(semverParts[1])
-	if err != nil {
-		return err
-	}
-
-	patchVersion, err := strconv.Atoi(semverParts[2])
-	if err != nil {
-		return err
-	}
-
-	terraformVersion := semver{
-		major: majorVersion,
-		minor: minorVersion,
-		patch: patchVersion,
-	}
-
-	if lessThan(terraformVersion, minimumVersion) {
-		return errors.New("Terraform version must be at least v0.8.5")
 	}
 
 	return nil

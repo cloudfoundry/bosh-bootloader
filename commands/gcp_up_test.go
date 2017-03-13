@@ -672,34 +672,8 @@ var _ = Describe("GCPUp", func() {
 			Expect(err).To(MatchError("cannot get version"))
 		})
 
-		It("fast fails when the major version cannot be converted to an int", func() {
+		It("fast fails when the version cannot be parsed by go-semver", func() {
 			terraformExecutor.VersionCall.Returns.Version = "lol.5.2"
-
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "us-west1",
-			}, storage.State{})
-
-			Expect(err.Error()).To(ContainSubstring("invalid syntax"))
-		})
-
-		It("fast fails when the minor version cannot be converted to an int", func() {
-			terraformExecutor.VersionCall.Returns.Version = "0.lol.2"
-
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKeyPath: serviceAccountKeyPath,
-				ProjectID:             "some-project-id",
-				Zone:                  "some-zone",
-				Region:                "us-west1",
-			}, storage.State{})
-
-			Expect(err.Error()).To(ContainSubstring("invalid syntax"))
-		})
-
-		It("fast fails when the patch version cannot be converted to an int", func() {
-			terraformExecutor.VersionCall.Returns.Version = "0.5.lol"
 
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKeyPath: serviceAccountKeyPath,
