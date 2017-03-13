@@ -116,7 +116,7 @@ var _ = Describe("load balancers", func() {
 			case "/output/ws_lb_ip":
 				responseWriter.Write([]byte("some-ws-lb-ip"))
 			case "/output/system_domain_dns_servers":
-				responseWriter.Write([]byte(`["name-server-1.","name-server-2.","name-server-3."]`))
+				responseWriter.Write([]byte("name-server-1.,\nname-server-2.,\nname-server-3."))
 			case "/version":
 				responseWriter.Write([]byte("0.8.6"))
 			}
@@ -804,16 +804,16 @@ var _ = Describe("load balancers", func() {
 				stdout := session.Out.Contents()
 
 				Expect(stdout).To(MatchJSON(`{
-          "cf_router_lb": "some-router-lb-ip",
-          "cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
-          "cf_tcp_router_lb": "some-tcp-router-lb-ip",
-          "cf_websocket_lb": "some-ws-lb-ip",
-          "cf_system_domain_dns_servers": [
-            "name-server-1.",
-            "name-server-2.",
-            "name-server-3."
-          ]
-        }`))
+					"cf_router_lb": "some-router-lb-ip",
+					"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
+					"cf_tcp_router_lb": "some-tcp-router-lb-ip",
+					"cf_websocket_lb": "some-ws-lb-ip",
+					"cf_system_domain_dns_servers": [
+						"name-server-1.",
+						"name-server-2.",
+						"name-server-3."
+					]
+				}`))
 			})
 		})
 

@@ -139,7 +139,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 					case "concourse_lb_ip":
 						return "some-concourse-lb-ip", nil
 					case "system_domain_dns_servers":
-						return `["some-name-server-1", "some-name-server-2"]`, nil
+						return "some-name-server-1,\nsome-name-server-2", nil
 					default:
 						return "", nil
 					}
@@ -216,19 +216,5 @@ var _ = Describe("TerraformOutputProvider", func() {
 			Entry("failed to get concourse_lb_ip", "concourse_lb_ip", "concourse"),
 			Entry("failed to get system_domain_dns_servers", "system_domain_dns_servers", "cf"),
 		)
-
-		Context("when the system_domain_dns_servers terraform output is not valid JSON", func() {
-			It("returns an error", func() {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
-					if output == "system_domain_dns_servers" {
-						return "%%%", nil
-					}
-					return "", nil
-				}
-
-				_, err := terraformOutputProvider.Get("system_domain_dns_servers", "cf", true)
-				Expect(err).To(MatchError("invalid character '%' looking for beginning of value"))
-			})
-		})
 	})
 })

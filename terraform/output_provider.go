@@ -1,6 +1,6 @@
 package terraform
 
-import "encoding/json"
+import "strings"
 
 type Outputs struct {
 	ExternalIP             string   `json:"-"`
@@ -68,16 +68,16 @@ func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs,
 	}
 
 	var (
-		routerBackendService       string
-		sshProxyTargetPool         string
-		tcpRouterTargetPool        string
-		wsTargetPool               string
-		routerLBIP                 string
-		sshProxyLBIP               string
-		tcpRouterLBIP              string
-		webSocketLBIP              string
-		systemDomainDNSServersJSON string
-		systemDomainDNSServers     []string
+		routerBackendService      string
+		sshProxyTargetPool        string
+		tcpRouterTargetPool       string
+		wsTargetPool              string
+		routerLBIP                string
+		sshProxyLBIP              string
+		tcpRouterLBIP             string
+		webSocketLBIP             string
+		systemDomainDNSServersRaw string
+		systemDomainDNSServers    []string
 	)
 
 	if lbType == "cf" {
@@ -122,15 +122,12 @@ func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs,
 		}
 
 		if domainExists {
-			systemDomainDNSServersJSON, err = o.outputter.Get(tfState, "system_domain_dns_servers")
+			systemDomainDNSServersRaw, err = o.outputter.Get(tfState, "system_domain_dns_servers")
 			if err != nil {
 				return Outputs{}, err
 			}
 
-			err = json.Unmarshal([]byte(systemDomainDNSServersJSON), &systemDomainDNSServers)
-			if err != nil {
-				return Outputs{}, err
-			}
+			systemDomainDNSServers = strings.Split(systemDomainDNSServersRaw, ",\n")
 		}
 	}
 
