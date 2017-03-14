@@ -7,10 +7,9 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
-	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -20,18 +19,20 @@ var (
 	marshal = yaml.Marshal
 )
 
+const (
+	DIRECTOR_USERNAME = "admin"
+)
+
 type GCPUp struct {
-	stateStore           stateStore
-	keyPairUpdater       keyPairUpdater
-	gcpProvider          gcpProvider
-	boshDeployer         boshDeployer
-	stringGenerator      stringGenerator
-	logger               logger
-	boshClientProvider   boshClientProvider
-	cloudConfigGenerator gcpCloudConfigGenerator
-	terraformOutputter   terraformOutputter
-	terraformExecutor    terraformExecutor
-	zones                zones
+	stateStore         stateStore
+	keyPairUpdater     keyPairUpdater
+	gcpProvider        gcpProvider
+	boshManager        boshManager
+	cloudConfigManager cloudConfigManager
+	logger             logger
+	terraformExecutor  terraformExecutor
+	zones              zones
+	envIDManager       envIDManager
 }
 
 type GCPUpConfig struct {
@@ -39,10 +40,9 @@ type GCPUpConfig struct {
 	ProjectID             string
 	Zone                  string
 	Region                string
-}
-
-type gcpCloudConfigGenerator interface {
-	Generate(gcp.CloudConfigInput) (gcp.CloudConfig, error)
+	OpsFilePath           string
+	Name                  string
+	NoDirector            bool
 }
 
 type gcpKeyPairCreator interface {
@@ -60,37 +60,50 @@ type gcpProvider interface {
 type terraformExecutor interface {
 	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, domain, template, tfState string) (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
-}
-
-type terraformOutputter interface {
-	Get(tfState, outputName string) (string, error)
+	Version() (string, error)
 }
 
 type zones interface {
 	Get(region string) []string
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor, boshDeployer boshDeployer,
-	stringGenerator stringGenerator, logger logger, boshClientProvider boshClientProvider, cloudConfigGenerator gcpCloudConfigGenerator,
-	terraformOutputter terraformOutputter, zones zones) GCPUp {
+type boshManager interface {
+	Create(storage.State, []byte) (storage.State, error)
+	Delete(storage.State) error
+	GetDeploymentVars(storage.State) (string, error)
+	Version() (string, error)
+}
+
+type envIDManager interface {
+	Sync(storage.State, string) (string, error)
+}
+
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor,
+	boshManager boshManager, logger logger, zones zones, envIDManager envIDManager, cloudConfigManager cloudConfigManager) GCPUp {
 	return GCPUp{
-		stateStore:           stateStore,
-		keyPairUpdater:       keyPairUpdater,
-		gcpProvider:          gcpProvider,
-		terraformExecutor:    terraformExecutor,
-		boshDeployer:         boshDeployer,
-		stringGenerator:      stringGenerator,
-		logger:               logger,
-		boshClientProvider:   boshClientProvider,
-		cloudConfigGenerator: cloudConfigGenerator,
-		terraformOutputter:   terraformOutputter,
-		zones:                zones,
+		stateStore:         stateStore,
+		keyPairUpdater:     keyPairUpdater,
+		gcpProvider:        gcpProvider,
+		terraformExecutor:  terraformExecutor,
+		boshManager:        boshManager,
+		cloudConfigManager: cloudConfigManager,
+		logger:             logger,
+		zones:              zones,
+		envIDManager:       envIDManager,
 	}
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
+	err := fastFailTerraformVersion(u.terraformExecutor)
+	if err != nil {
+		return err
+	}
+
+	var opsFileContents []byte
 	if !upConfig.empty() {
-		gcpDetails, err := u.parseUpConfig(upConfig)
+		var gcpDetails storage.GCP
+		var err error
+		gcpDetails, opsFileContents, err = u.parseUpConfig(upConfig)
 		if err != nil {
 			return err
 		}
@@ -101,6 +114,14 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 			return err
 		}
 
+		if upConfig.NoDirector {
+			if !state.BOSH.IsEmpty() {
+				return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
+			}
+
+			state.NoDirector = true
+		}
+
 		state.GCP = gcpDetails
 	}
 
@@ -108,11 +129,18 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
+	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone); err != nil {
 		return err
 	}
 
-	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone); err != nil {
+	envID, err := u.envIDManager.Sync(state, upConfig.Name)
+	if err != nil {
+		return err
+	}
+
+	state.EnvID = envID
+
+	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
@@ -135,7 +163,12 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	case "cf":
 		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
 		instanceGroups := generateInstanceGroups(zones)
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
+
+		if state.LB.Domain != "" {
+			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
+		} else {
+			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
+		}
 	default:
 		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
 	}
@@ -164,141 +197,32 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	externalIP, err := u.terraformOutputter.Get(state.TFState, "external_ip")
-	if err != nil {
-		return err
-	}
-
-	networkName, err := u.terraformOutputter.Get(state.TFState, "network_name")
-	if err != nil {
-		return err
-	}
-	subnetworkName, err := u.terraformOutputter.Get(state.TFState, "subnetwork_name")
-	if err != nil {
-		return err
-	}
-	boshTag, err := u.terraformOutputter.Get(state.TFState, "bosh_open_tag_name")
-	if err != nil {
-		return err
-	}
-	internalTag, err := u.terraformOutputter.Get(state.TFState, "internal_tag_name")
-	if err != nil {
-		return err
-	}
-	directorAddress, err := u.terraformOutputter.Get(state.TFState, "director_address")
-	if err != nil {
-		return err
-	}
-
-	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		ExternalIP: externalIP,
-		GCP: boshinit.InfrastructureConfigurationGCP{
-			Zone:           state.GCP.Zone,
-			NetworkName:    networkName,
-			SubnetworkName: subnetworkName,
-			BOSHTag:        boshTag,
-			InternalTag:    internalTag,
-			Project:        state.GCP.ProjectID,
-			JsonKey:        state.GCP.ServiceAccountKey,
-		},
-	}
-
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID, "gcp")
-	if err != nil {
-		return err
-	}
-
-	deployOutput, err := u.boshDeployer.Deploy(deployInput)
-	if err != nil {
-		return err
-	}
-
-	if state.BOSH.IsEmpty() {
-		state.BOSH = storage.BOSH{
-			DirectorName:           deployInput.DirectorName,
-			DirectorAddress:        directorAddress,
-			DirectorUsername:       deployInput.DirectorUsername,
-			DirectorPassword:       deployInput.DirectorPassword,
-			DirectorSSLCA:          string(deployOutput.DirectorSSLKeyPair.CA),
-			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            deployOutput.Credentials,
+	if !state.NoDirector {
+		state, err = u.boshManager.Create(state, opsFileContents)
+		switch err.(type) {
+		case bosh.ManagerCreateError:
+			bcErr := err.(bosh.ManagerCreateError)
+			if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+				errorList := helpers.Errors{}
+				errorList.Add(err)
+				errorList.Add(setErr)
+				return errorList
+			}
+			return err
+		case error:
+			return err
 		}
-	}
 
-	state.BOSH.State = deployOutput.BOSHInitState
-	state.BOSH.Manifest = deployOutput.BOSHInitManifest
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
-	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
-
-	cfHTTPSRouterBackendService := ""
-	cfSSHProxyTargetPool := ""
-	cfTCPRouterTargetPool := ""
-	cfWSTargetPool := ""
-	if state.LB.Type == "cf" {
-		cfHTTPSRouterBackendService, err = u.terraformOutputter.Get(state.TFState, "router_backend_service")
+		err = u.stateStore.Set(state)
 		if err != nil {
 			return err
 		}
 
-		cfSSHProxyTargetPool, err = u.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool")
-		if err != nil {
-			return err
-		}
-
-		cfTCPRouterTargetPool, err = u.terraformOutputter.Get(state.TFState, "tcp_router_target_pool")
-		if err != nil {
-			return err
-		}
-
-		cfWSTargetPool, err = u.terraformOutputter.Get(state.TFState, "ws_target_pool")
+		err := u.cloudConfigManager.Update(state)
 		if err != nil {
 			return err
 		}
 	}
-
-	concourseTargetPool := ""
-	if state.LB.Type == "concourse" {
-		concourseTargetPool, err = u.terraformOutputter.Get(state.TFState, "concourse_target_pool")
-		if err != nil {
-			return err
-		}
-	}
-
-	u.logger.Step("generating cloud config")
-	cloudConfig, err := u.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:                 zones,
-		Tags:                []string{internalTag},
-		NetworkName:         networkName,
-		SubnetworkName:      subnetworkName,
-		ConcourseTargetPool: concourseTargetPool,
-		CFBackends: gcp.CFBackends{
-			Router:    cfHTTPSRouterBackendService,
-			SSHProxy:  cfSSHProxyTargetPool,
-			TCPRouter: cfTCPRouterTargetPool,
-			WS:        cfWSTargetPool,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	manifestYAML, err := marshal(cloudConfig)
-	if err != nil {
-		return err
-	}
-
-	u.logger.Step("applying cloud config")
-	if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -317,20 +241,28 @@ func (u GCPUp) validateState(state storage.State) error {
 	return nil
 }
 
-func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
+func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) {
 	if upConfig.ServiceAccountKeyPath == "" {
-		return storage.GCP{}, errors.New("GCP service account key must be provided")
+		return storage.GCP{}, []byte{}, errors.New("GCP service account key must be provided")
 	}
 
 	sak, err := ioutil.ReadFile(upConfig.ServiceAccountKeyPath)
 	if err != nil {
-		return storage.GCP{}, fmt.Errorf("error reading service account key: %v", err)
+		return storage.GCP{}, []byte{}, fmt.Errorf("error reading service account key: %v", err)
 	}
 
 	var tmp interface{}
 	err = json.Unmarshal(sak, &tmp)
 	if err != nil {
-		return storage.GCP{}, fmt.Errorf("error parsing service account key: %v", err)
+		return storage.GCP{}, []byte{}, fmt.Errorf("error parsing service account key: %v", err)
+	}
+
+	var opsFileContents []byte
+	if upConfig.OpsFilePath != "" {
+		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFilePath)
+		if err != nil {
+			return storage.GCP{}, []byte{}, fmt.Errorf("error reading ops-file contents: %v", err)
+		}
 	}
 
 	return storage.GCP{
@@ -338,7 +270,7 @@ func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, error) {
 		ProjectID:         upConfig.ProjectID,
 		Zone:              upConfig.Zone,
 		Region:            upConfig.Region,
-	}, nil
+	}, opsFileContents, nil
 }
 
 func (c GCPUpConfig) empty() bool {

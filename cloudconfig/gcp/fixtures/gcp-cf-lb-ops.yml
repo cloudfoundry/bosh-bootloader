@@ -1,0 +1,28 @@
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cf-router-network-properties
+    cloud_properties:
+      backend_service: router-backend-service
+      target_pool: ws-target-pool
+      tags:
+      - router-backend-service
+      - ws-target-pool
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: diego-ssh-proxy-network-properties
+    cloud_properties:
+      target_pool: ssh-proxy-target-pool
+      tags:
+      - ssh-proxy-target-pool
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cf-tcp-router-network-properties
+    cloud_properties:
+      target_pool: tcp-router-target-pool
+      tags:
+      - tcp-router-target-pool

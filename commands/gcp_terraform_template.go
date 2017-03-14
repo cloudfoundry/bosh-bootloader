@@ -251,7 +251,7 @@ resource "google_compute_firewall" "cf-health-check" {
 
   allow {
     protocol = "tcp"
-    ports    = ["8080"]
+    ports    = ["8080", "80"]
   }
 
   source_ranges = ["130.211.0.0/22"]
@@ -374,6 +374,10 @@ resource "google_dns_managed_zone" "env_dns_zone" {
   name        = "${var.env_id}-zone"
   dns_name    = "${var.system_domain}."
   description = "DNS zone for the ${var.env_id} environment"
+}
+
+output "system_domain_dns_servers" {
+  value = "${google_dns_managed_zone.env_dns_zone.name_servers}"
 }
 
 resource "google_dns_record_set" "wildcard-dns" {

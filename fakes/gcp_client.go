@@ -33,6 +33,16 @@ type GCPClient struct {
 			Error        error
 		}
 	}
+	GetNetworksCall struct {
+		CallCount int
+		Receives  struct {
+			Name string
+		}
+		Returns struct {
+			NetworkList *compute.NetworkList
+			Error       error
+		}
+	}
 }
 
 func (g *GCPClient) ProjectID() string {
@@ -54,4 +64,10 @@ func (g *GCPClient) SetCommonInstanceMetadata(metadata *compute.Metadata) (*comp
 func (g *GCPClient) ListInstances() (*compute.InstanceList, error) {
 	g.ListInstancesCall.CallCount++
 	return g.ListInstancesCall.Returns.InstanceList, g.ListInstancesCall.Returns.Error
+}
+
+func (g *GCPClient) GetNetworks(name string) (*compute.NetworkList, error) {
+	g.GetNetworksCall.CallCount++
+	g.GetNetworksCall.Receives.Name = name
+	return g.GetNetworksCall.Returns.NetworkList, g.GetNetworksCall.Returns.Error
 }

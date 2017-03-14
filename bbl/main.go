@@ -3,10 +3,12 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
+
+	yaml "gopkg.in/yaml.v2"
 
 	"golang.org/x/crypto/ssh"
 
@@ -17,18 +19,16 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/bbl/constants"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit/manifests"
-	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
-	"github.com/cloudfoundry/bosh-bootloader/ssl"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	"github.com/square/certstrap/pkix"
+
+	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
+	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 )
 
 var (
@@ -39,22 +39,23 @@ var (
 func main() {
 	// Command Set
 	commandSet := application.CommandSet{
-		commands.HelpCommand:             nil,
-		commands.VersionCommand:          nil,
-		commands.UpCommand:               nil,
-		commands.DestroyCommand:          nil,
-		commands.DirectorAddressCommand:  nil,
-		commands.DirectorUsernameCommand: nil,
-		commands.DirectorPasswordCommand: nil,
-		commands.DirectorCACertCommand:   nil,
-		commands.BOSHCACertCommand:       nil,
-		commands.SSHKeyCommand:           nil,
-		commands.CreateLBsCommand:        nil,
-		commands.UpdateLBsCommand:        nil,
-		commands.DeleteLBsCommand:        nil,
-		commands.LBsCommand:              nil,
-		commands.EnvIDCommand:            nil,
-		commands.PrintEnvCommand:         nil,
+		commands.HelpCommand:               nil,
+		commands.VersionCommand:            nil,
+		commands.UpCommand:                 nil,
+		commands.DestroyCommand:            nil,
+		commands.DirectorAddressCommand:    nil,
+		commands.DirectorUsernameCommand:   nil,
+		commands.DirectorPasswordCommand:   nil,
+		commands.DirectorCACertCommand:     nil,
+		commands.SSHKeyCommand:             nil,
+		commands.CreateLBsCommand:          nil,
+		commands.UpdateLBsCommand:          nil,
+		commands.DeleteLBsCommand:          nil,
+		commands.LBsCommand:                nil,
+		commands.EnvIDCommand:              nil,
+		commands.PrintEnvCommand:           nil,
+		commands.CloudConfigCommand:        nil,
+		commands.BOSHDeploymentVarsCommand: nil,
 	}
 
 	// Utilities
@@ -63,7 +64,6 @@ func main() {
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
-	sslKeyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
@@ -112,76 +112,45 @@ func main() {
 	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey, configuration.State.GCP.ProjectID, configuration.State.GCP.Zone)
 
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
-	gcpCloudConfigGenerator := gcpcloudconfig.NewCloudConfigGenerator()
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
 	zones := gcp.NewZones()
 
-	// bosh-init
-	tempDir, err := ioutil.TempDir("", "bosh-init")
-	if err != nil {
-		fail(err)
-	}
-
-	boshInitPath, err := exec.LookPath("bosh-init")
-	if err != nil {
-		fail(err)
-	}
-
-	cloudProviderManifestBuilder := manifests.NewCloudProviderManifestBuilder(stringGenerator)
-	jobsManifestBuilder := manifests.NewJobsManifestBuilder(stringGenerator)
-	boshinitManifestBuilder := manifests.NewManifestBuilder(manifests.ManifestBuilderInput{
-		BOSHURL:         constants.BOSHURL,
-		BOSHSHA1:        constants.BOSHSHA1,
-		BOSHAWSCPIURL:   constants.BOSHAWSCPIURL,
-		BOSHAWSCPISHA1:  constants.BOSHAWSCPISHA1,
-		AWSStemcellURL:  constants.AWSStemcellURL,
-		AWSStemcellSHA1: constants.AWSStemcellSHA1,
-
-		BOSHGCPCPIURL:   constants.BOSHGCPCPIURL,
-		BOSHGCPCPISHA1:  constants.BOSHGCPCPISHA1,
-		GCPStemcellURL:  constants.GCPStemcellURL,
-		GCPStemcellSHA1: constants.GCPStemcellSHA1,
-	},
-		logger,
-		sslKeyPairGenerator,
-		stringGenerator,
-		cloudProviderManifestBuilder,
-		jobsManifestBuilder,
-	)
-	boshinitCommandBuilder := boshinit.NewCommandBuilder(boshInitPath, tempDir, os.Stdout, os.Stderr)
-	boshinitDeployCommand := boshinitCommandBuilder.DeployCommand()
-	boshinitDeleteCommand := boshinitCommandBuilder.DeleteCommand()
-	boshinitDeployRunner := boshinit.NewCommandRunner(tempDir, boshinitDeployCommand)
-	boshinitDeleteRunner := boshinit.NewCommandRunner(tempDir, boshinitDeleteCommand)
-	boshinitExecutor := boshinit.NewExecutor(
-		boshinitManifestBuilder, boshinitDeployRunner, boshinitDeleteRunner, logger,
-	)
+	// EnvID
+	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
 
 	// Terraform
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
 	terraformOutputter := terraform.NewOutputter(terraformCmd)
+	terraformOutputProvider := terraform.NewOutputProvider(terraformOutputter)
 
 	// BOSH
+	boshCommand := bosh.NewCmd(os.Stderr)
+	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal,
+		json.Marshal, ioutil.WriteFile, configuration.Global.Debug)
+	boshManager := bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
 	boshClientProvider := bosh.NewClientProvider()
-	cloudConfigGenerator := bosh.NewCloudConfigGenerator()
-	cloudConfigurator := bosh.NewCloudConfigurator(logger, cloudConfigGenerator)
-	cloudConfigManager := bosh.NewCloudConfigManager(logger, cloudConfigGenerator)
+
+	// Cloud Config
+	awsOpsGenerator := awscloudconfig.NewOpsGenerator(availabilityZoneRetriever, infrastructureManager)
+	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformOutputProvider, zones)
+	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsOpsGenerator, gcpOpsGenerator)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider)
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		credentialValidator, infrastructureManager, keyPairSynchronizer, boshinitExecutor,
-		stringGenerator, cloudConfigurator, availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, boshClientProvider, stateStore, clientProvider)
+		credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
+		availabilityZoneRetriever, certificateDescriber,
+		cloudConfigManager, stateStore, clientProvider, envIDManager)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigurator, cloudConfigManager, certificateValidator,
+		availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore,
 	)
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, terraformOutputter, gcpCloudConfigGenerator, boshClientProvider, zones, stateStore, logger)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)
@@ -190,53 +159,40 @@ func main() {
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
 		credentialValidator, availabilityZoneRetriever, certificateManager,
-		infrastructureManager, logger, cloudConfigurator, cloudConfigManager, boshClientProvider, stateStore,
+		infrastructureManager, logger, cloudConfigManager, boshClientProvider, stateStore,
 	)
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(terraformOutputter, gcpCloudConfigGenerator, zones, logger,
-		boshClientProvider, stateStore, terraformExecutor)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(logger, stateStore, terraformExecutor, cloudConfigManager)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshinitExecutor, stringGenerator, logger, boshClientProvider, gcpCloudConfigGenerator, terraformOutputter, zones)
+	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformExecutor, boshManager, logger,
+		zones, envIDManager, cloudConfigManager)
 	envGetter := commands.NewEnvGetter()
 
 	// Commands
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
 
-	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, envIDGenerator)
+	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
 
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
-		credentialValidator, logger, os.Stdin, boshinitExecutor, vpcStatusChecker, stackManager,
+		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
-		stateStore, stateValidator, terraformExecutor, terraformOutputter, gcpNetworkInstancesChecker,
+		stateStore, stateValidator, terraformExecutor, terraformOutputProvider, gcpNetworkInstancesChecker,
 	)
 
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator)
-	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger)
-	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator)
-	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputter, os.Stdout)
-	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorAddressPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorAddress
-	})
-	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorUsernamePropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorUsername
-	})
-	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorPasswordPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorPassword
-	})
-	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.DirectorCACertPropertyName, func(state storage.State) string {
-		return state.BOSH.DirectorSSLCA
-	})
-	commandSet[commands.BOSHCACertCommand] = commands.NewStateQuery(logger, stateValidator, commands.BOSHCACertPropertyName, func(state storage.State) string {
-		fmt.Fprintln(os.Stderr, "'bosh-ca-cert' has been deprecated and will be removed in future versions of bbl, please use 'director-ca-cert'")
-		return state.BOSH.DirectorSSLCA
-	})
-	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, commands.SSHKeyPropertyName, func(state storage.State) string {
-		return state.KeyPair.PrivateKey
-	})
-	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, commands.EnvIDPropertyName, func(state storage.State) string {
-		return state.EnvID
-	})
-	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator)
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
+	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
+	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputProvider, os.Stdout)
+	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorAddressPropertyName)
+	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorUsernamePropertyName)
+	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorPasswordPropertyName)
+	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.DirectorCACertPropertyName)
+	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.SSHKeyPropertyName)
+	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformOutputProvider, infrastructureManager, commands.EnvIDPropertyName)
+	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformOutputProvider, infrastructureManager)
+	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
+
+	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, terraformExecutor)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

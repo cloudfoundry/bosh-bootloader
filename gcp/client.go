@@ -1,12 +1,17 @@
 package gcp
 
-import compute "google.golang.org/api/compute/v1"
+import (
+	"fmt"
+
+	compute "google.golang.org/api/compute/v1"
+)
 
 type Client interface {
 	ProjectID() string
 	GetProject() (*compute.Project, error)
 	SetCommonInstanceMetadata(metadata *compute.Metadata) (*compute.Operation, error)
 	ListInstances() (*compute.InstanceList, error)
+	GetNetworks(name string) (*compute.NetworkList, error)
 }
 
 type GCPClient struct {
@@ -29,4 +34,9 @@ func (c GCPClient) SetCommonInstanceMetadata(metadata *compute.Metadata) (*compu
 
 func (c GCPClient) ListInstances() (*compute.InstanceList, error) {
 	return c.service.Instances.List(c.projectID, c.zone).Do()
+}
+
+func (c GCPClient) GetNetworks(name string) (*compute.NetworkList, error) {
+	networksListCall := c.service.Networks.List(c.projectID)
+	return networksListCall.Filter(fmt.Sprintf("name eq %s", name)).Do()
 }

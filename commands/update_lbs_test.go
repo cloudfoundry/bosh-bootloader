@@ -22,6 +22,7 @@ var _ = Describe("Update LBs", func() {
 		chainFilePath        string
 		certificateValidator *fakes.CertificateValidator
 		stateValidator       *fakes.StateValidator
+		boshManager          *fakes.BOSHManager
 		logger               *fakes.Logger
 		awsUpdateLBs         *fakes.AWSUpdateLBs
 		gcpUpdateLBs         *fakes.GCPUpdateLBs
@@ -33,8 +34,11 @@ var _ = Describe("Update LBs", func() {
 		certificateValidator = &fakes.CertificateValidator{}
 		stateValidator = &fakes.StateValidator{}
 		logger = &fakes.Logger{}
+		boshManager = &fakes.BOSHManager{}
 		awsUpdateLBs = &fakes.AWSUpdateLBs{}
 		gcpUpdateLBs = &fakes.GCPUpdateLBs{}
+
+		boshManager.VersionCall.Returns.Version = "2.0.0"
 
 		incomingState = storage.State{
 			IAAS: "aws",
@@ -58,10 +62,45 @@ var _ = Describe("Update LBs", func() {
 		chainFilePath, err = testhelpers.WriteContentsToTempFile("some-chain-contents")
 		Expect(err).NotTo(HaveOccurred())
 
-		command = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger)
+		command = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	})
 
 	Describe("Execute", func() {
+		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+			It("returns a helpful error message", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := command.Execute([]string{
+					"--cert", "my-cert",
+					"--key", "my-key",
+					"--domain", "some-domain",
+				}, storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "cf",
+					},
+				})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
+		})
+
+		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+			It("does not fast fail", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := command.Execute([]string{
+					"--cert", "my-cert",
+					"--key", "my-key",
+					"--domain", "some-domain",
+				}, storage.State{
+					IAAS:       "gcp",
+					NoDirector: true,
+					LB: storage.LB{
+						Type: "cf",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		It("updates a GCP cf lb type is the iaas if GCP and type is cf", func() {
 			err := command.Execute([]string{
 				"--cert", "my-cert",

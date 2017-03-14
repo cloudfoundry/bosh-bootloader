@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -19,7 +22,7 @@ import (
 var _ = Describe("Destroy", func() {
 	var (
 		destroy                 commands.Destroy
-		boshDeleter             *fakes.BOSHDeleter
+		boshManager             *fakes.BOSHManager
 		stackManager            *fakes.StackManager
 		infrastructureManager   *fakes.InfrastructureManager
 		vpcStatusChecker        *fakes.VPCStatusChecker
@@ -32,7 +35,7 @@ var _ = Describe("Destroy", func() {
 		stateStore              *fakes.StateStore
 		stateValidator          *fakes.StateValidator
 		terraformExecutor       *fakes.TerraformExecutor
-		terraformOutputter      *fakes.TerraformOutputter
+		terraformOutputProvider *fakes.TerraformOutputProvider
 		networkInstancesChecker *fakes.NetworkInstancesChecker
 		stdin                   *bytes.Buffer
 	)
@@ -44,7 +47,8 @@ var _ = Describe("Destroy", func() {
 		vpcStatusChecker = &fakes.VPCStatusChecker{}
 		stackManager = &fakes.StackManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
-		boshDeleter = &fakes.BOSHDeleter{}
+		boshManager = &fakes.BOSHManager{}
+		boshManager.VersionCall.Returns.Version = "2.0.0"
 		awsKeyPairDeleter = &fakes.AWSKeyPairDeleter{}
 		gcpKeyPairDeleter = &fakes.GCPKeyPairDeleter{}
 		certificateDeleter = &fakes.CertificateDeleter{}
@@ -53,16 +57,39 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformExecutor = &fakes.TerraformExecutor{}
-		terraformOutputter = &fakes.TerraformOutputter{}
+		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
-		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshDeleter,
+		terraformOutputProvider = &fakes.TerraformOutputProvider{}
+
+		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
-			stateValidator, terraformExecutor, terraformOutputter, networkInstancesChecker)
+			stateValidator, terraformExecutor, terraformOutputProvider, networkInstancesChecker)
 	})
 
 	Describe("Execute", func() {
+		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+			It("returns a helpful error message", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
+		})
+
+		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+			It("does not fast fail", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.0"
+				err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{
+					IAAS:       "aws",
+					NoDirector: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		It("returns when there is no state and --skip-if-missing flag is provided", func() {
 			err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{})
 
@@ -93,10 +120,10 @@ var _ = Describe("Destroy", func() {
 				Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
 
 				if proceed {
-					Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
+					Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
 				} else {
 					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
-					Expect(boshDeleter.DeleteCall.CallCount).To(Equal(0))
+					Expect(boshManager.DeleteCall.CallCount).To(Equal(0))
 				}
 			},
 			Entry("responding with 'yes'", "yes", true),
@@ -119,11 +146,26 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(boshDeleter.DeleteCall.CallCount).To(Equal(1))
+				Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
 			},
 				Entry("--no-confirm", "--no-confirm"),
 				Entry("-n", "-n"),
 			)
+		})
+
+		It("invokes bosh delete", func() {
+			stdin.Write([]byte("yes\n"))
+			state := storage.State{
+				BOSH: storage.BOSH{
+					DirectorName: "some-director",
+				},
+			}
+
+			err := destroy.Execute([]string{}, state)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
+			Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
 		})
 
 		It("clears the state", func() {
@@ -146,6 +188,22 @@ var _ = Describe("Destroy", func() {
 				stdin.Write([]byte("yes\n"))
 			})
 
+			It("fast fails on gcp if the terraform installed is less than v0.8.5", func() {
+				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+				err := destroy.Execute([]string{}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+			})
+
+			It("does not fast fail on aws if the terraform installed is less than v0.8.5", func() {
+				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+
+				err := destroy.Execute([]string{}, storage.State{IAAS: "aws"})
+
+				Expect(err).ToNot(HaveOccurred())
+			})
+
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
 					err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
@@ -154,16 +212,16 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
-			Context("when the bosh delete fails", func() {
+			Context("when bosh delete fails", func() {
 				It("returns an error", func() {
-					boshDeleter.DeleteCall.Returns.Error = errors.New("BOSH Delete Failed")
+					boshManager.DeleteCall.Returns.Error = errors.New("bosh delete-env failed")
 
 					err := destroy.Execute([]string{}, storage.State{
 						BOSH: storage.BOSH{
 							DirectorName: "some-director",
 						},
 					})
-					Expect(err).To(MatchError("BOSH Delete Failed"))
+					Expect(err).To(MatchError("bosh delete-env failed"))
 				})
 			})
 
@@ -236,13 +294,13 @@ var _ = Describe("Destroy", func() {
 							},
 							DirectorSSLCertificate: "some-certificate",
 							DirectorSSLPrivateKey:  "some-private-key",
-							Manifest:               "bosh-init-manifest",
 						},
 						Stack: storage.Stack{
 							Name:            "some-stack-name",
 							LBType:          "some-lb-type",
 							CertificateName: "some-certificate-name",
 						},
+						EnvID: "bbl-lake-time:stamp",
 					}
 				})
 
@@ -260,30 +318,6 @@ var _ = Describe("Destroy", func() {
 					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
 
 					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
-				})
-
-				It("invokes bosh-init delete", func() {
-					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-						Name:   "some-stack-name",
-						Status: "some-stack-status",
-						Outputs: map[string]string{
-							"BOSHSubnet":              "some-subnet-id",
-							"BOSHSubnetAZ":            "some-availability-zone",
-							"BOSHEIP":                 "some-elastic-ip",
-							"BOSHUserAccessKey":       "some-access-key-id",
-							"BOSHUserSecretAccessKey": "some-secret-access-key",
-							"BOSHSecurityGroup":       "some-security-group",
-						},
-					}
-
-					err := destroy.Execute([]string{}, state)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
-
-					Expect(boshDeleter.DeleteCall.Receives.BOSHInitManifest).To(Equal("bosh-init-manifest"))
-					Expect(boshDeleter.DeleteCall.Receives.BOSHInitState).To(Equal(boshinit.State{"key": "value"}))
-					Expect(boshDeleter.DeleteCall.Receives.EC2PrivateKey).To(Equal("some-private-key"))
 				})
 
 				It("deletes the stack", func() {
@@ -317,6 +351,13 @@ var _ = Describe("Destroy", func() {
 					Expect(awsKeyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
 				})
 
+				It("logs the bosh deletion", func() {
+					err := destroy.Execute([]string{}, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.StepCall.Messages).To(ContainElement("destroying bosh director"))
+				})
+
 				Context("reentrance", func() {
 					Context("when the stack fails to delete", func() {
 						It("removes the bosh properties from state and returns an error", func() {
@@ -344,6 +385,7 @@ var _ = Describe("Destroy", func() {
 									LBType:          "some-lb-type",
 									CertificateName: "some-certificate-name",
 								},
+								EnvID: "bbl-lake-time:stamp",
 							}))
 						})
 					})
@@ -355,7 +397,8 @@ var _ = Describe("Destroy", func() {
 							Expect(err).NotTo(HaveOccurred())
 
 							Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
-							Expect(boshDeleter.DeleteCall.CallCount).To(Equal(0))
+							Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
+							Expect(boshManager.DeleteCall.CallCount).To(Equal(0))
 						})
 					})
 
@@ -385,6 +428,7 @@ var _ = Describe("Destroy", func() {
 									LBType:          "",
 									CertificateName: "some-certificate-name",
 								},
+								EnvID: "bbl-lake-time:stamp",
 							}))
 						})
 					})
@@ -415,6 +459,7 @@ var _ = Describe("Destroy", func() {
 									LBType:          "",
 									CertificateName: "",
 								},
+								EnvID: "bbl-lake-time:stamp",
 							}))
 						})
 					})
@@ -511,10 +556,85 @@ var _ = Describe("Destroy", func() {
 						Expect(err).To(MatchError("failed to set state"))
 					})
 				})
+
+				Context("when bosh fails to delete the director", func() {
+					var (
+						state storage.State
+					)
+					BeforeEach(func() {
+						state = storage.State{
+							BOSH: storage.BOSH{
+								State: map[string]interface{}{"hello": "world"},
+							},
+							IAAS: "aws",
+							Stack: storage.Stack{
+								CertificateName: "some-certificate-name",
+							},
+						}
+					})
+					Context("when bosh delete returns a bosh manager delete error", func() {
+						var (
+							errState storage.State
+						)
+						BeforeEach(func() {
+							errState = storage.State{
+								BOSH: storage.BOSH{
+									State: map[string]interface{}{"error": "state"},
+								},
+								IAAS: "aws",
+								Stack: storage.Stack{
+									CertificateName: "some-certificate-name",
+								},
+							}
+							boshManager.DeleteCall.Returns.Error = bosh.NewManagerDeleteError(errState, errors.New("deletion failed"))
+						})
+
+						It("saves the bosh state and returns an error", func() {
+							err := destroy.Execute([]string{}, state)
+							Expect(err).To(MatchError("deletion failed"))
+							Expect(stateStore.SetCall.Receives.State).To(Equal(errState))
+						})
+
+						It("returns an error when it can't set the state", func() {
+							stateStore.SetCall.Returns = []fakes.SetCallReturn{{
+								errors.New("saving state failed"),
+							}}
+							err := destroy.Execute([]string{}, state)
+							Expect(err).To(MatchError("the following errors occurred:\ndeletion failed,\nsaving state failed"))
+						})
+					})
+
+					It("returns an error", func() {
+						boshManager.DeleteCall.Returns.Error = errors.New("deletion failed")
+						err := destroy.Execute([]string{}, state)
+						Expect(err).To(MatchError("deletion failed"))
+					})
+				})
 			})
 		})
 
 		Context("when iaas is gcp", func() {
+			var serviceAccountKeyPath string
+			var serviceAccountKey string
+			BeforeEach(func() {
+				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+					ExternalIP:      "some-external-ip",
+					NetworkName:     "some-network-name",
+					SubnetworkName:  "some-subnetwork-name",
+					BOSHTag:         "some-bosh-tag-name",
+					InternalTag:     "some-internal-tag-name",
+					DirectorAddress: "some-director-address",
+				}
+
+				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
+				Expect(err).NotTo(HaveOccurred())
+				serviceAccountKeyPath = tempFile.Name()
+				serviceAccountKey = `{"real": "json"}`
+				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+
 			It("returns an error when gcp credential validator fails", func() {
 				credentialValidator.ValidateGCPCall.Returns.Error = errors.New("gcp credentials validator failed")
 
@@ -587,7 +707,6 @@ var _ = Describe("Destroy", func() {
 
 			It("returns an error when instances exist in the gcp network", func() {
 				networkInstancesChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
-				terraformOutputter.GetCall.Returns.Output = "some-network-name"
 
 				projectID := "some-project-id"
 				zone := "some-zone"
@@ -603,9 +722,6 @@ var _ = Describe("Destroy", func() {
 					},
 					TFState: tfState,
 				})
-
-				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal(tfState))
-				Expect(terraformOutputter.GetCall.Receives.OutputName).To(Equal("network_name"))
 
 				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
 				Expect(err).To(MatchError("validation failed"))
@@ -661,24 +777,14 @@ var _ = Describe("Destroy", func() {
 				Expect(err).To(MatchError("failed to destroy"))
 			})
 
-			It("returns an error when terraform outputter fails", func() {
-				terraformOutputter.GetCall.Returns.Error = errors.New("terraform outputter failed")
+			It("returns an error when terraform output provider fails", func() {
+				terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
 
 				err := destroy.Execute([]string{}, storage.State{
 					IAAS: "gcp",
 				})
 
-				Expect(err).To(MatchError("terraform outputter failed"))
-			})
-
-			It("returns an error when network instances retreiver fails", func() {
-				terraformOutputter.GetCall.Returns.Error = errors.New("network instances retreiver failed")
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-				})
-
-				Expect(err).To(MatchError("network instances retreiver failed"))
+				Expect(err).To(MatchError("terraform output provider failed"))
 			})
 		})
 	})

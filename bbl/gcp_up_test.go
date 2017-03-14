@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
@@ -25,9 +26,20 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath      string
 		pathToFakeTerraform        string
 		pathToTerraform            string
+		pathToFakeBOSH             string
+		pathToBOSH                 string
+		fakeBOSHCLIBackendServer   *httptest.Server
 		fakeTerraformBackendServer *httptest.Server
 		fakeBOSHServer             *httptest.Server
 		fakeBOSH                   *fakeBOSHDirector
+
+		fastFail                 bool
+		fastFailMutex            sync.Mutex
+		callRealInterpolate      bool
+		callRealInterpolateMutex sync.Mutex
+
+		createEnvArgs   string
+		interpolateArgs []string
 	)
 
 	BeforeEach(func() {
@@ -35,6 +47,40 @@ var _ = Describe("bbl up gcp", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
+		}))
+
+		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("v2.0.0"))
+			case "/path":
+				responseWriter.Write([]byte(originalPath))
+			case "/create-env/args":
+				body, err := ioutil.ReadAll(request.Body)
+				Expect(err).NotTo(HaveOccurred())
+				createEnvArgs = string(body)
+			case "/interpolate/args":
+				body, err := ioutil.ReadAll(request.Body)
+				Expect(err).NotTo(HaveOccurred())
+				interpolateArgs = append(interpolateArgs, string(body))
+			case "/create-env/fastfail":
+				fastFailMutex.Lock()
+				defer fastFailMutex.Unlock()
+				if fastFail {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
+				}
+				return
+			case "/call-real-interpolate":
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				if callRealInterpolate {
+					responseWriter.Write([]byte("true"))
+				} else {
+					responseWriter.Write([]byte("false"))
+				}
+			}
 		}))
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -48,9 +94,11 @@ var _ = Describe("bbl up gcp", func() {
 			case "/output/subnetwork_name":
 				responseWriter.Write([]byte("some-subnetwork-name"))
 			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-tag"))
+				responseWriter.Write([]byte("some-internal-tag"))
 			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-open-tag"))
+				responseWriter.Write([]byte("some-bosh-tag"))
+			case "/version":
+				responseWriter.Write([]byte("0.8.6"))
 			}
 		}))
 
@@ -62,7 +110,15 @@ var _ = Describe("bbl up gcp", func() {
 		err = os.Rename(pathToFakeTerraform, pathToTerraform)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
+		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+		Expect(err).NotTo(HaveOccurred())
+
+		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+		err = os.Rename(pathToFakeBOSH, pathToBOSH)
+		Expect(err).NotTo(HaveOccurred())
+
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -73,11 +129,20 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+
+		fastFailMutex.Lock()
+		defer fastFailMutex.Unlock()
+		fastFail = false
+	})
+
+	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
 	})
 
 	It("writes gcp details to state", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
+			"--debug",
 			"up",
 			"--iaas", "gcp",
 			"--gcp-service-account-key", serviceAccountKeyPath,
@@ -89,7 +154,7 @@ var _ = Describe("bbl up gcp", func() {
 		executeCommand(args, 0)
 
 		state := readStateJson(tempDirectory)
-		Expect(state.Version).To(Equal(2))
+		Expect(state.Version).To(Equal(3))
 		Expect(state.IAAS).To(Equal("gcp"))
 		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
@@ -97,6 +162,103 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.GCP.Region).To(Equal("us-west1"))
 		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
+	})
+
+	Context("when the terraform version is <0.8.5", func() {
+		BeforeEach(func() {
+			fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("0.8.4"))
+				}
+			}))
+			var err error
+			pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+			err = os.Rename(pathToFakeTerraform, pathToTerraform)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
+		})
+	})
+
+	Context("when a bbl enviornment already exists", func() {
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--name", "some-bbl-env",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			executeCommand(args, 0)
+
+			gcpBackend.Network.Add("some-bbl-env-network")
+		})
+
+		It("can bbl up a second time idempotently", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			executeCommand(args, 0)
+		})
+	})
+
+	Context("when ops files are provides via --ops-file flag", func() {
+		It("passes those ops files to bosh create env", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+				"--ops-file", "fixtures/ops-file.yml",
+			}
+
+			executeCommand(args, 0)
+
+			Expect(interpolateArgs[0]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+		})
 	})
 
 	Context("when gcp details are provided via env vars", func() {
@@ -124,7 +286,7 @@ var _ = Describe("bbl up gcp", func() {
 			executeCommand(args, 0)
 
 			state := readStateJson(tempDirectory)
-			Expect(state.Version).To(Equal(2))
+			Expect(state.Version).To(Equal(3))
 			Expect(state.IAAS).To(Equal("gcp"))
 			Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 			Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
@@ -136,7 +298,8 @@ var _ = Describe("bbl up gcp", func() {
 	Context("when bbl-state.json contains gcp details", func() {
 		BeforeEach(func() {
 			buf, err := json.Marshal(storage.State{
-				IAAS: "gcp",
+				Version: 3,
+				IAAS:    "gcp",
 				GCP: storage.GCP{
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
@@ -229,9 +392,10 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
 	})
 
-	It("invokes bosh-init", func() {
+	It("invokes the bosh cli", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
+			"--debug",
 			"up",
 			"--iaas", "gcp",
 			"--gcp-service-account-key", serviceAccountKeyPath,
@@ -242,11 +406,36 @@ var _ = Describe("bbl up gcp", func() {
 
 		session := executeCommand(args, 0)
 
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh-init was called with [bosh-init deploy bosh.yml]"))
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh-state.json: {}"))
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+	})
+
+	It("can invoke the bosh cli idempotently", func() {
+		args := []string{
+			"--state-dir", tempDirectory,
+			"--debug",
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKeyPath,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "us-west1",
+		}
+
+		session := executeCommand(args, 0)
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+
+		session = executeCommand(args, 0)
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+		Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
 	})
 
 	DescribeTable("cloud config", func(fixtureLocation string) {
+		By("allowing the bosh interpolate call to be run", func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
+
 		contents, err := ioutil.ReadFile(fixtureLocation)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -276,9 +465,86 @@ var _ = Describe("bbl up gcp", func() {
 			executeCommand(args, 0)
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 		})
+
+		By("resetting the ability to call interpolate to false", func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = false
+		})
 	},
-		Entry("generates a cloud config with no lb type", "../cloudconfig/gcp/fixtures/cloud-config-no-lb.yml"),
+		Entry("generates a cloud config with no lb type", "../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml"),
 	)
+
+	Context("when there is a different environment with the same name", func() {
+		var session *gexec.Session
+
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+				"--name", "existing",
+			}
+
+			gcpBackend.Network.Add("existing-network")
+			session = executeCommand(args, 1)
+		})
+
+		It("fast fails and prints a helpful message", func() {
+			Expect(session.Err.Contents()).To(ContainSubstring("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
+		})
+
+		It("does not save the env id to the state", func() {
+			_, err := os.Stat(filepath.Join(tempDirectory, "bbl-state.json"))
+			Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+		})
+	})
+
+	Context("when the --no-director flag is provided", func() {
+		It("creates the infrastructure for a bosh director", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+
+		})
+
+		It("does not invoke the bosh cli or create a cloud config", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).NotTo(ContainSubstring("bosh create-env"))
+			Expect(session.Out.Contents()).NotTo(ContainSubstring("step: generating cloud config"))
+			Expect(session.Out.Contents()).NotTo(ContainSubstring("step: applying cloud config"))
+		})
+	})
 
 	Context("bbl re-entrance", func() {
 		It("saves the tf state when terraform apply fails", func() {
@@ -296,6 +562,33 @@ var _ = Describe("bbl up gcp", func() {
 
 			state := readStateJson(tempDirectory)
 			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+		})
+
+		Context("when bosh fails", func() {
+			BeforeEach(func() {
+				fastFailMutex.Lock()
+				fastFail = true
+				fastFailMutex.Unlock()
+
+				args := []string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "some-region",
+				}
+
+				executeCommand(args, 1)
+			})
+
+			It("stores a partial bosh state", func() {
+				state := readStateJson(tempDirectory)
+				Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+					"partial": "bosh-state",
+				}))
+			})
 		})
 	})
 })

@@ -1,11 +1,14 @@
 package terraform
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
@@ -148,6 +151,23 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	}
 
 	return string(tfState), nil
+}
+
+func (e Executor) Version() (string, error) {
+	buffer := bytes.NewBuffer([]byte{})
+	err := e.cmd.Run(buffer, "/tmp", []string{"version"}, true)
+	if err != nil {
+		return "", err
+	}
+	versionOutput := buffer.String()
+	regex := regexp.MustCompile(`\d+.\d+.\d+`)
+
+	version := regex.FindString(versionOutput)
+	if version == "" {
+		return "", errors.New("Terraform version could not be parsed")
+	}
+
+	return version, nil
 }
 
 func makeVar(name string, value string) []string {

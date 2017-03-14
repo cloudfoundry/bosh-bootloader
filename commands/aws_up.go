@@ -3,13 +3,15 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -27,10 +29,6 @@ type infrastructureManager interface {
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
 	Describe(stackName string) (cloudformation.Stack, error)
-}
-
-type boshDeployer interface {
-	Deploy(boshinit.DeployInput) (boshinit.DeployOutput, error)
 }
 
 type availabilityZoneRetriever interface {
@@ -60,50 +58,53 @@ type configProvider interface {
 	SetConfig(config aws.Config)
 }
 
+type cloudConfigManager interface {
+	Update(state storage.State) error
+	Generate(state storage.State) (string, error)
+}
+
 type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
 	keyPairSynchronizer       keyPairSynchronizer
-	boshDeployer              boshDeployer
-	stringGenerator           stringGenerator
-	boshCloudConfigurator     boshCloudConfigurator
+	boshManager               boshManager
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateDescriber      certificateDescriber
 	cloudConfigManager        cloudConfigManager
-	boshClientProvider        boshClientProvider
-	envIDGenerator            envIDGenerator
 	stateStore                stateStore
 	configProvider            configProvider
+	envIDManager              envIDManager
 }
 
 type AWSUpConfig struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	Region          string
+	OpsFilePath     string
 	BOSHAZ          string
+	Name            string
+	NoDirector      bool
 }
 
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairSynchronizer keyPairSynchronizer, boshDeployer boshDeployer, stringGenerator stringGenerator,
-	boshCloudConfigurator boshCloudConfigurator, availabilityZoneRetriever availabilityZoneRetriever,
+	keyPairSynchronizer keyPairSynchronizer, boshManager boshManager,
+	availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, stateStore stateStore,
-	configProvider configProvider) AWSUp {
+	stateStore stateStore,
+	configProvider configProvider, envIDManager envIDManager) AWSUp {
 
 	return AWSUp{
 		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
 		keyPairSynchronizer:       keyPairSynchronizer,
-		boshDeployer:              boshDeployer,
-		stringGenerator:           stringGenerator,
-		boshCloudConfigurator:     boshCloudConfigurator,
+		boshManager:               boshManager,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateDescriber:      certificateDescriber,
 		cloudConfigManager:        cloudConfigManager,
-		boshClientProvider:        boshClientProvider,
 		stateStore:                stateStore,
 		configProvider:            configProvider,
+		envIDManager:              envIDManager,
 	}
 }
 
@@ -131,10 +132,25 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return u.awsMissingCredentials(config)
 	}
 
+	if config.NoDirector {
+		if !state.BOSH.IsEmpty() {
+			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
+		}
+
+		state.NoDirector = true
+	}
+
 	err := u.checkForFastFails(state, config)
 	if err != nil {
 		return err
 	}
+
+	envID, err := u.envIDManager.Sync(state, config.Name)
+	if err != nil {
+		return err
+	}
+
+	state.EnvID = envID
 
 	if state.KeyPair.Name == "" {
 		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
@@ -183,69 +199,45 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	stack, err := u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
+	_, err = u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
 		return err
 	}
 
-	infrastructureConfiguration := boshinit.InfrastructureConfiguration{
-		ExternalIP: stack.Outputs["BOSHEIP"],
-		AWS: boshinit.InfrastructureConfigurationAWS{
-			AWSRegion:        state.AWS.Region,
-			SubnetID:         stack.Outputs["BOSHSubnet"],
-			AvailabilityZone: stack.Outputs["BOSHSubnetAZ"],
-			AccessKeyID:      stack.Outputs["BOSHUserAccessKey"],
-			SecretAccessKey:  stack.Outputs["BOSHUserSecretAccessKey"],
-			SecurityGroup:    stack.Outputs["BOSHSecurityGroup"],
-		},
-	}
+	if !state.NoDirector {
+		opsFile := []byte{}
+		if config.OpsFilePath != "" {
+			opsFile, err = ioutil.ReadFile(config.OpsFilePath)
+			if err != nil {
+				return err
+			}
+		}
 
-	deployInput, err := boshinit.NewDeployInput(state, infrastructureConfiguration, u.stringGenerator, state.EnvID, "aws")
-	if err != nil {
-		return err
-	}
+		state, err = u.boshManager.Create(state, opsFile)
+		switch err.(type) {
+		case bosh.ManagerCreateError:
+			bcErr := err.(bosh.ManagerCreateError)
+			if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+				errorList := helpers.Errors{}
+				errorList.Add(err)
+				errorList.Add(setErr)
+				return errorList
+			}
+			return err
+		case error:
+			return err
+		}
 
-	deployOutput, err := u.boshDeployer.Deploy(deployInput)
-	if err != nil {
-		return err
-	}
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
 
-	if state.BOSH.IsEmpty() {
-		state.BOSH = storage.BOSH{
-			DirectorName:           deployInput.DirectorName,
-			DirectorAddress:        stack.Outputs["BOSHURL"],
-			DirectorUsername:       deployInput.DirectorUsername,
-			DirectorPassword:       deployInput.DirectorPassword,
-			DirectorSSLCA:          string(deployOutput.DirectorSSLKeyPair.CA),
-			DirectorSSLCertificate: string(deployOutput.DirectorSSLKeyPair.Certificate),
-			DirectorSSLPrivateKey:  string(deployOutput.DirectorSSLKeyPair.PrivateKey),
-			Credentials:            deployOutput.Credentials,
+		err = u.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
 		}
 	}
-
-	state.BOSH.State = deployOutput.BOSHInitState
-	state.BOSH.Manifest = deployOutput.BOSHInitManifest
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
-	boshClient := u.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
-
-	cloudConfigInput := u.boshCloudConfigurator.Configure(stack, availabilityZones)
-
-	err = u.cloudConfigManager.Update(cloudConfigInput, boshClient)
-	if err != nil {
-		return err
-	}
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

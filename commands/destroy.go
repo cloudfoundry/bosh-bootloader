@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/boshinit"
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 const (
@@ -21,7 +22,7 @@ type Destroy struct {
 	credentialValidator     credentialValidator
 	logger                  logger
 	stdin                   io.Reader
-	boshDeleter             boshDeleter
+	boshManager             boshManager
 	vpcStatusChecker        vpcStatusChecker
 	stackManager            stackManager
 	stringGenerator         stringGenerator
@@ -32,8 +33,12 @@ type Destroy struct {
 	stateStore              stateStore
 	stateValidator          stateValidator
 	terraformExecutor       terraformExecutor
-	terraformOutputter      terraformOutputter
+	terraformOutputProvider terraformOutputProvider
 	networkInstancesChecker networkInstancesChecker
+}
+
+type terraformOutputProvider interface {
+	Get(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type destroyConfig struct {
@@ -47,10 +52,6 @@ type awsKeyPairDeleter interface {
 
 type gcpKeyPairDeleter interface {
 	Delete(publicKey string) error
-}
-
-type boshDeleter interface {
-	Delete(boshInitManifest string, boshInitState boshinit.State, ec2PrivateKey string) error
 }
 
 type vpcStatusChecker interface {
@@ -78,15 +79,15 @@ type networkInstancesChecker interface {
 }
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
-	boshDeleter boshDeleter, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
+	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformExecutor terraformExecutor, terraformOutputter terraformOutputter, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
 		logger:                  logger,
 		stdin:                   stdin,
-		boshDeleter:             boshDeleter,
+		boshManager:             boshManager,
 		vpcStatusChecker:        vpcStatusChecker,
 		stackManager:            stackManager,
 		stringGenerator:         stringGenerator,
@@ -97,12 +98,26 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		stateStore:              stateStore,
 		stateValidator:          stateValidator,
 		terraformExecutor:       terraformExecutor,
-		terraformOutputter:      terraformOutputter,
+		terraformOutputProvider: terraformOutputProvider,
 		networkInstancesChecker: networkInstancesChecker,
 	}
 }
 
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
+	if !state.NoDirector {
+		err := fastFailBOSHVersion(d.boshManager)
+		if err != nil {
+			return err
+		}
+	}
+
+	if state.IAAS == "gcp" {
+		err := fastFailTerraformVersion(d.terraformExecutor)
+		if err != nil {
+			return err
+		}
+	}
+
 	config, err := d.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
@@ -131,13 +146,19 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
+	var terraformOutputs terraform.Outputs
 	if state.IAAS == "gcp" {
-		networkName, err := d.terraformOutputter.Get(state.TFState, "network_name")
+		domainExists := false
+		if state.LB.Domain != "" {
+			domainExists = true
+		}
+
+		terraformOutputs, err = d.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
 		if err != nil {
 			return err
 		}
 
-		err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
+		err = d.networkInstancesChecker.ValidateSafeToDelete(terraformOutputs.NetworkName)
 		if err != nil {
 			return err
 		}
@@ -178,8 +199,19 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	state, err = d.deleteBOSH(state)
-	if err != nil {
+	state, err = d.deleteBOSH(state, stack, terraformOutputs)
+	switch err.(type) {
+	case bosh.ManagerDeleteError:
+		mdErr := err.(bosh.ManagerDeleteError)
+		setErr := d.stateStore.Set(mdErr.State())
+		if setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
+		return err
+	case error:
 		return err
 	}
 
@@ -266,14 +298,17 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, terraformOutputs terraform.Outputs) (storage.State, error) {
 	emptyBOSH := storage.BOSH{}
 	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
 		d.logger.Println("no BOSH director, skipping...")
 		return state, nil
 	}
 
-	if err := d.boshDeleter.Delete(state.BOSH.Manifest, state.BOSH.State, state.KeyPair.PrivateKey); err != nil {
+	d.logger.Step("destroying bosh director")
+
+	err := d.boshManager.Delete(state)
+	if err != nil {
 		return state, err
 	}
 

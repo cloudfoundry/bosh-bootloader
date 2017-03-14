@@ -9,10 +9,10 @@ import (
 )
 
 type Up struct {
-	awsUp          awsUp
-	gcpUp          gcpUp
-	envGetter      envGetter
-	envIDGenerator envIDGenerator
+	awsUp       awsUp
+	gcpUp       gcpUp
+	envGetter   envGetter
+	boshManager boshManager
 }
 
 type awsUp interface {
@@ -27,10 +27,6 @@ type envGetter interface {
 	Get(name string) string
 }
 
-type envIDGenerator interface {
-	Generate() (string, error)
-}
-
 type upConfig struct {
 	awsAccessKeyID       string
 	awsSecretAccessKey   string
@@ -42,15 +38,16 @@ type upConfig struct {
 	gcpRegion            string
 	iaas                 string
 	name                 string
+	opsFile              string
+	noDirector           bool
 }
 
-func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter,
-	envIDGenerator envIDGenerator) Up {
+func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter, boshManager boshManager) Up {
 	return Up{
-		awsUp:          awsUp,
-		gcpUp:          gcpUp,
-		envGetter:      envGetter,
-		envIDGenerator: envIDGenerator,
+		awsUp:       awsUp,
+		gcpUp:       gcpUp,
+		envGetter:   envGetter,
+		boshManager: boshManager,
 	}
 }
 
@@ -62,9 +59,16 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return err
 	}
 
+	if !config.noDirector && !state.NoDirector {
+		err = fastFailBOSHVersion(u.boshManager)
+		if err != nil {
+			return err
+		}
+	}
+
 	switch {
 	case state.IAAS == "" && config.iaas == "":
-		return errors.New("--iaas [gcp, aws] must be provided")
+		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
 	case state.IAAS == "" && config.iaas != "":
 		desiredIAAS = config.iaas
 	case state.IAAS != "" && config.iaas == "":
@@ -81,17 +85,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
 
-	if state.EnvID == "" {
-		if config.name == "" {
-			state.EnvID, err = u.envIDGenerator.Generate()
-			if err != nil {
-				return err
-			}
-		} else {
-			state.EnvID = config.name
-		}
-	}
-
 	switch desiredIAAS {
 	case "aws":
 		err = u.awsUp.Execute(AWSUpConfig{
@@ -99,6 +92,9 @@ func (u Up) Execute(args []string, state storage.State) error {
 			SecretAccessKey: config.awsSecretAccessKey,
 			Region:          config.awsRegion,
 			BOSHAZ:          config.awsBOSHAZ,
+			OpsFilePath:     config.opsFile,
+			Name:            config.name,
+			NoDirector:      config.noDirector,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
@@ -106,6 +102,9 @@ func (u Up) Execute(args []string, state storage.State) error {
 			ProjectID:             config.gcpProjectID,
 			Zone:                  config.gcpZone,
 			Region:                config.gcpRegion,
+			OpsFilePath:           config.opsFile,
+			Name:                  config.name,
+			NoDirector:            config.noDirector,
 		}, state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)
@@ -136,6 +135,8 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.gcpRegion, "gcp-region", u.envGetter.Get("BBL_GCP_REGION"))
 
 	upFlags.String(&config.name, "name", "")
+	upFlags.String(&config.opsFile, "ops-file", "")
+	upFlags.Bool(&config.noDirector, "", "no-director", false)
 
 	err := upFlags.Parse(args)
 	if err != nil {

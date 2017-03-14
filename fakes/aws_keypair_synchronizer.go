@@ -4,7 +4,8 @@ import "github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 
 type KeyPairSynchronizer struct {
 	SyncCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			KeyPair ec2.KeyPair
 		}
 		Returns struct {
@@ -15,6 +16,7 @@ type KeyPairSynchronizer struct {
 }
 
 func (s *KeyPairSynchronizer) Sync(keyPair ec2.KeyPair) (ec2.KeyPair, error) {
+	s.SyncCall.CallCount++
 	s.SyncCall.Receives.KeyPair = keyPair
 
 	return s.SyncCall.Returns.KeyPair, s.SyncCall.Returns.Error

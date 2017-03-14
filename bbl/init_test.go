@@ -32,6 +32,7 @@ var (
 	gcpBackend         gcpbackend.GCPBackend
 	fakeGCPServer      *httptest.Server
 	serviceAccountKey  string
+	originalPath       string
 )
 
 var _ = BeforeSuite(func() {
@@ -50,6 +51,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
+
+	originalPath = os.Getenv("PATH")
 })
 
 var _ = AfterSuite(func() {

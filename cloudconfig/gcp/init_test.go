@@ -1,4 +1,4 @@
-package gcp_test
+package gcp
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCloudConfigGCP(t *testing.T) {
+func TestGCP(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "cloudconfig/gcp")
 }

@@ -4,7 +4,9 @@ const (
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
   --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
-  --name                     Name to assign to your BOSH Director (optional, will be randomly generated)
+  [--name]                   Name to assign to your BOSH Director (optional, will be randomly generated)
+  [--ops-file]               Path to BOSH ops file (optional)
+  [--no-director]            Skips creating BOSH environment
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
@@ -35,7 +37,7 @@ const (
   --cert               Path to SSL certificate
   --key                Path to SSL certificate key
   [--chain]            Path to SSL certificate chain (optional)
-  [--domain]           Updates domain in the nameserver zone
+  [--domain]           Updates domain in the nameserver zone (optional)
   [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`
 
 	DeleteLBsCommandUsage = `Deletes load balancer(s)
@@ -61,6 +63,10 @@ const (
 	DirectorCACertCommandUsage = "Prints BOSH director CA certificate"
 
 	PrintEnvCommandUsage = "Prints required BOSH environment variables"
+
+	BOSHDeploymentVarsCommandUsage = "Prints required variables for BOSH deployment"
+
+	CloudConfigUsage = "Prints suggested cloud configuration for BOSH environment"
 )
 
 func (Up) Usage() string { return UpCommandUsage }
@@ -81,6 +87,10 @@ func (Usage) Usage() string { return UsageCommandUsage }
 
 func (PrintEnv) Usage() string { return PrintEnvCommandUsage }
 
+func (CloudConfig) Usage() string { return CloudConfigUsage }
+
+func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage }
+
 func (s StateQuery) Usage() string {
 	switch s.propertyName {
 	case EnvIDPropertyName:
@@ -94,8 +104,6 @@ func (s StateQuery) Usage() string {
 	case DirectorAddressPropertyName:
 		return DirectorAddressCommandUsage
 	case DirectorCACertPropertyName:
-		return DirectorCACertCommandUsage
-	case BOSHCACertPropertyName:
 		return DirectorCACertCommandUsage
 	}
 	return ""

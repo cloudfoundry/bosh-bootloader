@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -15,7 +14,6 @@ type AWSCreateLBs struct {
 	infrastructureManager     infrastructureManager
 	boshClientProvider        boshClientProvider
 	availabilityZoneRetriever availabilityZoneRetriever
-	boshCloudConfigurator     boshCloudConfigurator
 	credentialValidator       credentialValidator
 	cloudConfigManager        cloudConfigManager
 	certificateValidator      certificateValidator
@@ -42,10 +40,6 @@ type boshClientProvider interface {
 	Client(directorAddress, directorUsername, directorPassword string) bosh.Client
 }
 
-type boshCloudConfigurator interface {
-	Configure(stack cloudformation.Stack, azs []string) bosh.CloudConfigInput
-}
-
 type certificateValidator interface {
 	Validate(command, certPath, keyPath, chainPath string) error
 }
@@ -56,7 +50,7 @@ type guidGenerator interface {
 
 func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
-	boshCloudConfigurator boshCloudConfigurator, cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
+	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
 	guidGenerator guidGenerator, stateStore stateStore) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:                    logger,
@@ -64,7 +58,6 @@ func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, cer
 		infrastructureManager:     infrastructureManager,
 		boshClientProvider:        boshClientProvider,
 		availabilityZoneRetriever: availabilityZoneRetriever,
-		boshCloudConfigurator:     boshCloudConfigurator,
 		credentialValidator:       credentialValidator,
 		cloudConfigManager:        cloudConfigManager,
 		certificateValidator:      certificateValidator,
@@ -89,9 +82,14 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return nil
 	}
 
-	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+	if !state.NoDirector {
+		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+		if err := c.checkBOSHClient(state.Stack.Name, boshClient); err != nil {
+			return err
+		}
+	}
 
-	if err := c.checkFastFails(config.LBType, state.Stack.LBType, state.Stack.Name, boshClient); err != nil {
+	if err := c.checkFastFails(config.LBType, state.Stack.LBType); err != nil {
 		return err
 	}
 
@@ -110,13 +108,20 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	state.Stack.CertificateName = certificateName
 	state.Stack.LBType = config.LBType
 
-	if err := c.updateStackAndBOSH(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.BOSHAZ, config.LBType, boshClient, state.EnvID); err != nil {
+	if err := c.updateStack(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.BOSHAZ, config.LBType, state.EnvID); err != nil {
 		return err
 	}
 
 	err = c.stateStore.Set(state)
 	if err != nil {
 		return err
+	}
+
+	if !state.NoDirector {
+		err = c.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -126,7 +131,11 @@ func (AWSCreateLBs) isValidLBType(lbType string) bool {
 	return lbType == "concourse" || lbType == "cf"
 }
 
-func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string, stackName string, boshClient bosh.Client) error {
+func (c AWSCreateLBs) checkBOSHClient(stackName string, boshClient bosh.Client) error {
+	return bblExists(stackName, c.infrastructureManager, boshClient)
+}
+
+func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) error {
 	if newLBType == "" {
 		return fmt.Errorf("--type is a required flag")
 	}
@@ -139,12 +148,12 @@ func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string, sta
 		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
 	}
 
-	return bblExists(stackName, c.infrastructureManager, boshClient)
+	return nil
 }
 
-func (c AWSCreateLBs) updateStackAndBOSH(
+func (c AWSCreateLBs) updateStack(
 	awsRegion string, certificateName string, keyPairName string, stackName string, boshAZ,
-	lbType string, boshClient bosh.Client, envID string,
+	lbType string, envID string,
 ) error {
 
 	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
@@ -154,14 +163,7 @@ func (c AWSCreateLBs) updateStackAndBOSH(
 
 	certificate, err := c.certificateManager.Describe(certificateName)
 
-	stack, err := c.infrastructureManager.Update(keyPairName, availabilityZones, stackName, boshAZ, lbType, certificate.ARN, envID)
-	if err != nil {
-		return err
-	}
-
-	cloudConfigInput := c.boshCloudConfigurator.Configure(stack, availabilityZones)
-
-	err = c.cloudConfigManager.Update(cloudConfigInput, boshClient)
+	_, err = c.infrastructureManager.Update(keyPairName, availabilityZones, stackName, boshAZ, lbType, certificate.ARN, envID)
 	if err != nil {
 		return err
 	}

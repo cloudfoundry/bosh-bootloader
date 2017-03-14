@@ -26,7 +26,7 @@ var _ = Describe("load balancer tests", func() {
 		configuration, err := integration.LoadAWSConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration)
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		aws = actors.NewAWS(configuration)
 		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
@@ -35,7 +35,7 @@ var _ = Describe("load balancer tests", func() {
 	})
 
 	It("creates, updates and deletes an LB with the specified cert and key", func() {
-		bbl.Up(actors.AWSIAAS)
+		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
 		stackName := state.StackName()
 		directorAddress := bbl.DirectorAddress()
@@ -51,7 +51,7 @@ var _ = Describe("load balancer tests", func() {
 		Expect(natInstanceID).NotTo(BeEmpty())
 
 		tags := aws.GetEC2InstanceTags(natInstanceID)
-		Expect(tags["bbl-env-id"]).To(MatchRegexp(`bbl-env-([a-z]+-{1}){1,2}\d{4}-\d{2}-\d{2}t\d{2}-\d{2}z`))
+		Expect(tags["bbl-env-id"]).To(Equal(bbl.PredefinedEnvID()))
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())

@@ -1,25 +1,25 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	"github.com/cloudfoundry/multierror"
 )
 
 type GCPCreateLBs struct {
-	terraformExecutor    terraformExecutor
-	terraformOutputter   terraformOutputter
-	cloudConfigGenerator gcpCloudConfigGenerator
-	boshClientProvider   boshClientProvider
-	zones                zones
-	stateStore           stateStore
-	logger               logger
+	terraformExecutor  terraformExecutor
+	boshClientProvider boshClientProvider
+	cloudConfigManager cloudConfigManager
+	zones              zones
+	stateStore         stateStore
+	logger             logger
 }
 
 type GCPCreateLBsConfig struct {
@@ -30,26 +30,36 @@ type GCPCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
-func NewGCPCreateLBs(terraformExecutor terraformExecutor, terraformOutputter terraformOutputter,
-	cloudConfigGenerator gcpCloudConfigGenerator, boshClientProvider boshClientProvider, zones zones,
+func NewGCPCreateLBs(terraformExecutor terraformExecutor,
+	boshClientProvider boshClientProvider, cloudConfigManager cloudConfigManager, zones zones,
 	stateStore stateStore, logger logger) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformExecutor:    terraformExecutor,
-		terraformOutputter:   terraformOutputter,
-		cloudConfigGenerator: cloudConfigGenerator,
-		boshClientProvider:   boshClientProvider,
-		zones:                zones,
-		stateStore:           stateStore,
-		logger:               logger,
+		terraformExecutor:  terraformExecutor,
+		boshClientProvider: boshClientProvider,
+		cloudConfigManager: cloudConfigManager,
+		zones:              zones,
+		stateStore:         stateStore,
+		logger:             logger,
 	}
 }
 
 func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) error {
-	boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
-
-	if err := c.checkFastFails(config, state, boshClient); err != nil {
+	err := fastFailTerraformVersion(c.terraformExecutor)
+	if err != nil {
 		return err
+	}
+
+	if err = c.checkFastFails(config, state); err != nil {
+		return err
+	}
+
+	if !state.NoDirector {
+		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+			state.BOSH.DirectorPassword)
+
+		if err = c.checkBOSHClient(boshClient); err != nil {
+			return err
+		}
 	}
 
 	if config.SkipIfExists && config.LBType == state.LB.Type {
@@ -58,7 +68,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 
 	c.logger.Step("generating terraform template")
-	var err error
 
 	var lbTemplate string
 	var cert, key []byte
@@ -110,84 +119,18 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	network, err := c.terraformOutputter.Get(state.TFState, "network_name")
-	if err != nil {
-		return err
-	}
-
-	subnetwork, err := c.terraformOutputter.Get(state.TFState, "subnetwork_name")
-	if err != nil {
-		return err
-	}
-
-	internalTag, err := c.terraformOutputter.Get(state.TFState, "internal_tag_name")
-	if err != nil {
-		return err
-	}
-
-	concourseTargetPool := ""
-	if config.LBType == "concourse" {
-		concourseTargetPool, err = c.terraformOutputter.Get(state.TFState, "concourse_target_pool")
-		if err != nil {
-			return err
-		}
-	}
-
-	routerBackendService := ""
-	sshProxyTargetPool := ""
-	tcpRouterTargetPool := ""
-	wsTargetPool := ""
-	if config.LBType == "cf" {
-		if routerBackendService, err = c.terraformOutputter.Get(state.TFState, "router_backend_service"); err != nil {
-			return err
-		}
-
-		if sshProxyTargetPool, err = c.terraformOutputter.Get(state.TFState, "ssh_proxy_target_pool"); err != nil {
-			return err
-		}
-
-		if tcpRouterTargetPool, err = c.terraformOutputter.Get(state.TFState, "tcp_router_target_pool"); err != nil {
-			return err
-		}
-
-		if wsTargetPool, err = c.terraformOutputter.Get(state.TFState, "ws_target_pool"); err != nil {
-			return err
-		}
-	}
-
-	c.logger.Step("generating cloud config")
-	cloudConfig, err := c.cloudConfigGenerator.Generate(gcp.CloudConfigInput{
-		AZs:                 zones,
-		Tags:                []string{internalTag},
-		NetworkName:         network,
-		SubnetworkName:      subnetwork,
-		ConcourseTargetPool: concourseTargetPool,
-		CFBackends: gcp.CFBackends{
-			Router:    routerBackendService,
-			SSHProxy:  sshProxyTargetPool,
-			TCPRouter: tcpRouterTargetPool,
-			WS:        wsTargetPool,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	manifestYAML, err := marshal(cloudConfig)
-	if err != nil {
-		return err
-	}
-
-	c.logger.Step("applying cloud config")
-	if err := boshClient.UpdateCloudConfig(manifestYAML); err != nil {
-		return err
-	}
-
 	state.LB.Type = config.LBType
 	if config.LBType == "cf" {
 		state.LB.Cert = string(cert)
 		state.LB.Key = string(key)
 		state.LB.Domain = config.Domain
+	}
+
+	if !state.NoDirector {
+		err = c.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := c.stateStore.Set(state); err != nil {
@@ -197,7 +140,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	return nil
 }
 
-func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State, boshClient bosh.Client) error {
+func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State) error {
 	if config.LBType == "" {
 		return fmt.Errorf("--type is a required flag")
 	}
@@ -206,10 +149,27 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse, cf", config.LBType)
 	}
 
+	if config.LBType == "cf" {
+		errs := multierror.NewMultiError("create-lbs")
+		if config.CertPath == "" {
+			errs.Add(errors.New("--cert is required"))
+		}
+		if config.KeyPath == "" {
+			errs.Add(errors.New("--key is required"))
+		}
+		if errs.Length() > 0 {
+			return errs
+		}
+	}
+
 	if state.IAAS != "gcp" {
 		return fmt.Errorf("iaas type must be gcp")
 	}
 
+	return nil
+}
+
+func (GCPCreateLBs) checkBOSHClient(boshClient bosh.Client) error {
 	_, err := boshClient.Info()
 	if err != nil {
 		return BBLNotFound

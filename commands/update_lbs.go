@@ -21,6 +21,7 @@ type UpdateLBs struct {
 	certificateValidator certificateValidator
 	stateValidator       stateValidator
 	logger               logger
+	boshManager          boshManager
 }
 
 type awsUpdateLBs interface {
@@ -32,7 +33,7 @@ type gcpUpdateLBs interface {
 }
 
 func NewUpdateLBs(awsUpdateLBs awsUpdateLBs, gcpUpdateLBs gcpUpdateLBs, certificateValidator certificateValidator,
-	stateValidator stateValidator, logger logger) UpdateLBs {
+	stateValidator stateValidator, logger logger, boshManager boshManager) UpdateLBs {
 
 	return UpdateLBs{
 		awsUpdateLBs:         awsUpdateLBs,
@@ -40,23 +41,31 @@ func NewUpdateLBs(awsUpdateLBs awsUpdateLBs, gcpUpdateLBs gcpUpdateLBs, certific
 		certificateValidator: certificateValidator,
 		stateValidator:       stateValidator,
 		logger:               logger,
+		boshManager:          boshManager,
 	}
 }
 
-func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error {
-	config, err := c.parseFlags(subcommandFlags)
+func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error {
+	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
 	}
 
-	err = c.stateValidator.Validate()
+	err = u.stateValidator.Validate()
 	if err != nil {
 		return err
+	}
+
+	if !state.NoDirector {
+		err = fastFailBOSHVersion(u.boshManager)
+		if err != nil {
+			return err
+		}
 	}
 
 	lbExists := lbExists(state.Stack.LBType) || lbExists(state.LB.Type)
 	if config.skipIfMissing && !lbExists {
-		c.logger.Println("no lb type exists, skipping...")
+		u.logger.Println("no lb type exists, skipping...")
 		return nil
 	}
 
@@ -64,14 +73,14 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return LBNotFound
 	}
 
-	err = c.certificateValidator.Validate(UpdateLBsCommand, config.certPath, config.keyPath, config.chainPath)
+	err = u.certificateValidator.Validate(UpdateLBsCommand, config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return err
 	}
 
 	switch state.IAAS {
 	case "gcp":
-		if err := c.gcpUpdateLBs.Execute(GCPCreateLBsConfig{
+		if err := u.gcpUpdateLBs.Execute(GCPCreateLBsConfig{
 			LBType:   state.LB.Type,
 			CertPath: config.certPath,
 			KeyPath:  config.keyPath,
@@ -80,7 +89,7 @@ func (c UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 			return err
 		}
 	case "aws":
-		if err := c.awsUpdateLBs.Execute(AWSCreateLBsConfig{
+		if err := u.awsUpdateLBs.Execute(AWSCreateLBsConfig{
 			LBType:    state.Stack.LBType,
 			CertPath:  config.certPath,
 			KeyPath:   config.keyPath,

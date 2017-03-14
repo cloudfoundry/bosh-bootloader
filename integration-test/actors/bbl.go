@@ -3,6 +3,7 @@ package actors
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -24,23 +25,37 @@ type BBL struct {
 	stateDirectory string
 	pathToBBL      string
 	configuration  integration.Config
+	envID          string
 }
 
 type IAAS int
 
-func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config) BBL {
+func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config, envIDSuffix string) BBL {
+	envIDPrefix := os.Getenv("BBL_TEST_ENV_ID_PREFIX")
+	if envIDPrefix == "" {
+		envIDPrefix = "bbl-test"
+	}
+
 	return BBL{
 		stateDirectory: stateDirectory,
 		pathToBBL:      pathToBBL,
 		configuration:  configuration,
+		envID:          fmt.Sprintf("%s-%s", envIDPrefix, envIDSuffix),
 	}
 }
 
-func (b BBL) Up(iaas IAAS) {
+func (b BBL) PredefinedEnvID() string {
+	return b.envID
+}
+
+func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"up",
 	}
+
+	args = append(args, additionalArgs...)
 
 	switch iaas {
 	case AWSIAAS:

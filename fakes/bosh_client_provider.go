@@ -6,6 +6,8 @@ import (
 
 type BOSHClientProvider struct {
 	ClientCall struct {
+		CallCount int
+
 		Receives struct {
 			DirectorAddress  string
 			DirectorUsername string
@@ -18,6 +20,7 @@ type BOSHClientProvider struct {
 }
 
 func (b *BOSHClientProvider) Client(directorAddress, directorUsername, directorPassword string) bosh.Client {
+	b.ClientCall.CallCount++
 	b.ClientCall.Receives.DirectorAddress = directorAddress
 	b.ClientCall.Receives.DirectorUsername = directorUsername
 	b.ClientCall.Receives.DirectorPassword = directorPassword

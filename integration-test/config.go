@@ -14,6 +14,7 @@ type Config struct {
 	GCPProjectID             string
 	GCPRegion                string
 	GCPZone                  string
+	GCPEnvPrefix             string
 	StateFileDir             string
 }
 
@@ -82,6 +83,7 @@ func loadConfigFromEnvVars() Config {
 		GCPProjectID:             os.Getenv("GCP_PROJECT_ID"),
 		GCPRegion:                os.Getenv("GCP_REGION"),
 		GCPZone:                  os.Getenv("GCP_ZONE"),
+		GCPEnvPrefix:             os.Getenv("GCP_ENV_PREFIX"),
 		StateFileDir:             os.Getenv("STATE_DIR"),
 	}
 }

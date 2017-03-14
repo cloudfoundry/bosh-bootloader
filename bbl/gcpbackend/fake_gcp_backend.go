@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 )
 
@@ -30,6 +31,7 @@ const (
 type GCPBackend struct {
 	handleListInstances func(http.ResponseWriter, *http.Request)
 	handlerMutex        sync.Mutex
+	Network             Network
 }
 
 func (g *GCPBackend) StartFakeGCPBackend() (*httptest.Server, string) {
@@ -65,6 +67,14 @@ func (g *GCPBackend) StartFakeGCPBackend() (*httptest.Server, string) {
 				w.Write([]byte(`{}`))
 			}
 			return
+		case "/some-project-id/global/networks":
+			w.WriteHeader(http.StatusOK)
+			networkName := strings.Split(req.URL.Query().Get("filter"), " ")[2]
+			if g.Network.Exists(networkName) {
+				w.Write([]byte(`{"items":[{"id":"1234"}]}`))
+			} else {
+				w.Write([]byte(`{}`))
+			}
 		default:
 			log.Println("unexpected request recieved: ", req.URL.Path)
 			w.WriteHeader(http.StatusTeapot)

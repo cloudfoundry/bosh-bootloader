@@ -27,6 +27,7 @@ var _ = Describe("bbl-env-id", func() {
 
 	It("returns the env-id from the given state file", func() {
 		state := []byte(`{
+			"version": 3,
 			"envID": "some-env-id"
 		}`)
 		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
@@ -64,7 +65,7 @@ var _ = Describe("bbl-env-id", func() {
 		})
 
 		It("returns a non zero exit code when the bbl env id does not exist", func() {
-			state := []byte(`{}`)
+			state := []byte(`{"version":3}`)
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 

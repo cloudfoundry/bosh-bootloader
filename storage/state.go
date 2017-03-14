@@ -20,7 +20,6 @@ type logger interface {
 
 var (
 	encode func(io.Writer, interface{}) error = encodeFile
-	rename func(string, string) error         = os.Rename
 )
 
 type AWS struct {
@@ -51,16 +50,17 @@ type LB struct {
 }
 
 type State struct {
-	Version int     `json:"version"`
-	IAAS    string  `json:"iaas"`
-	AWS     AWS     `json:"aws,omitempty"`
-	GCP     GCP     `json:"gcp,omitempty"`
-	KeyPair KeyPair `json:"keyPair,omitempty"`
-	BOSH    BOSH    `json:"bosh,omitempty"`
-	Stack   Stack   `json:"stack"`
-	EnvID   string  `json:"envID"`
-	TFState string  `json:"tfState"`
-	LB      LB      `json:"lb"`
+	Version    int     `json:"version"`
+	IAAS       string  `json:"iaas"`
+	NoDirector bool    `json:"noDirector"`
+	AWS        AWS     `json:"aws,omitempty"`
+	GCP        GCP     `json:"gcp,omitempty"`
+	KeyPair    KeyPair `json:"keyPair,omitempty"`
+	BOSH       BOSH    `json:"bosh,omitempty"`
+	Stack      Stack   `json:"stack"`
+	EnvID      string  `json:"envID"`
+	TFState    string  `json:"tfState"`
+	LB         LB      `json:"lb"`
 }
 
 type Store struct {
@@ -70,7 +70,7 @@ type Store struct {
 
 func NewStore(dir string) Store {
 	return Store{
-		version:   2,
+		version:   3,
 		stateFile: filepath.Join(dir, StateFileName),
 	}
 }
@@ -118,20 +118,6 @@ func GetState(dir string) (State, error) {
 		return state, err
 	}
 
-	bothExist, err := stateAndBBLStateExist(dir)
-	if err != nil {
-		return state, err
-	}
-
-	if bothExist {
-		return state, errors.New("Cannot proceed with state.json and bbl-state.json present. Please delete one of the files.")
-	}
-
-	err = renameStateToBBLState(dir)
-	if err != nil {
-		return state, err
-	}
-
 	file, err := os.Open(filepath.Join(dir, StateFileName))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -145,35 +131,11 @@ func GetState(dir string) (State, error) {
 		return state, err
 	}
 
-	if state.Version == 1 {
-		state = migrateV1ToV2(state)
+	if state.Version < 3 {
+		return state, errors.New("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue.")
 	}
 
 	return state, nil
-}
-
-func migrateV1ToV2(state State) State {
-	state.Version = 2
-	state.IAAS = "aws"
-	return state
-}
-
-func renameStateToBBLState(dir string) error {
-	stateFile := filepath.Join(dir, "state.json")
-	_, err := os.Stat(stateFile)
-	switch {
-	case os.IsNotExist(err):
-		return nil
-	case err == nil:
-		GetStateLogger.Println("renaming state.json to bbl-state.json")
-		err := rename(stateFile, filepath.Join(dir, StateFileName))
-		if err != nil {
-			return err
-		}
-		return nil
-	default:
-		return err
-	}
 }
 
 func stateAndBBLStateExist(dir string) (bool, error) {

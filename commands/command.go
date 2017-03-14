@@ -28,11 +28,13 @@ func bblExists(stackName string, infrastructureManager infrastructureManager, bo
 }
 
 func checkBBLAndLB(state storage.State, boshClientProvider boshClientProvider, infrastructureManager infrastructureManager) error {
-	boshClient := boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-		state.BOSH.DirectorPassword)
+	if !state.NoDirector {
+		boshClient := boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
+			state.BOSH.DirectorPassword)
 
-	if err := bblExists(state.Stack.Name, infrastructureManager, boshClient); err != nil {
-		return err
+		if err := bblExists(state.Stack.Name, infrastructureManager, boshClient); err != nil {
+			return err
+		}
 	}
 
 	if !lbExists(state.Stack.LBType) {

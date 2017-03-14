@@ -235,6 +235,26 @@ func (b *Backend) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cl
 						OutputValue: aws.String(b.boshDirectorURL),
 					},
 					{
+						OutputKey:   aws.String("BOSHSubnetAZ"),
+						OutputValue: aws.String("some-az"),
+					},
+					{
+						OutputKey:   aws.String("BOSHUserAccessKey"),
+						OutputValue: aws.String("some-user-access-key"),
+					},
+					{
+						OutputKey:   aws.String("BOSHUserSecretAccessKey"),
+						OutputValue: aws.String("some-user-secret-access-key"),
+					},
+					{
+						OutputKey:   aws.String("BOSHSecurityGroup"),
+						OutputValue: aws.String("some-default-security-group"),
+					},
+					{
+						OutputKey:   aws.String("BOSHSubnet"),
+						OutputValue: aws.String("some-subnet-id"),
+					},
+					{
 						OutputKey:   aws.String("InternalSubnet1CIDR"),
 						OutputValue: aws.String("10.0.16.0/20"),
 					},

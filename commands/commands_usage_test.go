@@ -17,7 +17,9 @@ var _ = Describe("Commands Usage", func() {
 				Expect(usageText).To(Equal(`Deploys BOSH director on an IAAS
 
   --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
-  --name                     Name to assign to your BOSH Director (optional, will be randomly generated)
+  [--name]                   Name to assign to your BOSH Director (optional, will be randomly generated)
+  [--ops-file]               Path to BOSH ops file (optional)
+  [--no-director]            Skips creating BOSH environment
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
@@ -59,7 +61,7 @@ var _ = Describe("Commands Usage", func() {
   --cert               Path to SSL certificate
   --key                Path to SSL certificate key
   [--chain]            Path to SSL certificate chain (optional)
-  [--domain]           Updates domain in the nameserver zone
+  [--domain]           Updates domain in the nameserver zone (optional)
   [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`))
 			})
 		})
@@ -109,14 +111,15 @@ var _ = Describe("Commands Usage", func() {
 		Entry("director-password", newStateQuery("director password"), "Prints BOSH director password"),
 		Entry("director-username", newStateQuery("director username"), "Prints BOSH director username"),
 		Entry("director-ca-cert", newStateQuery("director ca cert"), "Prints BOSH director CA certificate"),
-		Entry("bosh-ca-cert", newStateQuery("bosh ca cert"), "Prints BOSH director CA certificate"),
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
 		Entry("ssh-key", newStateQuery("ssh key"), "Prints SSH private key"),
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
+		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
 		Entry("version", commands.Version{}, "Prints version"),
+		Entry("cloud-config", commands.CloudConfig{}, "Prints suggested cloud configuration for BOSH environment"),
 	)
 })
 
 func newStateQuery(propertyName string) commands.StateQuery {
-	return commands.NewStateQuery(nil, nil, propertyName, nil)
+	return commands.NewStateQuery(nil, nil, nil, nil, propertyName)
 }

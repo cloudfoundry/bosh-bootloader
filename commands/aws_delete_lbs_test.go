@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -21,7 +20,6 @@ var _ = Describe("Delete LBs", func() {
 		certificateManager        *fakes.CertificateManager
 		infrastructureManager     *fakes.InfrastructureManager
 		logger                    *fakes.Logger
-		cloudConfigurator         *fakes.BoshCloudConfigurator
 		cloudConfigManager        *fakes.CloudConfigManager
 		boshClient                *fakes.BOSHClient
 		boshClientProvider        *fakes.BOSHClientProvider
@@ -34,7 +32,6 @@ var _ = Describe("Delete LBs", func() {
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		certificateManager = &fakes.CertificateManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
-		cloudConfigurator = &fakes.BoshCloudConfigurator{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
@@ -68,41 +65,77 @@ var _ = Describe("Delete LBs", func() {
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
 		command = commands.NewAWSDeleteLBs(credentialValidator, availabilityZoneRetriever,
-			certificateManager, infrastructureManager, logger, cloudConfigurator, cloudConfigManager,
+			certificateManager, infrastructureManager, logger, cloudConfigManager,
 			boshClientProvider, stateStore)
 	})
 
 	Describe("Execute", func() {
-		It("updates cloud config", func() {
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-az"}
-			infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-				Name: "some-stack-name",
-			}
-			cloudConfigurator.ConfigureCall.Returns.CloudConfigInput = bosh.CloudConfigInput{
-				AZs: []string{"some-az"},
-				LBs: []bosh.LoadBalancerExtension{
-					{
-						Name: "some-lb",
+		Context("when the bbl env has a bosh director", func() {
+			It("updates cloud config", func() {
+				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-az"}
+				infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+					Name: "some-stack-name",
+				}
+
+				err := command.Execute(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+
+				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
+
+				Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("none"))
+			})
+		})
+
+		Context("when the bbl env was created without a bosh director", func() {
+			It("does not try to update the cloud config", func() {
+				state := storage.State{
+					Stack: storage.Stack{
+						LBType:          "concourse",
+						CertificateName: "some-certificate",
+						Name:            "some-stack-name",
+						BOSHAZ:          "some-bosh-az",
 					},
-				},
-			}
+					NoDirector: true,
+					AWS: storage.AWS{
+						Region: "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair",
+					},
+					EnvID: "some-env-id",
+				}
+				err := command.Execute(state)
+				Expect(err).NotTo(HaveOccurred())
 
-			err := command.Execute(incomingState)
-			Expect(err).NotTo(HaveOccurred())
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
+			})
 
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+			It("does not check for the existence of a bosh director", func() {
+				state := storage.State{
+					Stack: storage.Stack{
+						LBType:          "concourse",
+						CertificateName: "some-certificate",
+						Name:            "some-stack-name",
+						BOSHAZ:          "some-bosh-az",
+					},
+					NoDirector: true,
+					AWS: storage.AWS{
+						Region: "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair",
+					},
+					EnvID: "some-env-id",
+				}
+				err := command.Execute(state)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
-			Expect(cloudConfigurator.ConfigureCall.Receives.Stack).To(Equal(cloudformation.Stack{
-				Name: "some-stack-name",
-			}))
-
-			Expect(cloudConfigManager.UpdateCall.Receives.CloudConfigInput).To(Equal(bosh.CloudConfigInput{
-				AZs: []string{"some-az"},
-			}))
-			Expect(cloudConfigManager.UpdateCall.Receives.BOSHClient).To(Equal(boshClient))
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
+			})
 		})
 
 		It("delete lbs from cloudformation and deletes certificate", func() {
@@ -164,6 +197,27 @@ var _ = Describe("Delete LBs", func() {
 		})
 
 		Context("state management", func() {
+			It("saves state with no lb type before deleting certificate", func() {
+				certificateManager.DeleteCall.Returns.Error = errors.New("failed to delete")
+				err := command.Execute(storage.State{
+					Stack: storage.Stack{
+						Name:            "some-stack",
+						LBType:          "cf",
+						CertificateName: "some-certificate",
+					},
+				})
+				Expect(err).To(MatchError("failed to delete"))
+
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+					Stack: storage.Stack{
+						Name:            "some-stack",
+						LBType:          "none",
+						CertificateName: "some-certificate",
+					},
+				}))
+			})
+
 			It("saves state with no lb type nor certificate", func() {
 				err := command.Execute(storage.State{
 					Stack: storage.Stack{
@@ -174,7 +228,7 @@ var _ = Describe("Delete LBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
 				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
 					Stack: storage.Stack{
 						Name:            "some-stack",
@@ -222,8 +276,13 @@ var _ = Describe("Delete LBs", func() {
 				Expect(err).To(MatchError("delete failed"))
 			})
 
-			It("returns an error when the state fails to be saved", func() {
+			It("returns an error when the state fails to save lb type", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
+				err := command.Execute(incomingState)
+				Expect(err).To(MatchError("failed to save state"))
+			})
+			It("returns an error when the state fails to save certificate deletion", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to save state")}}
 				err := command.Execute(incomingState)
 				Expect(err).To(MatchError("failed to save state"))
 			})

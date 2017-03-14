@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -19,12 +20,19 @@ import (
 
 var _ = Describe("bbl destroy gcp", func() {
 	var (
-		tempDirectory       string
-		statePath           string
-		pathToFakeTerraform string
-		pathToTerraform     string
-		fakeBOSHServer      *httptest.Server
-		fakeBOSH            *fakeBOSHDirector
+		state                      storage.State
+		tempDirectory              string
+		statePath                  string
+		pathToFakeTerraform        string
+		pathToTerraform            string
+		pathToFakeBOSH             string
+		pathToBOSH                 string
+		fakeBOSHCLIBackendServer   *httptest.Server
+		fakeTerraformBackendServer *httptest.Server
+		fakeBOSHServer             *httptest.Server
+		fakeBOSH                   *fakeBOSHDirector
+		fastFail                   bool
+		fastFailMutex              sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -35,7 +43,23 @@ var _ = Describe("bbl destroy gcp", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeTerraformBackendServer := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/version":
+				responseWriter.Write([]byte("2.0.0"))
+			case "/delete-env/fastfail":
+				fastFailMutex.Lock()
+				defer fastFailMutex.Unlock()
+				if fastFail {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
+				}
+				return
+			}
+		}))
+
+		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/output/external_ip":
 				responseWriter.Write([]byte("127.0.0.1"))
@@ -46,9 +70,11 @@ var _ = Describe("bbl destroy gcp", func() {
 			case "/output/subnetwork_name":
 				responseWriter.Write([]byte("some-subnetwork-name"))
 			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-tag"))
+				responseWriter.Write([]byte("some-internal-tag"))
 			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-open-tag"))
+				responseWriter.Write([]byte("some-bosh-tag"))
+			case "/version":
+				responseWriter.Write([]byte("0.8.6"))
 			}
 		}))
 
@@ -60,12 +86,29 @@ var _ = Describe("bbl destroy gcp", func() {
 		err = os.Rename(pathToFakeTerraform, pathToTerraform)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
+		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+		Expect(err).NotTo(HaveOccurred())
+
+		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+		err = os.Rename(pathToFakeBOSH, pathToBOSH)
+		Expect(err).NotTo(HaveOccurred())
+
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		state := storage.State{
+		variables := `
+admin_password: rhkj9ys4l9guqfpc9vmp
+director_ssl:
+  certificate: some-certificate
+  private_key: some-private-key
+  ca: some-ca
+`
+
+		state = storage.State{
+			Version: 3,
 			IAAS:    "gcp",
 			TFState: `{"key": "value"}`,
 			GCP: storage.GCP{
@@ -80,6 +123,10 @@ var _ = Describe("bbl destroy gcp", func() {
 			},
 			BOSH: storage.BOSH{
 				DirectorName: "some-bosh-director-name",
+				Variables:    variables,
+				State: map[string]interface{}{
+					"new-key": "new-value",
+				},
 			},
 		}
 
@@ -89,6 +136,10 @@ var _ = Describe("bbl destroy gcp", func() {
 		statePath = filepath.Join(tempDirectory, "bbl-state.json")
 		err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		os.Setenv("PATH", originalPath)
 	})
 
 	It("deletes the bbl-state", func() {
@@ -115,23 +166,8 @@ var _ = Describe("bbl destroy gcp", func() {
 
 	Context("bbl re-entrance", func() {
 		It("saves the tf state when terraform destroy fails", func() {
-			state := storage.State{
-				IAAS:    "gcp",
-				TFState: `{"key": "value"}`,
-				GCP: storage.GCP{
-					ProjectID:         "some-project-id",
-					ServiceAccountKey: serviceAccountKey,
-					Region:            "fail-to-terraform",
-					Zone:              "some-zone",
-				},
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: testhelpers.BBL_KEY,
-				},
-				BOSH: storage.BOSH{
-					DirectorName: "some-bosh-director-name",
-				},
-			}
+			state.GCP.Region = "fail-to-terraform"
+
 			stateContents, err := json.Marshal(state)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -139,6 +175,7 @@ var _ = Describe("bbl destroy gcp", func() {
 			err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 			args := []string{
+				"--debug",
 				"--state-dir", tempDirectory,
 				"destroy", "--no-confirm",
 			}
@@ -147,6 +184,108 @@ var _ = Describe("bbl destroy gcp", func() {
 
 			state = readStateJson(tempDirectory)
 			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+		})
+
+		Context("when bosh fails", func() {
+			BeforeEach(func() {
+				fastFailMutex.Lock()
+				fastFail = true
+				fastFailMutex.Unlock()
+
+				args := []string{
+					"--debug",
+					"--state-dir", tempDirectory,
+					"destroy", "--no-confirm",
+				}
+
+				executeCommand(args, 1)
+			})
+
+			AfterEach(func() {
+				fastFailMutex.Lock()
+				fastFail = false
+				fastFailMutex.Unlock()
+			})
+
+			It("stores a partial bosh state", func() {
+				state := readStateJson(tempDirectory)
+				Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+					"partial": "bosh-state",
+				}))
+			})
+		})
+	})
+
+	Context("when the bosh cli version is <2.0", func() {
+		BeforeEach(func() {
+			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("1.9.0"))
+				}
+			}))
+
+			var err error
+			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
+			err = os.Rename(pathToFakeBOSH, pathToBOSH)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+		})
+	})
+
+	Context("when the terraform version is <0.8.5", func() {
+		BeforeEach(func() {
+			fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("0.8.4"))
+				}
+			}))
+			var err error
+			pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+			err = os.Rename(pathToFakeTerraform, pathToTerraform)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
 		})
 	})
 

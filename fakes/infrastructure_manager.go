@@ -39,7 +39,8 @@ type InfrastructureManager struct {
 	}
 
 	ExistsCall struct {
-		Receives struct {
+		CallCount int
+		Receives  struct {
 			StackName string
 		}
 		Returns struct {
@@ -99,6 +100,7 @@ func (m *InfrastructureManager) Update(keyPairName string, azs []string, stackNa
 }
 
 func (m *InfrastructureManager) Exists(stackName string) (bool, error) {
+	m.ExistsCall.CallCount++
 	m.ExistsCall.Receives.StackName = stackName
 
 	return m.ExistsCall.Returns.Exists, m.ExistsCall.Returns.Error

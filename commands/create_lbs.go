@@ -11,6 +11,7 @@ type CreateLBs struct {
 	awsCreateLBs   awsCreateLBs
 	gcpCreateLBs   gcpCreateLBs
 	stateValidator stateValidator
+	boshManager    boshManager
 }
 
 type lbConfig struct {
@@ -30,17 +31,25 @@ type awsCreateLBs interface {
 	Execute(AWSCreateLBsConfig, storage.State) error
 }
 
-func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateValidator stateValidator) CreateLBs {
+func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateValidator stateValidator, boshManager boshManager) CreateLBs {
 	return CreateLBs{
 		awsCreateLBs:   awsCreateLBs,
 		gcpCreateLBs:   gcpCreateLBs,
 		stateValidator: stateValidator,
+		boshManager:    boshManager,
 	}
 }
 
 func (c CreateLBs) Execute(args []string, state storage.State) error {
 	if err := c.stateValidator.Validate(); err != nil {
 		return err
+	}
+
+	if !state.NoDirector {
+		err := fastFailBOSHVersion(c.boshManager)
+		if err != nil {
+			return err
+		}
 	}
 
 	config, err := c.parseFlags(args)

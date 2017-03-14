@@ -90,6 +90,25 @@ var _ = Describe("AWS Update LBs", func() {
 	})
 
 	Describe("Execute", func() {
+		Context("when the bbl env was created with no director", func() {
+			It("does not fast fail", func() {
+				updateLBs(certFilePath, keyFilePath, "", storage.State{
+					NoDirector: true,
+					Stack: storage.Stack{
+						LBType:          "cf",
+						CertificateName: "some-old-certificate-name",
+					},
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+				})
+
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
+			})
+		})
+
 		It("creates the new certificate with private key", func() {
 			updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
