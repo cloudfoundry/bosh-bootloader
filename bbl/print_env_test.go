@@ -87,7 +87,12 @@ var _ = Describe("bbl", func() {
 
 				os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
 
-				state := []byte(`{"version":3,"iaas": "gcp", "noDirector": true}`)
+				state := []byte(`{
+					"version":3,
+					"iaas": "gcp",
+					"noDirector": true,
+					"tfState": "some-tf-state"
+				}`)
 				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})

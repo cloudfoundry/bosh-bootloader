@@ -37,6 +37,10 @@ func NewOutputProvider(outputter outputter) OutputProvider {
 }
 
 func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs, error) {
+	if tfState == "" {
+		return Outputs{}, nil
+	}
+
 	externalIP, err := o.outputter.Get(tfState, "external_ip")
 	if err != nil {
 		return Outputs{}, err
