@@ -3,9 +3,12 @@ package main_test
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"

@@ -247,46 +247,6 @@ var _ = Describe("bbl up aws", func() {
 			})
 		})
 
-		Context("when bbl-state.json contains aws details", func() {
-			BeforeEach(func() {
-				buf, err := json.Marshal(storage.State{
-					Version: 3,
-					IAAS:    "aws",
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-access-key",
-						Region:          "some-region",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("does not require --iaas flag and exits 0", func() {
-				args := []string{
-					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-					"--state-dir", tempDirectory,
-					"up",
-				}
-
-				executeCommand(args, 0)
-			})
-
-			Context("when called with --iaas gcp", func() {
-				It("exits 1 and prints error message", func() {
-					session := executeCommand([]string{
-						"--state-dir", tempDirectory,
-						"up",
-						"--iaas", "gcp",
-					}, 1)
-
-					Expect(session.Err.Contents()).To(ContainSubstring("The iaas type cannot be changed for an existing environment. The current iaas type is aws."))
-				})
-			})
-		})
-
 		Context("when ops files are provides via --ops-file flag", func() {
 			It("passes those ops files to bosh create env", func() {
 				args := []string{

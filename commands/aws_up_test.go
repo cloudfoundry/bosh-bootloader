@@ -332,37 +332,6 @@ var _ = Describe("AWSUp", func() {
 			})
 		})
 
-		Context("when bosh az is provided via --aws-bosh-az flag", func() {
-			It("passes the bosh az to the infrastructure manager", func() {
-				err := command.Execute(commands.AWSUpConfig{
-					AccessKeyID:     "some-aws-access-key-id",
-					SecretAccessKey: "some-aws-secret-access-key",
-					Region:          "some-aws-region",
-					BOSHAZ:          "some-bosh-az",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(infrastructureManager.CreateCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
-			})
-
-			Context("when a stack exists and the aws-bosh-az is provided and different", func() {
-				It("returns an error message", func() {
-					err := command.Execute(commands.AWSUpConfig{
-						AccessKeyID:     "some-aws-access-key-id",
-						SecretAccessKey: "some-aws-secret-access-key",
-						Region:          "some-aws-region",
-						BOSHAZ:          "other-bosh-az",
-					}, storage.State{
-						Stack: storage.Stack{
-							Name:   "some-stack",
-							BOSHAZ: "some-bosh-az",
-						},
-					})
-					Expect(err).To(MatchError("The --aws-bosh-az cannot be changed for existing environments."))
-				})
-			})
-		})
-
 		Context("when there is an lb", func() {
 			It("attaches the lb certificate to the lb type in cloudformation", func() {
 				certificateDescriber.DescribeCall.Returns.Certificate = iam.Certificate{
