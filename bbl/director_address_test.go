@@ -42,7 +42,8 @@ var _ = Describe("director-address", func() {
 				"version": 3,
 				"bosh": {
 					"directorAddress": "some-director-url"
-				}
+				},
+				"tfState": "some-tf-state"
 			}`)
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
@@ -84,7 +85,12 @@ var _ = Describe("director-address", func() {
 
 				os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
 
-				state := []byte(`{"version":3,"iaas": "gcp", "noDirector": true}`)
+				state := []byte(`{
+					"version":3,
+					"iaas": "gcp",
+					"noDirector": true,
+					"tfState": "some-tf-state"
+				}`)
 				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -93,7 +99,7 @@ var _ = Describe("director-address", func() {
 				os.Setenv("PATH", originalPath)
 			})
 
-			It("returns the eip reserved for the director", func() {
+			It("returns the external ip reserved for the director", func() {
 				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 

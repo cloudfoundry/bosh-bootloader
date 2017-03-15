@@ -65,8 +65,9 @@ var _ = Describe("TerraformOutputProvider", func() {
 
 	Context("when no lb exists", func() {
 		It("returns all terraform outputs except lb related outputs", func() {
-			terraformOutputs, err := terraformOutputProvider.Get("", "", false)
+			terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "", false)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(terraformOutputs).To(Equal(terraform.Outputs{
 				ExternalIP:      "some-external-ip",
 				NetworkName:     "some-network-name",
@@ -81,8 +82,9 @@ var _ = Describe("TerraformOutputProvider", func() {
 	Context("when cf lb exists", func() {
 		Context("when the domain is not specified", func() {
 			It("returns terraform outputs related to cf lb without system domain DNS servers", func() {
-				terraformOutputs, err := terraformOutputProvider.Get("", "cf", false)
+				terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "cf", false)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
 				Expect(terraformOutputs).To(Equal(terraform.Outputs{
 					ExternalIP:           "some-external-ip",
 					NetworkName:          "some-network-name",
@@ -145,8 +147,9 @@ var _ = Describe("TerraformOutputProvider", func() {
 					}
 				}
 
-				terraformOutputs, err := terraformOutputProvider.Get("", "cf", true)
+				terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "cf", true)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
 				Expect(terraformOutputs).To(Equal(terraform.Outputs{
 					ExternalIP:             "some-external-ip",
 					NetworkName:            "some-network-name",
@@ -170,8 +173,9 @@ var _ = Describe("TerraformOutputProvider", func() {
 
 	Context("when concourse lb exists", func() {
 		It("returns terraform outputs related to concourse lb", func() {
-			terraformOutputs, err := terraformOutputProvider.Get("", "concourse", false)
+			terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "concourse", false)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(terraformOutputs).To(Equal(terraform.Outputs{
 				ExternalIP:          "some-external-ip",
 				NetworkName:         "some-network-name",
@@ -182,6 +186,15 @@ var _ = Describe("TerraformOutputProvider", func() {
 				ConcourseTargetPool: "some-concourse-target-pool",
 				ConcourseLBIP:       "some-concourse-lb-ip",
 			}))
+		})
+	})
+
+	Context("when tfState is empty", func() {
+		It("returns an empty terraform outputs", func() {
+			terraformOutputs, err := terraformOutputProvider.Get("", "concourse", false)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(terraformOutputter.GetCall.CallCount).To(Equal(0))
+			Expect(terraformOutputs).To(Equal(terraform.Outputs{}))
 		})
 	})
 
