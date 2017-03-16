@@ -48,4 +48,4 @@ bosh upload-cloud-config <(bbl cloud-config)
 ```
 
 
-Finally deploy a bosh deployment manifest like (cf-deployment)[https://github.com/cloudfoundry/cf-deployment]
+Finally deploy a bosh deployment manifest like [cf-deployment](https://github.com/cloudfoundry/cf-deployment)
