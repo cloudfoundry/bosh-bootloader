@@ -122,6 +122,7 @@ func main() {
 	// Terraform
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
+	terraformManager := terraform.NewManager(terraformExecutor, logger)
 	terraformOutputter := terraform.NewOutputter(terraformCmd)
 	terraformOutputProvider := terraform.NewOutputProvider(terraformOutputter)
 
@@ -176,7 +177,7 @@ func main() {
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
-		stateStore, stateValidator, terraformExecutor, terraformOutputProvider, gcpNetworkInstancesChecker,
+		stateStore, stateValidator, terraformManager, terraformExecutor, terraformOutputProvider, gcpNetworkInstancesChecker,
 	)
 
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)

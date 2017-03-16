@@ -34,6 +34,7 @@ var _ = Describe("Destroy", func() {
 		credentialValidator     *fakes.CredentialValidator
 		stateStore              *fakes.StateStore
 		stateValidator          *fakes.StateValidator
+		terraformManager        *fakes.TerraformManager
 		terraformExecutor       *fakes.TerraformExecutor
 		terraformOutputProvider *fakes.TerraformOutputProvider
 		networkInstancesChecker *fakes.NetworkInstancesChecker
@@ -56,6 +57,7 @@ var _ = Describe("Destroy", func() {
 		credentialValidator = &fakes.CredentialValidator{}
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
+		terraformManager = &fakes.TerraformManager{}
 		terraformExecutor = &fakes.TerraformExecutor{}
 		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
@@ -65,7 +67,7 @@ var _ = Describe("Destroy", func() {
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
-			stateValidator, terraformExecutor, terraformOutputProvider, networkInstancesChecker)
+			stateValidator, terraformManager, terraformExecutor, terraformOutputProvider, networkInstancesChecker)
 	})
 
 	Describe("Execute", func() {
@@ -611,11 +613,43 @@ var _ = Describe("Destroy", func() {
 					})
 				})
 			})
+
+			Context("deleting the keypair", func() {
+				It("deletes the keypair using the name", func() {
+					state := storage.State{
+						IAAS: "aws",
+						KeyPair: storage.KeyPair{
+							Name:       "some-ec2-key-pair-name",
+							PrivateKey: "some-private-key",
+							PublicKey:  "some-public-key",
+						},
+					}
+					stdin.Write([]byte("yes\n"))
+					err := destroy.Execute([]string{}, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(awsKeyPairDeleter.DeleteCall.CallCount).To(Equal(1))
+					Expect(awsKeyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
+				})
+
+				Context("when the key pair deleter fails", func() {
+					It("returns an error", func() {
+						stdin.Write([]byte("yes\n"))
+						awsKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to destroy")
+						err := destroy.Execute([]string{}, storage.State{
+							IAAS: "aws",
+						})
+
+						Expect(err).To(MatchError("failed to destroy"))
+					})
+				})
+			})
 		})
 
 		Context("when iaas is gcp", func() {
 			var serviceAccountKeyPath string
 			var serviceAccountKey string
+			var bblState storage.State
 			BeforeEach(func() {
 				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
 					ExternalIP:      "some-external-ip",
@@ -633,6 +667,21 @@ var _ = Describe("Destroy", func() {
 				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
+				bblState = storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+					TFState: "some-tf-state",
+					KeyPair: storage.KeyPair{
+						PublicKey: "some-public-key",
+					},
+				}
+				terraformManager.DestroyCall.Returns.BBLState = bblState
 			})
 
 			It("returns an error when gcp credential validator fails", func() {
@@ -647,61 +696,42 @@ var _ = Describe("Destroy", func() {
 
 			It("calls terraform destroy", func() {
 				stdin.Write([]byte("yes\n"))
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS:  "gcp",
-					EnvID: "some-env-id",
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-					TFState: "some-tf-state",
-				})
+				err := destroy.Execute([]string{}, bblState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformExecutor.DestroyCall.CallCount).To(Equal(1))
-				Expect(terraformExecutor.DestroyCall.Receives.Credentials).To(Equal("some-service-account-key"))
-				Expect(terraformExecutor.DestroyCall.Receives.EnvID).To(Equal("some-env-id"))
-				Expect(terraformExecutor.DestroyCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(terraformExecutor.DestroyCall.Receives.Zone).To(Equal("some-zone"))
-				Expect(terraformExecutor.DestroyCall.Receives.Region).To(Equal("some-region"))
-				Expect(terraformExecutor.DestroyCall.Receives.TFState).To(Equal("some-tf-state"))
-				Expect(terraformExecutor.DestroyCall.Receives.Template).To(ContainSubstring(`variable "project_id"`))
-
-				Expect(terraformExecutor.DestroyCall.Returns.TFState).To(Equal(""))
+				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
+				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 			})
 
 			Context("when terraform destroy fails", func() {
+				var (
+					managerDestroyError *fakes.TerraformManagerDestroyError
+					updatedBBLState     storage.State
+				)
+
+				BeforeEach(func() {
+					updatedBBLState = bblState
+					updatedBBLState.TFState = "some-updated-tf-state"
+
+					managerDestroyError = &fakes.TerraformManagerDestroyError{}
+					managerDestroyError.BBLStateCall.Returns = updatedBBLState
+					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
+					terraformManager.DestroyCall.Returns.Error = managerDestroyError
+				})
+
 				It("saves the partially destroyed tf state", func() {
-					terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to terraform destroy")
-					terraformExecutor.DestroyCall.Returns.TFState = "some-tf-state"
 					stdin.Write([]byte("yes\n"))
-					err := destroy.Execute([]string{}, storage.State{
-						IAAS:  "gcp",
-						EnvID: "some-env-id",
-						GCP: storage.GCP{
-							ServiceAccountKey: "some-service-account-key",
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "some-region",
-						},
-						TFState: "some-tf-state",
-					})
-					Expect(err).To(MatchError("failed to terraform destroy"))
 
-					Expect(terraformExecutor.DestroyCall.CallCount).To(Equal(1))
-					Expect(terraformExecutor.DestroyCall.Receives.Credentials).To(Equal("some-service-account-key"))
-					Expect(terraformExecutor.DestroyCall.Receives.EnvID).To(Equal("some-env-id"))
-					Expect(terraformExecutor.DestroyCall.Receives.ProjectID).To(Equal("some-project-id"))
-					Expect(terraformExecutor.DestroyCall.Receives.Zone).To(Equal("some-zone"))
-					Expect(terraformExecutor.DestroyCall.Receives.Region).To(Equal("some-region"))
-					Expect(terraformExecutor.DestroyCall.Receives.TFState).To(Equal("some-tf-state"))
-					Expect(terraformExecutor.DestroyCall.Receives.Template).To(ContainSubstring(`variable "project_id"`))
+					err := destroy.Execute([]string{}, bblState)
+					Expect(err).To(Equal(managerDestroyError))
 
-					Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
+					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
+
+					Expect(managerDestroyError.BBLStateCall.CallCount).To(Equal(1))
+
+					Expect(stateStore.SetCall.Receives.State).To(Equal(updatedBBLState))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-
 				})
 			})
 
@@ -726,65 +756,76 @@ var _ = Describe("Destroy", func() {
 				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
 				Expect(err).To(MatchError("validation failed"))
 			})
-		})
 
-		It("deletes the keypair", func() {
-			stdin.Write([]byte("yes\n"))
-			err := destroy.Execute([]string{}, storage.State{
-				IAAS: "gcp",
-				KeyPair: storage.KeyPair{
-					PublicKey: "some-public-key",
-				},
-				GCP: storage.GCP{
-					ProjectID: "some-project-id",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+			Context("deleting the keypair", func() {
 
-			Expect(gcpKeyPairDeleter.DeleteCall.CallCount).To(Equal(1))
-			Expect(gcpKeyPairDeleter.DeleteCall.Receives.PublicKey).To(Equal("some-public-key"))
-		})
+				It("deletes the keypair", func() {
+					stdin.Write([]byte("yes\n"))
+					err := destroy.Execute([]string{}, storage.State{
+						IAAS: "gcp",
+						KeyPair: storage.KeyPair{
+							PublicKey: "some-public-key",
+						},
+						GCP: storage.GCP{
+							ProjectID: "some-project-id",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
 
-		Context("failure cases", func() {
-			It("returns an error when terraform executor fails to destroy", func() {
-				stdin.Write([]byte("yes\n"))
-				terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to destroy")
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
+					Expect(gcpKeyPairDeleter.DeleteCall.CallCount).To(Equal(1))
+					Expect(gcpKeyPairDeleter.DeleteCall.Receives.PublicKey).To(Equal("some-public-key"))
 				})
 
-				Expect(err).To(MatchError("failed to destroy"))
+				Context("when the key pair deleter fails", func() {
+					It("returns an error", func() {
+						stdin.Write([]byte("yes\n"))
+						gcpKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to destroy")
+						err := destroy.Execute([]string{}, storage.State{
+							IAAS: "gcp",
+						})
+
+						Expect(err).To(MatchError("failed to destroy"))
+					})
+				})
 			})
 
-			It("returns an error when terraform executor fails to destroy and the resulting state fails to be set", func() {
-				stdin.Write([]byte("yes\n"))
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
-				terraformExecutor.DestroyCall.Returns.Error = errors.New("failed to destroy")
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-				})
+			Context("when terraform output provider fails to get terraform outputs", func() {
+				It("returns an error", func() {
+					terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
 
-				Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
+					err := destroy.Execute([]string{}, storage.State{
+						IAAS: "gcp",
+					})
+
+					Expect(err).To(MatchError("terraform output provider failed"))
+				})
 			})
 
-			It("returns an error when the key pair deleter fails", func() {
-				stdin.Write([]byte("yes\n"))
-				gcpKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to destroy")
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
+			Context("when terraform manager fails to destroy", func() {
+				It("returns an error", func() {
+					stdin.Write([]byte("yes\n"))
+					terraformManager.DestroyCall.Returns.Error = errors.New("failed to destroy")
+					err := destroy.Execute([]string{}, storage.State{
+						IAAS: "gcp",
+					})
+
+					Expect(err).To(MatchError("failed to destroy"))
 				})
 
-				Expect(err).To(MatchError("failed to destroy"))
-			})
+				Context("and the state fails to be set", func() {
+					It("returns an error containing both messages", func() {
+						stdin.Write([]byte("yes\n"))
+						terraformManagerDestroyError := &fakes.TerraformManagerDestroyError{}
+						terraformManagerDestroyError.ErrorCall.Returns = "failed to destroy"
+						terraformManager.DestroyCall.Returns.Error = terraformManagerDestroyError
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+						err := destroy.Execute([]string{}, storage.State{
+							IAAS: "gcp",
+						})
 
-			It("returns an error when terraform output provider fails", func() {
-				terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
+					})
 				})
-
-				Expect(err).To(MatchError("terraform output provider failed"))
 			})
 		})
 	})

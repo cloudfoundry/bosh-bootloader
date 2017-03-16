@@ -94,7 +94,7 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, 
 			errorList.Add(readErr)
 			return "", errorList
 		}
-		return string(tfState), NewTerraformApplyError(string(tfState), err)
+		return "", NewTerraformApplyError(string(tfState), err)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
@@ -142,7 +142,7 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 			errorList.Add(readErr)
 			return "", errorList
 		}
-		return string(tfState), err
+		return "", NewExecutorDestroyError(string(tfState), err)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))

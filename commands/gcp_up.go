@@ -57,6 +57,10 @@ type gcpProvider interface {
 	SetConfig(serviceAccountKey, projectID, zone string) error
 }
 
+type terraformManager interface {
+	Destroy(bblState storage.State) (storage.State, error)
+}
+
 type terraformExecutor interface {
 	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, domain, template, tfState string) (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
@@ -159,18 +163,18 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	zones := u.zones.Get(state.GCP.Region)
 	switch state.LB.Type {
 	case "concourse":
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
+		template = strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
 	case "cf":
 		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
 		instanceGroups := generateInstanceGroups(zones)
 
 		if state.LB.Domain != "" {
-			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
+			template = strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
 		} else {
-			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
+			template = strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
 		}
 	default:
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
+		template = strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate}, "\n")
 	}
 
 	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,

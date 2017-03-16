@@ -401,15 +401,17 @@ var _ = Describe("Executor", func() {
 				Expect(err).To(MatchError("failed to write tf state file"))
 			})
 
-			It("returns an error and the current tf state when it fails to call terraform command run", func() {
+			It("returns an error containing the updated tf state when it fails to call terraform command run", func() {
+				updatedTFState := "some-tf-state"
 				terraform.SetReadFile(func(filename string) ([]byte, error) {
-					return []byte("some-tf-state"), nil
+					return []byte(updatedTFState), nil
 				})
-				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
+				terraformError := errors.New("failed to run terraform command")
+				cmd.RunCall.Returns.Error = terraformError
 
 				tfState, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
-				Expect(err).To(MatchError("failed to run terraform command"))
-				Expect(tfState).To(Equal("some-tf-state"))
+				Expect(err).To(MatchError(terraform.NewExecutorDestroyError(updatedTFState, terraformError)))
+				Expect(tfState).To(BeEmpty())
 			})
 
 			It("returns an error when it fails to call terraform command run and read out the resulting tf state", func() {
@@ -430,7 +432,6 @@ var _ = Describe("Executor", func() {
 				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to read tf state file"))
 			})
-
 		})
 	})
 
@@ -469,7 +470,6 @@ var _ = Describe("Executor", func() {
 				_, err := executor.Version()
 				Expect(err).To(MatchError("Terraform version could not be parsed"))
 			})
-
 		})
 	})
 })

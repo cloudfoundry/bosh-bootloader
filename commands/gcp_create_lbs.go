@@ -95,7 +95,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		}
 	}
 
-	templateWithLB := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
+	templateWithLB := strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
 	tfState, err := c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
 		state.GCP.Region, string(cert), string(key), config.Domain, templateWithLB, state.TFState)
 	switch err.(type) {
