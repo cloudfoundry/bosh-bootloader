@@ -59,6 +59,7 @@ type gcpProvider interface {
 
 type terraformManager interface {
 	Destroy(bblState storage.State) (storage.State, error)
+	GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type terraformExecutor interface {

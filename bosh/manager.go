@@ -17,9 +17,9 @@ const (
 )
 
 type Manager struct {
-	executor                executor
-	terraformOutputProvider terraformOutputProvider
-	stackManager            stackManager
+	executor         executor
+	terraformManager terraformManager
+	stackManager     stackManager
 }
 
 type directorOutputs struct {
@@ -60,19 +60,19 @@ type executor interface {
 	Version() (string, error)
 }
 
-type terraformOutputProvider interface {
-	Get(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
+type terraformManager interface {
+	GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type stackManager interface {
 	Describe(stackName string) (cloudformation.Stack, error)
 }
 
-func NewManager(executor executor, terraformOutputProvider terraformOutputProvider, stackManager stackManager) Manager {
+func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager) Manager {
 	return Manager{
-		executor:                executor,
-		terraformOutputProvider: terraformOutputProvider,
-		stackManager:            stackManager,
+		executor:         executor,
+		terraformManager: terraformManager,
+		stackManager:     stackManager,
 	}
 }
 
@@ -161,7 +161,7 @@ internal_ip: 10.0.0.6`
 
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := m.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return "", err
 		}
@@ -202,7 +202,7 @@ internal_ip: 10.0.0.6`
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := m.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return iaasInputs{}, err
 		}

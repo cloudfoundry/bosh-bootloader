@@ -36,7 +36,6 @@ var _ = Describe("Destroy", func() {
 		stateValidator          *fakes.StateValidator
 		terraformManager        *fakes.TerraformManager
 		terraformExecutor       *fakes.TerraformExecutor
-		terraformOutputProvider *fakes.TerraformOutputProvider
 		networkInstancesChecker *fakes.NetworkInstancesChecker
 		stdin                   *bytes.Buffer
 	)
@@ -62,12 +61,10 @@ var _ = Describe("Destroy", func() {
 		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
-		terraformOutputProvider = &fakes.TerraformOutputProvider{}
-
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
-			stateValidator, terraformManager, terraformExecutor, terraformOutputProvider, networkInstancesChecker)
+			stateValidator, terraformManager, terraformExecutor, networkInstancesChecker)
 	})
 
 	Describe("Execute", func() {
@@ -651,7 +648,7 @@ var _ = Describe("Destroy", func() {
 			var serviceAccountKey string
 			var bblState storage.State
 			BeforeEach(func() {
-				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 					ExternalIP:      "some-external-ip",
 					NetworkName:     "some-network-name",
 					SubnetworkName:  "some-subnetwork-name",
@@ -791,7 +788,7 @@ var _ = Describe("Destroy", func() {
 
 			Context("when terraform output provider fails to get terraform outputs", func() {
 				It("returns an error", func() {
-					terraformOutputProvider.GetCall.Returns.Error = errors.New("terraform output provider failed")
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform output provider failed")
 
 					err := destroy.Execute([]string{}, storage.State{
 						IAAS: "gcp",

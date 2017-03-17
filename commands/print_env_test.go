@@ -14,18 +14,18 @@ import (
 
 var _ = Describe("PrintEnv", func() {
 	var (
-		logger                  *fakes.Logger
-		stateValidator          *fakes.StateValidator
-		terraformOutputProvider *fakes.TerraformOutputProvider
-		infrastructureManager   *fakes.InfrastructureManager
-		printEnv                commands.PrintEnv
-		state                   storage.State
+		logger                *fakes.Logger
+		stateValidator        *fakes.StateValidator
+		terraformManager      *fakes.TerraformManager
+		infrastructureManager *fakes.InfrastructureManager
+		printEnv              commands.PrintEnv
+		state                 storage.State
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
-		terraformOutputProvider = &fakes.TerraformOutputProvider{}
+		terraformManager = &fakes.TerraformManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 
 		state = storage.State{
@@ -37,7 +37,7 @@ var _ = Describe("PrintEnv", func() {
 			},
 		}
 
-		printEnv = commands.NewPrintEnv(logger, stateValidator, terraformOutputProvider, infrastructureManager)
+		printEnv = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
 	})
 
 	It("prints the correct environment variables for the bosh cli", func() {
@@ -71,7 +71,7 @@ var _ = Describe("PrintEnv", func() {
 		})
 		Context("gcp", func() {
 			It("prints only the BOSH_ENVIRONMENT", func() {
-				terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 					ExternalIP: "some-external-ip",
 				}
 
@@ -96,7 +96,7 @@ var _ = Describe("PrintEnv", func() {
 		})
 
 		It("returns an error when the terraform outputter fails", func() {
-			terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to get terraform output")
+			terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 			err := printEnv.Execute([]string{}, storage.State{
 				IAAS:       "gcp",
 				NoDirector: true,

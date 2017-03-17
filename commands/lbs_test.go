@@ -16,21 +16,21 @@ import (
 
 var _ = Describe("LBs", func() {
 	var (
-		credentialValidator     *fakes.CredentialValidator
-		infrastructureManager   *fakes.InfrastructureManager
-		stateValidator          *fakes.StateValidator
-		terraformOutputProvider *fakes.TerraformOutputProvider
-		lbsCommand              commands.LBs
-		stdout                  *bytes.Buffer
-		incomingState           storage.State
+		credentialValidator   *fakes.CredentialValidator
+		infrastructureManager *fakes.InfrastructureManager
+		stateValidator        *fakes.StateValidator
+		terraformManager      *fakes.TerraformManager
+		lbsCommand            commands.LBs
+		stdout                *bytes.Buffer
+		incomingState         storage.State
 	)
 
 	BeforeEach(func() {
 		credentialValidator = &fakes.CredentialValidator{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		stateValidator = &fakes.StateValidator{}
-		terraformOutputProvider = &fakes.TerraformOutputProvider{}
-		terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+		terraformManager = &fakes.TerraformManager{}
+		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 			RouterLBIP:    "some-router-lb-ip",
 			SSHProxyLBIP:  "some-ssh-proxy-lb-ip",
 			TCPRouterLBIP: "some-tcp-router-lb-ip",
@@ -39,7 +39,7 @@ var _ = Describe("LBs", func() {
 		}
 		stdout = bytes.NewBuffer([]byte{})
 
-		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformOutputProvider, stdout)
+		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformManager, stdout)
 	})
 
 	Describe("Execute", func() {
@@ -157,7 +157,7 @@ var _ = Describe("LBs", func() {
 
 			Context("when the domain is specified", func() {
 				BeforeEach(func() {
-					terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 						RouterLBIP:             "some-router-lb-ip",
 						SSHProxyLBIP:           "some-ssh-proxy-lb-ip",
 						TCPRouterLBIP:          "some-tcp-router-lb-ip",
@@ -219,7 +219,7 @@ var _ = Describe("LBs", func() {
 
 			Context("failure cases", func() {
 				It("returns an error when terraform output provider fails", func() {
-					terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to return terraform output")
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to return terraform output")
 					err := lbsCommand.Execute([]string{}, incomingState)
 					Expect(err).To(MatchError("failed to return terraform output"))
 				})

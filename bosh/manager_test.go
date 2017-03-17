@@ -26,22 +26,22 @@ director_ssl:
 var _ = Describe("Manager", func() {
 	Describe("Create", func() {
 		var (
-			stackManager            *fakes.StackManager
-			boshExecutor            *fakes.BOSHExecutor
-			terraformOutputProvider *fakes.TerraformOutputProvider
-			boshManager             bosh.Manager
-			incomingGCPState        storage.State
-			incomingAWSState        storage.State
-			variablesMap            map[interface{}]interface{}
+			stackManager     *fakes.StackManager
+			boshExecutor     *fakes.BOSHExecutor
+			terraformManager *fakes.TerraformManager
+			boshManager      bosh.Manager
+			incomingGCPState storage.State
+			incomingAWSState storage.State
+			variablesMap     map[interface{}]interface{}
 		)
 
 		BeforeEach(func() {
-			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
 
-			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:     "some-network",
 				SubnetworkName:  "some-subnetwork",
 				BOSHTag:         "some-bosh-tag",
@@ -132,8 +132,8 @@ var _ = Describe("Manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stackManager.DescribeCall.CallCount).To(Equal(0))
-				Expect(terraformOutputProvider.GetCall.Receives.TFState).To(Equal("some-tf-state"))
-				Expect(terraformOutputProvider.GetCall.Receives.LBType).To(Equal("cf"))
+				Expect(terraformManager.GetOutputsCall.Receives.TFState).To(Equal("some-tf-state"))
+				Expect(terraformManager.GetOutputsCall.Receives.LBType).To(Equal("cf"))
 			})
 		})
 
@@ -142,7 +142,7 @@ var _ = Describe("Manager", func() {
 				_, err := boshManager.Create(incomingAWSState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformOutputProvider.GetCall.CallCount).To(Equal(0))
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
 				Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack"))
 			})
 		})
@@ -293,7 +293,7 @@ private_key: |-
 
 		Context("failure cases", func() {
 			It("returns an error when terraform output provider fails", func() {
-				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "gcp",
 				}, []byte{})
@@ -366,17 +366,17 @@ private_key: |-
 
 	Describe("Delete", func() {
 		var (
-			stackManager            *fakes.StackManager
-			boshExecutor            *fakes.BOSHExecutor
-			terraformOutputProvider *fakes.TerraformOutputProvider
-			boshManager             bosh.Manager
+			stackManager     *fakes.StackManager
+			boshExecutor     *fakes.BOSHExecutor
+			terraformManager *fakes.TerraformManager
+			boshManager      bosh.Manager
 		)
 
 		BeforeEach(func() {
-			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
 		})
 
 		It("calls delete env", func() {
@@ -450,21 +450,21 @@ private_key: |-
 
 	Describe("GetDeploymentVars", func() {
 		var (
-			stackManager            *fakes.StackManager
-			boshExecutor            *fakes.BOSHExecutor
-			terraformOutputProvider *fakes.TerraformOutputProvider
-			boshManager             bosh.Manager
-			incomingGCPState        storage.State
-			incomingAWSState        storage.State
+			stackManager     *fakes.StackManager
+			boshExecutor     *fakes.BOSHExecutor
+			terraformManager *fakes.TerraformManager
+			boshManager      bosh.Manager
+			incomingGCPState storage.State
+			incomingAWSState storage.State
 		)
 
 		BeforeEach(func() {
-			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
 
-			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:     "some-network",
 				SubnetworkName:  "some-subnetwork",
 				BOSHTag:         "some-bosh-tag",
@@ -572,7 +572,7 @@ private_key: |-
 
 		Context("failure cases", func() {
 			It("returns an error when the terraform output provider fails", func() {
-				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
 				_, err := boshManager.GetDeploymentVars(storage.State{
 					IAAS: "gcp",
 				})
@@ -591,17 +591,17 @@ private_key: |-
 
 	Describe("Version", func() {
 		var (
-			stackManager            *fakes.StackManager
-			boshExecutor            *fakes.BOSHExecutor
-			terraformOutputProvider *fakes.TerraformOutputProvider
-			boshManager             bosh.Manager
+			stackManager     *fakes.StackManager
+			boshExecutor     *fakes.BOSHExecutor
+			terraformManager *fakes.TerraformManager
+			boshManager      bosh.Manager
 		)
 
 		BeforeEach(func() {
-			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformOutputProvider, stackManager)
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
 
 			boshExecutor.VersionCall.Returns.Version = "2.0.0"
 		})

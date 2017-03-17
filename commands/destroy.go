@@ -34,12 +34,7 @@ type Destroy struct {
 	stateValidator          stateValidator
 	terraformManager        terraformManager
 	terraformExecutor       terraformExecutor
-	terraformOutputProvider terraformOutputProvider
 	networkInstancesChecker networkInstancesChecker
-}
-
-type terraformOutputProvider interface {
-	Get(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type destroyConfig struct {
@@ -87,7 +82,7 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformManager terraformManager, terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformManager terraformManager, terraformExecutor terraformExecutor, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
 		logger:                  logger,
@@ -104,7 +99,6 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		stateValidator:          stateValidator,
 		terraformManager:        terraformManager,
 		terraformExecutor:       terraformExecutor,
-		terraformOutputProvider: terraformOutputProvider,
 		networkInstancesChecker: networkInstancesChecker,
 	}
 }
@@ -159,7 +153,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			domainExists = true
 		}
 
-		terraformOutputs, err = d.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
+		terraformOutputs, err = d.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
 		if err != nil {
 			return err
 		}
