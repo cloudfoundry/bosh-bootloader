@@ -123,8 +123,7 @@ func main() {
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
 	terraformManager := terraform.NewManager(terraformExecutor, logger)
-	terraformOutputter := terraform.NewOutputter(terraformCmd)
-	terraformOutputProvider := terraform.NewOutputProvider(terraformOutputter)
+	terraformOutputProvider := terraform.NewOutputProvider(terraformExecutor)
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)

@@ -14,13 +14,13 @@ import (
 
 var _ = Describe("TerraformOutputProvider", func() {
 	var (
-		terraformOutputter      *fakes.TerraformOutputter
+		terraformExecutor       *fakes.TerraformExecutor
 		terraformOutputProvider terraform.OutputProvider
 	)
 
 	BeforeEach(func() {
-		terraformOutputter = &fakes.TerraformOutputter{}
-		terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+		terraformExecutor = &fakes.TerraformExecutor{}
+		terraformExecutor.OutputCall.Stub = func(output string) (string, error) {
 			switch output {
 			case "network_name":
 				return "some-network-name", nil
@@ -60,14 +60,14 @@ var _ = Describe("TerraformOutputProvider", func() {
 				return "", nil
 			}
 		}
-		terraformOutputProvider = terraform.NewOutputProvider(terraformOutputter)
+		terraformOutputProvider = terraform.NewOutputProvider(terraformExecutor)
 	})
 
 	Context("when no lb exists", func() {
 		It("returns all terraform outputs except lb related outputs", func() {
 			terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "", false)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(terraformExecutor.OutputCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(terraformOutputs).To(Equal(terraform.Outputs{
 				ExternalIP:      "some-external-ip",
 				NetworkName:     "some-network-name",
@@ -84,7 +84,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 			It("returns terraform outputs related to cf lb without system domain DNS servers", func() {
 				terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "cf", false)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
+				Expect(terraformExecutor.OutputCall.Receives.TFState).To(Equal("some-tf-state"))
 				Expect(terraformOutputs).To(Equal(terraform.Outputs{
 					ExternalIP:           "some-external-ip",
 					NetworkName:          "some-network-name",
@@ -106,7 +106,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 
 		Context("when the domain is specified", func() {
 			It("returns terraform outputs related to cf lb with the system domain DNS servers", func() {
-				terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+				terraformExecutor.OutputCall.Stub = func(output string) (string, error) {
 					switch output {
 					case "network_name":
 						return "some-network-name", nil
@@ -149,7 +149,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 
 				terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "cf", true)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
+				Expect(terraformExecutor.OutputCall.Receives.TFState).To(Equal("some-tf-state"))
 				Expect(terraformOutputs).To(Equal(terraform.Outputs{
 					ExternalIP:             "some-external-ip",
 					NetworkName:            "some-network-name",
@@ -175,7 +175,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 		It("returns terraform outputs related to concourse lb", func() {
 			terraformOutputs, err := terraformOutputProvider.Get("some-tf-state", "concourse", false)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(terraformOutputter.GetCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(terraformExecutor.OutputCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(terraformOutputs).To(Equal(terraform.Outputs{
 				ExternalIP:          "some-external-ip",
 				NetworkName:         "some-network-name",
@@ -193,7 +193,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 		It("returns an empty terraform outputs", func() {
 			terraformOutputs, err := terraformOutputProvider.Get("", "concourse", false)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(terraformOutputter.GetCall.CallCount).To(Equal(0))
+			Expect(terraformExecutor.OutputCall.CallCount).To(Equal(0))
 			Expect(terraformOutputs).To(Equal(terraform.Outputs{}))
 		})
 	})
@@ -201,7 +201,7 @@ var _ = Describe("TerraformOutputProvider", func() {
 	Context("failure cases", func() {
 		DescribeTable("returns an error when the outputter fails", func(outputName, lbType string) {
 			expectedError := fmt.Sprintf("failed to get %s", outputName)
-			terraformOutputter.GetCall.Stub = func(output string) (string, error) {
+			terraformExecutor.OutputCall.Stub = func(output string) (string, error) {
 				if output == outputName {
 					return "", errors.New(expectedError)
 				}

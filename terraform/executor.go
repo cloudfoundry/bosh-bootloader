@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
@@ -168,6 +169,28 @@ func (e Executor) Version() (string, error) {
 	}
 
 	return version, nil
+}
+
+func (e Executor) Output(tfState, outputName string) (string, error) {
+	templateDir, err := tempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	args := []string{"output", outputName}
+	buffer := bytes.NewBuffer([]byte{})
+	err = e.cmd.Run(buffer, templateDir, args, true)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSuffix(buffer.String(), "\n"), nil
+
 }
 
 func makeVar(name string, value string) []string {

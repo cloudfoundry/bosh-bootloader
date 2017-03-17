@@ -9,6 +9,7 @@ type Manager struct {
 
 type executor interface {
 	Destroy(serviceAccountKey, envID, projectID, zone, region, terraformTemplate, tfState string) (string, error)
+	Output(string, string) (string, error)
 }
 
 type logger interface {

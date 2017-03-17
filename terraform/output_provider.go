@@ -22,17 +22,13 @@ type Outputs struct {
 	SystemDomainDNSServers []string `json:"cf_system_domain_dns_servers,omitempty"`
 }
 
-type outputter interface {
-	Get(string, string) (string, error)
-}
-
 type OutputProvider struct {
-	outputter outputter
+	executor executor
 }
 
-func NewOutputProvider(outputter outputter) OutputProvider {
+func NewOutputProvider(executor executor) OutputProvider {
 	return OutputProvider{
-		outputter: outputter,
+		executor: executor,
 	}
 }
 
@@ -41,32 +37,32 @@ func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs,
 		return Outputs{}, nil
 	}
 
-	externalIP, err := o.outputter.Get(tfState, "external_ip")
+	externalIP, err := o.executor.Output(tfState, "external_ip")
 	if err != nil {
 		return Outputs{}, err
 	}
 
-	networkName, err := o.outputter.Get(tfState, "network_name")
+	networkName, err := o.executor.Output(tfState, "network_name")
 	if err != nil {
 		return Outputs{}, err
 	}
 
-	subnetworkName, err := o.outputter.Get(tfState, "subnetwork_name")
+	subnetworkName, err := o.executor.Output(tfState, "subnetwork_name")
 	if err != nil {
 		return Outputs{}, err
 	}
 
-	boshTag, err := o.outputter.Get(tfState, "bosh_open_tag_name")
+	boshTag, err := o.executor.Output(tfState, "bosh_open_tag_name")
 	if err != nil {
 		return Outputs{}, err
 	}
 
-	internalTag, err := o.outputter.Get(tfState, "internal_tag_name")
+	internalTag, err := o.executor.Output(tfState, "internal_tag_name")
 	if err != nil {
 		return Outputs{}, err
 	}
 
-	directorAddress, err := o.outputter.Get(tfState, "director_address")
+	directorAddress, err := o.executor.Output(tfState, "director_address")
 	if err != nil {
 		return Outputs{}, err
 	}
@@ -85,48 +81,48 @@ func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs,
 	)
 
 	if lbType == "cf" {
-		routerBackendService, err = o.outputter.Get(tfState, "router_backend_service")
+		routerBackendService, err = o.executor.Output(tfState, "router_backend_service")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		sshProxyTargetPool, err = o.outputter.Get(tfState, "ssh_proxy_target_pool")
+		sshProxyTargetPool, err = o.executor.Output(tfState, "ssh_proxy_target_pool")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		tcpRouterTargetPool, err = o.outputter.Get(tfState, "tcp_router_target_pool")
+		tcpRouterTargetPool, err = o.executor.Output(tfState, "tcp_router_target_pool")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		wsTargetPool, err = o.outputter.Get(tfState, "ws_target_pool")
+		wsTargetPool, err = o.executor.Output(tfState, "ws_target_pool")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		routerLBIP, err = o.outputter.Get(tfState, "router_lb_ip")
+		routerLBIP, err = o.executor.Output(tfState, "router_lb_ip")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		sshProxyLBIP, err = o.outputter.Get(tfState, "ssh_proxy_lb_ip")
+		sshProxyLBIP, err = o.executor.Output(tfState, "ssh_proxy_lb_ip")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		tcpRouterLBIP, err = o.outputter.Get(tfState, "tcp_router_lb_ip")
+		tcpRouterLBIP, err = o.executor.Output(tfState, "tcp_router_lb_ip")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		webSocketLBIP, err = o.outputter.Get(tfState, "ws_lb_ip")
+		webSocketLBIP, err = o.executor.Output(tfState, "ws_lb_ip")
 		if err != nil {
 			return Outputs{}, err
 		}
 
 		if domainExists {
-			systemDomainDNSServersRaw, err = o.outputter.Get(tfState, "system_domain_dns_servers")
+			systemDomainDNSServersRaw, err = o.executor.Output(tfState, "system_domain_dns_servers")
 			if err != nil {
 				return Outputs{}, err
 			}
@@ -137,12 +133,12 @@ func (o OutputProvider) Get(tfState, lbType string, domainExists bool) (Outputs,
 
 	var concourseTargetPool, concourseLBIP string
 	if lbType == "concourse" {
-		concourseTargetPool, err = o.outputter.Get(tfState, "concourse_target_pool")
+		concourseTargetPool, err = o.executor.Output(tfState, "concourse_target_pool")
 		if err != nil {
 			return Outputs{}, err
 		}
 
-		concourseLBIP, err = o.outputter.Get(tfState, "concourse_lb_ip")
+		concourseLBIP, err = o.executor.Output(tfState, "concourse_lb_ip")
 		if err != nil {
 			return Outputs{}, err
 		}
