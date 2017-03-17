@@ -23,6 +23,10 @@ func NewManager(executor executor, logger logger) Manager {
 }
 
 func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
+	if bblState.TFState == "" {
+		return bblState, nil
+	}
+
 	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
 		VarsTemplate, bblState.TFState)
 	switch err.(type) {

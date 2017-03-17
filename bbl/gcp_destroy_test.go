@@ -164,6 +164,28 @@ director_ssl:
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})
 
+	Context("when the bbl-state does not contain a TFState", func() {
+		var args []string
+		BeforeEach(func() {
+			state.TFState = ""
+			stateContents, err := json.Marshal(state)
+			Expect(err).NotTo(HaveOccurred())
+
+			statePath = filepath.Join(tempDirectory, "bbl-state.json")
+			err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+			args = []string{
+				"--debug",
+				"--state-dir", tempDirectory,
+				"destroy", "--no-confirm",
+			}
+		})
+
+		It("succeeds", func() {
+			executeCommand(args, 0)
+		})
+	})
+
 	Context("bbl re-entrance", func() {
 		Context("when terraform fails", func() {
 			var args []string

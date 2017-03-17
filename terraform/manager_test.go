@@ -40,10 +40,16 @@ provider "google" {
 
 var _ = Describe("Manager", func() {
 	var (
-		executor = &fakes.TerraformExecutor{}
-		logger   = &fakes.Logger{}
-		manager  = terraform.NewManager(executor, logger)
+		executor *fakes.TerraformExecutor
+		logger   *fakes.Logger
+		manager  terraform.Manager
 	)
+
+	BeforeEach(func() {
+		executor = &fakes.TerraformExecutor{}
+		logger = &fakes.Logger{}
+		manager = terraform.NewManager(executor, logger)
+	})
 
 	Describe("Destroy", func() {
 		Context("when the bbl state contains a non-empty TFState", func() {
@@ -130,6 +136,22 @@ var _ = Describe("Manager", func() {
 					_, err := manager.Destroy(originalBBLState)
 					Expect(err).To(Equal(executorError))
 				})
+			})
+		})
+
+		Context("when the bbl state contains a non-empty TFState", func() {
+			var (
+				originalBBLState = storage.State{
+					EnvID: "some-env-id",
+				}
+			)
+
+			It("returns the bbl state and skips calling executor destroy", func() {
+				bblState, err := manager.Destroy(originalBBLState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(bblState).To(Equal(originalBBLState))
+				Expect(executor.DestroyCall.CallCount).To(Equal(0))
 			})
 		})
 	})
