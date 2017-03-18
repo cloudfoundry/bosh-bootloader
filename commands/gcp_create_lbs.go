@@ -99,8 +99,8 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	tfState, err := c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
 		state.GCP.Region, string(cert), string(key), config.Domain, templateWithLB, state.TFState)
 	switch err.(type) {
-	case terraform.TerraformApplyError:
-		taError := err.(terraform.TerraformApplyError)
+	case terraform.ExecutorApplyError:
+		taError := err.(terraform.ExecutorApplyError)
 		state.TFState = taError.TFState()
 		if setErr := c.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}

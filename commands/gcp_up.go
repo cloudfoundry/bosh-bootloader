@@ -183,8 +183,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		template, state.TFState,
 	)
 	switch err.(type) {
-	case terraform.TerraformApplyError:
-		taErr := err.(terraform.TerraformApplyError)
+	case terraform.ExecutorApplyError:
+		taErr := err.(terraform.ExecutorApplyError)
 		state.TFState = taErr.TFState()
 		if setErr := u.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}

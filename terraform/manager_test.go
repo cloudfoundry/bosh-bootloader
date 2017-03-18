@@ -3,6 +3,7 @@ package terraform_test
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -42,15 +43,257 @@ provider "google" {
 
 var _ = Describe("Manager", func() {
 	var (
-		executor *fakes.TerraformExecutor
-		logger   *fakes.Logger
-		manager  terraform.Manager
+		executor             *fakes.TerraformExecutor
+		gcpTemplateGenerator *fakes.GCPTemplateGenerator
+		logger               *fakes.Logger
+		manager              terraform.Manager
 	)
 
 	BeforeEach(func() {
 		executor = &fakes.TerraformExecutor{}
+		gcpTemplateGenerator = &fakes.GCPTemplateGenerator{}
 		logger = &fakes.Logger{}
-		manager = terraform.NewManager(executor, logger)
+
+		manager = terraform.NewManager(executor, gcpTemplateGenerator, logger)
+	})
+
+	Describe("Apply", func() {
+		var (
+			incomingState    storage.State
+			expectedState    storage.State
+			expectedTFState  string
+			expectedTemplate []byte
+		)
+
+		Context("when no lb exists", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+					TFState: "some-tf-state",
+				}
+
+				expectedTFState = "some-updated-tf-state"
+				executor.ApplyCall.Returns.TFState = expectedTFState
+
+				expectedState = incomingState
+				expectedState.TFState = expectedTFState
+
+				var err error
+				expectedTemplate, err = ioutil.ReadFile("fixtures/gcp_template_no_lb.tf")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns a state with new tfState from executor apply", func() {
+				state, err := manager.Apply(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(executor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
+				Expect(executor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
+				Expect(executor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
+				Expect(executor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
+				Expect(executor.ApplyCall.Receives.Region).To(Equal("some-region"))
+				Expect(executor.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
+				Expect(executor.ApplyCall.Receives.Template).To(Equal(string(expectedTemplate)))
+				Expect(state).To(Equal(expectedState))
+			})
+		})
+
+		Context("when lb type is concourse", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+					TFState: "some-tf-state",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				}
+
+				expectedTFState = "some-updated-tf-state"
+				executor.ApplyCall.Returns.TFState = expectedTFState
+
+				expectedState = incomingState
+				expectedState.TFState = expectedTFState
+
+				var err error
+				expectedTemplate, err = ioutil.ReadFile("fixtures/gcp_template_concourse_lb.tf")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns a state with new tfState from executor apply", func() {
+				state, err := manager.Apply(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(executor.ApplyCall.Receives.Template).To(Equal(string(expectedTemplate)))
+				Expect(state).To(Equal(expectedState))
+			})
+		})
+
+		Context("when lb type is cf", func() {
+			BeforeEach(func() {
+				gcpTemplateGenerator.GenerateBackendServiceCall.Returns.Template = `resource "google_compute_backend_service" "router-lb-backend-service" {
+  name        = "${var.env_id}-router-lb"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 900
+  enable_cdn  = false
+
+  backend {
+    group = "${google_compute_instance_group.router-lb-0.self_link}"
+  }
+
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
+}
+`
+
+				gcpTemplateGenerator.GenerateInstanceGroupsCall.Returns.Template = `resource "google_compute_instance_group" "router-lb-0" {
+  name        = "${var.env_id}-router-z1"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
+  zone        = "z1"
+}
+`
+			})
+
+			Context("when no domain exists", func() {
+				BeforeEach(func() {
+					incomingState = storage.State{
+						IAAS:  "gcp",
+						EnvID: "some-env-id",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+						TFState: "some-tf-state",
+						LB: storage.LB{
+							Type: "cf",
+							Cert: "some-cert",
+							Key:  "some-key",
+						},
+					}
+
+					expectedTFState = "some-updated-tf-state"
+					executor.ApplyCall.Returns.TFState = expectedTFState
+
+					expectedState = incomingState
+					expectedState.TFState = expectedTFState
+
+					var err error
+					expectedTemplate, err = ioutil.ReadFile("fixtures/gcp_template_cf_lb.tf")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("returns a state with new tfState from executor apply", func() {
+					state, err := manager.Apply(incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(executor.ApplyCall.Receives.Cert).To(Equal("some-cert"))
+					Expect(executor.ApplyCall.Receives.Key).To(Equal("some-key"))
+					Expect(executor.ApplyCall.Receives.Template).To(Equal(string(expectedTemplate)))
+
+					Expect(gcpTemplateGenerator.GenerateInstanceGroupsCall.Receives.Region).To(Equal("some-region"))
+					Expect(gcpTemplateGenerator.GenerateBackendServiceCall.Receives.Region).To(Equal("some-region"))
+
+					Expect(state).To(Equal(expectedState))
+				})
+			})
+
+			Context("when domain exists", func() {
+				BeforeEach(func() {
+					incomingState = storage.State{
+						IAAS:  "gcp",
+						EnvID: "some-env-id",
+						GCP: storage.GCP{
+							ServiceAccountKey: "some-service-account-key",
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+						TFState: "some-tf-state",
+						LB: storage.LB{
+							Type:   "cf",
+							Cert:   "some-cert",
+							Key:    "some-key",
+							Domain: "some-domain",
+						},
+					}
+
+					expectedTFState = "some-updated-tf-state"
+					executor.ApplyCall.Returns.TFState = expectedTFState
+
+					expectedState = incomingState
+					expectedState.TFState = expectedTFState
+
+					var err error
+					expectedTemplate, err = ioutil.ReadFile("fixtures/gcp_template_cf_lb_dns.tf")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("returns a state with new tfState from executor apply", func() {
+					state, err := manager.Apply(incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(executor.ApplyCall.Receives.Domain).To(Equal("some-domain"))
+
+					Expect(executor.ApplyCall.Receives.Template).To(Equal(string(expectedTemplate)))
+					Expect(state).To(Equal(expectedState))
+				})
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when Executor.Apply returns a ExecutorApplyError", func() {
+				executorError := terraform.NewExecutorApplyError("updated-tf-state", errors.New("some-error"))
+
+				BeforeEach(func() {
+					executor.ApplyCall.Returns.Error = executorError
+				})
+
+				AfterEach(func() {
+					executor.ApplyCall.Returns.Error = nil
+				})
+
+				It("returns a ManagerApplyError", func() {
+					_, err := manager.Apply(incomingState)
+
+					expectedBBLState := incomingState
+					expectedBBLState.TFState = "updated-tf-state"
+					expectedError := terraform.NewManagerApplyError(expectedBBLState, executorError)
+					Expect(err).To(MatchError(expectedError))
+				})
+			})
+
+			Context("when Executor.Apply returns a non-ExecutorApplyError error", func() {
+				executorError := errors.New("some-error")
+
+				BeforeEach(func() {
+					executor.ApplyCall.Returns.Error = executorError
+				})
+
+				AfterEach(func() {
+					executor.ApplyCall.Returns.Error = nil
+				})
+
+				It("bubbles up the error", func() {
+					_, err := manager.Apply(incomingState)
+					Expect(err).To(Equal(executorError))
+				})
+			})
+		})
 	})
 
 	Describe("Destroy", func() {

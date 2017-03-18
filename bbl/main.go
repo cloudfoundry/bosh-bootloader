@@ -29,6 +29,7 @@ import (
 
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
 
 var (
@@ -120,9 +121,10 @@ func main() {
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
 
 	// Terraform
+	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
-	terraformManager := terraform.NewManager(terraformExecutor, logger)
+	terraformManager := terraform.NewManager(terraformExecutor, gcpTemplateGenerator, logger)
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)

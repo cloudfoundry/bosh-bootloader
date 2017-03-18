@@ -7,8 +7,9 @@ import (
 )
 
 type Manager struct {
-	executor executor
-	logger   logger
+	executor          executor
+	templateGenerator templateGenerator
+	logger            logger
 }
 
 type Outputs struct {
@@ -33,17 +34,24 @@ type Outputs struct {
 
 type executor interface {
 	Destroy(serviceAccountKey, envID, projectID, zone, region, terraformTemplate, tfState string) (string, error)
+	Apply(serviceAccountKey, envID, projectID, zone, region, cert, key, domain, terraformTemplate, tfState string) (string, error)
 	Output(string, string) (string, error)
+}
+
+type templateGenerator interface {
+	GenerateBackendService(region string) string
+	GenerateInstanceGroups(region string) string
 }
 
 type logger interface {
 	Println(message string)
 }
 
-func NewManager(executor executor, logger logger) Manager {
+func NewManager(executor executor, templateGenerator templateGenerator, logger logger) Manager {
 	return Manager{
-		executor: executor,
-		logger:   logger,
+		executor:          executor,
+		templateGenerator: templateGenerator,
+		logger:            logger,
 	}
 }
 
@@ -59,6 +67,46 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		executorDestroyError := err.(ExecutorDestroyError)
 		bblState.TFState = executorDestroyError.tfState
 		return storage.State{}, NewManagerDestroyError(bblState, executorDestroyError)
+	case error:
+		return storage.State{}, err
+	}
+
+	bblState.TFState = tfState
+	return bblState, nil
+}
+
+func (m Manager) Apply(bblState storage.State) (storage.State, error) {
+	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
+	switch bblState.LB.Type {
+	case "concourse":
+		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")
+	case "cf":
+		instanceGroups := m.templateGenerator.GenerateInstanceGroups(bblState.GCP.Region)
+		backendService := m.templateGenerator.GenerateBackendService(bblState.GCP.Region)
+
+		template = strings.Join([]string{template, CFLBTemplate, instanceGroups, backendService}, "\n")
+
+		if bblState.LB.Domain != "" {
+			template = strings.Join([]string{template, CFDNSTemplate}, "\n")
+		}
+	}
+
+	tfState, err := m.executor.Apply(bblState.GCP.ServiceAccountKey,
+		bblState.EnvID,
+		bblState.GCP.ProjectID,
+		bblState.GCP.Zone,
+		bblState.GCP.Region,
+		bblState.LB.Cert,
+		bblState.LB.Key,
+		bblState.LB.Domain,
+		template,
+		bblState.TFState)
+
+	switch err.(type) {
+	case ExecutorApplyError:
+		executorApplyError := err.(ExecutorApplyError)
+		bblState.TFState = executorApplyError.tfState
+		return storage.State{}, NewManagerApplyError(bblState, executorApplyError)
 	case error:
 		return storage.State{}, err
 	}

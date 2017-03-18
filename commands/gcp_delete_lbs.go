@@ -46,8 +46,8 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 		state.GCP.Zone, state.GCP.Region, "", "", "", template, state.TFState)
 
 	switch err.(type) {
-	case terraform.TerraformApplyError:
-		taErr := err.(terraform.TerraformApplyError)
+	case terraform.ExecutorApplyError:
+		taErr := err.(terraform.ExecutorApplyError)
 		state.TFState = taErr.TFState()
 		if setErr := g.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}

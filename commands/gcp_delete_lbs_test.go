@@ -154,7 +154,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 			})
 
 			It("saves the tf state even if the applier failed", func() {
-				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 				terraformExecutor.ApplyCall.Returns.Error = expectedError
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
@@ -195,7 +195,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 			Context("when terraform applier fails and if fails to save the state", func() {
 				It("returns an error with both errors that occurred", func() {
-					expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+					expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 					terraformExecutor.ApplyCall.Returns.Error = expectedError
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{
 						{errors.New("failed to set state")},

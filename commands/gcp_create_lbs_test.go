@@ -807,7 +807,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("saves the tf state even if the applier fails", func() {
-				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 				terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -1067,7 +1067,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("returns an error when both the applier fails and state fails to be set", func() {
-				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 				terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}

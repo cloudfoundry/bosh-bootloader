@@ -241,7 +241,7 @@ var _ = Describe("Executor", func() {
 
 				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 					"some-cert", "some-key", "some-domain", "some-template", "")
-				taErr := err.(terraform.TerraformApplyError)
+				taErr := err.(terraform.ExecutorApplyError)
 				Expect(taErr).To(MatchError("failed to run terraform command"))
 				Expect(taErr.TFState()).To(Equal("some-tf-state"))
 			})

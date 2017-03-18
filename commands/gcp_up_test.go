@@ -894,7 +894,7 @@ var _ = Describe("GCPUp", func() {
 		})
 
 		It("saves the tf state when the applier fails", func() {
-			expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+			expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 			terraformExecutor.ApplyCall.Returns.Error = expectedError
 
 			err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
@@ -969,7 +969,7 @@ var _ = Describe("GCPUp", func() {
 		})
 
 		It("returns an error when both the applier fails and state fails to be set", func() {
-			expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+			expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 			terraformExecutor.ApplyCall.Returns.Error = expectedError
 			terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
 
