@@ -613,4 +613,31 @@ var _ = Describe("Manager", func() {
 			)
 		})
 	})
+
+	Describe("Version", func() {
+		BeforeEach(func() {
+			executor.VersionCall.Returns.Version = "some-version"
+		})
+
+		It("returns a version", func() {
+			version, err := manager.Version()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(executor.VersionCall.CallCount).To(Equal(1))
+			Expect(version).To(Equal("some-version"))
+		})
+
+		Context("failure cases", func() {
+			Context("when version returns an error", func() {
+				BeforeEach(func() {
+					executor.VersionCall.Returns.Error = errors.New("failed to get version")
+				})
+
+				It("returns the error", func() {
+					_, err := manager.Version()
+					Expect(err).To(MatchError("failed to get version"))
+				})
+			})
+		})
+	})
 })

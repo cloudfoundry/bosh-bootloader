@@ -33,6 +33,7 @@ type Outputs struct {
 }
 
 type executor interface {
+	Version() (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, terraformTemplate, tfState string) (string, error)
 	Apply(serviceAccountKey, envID, projectID, zone, region, cert, key, domain, terraformTemplate, tfState string) (string, error)
 	Output(string, string) (string, error)
@@ -53,6 +54,10 @@ func NewManager(executor executor, templateGenerator templateGenerator, logger l
 		templateGenerator: templateGenerator,
 		logger:            logger,
 	}
+}
+
+func (m Manager) Version() (string, error) {
+	return m.executor.Version()
 }
 
 func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
