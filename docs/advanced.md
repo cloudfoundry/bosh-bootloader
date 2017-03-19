@@ -41,8 +41,8 @@ bbl create-lbs --type cf --key mykey.key --cert mycert.crt --domain cf.example.c
 Then upload the load balancer VM extensions to your cloud-config
 ```
 eval "$(bbl print-env)"
-export BOSH_CA_CERT=<THE VALUE OF default_ca.ca FROM creds.yml>
-export BOSH_CLIENT_SECRET=<THE VALUE OF admin_password FROM creds.yml>
+export BOSH_CA_CERT="$(bosh int creds.yml --path /default_ca/ca)"
+export BOSH_CLIENT_SECRET="$(bosh int creds.yml --path /admin_password)"
 export BOSH_CLIENT=admin
 bosh upload-cloud-config <(bbl cloud-config)
 ```
