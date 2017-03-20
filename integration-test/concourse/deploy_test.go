@@ -23,7 +23,7 @@ import (
 const (
 	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/master/docs/setting-up/installing.any"
 	ConcourseReleaseURL         = "https://bosh.io/d/github.com/concourse/concourse"
-	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-runc-release"
+	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry/garden-runc-release"
 	GardenReleaseName           = "garden-runc"
 	AWSStemcellURL              = "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
 	AWSStemcellName             = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
