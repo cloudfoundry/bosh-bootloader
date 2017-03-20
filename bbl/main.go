@@ -151,7 +151,7 @@ func main() {
 		uuidGenerator, stateStore,
 	)
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformExecutor, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)

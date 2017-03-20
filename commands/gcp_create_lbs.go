@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -18,7 +17,7 @@ type zones interface {
 }
 
 type GCPCreateLBs struct {
-	terraformExecutor  terraformExecutor
+	terraformManager   terraformManager
 	boshClientProvider boshClientProvider
 	cloudConfigManager cloudConfigManager
 	zones              zones
@@ -34,11 +33,11 @@ type GCPCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
-func NewGCPCreateLBs(terraformExecutor terraformExecutor,
+func NewGCPCreateLBs(terraformManager terraformManager,
 	boshClientProvider boshClientProvider, cloudConfigManager cloudConfigManager, zones zones,
 	stateStore stateStore, logger logger) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformExecutor:  terraformExecutor,
+		terraformManager:   terraformManager,
 		boshClientProvider: boshClientProvider,
 		cloudConfigManager: cloudConfigManager,
 		zones:              zones,
@@ -48,12 +47,13 @@ func NewGCPCreateLBs(terraformExecutor terraformExecutor,
 }
 
 func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) error {
-	err := fastFailTerraformVersion(c.terraformExecutor)
+	err := c.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
 	}
 
-	if err = c.checkFastFails(config, state); err != nil {
+	err = c.checkFastFails(config, state)
+	if err != nil {
 		return err
 	}
 
@@ -61,8 +61,9 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 			state.BOSH.DirectorPassword)
 
-		if err = c.checkBOSHClient(boshClient); err != nil {
-			return err
+		_, err := boshClient.Info()
+		if err != nil {
+			return BBLNotFound
 		}
 	}
 
@@ -73,39 +74,32 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	c.logger.Step("generating terraform template")
 
-	var lbTemplate string
+	state.LB.Type = config.LBType
+
 	var cert, key []byte
-	zones := c.zones.Get(state.GCP.Region)
-	switch config.LBType {
-	case "concourse":
-		lbTemplate = terraformConcourseLBTemplate
-	case "cf":
-		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
-		instanceGroups := generateInstanceGroups(zones)
-		if config.Domain != "" {
-			lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
-		} else {
-			lbTemplate = strings.Join([]string{terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
-		}
+	if config.LBType == "cf" {
+		state.LB.Domain = config.Domain
 
 		cert, err = ioutil.ReadFile(config.CertPath)
 		if err != nil {
 			return err
 		}
 
+		state.LB.Cert = string(cert)
+
 		key, err = ioutil.ReadFile(config.KeyPath)
 		if err != nil {
 			return err
 		}
+
+		state.LB.Key = string(key)
 	}
 
-	templateWithLB := strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate, lbTemplate}, "\n")
-	tfState, err := c.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-		state.GCP.Region, string(cert), string(key), config.Domain, templateWithLB, state.TFState)
+	state, err = c.terraformManager.Apply(state)
 	switch err.(type) {
-	case terraform.ExecutorApplyError:
-		taError := err.(terraform.ExecutorApplyError)
-		state.TFState = taError.TFState()
+	case terraform.ManagerApplyError:
+		taError := err.(terraform.ManagerApplyError)
+		state = taError.BBLState()
 		if setErr := c.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)
@@ -118,16 +112,8 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 	c.logger.Step("finished applying terraform template")
 
-	state.TFState = tfState
 	if err := c.stateStore.Set(state); err != nil {
 		return err
-	}
-
-	state.LB.Type = config.LBType
-	if config.LBType == "cf" {
-		state.LB.Cert = string(cert)
-		state.LB.Key = string(key)
-		state.LB.Domain = config.Domain
 	}
 
 	if !state.NoDirector {
@@ -135,10 +121,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		if err != nil {
 			return err
 		}
-	}
-
-	if err := c.stateStore.Set(state); err != nil {
-		return err
 	}
 
 	return nil
@@ -168,15 +150,6 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 
 	if state.IAAS != "gcp" {
 		return fmt.Errorf("iaas type must be gcp")
-	}
-
-	return nil
-}
-
-func (GCPCreateLBs) checkBOSHClient(boshClient bosh.Client) error {
-	_, err := boshClient.Info()
-	if err != nil {
-		return BBLNotFound
 	}
 
 	return nil
