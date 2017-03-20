@@ -457,45 +457,17 @@ var _ = Describe("GCPUp", func() {
 		})
 
 		Context("failure cases", func() {
-			Context("terraform fast fails", func() {
-				It("fast fails if the terraform executor fails to get the version", func() {
-					terraformManager.VersionCall.Returns.Error = errors.New("cannot get version")
+			It("returns an error if terraform manager version validator fails", func() {
+				terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
 
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKeyPath: serviceAccountKeyPath,
-						ProjectID:             "some-project-id",
-						Zone:                  "some-zone",
-						Region:                "us-west1",
-					}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKeyPath: serviceAccountKeyPath,
+					ProjectID:             "some-project-id",
+					Zone:                  "some-zone",
+					Region:                "us-west1",
+				}, storage.State{})
 
-					Expect(err).To(MatchError("cannot get version"))
-				})
-
-				It("fast fails when the version cannot be parsed by go-semver", func() {
-					terraformManager.VersionCall.Returns.Version = "lol.5.2"
-
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKeyPath: serviceAccountKeyPath,
-						ProjectID:             "some-project-id",
-						Zone:                  "some-zone",
-						Region:                "us-west1",
-					}, storage.State{})
-
-					Expect(err.Error()).To(ContainSubstring("invalid syntax"))
-				})
-
-				It("fast fails if the terraform installed is less than v0.8.5", func() {
-					terraformManager.VersionCall.Returns.Version = "0.8.4"
-
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKeyPath: serviceAccountKeyPath,
-						ProjectID:             "some-project-id",
-						Zone:                  "some-zone",
-						Region:                "us-west1",
-					}, storage.State{})
-
-					Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
-				})
+				Expect(err).To(MatchError("cannot validate version"))
 			})
 
 			It("returns an error when the service account key file does not exist", func() {

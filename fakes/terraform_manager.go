@@ -45,6 +45,12 @@ type TerraformManager struct {
 			Error    error
 		}
 	}
+	ValidateVersionCall struct {
+		CallCount int
+		Returns   struct {
+			Error error
+		}
+	}
 }
 
 func (t *TerraformManager) Apply(bblState storage.State) (storage.State, error) {
@@ -73,4 +79,9 @@ func (t *TerraformManager) GetOutputs(tfState, lbType string, domainExists bool)
 func (t *TerraformManager) Version() (string, error) {
 	t.VersionCall.CallCount++
 	return t.VersionCall.Returns.Version, t.VersionCall.Returns.Error
+}
+
+func (t *TerraformManager) ValidateVersion() error {
+	t.ValidateVersionCall.CallCount++
+	return t.ValidateVersionCall.Returns.Error
 }

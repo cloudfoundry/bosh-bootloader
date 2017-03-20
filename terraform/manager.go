@@ -1,9 +1,11 @@
 package terraform
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/coreos/go-semver/semver"
 )
 
 type Manager struct {
@@ -58,6 +60,30 @@ func NewManager(executor executor, templateGenerator templateGenerator, logger l
 
 func (m Manager) Version() (string, error) {
 	return m.executor.Version()
+}
+
+func (m Manager) ValidateVersion() error {
+	version, err := m.executor.Version()
+	if err != nil {
+		return err
+	}
+
+	currentVersion, err := semver.NewVersion(version)
+	if err != nil {
+		return err
+	}
+
+	// This shouldn't fail, so there is no test for capturing the error.
+	minimumVersion, err := semver.NewVersion("0.8.5")
+	if err != nil {
+		return err
+	}
+
+	if currentVersion.LessThan(*minimumVersion) {
+		return errors.New("Terraform version must be at least v0.8.5")
+	}
+
+	return nil
 }
 
 func (m Manager) Destroy(bblState storage.State) (storage.State, error) {

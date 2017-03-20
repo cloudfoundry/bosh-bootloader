@@ -60,6 +60,7 @@ type terraformManager interface {
 	Apply(bblState storage.State) (storage.State, error)
 	GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 	Version() (string, error)
+	ValidateVersion() error
 }
 
 type terraformExecutor interface {
@@ -94,7 +95,7 @@ func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider 
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
-	err := fastFailTerraformVersionFromManager(u.terraformManager)
+	err := u.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
 	}

@@ -640,4 +640,36 @@ var _ = Describe("Manager", func() {
 			})
 		})
 	})
+
+	Describe("ValidateVersion", func() {
+		It("validates the version of terraform", func() {
+			executor.VersionCall.Returns.Version = "0.9.0"
+
+			err := manager.ValidateVersion()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the terraform installed is less than v0.8.5", func() {
+				executor.VersionCall.Returns.Version = "0.8.4"
+
+				err := manager.ValidateVersion()
+				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+			})
+
+			It("fast fails if the terraform executor fails to get the version", func() {
+				executor.VersionCall.Returns.Error = errors.New("cannot get version")
+
+				err := manager.ValidateVersion()
+				Expect(err).To(MatchError("cannot get version"))
+			})
+
+			It("fast fails when the version cannot be parsed by go-semver", func() {
+				executor.VersionCall.Returns.Version = "lol.5.2"
+
+				err := manager.ValidateVersion()
+				Expect(err.Error()).To(ContainSubstring("invalid syntax"))
+			})
+		})
+	})
 })
