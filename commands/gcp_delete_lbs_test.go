@@ -19,7 +19,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
 		logger             *fakes.Logger
-		terraformExecutor  *fakes.TerraformExecutor
+		terraformManager   *fakes.TerraformManager
 
 		command commands.GCPDeleteLBs
 
@@ -30,11 +30,10 @@ var _ = Describe("GCPDeleteLBs", func() {
 		BeforeEach(func() {
 			stateStore = &fakes.StateStore{}
 			logger = &fakes.Logger{}
-			terraformExecutor = &fakes.TerraformExecutor{}
-			terraformExecutor.VersionCall.Returns.Version = "0.8.7"
+			terraformManager = &fakes.TerraformManager{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 
-			command = commands.NewGCPDeleteLBs(logger, stateStore, terraformExecutor, cloudConfigManager)
+			command = commands.NewGCPDeleteLBs(logger, stateStore, terraformManager, cloudConfigManager)
 
 			body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
 			Expect(err).NotTo(HaveOccurred())
@@ -108,18 +107,24 @@ var _ = Describe("GCPDeleteLBs", func() {
 					Region:            region,
 					ProjectID:         projectID,
 				},
+				LB: storage.LB{
+					Type: "concourse",
+				},
 				TFState: tfState,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformExecutor.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformExecutor.ApplyCall.Receives.Credentials).To(Equal(credentials))
-			Expect(terraformExecutor.ApplyCall.Receives.EnvID).To(Equal(envID))
-			Expect(terraformExecutor.ApplyCall.Receives.ProjectID).To(Equal(projectID))
-			Expect(terraformExecutor.ApplyCall.Receives.Zone).To(Equal(zone))
-			Expect(terraformExecutor.ApplyCall.Receives.Region).To(Equal(region))
-			Expect(terraformExecutor.ApplyCall.Receives.Template).To(Equal(expectedTerraformTemplate))
-			Expect(terraformExecutor.ApplyCall.Receives.TFState).To(Equal(tfState))
+			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
+				EnvID: envID,
+				GCP: storage.GCP{
+					ServiceAccountKey: credentials,
+					Zone:              zone,
+					Region:            region,
+					ProjectID:         projectID,
+				},
+				TFState: tfState,
+			}))
 
 			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
 				"generating terraform template", "finished applying terraform template",
@@ -141,21 +146,30 @@ var _ = Describe("GCPDeleteLBs", func() {
 			})
 
 			It("saves the tf state", func() {
-				terraformExecutor.ApplyCall.Returns.TFState = "some-tf-state"
+				terraformManager.ApplyCall.Returns.BBLState = storage.State{
+					IAAS: "gcp",
+				}
+
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
+
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+					IAAS: "gcp",
+				}))
 			})
 
 			It("saves the tf state even if the applier failed", func() {
-				expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
-				terraformExecutor.ApplyCall.Returns.Error = expectedError
+				expectedError := terraform.NewManagerApplyError(storage.State{
+					TFState: "some-tf-state",
+				}, errors.New("failed to apply"))
+				terraformManager.ApplyCall.Returns.Error = expectedError
+
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					Stack: storage.Stack{
@@ -163,14 +177,17 @@ var _ = Describe("GCPDeleteLBs", func() {
 					},
 				})
 				Expect(err).To(MatchError(expectedError))
+
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+					TFState: "some-tf-state",
+				}))
 			})
 		})
 
 		Context("failure cases", func() {
-			It("fast fails if the terraform installed is less than v0.8.5", func() {
-				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+			It("fast fails if the terraform version is invalid", func() {
+				terraformManager.ValidateVersionCall.Returns.Error = errors.New("invalid")
 
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
@@ -178,11 +195,12 @@ var _ = Describe("GCPDeleteLBs", func() {
 						LBType: "concourse",
 					},
 				})
-
-				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+				Expect(err).To(MatchError("invalid"))
 			})
+
 			It("returns an error if applier fails with non terraform apply error", func() {
-				terraformExecutor.ApplyCall.Returns.Error = errors.New("failed to apply")
+				terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
+
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					Stack: storage.Stack{
@@ -190,13 +208,17 @@ var _ = Describe("GCPDeleteLBs", func() {
 					},
 				})
 				Expect(err).To(MatchError("failed to apply"))
+
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
-			Context("when terraform applier fails and if fails to save the state", func() {
+			Context("when terraform applier fails and it fails to save the state", func() {
 				It("returns an error with both errors that occurred", func() {
-					expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
-					terraformExecutor.ApplyCall.Returns.Error = expectedError
+					expectedError := terraform.NewManagerApplyError(storage.State{
+						TFState: "some-tf-state",
+					}, errors.New("failed to apply"))
+					terraformManager.ApplyCall.Returns.Error = expectedError
+
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{
 						{errors.New("failed to set state")},
 					}
@@ -213,6 +235,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 			It("returns an error when updating cloud config fails", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("updating cloud config failed")
+
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					Stack: storage.Stack{
@@ -226,6 +249,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{
 					{errors.New("failed to set state")},
 				}
+
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					Stack: storage.Stack{

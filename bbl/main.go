@@ -162,7 +162,7 @@ func main() {
 		credentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigManager, boshClientProvider, stateStore,
 	)
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(logger, stateStore, terraformExecutor, cloudConfigManager)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(logger, stateStore, terraformManager, cloudConfigManager)
 
 	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformManager, boshManager, logger,
 		envIDManager, cloudConfigManager)
