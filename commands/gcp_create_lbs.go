@@ -13,6 +13,10 @@ import (
 	"github.com/cloudfoundry/multierror"
 )
 
+type zones interface {
+	Get(string) []string
+}
+
 type GCPCreateLBs struct {
 	terraformExecutor  terraformExecutor
 	boshClientProvider boshClientProvider

@@ -5,10 +5,8 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 type StateStore struct {
 	SetCall struct {
 		CallCount int
-		Receives  struct {
-			State storage.State
-		}
-		Returns []SetCallReturn
+		Receives  []SetCallReceive
+		Returns   []SetCallReturn
 	}
 
 	GetCall struct {
@@ -23,16 +21,22 @@ type StateStore struct {
 	}
 }
 
+type SetCallReceive struct {
+	State storage.State
+}
+
 type SetCallReturn struct {
 	Error error
 }
 
 func (s *StateStore) Set(state storage.State) error {
 	s.SetCall.CallCount++
-	s.SetCall.Receives.State = state
+
+	s.SetCall.Receives = append(s.SetCall.Receives, SetCallReceive{State: state})
 
 	if len(s.SetCall.Returns) < s.SetCall.CallCount {
-		s.SetCall.Returns = append(s.SetCall.Returns, SetCallReturn{})
+		return nil
 	}
+
 	return s.SetCall.Returns[s.SetCall.CallCount-1].Error
 }

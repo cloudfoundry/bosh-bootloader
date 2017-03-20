@@ -825,7 +825,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 				Expect(err).To(MatchError("failed to apply"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
 			})
 		})
 
@@ -882,9 +882,10 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stateStore.SetCall.Receives.State.LB.Type).To(Equal("concourse"))
-				Expect(stateStore.SetCall.Receives.State.LB.Cert).To(Equal(""))
-				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal(""))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.Receives[1].State.LB.Type).To(Equal("concourse"))
+				Expect(stateStore.SetCall.Receives[1].State.LB.Cert).To(Equal(""))
+				Expect(stateStore.SetCall.Receives[1].State.LB.Key).To(Equal(""))
 			})
 
 			It("saves the cf lb type, cert, and key", func() {
@@ -897,9 +898,10 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stateStore.SetCall.Receives.State.LB.Type).To(Equal("cf"))
-				Expect(stateStore.SetCall.Receives.State.LB.Cert).To(Equal("some-cert"))
-				Expect(stateStore.SetCall.Receives.State.LB.Key).To(Equal("some-key"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.Receives[1].State.LB.Type).To(Equal("cf"))
+				Expect(stateStore.SetCall.Receives[1].State.LB.Cert).To(Equal("some-cert"))
+				Expect(stateStore.SetCall.Receives[1].State.LB.Key).To(Equal("some-key"))
 			})
 
 			It("saves the updated tfstate", func() {
@@ -917,7 +919,8 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-new-tfstate"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.Receives[1].State.TFState).To(Equal("some-new-tfstate"))
 			})
 		})
 
@@ -1077,7 +1080,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
 			})
 
 			It("returns an error when the state store fails to save the state after writing lb type", func() {

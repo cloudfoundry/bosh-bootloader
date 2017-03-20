@@ -281,8 +281,8 @@ var _ = Describe("AWS Update LBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				state := stateStore.SetCall.Receives.State
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				state := stateStore.SetCall.Receives[0].State
 				Expect(state.Stack.CertificateName).To(Equal("cf-elb-cert-abcd-some-env-timestamp"))
 			})
 		})

@@ -179,7 +179,7 @@ var _ = Describe("Destroy", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stateStore.SetCall.CallCount).To(Equal(3))
-			Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{}))
+			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
 		})
 
 		Context("failure cases", func() {
@@ -366,7 +366,7 @@ var _ = Describe("Destroy", func() {
 							Expect(err).To(MatchError("failed to delete stack"))
 
 							Expect(stateStore.SetCall.CallCount).To(Equal(1))
-							Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
 								IAAS: "aws",
 								AWS: storage.AWS{
 									AccessKeyID:     "some-access-key-id",
@@ -409,7 +409,7 @@ var _ = Describe("Destroy", func() {
 							Expect(err).To(MatchError("failed to delete certificate"))
 
 							Expect(stateStore.SetCall.CallCount).To(Equal(2))
-							Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
 								IAAS: "aws",
 								AWS: storage.AWS{
 									AccessKeyID:     "some-access-key-id",
@@ -440,7 +440,7 @@ var _ = Describe("Destroy", func() {
 							Expect(err).To(MatchError("failed to delete keypair"))
 
 							Expect(stateStore.SetCall.CallCount).To(Equal(3))
-							Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+							Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
 								IAAS: "aws",
 								AWS: storage.AWS{
 									AccessKeyID:     "some-access-key-id",
@@ -591,7 +591,8 @@ var _ = Describe("Destroy", func() {
 						It("saves the bosh state and returns an error", func() {
 							err := destroy.Execute([]string{}, state)
 							Expect(err).To(MatchError("deletion failed"))
-							Expect(stateStore.SetCall.Receives.State).To(Equal(errState))
+							Expect(stateStore.SetCall.CallCount).To(Equal(1))
+							Expect(stateStore.SetCall.Receives[0].State).To(Equal(errState))
 						})
 
 						It("returns an error when it can't set the state", func() {
@@ -727,8 +728,8 @@ var _ = Describe("Destroy", func() {
 
 					Expect(managerDestroyError.BBLStateCall.CallCount).To(Equal(1))
 
-					Expect(stateStore.SetCall.Receives.State).To(Equal(updatedBBLState))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedBBLState))
 				})
 			})
 
