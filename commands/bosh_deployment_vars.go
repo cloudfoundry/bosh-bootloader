@@ -7,27 +7,20 @@ const (
 )
 
 type BOSHDeploymentVars struct {
-	logger            logger
-	boshManager       boshManager
-	terraformExecutor terraformExecutor
+	logger      logger
+	boshManager boshManager
 }
 
-func NewBOSHDeploymentVars(logger logger, boshManager boshManager, terraformExecutor terraformExecutor) BOSHDeploymentVars {
+func NewBOSHDeploymentVars(logger logger, boshManager boshManager) BOSHDeploymentVars {
 	return BOSHDeploymentVars{
-		logger:            logger,
-		boshManager:       boshManager,
-		terraformExecutor: terraformExecutor,
+		logger:      logger,
+		boshManager: boshManager,
 	}
 }
 
 func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
-	err := fastFailTerraformVersion(b.terraformExecutor)
-	if err != nil {
-		return err
-	}
-
 	if !state.NoDirector {
-		err = fastFailBOSHVersion(b.boshManager)
+		err := fastFailBOSHVersion(b.boshManager)
 		if err != nil {
 			return err
 		}

@@ -172,38 +172,6 @@ var _ = Describe("bosh-deployment-vars", func() {
 			Expect(vars.ProjectID).To(Equal("some-project-id"))
 			Expect(returnedAccountKey).To(Equal(realAccountKey))
 		})
-
-		Context("when the terraform version is <0.8.5", func() {
-			BeforeEach(func() {
-				fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/version":
-						responseWriter.Write([]byte("0.8.4"))
-					}
-				}))
-				var err error
-				pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
-					"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
-				Expect(err).NotTo(HaveOccurred())
-
-				pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
-				err = os.Rename(pathToFakeTerraform, pathToTerraform)
-				Expect(err).NotTo(HaveOccurred())
-
-				os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
-			})
-
-			It("fast fails with a helpful error message", func() {
-				args := []string{
-					"--state-dir", tempDirectory,
-					"bosh-deployment-vars",
-				}
-				session := executeCommand(args, 1)
-
-				Expect(session.Err.Contents()).To(ContainSubstring("Terraform version must be at least v0.8.5"))
-			})
-		})
-
 	})
 
 	Context("AWS", func() {

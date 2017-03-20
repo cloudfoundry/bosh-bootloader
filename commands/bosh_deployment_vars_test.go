@@ -13,9 +13,8 @@ import (
 var _ = Describe("BOSHDeploymentVars", func() {
 
 	var (
-		logger            *fakes.Logger
-		boshManager       *fakes.BOSHManager
-		terraformExecutor *fakes.TerraformExecutor
+		logger      *fakes.Logger
+		boshManager *fakes.BOSHManager
 
 		boshDeploymentVars commands.BOSHDeploymentVars
 	)
@@ -24,10 +23,8 @@ var _ = Describe("BOSHDeploymentVars", func() {
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.0"
-		terraformExecutor = &fakes.TerraformExecutor{}
-		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 
-		boshDeploymentVars = commands.NewBOSHDeploymentVars(logger, boshManager, terraformExecutor)
+		boshDeploymentVars = commands.NewBOSHDeploymentVars(logger, boshManager)
 	})
 
 	It("calls out to bosh manager and prints the resulting information", func() {
@@ -52,13 +49,6 @@ var _ = Describe("BOSHDeploymentVars", func() {
 			boshManager.GetDeploymentVarsCall.Returns.Error = errors.New("failed to get deployment vars")
 			err := boshDeploymentVars.Execute([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to get deployment vars"))
-		})
-
-		It("fast fails if the terraform installed is less than v0.8.5", func() {
-			terraformExecutor.VersionCall.Returns.Version = "0.8.4"
-
-			err := boshDeploymentVars.Execute([]string{}, storage.State{})
-			Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
 		})
 
 		It("fast fails if the bosh installed is less than v2.0.0", func() {
