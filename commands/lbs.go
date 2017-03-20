@@ -15,20 +15,20 @@ const (
 )
 
 type LBs struct {
-	credentialValidator     credentialValidator
-	infrastructureManager   infrastructureManager
-	stateValidator          stateValidator
-	terraformOutputProvider terraformOutputProvider
-	stdout                  io.Writer
+	credentialValidator   credentialValidator
+	infrastructureManager infrastructureManager
+	stateValidator        stateValidator
+	terraformManager      terraformManager
+	stdout                io.Writer
 }
 
-func NewLBs(credentialValidator credentialValidator, stateValidator stateValidator, infrastructureManager infrastructureManager, terraformOutputProvider terraformOutputProvider, stdout io.Writer) LBs {
+func NewLBs(credentialValidator credentialValidator, stateValidator stateValidator, infrastructureManager infrastructureManager, terraformManager terraformManager, stdout io.Writer) LBs {
 	return LBs{
-		credentialValidator:     credentialValidator,
-		infrastructureManager:   infrastructureManager,
-		stateValidator:          stateValidator,
-		terraformOutputProvider: terraformOutputProvider,
-		stdout:                  stdout,
+		credentialValidator:   credentialValidator,
+		infrastructureManager: infrastructureManager,
+		stateValidator:        stateValidator,
+		terraformManager:      terraformManager,
+		stdout:                stdout,
 	}
 }
 
@@ -65,7 +65,7 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 			domainExists = true
 		}
 
-		terraformOutputs, err := c.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
+		terraformOutputs, err := c.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
 		if err != nil {
 			return err
 		}

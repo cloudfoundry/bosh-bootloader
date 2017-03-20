@@ -39,15 +39,15 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 		}
 	}
 
-	template := strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
+	template := strings.Join([]string{terraform.VarsTemplate, terraformBOSHDirectorTemplate}, "\n")
 
 	g.logger.Step("generating terraform template")
 	tfState, err := g.terraformExecutor.Apply(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID,
 		state.GCP.Zone, state.GCP.Region, "", "", "", template, state.TFState)
 
 	switch err.(type) {
-	case terraform.TerraformApplyError:
-		taErr := err.(terraform.TerraformApplyError)
+	case terraform.ExecutorApplyError:
+		taErr := err.(terraform.ExecutorApplyError)
 		state.TFState = taErr.TFState()
 		if setErr := g.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}

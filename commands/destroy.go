@@ -32,13 +32,9 @@ type Destroy struct {
 	certificateDeleter      certificateDeleter
 	stateStore              stateStore
 	stateValidator          stateValidator
+	terraformManager        terraformManager
 	terraformExecutor       terraformExecutor
-	terraformOutputProvider terraformOutputProvider
 	networkInstancesChecker networkInstancesChecker
-}
-
-type terraformOutputProvider interface {
-	Get(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
 }
 
 type destroyConfig struct {
@@ -78,11 +74,15 @@ type networkInstancesChecker interface {
 	ValidateSafeToDelete(networkName string) error
 }
 
+type terraformManagerDestroyError interface {
+	BBLState() storage.State
+}
+
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformExecutor terraformExecutor, terraformOutputProvider terraformOutputProvider, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformManager terraformManager, terraformExecutor terraformExecutor, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
 		logger:                  logger,
@@ -97,8 +97,8 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		certificateDeleter:      certificateDeleter,
 		stateStore:              stateStore,
 		stateValidator:          stateValidator,
+		terraformManager:        terraformManager,
 		terraformExecutor:       terraformExecutor,
-		terraformOutputProvider: terraformOutputProvider,
 		networkInstancesChecker: networkInstancesChecker,
 	}
 }
@@ -153,7 +153,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			domainExists = true
 		}
 
-		terraformOutputs, err = d.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
+		terraformOutputs, err = d.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
 		if err != nil {
 			return err
 		}
@@ -228,14 +228,20 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if state.IAAS == "gcp" {
-		state.TFState, err = d.terraformExecutor.Destroy(state.GCP.ServiceAccountKey, state.EnvID, state.GCP.ProjectID, state.GCP.Zone,
-			state.GCP.Region, terraformVarsTemplate, state.TFState)
+		state, err = d.terraformManager.Destroy(state)
 		if err != nil {
-			if setErr := d.stateStore.Set(state); setErr != nil {
-				errorList := helpers.Errors{}
-				errorList.Add(err)
-				errorList.Add(setErr)
-				return errorList
+			switch err.(type) {
+			case terraformManagerDestroyError:
+				mdErr := err.(terraformManagerDestroyError)
+				setErr := d.stateStore.Set(mdErr.BBLState())
+				if setErr != nil {
+					errorList := helpers.Errors{}
+					errorList.Add(err)
+					errorList.Add(setErr)
+					return errorList
+				}
+			default:
+				return err
 			}
 			return err
 		}

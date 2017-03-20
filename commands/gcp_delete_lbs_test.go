@@ -137,7 +137,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.Stack.LBType).To(Equal(""))
+				Expect(stateStore.SetCall.Receives[0].State.Stack.LBType).To(Equal(""))
 			})
 
 			It("saves the tf state", func() {
@@ -150,11 +150,11 @@ var _ = Describe("GCPDeleteLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
 			})
 
 			It("saves the tf state even if the applier failed", func() {
-				expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+				expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 				terraformExecutor.ApplyCall.Returns.Error = expectedError
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
@@ -164,7 +164,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 				})
 				Expect(err).To(MatchError(expectedError))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
 			})
 		})
 
@@ -195,7 +195,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 			Context("when terraform applier fails and if fails to save the state", func() {
 				It("returns an error with both errors that occurred", func() {
-					expectedError := terraform.NewTerraformApplyError("some-tf-state", errors.New("failed to apply"))
+					expectedError := terraform.NewExecutorApplyError("some-tf-state", errors.New("failed to apply"))
 					terraformExecutor.ApplyCall.Returns.Error = expectedError
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{
 						{errors.New("failed to set state")},

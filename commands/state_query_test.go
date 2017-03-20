@@ -18,16 +18,16 @@ import (
 
 var _ = Describe("StateQuery", func() {
 	var (
-		fakeLogger                  *fakes.Logger
-		fakeStateValidator          *fakes.StateValidator
-		fakeTerraformOutputProvider *fakes.TerraformOutputProvider
-		fakeInfrastructureManager   *fakes.InfrastructureManager
+		fakeLogger                *fakes.Logger
+		fakeStateValidator        *fakes.StateValidator
+		fakeTerraformManager      *fakes.TerraformManager
+		fakeInfrastructureManager *fakes.InfrastructureManager
 	)
 
 	BeforeEach(func() {
 		fakeLogger = &fakes.Logger{}
 		fakeStateValidator = &fakes.StateValidator{}
-		fakeTerraformOutputProvider = &fakes.TerraformOutputProvider{}
+		fakeTerraformManager = &fakes.TerraformManager{}
 		fakeInfrastructureManager = &fakes.InfrastructureManager{}
 	})
 
@@ -48,7 +48,7 @@ var _ = Describe("StateQuery", func() {
 
 			DescribeTable("prints out the director information",
 				func(propertyName, expectedOutput string) {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, propertyName)
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, propertyName)
 
 					err := command.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
@@ -73,7 +73,7 @@ var _ = Describe("StateQuery", func() {
 
 			DescribeTable("prints out the director information",
 				func(propertyName string) {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, propertyName)
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, propertyName)
 
 					err := command.Execute([]string{}, state)
 					Expect(err).To(MatchError("Error BBL does not manage this director."))
@@ -85,13 +85,13 @@ var _ = Describe("StateQuery", func() {
 
 			Context("gcp", func() {
 				It("prints the eip as the director-address", func() {
-					fakeTerraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+					fakeTerraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 						ExternalIP: "some-external-ip",
 					}
 
 					state.IAAS = "gcp"
 
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
 					err := command.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
@@ -108,7 +108,7 @@ var _ = Describe("StateQuery", func() {
 
 					state.IAAS = "aws"
 
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
 					err := command.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
@@ -120,7 +120,7 @@ var _ = Describe("StateQuery", func() {
 		Context("failure cases", func() {
 			It("returns an error when the state validator fails", func() {
 				fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "")
 
 				err := command.Execute([]string{}, storage.State{
 					BOSH: storage.BOSH{},
@@ -130,8 +130,8 @@ var _ = Describe("StateQuery", func() {
 			})
 
 			It("returns an error when the terraform output provider fails", func() {
-				fakeTerraformOutputProvider.GetCall.Returns.Error = errors.New("failed to get terraform output")
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
+				fakeTerraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
 
 				err := command.Execute([]string{}, storage.State{
 					IAAS:       "gcp",
@@ -143,7 +143,7 @@ var _ = Describe("StateQuery", func() {
 
 			It("returns an error when the infrastructure manager fails", func() {
 				fakeInfrastructureManager.DescribeCall.Returns.Error = errors.New("failed to describe stack")
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
 
 				err := command.Execute([]string{}, storage.State{
 					IAAS:       "aws",
@@ -154,7 +154,7 @@ var _ = Describe("StateQuery", func() {
 			})
 
 			It("returns an error when an external ip cannot be found", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, "director address")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
 
 				err := command.Execute([]string{}, storage.State{
 					IAAS:       "lol",
@@ -166,7 +166,7 @@ var _ = Describe("StateQuery", func() {
 
 			It("returns an error when the state value is empty", func() {
 				propertyName := fmt.Sprintf("%s-%d", "some-name", rand.Int())
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformOutputProvider, fakeInfrastructureManager, propertyName)
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, propertyName)
 				err := command.Execute([]string{}, storage.State{
 					BOSH: storage.BOSH{},
 				})

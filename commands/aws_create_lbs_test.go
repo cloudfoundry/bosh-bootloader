@@ -330,8 +330,8 @@ var _ = Describe("AWS Create LBs", func() {
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					state := stateStore.SetCall.Receives.State
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					state := stateStore.SetCall.Receives[0].State
 					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd"))
 					Expect(state.Stack.LBType).To(Equal("concourse"))
 				})
@@ -348,8 +348,8 @@ var _ = Describe("AWS Create LBs", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					state := stateStore.SetCall.Receives.State
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					state := stateStore.SetCall.Receives[0].State
 					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 					Expect(state.Stack.LBType).To(Equal("concourse"))
 				})

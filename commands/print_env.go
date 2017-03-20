@@ -12,22 +12,22 @@ const (
 )
 
 type PrintEnv struct {
-	stateValidator          stateValidator
-	logger                  logger
-	terraformOutputProvider terraformOutputProvider
-	infrastructureManager   infrastructureManager
+	stateValidator        stateValidator
+	logger                logger
+	terraformManager      terraformManager
+	infrastructureManager infrastructureManager
 }
 
 type envSetter interface {
 	Set(key, value string) error
 }
 
-func NewPrintEnv(logger logger, stateValidator stateValidator, terraformOutputProvider terraformOutputProvider, infrastructureManager infrastructureManager) PrintEnv {
+func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager terraformManager, infrastructureManager infrastructureManager) PrintEnv {
 	return PrintEnv{
-		stateValidator:          stateValidator,
-		logger:                  logger,
-		terraformOutputProvider: terraformOutputProvider,
-		infrastructureManager:   infrastructureManager,
+		stateValidator:        stateValidator,
+		logger:                logger,
+		terraformManager:      terraformManager,
+		infrastructureManager: infrastructureManager,
 	}
 }
 
@@ -62,7 +62,7 @@ func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
 		}
 		return stack.Outputs["BOSHEIP"], nil
 	case "gcp":
-		terraformOutputs, err := p.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := p.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return "", err
 		}

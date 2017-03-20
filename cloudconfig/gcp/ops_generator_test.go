@@ -21,16 +21,16 @@ import (
 var _ = Describe("GCPOpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			zones                   *fakes.Zones
-			terraformOutputProvider *fakes.TerraformOutputProvider
-			opsGenerator            gcp.OpsGenerator
+			zones            *fakes.Zones
+			terraformManager *fakes.TerraformManager
+			opsGenerator     gcp.OpsGenerator
 
 			incomingState   storage.State
 			expectedOpsFile []byte
 		)
 
 		BeforeEach(func() {
-			terraformOutputProvider = &fakes.TerraformOutputProvider{}
+			terraformManager = &fakes.TerraformManager{}
 			zones = &fakes.Zones{}
 
 			incomingState = storage.State{
@@ -42,7 +42,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 			}
 
 			zones.GetCall.Returns.Zones = []string{"us-east1-b", "us-east1-c", "us-east1-d"}
-			terraformOutputProvider.GetCall.Returns.Outputs = terraform.Outputs{
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:    "some-network-name",
 				SubnetworkName: "some-subnetwork-name",
 				BOSHTag:        "some-bosh-tag",
@@ -53,7 +53,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "gcp-ops.yml"))
 			Expect(err).NotTo(HaveOccurred())
 
-			opsGenerator = gcp.NewOpsGenerator(terraformOutputProvider, zones)
+			opsGenerator = gcp.NewOpsGenerator(terraformManager, zones)
 		})
 
 		It("returns an ops file to transform base cloud config into gcp specific cloud config", func() {
@@ -61,7 +61,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(zones.GetCall.Receives.Region).To(Equal("us-east1"))
-			Expect(terraformOutputProvider.GetCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(terraformManager.GetOutputsCall.Receives.TFState).To(Equal("some-tf-state"))
 
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsFile))
 		})
@@ -74,12 +74,12 @@ var _ = Describe("GCPOpsGenerator", func() {
 
 			expectedOps := strings.Join([]string{string(expectedOpsFile), string(expectedLBOpsFile)}, "\n")
 
-			terraformOutputProvider.GetCall.Returns.Outputs = lbOutputs
+			terraformManager.GetOutputsCall.Returns.Outputs = lbOutputs
 
 			opsYAML, err := opsGenerator.Generate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformOutputProvider.GetCall.Receives.LBType).To(Equal(lbType))
+			Expect(terraformManager.GetOutputsCall.Receives.LBType).To(Equal(lbType))
 
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOps))
 		},
@@ -106,7 +106,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when terraform output provider fails to retrieve", func() {
-				terraformOutputProvider.GetCall.Returns.Error = errors.New("failed to output")
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
 				_, err := opsGenerator.Generate(storage.State{})
 				Expect(err).To(MatchError("failed to output"))
 			})

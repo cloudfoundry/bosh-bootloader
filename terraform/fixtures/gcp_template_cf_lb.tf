@@ -1,6 +1,30 @@
-package commands
+variable "project_id" {
+	type = "string"
+}
 
-const terraformBOSHDirectorTemplate = `output "external_ip" {
+variable "region" {
+	type = "string"
+}
+
+variable "zone" {
+	type = "string"
+}
+
+variable "env_id" {
+	type = "string"
+}
+
+variable "credentials" {
+	type = "string"
+}
+
+provider "google" {
+	credentials = "${file("${var.credentials}")}"
+	project = "${var.project_id}"
+	region = "${var.region}"
+}
+
+output "external_ip" {
     value = "${google_compute_address.bosh-external-ip.address}"
 }
 
@@ -74,54 +98,8 @@ resource "google_compute_firewall" "internal" {
 
   source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }
-`
 
-const terraformConcourseLBTemplate = `output "concourse_target_pool" {
-	value = "${google_compute_target_pool.target-pool.name}"
-}
-
-output "concourse_lb_ip" {
-    value = "${google_compute_address.concourse-address.address}"
-}
-
-resource "google_compute_firewall" "firewall-concourse" {
-  name    = "${var.env_id}-concourse-open"
-  network = "${google_compute_network.bbl-network.name}"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443", "2222"]
-  }
-
-  target_tags = ["concourse"]
-}
-
-resource "google_compute_address" "concourse-address" {
-  name = "${var.env_id}-concourse"
-}
-
-resource "google_compute_target_pool" "target-pool" {
-  name = "${var.env_id}-concourse"
-}
-
-resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
-  name        = "${var.env_id}-concourse-ssh"
-  target      = "${google_compute_target_pool.target-pool.self_link}"
-  port_range  = "2222"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-address.address}"
-}
-
-resource "google_compute_forwarding_rule" "https-forwarding-rule" {
-  name        = "${var.env_id}-concourse-https"
-  target      = "${google_compute_target_pool.target-pool.self_link}"
-  port_range  = "443"
-  ip_protocol = "TCP"
-  ip_address  = "${google_compute_address.concourse-address.address}"
-}
-`
-
-const terraformCFLBTemplate = `variable "ssl_certificate" {
+variable "ssl_certificate" {
   type = "string"
 }
 
@@ -336,97 +314,23 @@ resource "google_compute_forwarding_rule" "cf-ws-http" {
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-ws.address}"
 }
-`
 
-const terraformCFDNSTemplate = `
-variable "system_domain" {
-  type = "string"
+resource "google_compute_instance_group" "router-lb-0" {
+  name        = "${var.env_id}-router-z1"
+  description = "terraform generated instance group that is multi-zone for https loadbalancing"
+  zone        = "z1"
 }
 
-resource "google_dns_managed_zone" "env_dns_zone" {
-  name        = "${var.env_id}-zone"
-  dns_name    = "${var.system_domain}."
-  description = "DNS zone for the ${var.env_id} environment"
+resource "google_compute_backend_service" "router-lb-backend-service" {
+  name        = "${var.env_id}-router-lb"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 900
+  enable_cdn  = false
+
+  backend {
+    group = "${google_compute_instance_group.router-lb-0.self_link}"
+  }
+
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
 }
-
-output "system_domain_dns_servers" {
-  value = "${google_dns_managed_zone.env_dns_zone.name_servers}"
-}
-
-resource "google_dns_record_set" "wildcard-dns" {
-  name       = "*.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_global_address.cf-address"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_global_address.cf-address.address}"]
-}
-
-resource "google_dns_record_set" "bosh-dns" {
-  name       = "bosh.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.bosh-external-ip"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.bosh-external-ip.address}"]
-}
-
-resource "google_dns_record_set" "cf-ssh-proxy" {
-  name       = "ssh.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.cf-ssh-proxy"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.cf-ssh-proxy.address}"]
-}
-
-resource "google_dns_record_set" "tcp-dns" {
-  name       = "tcp.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.cf-tcp-router"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.cf-tcp-router.address}"]
-}
-
-resource "google_dns_record_set" "doppler-dns" {
-  name       = "doppler.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.cf-ws"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.cf-ws.address}"]
-}
-
-resource "google_dns_record_set" "loggregator-dns" {
-  name       = "loggregator.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.cf-ws"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.cf-ws.address}"]
-}
-
-resource "google_dns_record_set" "wildcard-ws-dns" {
-  name       = "*.ws.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.cf-ws"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.cf-ws.address}"]
-}
-`

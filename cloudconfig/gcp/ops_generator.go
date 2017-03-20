@@ -12,12 +12,12 @@ import (
 )
 
 type OpsGenerator struct {
-	terraformOutputProvider terraformOutputProvider
-	zones                   zones
+	terraformManager terraformManager
+	zones            zones
 }
 
-type terraformOutputProvider interface {
-	Get(string, string, bool) (terraform.Outputs, error)
+type terraformManager interface {
+	GetOutputs(string, string, bool) (terraform.Outputs, error)
 }
 
 type zones interface {
@@ -74,10 +74,10 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-func NewOpsGenerator(terraformOutputProvider terraformOutputProvider, zones zones) OpsGenerator {
+func NewOpsGenerator(terraformManager terraformManager, zones zones) OpsGenerator {
 	return OpsGenerator{
-		terraformOutputProvider: terraformOutputProvider,
-		zones: zones,
+		terraformManager: terraformManager,
+		zones:            zones,
 	}
 }
 
@@ -126,7 +126,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 	if state.LB.Domain != "" {
 		domainExists = true
 	}
-	outputs, err := o.terraformOutputProvider.Get(state.TFState, state.LB.Type, domainExists)
+	outputs, err := o.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
 	if err != nil {
 		return []op{}, err
 	}

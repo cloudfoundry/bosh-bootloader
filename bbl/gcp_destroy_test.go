@@ -164,26 +164,54 @@ director_ssl:
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})
 
-	Context("bbl re-entrance", func() {
-		It("saves the tf state when terraform destroy fails", func() {
-			state.GCP.Region = "fail-to-terraform"
-
+	Context("when the bbl-state does not contain a TFState", func() {
+		var args []string
+		BeforeEach(func() {
+			state.TFState = ""
 			stateContents, err := json.Marshal(state)
 			Expect(err).NotTo(HaveOccurred())
 
 			statePath = filepath.Join(tempDirectory, "bbl-state.json")
 			err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
-			args := []string{
+			args = []string{
 				"--debug",
 				"--state-dir", tempDirectory,
 				"destroy", "--no-confirm",
 			}
+		})
 
-			executeCommand(args, 1)
+		It("succeeds", func() {
+			executeCommand(args, 0)
+		})
+	})
 
-			state = readStateJson(tempDirectory)
-			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+	Context("bbl re-entrance", func() {
+		Context("when terraform fails", func() {
+			var args []string
+
+			BeforeEach(func() {
+				state.GCP.Region = "fail-to-terraform"
+
+				stateContents, err := json.Marshal(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				statePath = filepath.Join(tempDirectory, "bbl-state.json")
+				err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+				args = []string{
+					"--debug",
+					"--state-dir", tempDirectory,
+					"destroy", "--no-confirm",
+				}
+			})
+
+			It("saves the tf state when terraform destroy fails with ManagerDestroyError", func() {
+				executeCommand(args, 1)
+
+				state = readStateJson(tempDirectory)
+				Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+			})
 		})
 
 		Context("when bosh fails", func() {

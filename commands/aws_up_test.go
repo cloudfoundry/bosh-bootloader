@@ -128,7 +128,8 @@ var _ = Describe("AWSUp", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-			Expect(stateStore.SetCall.Receives.State.EnvID).To(Equal("bbl-lake-time-stamp"))
+			Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 2))
+			Expect(stateStore.SetCall.Receives[1].State.EnvID).To(Equal("bbl-lake-time-stamp"))
 		})
 
 		Context("when a name is passed in for env-id", func() {
@@ -170,7 +171,8 @@ var _ = Describe("AWSUp", func() {
 				PublicKey:  "some-public-key",
 			}))
 
-			actualState := stateStore.SetCall.Receives.State
+			Expect(stateStore.SetCall.CallCount).To(Equal(4))
+			actualState := stateStore.SetCall.Receives[3].State
 			Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
 				Name:       "some-keypair-name",
 				PublicKey:  "some-public-key",
@@ -395,7 +397,7 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("error syncing key pair"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.Receives.State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
+					Expect(stateStore.SetCall.Receives[0].State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
 				})
 			})
 
@@ -408,8 +410,8 @@ var _ = Describe("AWSUp", func() {
 					})
 					Expect(err).To(MatchError("availability zone retrieve failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
-					Expect(stateStore.SetCall.Receives.State.KeyPair.PublicKey).To(Equal("some-public-key"))
+					Expect(stateStore.SetCall.Receives[1].State.KeyPair.PrivateKey).To(Equal("some-private-key"))
+					Expect(stateStore.SetCall.Receives[1].State.KeyPair.PublicKey).To(Equal("some-public-key"))
 				})
 			})
 
@@ -424,8 +426,8 @@ var _ = Describe("AWSUp", func() {
 					})
 					Expect(err).To(MatchError("infrastructure creation failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives.State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
-					Expect(stateStore.SetCall.Receives.State.Stack.BOSHAZ).To(Equal("some-bosh-az"))
+					Expect(stateStore.SetCall.Receives[2].State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
+					Expect(stateStore.SetCall.Receives[2].State.Stack.BOSHAZ).To(Equal("some-bosh-az"))
 				})
 
 				It("saves the private/public key and returns an error", func() {
@@ -434,8 +436,8 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("infrastructure creation failed"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives.State.KeyPair.PrivateKey).To(Equal("some-private-key"))
-					Expect(stateStore.SetCall.Receives.State.KeyPair.PublicKey).To(Equal("some-public-key"))
+					Expect(stateStore.SetCall.Receives[2].State.KeyPair.PrivateKey).To(Equal("some-private-key"))
+					Expect(stateStore.SetCall.Receives[2].State.KeyPair.PublicKey).To(Equal("some-public-key"))
 				})
 			})
 		})
@@ -446,7 +448,8 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(stateStore.SetCall.Receives.State.IAAS).To(Equal("aws"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State.IAAS).To(Equal("aws"))
 				})
 			})
 
@@ -460,7 +463,8 @@ var _ = Describe("AWSUp", func() {
 						}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "some-aws-access-key-id",
 							SecretAccessKey: "some-aws-secret-access-key",
 							Region:          "some-aws-region",
@@ -482,7 +486,8 @@ var _ = Describe("AWSUp", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "new-aws-access-key-id",
 							SecretAccessKey: "new-aws-secret-access-key",
 							Region:          "new-aws-region",
@@ -499,7 +504,8 @@ var _ = Describe("AWSUp", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.Receives.State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						Expect(stateStore.SetCall.Receives[3].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "aws-access-key-id",
 							SecretAccessKey: "aws-secret-access-key",
 							Region:          "aws-region",
@@ -534,7 +540,8 @@ var _ = Describe("AWSUp", func() {
 							PublicKey:  "some-public-key",
 						}))
 
-						Expect(stateStore.SetCall.Receives.State.KeyPair).To(Equal(incomingState.KeyPair))
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						Expect(stateStore.SetCall.Receives[3].State.KeyPair).To(Equal(incomingState.KeyPair))
 					})
 				})
 
@@ -555,7 +562,8 @@ var _ = Describe("AWSUp", func() {
 							Name: "keypair-bbl-lake-time:stamp",
 						}))
 
-						actualState := stateStore.SetCall.Receives.State
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						actualState := stateStore.SetCall.Receives[3].State
 						Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
 							Name:       "keypair-bbl-lake-time:stamp",
 							PrivateKey: "some-private-key",
@@ -574,7 +582,8 @@ var _ = Describe("AWSUp", func() {
 						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						state := stateStore.SetCall.Receives.State
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						state := stateStore.SetCall.Receives[3].State
 						Expect(state.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
 					})
 				})
@@ -589,7 +598,8 @@ var _ = Describe("AWSUp", func() {
 						err := command.Execute(commands.AWSUpConfig{}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						state := stateStore.SetCall.Receives.State
+						Expect(stateStore.SetCall.CallCount).To(Equal(3))
+						state := stateStore.SetCall.Receives[2].State
 						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
 					})
 				})
@@ -605,7 +615,8 @@ var _ = Describe("AWSUp", func() {
 						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.Receives.State.BOSH).To(Equal(storage.BOSH{
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						Expect(stateStore.SetCall.Receives[3].State.BOSH).To(Equal(storage.BOSH{
 							DirectorName:           "bosh-bbl-lake-time:stamp",
 							DirectorUsername:       "admin",
 							DirectorPassword:       "some-admin-password",
@@ -797,7 +808,7 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, incomingState)
 					Expect(err).To(MatchError("failed to create"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
 				})
 
 				It("returns a compound error when it fails to save the state", func() {
@@ -805,7 +816,7 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, incomingState)
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives.State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
 				})
 			})
 		})

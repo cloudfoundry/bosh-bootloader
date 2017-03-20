@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	yaml "gopkg.in/yaml.v2"
@@ -30,8 +29,7 @@ type GCPUp struct {
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	logger             logger
-	terraformExecutor  terraformExecutor
-	zones              zones
+	terraformManager   terraformManager
 	envIDManager       envIDManager
 }
 
@@ -57,14 +55,18 @@ type gcpProvider interface {
 	SetConfig(serviceAccountKey, projectID, zone string) error
 }
 
+type terraformManager interface {
+	Destroy(bblState storage.State) (storage.State, error)
+	Apply(bblState storage.State) (storage.State, error)
+	GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
+	Version() (string, error)
+	ValidateVersion() error
+}
+
 type terraformExecutor interface {
 	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, domain, template, tfState string) (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
 	Version() (string, error)
-}
-
-type zones interface {
-	Get(region string) []string
 }
 
 type boshManager interface {
@@ -78,23 +80,22 @@ type envIDManager interface {
 	Sync(storage.State, string) (string, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformExecutor terraformExecutor,
-	boshManager boshManager, logger logger, zones zones, envIDManager envIDManager, cloudConfigManager cloudConfigManager) GCPUp {
+func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformManager terraformManager,
+	boshManager boshManager, logger logger, envIDManager envIDManager, cloudConfigManager cloudConfigManager) GCPUp {
 	return GCPUp{
 		stateStore:         stateStore,
 		keyPairUpdater:     keyPairUpdater,
 		gcpProvider:        gcpProvider,
-		terraformExecutor:  terraformExecutor,
+		terraformManager:   terraformManager,
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		logger:             logger,
-		zones:              zones,
 		envIDManager:       envIDManager,
 	}
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
-	err := fastFailTerraformVersion(u.terraformExecutor)
+	err := u.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
 	}
@@ -155,33 +156,11 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
-	var template string
-	zones := u.zones.Get(state.GCP.Region)
-	switch state.LB.Type {
-	case "concourse":
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformConcourseLBTemplate}, "\n")
-	case "cf":
-		terraformCFLBBackendService := generateBackendServiceTerraform(len(zones))
-		instanceGroups := generateInstanceGroups(zones)
-
-		if state.LB.Domain != "" {
-			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService, terraformCFDNSTemplate}, "\n")
-		} else {
-			template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate, terraformCFLBTemplate, instanceGroups, terraformCFLBBackendService}, "\n")
-		}
-	default:
-		template = strings.Join([]string{terraformVarsTemplate, terraformBOSHDirectorTemplate}, "\n")
-	}
-
-	tfState, err := u.terraformExecutor.Apply(state.GCP.ServiceAccountKey,
-		state.EnvID, state.GCP.ProjectID, state.GCP.Zone, state.GCP.Region, state.LB.Cert, state.LB.Key, state.LB.Domain,
-		template, state.TFState,
-	)
+	state, err = u.terraformManager.Apply(state)
 	switch err.(type) {
-	case terraform.TerraformApplyError:
-		taErr := err.(terraform.TerraformApplyError)
-		state.TFState = taErr.TFState()
-		if setErr := u.stateStore.Set(state); setErr != nil {
+	case terraform.ManagerApplyError:
+		taErr := err.(terraform.ManagerApplyError)
+		if setErr := u.stateStore.Set(taErr.BBLState()); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)
 			errorList.Add(setErr)
@@ -192,8 +171,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	state.TFState = tfState
-	if err := u.stateStore.Set(state); err != nil {
+	err = u.stateStore.Set(state)
+	if err != nil {
 		return err
 	}
 
@@ -223,6 +202,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 			return err
 		}
 	}
+
 	return nil
 }
 

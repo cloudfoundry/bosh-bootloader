@@ -24,22 +24,22 @@ const (
 )
 
 type StateQuery struct {
-	logger                  logger
-	stateValidator          stateValidator
-	terraformOutputProvider terraformOutputProvider
-	infrastructureManager   infrastructureManager
-	propertyName            string
+	logger                logger
+	stateValidator        stateValidator
+	terraformManager      terraformManager
+	infrastructureManager infrastructureManager
+	propertyName          string
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, stateValidator stateValidator, terraformOutputProvider terraformOutputProvider, infrastructureManager infrastructureManager, propertyName string) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformManager, infrastructureManager infrastructureManager, propertyName string) StateQuery {
 	return StateQuery{
-		logger:                  logger,
-		stateValidator:          stateValidator,
-		terraformOutputProvider: terraformOutputProvider,
-		infrastructureManager:   infrastructureManager,
-		propertyName:            propertyName,
+		logger:                logger,
+		stateValidator:        stateValidator,
+		terraformManager:      terraformManager,
+		infrastructureManager: infrastructureManager,
+		propertyName:          propertyName,
 	}
 }
 
@@ -94,7 +94,7 @@ func (s StateQuery) getEIP(state storage.State) (string, error) {
 		}
 		return stack.Outputs["BOSHEIP"], nil
 	case "gcp":
-		terraformOutputs, err := s.terraformOutputProvider.Get(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := s.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
 		if err != nil {
 			return "", err
 		}

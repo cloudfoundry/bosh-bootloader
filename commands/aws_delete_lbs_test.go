@@ -209,7 +209,7 @@ var _ = Describe("Delete LBs", func() {
 				Expect(err).To(MatchError("failed to delete"))
 
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
 					Stack: storage.Stack{
 						Name:            "some-stack",
 						LBType:          "none",
@@ -229,7 +229,7 @@ var _ = Describe("Delete LBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				Expect(stateStore.SetCall.Receives.State).To(Equal(storage.State{
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
 					Stack: storage.Stack{
 						Name:            "some-stack",
 						LBType:          "none",
