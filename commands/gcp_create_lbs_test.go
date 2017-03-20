@@ -22,7 +22,6 @@ var _ = Describe("GCPCreateLBs", func() {
 		boshClientProvider *fakes.BOSHClientProvider
 		boshClient         *fakes.BOSHClient
 		cloudConfigManager *fakes.CloudConfigManager
-		zones              *fakes.Zones
 		stateStore         *fakes.StateStore
 		logger             *fakes.Logger
 		command            commands.GCPCreateLBs
@@ -38,11 +37,10 @@ var _ = Describe("GCPCreateLBs", func() {
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		zones = &fakes.Zones{}
 		stateStore = &fakes.StateStore{}
 		logger = &fakes.Logger{}
 
-		command = commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
+		command = commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())

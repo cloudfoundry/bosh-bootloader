@@ -33,7 +33,6 @@ type Destroy struct {
 	stateStore              stateStore
 	stateValidator          stateValidator
 	terraformManager        terraformManager
-	terraformExecutor       terraformExecutor
 	networkInstancesChecker networkInstancesChecker
 }
 
@@ -82,7 +81,7 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformManager terraformManager, terraformExecutor terraformExecutor, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformManager terraformManager, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
 		logger:                  logger,
@@ -98,7 +97,6 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		stateStore:              stateStore,
 		stateValidator:          stateValidator,
 		terraformManager:        terraformManager,
-		terraformExecutor:       terraformExecutor,
 		networkInstancesChecker: networkInstancesChecker,
 	}
 }
@@ -112,7 +110,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if state.IAAS == "gcp" {
-		err := fastFailTerraformVersion(d.terraformExecutor)
+		err := d.terraformManager.ValidateVersion()
 		if err != nil {
 			return err
 		}

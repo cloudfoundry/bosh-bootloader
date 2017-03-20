@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -12,15 +11,10 @@ import (
 	"github.com/cloudfoundry/multierror"
 )
 
-type zones interface {
-	Get(string) []string
-}
-
 type GCPCreateLBs struct {
 	terraformManager   terraformManager
 	boshClientProvider boshClientProvider
 	cloudConfigManager cloudConfigManager
-	zones              zones
 	stateStore         stateStore
 	logger             logger
 }
@@ -34,13 +28,12 @@ type GCPCreateLBsConfig struct {
 }
 
 func NewGCPCreateLBs(terraformManager terraformManager,
-	boshClientProvider boshClientProvider, cloudConfigManager cloudConfigManager, zones zones,
+	boshClientProvider boshClientProvider, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, logger logger) GCPCreateLBs {
 	return GCPCreateLBs{
 		terraformManager:   terraformManager,
 		boshClientProvider: boshClientProvider,
 		cloudConfigManager: cloudConfigManager,
-		zones:              zones,
 		stateStore:         stateStore,
 		logger:             logger,
 	}
@@ -153,44 +146,4 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 	}
 
 	return nil
-}
-
-func generateBackendServiceTerraform(count int) string {
-	backendResourceStart := `resource "google_compute_backend_service" "router-lb-backend-service" {
-  name        = "${var.env_id}-router-lb"
-  port_name   = "http"
-  protocol    = "HTTP"
-  timeout_sec = 900
-  enable_cdn  = false
-`
-	backendResourceEnd := `  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
-}
-`
-	backendStrings := []string{}
-	for i := 0; i < count; i++ {
-		backendString := fmt.Sprintf(`  backend {
-    group = "${google_compute_instance_group.router-lb-%d.self_link}"
-  }
-`, i)
-		backendStrings = append(backendStrings, backendString)
-	}
-
-	backendServiceTemplate := []string{backendResourceStart}
-	backendServiceTemplate = append(backendServiceTemplate, backendStrings...)
-	backendServiceTemplate = append(backendServiceTemplate, backendResourceEnd)
-	return strings.Join(backendServiceTemplate, "\n")
-}
-
-func generateInstanceGroups(zones []string) string {
-	var groups []string
-	for i, zone := range zones {
-		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
-  name        = "${var.env_id}-router-%[2]s"
-  description = "terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "%[2]s"
-}
-`, i, zone))
-	}
-
-	return strings.Join(groups, "\n")
 }

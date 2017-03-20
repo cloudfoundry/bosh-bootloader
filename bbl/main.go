@@ -151,7 +151,7 @@ func main() {
 		uuidGenerator, stateStore,
 	)
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, zones, stateStore, logger)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)
@@ -177,7 +177,7 @@ func main() {
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
-		stateStore, stateValidator, terraformManager, terraformExecutor, gcpNetworkInstancesChecker,
+		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
 
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)

@@ -35,7 +35,6 @@ var _ = Describe("Destroy", func() {
 		stateStore              *fakes.StateStore
 		stateValidator          *fakes.StateValidator
 		terraformManager        *fakes.TerraformManager
-		terraformExecutor       *fakes.TerraformExecutor
 		networkInstancesChecker *fakes.NetworkInstancesChecker
 		stdin                   *bytes.Buffer
 	)
@@ -57,14 +56,12 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
-		terraformExecutor = &fakes.TerraformExecutor{}
-		terraformExecutor.VersionCall.Returns.Version = "0.8.7"
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
 			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
-			stateValidator, terraformManager, terraformExecutor, networkInstancesChecker)
+			stateValidator, terraformManager, networkInstancesChecker)
 	})
 
 	Describe("Execute", func() {
@@ -188,19 +185,16 @@ var _ = Describe("Destroy", func() {
 			})
 
 			It("fast fails on gcp if the terraform installed is less than v0.8.5", func() {
-				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
+				terraformManager.ValidateVersionCall.Returns.Error = errors.New("failed to validate version")
 
 				err := destroy.Execute([]string{}, storage.State{IAAS: "gcp"})
-
-				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+				Expect(err).To(MatchError("failed to validate version"))
 			})
 
 			It("does not fast fail on aws if the terraform installed is less than v0.8.5", func() {
-				terraformExecutor.VersionCall.Returns.Version = "0.8.4"
-
 				err := destroy.Execute([]string{}, storage.State{IAAS: "aws"})
-
 				Expect(err).ToNot(HaveOccurred())
+				Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(0))
 			})
 
 			Context("when an invalid command line flag is supplied", func() {
