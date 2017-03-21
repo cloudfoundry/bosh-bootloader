@@ -44,7 +44,7 @@ eval "$(bbl print-env)"
 export BOSH_CA_CERT=<THE VALUE OF default_ca.ca FROM creds.yml>
 export BOSH_CLIENT_SECRET=<THE VALUE OF admin_password FROM creds.yml>
 export BOSH_CLIENT=admin
-bosh upload-cloud-config <(bbl cloud-config)
+bosh update-cloud-config <(bbl cloud-config)
 ```
 
 
