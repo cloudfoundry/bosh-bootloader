@@ -29,8 +29,6 @@ func TestBbl(t *testing.T) {
 
 var (
 	pathToBBL                  string
-	pathToBOSHInit             string
-	pathToFakeBOSHInit         string
 	pathToFakeTerraform        string
 	pathToTerraform            string
 	gcpBackend                 gcpbackend.GCPBackend
@@ -49,13 +47,6 @@ var _ = BeforeSuite(func() {
 	pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl", "--ldflags", fmt.Sprintf("-X main.gcpBasePath=%s", fakeGCPServer.URL))
 	Expect(err).NotTo(HaveOccurred())
 
-	pathToFakeBOSHInit, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakeboshinit")
-	Expect(err).NotTo(HaveOccurred())
-
-	pathToBOSHInit = filepath.Join(filepath.Dir(pathToFakeBOSHInit), "bosh-init")
-	err = os.Rename(pathToFakeBOSHInit, pathToBOSHInit)
-	Expect(err).NotTo(HaveOccurred())
-
 	pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
 		"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.ServerURL()))
 	Expect(err).NotTo(HaveOccurred())
@@ -64,7 +55,7 @@ var _ = BeforeSuite(func() {
 	err = os.Rename(pathToFakeTerraform, pathToTerraform)
 	Expect(err).NotTo(HaveOccurred())
 
-	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
+	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
 
 	originalPath = os.Getenv("PATH")
 })
