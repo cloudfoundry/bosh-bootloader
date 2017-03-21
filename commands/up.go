@@ -81,7 +81,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 		}
 	}
 
-	if state.EnvID != "" && config.name != "" {
+	if state.EnvID != "" && config.name != "" && config.name != state.EnvID {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
 

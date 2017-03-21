@@ -236,6 +236,7 @@ var _ = Describe("bbl up gcp", func() {
 				"--debug",
 				"up",
 				"--iaas", "gcp",
+				"--name", "some-bbl-env",
 				"--gcp-service-account-key", serviceAccountKeyPath,
 				"--gcp-project-id", "some-project-id",
 				"--gcp-zone", "some-zone",

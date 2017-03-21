@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -453,6 +454,33 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Name).To(Equal("a-better-name"))
+			})
+
+			Context("when bbl-state contains an env-id", func() {
+				var (
+					name  = "some-name"
+					state = storage.State{EnvID: name}
+				)
+
+				Context("when the passed in name matches the env-id", func() {
+					It("succeeds", func() {
+						err := command.Execute([]string{
+							"--iaas", "aws",
+							"--name", name,
+						}, state)
+						Expect(err).NotTo(HaveOccurred())
+					})
+				})
+
+				Context("when the passed in name does not match the env-id", func() {
+					It("returns an error", func() {
+						err := command.Execute([]string{
+							"--iaas", "aws",
+							"--name", "some-other-name",
+						}, state)
+						Expect(err).To(MatchError(fmt.Sprintf("The director name cannot be changed for an existing environment. Current name is %s.", name)))
+					})
+				})
 			})
 		})
 
