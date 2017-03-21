@@ -78,10 +78,6 @@ var _ = Describe("director-address", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			AfterEach(func() {
-				os.Setenv("PATH", originalPath)
-			})
-
 			It("returns the external ip reserved for the director", func() {
 				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())

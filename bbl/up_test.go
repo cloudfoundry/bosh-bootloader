@@ -1,28 +1,21 @@
 package main_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
-	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("bbl up", func() {
 	var (
-		tempDirectory            string
-		serviceAccountKeyPath    string
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		fakeBOSHCLIBackendServer *httptest.Server
+		tempDirectory         string
+		serviceAccountKeyPath string
+		fakeBOSHServer        *httptest.Server
+		fakeBOSH              *fakeBOSHDirector
 	)
 
 	BeforeEach(func() {
@@ -32,7 +25,7 @@ var _ = Describe("bbl up", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/version":
 				responseWriter.Write([]byte("2.0.0"))
@@ -50,16 +43,6 @@ var _ = Describe("bbl up", func() {
 			}
 		}))
 
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -69,10 +52,6 @@ var _ = Describe("bbl up", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
 	})
 
 	It("writes iaas to state", func() {
@@ -138,27 +117,12 @@ var _ = Describe("bbl up", func() {
 
 	Context("when the bosh cli version is <2.0", func() {
 		BeforeEach(func() {
-			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
 				case "/version":
 					responseWriter.Write([]byte("1.9.0"))
 				}
 			}))
-
-			var err error
-			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-			Expect(err).NotTo(HaveOccurred())
-
-			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-			err = os.Rename(pathToFakeBOSH, pathToBOSH)
-			Expect(err).NotTo(HaveOccurred())
-
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-		})
-
-		AfterEach(func() {
-			os.Setenv("PATH", originalPath)
 		})
 
 		It("fast fails with a helpful error message", func() {

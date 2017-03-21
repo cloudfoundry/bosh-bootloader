@@ -5,10 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,20 +24,17 @@ import (
 
 var _ = Describe("load balancers", func() {
 	var (
-		fakeAWS                  *awsbackend.Backend
-		fakeAWSServer            *httptest.Server
-		fakeBOSHServer           *httptest.Server
-		fakeBOSHCLIBackendServer *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
-		tempDirectory            string
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		lbCertPath               string
-		lbChainPath              string
-		lbKeyPath                string
-		otherLBCertPath          string
-		otherLBChainPath         string
-		otherLBKeyPath           string
+		fakeAWS          *awsbackend.Backend
+		fakeAWSServer    *httptest.Server
+		fakeBOSHServer   *httptest.Server
+		fakeBOSH         *fakeBOSHDirector
+		tempDirectory    string
+		lbCertPath       string
+		lbChainPath      string
+		lbKeyPath        string
+		otherLBCertPath  string
+		otherLBChainPath string
+		otherLBKeyPath   string
 
 		callRealInterpolate      bool
 		callRealInterpolateMutex sync.Mutex
@@ -52,12 +46,12 @@ var _ = Describe("load balancers", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/version":
 				responseWriter.Write([]byte("2.0.0"))
 			case "/path":
-				responseWriter.Write([]byte(originalPath))
+				responseWriter.Write([]byte(noFakesPath))
 			case "/call-real-interpolate":
 				callRealInterpolateMutex.Lock()
 				defer callRealInterpolateMutex.Unlock()
@@ -73,16 +67,6 @@ var _ = Describe("load balancers", func() {
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 		var err error
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -103,10 +87,6 @@ var _ = Describe("load balancers", func() {
 
 		otherLBKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
 	})
 
 	Describe("create-lbs", func() {
@@ -176,27 +156,12 @@ var _ = Describe("load balancers", func() {
 		Context("failure cases", func() {
 			Context("when the bosh cli version is <2.0", func() {
 				BeforeEach(func() {
-					fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 						switch request.URL.Path {
 						case "/version":
 							responseWriter.Write([]byte("1.9.0"))
 						}
 					}))
-
-					var err error
-					pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-						"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-					Expect(err).NotTo(HaveOccurred())
-
-					pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-					err = os.Rename(pathToFakeBOSH, pathToBOSH)
-					Expect(err).NotTo(HaveOccurred())
-
-					os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-				})
-
-				AfterEach(func() {
-					os.Setenv("PATH", originalPath)
 				})
 
 				It("fast fails with a helpful error message", func() {
@@ -411,27 +376,12 @@ var _ = Describe("load balancers", func() {
 
 			Context("when the bosh cli version is < 2.0.0", func() {
 				BeforeEach(func() {
-					fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 						switch request.URL.Path {
 						case "/version":
 							responseWriter.Write([]byte("1.9.0"))
 						}
 					}))
-
-					var err error
-					pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-						"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-					Expect(err).NotTo(HaveOccurred())
-
-					pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-					err = os.Rename(pathToFakeBOSH, pathToBOSH)
-					Expect(err).NotTo(HaveOccurred())
-
-					os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-				})
-
-				AfterEach(func() {
-					os.Setenv("PATH", originalPath)
 				})
 
 				It("fast fails with a helpful error message", func() {

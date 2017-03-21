@@ -6,12 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
-	"github.com/onsi/gomega/gexec"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
@@ -54,11 +51,8 @@ var _ = Describe("bosh-deployment-vars", func() {
 	var (
 		tempDirectory            string
 		serviceAccountKeyPath    string
-		pathToFakeBOSH           string
-		pathToBOSH               string
 		fakeBOSH                 *fakeBOSHDirector
 		fakeBOSHServer           *httptest.Server
-		fakeBOSHCLIBackendServer *httptest.Server
 	)
 
 	BeforeEach(func() {
@@ -69,7 +63,7 @@ var _ = Describe("bosh-deployment-vars", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/version":
 				responseWriter.Write([]byte("2.0.0"))
@@ -94,16 +88,6 @@ var _ = Describe("bosh-deployment-vars", func() {
 				responseWriter.Write([]byte("0.8.6"))
 			}
 		})
-
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -113,10 +97,6 @@ var _ = Describe("bosh-deployment-vars", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
 	})
 
 	Context("GCP", func() {
@@ -217,27 +197,12 @@ var _ = Describe("bosh-deployment-vars", func() {
 
 	Context("when the bosh cli version is <2.0", func() {
 		BeforeEach(func() {
-			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
 				case "/version":
 					responseWriter.Write([]byte("1.9.0"))
 				}
 			}))
-
-			var err error
-			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-			Expect(err).NotTo(HaveOccurred())
-
-			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-			err = os.Rename(pathToFakeBOSH, pathToBOSH)
-			Expect(err).NotTo(HaveOccurred())
-
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-		})
-
-		AfterEach(func() {
-			os.Setenv("PATH", originalPath)
 		})
 
 		It("fast fails with a helpful error message", func() {

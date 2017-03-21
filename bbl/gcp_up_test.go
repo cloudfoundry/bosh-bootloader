@@ -2,33 +2,28 @@ package main_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/onsi/gomega/gexec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("bbl up gcp", func() {
 	var (
-		tempDirectory            string
-		serviceAccountKeyPath    string
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		fakeBOSHCLIBackendServer *httptest.Server
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
+		tempDirectory         string
+		serviceAccountKeyPath string
+		fakeBOSHServer        *httptest.Server
+		fakeBOSH              *fakeBOSHDirector
 
 		fastFail                 bool
 		fastFailMutex            sync.Mutex
@@ -46,12 +41,12 @@ var _ = Describe("bbl up gcp", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/version":
 				responseWriter.Write([]byte("v2.0.0"))
 			case "/path":
-				responseWriter.Write([]byte(originalPath))
+				responseWriter.Write([]byte(noFakesPath))
 			case "/create-env/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
@@ -99,16 +94,6 @@ var _ = Describe("bbl up gcp", func() {
 			}
 		}))
 
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -122,10 +107,6 @@ var _ = Describe("bbl up gcp", func() {
 		fastFailMutex.Lock()
 		defer fastFailMutex.Unlock()
 		fastFail = false
-	})
-
-	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
 	})
 
 	It("writes gcp details to state", func() {

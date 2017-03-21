@@ -59,7 +59,6 @@ var _ = Describe("bbl", func() {
 	})
 
 	Context("when the bosh environment has no director", func() {
-
 		Context("gcp", func() {
 			BeforeEach(func() {
 				var err error
@@ -78,10 +77,6 @@ var _ = Describe("bbl", func() {
 				}`)
 				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				os.Setenv("PATH", originalPath)
 			})
 
 			It("prints only the external ip", func() {

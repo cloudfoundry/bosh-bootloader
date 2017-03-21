@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,31 +25,13 @@ import (
 
 var _ = Describe("destroy", func() {
 	Context("when the state file does not exist", func() {
-		var (
-			pathToFakeBOSH           string
-			pathToBOSH               string
-			fakeBOSHCLIBackendServer *httptest.Server
-		)
-
 		BeforeEach(func() {
-			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
 				case "/version":
 					responseWriter.Write([]byte("2.0.0"))
 				}
 			}))
-
-			var err error
-			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-			Expect(err).NotTo(HaveOccurred())
-
-			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-			err = os.Rename(pathToFakeBOSH, pathToBOSH)
-			Expect(err).NotTo(HaveOccurred())
-
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		})
 
 		It("exits with status 0 if --skip-if-missing flag is provided", func() {
@@ -93,14 +74,11 @@ var _ = Describe("destroy", func() {
 
 	Context("when the bosh director, cloudformation stack, certificate, and ec2 keypair exists", func() {
 		var (
-			fakeAWS                  *awsbackend.Backend
-			fakeAWSServer            *httptest.Server
-			fakeBOSH                 *fakeBOSHDirector
-			fakeBOSHServer           *httptest.Server
-			tempDirectory            string
-			pathToFakeBOSH           string
-			pathToBOSH               string
-			fakeBOSHCLIBackendServer *httptest.Server
+			fakeAWS        *awsbackend.Backend
+			fakeAWSServer  *httptest.Server
+			fakeBOSH       *fakeBOSHDirector
+			fakeBOSHServer *httptest.Server
+			tempDirectory  string
 
 			fastFail      bool
 			fastFailMutex sync.Mutex
@@ -128,7 +106,7 @@ var _ = Describe("destroy", func() {
 			})
 			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
-			fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
 				case "/delete-env/fastfail":
 					fastFailMutex.Lock()
@@ -145,16 +123,6 @@ var _ = Describe("destroy", func() {
 			}))
 
 			var err error
-			pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-			Expect(err).NotTo(HaveOccurred())
-
-			pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-			err = os.Rename(pathToFakeBOSH, pathToBOSH)
-			Expect(err).NotTo(HaveOccurred())
-
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 			tempDirectory, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -188,10 +156,6 @@ director_ssl:
 			Expect(err).NotTo(HaveOccurred())
 
 			ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
-		})
-
-		AfterEach(func() {
-			os.Setenv("PATH", originalPath)
 		})
 
 		Context("asks for confirmation before it starts destroying things", func() {
@@ -392,27 +356,12 @@ director_ssl:
 
 			Context("when the bosh cli version is <2.0", func() {
 				BeforeEach(func() {
-					fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 						switch request.URL.Path {
 						case "/version":
 							responseWriter.Write([]byte("1.9.0"))
 						}
 					}))
-
-					var err error
-					pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-						"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-					Expect(err).NotTo(HaveOccurred())
-
-					pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-					err = os.Rename(pathToFakeBOSH, pathToBOSH)
-					Expect(err).NotTo(HaveOccurred())
-
-					os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-				})
-
-				AfterEach(func() {
-					os.Setenv("PATH", originalPath)
 				})
 
 				It("fast fails with a helpful error message", func() {

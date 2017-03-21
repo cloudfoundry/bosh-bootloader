@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -27,9 +26,6 @@ var _ = Describe("load balancers", func() {
 	var (
 		tempDirectory            string
 		serviceAccountKeyPath    string
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		fakeBOSHCLIBackendServer *httptest.Server
 		fakeBOSHServer           *httptest.Server
 		fakeBOSH                 *fakeBOSHDirector
 		fastFailTerraform        bool
@@ -57,12 +53,12 @@ var _ = Describe("load balancers", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/version":
 				responseWriter.Write([]byte("v2.0.0"))
 			case "/path":
-				responseWriter.Write([]byte(originalPath))
+				responseWriter.Write([]byte(noFakesPath))
 			case "/call-real-interpolate":
 				callRealInterpolateMutex.Lock()
 				defer callRealInterpolateMutex.Unlock()
@@ -119,16 +115,6 @@ var _ = Describe("load balancers", func() {
 			}
 		}))
 
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -141,7 +127,6 @@ var _ = Describe("load balancers", func() {
 	})
 
 	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
 		setFastFailTerraform(false)
 	})
 
@@ -287,27 +272,12 @@ var _ = Describe("load balancers", func() {
 
 				Context("when the bosh cli version is <2.0", func() {
 					BeforeEach(func() {
-						fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+						fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 							switch request.URL.Path {
 							case "/version":
 								responseWriter.Write([]byte("1.9.0"))
 							}
 						}))
-
-						var err error
-						pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-							"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-						Expect(err).NotTo(HaveOccurred())
-
-						pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-						err = os.Rename(pathToFakeBOSH, pathToBOSH)
-						Expect(err).NotTo(HaveOccurred())
-
-						os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-					})
-
-					AfterEach(func() {
-						os.Setenv("PATH", originalPath)
 					})
 
 					It("fast fails with a helpful error message", func() {

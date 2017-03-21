@@ -2,14 +2,12 @@ package main_test
 
 import (
 	"crypto/rsa"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
@@ -22,11 +20,8 @@ import (
 
 var _ = Describe("bbl cloud-config", func() {
 	var (
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		fakeBOSHCLIBackendServer *httptest.Server
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
+		fakeBOSHServer *httptest.Server
+		fakeBOSH       *fakeBOSHDirector
 
 		tempDirectory         string
 		serviceAccountKeyPath string
@@ -44,10 +39,10 @@ var _ = Describe("bbl cloud-config", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/path":
-				responseWriter.Write([]byte(originalPath))
+				responseWriter.Write([]byte(noFakesPath))
 			case "/create-env/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
@@ -106,16 +101,6 @@ var _ = Describe("bbl cloud-config", func() {
 			}
 		}))
 
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -145,8 +130,6 @@ var _ = Describe("bbl cloud-config", func() {
 	})
 
 	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
-
 		callRealInterpolateMutex.Lock()
 		defer callRealInterpolateMutex.Unlock()
 		callRealInterpolate = false

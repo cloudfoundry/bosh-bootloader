@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
@@ -89,17 +88,14 @@ func (b *fakeBOSHDirector) ServeHTTP(responseWriter http.ResponseWriter, request
 
 var _ = Describe("bbl up aws", func() {
 	var (
-		fakeAWS                  *awsbackend.Backend
-		fakeAWSServer            *httptest.Server
-		fakeBOSHServer           *httptest.Server
-		fakeBOSHCLIBackendServer *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
-		pathToFakeBOSH           string
-		pathToBOSH               string
-		tempDirectory            string
-		lbCertPath               string
-		lbChainPath              string
-		lbKeyPath                string
+		fakeAWS        *awsbackend.Backend
+		fakeAWSServer  *httptest.Server
+		fakeBOSHServer *httptest.Server
+		fakeBOSH       *fakeBOSHDirector
+		tempDirectory  string
+		lbCertPath     string
+		lbChainPath    string
+		lbKeyPath      string
 
 		fastFail                 bool
 		fastFailMutex            sync.Mutex
@@ -115,12 +111,12 @@ var _ = Describe("bbl up aws", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/version":
 				responseWriter.Write([]byte("2.0.0"))
 			case "/path":
-				responseWriter.Write([]byte(originalPath))
+				responseWriter.Write([]byte(noFakesPath))
 			case "/interpolate/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
@@ -152,16 +148,6 @@ var _ = Describe("bbl up aws", func() {
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
 		var err error
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -177,10 +163,6 @@ var _ = Describe("bbl up aws", func() {
 		fastFailMutex.Lock()
 		defer fastFailMutex.Unlock()
 		fastFail = false
-	})
-
-	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
 	})
 
 	Describe("up", func() {
