@@ -206,6 +206,48 @@ var _ = Describe("bbl up gcp", func() {
 		})
 	})
 
+	Context("when the terraform version is 0.9.0", func() {
+		BeforeEach(func() {
+			fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/version":
+					responseWriter.Write([]byte("0.9.0"))
+				}
+			}))
+			var err error
+			pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
+			Expect(err).NotTo(HaveOccurred())
+
+			pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+			err = os.Rename(pathToFakeTerraform, pathToTerraform)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		})
+
+		AfterEach(func() {
+			os.Setenv("PATH", originalPath)
+		})
+
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("Version 0.9.0 of terraform is incompatible with bbl, please try a later version."))
+		})
+	})
+
 	Context("when a bbl enviornment already exists", func() {
 		BeforeEach(func() {
 			args := []string{

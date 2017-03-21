@@ -642,11 +642,26 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe("ValidateVersion", func() {
-		It("validates the version of terraform", func() {
-			executor.VersionCall.Returns.Version = "0.9.0"
+		Context("when terraform version is greater than v0.8.5", func() {
+			BeforeEach(func() {
+				executor.VersionCall.Returns.Version = "0.9.1"
+			})
 
-			err := manager.ValidateVersion()
-			Expect(err).NotTo(HaveOccurred())
+			It("validates the version of terraform and returns no error", func() {
+				err := manager.ValidateVersion()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when terraform version is v0.9.0", func() {
+			BeforeEach(func() {
+				executor.VersionCall.Returns.Version = "0.9.0"
+			})
+
+			It("returns a helpful error message", func() {
+				err := manager.ValidateVersion()
+				Expect(err).To(MatchError("Version 0.9.0 of terraform is incompatible with bbl, please try a later version."))
+			})
 		})
 
 		Context("failure cases", func() {
