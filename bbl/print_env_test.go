@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -62,30 +61,14 @@ var _ = Describe("bbl", func() {
 	Context("when the bosh environment has no director", func() {
 
 		Context("gcp", func() {
-			var (
-				pathToFakeTerraform        string
-				pathToTerraform            string
-				fakeTerraformBackendServer *httptest.Server
-			)
-
 			BeforeEach(func() {
 				var err error
-				fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 					switch request.URL.Path {
 					case "/output/external_ip":
 						responseWriter.Write([]byte("some-external-ip"))
 					}
 				}))
-
-				pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
-					"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
-				Expect(err).NotTo(HaveOccurred())
-
-				pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
-				err = os.Rename(pathToFakeTerraform, pathToTerraform)
-				Expect(err).NotTo(HaveOccurred())
-
-				os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
 
 				state := []byte(`{
 					"version":3,

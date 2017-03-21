@@ -20,19 +20,16 @@ import (
 
 var _ = Describe("bbl destroy gcp", func() {
 	var (
-		state                      storage.State
-		tempDirectory              string
-		statePath                  string
-		pathToFakeTerraform        string
-		pathToTerraform            string
-		pathToFakeBOSH             string
-		pathToBOSH                 string
-		fakeBOSHCLIBackendServer   *httptest.Server
-		fakeTerraformBackendServer *httptest.Server
-		fakeBOSHServer             *httptest.Server
-		fakeBOSH                   *fakeBOSHDirector
-		fastFail                   bool
-		fastFailMutex              sync.Mutex
+		state                    storage.State
+		tempDirectory            string
+		statePath                string
+		pathToFakeBOSH           string
+		pathToBOSH               string
+		fakeBOSHCLIBackendServer *httptest.Server
+		fakeBOSHServer           *httptest.Server
+		fakeBOSH                 *fakeBOSHDirector
+		fastFail                 bool
+		fastFailMutex            sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -59,7 +56,7 @@ var _ = Describe("bbl destroy gcp", func() {
 			}
 		}))
 
-		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/output/external_ip":
 				responseWriter.Write([]byte("127.0.0.1"))
@@ -78,14 +75,6 @@ var _ = Describe("bbl destroy gcp", func() {
 			}
 		}))
 
-		pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
-		err = os.Rename(pathToFakeTerraform, pathToTerraform)
-		Expect(err).NotTo(HaveOccurred())
-
 		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
 			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
 		Expect(err).NotTo(HaveOccurred())
@@ -94,7 +83,7 @@ var _ = Describe("bbl destroy gcp", func() {
 		err = os.Rename(pathToFakeBOSH, pathToBOSH)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -283,26 +272,12 @@ director_ssl:
 
 	Context("when the terraform version is <0.8.5", func() {
 		BeforeEach(func() {
-			fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
 				case "/version":
 					responseWriter.Write([]byte("0.8.4"))
 				}
 			}))
-			var err error
-			pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
-				"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
-			Expect(err).NotTo(HaveOccurred())
-
-			pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
-			err = os.Rename(pathToFakeTerraform, pathToTerraform)
-			Expect(err).NotTo(HaveOccurred())
-
-			os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
-		})
-
-		AfterEach(func() {
-			os.Setenv("PATH", originalPath)
 		})
 
 		It("fast fails with a helpful error message", func() {

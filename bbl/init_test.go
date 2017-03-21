@@ -11,13 +11,15 @@ import (
 	"strings"
 	"time"
 
+	"testing"
+
+	terraformbackend "github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform/backend"
 	"github.com/cloudfoundry/bosh-bootloader/bbl/gcpbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 func TestBbl(t *testing.T) {
@@ -26,19 +28,23 @@ func TestBbl(t *testing.T) {
 }
 
 var (
-	pathToBBL          string
-	pathToBOSHInit     string
-	pathToFakeBOSHInit string
-	gcpBackend         gcpbackend.GCPBackend
-	fakeGCPServer      *httptest.Server
-	serviceAccountKey  string
-	originalPath       string
+	pathToBBL                  string
+	pathToBOSHInit             string
+	pathToFakeBOSHInit         string
+	pathToFakeTerraform        string
+	pathToTerraform            string
+	gcpBackend                 gcpbackend.GCPBackend
+	fakeGCPServer              *httptest.Server
+	fakeTerraformBackendServer *terraformbackend.Backend
+	serviceAccountKey          string
+	originalPath               string
 )
 
 var _ = BeforeSuite(func() {
 	var err error
 	gcpBackend = gcpbackend.GCPBackend{}
 	fakeGCPServer, serviceAccountKey = gcpBackend.StartFakeGCPBackend()
+	fakeTerraformBackendServer = terraformbackend.NewBackend()
 
 	pathToBBL, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl", "--ldflags", fmt.Sprintf("-X main.gcpBasePath=%s", fakeGCPServer.URL))
 	Expect(err).NotTo(HaveOccurred())
@@ -50,7 +56,15 @@ var _ = BeforeSuite(func() {
 	err = os.Rename(pathToFakeBOSHInit, pathToBOSHInit)
 	Expect(err).NotTo(HaveOccurred())
 
-	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
+	pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+		"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.ServerURL()))
+	Expect(err).NotTo(HaveOccurred())
+
+	pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
+	err = os.Rename(pathToFakeTerraform, pathToTerraform)
+	Expect(err).NotTo(HaveOccurred())
+
+	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSHInit), os.Getenv("PATH")}, ":"))
 
 	originalPath = os.Getenv("PATH")
 })

@@ -11,10 +11,11 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/rosenhouse/awsfaker"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -51,16 +52,13 @@ type awsBOSHDeploymentVars struct {
 
 var _ = Describe("bosh-deployment-vars", func() {
 	var (
-		tempDirectory              string
-		serviceAccountKeyPath      string
-		pathToFakeTerraform        string
-		pathToTerraform            string
-		pathToFakeBOSH             string
-		pathToBOSH                 string
-		fakeBOSH                   *fakeBOSHDirector
-		fakeBOSHServer             *httptest.Server
-		fakeBOSHCLIBackendServer   *httptest.Server
-		fakeTerraformBackendServer *httptest.Server
+		tempDirectory            string
+		serviceAccountKeyPath    string
+		pathToFakeBOSH           string
+		pathToBOSH               string
+		fakeBOSH                 *fakeBOSHDirector
+		fakeBOSHServer           *httptest.Server
+		fakeBOSHCLIBackendServer *httptest.Server
 	)
 
 	BeforeEach(func() {
@@ -78,7 +76,7 @@ var _ = Describe("bosh-deployment-vars", func() {
 			}
 		}))
 
-		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		fakeTerraformBackendServer.SetHandler(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/output/external_ip":
 				responseWriter.Write([]byte("127.0.0.1"))
@@ -95,15 +93,7 @@ var _ = Describe("bosh-deployment-vars", func() {
 			case "/version":
 				responseWriter.Write([]byte("0.8.6"))
 			}
-		}))
-
-		pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
-		err = os.Rename(pathToFakeTerraform, pathToTerraform)
-		Expect(err).NotTo(HaveOccurred())
+		})
 
 		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
 			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHCLIBackendServer.URL))
@@ -113,7 +103,7 @@ var _ = Describe("bosh-deployment-vars", func() {
 		err = os.Rename(pathToFakeBOSH, pathToBOSH)
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), filepath.Dir(pathToBOSH), originalPath}, ":"))
+		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
