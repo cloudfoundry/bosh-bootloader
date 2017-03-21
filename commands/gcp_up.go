@@ -34,13 +34,13 @@ type GCPUp struct {
 }
 
 type GCPUpConfig struct {
-	ServiceAccountKeyPath string
-	ProjectID             string
-	Zone                  string
-	Region                string
-	OpsFilePath           string
-	Name                  string
-	NoDirector            bool
+	ServiceAccountKey string
+	ProjectID         string
+	Zone              string
+	Region            string
+	OpsFilePath       string
+	Name              string
+	NoDirector        bool
 }
 
 type gcpKeyPairCreator interface {
@@ -104,14 +104,14 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	if !upConfig.empty() {
 		var gcpDetails storage.GCP
 		var err error
-		gcpDetails, opsFileContents, err = u.parseUpConfig(upConfig)
+		gcpDetails, opsFileContents, err = parseUpConfig(upConfig)
 		if err != nil {
 			return err
 		}
 
 		state.IAAS = "gcp"
 
-		if err := u.fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
+		if err := fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
 			return err
 		}
 
@@ -221,20 +221,14 @@ func (u GCPUp) validateState(state storage.State) error {
 	return nil
 }
 
-func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) {
-	if upConfig.ServiceAccountKeyPath == "" {
+func parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) {
+	if upConfig.ServiceAccountKey == "" {
 		return storage.GCP{}, []byte{}, errors.New("GCP service account key must be provided")
 	}
 
-	sak, err := ioutil.ReadFile(upConfig.ServiceAccountKeyPath)
+	serviceAccountKey, err := parseServiceAccountKey(upConfig.ServiceAccountKey)
 	if err != nil {
-		return storage.GCP{}, []byte{}, fmt.Errorf("error reading service account key: %v", err)
-	}
-
-	var tmp interface{}
-	err = json.Unmarshal(sak, &tmp)
-	if err != nil {
-		return storage.GCP{}, []byte{}, fmt.Errorf("error parsing service account key: %v", err)
+		return storage.GCP{}, []byte{}, err
 	}
 
 	var opsFileContents []byte
@@ -246,7 +240,7 @@ func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) 
 	}
 
 	return storage.GCP{
-		ServiceAccountKey: string(sak),
+		ServiceAccountKey: serviceAccountKey,
 		ProjectID:         upConfig.ProjectID,
 		Zone:              upConfig.Zone,
 		Region:            upConfig.Region,
@@ -254,10 +248,10 @@ func (u GCPUp) parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) 
 }
 
 func (c GCPUpConfig) empty() bool {
-	return c.ServiceAccountKeyPath == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
+	return c.ServiceAccountKey == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
 }
 
-func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
+func fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
 	if stateGCP.Region != "" && stateGCP.Region != configGCP.Region {
 		return errors.New(fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", stateGCP.Region))
 	}
@@ -271,4 +265,22 @@ func (u GCPUp) fastFailConflictingGCPState(configGCP storage.GCP, stateGCP stora
 	}
 
 	return nil
+}
+
+func parseServiceAccountKey(serviceAccountKey string) (string, error) {
+	var tmp interface{}
+	rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
+	if err != nil {
+		err = json.Unmarshal([]byte(serviceAccountKey), &tmp)
+		if err != nil {
+			return "", fmt.Errorf("error reading or parsing service account key (must be valid json or a file containing valid json): %v", err)
+		}
+		return serviceAccountKey, nil
+	} else {
+		err = json.Unmarshal(rawServiceAccountKey, &tmp)
+		if err != nil {
+			return "", fmt.Errorf("error reading or parsing service account key (must be valid json or a file containing valid json): %v", err)
+		}
+		return string(rawServiceAccountKey), nil
+	}
 }

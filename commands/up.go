@@ -98,13 +98,13 @@ func (u Up) Execute(args []string, state storage.State) error {
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
-			ServiceAccountKeyPath: config.gcpServiceAccountKey,
-			ProjectID:             config.gcpProjectID,
-			Zone:                  config.gcpZone,
-			Region:                config.gcpRegion,
-			OpsFilePath:           config.opsFile,
-			Name:                  config.name,
-			NoDirector:            config.noDirector,
+			ServiceAccountKey: config.gcpServiceAccountKey,
+			ProjectID:         config.gcpProjectID,
+			Zone:              config.gcpZone,
+			Region:            config.gcpRegion,
+			OpsFilePath:       config.opsFile,
+			Name:              config.name,
+			NoDirector:        config.noDirector,
 		}, state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)

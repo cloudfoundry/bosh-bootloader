@@ -134,6 +134,31 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
 	})
 
+	It("accepts the service account key contents", func() {
+		args := []string{
+			"--state-dir", tempDirectory,
+			"--debug",
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKey,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "us-west1",
+		}
+
+		executeCommand(args, 0)
+
+		state := readStateJson(tempDirectory)
+		Expect(state.Version).To(Equal(3))
+		Expect(state.IAAS).To(Equal("gcp"))
+		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
+		Expect(state.GCP.Zone).To(Equal("some-zone"))
+		Expect(state.GCP.Region).To(Equal("us-west1"))
+		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
+		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
+	})
+
 	Context("when the terraform version is <0.8.5", func() {
 		BeforeEach(func() {
 			fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
