@@ -398,16 +398,17 @@ var _ = Describe("GCPUp", func() {
 
 		Context("reentrance", func() {
 			var (
-				updatedServiceAccountKey string
+				updatedServiceAccountKey     string
+				updatedServiceAccountKeyPath string
 			)
 
 			BeforeEach(func() {
 				tempFile, err := ioutil.TempFile("", "updatedGcpServiceAccountKey")
 				Expect(err).NotTo(HaveOccurred())
 
-				updatedServiceAccountKey = tempFile.Name()
+				updatedServiceAccountKeyPath = tempFile.Name()
 				updatedServiceAccountKey = `{"another-real": "json-file"}`
-				err = ioutil.WriteFile(updatedServiceAccountKey, []byte(updatedServiceAccountKey), os.ModePerm)
+				err = ioutil.WriteFile(updatedServiceAccountKeyPath, []byte(updatedServiceAccountKey), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -415,7 +416,7 @@ var _ = Describe("GCPUp", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
+						ServiceAccountKey: serviceAccountKeyPath,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
 						Region:            "us-west1",
@@ -437,7 +438,7 @@ var _ = Describe("GCPUp", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKey,
+						ServiceAccountKey: serviceAccountKeyPath,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
 						Region:            "us-west1",
