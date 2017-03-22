@@ -67,6 +67,7 @@ var _ = Describe("StateQuery", func() {
 
 			BeforeEach(func() {
 				state = storage.State{
+					EnvID:      "some-env-id",
 					NoDirector: true,
 				}
 			})
@@ -82,6 +83,15 @@ var _ = Describe("StateQuery", func() {
 				Entry("director-password", "director password"),
 				Entry("director-ssl-ca", "director ca cert"),
 			)
+
+			It("prints the env id", func() {
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "environment id")
+
+				err := command.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-env-id"))
+			})
 
 			Context("gcp", func() {
 				It("prints the eip as the director-address", func() {
@@ -113,7 +123,6 @@ var _ = Describe("StateQuery", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
 				})
-
 			})
 		})
 

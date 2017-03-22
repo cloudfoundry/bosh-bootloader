@@ -45,6 +45,29 @@ var _ = Describe("bbl-env-id", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("some-env-id"))
 	})
 
+	Context("when bbl environment does not have any bosh director", func() {
+		It("returns the env-id from the given state file", func() {
+			state := []byte(`{
+				"version": 3,
+				"envID": "some-env-id",
+				"noDirector": true
+			}`)
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			args := []string{
+				"--state-dir", tempDirectory,
+				"env-id",
+			}
+
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(ContainSubstring("some-env-id"))
+		})
+	})
+
 	Context("failure cases", func() {
 		It("returns a non zero exit code when the bbl-state.json does not exist", func() {
 			tempDirectory, err := ioutil.TempDir("", "")

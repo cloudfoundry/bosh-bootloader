@@ -49,7 +49,7 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 		return err
 	}
 
-	if state.NoDirector && s.propertyName != DirectorAddressPropertyName {
+	if state.NoDirector && s.propertyName != DirectorAddressPropertyName && s.propertyName != EnvIDPropertyName {
 		return errors.New("Error BBL does not manage this director.")
 	}
 
