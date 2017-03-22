@@ -55,7 +55,7 @@ var _ = Describe("concourse deployment test", func() {
 		info, err := boshClient.Info()
 		Expect(err).NotTo(HaveOccurred())
 
-		stemcell, err := boshClient.Stemcell(stemcellName)
+		stemcell, err := boshClient.StemcellByName(stemcellName)
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseRelease, err := boshClient.Release("concourse")
@@ -64,12 +64,15 @@ var _ = Describe("concourse deployment test", func() {
 		gardenRelease, err := boshClient.Release(GardenReleaseName)
 		Expect(err).NotTo(HaveOccurred())
 
+		stemcellLatest, err := stemcell.Latest()
+		Expect(err).NotTo(HaveOccurred())
+
 		concourseManifestInputs := concourseManifestInputs{
 			boshDirectorUUID:        info.UUID,
 			webExternalURL:          lbURL,
 			tlsMode:                 tlsMode,
 			tlsBindPort:             tlsBindPort,
-			stemcellVersion:         stemcell.Latest(),
+			stemcellVersion:         stemcellLatest,
 			concourseReleaseVersion: concourseRelease.Latest(),
 			gardenReleaseVersion:    gardenRelease.Latest(),
 		}
