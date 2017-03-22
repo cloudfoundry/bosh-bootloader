@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -130,12 +129,13 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 
 	if config.LBType == "cf" {
 		errs := multierror.NewMultiError("create-lbs")
-		if config.CertPath == "" {
-			errs.Add(errors.New("--cert is required"))
+		if err := validateCertOrKeyFlag("cert", config.CertPath); err != nil {
+			errs.Add(err)
 		}
-		if config.KeyPath == "" {
-			errs.Add(errors.New("--key is required"))
+		if err := validateCertOrKeyFlag("key", config.KeyPath); err != nil {
+			errs.Add(err)
 		}
+
 		if errs.Length() > 0 {
 			return errs
 		}
@@ -145,5 +145,21 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 		return fmt.Errorf("iaas type must be gcp")
 	}
 
+	return nil
+}
+
+func validateCertOrKeyFlag(flagName, path string) error {
+	if path == "" {
+		return fmt.Errorf("--%s is required", flagName)
+	} else {
+		body, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if string(body) == "" {
+			return fmt.Errorf("provided %s file is empty", flagName)
+		}
+	}
 	return nil
 }

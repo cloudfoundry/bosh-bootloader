@@ -250,6 +250,32 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
+			Context("when creating a cf lb and provided cert and key files are empty", func() {
+				BeforeEach(func() {
+					err := ioutil.WriteFile(certPath, []byte{}, os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = ioutil.WriteFile(keyPath, []byte{}, os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("returns a helpful error message", func() {
+					expectedErrors := multierror.NewMultiError("create-lbs")
+					expectedErrors.Add(errors.New("provided cert file is empty"))
+					expectedErrors.Add(errors.New("provided key file is empty"))
+
+					err := command.Execute(commands.GCPCreateLBsConfig{
+						LBType:   "cf",
+						CertPath: certPath,
+						KeyPath:  keyPath,
+						Domain:   "some-domain",
+					}, storage.State{
+						IAAS: "gcp",
+					})
+					Expect(err).To(Equal(expectedErrors))
+				})
+			})
+
 			It("returns an error if terraform manager version validator fails", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
 
@@ -310,21 +336,27 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("returns an error if the command fails to read the certificate", func() {
+				expectedErrors := multierror.NewMultiError("create-lbs")
+				expectedErrors.Add(errors.New("open some/fake/path: no such file or directory"))
+
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType:   "cf",
 					CertPath: "some/fake/path",
 					KeyPath:  keyPath,
 				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
+				Expect(err).To(MatchError(expectedErrors))
 			})
 
 			It("returns an error if the command fails to read the key", func() {
+				expectedErrors := multierror.NewMultiError("create-lbs")
+				expectedErrors.Add(errors.New("open some/fake/path: no such file or directory"))
+
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType:   "cf",
 					CertPath: certPath,
 					KeyPath:  "some/fake/path",
 				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
+				Expect(err).To(MatchError(expectedErrors))
 			})
 
 			It("saves the tf state even if the applier fails", func() {

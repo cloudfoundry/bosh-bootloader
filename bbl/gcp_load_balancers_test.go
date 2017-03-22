@@ -295,6 +295,30 @@ var _ = Describe("load balancers", func() {
 					})
 				})
 
+				Context("when creating cf lb and provided cert and key are empty files", func() {
+					BeforeEach(func() {
+						err := ioutil.WriteFile(certPath, []byte{}, os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = ioutil.WriteFile(keyPath, []byte{}, os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns a helpful error message", func() {
+						args := []string{
+							"--state-dir", tempDirectory,
+							"create-lbs",
+							"--type", "cf",
+							"--cert", certPath,
+							"--key", keyPath,
+						}
+
+						session := executeCommand(args, 1)
+						Expect(session.Err.Contents()).To(ContainSubstring("provided cert file is empty"))
+						Expect(session.Err.Contents()).To(ContainSubstring("provided key file is empty"))
+					})
+				})
+
 				DescribeTable("missing required flags", func(extraArgs, expectedOutputs []string) {
 					args := []string{
 						"--state-dir", tempDirectory,
@@ -503,6 +527,44 @@ var _ = Describe("load balancers", func() {
 					stderr := session.Err.Contents()
 
 					Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
+				})
+			})
+
+			Context("when a cf lb exists", func() {
+				BeforeEach(func() {
+					args := []string{
+						"--state-dir", tempDirectory,
+						"create-lbs",
+						"--type", "cf",
+						"--cert", certPath,
+						"--key", keyPath,
+					}
+
+					executeCommand(args, 0)
+				})
+
+				Context("when provided cert and key are empty files", func() {
+					BeforeEach(func() {
+						err := ioutil.WriteFile(certPath, []byte{}, os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = ioutil.WriteFile(keyPath, []byte{}, os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns a helpful error message", func() {
+						args := []string{
+							"--state-dir", tempDirectory,
+							"create-lbs",
+							"--type", "cf",
+							"--cert", certPath,
+							"--key", keyPath,
+						}
+
+						session := executeCommand(args, 1)
+						Expect(session.Err.Contents()).To(ContainSubstring("provided cert file is empty"))
+						Expect(session.Err.Contents()).To(ContainSubstring("provided key file is empty"))
+					})
 				})
 			})
 
