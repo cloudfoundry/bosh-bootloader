@@ -83,7 +83,15 @@ var _ = Describe("concourse deployment test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return boshClient.DeploymentVMs("concourse")
+			vms, err := boshClient.DeploymentVMs("concourse")
+			if err != nil {
+				return []bosh.VM{}, err
+			}
+
+			for _, vm := range vms {
+				vm.ID = ""
+			}
+			return vms, nil
 		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
 			{JobName: "worker", Index: 0, State: "running"},
 			{JobName: "db", Index: 0, State: "running"},
