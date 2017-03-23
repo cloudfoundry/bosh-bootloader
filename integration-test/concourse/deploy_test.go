@@ -88,10 +88,12 @@ var _ = Describe("concourse deployment test", func() {
 				return []bosh.VM{}, err
 			}
 
+			vmsNoID := []bosh.VM{}
 			for _, vm := range vms {
 				vm.ID = ""
+				vmsNoID = append(vmsNoID, vm)
 			}
-			return vms, nil
+			return vmsNoID, nil
 		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
 			{JobName: "worker", Index: 0, State: "running"},
 			{JobName: "db", Index: 0, State: "running"},
