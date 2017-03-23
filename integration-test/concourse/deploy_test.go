@@ -91,6 +91,7 @@ var _ = Describe("concourse deployment test", func() {
 			vmsNoID := []bosh.VM{}
 			for _, vm := range vms {
 				vm.ID = ""
+				vm.IPs = nil
 				vmsNoID = append(vmsNoID, vm)
 			}
 			return vmsNoID, nil
