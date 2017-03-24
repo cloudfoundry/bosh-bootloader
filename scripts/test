@@ -1,6 +1,21 @@
 #!/bin/bash -eu
 
+function unset_env_vars() {
+  echo "Unsetting BBL environment variables"
+  unset BBL_IAAS
+  unset BBL_AWS_ACCESS_KEY_ID
+  unset BBL_AWS_REGION
+  unset BBL_AWS_SECRET_ACCESS_KEY
+  unset BBL_AWS_BOSH_AZ
+  unset BBL_GCP_SERVICE_ACCOUNT_KEY
+  unset BBL_GCP_REGION
+  unset BBL_GCP_ZONE
+  unset BBL_GCP_PROJECT_ID
+}
+
 function main() {
+  unset_env_vars
+
 	local root_dir
 	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
