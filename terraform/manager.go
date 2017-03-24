@@ -47,7 +47,7 @@ type templateGenerator interface {
 }
 
 type logger interface {
-	Println(message string)
+	Step(string, ...interface{})
 }
 
 func NewManager(executor executor, templateGenerator templateGenerator, logger logger) Manager {
@@ -117,6 +117,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 }
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
+	m.logger.Step("generating terraform template")
 	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
 	switch bblState.LB.Type {
 	case "concourse":
@@ -151,6 +152,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	case error:
 		return storage.State{}, err
 	}
+	m.logger.Step("applied terraform template")
 
 	bblState.TFState = tfState
 	return bblState, nil

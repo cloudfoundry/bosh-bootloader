@@ -8,15 +8,13 @@ import (
 
 type GCPDeleteLBs struct {
 	cloudConfigManager cloudConfigManager
-	logger             logger
 	stateStore         stateStore
 	terraformManager   terraformManager
 }
 
-func NewGCPDeleteLBs(logger logger, stateStore stateStore,
+func NewGCPDeleteLBs(stateStore stateStore,
 	terraformManager terraformManager, cloudConfigManager cloudConfigManager) GCPDeleteLBs {
 	return GCPDeleteLBs{
-		logger:             logger,
 		stateStore:         stateStore,
 		terraformManager:   terraformManager,
 		cloudConfigManager: cloudConfigManager,
@@ -37,7 +35,6 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 		}
 	}
 
-	g.logger.Step("generating terraform template")
 	state, err = g.terraformManager.Apply(state)
 	switch err.(type) {
 	case terraform.ManagerApplyError:
@@ -53,7 +50,6 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 	case error:
 		return err
 	}
-	g.logger.Step("finished applying terraform template")
 
 	err = g.stateStore.Set(state)
 	if err != nil {

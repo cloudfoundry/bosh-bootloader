@@ -64,8 +64,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return nil
 	}
 
-	c.logger.Step("generating terraform template")
-
 	state.LB.Type = config.LBType
 
 	var cert, key []byte
@@ -102,7 +100,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	case error:
 		return err
 	}
-	c.logger.Step("finished applying terraform template")
 
 	if err := c.stateStore.Set(state); err != nil {
 		return err

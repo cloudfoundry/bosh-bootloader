@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 const (
@@ -29,6 +30,7 @@ var _ = Describe("Manager", func() {
 			stackManager     *fakes.StackManager
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
+			logger           *fakes.Logger
 			boshManager      bosh.Manager
 			incomingGCPState storage.State
 			incomingAWSState storage.State
@@ -39,7 +41,8 @@ var _ = Describe("Manager", func() {
 			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
+			logger = &fakes.Logger{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 
 			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:     "some-network",
@@ -124,6 +127,13 @@ var _ = Describe("Manager", func() {
 					"some-new-key": "some-new-value",
 				},
 			}
+		})
+
+		It("logs bosh director status messages", func() {
+			_, err := boshManager.Create(incomingGCPState, []byte{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.StepCall.Messages).To(ContainSequence([]string{"creating bosh director", "created bosh director"}))
 		})
 
 		Context("when iaas is gcp", func() {
@@ -369,6 +379,7 @@ private_key: |-
 			stackManager     *fakes.StackManager
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
+			logger           *fakes.Logger
 			boshManager      bosh.Manager
 		)
 
@@ -376,7 +387,8 @@ private_key: |-
 			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
+			logger = &fakes.Logger{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 		})
 
 		It("calls delete env", func() {
@@ -453,6 +465,7 @@ private_key: |-
 			stackManager     *fakes.StackManager
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
+			logger           *fakes.Logger
 			boshManager      bosh.Manager
 			incomingGCPState storage.State
 			incomingAWSState storage.State
@@ -462,7 +475,8 @@ private_key: |-
 			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
+			logger = &fakes.Logger{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 
 			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 				NetworkName:     "some-network",
@@ -594,6 +608,7 @@ private_key: |-
 			stackManager     *fakes.StackManager
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
+			logger           *fakes.Logger
 			boshManager      bosh.Manager
 		)
 
@@ -601,7 +616,8 @@ private_key: |-
 			terraformManager = &fakes.TerraformManager{}
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager)
+			logger = &fakes.Logger{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 
 			boshExecutor.VersionCall.Returns.Version = "2.0.0"
 		})

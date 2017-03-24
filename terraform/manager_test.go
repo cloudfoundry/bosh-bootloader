@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var terraformTemplate = `variable "project_id" {
@@ -64,6 +65,15 @@ var _ = Describe("Manager", func() {
 			expectedTFState  string
 			expectedTemplate []byte
 		)
+
+		It("returns a state with new tfState from executor apply", func() {
+			_, err := manager.Apply(storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				"generating terraform template", "applied terraform template",
+			}))
+		})
 
 		Context("when no lb exists", func() {
 			BeforeEach(func() {

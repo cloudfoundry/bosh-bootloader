@@ -11,14 +11,12 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("GCPDeleteLBs", func() {
 	var (
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
-		logger             *fakes.Logger
 		terraformManager   *fakes.TerraformManager
 
 		command commands.GCPDeleteLBs
@@ -29,11 +27,10 @@ var _ = Describe("GCPDeleteLBs", func() {
 	Describe("Execute", func() {
 		BeforeEach(func() {
 			stateStore = &fakes.StateStore{}
-			logger = &fakes.Logger{}
 			terraformManager = &fakes.TerraformManager{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 
-			command = commands.NewGCPDeleteLBs(logger, stateStore, terraformManager, cloudConfigManager)
+			command = commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
 			body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
 			Expect(err).NotTo(HaveOccurred())
@@ -124,10 +121,6 @@ var _ = Describe("GCPDeleteLBs", func() {
 					ProjectID:         projectID,
 				},
 				TFState: tfState,
-			}))
-
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-				"generating terraform template", "finished applying terraform template",
 			}))
 		})
 

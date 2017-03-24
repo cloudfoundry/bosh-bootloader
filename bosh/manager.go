@@ -20,6 +20,7 @@ type Manager struct {
 	executor         executor
 	terraformManager terraformManager
 	stackManager     stackManager
+	logger           logger
 }
 
 type directorOutputs struct {
@@ -68,11 +69,16 @@ type stackManager interface {
 	Describe(stackName string) (cloudformation.Stack, error)
 }
 
-func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager) Manager {
+type logger interface {
+	Step(string, ...interface{})
+}
+
+func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager, logger logger) Manager {
 	return Manager{
 		executor:         executor,
 		terraformManager: terraformManager,
 		stackManager:     stackManager,
+		logger:           logger,
 	}
 }
 
@@ -81,6 +87,7 @@ func (m Manager) Version() (string, error) {
 }
 
 func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, error) {
+	m.logger.Step("creating bosh director")
 	iaasInputs, err := m.generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
@@ -133,6 +140,7 @@ func (m Manager) Create(state storage.State, opsFile []byte) (storage.State, err
 		Manifest:               interpolateOutputs.Manifest,
 	}
 
+	m.logger.Step("created bosh director")
 	return state, nil
 }
 

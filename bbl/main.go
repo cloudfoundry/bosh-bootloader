@@ -130,7 +130,7 @@ func main() {
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile, configuration.Global.Debug)
-	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager)
+	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 	boshClientProvider := bosh.NewClientProvider()
 
 	// Cloud Config
@@ -162,7 +162,7 @@ func main() {
 		credentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigManager, boshClientProvider, stateStore,
 	)
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(logger, stateStore, terraformManager, cloudConfigManager)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
 	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformManager, boshManager, logger,
 		envIDManager, cloudConfigManager)

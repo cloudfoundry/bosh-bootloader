@@ -134,6 +134,30 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
 	})
 
+	It("writes logging messages to stdout", func() {
+		args := []string{
+			"--state-dir", tempDirectory,
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKeyPath,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "us-west1",
+		}
+
+		session := executeCommand(args, 0)
+
+		stdout := session.Out.Contents()
+
+		Expect(stdout).To(ContainSubstring("step: appending new ssh-keys"))
+		Expect(stdout).To(ContainSubstring("step: generating terraform template"))
+		Expect(stdout).To(ContainSubstring("step: applied terraform template"))
+		Expect(stdout).To(ContainSubstring("step: creating bosh director"))
+		Expect(stdout).To(ContainSubstring("step: created bosh director"))
+		Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+		Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+	})
+
 	It("accepts the service account key contents", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
@@ -459,11 +483,8 @@ var _ = Describe("bbl up gcp", func() {
 			"--gcp-region", "us-east1",
 		}
 
-		session := executeCommand(args, 0)
-		stdout := session.Out.Contents()
+		executeCommand(args, 0)
 
-		Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-		Expect(stdout).To(ContainSubstring("step: applying cloud config"))
 		Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 
 		By("executing idempotently", func() {

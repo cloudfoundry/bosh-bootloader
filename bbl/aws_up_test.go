@@ -387,6 +387,10 @@ var _ = Describe("bbl up aws", func() {
 				Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
 				Expect(stdout).To(ContainSubstring("step: creating cloudformation stack"))
 				Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
+				Expect(stdout).To(ContainSubstring("step: creating bosh director"))
+				Expect(stdout).To(ContainSubstring("step: created bosh director"))
+				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
 			})
 
 			It("invokes the bosh cli", func() {

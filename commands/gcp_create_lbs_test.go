@@ -13,7 +13,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("GCPCreateLBs", func() {
@@ -222,9 +221,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-					"generating terraform template", "finished applying terraform template",
-				}))
 			})
 
 			It("does not call the CloudConfigManager", func() {

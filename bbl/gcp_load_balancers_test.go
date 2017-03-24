@@ -369,7 +369,7 @@ var _ = Describe("load balancers", func() {
 			session := executeCommand(args, 0)
 			stdout := session.Out.Contents()
 			Expect(stdout).To(ContainSubstring("step: generating terraform template"))
-			Expect(stdout).To(ContainSubstring("step: finished applying terraform template"))
+			Expect(stdout).To(ContainSubstring("step: applied terraform template"))
 			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
 			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
 		})
@@ -667,7 +667,7 @@ var _ = Describe("load balancers", func() {
 
 			By("logging the steps", func() {
 				Expect(stdout).To(ContainSubstring("step: generating terraform template"))
-				Expect(stdout).To(ContainSubstring("step: finished applying terraform template"))
+				Expect(stdout).To(ContainSubstring("step: applied terraform template"))
 				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
 				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
 			})
@@ -1002,7 +1002,7 @@ var _ = Describe("load balancers", func() {
 
 			By("logging the steps", func() {
 				Expect(stdout).To(ContainSubstring("step: generating terraform template"))
-				Expect(stdout).To(ContainSubstring("step: finished applying terraform template"))
+				Expect(stdout).To(ContainSubstring("step: applied terraform template"))
 				Expect(stdout).NotTo(ContainSubstring("step: generating cloud config"))
 				Expect(stdout).NotTo(ContainSubstring("step: applying cloud config"))
 			})
