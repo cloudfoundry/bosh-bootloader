@@ -3,10 +3,14 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
+)
+
+var (
+	marshalIndent = json.MarshalIndent
 )
 
 const (
@@ -17,10 +21,6 @@ const (
 type logger interface {
 	Println(message string)
 }
-
-var (
-	encode func(io.Writer, interface{}) error = encodeFile
-)
 
 type AWS struct {
 	AccessKeyID     string `json:"accessKeyId"`
@@ -90,13 +90,13 @@ func (s Store) Set(state State) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(s.stateFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, OS_READ_WRITE_MODE)
+	state.Version = s.version
+
+	jsonData, err := marshalIndent(state, "", "\t")
 	if err != nil {
 		return err
 	}
-
-	state.Version = s.version
-	err = encode(file, state)
+	err = ioutil.WriteFile(s.stateFile, jsonData, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
@@ -158,8 +158,4 @@ func stateAndBBLStateExist(dir string) (bool, error) {
 	}
 	return true, nil
 
-}
-
-func encodeFile(w io.Writer, v interface{}) error {
-	return json.NewEncoder(w).Encode(v)
 }

@@ -1,13 +1,11 @@
 package storage
 
-import (
-	"io"
-)
+import "encoding/json"
 
-func SetEncode(f func(io.Writer, interface{}) error) {
-	encode = f
+func SetMarshalIndent(f func(state interface{}, prefix, indent string) ([]byte, error)) {
+	marshalIndent = f
 }
 
-func ResetEncode() {
-	encode = encodeFile
+func ResetMarshalIndent() {
+	marshalIndent = json.MarshalIndent
 }

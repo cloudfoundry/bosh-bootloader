@@ -2,7 +2,6 @@ package storage_test
 
 import (
 	"errors"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,7 +20,6 @@ var _ = Describe("Store", func() {
 	)
 
 	BeforeEach(func() {
-
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
 
@@ -30,7 +28,7 @@ var _ = Describe("Store", func() {
 	})
 
 	AfterEach(func() {
-		storage.ResetEncode()
+		storage.ResetMarshalIndent()
 	})
 
 	Describe("Set", func() {
@@ -206,6 +204,16 @@ var _ = Describe("Store", func() {
 		})
 
 		Context("failure cases", func() {
+			It("fails when json marshalling doesn't work", func() {
+				storage.SetMarshalIndent(func(state interface{}, prefix string, indent string) ([]byte, error) {
+					return []byte{}, errors.New("failed to marshal JSON")
+				})
+				err := store.Set(storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).To(MatchError("failed to marshal JSON"))
+			})
+
 			It("fails when the directory does not exist", func() {
 				store = storage.NewStore("non-valid-dir")
 				err := store.Set(storage.State{})
@@ -222,19 +230,6 @@ var _ = Describe("Store", func() {
 					},
 				})
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
-			})
-
-			It("fails to write the bbl-state.json file", func() {
-				storage.SetEncode(func(io.Writer, interface{}) error {
-					return errors.New("failed to encode")
-				})
-
-				err := store.Set(storage.State{
-					Stack: storage.Stack{
-						Name: "some-stack-name",
-					},
-				})
-				Expect(err).To(MatchError("failed to encode"))
 			})
 		})
 	})
