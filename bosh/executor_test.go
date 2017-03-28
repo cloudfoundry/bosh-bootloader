@@ -93,7 +93,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				OpsFile:   []byte("some-ops-file"),
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
 		AfterEach(func() {
@@ -122,7 +122,6 @@ gcp_credentials_json: 'some-credential-json'`,
 				"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
 
 			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
-			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
 
 			opsFileContents, err := ioutil.ReadFile(fmt.Sprintf("%s/user-ops-file.yml", tempDir))
 			Expect(err).NotTo(HaveOccurred())
@@ -142,10 +141,9 @@ gcp_credentials_json: 'some-credential-json'`,
 		)
 
 		It("does not pass in false to run command on interpolate", func() {
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, false)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 			_, err := executor.Interpolate(awsInterpolateInput)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
 		})
 
 		Describe("failure cases", func() {
@@ -154,7 +152,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return "", errors.New("failed to create temp dir")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Interpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to create temp dir"))
 			})
@@ -167,7 +165,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
 				_, err := executor.Interpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to write variables"))
 			})
@@ -180,7 +178,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
 				_, err := executor.Interpolate(bosh.InterpolateInput{})
 				Expect(err).To(MatchError("failed to write user ops file"))
 			})
@@ -193,7 +191,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
 				_, err := executor.Interpolate(bosh.InterpolateInput{})
 				Expect(err).To(MatchError("failed to write bosh manifest"))
 			})
@@ -206,7 +204,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
@@ -221,7 +219,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
@@ -236,7 +234,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
@@ -246,7 +244,7 @@ gcp_credentials_json: 'some-credential-json'`,
 			It("fails when trying to run command", func() {
 				cmd.RunCall.Returns.Error = errors.New("failed to run command")
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
@@ -258,7 +256,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return []byte{}, errors.New("failed to read variables file")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
@@ -270,7 +268,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return errors.New("failed to unmarshal variables")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, unmarshalFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, unmarshalFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS:      "aws",
 					Variables: variablesYMLContents,
@@ -303,7 +301,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return tempDir, nil
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 		})
 
@@ -312,7 +310,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return "", errors.New("failed to create temp dir")
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 			err := callback(executor)
 			Expect(err).To(MatchError("failed to create temp dir"))
 		})
@@ -322,7 +320,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return []byte{}, errors.New("failed to marshal state")
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalFunc, ioutil.WriteFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, marshalFunc, ioutil.WriteFile)
 			err := callback(executor)
 			Expect(err).To(MatchError("failed to marshal state"))
 		})
@@ -332,7 +330,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return errors.New("failed to write file")
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFile)
 			err := callback(executor)
 			Expect(err).To(MatchError("failed to write file"))
 		})
@@ -372,7 +370,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return tempDir, nil
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			createEnvInput = bosh.CreateEnvInput{
 				Manifest:  "some-manifest",
@@ -415,7 +413,6 @@ gcp_credentials_json: 'some-credential-json'`,
 				"--vars-store", variablesPath,
 				"--state", statePath,
 			}))
-			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
 
 			Expect(createEnvOutput.State).To(Equal(map[string]interface{}{
 				"key": "value",
@@ -436,7 +433,7 @@ gcp_credentials_json: 'some-credential-json'`,
 			Context("when command run fails", func() {
 				BeforeEach(func() {
 					cmd.RunCall.Returns.Error = errors.New("failed to run")
-					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				})
 
 				It("returns a create env error with a valid bosh state", func() {
@@ -453,7 +450,7 @@ gcp_credentials_json: 'some-credential-json'`,
 							return []byte{}, errors.New("failed to read file")
 						}
 
-						executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+						executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 					})
 
 					It("returns an error", func() {
@@ -468,7 +465,7 @@ gcp_credentials_json: 'some-credential-json'`,
 							return errors.New("failed to unmarshal")
 						}
 
-						executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile, true)
+						executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile)
 					})
 
 					It("returns an error", func() {
@@ -483,7 +480,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return []byte{}, errors.New("failed to read file")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.CreateEnv(createEnvInput)
 				Expect(err).To(MatchError("failed to read file"))
 			})
@@ -493,7 +490,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return errors.New("failed to unmarshal")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, unmarshalFunc, json.Marshal, ioutil.WriteFile)
 				_, err := executor.CreateEnv(createEnvInput)
 				Expect(err).To(MatchError("failed to unmarshal"))
 			})
@@ -528,7 +525,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return tempDir, nil
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			deleteEnvInput = bosh.DeleteEnvInput{
 				Manifest:  "some-manifest",
@@ -571,7 +568,6 @@ gcp_credentials_json: 'some-credential-json'`,
 				"--vars-store", variablesPath,
 				"--state", statePath,
 			}))
-			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
 		})
 
 		Context("failure cases", func() {
@@ -592,7 +588,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					}
 
 					cmd.RunCall.Returns.Error = errors.New("failed to run")
-					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				})
 
 				It("returns a create env error with a valid bosh state", func() {
@@ -609,7 +605,7 @@ gcp_credentials_json: 'some-credential-json'`,
 							return []byte{}, errors.New("failed to read file")
 						}
 
-						executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+						executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 					})
 
 					It("returns an error", func() {
@@ -645,7 +641,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return tempDir, nil
 			}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, false)
+			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
 		It("passes the correct args and dir to run command", func() {
@@ -653,7 +649,6 @@ gcp_credentials_json: 'some-credential-json'`,
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"-v"}))
-			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
 		It("returns the correctly trimmed version", func() {
@@ -668,7 +663,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return "", errors.New("failed to create temp dir")
 				}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile, true)
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Version()
 				Expect(err).To(MatchError("failed to create temp dir"))
 			})

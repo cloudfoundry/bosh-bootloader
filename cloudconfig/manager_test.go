@@ -96,7 +96,6 @@ var _ = Describe("Manager", func() {
 			Expect(cmd.RunCall.CallCount).To(Equal(1))
 			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
 			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
-			Expect(cmd.RunCall.Receives.Debug).To(Equal(true))
 
 			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
 		})

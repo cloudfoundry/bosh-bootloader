@@ -15,14 +15,12 @@ func NewCmd(stderr io.Writer) Cmd {
 	}
 }
 
-func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
+func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
 	command := exec.Command("bosh", args...)
 	command.Dir = workingDirectory
 
-	if debug {
-		command.Stdout = stdout
-		command.Stderr = c.stderr
-	}
+	command.Stdout = stdout
+	command.Stderr = c.stderr
 
 	return command.Run()
 }

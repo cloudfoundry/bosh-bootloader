@@ -29,7 +29,7 @@ type logger interface {
 }
 
 type command interface {
-	Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error
+	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 type opsGenerator interface {
@@ -76,7 +76,7 @@ func (m Manager) Generate(state storage.State) (string, error) {
 		"-o", fmt.Sprintf("%s/ops.yml", workingDir),
 	}
 
-	err = m.command.Run(buf, workingDir, args, true)
+	err = m.command.Run(buf, workingDir, args)
 	if err != nil {
 		return "", err
 	}

@@ -20,7 +20,6 @@ type Executor struct {
 	unmarshalJSON func([]byte, interface{}) error
 	marshalJSON   func(interface{}) ([]byte, error)
 	writeFile     func(string, []byte, os.FileMode) error
-	debug         bool
 }
 
 type InterpolateInput struct {
@@ -53,12 +52,12 @@ type DeleteEnvInput struct {
 }
 
 type command interface {
-	Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error
+	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 func NewExecutor(cmd command, tempDir func(string, string) (string, error), readFile func(string) ([]byte, error),
 	unmarshalYAML func([]byte, interface{}) error, unmarshalJSON func([]byte, interface{}) error,
-	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error, debug bool) Executor {
+	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error) Executor {
 	return Executor{
 		command:       cmd,
 		tempDir:       tempDir,
@@ -67,7 +66,6 @@ func NewExecutor(cmd command, tempDir func(string, string) (string, error), read
 		unmarshalJSON: unmarshalJSON,
 		marshalJSON:   marshalJSON,
 		writeFile:     writeFile,
-		debug:         debug,
 	}
 }
 
@@ -153,7 +151,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.command.Run(buffer, tempDir, args, true)
+	err = e.command.Run(buffer, tempDir, args)
 	if err != nil {
 		return InterpolateOutput{}, err
 	}
@@ -191,7 +189,7 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, err
 		"--state", statePath,
 	}
 
-	err = e.command.Run(os.Stdout, tempDir, args, e.debug)
+	err = e.command.Run(os.Stdout, tempDir, args)
 	if err != nil {
 		state, readErr := e.readBOSHState(statePath)
 		if readErr != nil {
@@ -245,7 +243,7 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 		"--state", statePath,
 	}
 
-	err = e.command.Run(os.Stdout, tempDir, args, e.debug)
+	err = e.command.Run(os.Stdout, tempDir, args)
 	if err != nil {
 		state, readErr := e.readBOSHState(statePath)
 		if readErr != nil {
@@ -269,7 +267,7 @@ func (e Executor) Version() (string, error) {
 	args := []string{"-v"}
 
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.command.Run(buffer, tempDir, args, true)
+	err = e.command.Run(buffer, tempDir, args)
 	if err != nil {
 		return "", err
 	}

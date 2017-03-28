@@ -129,7 +129,7 @@ func main() {
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal,
-		json.Marshal, ioutil.WriteFile, configuration.Global.Debug)
+		json.Marshal, ioutil.WriteFile)
 	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 	boshClientProvider := bosh.NewClientProvider()
 

@@ -96,23 +96,15 @@ var _ = Describe("Cmd", func() {
 	})
 
 	It("runs bosh with args", func() {
-		err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"}, false)
+		err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"})
 		Expect(err).NotTo(HaveOccurred())
 
 		boshArgsMutex.Lock()
 		defer boshArgsMutex.Unlock()
 		Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
 
-		Expect(stdout).NotTo(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
-		Expect(stdout).NotTo(ContainSubstring("create-env some-arg"))
-	})
-
-	It("redirects command stdout to provided stdout when debug is true", func() {
-		err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"}, true)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(stdout.String()).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
-		Expect(stdout.String()).To(ContainSubstring("create-env some-arg"))
+		Expect(stdout).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
+		Expect(stdout).To(ContainSubstring("create-env some-arg"))
 	})
 
 	Context("failure case", func() {
@@ -125,12 +117,8 @@ var _ = Describe("Cmd", func() {
 		})
 
 		It("returns an error when bosh fails", func() {
-			err := cmd.Run(stdout, tempDir, []string{"create-env"}, false)
+			err := cmd.Run(stdout, tempDir, []string{"create-env"})
 			Expect(err).To(MatchError("exit status 1"))
-		})
-
-		It("redirects command stderr to provided stderr when debug is true", func() {
-			_ = cmd.Run(stdout, tempDir, []string{"create-env"}, true)
 			Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
 		})
 	})
