@@ -296,6 +296,24 @@
       root_disk_type: pd-ssd
 
 - type: replace
+  path: /vm_types/-
+  value:
+    name: small-highmem
+    cloud_properties:
+      machine_type: n1-highmem-4
+      root_disk_size_gb: 10
+      root_disk_type: pd-ssd
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: small-highcpu
+    cloud_properties:
+      machine_type: n1-highcpu-2
+      root_disk_size_gb: 10
+      root_disk_type: pd-ssd
+
+- type: replace
   path: /vm_extensions/name=1GB_ephemeral_disk/cloud_properties?
   value:
     root_disk_size_gb: 1
