@@ -20,9 +20,8 @@ support bootstrapping a CloudFoundry installation on AWS.
 ### Install Dependencies
 
 The following should be installed on your local machine
-- Golang >= 1.7 (install with `brew install go`)
-- bosh-init ([installation instructions](http://bosh.io/docs/install-bosh-init.html))
-- terraform >= 0.8.7 ([download here](https://www.terraform.io/downloads.html))
+- BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html)
+- terraform >= 0.9.1 ([download here](https://www.terraform.io/downloads.html))
 
 ### Install bosh-bootloader
 
@@ -74,11 +73,13 @@ Usage:
   bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
 
 Global Options:
-  --help      [-h]       Print usage
-  --version   [-v]       Print version
+  --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
+  --debug                Prints debugging output
 
 Commands:
+  bosh-deployment-vars   Prints required variables for BOSH deployment
+  cloud-config           Prints suggested cloud configuration for BOSH environment
   create-lbs             Attaches load balancer(s)
   delete-lbs             Deletes attached load balancer(s)
   destroy                Tears down BOSH director infrastructure
@@ -87,6 +88,7 @@ Commands:
   director-password      Prints BOSH director password
   director-ca-cert       Prints BOSH director CA certificate
   env-id                 Prints environment ID
+  print-env              Prints BOSH friendly environment variables
   help                   Prints usage
   lbs                    Prints attached load balancer(s)
   ssh-key                Prints SSH private key
