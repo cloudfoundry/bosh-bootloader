@@ -13,10 +13,7 @@ This document will walk through deploying a cf-deployment based Cloud Foundry.
 ## Set the bosh environment
 
 ```
-export BOSH_CLIENT=`bbl director-username`
-export BOSH_CLIENT_SECRET=`bbl director-password`
-export BOSH_CA_CERT=`bbl director-ca-cert`
-export BOSH_ENVIRONMENT=`bbl director-address`
+eval "$(bosh print-env)"
 ```
 
 ## Create load balancer
