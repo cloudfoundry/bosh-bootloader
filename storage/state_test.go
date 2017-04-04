@@ -258,6 +258,21 @@ var _ = Describe("Store", func() {
 			storage.GetStateLogger = logger
 		})
 
+		Context("when there is a completely empty state file", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns a new state", func() {
+				state, err := storage.GetState(tempDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(state).To(Equal(storage.State{
+					Version: 3,
+				}))
+			})
+		})
+
 		Context("when there is a pre v3 state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{

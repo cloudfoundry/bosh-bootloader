@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -69,6 +71,23 @@ var _ = Describe("bbl up", func() {
 
 		state := readStateJson(tempDirectory)
 		Expect(state.IAAS).To(Equal("gcp"))
+	})
+
+	It("succeeds if provided an empty json struct as the bbl-state.json", func() {
+		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), []byte("{}"), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		args := []string{
+			"--state-dir", tempDirectory,
+			"up",
+			"--iaas", "gcp",
+			"--gcp-service-account-key", serviceAccountKeyPath,
+			"--gcp-project-id", "some-project-id",
+			"--gcp-zone", "some-zone",
+			"--gcp-region", "us-west1",
+		}
+
+		executeCommand(args, 0)
 	})
 
 	Context("when providing iaas via env vars", func() {

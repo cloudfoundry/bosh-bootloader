@@ -131,6 +131,13 @@ func GetState(dir string) (State, error) {
 		return state, err
 	}
 
+	emptyState := State{}
+	if reflect.DeepEqual(state, emptyState) {
+		state = State{
+			Version: 3,
+		}
+	}
+
 	if state.Version < 3 {
 		return state, errors.New("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue.")
 	}
