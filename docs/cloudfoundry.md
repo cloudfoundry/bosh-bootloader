@@ -13,7 +13,7 @@ This document will walk through deploying a cf-deployment based Cloud Foundry.
 ## Set the bosh environment
 
 ```
-eval "$(bosh print-env)"
+eval "$(bbl print-env)"
 ```
 
 ## Create load balancer
