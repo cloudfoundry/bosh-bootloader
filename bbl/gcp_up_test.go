@@ -183,6 +183,26 @@ var _ = Describe("bbl up gcp", func() {
 		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
 	})
 
+	Context("when provided a name with invalid characters", func() {
+		It("fast fails with a helpful error message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+				"--name", "some_name",
+			}
+
+			session := executeCommand(args, 1)
+
+			Expect(session.Err.Contents()).To(ContainSubstring("Names must start with a letter and be alphanumeric or hyphenated."))
+		})
+	})
+
 	Context("when the terraform version is <0.8.5", func() {
 		BeforeEach(func() {
 			fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {

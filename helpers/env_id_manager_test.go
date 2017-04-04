@@ -49,7 +49,6 @@ var _ = Describe("EnvIDManager", func() {
 
 				Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
 				Expect(envID).To(Equal("some-other-env-id"))
-
 			})
 
 			Context("for gcp", func() {
@@ -83,7 +82,6 @@ var _ = Describe("EnvIDManager", func() {
 					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
 				})
 			})
-
 		})
 
 		Context("when an env id exists in the state", func() {
@@ -115,6 +113,24 @@ var _ = Describe("EnvIDManager", func() {
 				}, "existing")
 
 				Expect(err).To(MatchError("failed to check stack existence"))
+			})
+
+			It("returns an error with a helpful message when an invalid name is provided", func() {
+				_, err := envIDManager.Sync(storage.State{}, "some_bad_name")
+
+				Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
+			})
+
+			It("returns an error when regex match string fails", func() {
+				helpers.SetMatchString(func(string, string) (bool, error) {
+					return false, errors.New("failed to match string")
+				})
+
+				_, err := envIDManager.Sync(storage.State{}, "some-name")
+
+				Expect(err).To(MatchError("failed to match string"))
+
+				helpers.ResetMatchString()
 			})
 		})
 	})

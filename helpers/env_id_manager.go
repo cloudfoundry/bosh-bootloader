@@ -3,10 +3,13 @@ package helpers
 import (
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
+
+var matchString = regexp.MatchString
 
 type EnvIDManager struct {
 	envIDGenerator        envIDGenerator
@@ -45,6 +48,11 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (string, error) {
 		return "", err
 	}
 
+	err = e.validateName(envID)
+	if err != nil {
+		return "", err
+	}
+
 	if envID != "" {
 		return envID, nil
 	}
@@ -74,5 +82,22 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
 		}
 	}
+	return nil
+}
+
+func (e EnvIDManager) validateName(envID string) error {
+	if envID == "" {
+		return nil
+	}
+
+	matched, err := matchString("^(?:[a-z](?:[-a-z0-9]+[a-z0-9])?)$", envID)
+	if err != nil {
+		return err
+	}
+
+	if !matched {
+		return errors.New("Names must start with a letter and be alphanumeric or hyphenated.")
+	}
+
 	return nil
 }
