@@ -267,7 +267,7 @@ var _ = Describe("Manager", func() {
 
 		Context("failure cases", func() {
 			Context("when Executor.Apply returns a ExecutorApplyError", func() {
-				executorError := terraform.NewExecutorApplyError("updated-tf-state", errors.New("some-error"))
+				executorError := terraform.NewExecutorApplyError("updated-tf-state", errors.New("some-error"), false)
 
 				BeforeEach(func() {
 					executor.ApplyCall.Returns.Error = executorError

@@ -598,21 +598,35 @@ var _ = Describe("bbl up gcp", func() {
 	})
 
 	Context("bbl re-entrance", func() {
-		It("saves the tf state when terraform apply fails", func() {
-			args := []string{
-				"--state-dir", tempDirectory,
-				"up",
-				"--iaas", "gcp",
-				"--gcp-service-account-key", serviceAccountKeyPath,
-				"--gcp-project-id", "some-project-id",
-				"--gcp-zone", "some-zone",
-				"--gcp-region", "fail-to-terraform",
-			}
+		Context("when terraform apply fails", func() {
+			var (
+				session *gexec.Session
+			)
 
-			executeCommand(args, 1)
+			BeforeEach(func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"up",
+					"--iaas", "gcp",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "fail-to-terraform",
+				}
 
-			state := readStateJson(tempDirectory)
-			Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+				session = executeCommand(args, 1)
+			})
+
+			It("saves the tf state", func() {
+				state := readStateJson(tempDirectory)
+				Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+			})
+
+			Context("when no --debug flag is provided", func() {
+				It("returns a helpful error message", func() {
+					Expect(session.Err.Contents()).To(ContainSubstring("use --debug for additional debug output"))
+				})
+			})
 		})
 
 		Context("when bosh fails", func() {

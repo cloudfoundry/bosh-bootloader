@@ -96,26 +96,6 @@ func (m Manager) ValidateVersion() error {
 	return nil
 }
 
-func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
-	if bblState.TFState == "" {
-		return bblState, nil
-	}
-
-	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
-		VarsTemplate, bblState.TFState)
-	switch err.(type) {
-	case ExecutorDestroyError:
-		executorDestroyError := err.(ExecutorDestroyError)
-		bblState.TFState = executorDestroyError.tfState
-		return storage.State{}, NewManagerDestroyError(bblState, executorDestroyError)
-	case error:
-		return storage.State{}, err
-	}
-
-	bblState.TFState = tfState
-	return bblState, nil
-}
-
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("generating terraform template")
 	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
@@ -153,6 +133,26 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 	m.logger.Step("applied terraform template")
+
+	bblState.TFState = tfState
+	return bblState, nil
+}
+
+func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
+	if bblState.TFState == "" {
+		return bblState, nil
+	}
+
+	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
+		VarsTemplate, bblState.TFState)
+	switch err.(type) {
+	case ExecutorDestroyError:
+		executorDestroyError := err.(ExecutorDestroyError)
+		bblState.TFState = executorDestroyError.tfState
+		return storage.State{}, NewManagerDestroyError(bblState, executorDestroyError)
+	case error:
+		return storage.State{}, err
+	}
 
 	bblState.TFState = tfState
 	return bblState, nil

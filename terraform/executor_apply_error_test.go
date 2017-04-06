@@ -2,6 +2,7 @@ package terraform_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
@@ -9,17 +10,26 @@ import (
 )
 
 var _ = Describe("ExecutorApplyError", func() {
-	Describe("NewExecutorApplyError", func() {
-		It("sets the error passed in", func() {
+	Describe("Error", func() {
+		It("returns just the internal error message when debug is true", func() {
 			err := errors.New("some-error")
+			executorApplyError := terraform.NewExecutorApplyError("", err, true)
 
-			executorApplyError := terraform.NewExecutorApplyError("", err)
 			Expect(executorApplyError.Error()).To(Equal(err.Error()))
 		})
 
-		It("sets the tf state passed in", func() {
+		It("returns the internal error message and mentions the --debug flag when debug is false", func() {
+			err := errors.New("some-error")
+			executorApplyError := terraform.NewExecutorApplyError("", err, false)
+
+			Expect(executorApplyError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "use --debug for additional debug output")))
+		})
+	})
+
+	Describe("TFState", func() {
+		It("returns the tfState", func() {
 			tfState := "some-tf-state"
-			executorApplyError := terraform.NewExecutorApplyError(tfState, nil)
+			executorApplyError := terraform.NewExecutorApplyError(tfState, nil, true)
 
 			Expect(executorApplyError.TFState()).To(Equal(tfState))
 		})

@@ -294,6 +294,26 @@ var _ = Describe("Executor", func() {
 					"some-cert", "some-key", "some-domain", "some-template", "")
 				Expect(err).To(MatchError("failed to write file"))
 			})
+
+			Context("when --debug is false", func() {
+				BeforeEach(func() {
+					executor = terraform.NewExecutor(cmd, false)
+				})
+
+				It("returns an error and the current tf state when it fails to call terraform command run", func() {
+					terraform.SetReadFile(func(string) ([]byte, error) {
+						return []byte("some-tf-state"), nil
+					})
+					cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
+
+					_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
+						"some-cert", "some-key", "some-domain", "some-template", "")
+					taErr := err.(terraform.ExecutorApplyError)
+					Expect(taErr).To(MatchError("failed to run terraform command\nuse --debug for additional debug output"))
+					Expect(taErr.TFState()).To(Equal("some-tf-state"))
+				})
+
+			})
 		})
 	})
 

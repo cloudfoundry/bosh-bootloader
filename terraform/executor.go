@@ -95,7 +95,7 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, 
 			errorList.Add(readErr)
 			return "", errorList
 		}
-		return "", NewExecutorApplyError(string(tfState), err)
+		return "", NewExecutorApplyError(string(tfState), err, e.debug)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))

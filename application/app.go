@@ -93,10 +93,7 @@ func (a App) execute() error {
 			}
 			return err
 		default:
-			if a.configuration.Global.Debug {
-				return err
-			}
-			return fmt.Errorf("%s \nuse --debug for additional debug output", err)
+			return err
 		}
 	}
 

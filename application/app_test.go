@@ -218,21 +218,6 @@ var _ = Describe("App", func() {
 					Expect(err).To(ContainSubstring("InternalServerError"))
 					Expect(err).NotTo(ContainSubstring("README"))
 				})
-
-				Context("when --debug is not provided", func() {
-					It("returns an error with a helpful error message pertaining to --debug", func() {
-						errorCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
-						app = NewAppWithConfiguration(application.Configuration{
-							Command: "error",
-							Global: application.GlobalConfiguration{
-								Debug: false,
-							},
-						})
-						err := app.Run()
-
-						Expect(err.Error()).To(ContainSubstring("use --debug for additional debug output"))
-					})
-				})
 			})
 
 			Context("when the command fails to execute", func() {
