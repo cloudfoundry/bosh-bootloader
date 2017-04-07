@@ -89,7 +89,14 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	switch err.(type) {
 	case terraform.ManagerApplyError:
 		taError := err.(terraform.ManagerApplyError)
-		state = taError.BBLState()
+		var bblStateErr error
+		state, bblStateErr = taError.BBLState()
+		if bblStateErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(bblStateErr)
+			return errorList
+		}
 		if setErr := c.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)

@@ -9,6 +9,7 @@ type ManagerApplyError struct {
 
 type executorApplyError interface {
 	Error() string
+	TFState() (string, error)
 }
 
 func NewManagerApplyError(bblState storage.State, executorApplyError executorApplyError) ManagerApplyError {
@@ -18,8 +19,13 @@ func NewManagerApplyError(bblState storage.State, executorApplyError executorApp
 	}
 }
 
-func (m ManagerApplyError) BBLState() storage.State {
-	return m.bblState
+func (m ManagerApplyError) BBLState() (storage.State, error) {
+	tfState, err := m.executorApplyError.TFState()
+	if err != nil {
+		return storage.State{}, err
+	}
+	m.bblState.TFState = tfState
+	return m.bblState, nil
 }
 
 func (m ManagerApplyError) Error() string {

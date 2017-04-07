@@ -88,14 +88,7 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, 
 	args = append(args, makeVar("system_domain", domain)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
-		tfState, readErr := readFile(filepath.Join(tempDir, "terraform.tfstate"))
-		if readErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(readErr)
-			return "", errorList
-		}
-		return "", NewExecutorApplyError(string(tfState), err, e.debug)
+		return "", NewExecutorApplyError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))

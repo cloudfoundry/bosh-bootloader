@@ -28,11 +28,11 @@ var _ = Describe("Executor", func() {
 
 		executor = terraform.NewExecutor(cmd, true)
 
-		terraform.SetTempDir(func(dir, prefix string) (string, error) {
-			var err error
-			tempDir, err = ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
+		var err error
+		tempDir, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
 
+		terraform.SetTempDir(func(dir, prefix string) (string, error) {
 			return tempDir, nil
 		})
 
@@ -234,27 +234,19 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("returns an error and the current tf state when it fails to call terraform command run", func() {
-				terraform.SetReadFile(func(string) ([]byte, error) {
-					return []byte("some-tf-state"), nil
-				})
+				err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
 				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
+				_, err = executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 					"some-cert", "some-key", "some-domain", "some-template", "")
 				taErr := err.(terraform.ExecutorApplyError)
 				Expect(taErr).To(MatchError("failed to run terraform command"))
-				Expect(taErr.TFState()).To(Equal("some-tf-state"))
-			})
 
-			It("returns an error when it fails to call terraform command run and read out the resulting tf state", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
-				terraform.SetReadFile(func(filename string) ([]byte, error) {
-					return []byte{}, errors.New("failed to read tf state file")
-				})
-
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
-				Expect(err).To(MatchError("the following errors occurred:\nfailed to run terraform command,\nfailed to read tf state file"))
+				tfState, err := taErr.TFState()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tfState).To(Equal("some-tf-state"))
 			})
 
 			It("returns an error when it fails to read the tf state file", func() {
@@ -301,18 +293,19 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error and the current tf state when it fails to call terraform command run", func() {
-					terraform.SetReadFile(func(string) ([]byte, error) {
-						return []byte("some-tf-state"), nil
-					})
+					err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
 					cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-					_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
+					_, err = executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 						"some-cert", "some-key", "some-domain", "some-template", "")
 					taErr := err.(terraform.ExecutorApplyError)
-					Expect(taErr).To(MatchError("failed to run terraform command\nuse --debug for additional debug output"))
-					Expect(taErr.TFState()).To(Equal("some-tf-state"))
-				})
 
+					tfState, err := taErr.TFState()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(tfState).To(Equal("some-tf-state"))
+				})
 			})
 		})
 	})

@@ -17,17 +17,19 @@ import (
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (
-		terraformManager   *fakes.TerraformManager
-		boshClientProvider *fakes.BOSHClientProvider
-		boshClient         *fakes.BOSHClient
-		cloudConfigManager *fakes.CloudConfigManager
-		stateStore         *fakes.StateStore
-		logger             *fakes.Logger
-		command            commands.GCPCreateLBs
-		certPath           string
-		keyPath            string
-		certificate        string
-		key                string
+		terraformManager            *fakes.TerraformManager
+		boshClientProvider          *fakes.BOSHClientProvider
+		boshClient                  *fakes.BOSHClient
+		cloudConfigManager          *fakes.CloudConfigManager
+		stateStore                  *fakes.StateStore
+		logger                      *fakes.Logger
+		terraformExecutorApplyError *fakes.TerraformExecutorApplyError
+
+		command     commands.GCPCreateLBs
+		certPath    string
+		keyPath     string
+		certificate string
+		key         string
 	)
 
 	BeforeEach(func() {
@@ -38,6 +40,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		logger = &fakes.Logger{}
+		terraformExecutorApplyError = &fakes.TerraformExecutorApplyError{}
 
 		command = commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
 
@@ -356,9 +359,11 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("saves the tf state even if the applier fails", func() {
+				terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
 				expectedError := terraform.NewManagerApplyError(storage.State{
 					TFState: "some-tf-state",
-				}, errors.New("failed to apply"))
+				}, terraformExecutorApplyError)
 				terraformManager.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -376,7 +381,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 				Expect(err).To(MatchError("failed to apply"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-tf-state"))
+				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-updated-tf-state"))
 			})
 
 			It("returns an error if terraform manager apply fails with non terraform manager apply error", func() {
@@ -392,14 +397,36 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
-			It("returns an error when both the applier fails and state fails to be set", func() {
+			It("returns an error when both the applier fails and terraformManagerApplyError.BBLState fails", func() {
+				terraformExecutorApplyError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
+				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
 				expectedError := terraform.NewManagerApplyError(storage.State{
 					IAAS: "gcp",
 					LB: storage.LB{
 						Type: "concourse",
 					},
-					TFState: "some-partial-tf-state",
-				}, errors.New("failed to apply"))
+					TFState: "some-tf-state",
+				}, terraformExecutorApplyError)
+				terraformManager.ApplyCall.Returns.Error = expectedError
+
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{IAAS: "gcp"})
+
+				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to get tf state"))
+				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+			})
+
+			It("returns an error when both the applier fails and state fails to be set", func() {
+				terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
+				expectedError := terraform.NewManagerApplyError(storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+					TFState: "some-tf-state",
+				}, terraformExecutorApplyError)
 				terraformManager.ApplyCall.Returns.Error = expectedError
 
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
@@ -414,7 +441,7 @@ var _ = Describe("GCPCreateLBs", func() {
 					LB: storage.LB{
 						Type: "concourse",
 					},
-					TFState: "some-partial-tf-state",
+					TFState: "some-updated-tf-state",
 				}))
 			})
 

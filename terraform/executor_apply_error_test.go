@@ -3,6 +3,7 @@ package terraform_test
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
@@ -27,11 +28,38 @@ var _ = Describe("ExecutorApplyError", func() {
 	})
 
 	Describe("TFState", func() {
-		It("returns the tfState", func() {
-			tfState := "some-tf-state"
-			executorApplyError := terraform.NewExecutorApplyError(tfState, nil, true)
+		var (
+			tfStateFilename string
+			tfState         string
+		)
 
-			Expect(executorApplyError.TFState()).To(Equal(tfState))
+		BeforeEach(func() {
+			tfState = "some-tf-state"
+
+			tfStateFile, err := ioutil.TempFile("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = tfStateFile.Write([]byte(tfState))
+			Expect(err).NotTo(HaveOccurred())
+
+			tfStateFilename = tfStateFile.Name()
+		})
+
+		It("returns the tfState", func() {
+			executorApplyError := terraform.NewExecutorApplyError(tfStateFilename, nil, true)
+
+			actualTFState, err := executorApplyError.TFState()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualTFState).To(Equal(tfState))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when tf state file does not exist", func() {
+				executorApplyError := terraform.NewExecutorApplyError("/fake/file/name", nil, true)
+
+				_, err := executorApplyError.TFState()
+				Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+			})
 		})
 	})
 })

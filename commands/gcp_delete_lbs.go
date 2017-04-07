@@ -39,7 +39,14 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 	switch err.(type) {
 	case terraform.ManagerApplyError:
 		taErr := err.(terraform.ManagerApplyError)
-		state = taErr.BBLState()
+		var bblStateErr error
+		state, bblStateErr = taErr.BBLState()
+		if bblStateErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(bblStateErr)
+			return errorList
+		}
 		if setErr := g.stateStore.Set(state); setErr != nil {
 			errorList := helpers.Errors{}
 			errorList.Add(err)

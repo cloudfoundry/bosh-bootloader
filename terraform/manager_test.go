@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -267,9 +269,20 @@ var _ = Describe("Manager", func() {
 
 		Context("failure cases", func() {
 			Context("when Executor.Apply returns a ExecutorApplyError", func() {
-				executorError := terraform.NewExecutorApplyError("updated-tf-state", errors.New("some-error"), false)
+				var (
+					tempDir       string
+					executorError terraform.ExecutorApplyError
+				)
 
 				BeforeEach(func() {
+					var err error
+					tempDir, err = ioutil.TempDir("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("updated-tf-state"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					executorError = terraform.NewExecutorApplyError(filepath.Join(tempDir, "terraform.tfstate"), errors.New("some-error"), false)
 					executor.ApplyCall.Returns.Error = executorError
 				})
 
@@ -280,9 +293,7 @@ var _ = Describe("Manager", func() {
 				It("returns a ManagerApplyError", func() {
 					_, err := manager.Apply(incomingState)
 
-					expectedBBLState := incomingState
-					expectedBBLState.TFState = "updated-tf-state"
-					expectedError := terraform.NewManagerApplyError(expectedBBLState, executorError)
+					expectedError := terraform.NewManagerApplyError(incomingState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})

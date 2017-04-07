@@ -1,18 +1,21 @@
 package terraform
 
-import "fmt"
+import (
+	"fmt"
+	"io/ioutil"
+)
 
 type ExecutorApplyError struct {
-	tfState string
-	err     error
-	debug   bool
+	tfStateFilename string
+	err             error
+	debug           bool
 }
 
-func NewExecutorApplyError(tfState string, err error, debug bool) ExecutorApplyError {
+func NewExecutorApplyError(tfStateFilename string, err error, debug bool) ExecutorApplyError {
 	return ExecutorApplyError{
-		tfState: tfState,
-		err:     err,
-		debug:   debug,
+		tfStateFilename: tfStateFilename,
+		err:             err,
+		debug:           debug,
 	}
 }
 
@@ -24,6 +27,10 @@ func (t ExecutorApplyError) Error() string {
 	}
 }
 
-func (t ExecutorApplyError) TFState() string {
-	return t.tfState
+func (t ExecutorApplyError) TFState() (string, error) {
+	tfStateContents, err := ioutil.ReadFile(t.tfStateFilename)
+	if err != nil {
+		return "", err
+	}
+	return string(tfStateContents), nil
 }

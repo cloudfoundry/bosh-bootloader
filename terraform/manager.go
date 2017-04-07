@@ -126,9 +126,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 
 	switch err.(type) {
 	case ExecutorApplyError:
-		executorApplyError := err.(ExecutorApplyError)
-		bblState.TFState = executorApplyError.tfState
-		return storage.State{}, NewManagerApplyError(bblState, executorApplyError)
+		return storage.State{}, NewManagerApplyError(bblState, err.(ExecutorApplyError))
 	case error:
 		return storage.State{}, err
 	}
