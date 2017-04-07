@@ -75,7 +75,8 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 			if len(subcommandFlags) > 0 && subcommandFlags[0] == "--json" {
 				lbOutput, err := json.Marshal(&terraformOutputs)
 				if err != nil {
-					panic(err)
+					// not tested
+					return err
 				}
 
 				fmt.Fprintf(c.stdout, "%s\n", string(lbOutput))
