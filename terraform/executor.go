@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
 var tempDir func(dir, prefix string) (string, error) = ioutil.TempDir
@@ -116,9 +114,11 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
-	if err != nil {
-		return "", err
+	if prevTFState != "" {
+		err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	args := []string{"destroy", "-force"}
@@ -129,14 +129,7 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
-		tfState, readErr := readFile(filepath.Join(tempDir, "terraform.tfstate"))
-		if readErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(readErr)
-			return "", errorList
-		}
-		return "", NewExecutorDestroyError(string(tfState), err)
+		return "", NewExecutorDestroyError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))

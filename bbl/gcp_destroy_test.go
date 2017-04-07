@@ -13,17 +13,18 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("bbl destroy gcp", func() {
 	var (
-		state                    storage.State
-		tempDirectory            string
-		statePath                string
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
-		fastFail                 bool
-		fastFailMutex            sync.Mutex
+		state          storage.State
+		tempDirectory  string
+		statePath      string
+		fakeBOSHServer *httptest.Server
+		fakeBOSH       *fakeBOSHDirector
+		fastFail       bool
+		fastFailMutex  sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -157,7 +158,10 @@ director_ssl:
 
 	Context("bbl re-entrance", func() {
 		Context("when terraform fails", func() {
-			var args []string
+			var (
+				args    []string
+				session *gexec.Session
+			)
 
 			BeforeEach(func() {
 				state.GCP.Region = "fail-to-terraform"
@@ -169,17 +173,22 @@ director_ssl:
 				err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 				args = []string{
-					"--debug",
 					"--state-dir", tempDirectory,
 					"destroy", "--no-confirm",
 				}
+
+				session = executeCommand(args, 1)
 			})
 
 			It("saves the tf state when terraform destroy fails with ManagerDestroyError", func() {
-				executeCommand(args, 1)
-
 				state = readStateJson(tempDirectory)
 				Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+			})
+
+			Context("when no --debug is provided", func() {
+				It("returns a helpful error message", func() {
+					Expect(session.Err.Contents()).To(ContainSubstring("use --debug for additional debug output"))
+				})
 			})
 		})
 

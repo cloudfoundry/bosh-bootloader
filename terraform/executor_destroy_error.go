@@ -1,21 +1,36 @@
 package terraform
 
+import (
+	"fmt"
+	"io/ioutil"
+)
+
 type ExecutorDestroyError struct {
-	tfState       string
-	internalError error
+	tfStateFilename string
+	err             error
+	debug           bool
 }
 
-func NewExecutorDestroyError(tfState string, internalError error) ExecutorDestroyError {
+func NewExecutorDestroyError(tfStateFilename string, err error, debug bool) ExecutorDestroyError {
 	return ExecutorDestroyError{
-		tfState:       tfState,
-		internalError: internalError,
+		tfStateFilename: tfStateFilename,
+		err:             err,
+		debug:           debug,
 	}
 }
 
-func (e ExecutorDestroyError) Error() string {
-	return e.internalError.Error()
+func (t ExecutorDestroyError) Error() string {
+	if t.debug {
+		return t.err.Error()
+	} else {
+		return fmt.Sprintf("%s\n%s", t.err.Error(), "use --debug for additional debug output")
+	}
 }
 
-func (e ExecutorDestroyError) TFState() string {
-	return e.tfState
+func (t ExecutorDestroyError) TFState() (string, error) {
+	tfStateContents, err := ioutil.ReadFile(t.tfStateFilename)
+	if err != nil {
+		return "", err
+	}
+	return string(tfStateContents), nil
 }

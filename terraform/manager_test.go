@@ -367,9 +367,20 @@ var _ = Describe("Manager", func() {
 			})
 
 			Context("when Executor.Destroy returns a ExecutorDestroyError", func() {
-				executorError := terraform.NewExecutorDestroyError(updatedTFState, errors.New("some-error"))
+				var (
+					tempDir       string
+					executorError terraform.ExecutorDestroyError
+				)
 
 				BeforeEach(func() {
+					var err error
+					tempDir, err = ioutil.TempDir("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("updated-tf-state"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					executorError = terraform.NewExecutorDestroyError(filepath.Join(tempDir, "terraform.tfstate"), errors.New("some-error"), false)
 					executor.DestroyCall.Returns.Error = executorError
 				})
 
@@ -380,9 +391,7 @@ var _ = Describe("Manager", func() {
 				It("returns a ManagerDestroyError", func() {
 					_, err := manager.Destroy(originalBBLState)
 
-					expectedBBLState := originalBBLState
-					expectedBBLState.TFState = updatedTFState
-					expectedError := terraform.NewManagerDestroyError(expectedBBLState, executorError)
+					expectedError := terraform.NewManagerDestroyError(originalBBLState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})

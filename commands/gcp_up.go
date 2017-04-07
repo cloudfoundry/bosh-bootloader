@@ -63,10 +63,9 @@ type terraformManager interface {
 	ValidateVersion() error
 }
 
-type terraformExecutor interface {
-	Apply(credentials, envID, projectID, zone, region, certPath, keyPath, domain, template, tfState string) (string, error)
-	Destroy(serviceAccountKey, envID, projectID, zone, region, template, tfState string) (string, error)
-	Version() (string, error)
+type terraformManagerApplyError interface {
+	Error() string
+	BBLState() (storage.State, error)
 }
 
 type boshManager interface {
@@ -158,8 +157,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	state, err = u.terraformManager.Apply(state)
 	switch err.(type) {
-	case terraform.ManagerApplyError:
-		taErr := err.(terraform.ManagerApplyError)
+	case terraformManagerApplyError:
+		taErr := err.(terraformManagerApplyError)
 		bblState, bblStateErr := taErr.BBLState()
 		if bblStateErr != nil {
 			errorList := helpers.Errors{}

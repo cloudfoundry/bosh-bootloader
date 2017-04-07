@@ -74,7 +74,8 @@ type networkInstancesChecker interface {
 }
 
 type terraformManagerDestroyError interface {
-	BBLState() storage.State
+	BBLState() (storage.State, error)
+	Error() string
 }
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
@@ -231,7 +232,14 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			switch err.(type) {
 			case terraformManagerDestroyError:
 				mdErr := err.(terraformManagerDestroyError)
-				setErr := d.stateStore.Set(mdErr.BBLState())
+				updatedBBLState, bblStateErr := mdErr.BBLState()
+				if bblStateErr != nil {
+					errorList := helpers.Errors{}
+					errorList.Add(err)
+					errorList.Add(bblStateErr)
+					return errorList
+				}
+				setErr := d.stateStore.Set(updatedBBLState)
 				if setErr != nil {
 					errorList := helpers.Errors{}
 					errorList.Add(err)

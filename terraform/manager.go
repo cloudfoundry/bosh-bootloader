@@ -145,9 +145,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		VarsTemplate, bblState.TFState)
 	switch err.(type) {
 	case ExecutorDestroyError:
-		executorDestroyError := err.(ExecutorDestroyError)
-		bblState.TFState = executorDestroyError.tfState
-		return storage.State{}, NewManagerDestroyError(bblState, executorDestroyError)
+		return storage.State{}, NewManagerDestroyError(bblState, err.(ExecutorDestroyError))
 	case error:
 		return storage.State{}, err
 	}

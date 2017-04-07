@@ -9,6 +9,7 @@ type ManagerDestroyError struct {
 
 type executorDestroyError interface {
 	Error() string
+	TFState() (string, error)
 }
 
 func NewManagerDestroyError(bblState storage.State, executorDestroyError executorDestroyError) ManagerDestroyError {
@@ -18,8 +19,13 @@ func NewManagerDestroyError(bblState storage.State, executorDestroyError executo
 	}
 }
 
-func (m ManagerDestroyError) BBLState() storage.State {
-	return m.bblState
+func (m ManagerDestroyError) BBLState() (storage.State, error) {
+	tfState, err := m.executorDestroyError.TFState()
+	if err != nil {
+		return storage.State{}, err
+	}
+	m.bblState.TFState = tfState
+	return m.bblState, nil
 }
 
 func (m ManagerDestroyError) Error() string {

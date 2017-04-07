@@ -414,27 +414,19 @@ var _ = Describe("Executor", func() {
 				Expect(err).To(MatchError("failed to write tf state file"))
 			})
 
-			It("returns an error containing the updated tf state when it fails to call terraform command run", func() {
-				updatedTFState := "some-tf-state"
-				terraform.SetReadFile(func(filename string) ([]byte, error) {
-					return []byte(updatedTFState), nil
-				})
-				terraformError := errors.New("failed to run terraform command")
-				cmd.RunCall.Returns.Error = terraformError
-
-				tfState, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
-				Expect(err).To(MatchError(terraform.NewExecutorDestroyError(updatedTFState, terraformError)))
-				Expect(tfState).To(BeEmpty())
-			})
-
-			It("returns an error when it fails to call terraform command run and read out the resulting tf state", func() {
+			It("returns an error and the current tf state when it fails to call terraform command run", func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
-				terraform.SetReadFile(func(filename string) ([]byte, error) {
-					return []byte{}, errors.New("failed to read tf state file")
-				})
 
-				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
-				Expect(err).To(MatchError("the following errors occurred:\nfailed to run terraform command,\nfailed to read tf state file"))
+				_, err = executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
+					"some-template", "")
+				tdErr := err.(terraform.ExecutorDestroyError)
+				Expect(tdErr).To(MatchError("failed to run terraform command"))
+
+				tfState, err := tdErr.TFState()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tfState).To(Equal("some-tf-state"))
 			})
 
 			It("returns an error when it fails to read out the resulting tf state", func() {
@@ -444,6 +436,26 @@ var _ = Describe("Executor", func() {
 
 				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
 				Expect(err).To(MatchError("failed to read tf state file"))
+			})
+
+			Context("when --debug is false", func() {
+				BeforeEach(func() {
+					executor = terraform.NewExecutor(cmd, false)
+				})
+
+				It("returns an error and the current tf state when it fails to call terraform command run", func() {
+					err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
+
+					_, err = executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
+						"some-template", "")
+					tdErr := err.(terraform.ExecutorDestroyError)
+
+					tfState, err := tdErr.TFState()
+					Expect(tfState).To(Equal("some-tf-state"))
+				})
 			})
 		})
 	})

@@ -21,22 +21,23 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy                 commands.Destroy
-		boshManager             *fakes.BOSHManager
-		stackManager            *fakes.StackManager
-		infrastructureManager   *fakes.InfrastructureManager
-		vpcStatusChecker        *fakes.VPCStatusChecker
-		stringGenerator         *fakes.StringGenerator
-		logger                  *fakes.Logger
-		awsKeyPairDeleter       *fakes.AWSKeyPairDeleter
-		gcpKeyPairDeleter       *fakes.GCPKeyPairDeleter
-		certificateDeleter      *fakes.CertificateDeleter
-		credentialValidator     *fakes.CredentialValidator
-		stateStore              *fakes.StateStore
-		stateValidator          *fakes.StateValidator
-		terraformManager        *fakes.TerraformManager
-		networkInstancesChecker *fakes.NetworkInstancesChecker
-		stdin                   *bytes.Buffer
+		destroy                      commands.Destroy
+		boshManager                  *fakes.BOSHManager
+		stackManager                 *fakes.StackManager
+		infrastructureManager        *fakes.InfrastructureManager
+		vpcStatusChecker             *fakes.VPCStatusChecker
+		stringGenerator              *fakes.StringGenerator
+		logger                       *fakes.Logger
+		awsKeyPairDeleter            *fakes.AWSKeyPairDeleter
+		gcpKeyPairDeleter            *fakes.GCPKeyPairDeleter
+		certificateDeleter           *fakes.CertificateDeleter
+		credentialValidator          *fakes.CredentialValidator
+		stateStore                   *fakes.StateStore
+		stateValidator               *fakes.StateValidator
+		terraformManager             *fakes.TerraformManager
+		terraformManagerDestroyError *fakes.TerraformManagerDestroyError
+		networkInstancesChecker      *fakes.NetworkInstancesChecker
+		stdin                        *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -56,6 +57,7 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
+		terraformManagerDestroyError = &fakes.TerraformManagerDestroyError{}
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
@@ -697,33 +699,57 @@ var _ = Describe("Destroy", func() {
 
 			Context("when terraform destroy fails", func() {
 				var (
-					managerDestroyError *fakes.TerraformManagerDestroyError
-					updatedBBLState     storage.State
+					updatedBBLState storage.State
 				)
 
 				BeforeEach(func() {
 					updatedBBLState = bblState
 					updatedBBLState.TFState = "some-updated-tf-state"
 
-					managerDestroyError = &fakes.TerraformManagerDestroyError{}
-					managerDestroyError.BBLStateCall.Returns = updatedBBLState
+					terraformManagerDestroyError.ErrorCall.Returns = "failed to destroy"
+					terraformManagerDestroyError.BBLStateCall.Returns.BBLState = updatedBBLState
+
 					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
-					terraformManager.DestroyCall.Returns.Error = managerDestroyError
+					terraformManager.DestroyCall.Returns.Error = terraformManagerDestroyError
+
+					stdin.Write([]byte("yes\n"))
 				})
 
 				It("saves the partially destroyed tf state", func() {
-					stdin.Write([]byte("yes\n"))
-
 					err := destroy.Execute([]string{}, bblState)
-					Expect(err).To(Equal(managerDestroyError))
+					Expect(err).To(Equal(terraformManagerDestroyError))
 
 					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 
-					Expect(managerDestroyError.BBLStateCall.CallCount).To(Equal(1))
+					Expect(terraformManagerDestroyError.BBLStateCall.CallCount).To(Equal(1))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedBBLState))
+				})
+
+				Context("when we cannot retrieve the updated bbl state", func() {
+					BeforeEach(func() {
+						terraformManagerDestroyError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
+					})
+
+					It("returns an error containing both messages", func() {
+						err := destroy.Execute([]string{}, bblState)
+
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
+						Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					})
+				})
+
+				Context("and the state fails to be set", func() {
+					It("returns an error containing both messages", func() {
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+						err := destroy.Execute([]string{}, storage.State{
+							IAAS: "gcp",
+						})
+
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
+					})
 				})
 			})
 
@@ -790,33 +816,6 @@ var _ = Describe("Destroy", func() {
 					})
 
 					Expect(err).To(MatchError("terraform output provider failed"))
-				})
-			})
-
-			Context("when terraform manager fails to destroy", func() {
-				It("returns an error", func() {
-					stdin.Write([]byte("yes\n"))
-					terraformManager.DestroyCall.Returns.Error = errors.New("failed to destroy")
-					err := destroy.Execute([]string{}, storage.State{
-						IAAS: "gcp",
-					})
-
-					Expect(err).To(MatchError("failed to destroy"))
-				})
-
-				Context("and the state fails to be set", func() {
-					It("returns an error containing both messages", func() {
-						stdin.Write([]byte("yes\n"))
-						terraformManagerDestroyError := &fakes.TerraformManagerDestroyError{}
-						terraformManagerDestroyError.ErrorCall.Returns = "failed to destroy"
-						terraformManager.DestroyCall.Returns.Error = terraformManagerDestroyError
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "gcp",
-						})
-
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
-					})
 				})
 			})
 		})

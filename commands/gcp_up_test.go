@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -29,17 +28,17 @@ director_ssl:
 
 var _ = Describe("GCPUp", func() {
 	var (
-		gcpUp                       commands.GCPUp
-		stateStore                  *fakes.StateStore
-		keyPairUpdater              *fakes.GCPKeyPairUpdater
-		gcpClientProvider           *fakes.GCPClientProvider
-		gcpClient                   *fakes.GCPClient
-		terraformManager            *fakes.TerraformManager
-		boshManager                 *fakes.BOSHManager
-		cloudConfigManager          *fakes.CloudConfigManager
-		envIDManager                *fakes.EnvIDManager
-		logger                      *fakes.Logger
-		terraformExecutorApplyError *fakes.TerraformExecutorApplyError
+		gcpUp                      commands.GCPUp
+		stateStore                 *fakes.StateStore
+		keyPairUpdater             *fakes.GCPKeyPairUpdater
+		gcpClientProvider          *fakes.GCPClientProvider
+		gcpClient                  *fakes.GCPClient
+		terraformManager           *fakes.TerraformManager
+		boshManager                *fakes.BOSHManager
+		cloudConfigManager         *fakes.CloudConfigManager
+		envIDManager               *fakes.EnvIDManager
+		logger                     *fakes.Logger
+		terraformManagerApplyError *fakes.TerraformManagerApplyError
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
@@ -65,7 +64,7 @@ var _ = Describe("GCPUp", func() {
 		terraformManager = &fakes.TerraformManager{}
 		envIDManager = &fakes.EnvIDManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		terraformExecutorApplyError = &fakes.TerraformExecutorApplyError{}
+		terraformManagerApplyError = &fakes.TerraformManagerApplyError{}
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -711,23 +710,14 @@ var _ = Describe("GCPUp", func() {
 
 			Context("terraform manager error handling", func() {
 				BeforeEach(func() {
-					terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
-					terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-partial-tf-state"
+					terraformManagerApplyError.ErrorCall.Returns = "failed to apply"
+					terraformManagerApplyError.BBLStateCall.Returns.BBLState = storage.State{
+						TFState: "some-updated-tf-state",
+					}
 				})
 
 				It("saves the tf state when the applier fails", func() {
-					expectedError := terraform.NewManagerApplyError(storage.State{
-						IAAS: "gcp",
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKey,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "us-west1",
-						},
-						EnvID:   "bbl-lake-time:stamp",
-						TFState: "some-tf-state",
-					}, terraformExecutorApplyError)
-					terraformManager.ApplyCall.Returns.Error = expectedError
+					terraformManager.ApplyCall.Returns.Error = terraformManagerApplyError
 
 					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 						IAAS: "gcp",
@@ -742,23 +732,12 @@ var _ = Describe("GCPUp", func() {
 
 					Expect(err).To(MatchError("failed to apply"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.TFState).To(Equal("some-partial-tf-state"))
+					Expect(stateStore.SetCall.Receives[2].State.TFState).To(Equal("some-updated-tf-state"))
 				})
 
-				It("returns an error when the applier fails and we cannot read the TFState", func() {
-					terraformExecutorApplyError.TFStateCall.Returns.Error = errors.New("some-tf-state-error")
-					expectedError := terraform.NewManagerApplyError(storage.State{
-						IAAS: "gcp",
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKey,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "us-west1",
-						},
-						EnvID:   "bbl-lake-time:stamp",
-						TFState: "some-tf-state",
-					}, terraformExecutorApplyError)
-					terraformManager.ApplyCall.Returns.Error = expectedError
+				It("returns an error when the applier fails and we cannot retrieve the updated bbl state", func() {
+					terraformManagerApplyError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
+					terraformManager.ApplyCall.Returns.Error = terraformManagerApplyError
 
 					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 						IAAS: "gcp",
@@ -771,7 +750,7 @@ var _ = Describe("GCPUp", func() {
 						EnvID: "bbl-lake-time:stamp",
 					})
 
-					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nsome-tf-state-error"))
+					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nsome-bbl-state-error"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 				})
 
@@ -786,7 +765,7 @@ var _ = Describe("GCPUp", func() {
 					Expect(err).To(MatchError("failed to apply"))
 				})
 
-				It("returns an error when both the terraform manager fails and state fails to be set", func() {
+				It("returns an error when the terraform manager fails, we can retrieve the updated bbl state, and state fails to be set", func() {
 					incomingState := storage.State{
 						IAAS: "gcp",
 						GCP: storage.GCP{
@@ -797,18 +776,19 @@ var _ = Describe("GCPUp", func() {
 						},
 						EnvID: "some-env-id",
 					}
-					expectedTerraformState := incomingState
-					expectedTerraformState.TFState = "some-partial-tf-state"
+					updatedBBLState := incomingState
+					updatedBBLState.TFState = "some-updated-tf-state"
 
-					expectedError := terraform.NewManagerApplyError(expectedTerraformState, terraformExecutorApplyError)
-					terraformManager.ApplyCall.Returns.Error = expectedError
+					terraformManagerApplyError.BBLStateCall.Returns.BBLState = updatedBBLState
+
+					terraformManager.ApplyCall.Returns.Error = terraformManagerApplyError
 
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
 					err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)
 
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.TFState).To(Equal("some-partial-tf-state"))
+					Expect(stateStore.SetCall.Receives[2].State.TFState).To(Equal("some-updated-tf-state"))
 				})
 			})
 
