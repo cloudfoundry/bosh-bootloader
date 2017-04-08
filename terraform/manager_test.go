@@ -268,10 +268,10 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("failure cases", func() {
-			Context("when Executor.Apply returns a ExecutorApplyError", func() {
+			Context("when Executor.Apply returns a ExecutorError", func() {
 				var (
 					tempDir       string
-					executorError terraform.ExecutorApplyError
+					executorError terraform.ExecutorError
 				)
 
 				BeforeEach(func() {
@@ -282,7 +282,7 @@ var _ = Describe("Manager", func() {
 					err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("updated-tf-state"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 
-					executorError = terraform.NewExecutorApplyError(filepath.Join(tempDir, "terraform.tfstate"), errors.New("some-error"), false)
+					executorError = terraform.NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), errors.New("some-error"), false)
 					executor.ApplyCall.Returns.Error = executorError
 				})
 
@@ -290,15 +290,15 @@ var _ = Describe("Manager", func() {
 					executor.ApplyCall.Returns.Error = nil
 				})
 
-				It("returns a ManagerApplyError", func() {
+				It("returns a ManagerError", func() {
 					_, err := manager.Apply(incomingState)
 
-					expectedError := terraform.NewManagerApplyError(incomingState, executorError)
+					expectedError := terraform.NewManagerError(incomingState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
 
-			Context("when Executor.Apply returns a non-ExecutorApplyError error", func() {
+			Context("when Executor.Apply returns a non-ExecutorError error", func() {
 				executorError := errors.New("some-error")
 
 				BeforeEach(func() {
@@ -366,10 +366,10 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			Context("when Executor.Destroy returns a ExecutorDestroyError", func() {
+			Context("when Executor.Destroy returns a ExecutorError", func() {
 				var (
 					tempDir       string
-					executorError terraform.ExecutorDestroyError
+					executorError terraform.ExecutorError
 				)
 
 				BeforeEach(func() {
@@ -380,7 +380,7 @@ var _ = Describe("Manager", func() {
 					err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("updated-tf-state"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 
-					executorError = terraform.NewExecutorDestroyError(filepath.Join(tempDir, "terraform.tfstate"), errors.New("some-error"), false)
+					executorError = terraform.NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), errors.New("some-error"), false)
 					executor.DestroyCall.Returns.Error = executorError
 				})
 
@@ -396,7 +396,7 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			Context("when Executor.Destroy returns a non-ExecutorDestroyError error", func() {
+			Context("when Executor.Destroy returns a non-ExecutorError error", func() {
 				executorError := errors.New("some-error")
 
 				BeforeEach(func() {

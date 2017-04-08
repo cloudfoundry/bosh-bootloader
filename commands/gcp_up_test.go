@@ -28,17 +28,17 @@ director_ssl:
 
 var _ = Describe("GCPUp", func() {
 	var (
-		gcpUp                      commands.GCPUp
-		stateStore                 *fakes.StateStore
-		keyPairUpdater             *fakes.GCPKeyPairUpdater
-		gcpClientProvider          *fakes.GCPClientProvider
-		gcpClient                  *fakes.GCPClient
-		terraformManager           *fakes.TerraformManager
-		boshManager                *fakes.BOSHManager
-		cloudConfigManager         *fakes.CloudConfigManager
-		envIDManager               *fakes.EnvIDManager
-		logger                     *fakes.Logger
-		terraformManagerApplyError *fakes.TerraformManagerApplyError
+		gcpUp                 commands.GCPUp
+		stateStore            *fakes.StateStore
+		keyPairUpdater        *fakes.GCPKeyPairUpdater
+		gcpClientProvider     *fakes.GCPClientProvider
+		gcpClient             *fakes.GCPClient
+		terraformManager      *fakes.TerraformManager
+		boshManager           *fakes.BOSHManager
+		cloudConfigManager    *fakes.CloudConfigManager
+		envIDManager          *fakes.EnvIDManager
+		logger                *fakes.Logger
+		terraformManagerError *fakes.TerraformManagerError
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
@@ -64,7 +64,7 @@ var _ = Describe("GCPUp", func() {
 		terraformManager = &fakes.TerraformManager{}
 		envIDManager = &fakes.EnvIDManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		terraformManagerApplyError = &fakes.TerraformManagerApplyError{}
+		terraformManagerError = &fakes.TerraformManagerError{}
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -710,14 +710,14 @@ var _ = Describe("GCPUp", func() {
 
 			Context("terraform manager error handling", func() {
 				BeforeEach(func() {
-					terraformManagerApplyError.ErrorCall.Returns = "failed to apply"
-					terraformManagerApplyError.BBLStateCall.Returns.BBLState = storage.State{
+					terraformManagerError.ErrorCall.Returns = "failed to apply"
+					terraformManagerError.BBLStateCall.Returns.BBLState = storage.State{
 						TFState: "some-updated-tf-state",
 					}
 				})
 
 				It("saves the tf state when the applier fails", func() {
-					terraformManager.ApplyCall.Returns.Error = terraformManagerApplyError
+					terraformManager.ApplyCall.Returns.Error = terraformManagerError
 
 					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 						IAAS: "gcp",
@@ -736,8 +736,8 @@ var _ = Describe("GCPUp", func() {
 				})
 
 				It("returns an error when the applier fails and we cannot retrieve the updated bbl state", func() {
-					terraformManagerApplyError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
-					terraformManager.ApplyCall.Returns.Error = terraformManagerApplyError
+					terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
+					terraformManager.ApplyCall.Returns.Error = terraformManagerError
 
 					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 						IAAS: "gcp",
@@ -779,9 +779,9 @@ var _ = Describe("GCPUp", func() {
 					updatedBBLState := incomingState
 					updatedBBLState.TFState = "some-updated-tf-state"
 
-					terraformManagerApplyError.BBLStateCall.Returns.BBLState = updatedBBLState
+					terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState
 
-					terraformManager.ApplyCall.Returns.Error = terraformManagerApplyError
+					terraformManager.ApplyCall.Returns.Error = terraformManagerError
 
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
 					err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)

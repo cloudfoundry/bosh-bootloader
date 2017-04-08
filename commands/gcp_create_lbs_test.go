@@ -17,13 +17,13 @@ import (
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (
-		terraformManager            *fakes.TerraformManager
-		boshClientProvider          *fakes.BOSHClientProvider
-		boshClient                  *fakes.BOSHClient
-		cloudConfigManager          *fakes.CloudConfigManager
-		stateStore                  *fakes.StateStore
-		logger                      *fakes.Logger
-		terraformExecutorApplyError *fakes.TerraformExecutorApplyError
+		terraformManager       *fakes.TerraformManager
+		boshClientProvider     *fakes.BOSHClientProvider
+		boshClient             *fakes.BOSHClient
+		cloudConfigManager     *fakes.CloudConfigManager
+		stateStore             *fakes.StateStore
+		logger                 *fakes.Logger
+		terraformExecutorError *fakes.TerraformExecutorError
 
 		command     commands.GCPCreateLBs
 		certPath    string
@@ -40,7 +40,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		logger = &fakes.Logger{}
-		terraformExecutorApplyError = &fakes.TerraformExecutorApplyError{}
+		terraformExecutorError = &fakes.TerraformExecutorError{}
 
 		command = commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
 
@@ -359,11 +359,11 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("saves the tf state even if the applier fails", func() {
-				terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerApplyError(storage.State{
+				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+				terraformExecutorError.ErrorCall.Returns = "failed to apply"
+				expectedError := terraform.NewManagerError(storage.State{
 					TFState: "some-tf-state",
-				}, terraformExecutorApplyError)
+				}, terraformExecutorError)
 				terraformManager.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -397,16 +397,16 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
-			It("returns an error when both the applier fails and terraformManagerApplyError.BBLState fails", func() {
-				terraformExecutorApplyError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
-				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerApplyError(storage.State{
+			It("returns an error when both the applier fails and terraformManagerError.BBLState fails", func() {
+				terraformExecutorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
+				terraformExecutorError.ErrorCall.Returns = "failed to apply"
+				expectedError := terraform.NewManagerError(storage.State{
 					IAAS: "gcp",
 					LB: storage.LB{
 						Type: "concourse",
 					},
 					TFState: "some-tf-state",
-				}, terraformExecutorApplyError)
+				}, terraformExecutorError)
 				terraformManager.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -418,15 +418,15 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("returns an error when both the applier fails and state fails to be set", func() {
-				terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerApplyError(storage.State{
+				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+				terraformExecutorError.ErrorCall.Returns = "failed to apply"
+				expectedError := terraform.NewManagerError(storage.State{
 					IAAS: "gcp",
 					LB: storage.LB{
 						Type: "concourse",
 					},
 					TFState: "some-tf-state",
-				}, terraformExecutorApplyError)
+				}, terraformExecutorError)
 				terraformManager.ApplyCall.Returns.Error = expectedError
 
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}

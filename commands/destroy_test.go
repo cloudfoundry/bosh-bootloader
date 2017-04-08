@@ -21,23 +21,23 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy                      commands.Destroy
-		boshManager                  *fakes.BOSHManager
-		stackManager                 *fakes.StackManager
-		infrastructureManager        *fakes.InfrastructureManager
-		vpcStatusChecker             *fakes.VPCStatusChecker
-		stringGenerator              *fakes.StringGenerator
-		logger                       *fakes.Logger
-		awsKeyPairDeleter            *fakes.AWSKeyPairDeleter
-		gcpKeyPairDeleter            *fakes.GCPKeyPairDeleter
-		certificateDeleter           *fakes.CertificateDeleter
-		credentialValidator          *fakes.CredentialValidator
-		stateStore                   *fakes.StateStore
-		stateValidator               *fakes.StateValidator
-		terraformManager             *fakes.TerraformManager
-		terraformManagerDestroyError *fakes.TerraformManagerDestroyError
-		networkInstancesChecker      *fakes.NetworkInstancesChecker
-		stdin                        *bytes.Buffer
+		destroy                 commands.Destroy
+		boshManager             *fakes.BOSHManager
+		stackManager            *fakes.StackManager
+		infrastructureManager   *fakes.InfrastructureManager
+		vpcStatusChecker        *fakes.VPCStatusChecker
+		stringGenerator         *fakes.StringGenerator
+		logger                  *fakes.Logger
+		awsKeyPairDeleter       *fakes.AWSKeyPairDeleter
+		gcpKeyPairDeleter       *fakes.GCPKeyPairDeleter
+		certificateDeleter      *fakes.CertificateDeleter
+		credentialValidator     *fakes.CredentialValidator
+		stateStore              *fakes.StateStore
+		stateValidator          *fakes.StateValidator
+		terraformManager        *fakes.TerraformManager
+		terraformManagerError   *fakes.TerraformManagerError
+		networkInstancesChecker *fakes.NetworkInstancesChecker
+		stdin                   *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -57,7 +57,7 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
-		terraformManagerDestroyError = &fakes.TerraformManagerDestroyError{}
+		terraformManagerError = &fakes.TerraformManagerError{}
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
@@ -706,23 +706,23 @@ var _ = Describe("Destroy", func() {
 					updatedBBLState = bblState
 					updatedBBLState.TFState = "some-updated-tf-state"
 
-					terraformManagerDestroyError.ErrorCall.Returns = "failed to destroy"
-					terraformManagerDestroyError.BBLStateCall.Returns.BBLState = updatedBBLState
+					terraformManagerError.ErrorCall.Returns = "failed to destroy"
+					terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState
 
 					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
-					terraformManager.DestroyCall.Returns.Error = terraformManagerDestroyError
+					terraformManager.DestroyCall.Returns.Error = terraformManagerError
 
 					stdin.Write([]byte("yes\n"))
 				})
 
 				It("saves the partially destroyed tf state", func() {
 					err := destroy.Execute([]string{}, bblState)
-					Expect(err).To(Equal(terraformManagerDestroyError))
+					Expect(err).To(Equal(terraformManagerError))
 
 					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 
-					Expect(terraformManagerDestroyError.BBLStateCall.CallCount).To(Equal(1))
+					Expect(terraformManagerError.BBLStateCall.CallCount).To(Equal(1))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedBBLState))
@@ -730,7 +730,7 @@ var _ = Describe("Destroy", func() {
 
 				Context("when we cannot retrieve the updated bbl state", func() {
 					BeforeEach(func() {
-						terraformManagerDestroyError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
+						terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
 					})
 
 					It("returns an error containing both messages", func() {

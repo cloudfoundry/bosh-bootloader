@@ -5,21 +5,21 @@ import (
 	"io/ioutil"
 )
 
-type ExecutorApplyError struct {
+type ExecutorError struct {
 	tfStateFilename string
 	err             error
 	debug           bool
 }
 
-func NewExecutorApplyError(tfStateFilename string, err error, debug bool) ExecutorApplyError {
-	return ExecutorApplyError{
+func NewExecutorError(tfStateFilename string, err error, debug bool) ExecutorError {
+	return ExecutorError{
 		tfStateFilename: tfStateFilename,
 		err:             err,
 		debug:           debug,
 	}
 }
 
-func (t ExecutorApplyError) Error() string {
+func (t ExecutorError) Error() string {
 	if t.debug {
 		return t.err.Error()
 	} else {
@@ -27,7 +27,7 @@ func (t ExecutorApplyError) Error() string {
 	}
 }
 
-func (t ExecutorApplyError) TFState() (string, error) {
+func (t ExecutorError) TFState() (string, error) {
 	tfStateContents, err := ioutil.ReadFile(t.tfStateFilename)
 	if err != nil {
 		return "", err

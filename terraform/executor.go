@@ -86,7 +86,7 @@ func (e Executor) Apply(credentials, envID, projectID, zone, region, cert, key, 
 	args = append(args, makeVar("system_domain", domain)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
-		return "", NewExecutorApplyError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
+		return "", NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
@@ -129,7 +129,7 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	args = append(args, makeVar("credentials", credentialsPath)...)
 	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
-		return "", NewExecutorDestroyError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
+		return "", NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
 	}
 
 	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))

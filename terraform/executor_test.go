@@ -241,7 +241,7 @@ var _ = Describe("Executor", func() {
 
 				_, err = executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 					"some-cert", "some-key", "some-domain", "some-template", "")
-				taErr := err.(terraform.ExecutorApplyError)
+				taErr := err.(terraform.ExecutorError)
 				Expect(taErr).To(MatchError("failed to run terraform command"))
 
 				tfState, err := taErr.TFState()
@@ -300,7 +300,7 @@ var _ = Describe("Executor", func() {
 
 					_, err = executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 						"some-cert", "some-key", "some-domain", "some-template", "")
-					taErr := err.(terraform.ExecutorApplyError)
+					taErr := err.(terraform.ExecutorError)
 
 					tfState, err := taErr.TFState()
 					Expect(err).NotTo(HaveOccurred())
@@ -421,7 +421,7 @@ var _ = Describe("Executor", func() {
 
 				_, err = executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 					"some-template", "")
-				tdErr := err.(terraform.ExecutorDestroyError)
+				tdErr := err.(terraform.ExecutorError)
 				Expect(tdErr).To(MatchError("failed to run terraform command"))
 
 				tfState, err := tdErr.TFState()
@@ -451,7 +451,7 @@ var _ = Describe("Executor", func() {
 
 					_, err = executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
 						"some-template", "")
-					tdErr := err.(terraform.ExecutorDestroyError)
+					tdErr := err.(terraform.ExecutorError)
 
 					tfState, err := tdErr.TFState()
 					Expect(tfState).To(Equal("some-tf-state"))

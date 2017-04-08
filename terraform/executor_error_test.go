@@ -10,20 +10,20 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ExecutorDestroyError", func() {
+var _ = Describe("ExecutorError", func() {
 	Describe("Error", func() {
 		It("returns just the internal error message when debug is true", func() {
 			err := errors.New("some-error")
-			executorDestroyError := terraform.NewExecutorDestroyError("", err, true)
+			executorError := terraform.NewExecutorError("", err, true)
 
-			Expect(executorDestroyError.Error()).To(Equal(err.Error()))
+			Expect(executorError.Error()).To(Equal(err.Error()))
 		})
 
 		It("returns the internal error message and mentions the --debug flag when debug is false", func() {
 			err := errors.New("some-error")
-			executorDestroyError := terraform.NewExecutorDestroyError("", err, false)
+			executorError := terraform.NewExecutorError("", err, false)
 
-			Expect(executorDestroyError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "use --debug for additional debug output")))
+			Expect(executorError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "use --debug for additional debug output")))
 		})
 	})
 
@@ -46,18 +46,18 @@ var _ = Describe("ExecutorDestroyError", func() {
 		})
 
 		It("returns the tfState", func() {
-			executorDestroyError := terraform.NewExecutorDestroyError(tfStateFilename, nil, true)
+			executorError := terraform.NewExecutorError(tfStateFilename, nil, true)
 
-			actualTFState, err := executorDestroyError.TFState()
+			actualTFState, err := executorError.TFState()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualTFState).To(Equal(tfState))
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when tf state file does not exist", func() {
-				executorDestroyError := terraform.NewExecutorDestroyError("/fake/file/name", nil, true)
+				executorError := terraform.NewExecutorError("/fake/file/name", nil, true)
 
-				_, err := executorDestroyError.TFState()
+				_, err := executorError.TFState()
 				Expect(err.Error()).To(ContainSubstring("no such file or directory"))
 			})
 		})

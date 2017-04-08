@@ -125,8 +125,8 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 		bblState.TFState)
 
 	switch err.(type) {
-	case ExecutorApplyError:
-		return storage.State{}, NewManagerApplyError(bblState, err.(ExecutorApplyError))
+	case ExecutorError:
+		return storage.State{}, NewManagerError(bblState, err.(ExecutorError))
 	case error:
 		return storage.State{}, err
 	}
@@ -144,8 +144,8 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
 		VarsTemplate, bblState.TFState)
 	switch err.(type) {
-	case ExecutorDestroyError:
-		return storage.State{}, NewManagerDestroyError(bblState, err.(ExecutorDestroyError))
+	case ExecutorError:
+		return storage.State{}, NewManagerError(bblState, err.(ExecutorError))
 	case error:
 		return storage.State{}, err
 	}

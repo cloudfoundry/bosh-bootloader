@@ -15,10 +15,10 @@ import (
 
 var _ = Describe("GCPDeleteLBs", func() {
 	var (
-		cloudConfigManager          *fakes.CloudConfigManager
-		stateStore                  *fakes.StateStore
-		terraformManager            *fakes.TerraformManager
-		terraformExecutorApplyError *fakes.TerraformExecutorApplyError
+		cloudConfigManager     *fakes.CloudConfigManager
+		stateStore             *fakes.StateStore
+		terraformManager       *fakes.TerraformManager
+		terraformExecutorError *fakes.TerraformExecutorError
 
 		command commands.GCPDeleteLBs
 
@@ -30,7 +30,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 			stateStore = &fakes.StateStore{}
 			terraformManager = &fakes.TerraformManager{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
-			terraformExecutorApplyError = &fakes.TerraformExecutorApplyError{}
+			terraformExecutorError = &fakes.TerraformExecutorError{}
 
 			command = commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
@@ -160,11 +160,11 @@ var _ = Describe("GCPDeleteLBs", func() {
 			})
 
 			It("saves the tf state even if the applier failed", func() {
-				terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-				terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerApplyError(storage.State{
+				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+				terraformExecutorError.ErrorCall.Returns = "failed to apply"
+				expectedError := terraform.NewManagerError(storage.State{
 					TFState: "some-tf-state",
-				}, terraformExecutorApplyError)
+				}, terraformExecutorError)
 				terraformManager.ApplyCall.Returns.Error = expectedError
 
 				err := command.Execute(storage.State{
@@ -211,14 +211,14 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 			Context("when terraform applier fails and it fails to save the state", func() {
 				BeforeEach(func() {
-					terraformExecutorApplyError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-					terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
+					terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+					terraformExecutorError.ErrorCall.Returns = "failed to apply"
 				})
 
 				It("returns an error with both errors that occurred", func() {
-					expectedError := terraform.NewManagerApplyError(storage.State{
+					expectedError := terraform.NewManagerError(storage.State{
 						TFState: "some-tf-state",
-					}, terraformExecutorApplyError)
+					}, terraformExecutorError)
 					terraformManager.ApplyCall.Returns.Error = expectedError
 
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{
@@ -237,14 +237,14 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 			Context("when terraform applier fails and it fails to get the bbl state", func() {
 				BeforeEach(func() {
-					terraformExecutorApplyError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
-					terraformExecutorApplyError.ErrorCall.Returns = "failed to apply"
+					terraformExecutorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
+					terraformExecutorError.ErrorCall.Returns = "failed to apply"
 				})
 
 				It("returns an error with both errors that occurred", func() {
-					expectedError := terraform.NewManagerApplyError(storage.State{
+					expectedError := terraform.NewManagerError(storage.State{
 						TFState: "some-tf-state",
-					}, terraformExecutorApplyError)
+					}, terraformExecutorError)
 					terraformManager.ApplyCall.Returns.Error = expectedError
 
 					stateStore.SetCall.Returns = []fakes.SetCallReturn{

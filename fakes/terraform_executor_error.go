@@ -1,6 +1,6 @@
 package fakes
 
-type TerraformExecutorApplyError struct {
+type TerraformExecutorError struct {
 	ErrorCall struct {
 		CallCount int
 		Returns   string
@@ -15,13 +15,13 @@ type TerraformExecutorApplyError struct {
 	}
 }
 
-func (t *TerraformExecutorApplyError) Error() string {
+func (t *TerraformExecutorError) Error() string {
 	t.ErrorCall.CallCount++
 
 	return t.ErrorCall.Returns
 }
 
-func (t *TerraformExecutorApplyError) TFState() (string, error) {
+func (t *TerraformExecutorError) TFState() (string, error) {
 	t.TFStateCall.CallCount++
 
 	return t.TFStateCall.Returns.TFState, t.TFStateCall.Returns.Error
