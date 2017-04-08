@@ -388,10 +388,10 @@ var _ = Describe("Manager", func() {
 					executor.DestroyCall.Returns.Error = nil
 				})
 
-				It("returns a ManagerDestroyError", func() {
+				It("returns a ManagerError", func() {
 					_, err := manager.Destroy(originalBBLState)
 
-					expectedError := terraform.NewManagerDestroyError(originalBBLState, executorError)
+					expectedError := terraform.NewManagerError(originalBBLState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})

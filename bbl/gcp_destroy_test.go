@@ -180,7 +180,7 @@ director_ssl:
 				session = executeCommand(args, 1)
 			})
 
-			It("saves the tf state when terraform destroy fails with ManagerDestroyError", func() {
+			It("saves the tf state when terraform destroy fails with ManagerError", func() {
 				state = readStateJson(tempDirectory)
 				Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
 			})

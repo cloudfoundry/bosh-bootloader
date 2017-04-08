@@ -73,11 +73,6 @@ type networkInstancesChecker interface {
 	ValidateSafeToDelete(networkName string) error
 }
 
-type terraformManagerDestroyError interface {
-	BBLState() (storage.State, error)
-	Error() string
-}
-
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
@@ -230,8 +225,8 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		state, err = d.terraformManager.Destroy(state)
 		if err != nil {
 			switch err.(type) {
-			case terraformManagerDestroyError:
-				mdErr := err.(terraformManagerDestroyError)
+			case terraformManagerError:
+				mdErr := err.(terraformManagerError)
 				updatedBBLState, bblStateErr := mdErr.BBLState()
 				if bblStateErr != nil {
 					errorList := helpers.Errors{}

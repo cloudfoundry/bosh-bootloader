@@ -63,7 +63,7 @@ type terraformManager interface {
 	ValidateVersion() error
 }
 
-type terraformManagerApplyError interface {
+type terraformManagerError interface {
 	Error() string
 	BBLState() (storage.State, error)
 }
@@ -157,8 +157,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	state, err = u.terraformManager.Apply(state)
 	switch err.(type) {
-	case terraformManagerApplyError:
-		taErr := err.(terraformManagerApplyError)
+	case terraformManagerError:
+		taErr := err.(terraformManagerError)
 		bblState, bblStateErr := taErr.BBLState()
 		if bblStateErr != nil {
 			errorList := helpers.Errors{}
