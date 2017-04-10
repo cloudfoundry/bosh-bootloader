@@ -156,25 +156,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	state, err = u.terraformManager.Apply(state)
-	switch err.(type) {
-	case terraformManagerError:
-		taErr := err.(terraformManagerError)
-		bblState, bblStateErr := taErr.BBLState()
-		if bblStateErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(bblStateErr)
-			return errorList
-		}
-		if setErr := u.stateStore.Set(bblState); setErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(setErr)
-			return errorList
-		}
-		return err
-	case error:
-		return err
+	if err != nil {
+		return handleTerraformError(err, u.stateStore)
 	}
 
 	err = u.stateStore.Set(state)

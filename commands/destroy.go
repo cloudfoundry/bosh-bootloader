@@ -224,27 +224,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	if state.IAAS == "gcp" {
 		state, err = d.terraformManager.Destroy(state)
 		if err != nil {
-			switch err.(type) {
-			case terraformManagerError:
-				mdErr := err.(terraformManagerError)
-				updatedBBLState, bblStateErr := mdErr.BBLState()
-				if bblStateErr != nil {
-					errorList := helpers.Errors{}
-					errorList.Add(err)
-					errorList.Add(bblStateErr)
-					return errorList
-				}
-				setErr := d.stateStore.Set(updatedBBLState)
-				if setErr != nil {
-					errorList := helpers.Errors{}
-					errorList.Add(err)
-					errorList.Add(setErr)
-					return errorList
-				}
-			default:
-				return err
-			}
-			return err
+			return handleTerraformError(err, d.stateStore)
 		}
 	}
 
