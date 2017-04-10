@@ -1,8 +1,8 @@
 # bosh-bootloader
 ---
 
-This is a command line utility for standing up a CloudFoundry or Concourse installation 
-on an IAAS. This CLI is currently under heavy development, and the initial goal is to 
+This is a command line utility for standing up a CloudFoundry or Concourse installation
+on an IAAS. This CLI is currently under heavy development, and the initial goal is to
 support bootstrapping a CloudFoundry installation on AWS.
 
 * [CI](https://p-concourse.wings.cf-app.com/teams/system-team-infra-infra1-08f1/pipelines/bosh-bootloader)
@@ -96,3 +96,15 @@ Commands:
 
   Use "bbl [command] --help" for more information about a command.
 ```
+
+## Known Issues
+
+### Re-running `bbl up` Detaches Instances from GCP LBs
+
+Due to `bbl`'s use of Terraform to create infrastructure on GCP, re-running
+`bbl up` after deploying either CloudFoundry or Concourse will detach any
+instances that were attached to a load balancer created by `bbl`. At this
+time, the only known work-around is to recreate the affected instance
+using `bosh recreate`.
+
+The `bbl` team is planning to address this issue in an upcoming release.
