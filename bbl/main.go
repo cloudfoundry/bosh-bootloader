@@ -68,14 +68,10 @@ func main() {
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
-	storage.GetStateLogger = stderrLogger
 
-	commandLineParser := application.NewCommandLineParser(usage.Print, commandSet)
-	configurationParser := application.NewConfigurationParser(commandLineParser)
-	configuration, err := configurationParser.Parse(os.Args[1:])
-	if err != nil {
-		fail(err)
-	}
+	configuration := getConfiguration(usage.Print, commandSet)
+
+	storage.GetStateLogger = stderrLogger
 
 	stateStore := storage.NewStore(configuration.Global.StateDir)
 	stateValidator := application.NewStateValidator(configuration.Global.StateDir)
@@ -111,7 +107,6 @@ func main() {
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
 	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey, configuration.State.GCP.ProjectID, configuration.State.GCP.Zone)
-
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
@@ -151,12 +146,8 @@ func main() {
 		uuidGenerator, stateStore,
 	)
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
-
 	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)
-
-	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
 		credentialValidator, availabilityZoneRetriever, certificateManager,
@@ -175,20 +166,21 @@ func main() {
 		CloudConfigManager: cloudConfigManager,
 	})
 
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
+
+	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
+
 	envGetter := commands.NewEnvGetter()
 
 	// Commands
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
-
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
-
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
-
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
@@ -201,12 +193,11 @@ func main() {
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
-
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 
-	err = app.Run()
+	err := app.Run()
 	if err != nil {
 		fail(err)
 	}
@@ -215,4 +206,15 @@ func main() {
 func fail(err error) {
 	fmt.Fprintf(os.Stderr, "\n\n%s\n", err)
 	os.Exit(1)
+}
+
+func getConfiguration(printUsage func(), commandSet application.CommandSet) application.Configuration {
+	commandLineParser := application.NewCommandLineParser(printUsage, commandSet)
+	configurationParser := application.NewConfigurationParser(commandLineParser)
+	configuration, err := configurationParser.Parse(os.Args[1:])
+	if err != nil {
+		fail(err)
+	}
+
+	return configuration
 }
