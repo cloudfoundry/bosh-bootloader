@@ -79,17 +79,27 @@ type envIDManager interface {
 	Sync(storage.State, string) (string, error)
 }
 
-func NewGCPUp(stateStore stateStore, keyPairUpdater keyPairUpdater, gcpProvider gcpProvider, terraformManager terraformManager,
-	boshManager boshManager, logger logger, envIDManager envIDManager, cloudConfigManager cloudConfigManager) GCPUp {
+type NewGCPUpArgs struct {
+	StateStore         stateStore
+	KeyPairUpdater     keyPairUpdater
+	GCPProvider        gcpProvider
+	TerraformManager   terraformManager
+	BoshManager        boshManager
+	Logger             logger
+	EnvIDManager       envIDManager
+	CloudConfigManager cloudConfigManager
+}
+
+func NewGCPUp(args NewGCPUpArgs) GCPUp {
 	return GCPUp{
-		stateStore:         stateStore,
-		keyPairUpdater:     keyPairUpdater,
-		gcpProvider:        gcpProvider,
-		terraformManager:   terraformManager,
-		boshManager:        boshManager,
-		cloudConfigManager: cloudConfigManager,
-		logger:             logger,
-		envIDManager:       envIDManager,
+		stateStore:         args.StateStore,
+		keyPairUpdater:     args.KeyPairUpdater,
+		gcpProvider:        args.GCPProvider,
+		terraformManager:   args.TerraformManager,
+		boshManager:        args.BoshManager,
+		cloudConfigManager: args.CloudConfigManager,
+		logger:             args.Logger,
+		envIDManager:       args.EnvIDManager,
 	}
 }
 

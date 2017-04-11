@@ -164,8 +164,17 @@ func main() {
 	)
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
-	gcpUp := commands.NewGCPUp(stateStore, gcpKeyPairUpdater, gcpClientProvider, terraformManager, boshManager, logger,
-		envIDManager, cloudConfigManager)
+	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
+		StateStore:         stateStore,
+		KeyPairUpdater:     gcpKeyPairUpdater,
+		GCPProvider:        gcpClientProvider,
+		TerraformManager:   terraformManager,
+		BoshManager:        boshManager,
+		Logger:             logger,
+		EnvIDManager:       envIDManager,
+		CloudConfigManager: cloudConfigManager,
+	})
+
 	envGetter := commands.NewEnvGetter()
 
 	// Commands

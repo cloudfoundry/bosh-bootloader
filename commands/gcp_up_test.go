@@ -121,8 +121,16 @@ var _ = Describe("GCPUp", func() {
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateCall.Returns.State = expectedBOSHState
 
-		gcpUp = commands.NewGCPUp(stateStore, keyPairUpdater, gcpClientProvider, terraformManager, boshManager,
-			logger, envIDManager, cloudConfigManager)
+		gcpUp = commands.NewGCPUp(commands.NewGCPUpArgs{
+			StateStore:         stateStore,
+			KeyPairUpdater:     keyPairUpdater,
+			GCPProvider:        gcpClientProvider,
+			TerraformManager:   terraformManager,
+			BoshManager:        boshManager,
+			Logger:             logger,
+			EnvIDManager:       envIDManager,
+			CloudConfigManager: cloudConfigManager,
+		})
 
 		body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
 		Expect(err).NotTo(HaveOccurred())
