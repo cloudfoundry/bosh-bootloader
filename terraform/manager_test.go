@@ -21,6 +21,7 @@ var _ = Describe("Manager", func() {
 	var (
 		executor             *fakes.TerraformExecutor
 		gcpTemplateGenerator *fakes.GCPTemplateGenerator
+		gcpInputGenerator    *fakes.GCPInputGenerator
 		logger               *fakes.Logger
 		manager              terraform.Manager
 	)
@@ -28,9 +29,10 @@ var _ = Describe("Manager", func() {
 	BeforeEach(func() {
 		executor = &fakes.TerraformExecutor{}
 		gcpTemplateGenerator = &fakes.GCPTemplateGenerator{}
+		gcpInputGenerator = &fakes.GCPInputGenerator{}
 		logger = &fakes.Logger{}
 
-		manager = terraform.NewManager(executor, gcpTemplateGenerator, logger)
+		manager = terraform.NewManager(executor, gcpTemplateGenerator, gcpInputGenerator, logger)
 	})
 
 	Describe("Apply", func() {
@@ -64,6 +66,14 @@ var _ = Describe("Manager", func() {
 			expectedState.TFState = expectedTFState
 
 			gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
+			gcpInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+				"env_id":        incomingState.EnvID,
+				"project_id":    incomingState.GCP.ProjectID,
+				"region":        incomingState.GCP.Region,
+				"zone":          incomingState.GCP.Zone,
+				"credentials":   "some-path",
+				"system_domain": incomingState.LB.Domain,
+			}
 		})
 
 		It("returns a state with new tfState from executor apply", func() {
@@ -81,17 +91,33 @@ var _ = Describe("Manager", func() {
 
 			Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
-			Expect(executor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
-			Expect(executor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
-			Expect(executor.ApplyCall.Receives.ProjectID).To(Equal("some-project-id"))
-			Expect(executor.ApplyCall.Receives.Zone).To(Equal("some-zone"))
-			Expect(executor.ApplyCall.Receives.Region).To(Equal("some-region"))
+			Expect(gcpInputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+
+			Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{
+				"env_id":        incomingState.EnvID,
+				"project_id":    incomingState.GCP.ProjectID,
+				"region":        incomingState.GCP.Region,
+				"zone":          incomingState.GCP.Zone,
+				"credentials":   "some-path",
+				"system_domain": incomingState.LB.Domain,
+			}))
 			Expect(executor.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(executor.ApplyCall.Receives.Template).To(Equal(string("some-gcp-terraform-template")))
 			Expect(state).To(Equal(expectedState))
 		})
 
 		Context("failure cases", func() {
+			Context("when InputGenerator.Generate returns an error", func() {
+				BeforeEach(func() {
+					gcpInputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
+				})
+
+				It("bubbles up the error", func() {
+					_, err := manager.Apply(incomingState)
+					Expect(err).To(MatchError("failed to generate inputs"))
+				})
+			})
+
 			Context("when Executor.Apply returns a ExecutorError", func() {
 				var (
 					tempDir       string

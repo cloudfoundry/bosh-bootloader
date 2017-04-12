@@ -20,7 +20,9 @@ var _ = Describe("Executor", func() {
 	var (
 		cmd      *fakes.TerraformCmd
 		executor terraform.Executor
-		tempDir  string
+
+		tempDir string
+		input   map[string]string
 	)
 
 	BeforeEach(func() {
@@ -39,6 +41,17 @@ var _ = Describe("Executor", func() {
 		terraform.SetReadFile(func(string) ([]byte, error) {
 			return []byte(""), nil
 		})
+
+		input = map[string]string{
+			"env_id":                      "some-env-id",
+			"project_id":                  "some-project-id",
+			"region":                      "some-region",
+			"zone":                        "some-zone",
+			"credentials":                 "some/credentials/path",
+			"system_domain":               "some-domain",
+			"ssl_certificate":             "some/certificate/path",
+			"ssl_certificate_private_key": "some/key/path",
+		}
 	})
 
 	AfterEach(func() {
@@ -49,8 +62,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Apply", func() {
 		It("writes the terraform template to a file", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "some-key", "some-domain", "some-template", "")
+			_, err := executor.Apply(input, "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
@@ -59,97 +71,20 @@ var _ = Describe("Executor", func() {
 			Expect(string(fileContents)).To(Equal("some-template"))
 		})
 
-		It("writes the cert when cert is provided", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "some-key", "some-domain", "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "cert"))
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(string(fileContents)).To(Equal("some-cert"))
-		})
-
-		It("writes the key when key is provided", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "some-key", "some-domain", "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "key"))
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(string(fileContents)).To(Equal("some-key"))
-		})
-
-		It("does not write a cert when cert is not provided", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"", "some-key", "some-domain", "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = ioutil.ReadFile(filepath.Join(tempDir, "cert"))
-			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
-		})
-
-		It("does not write a key when key is not provided", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "", "some-domain", "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = ioutil.ReadFile(filepath.Join(tempDir, "key"))
-			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
-		})
-
-		It("does not append ssl_certificate to args when cert is not provided", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"", "some-key", "some-domain", "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
-				"apply",
-				"-var", "project_id=some-project-id",
-				"-var", "env_id=some-env-id",
-				"-var", "region=some-region",
-				"-var", "zone=some-zone",
-				"-var", fmt.Sprintf("ssl_certificate_private_key=%s/key", tempDir),
-				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
-				"-var", "system_domain=some-domain",
-			}))
-		})
-
-		It("does not append ssl_certificate_private_key to args when key is not provided", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "", "some-domain", "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
-				"apply",
-				"-var", "project_id=some-project-id",
-				"-var", "env_id=some-env-id",
-				"-var", "region=some-region",
-				"-var", "zone=some-zone",
-				"-var", fmt.Sprintf("ssl_certificate=%s/cert", tempDir),
-				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
-				"-var", "system_domain=some-domain",
-			}))
-		})
-
 		It("passes the correct args and dir to run command", func() {
-			_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "some-key", "some-domain", "some-template", "")
+			_, err := executor.Apply(input, "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"apply",
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
 				"-var", "zone=some-zone",
-				"-var", fmt.Sprintf("ssl_certificate=%s/cert", tempDir),
-				"-var", fmt.Sprintf("ssl_certificate_private_key=%s/key", tempDir),
-				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
+				"-var", "ssl_certificate=some/certificate/path",
+				"-var", "ssl_certificate_private_key=some/key/path",
+				"-var", "credentials=some/credentials/path",
 				"-var", "system_domain=some-domain",
 			}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
@@ -163,8 +98,7 @@ var _ = Describe("Executor", func() {
 				return []byte("some-terraform-state"), nil
 			})
 
-			terraformState, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-cert", "some-key", "some-domain", "some-template", "")
+			terraformState, err := executor.Apply(input, "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(actualFilename).To(ContainSubstring("terraform.tfstate"))
@@ -173,8 +107,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when previous tf state is blank", func() {
 			It("does not write the previous tf state file", func() {
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
+				_, err := executor.Apply(input, "some-template", "")
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = os.Stat(filepath.Join(tempDir, "terraform.tfstate"))
@@ -184,8 +117,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when previous tf state is not blank", func() {
 			It("writes the tf state to a file", func() {
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "some-tf-state")
+				_, err := executor.Apply(input, "some-template", "some-tf-state")
 				Expect(err).NotTo(HaveOccurred())
 
 				fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
@@ -200,8 +132,7 @@ var _ = Describe("Executor", func() {
 				terraform.SetTempDir(func(dir, prefix string) (string, error) {
 					return "", errors.New("failed to make temp dir")
 				})
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
+				_, err := executor.Apply(input, "some-template", "")
 				Expect(err).To(MatchError("failed to make temp dir"))
 			})
 
@@ -214,8 +145,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
+				_, err := executor.Apply(input, "some-template", "")
 				Expect(err).To(MatchError("failed to write template file"))
 			})
 
@@ -228,8 +158,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "some-tf-state")
+				_, err := executor.Apply(input, "some-template", "some-tf-state")
 				Expect(err).To(MatchError("failed to write tf state file"))
 			})
 
@@ -239,8 +168,7 @@ var _ = Describe("Executor", func() {
 
 				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-				_, err = executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
+				_, err = executor.Apply(input, "some-template", "")
 				taErr := err.(terraform.ExecutorError)
 				Expect(taErr).To(MatchError("failed to run terraform command"))
 
@@ -254,37 +182,8 @@ var _ = Describe("Executor", func() {
 					return []byte{}, errors.New("failed to read tf state file")
 				})
 
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
+				_, err := executor.Apply(input, "some-template", "")
 				Expect(err).To(MatchError("failed to read tf state file"))
-			})
-
-			It("returns an error when it fails to write the cert", func() {
-				terraform.SetWriteFile(func(file string, _ []byte, _ os.FileMode) error {
-					if file == filepath.Join(tempDir, "cert") {
-						return errors.New("failed to write file")
-					}
-
-					return nil
-				})
-
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
-				Expect(err).To(MatchError("failed to write file"))
-			})
-
-			It("returns an error when it fails to write the key", func() {
-				terraform.SetWriteFile(func(file string, _ []byte, _ os.FileMode) error {
-					if file == filepath.Join(tempDir, "key") {
-						return errors.New("failed to write file")
-					}
-
-					return nil
-				})
-
-				_, err := executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-cert", "some-key", "some-domain", "some-template", "")
-				Expect(err).To(MatchError("failed to write file"))
 			})
 
 			Context("when --debug is false", func() {
@@ -298,8 +197,7 @@ var _ = Describe("Executor", func() {
 
 					cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-					_, err = executor.Apply("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-						"some-cert", "some-key", "some-domain", "some-template", "")
+					_, err = executor.Apply(input, "some-template", "")
 					taErr := err.(terraform.ExecutorError)
 
 					tfState, err := taErr.TFState()

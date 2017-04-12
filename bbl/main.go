@@ -117,9 +117,10 @@ func main() {
 
 	// Terraform
 	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
+	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
-	terraformManager := terraform.NewManager(terraformExecutor, gcpTemplateGenerator, logger)
+	terraformManager := terraform.NewManager(terraformExecutor, gcpTemplateGenerator, gcpInputGenerator, logger)
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)

@@ -11,6 +11,7 @@ import (
 type Manager struct {
 	executor          executor
 	templateGenerator templateGenerator
+	inputGenerator    inputGenerator
 	logger            logger
 }
 
@@ -37,7 +38,7 @@ type Outputs struct {
 type executor interface {
 	Version() (string, error)
 	Destroy(serviceAccountKey, envID, projectID, zone, region, terraformTemplate, tfState string) (string, error)
-	Apply(serviceAccountKey, envID, projectID, zone, region, cert, key, domain, terraformTemplate, tfState string) (string, error)
+	Apply(inputs map[string]string, terraformTemplate, tfState string) (string, error)
 	Output(string, string) (string, error)
 }
 
@@ -45,14 +46,19 @@ type templateGenerator interface {
 	Generate(storage.State) string
 }
 
+type inputGenerator interface {
+	Generate(storage.State) (map[string]string, error)
+}
+
 type logger interface {
 	Step(string, ...interface{})
 }
 
-func NewManager(executor executor, templateGenerator templateGenerator, logger logger) Manager {
+func NewManager(executor executor, templateGenerator templateGenerator, inputGenerator inputGenerator, logger logger) Manager {
 	return Manager{
 		executor:          executor,
 		templateGenerator: templateGenerator,
+		inputGenerator:    inputGenerator,
 		logger:            logger,
 	}
 }
@@ -99,14 +105,13 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("generating terraform template")
 	template := m.templateGenerator.Generate(bblState)
 
-	tfState, err := m.executor.Apply(bblState.GCP.ServiceAccountKey,
-		bblState.EnvID,
-		bblState.GCP.ProjectID,
-		bblState.GCP.Zone,
-		bblState.GCP.Region,
-		bblState.LB.Cert,
-		bblState.LB.Key,
-		bblState.LB.Domain,
+	input, err := m.inputGenerator.Generate(bblState)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	tfState, err := m.executor.Apply(
+		input,
 		template,
 		bblState.TFState)
 
