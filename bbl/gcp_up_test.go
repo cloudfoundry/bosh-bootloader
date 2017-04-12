@@ -500,7 +500,7 @@ var _ = Describe("bbl up gcp", func() {
 			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-east1",
+			"--gcp-region", "us-west1",
 		}
 
 		executeCommand(args, 0)

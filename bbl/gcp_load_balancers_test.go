@@ -626,8 +626,8 @@ var _ = Describe("load balancers", func() {
 				"--iaas", "gcp",
 				"--gcp-service-account-key", serviceAccountKeyPath,
 				"--gcp-project-id", "some-project-id",
-				"--gcp-zone", "us-east1-a",
-				"--gcp-region", "us-east1",
+				"--gcp-zone", "us-west1-a",
+				"--gcp-region", "us-west1",
 			}, 0)
 
 			callRealInterpolateMutex.Lock()

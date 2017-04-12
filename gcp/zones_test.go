@@ -20,7 +20,7 @@ var _ = Describe("zones", func() {
 			actualZones := zones.Get(region)
 			Expect(actualZones).To(Equal(expectedZones))
 		},
-			Entry("for us-west", "us-west1", []string{"us-west1-a", "us-west1-b"}),
+			Entry("for us-west", "us-west1", []string{"us-west1-a", "us-west1-b", "us-west1-a"}),
 			Entry("for us-central1", "us-central1", []string{"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}),
 			Entry("for us-east1", "us-east1", []string{"us-east1-b", "us-east1-c", "us-east1-d"}),
 			Entry("for europe-west1", "europe-west1", []string{"europe-west1-b", "europe-west1-c", "europe-west1-d"}),

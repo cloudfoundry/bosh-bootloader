@@ -115,18 +115,6 @@ var _ = Describe("bbl cloud-config", func() {
 		defer callRealInterpolateMutex.Unlock()
 		callRealInterpolate = true
 
-		args := []string{
-			"--state-dir", tempDirectory,
-			"up",
-			"--no-director",
-			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKeyPath,
-			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-east1",
-		}
-
-		executeCommand(args, 0)
 	})
 
 	AfterEach(func() {
@@ -135,81 +123,132 @@ var _ = Describe("bbl cloud-config", func() {
 		callRealInterpolate = false
 	})
 
-	It("returns the cloud config of the bbl environment", func() {
-		contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml")
-		Expect(err).NotTo(HaveOccurred())
-		args := []string{
-			"--state-dir", tempDirectory,
-			"cloud-config",
-		}
+	Context("when there is no lb", func() {
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
 
-		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+			executeCommand(args, 0)
+		})
 
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+		It("returns the cloud config of the bbl environment", func() {
+			contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml")
+			Expect(err).NotTo(HaveOccurred())
+			args := []string{
+				"--state-dir", tempDirectory,
+				"cloud-config",
+			}
+
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+		})
 	})
 
-	It("returns the cloud config of a bbl environment with concourse lb", func() {
-		contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-concourse-lb.yml")
-		Expect(err).NotTo(HaveOccurred())
-		args := []string{
-			"--state-dir", tempDirectory,
-			"create-lbs",
-			"--type", "concourse",
-		}
+	Context("when there is a concourse lb", func() {
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-east1",
+			}
 
-		executeCommand(args, 0)
+			executeCommand(args, 0)
+		})
 
-		args = []string{
-			"--state-dir", tempDirectory,
-			"cloud-config",
-		}
+		It("returns the cloud config of a bbl environment with concourse lb", func() {
+			contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-concourse-lb.yml")
+			Expect(err).NotTo(HaveOccurred())
+			args := []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "concourse",
+			}
 
-		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+			executeCommand(args, 0)
 
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+			args = []string{
+				"--state-dir", tempDirectory,
+				"cloud-config",
+			}
+
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+		})
 	})
 
-	It("returns the cloud config of a bbl environment with cf lb", func() {
-		contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-cf-lb.yml")
-		Expect(err).NotTo(HaveOccurred())
+	Context("when there is a cf lb", func() {
+		BeforeEach(func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--no-director",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-east1",
+			}
 
-		keyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
-		keyPair, err := keyPairGenerator.Generate("127.0.0.1", "127.0.0.1")
-		Expect(err).NotTo(HaveOccurred())
-		cert := keyPair.Certificate
-		key := keyPair.PrivateKey
+			executeCommand(args, 0)
+		})
 
-		certPath := filepath.Join(tempDirectory, "some-cert")
-		err = ioutil.WriteFile(certPath, cert, os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
+		It("returns the cloud config of a bbl environment with cf lb", func() {
+			contents, err := ioutil.ReadFile("../cloudconfig/fixtures/gcp-cloud-config-cf-lb.yml")
+			Expect(err).NotTo(HaveOccurred())
 
-		keyPath := filepath.Join(tempDirectory, "some-key")
-		err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), key, os.ModePerm)
-		Expect(err).NotTo(HaveOccurred())
+			keyPairGenerator := ssl.NewKeyPairGenerator(rsa.GenerateKey, pkix.CreateCertificateAuthority, pkix.CreateCertificateSigningRequest, pkix.CreateCertificateHost)
+			keyPair, err := keyPairGenerator.Generate("127.0.0.1", "127.0.0.1")
+			Expect(err).NotTo(HaveOccurred())
+			cert := keyPair.Certificate
+			key := keyPair.PrivateKey
 
-		args := []string{
-			"--state-dir", tempDirectory,
-			"create-lbs",
-			"--type", "cf",
-			"--cert", certPath,
-			"--key", keyPath,
-		}
+			certPath := filepath.Join(tempDirectory, "some-cert")
+			err = ioutil.WriteFile(certPath, cert, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 
-		executeCommand(args, 0)
+			keyPath := filepath.Join(tempDirectory, "some-key")
+			err = ioutil.WriteFile(filepath.Join(tempDirectory, "some-key"), key, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 
-		args = []string{
-			"--state-dir", tempDirectory,
-			"cloud-config",
-		}
+			args := []string{
+				"--state-dir", tempDirectory,
+				"create-lbs",
+				"--type", "cf",
+				"--cert", certPath,
+				"--key", keyPath,
+			}
 
-		session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+			executeCommand(args, 0)
 
-		Expect(err).NotTo(HaveOccurred())
-		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+			args = []string{
+				"--state-dir", tempDirectory,
+				"cloud-config",
+			}
+
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(MatchYAML(string(contents)))
+		})
 	})
 })

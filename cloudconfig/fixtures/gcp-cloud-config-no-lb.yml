@@ -2,13 +2,13 @@
 azs:
 - name: z1
   cloud_properties:
-    zone: us-east1-b
+    zone: us-west1-a
 - name: z2
   cloud_properties:
-    zone: us-east1-c
+    zone: us-west1-b
 - name: z3
   cloud_properties:
-    zone: us-east1-d
+    zone: us-west1-a
 
 compilation:
   az: z1
