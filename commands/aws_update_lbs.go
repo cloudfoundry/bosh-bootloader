@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -63,6 +64,9 @@ func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	if err != nil {
 		return err
 	}
+
+	// Temporary fix for IAM propagation. Terraform should have retry logic for this, so we should remove it once we start using terraform on AWS.
+	time.Sleep(9 * time.Second)
 
 	if err := c.updateStack(certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, state.AWS.Region, state.EnvID); err != nil {
 		return err
