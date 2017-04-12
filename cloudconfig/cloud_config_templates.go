@@ -33,7 +33,7 @@ networks: []
 
 vm_types:
 - name: default
-- name: extra-small
+- name: sharedcpu
 - name: small
 - name: medium
 - name: large

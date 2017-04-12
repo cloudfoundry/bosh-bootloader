@@ -53,7 +53,7 @@
       type: gp2
 
 - type: replace
-  path: /vm_types/name=extra-small/cloud_properties?
+  path: /vm_types/name=sharedcpu/cloud_properties?
   value:
     instance_type: t2.small
     ephemeral_disk:
