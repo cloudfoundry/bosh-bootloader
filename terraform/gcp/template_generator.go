@@ -3,6 +3,8 @@ package gcp
 import (
 	"fmt"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type TemplateGenerator struct {
@@ -30,18 +32,18 @@ func NewTemplateGenerator(zones zones) TemplateGenerator {
 	}
 }
 
-func (t TemplateGenerator) Generate(region string, lbType string, domain string) string {
+func (t TemplateGenerator) Generate(state storage.State) string {
 	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
-	switch lbType {
+	switch state.LB.Type {
 	case "concourse":
 		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")
 	case "cf":
-		instanceGroups := t.GenerateInstanceGroups(region)
-		backendService := t.GenerateBackendService(region)
+		instanceGroups := t.GenerateInstanceGroups(state.GCP.Region)
+		backendService := t.GenerateBackendService(state.GCP.Region)
 
 		template = strings.Join([]string{template, CFLBTemplate, instanceGroups, backendService}, "\n")
 
-		if domain != "" {
+		if state.LB.Domain != "" {
 			template = strings.Join([]string{template, CFDNSTemplate}, "\n")
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 
 	. "github.com/onsi/ginkgo"
@@ -32,7 +33,15 @@ var _ = Describe("TemplateGenerator", func() {
 			expectedTemplate, err := ioutil.ReadFile(fixtureFilename)
 			Expect(err).NotTo(HaveOccurred())
 
-			template := templateGenerator.Generate(region, lbType, domain)
+			template := templateGenerator.Generate(storage.State{
+				GCP: storage.GCP{
+					Region: region,
+				},
+				LB: storage.LB{
+					Type:   lbType,
+					Domain: domain,
+				},
+			})
 			Expect(template).To(Equal(string(expectedTemplate)))
 		},
 			Entry("when no lb type is provided", "fixtures/gcp_template_no_lb.tf", "some-region", "", ""),

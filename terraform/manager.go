@@ -42,9 +42,7 @@ type executor interface {
 }
 
 type templateGenerator interface {
-	GenerateBackendService(region string) string
-	GenerateInstanceGroups(region string) string
-	Generate(region string, lbType string, domain string) string
+	Generate(storage.State) string
 }
 
 type logger interface {
@@ -99,7 +97,7 @@ func (m Manager) ValidateVersion() error {
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("generating terraform template")
-	template := m.templateGenerator.Generate(bblState.GCP.Region, bblState.LB.Type, bblState.LB.Domain)
+	template := m.templateGenerator.Generate(bblState)
 
 	tfState, err := m.executor.Apply(bblState.GCP.ServiceAccountKey,
 		bblState.EnvID,
@@ -129,7 +127,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		return bblState, nil
 	}
 
-	template := m.templateGenerator.Generate(bblState.GCP.Region, bblState.LB.Type, bblState.LB.Domain)
+	template := m.templateGenerator.Generate(bblState)
 
 	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
 		template, bblState.TFState)

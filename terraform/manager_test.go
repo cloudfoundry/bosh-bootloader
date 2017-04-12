@@ -79,9 +79,7 @@ var _ = Describe("Manager", func() {
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(gcpTemplateGenerator.GenerateCall.Receives.Region).To(Equal("some-region"))
-			Expect(gcpTemplateGenerator.GenerateCall.Receives.LBType).To(Equal("cf"))
-			Expect(gcpTemplateGenerator.GenerateCall.Receives.Domain).To(Equal("some-domain"))
+			Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(executor.ApplyCall.Receives.Credentials).To(Equal("some-service-account-key"))
 			Expect(executor.ApplyCall.Receives.EnvID).To(Equal("some-env-id"))
@@ -171,9 +169,7 @@ var _ = Describe("Manager", func() {
 				_, err := manager.Destroy(originalBBLState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(gcpTemplateGenerator.GenerateCall.Receives.Region).To(Equal("some-region"))
-				Expect(gcpTemplateGenerator.GenerateCall.Receives.LBType).To(Equal("cf"))
-				Expect(gcpTemplateGenerator.GenerateCall.Receives.Domain).To(Equal("some-domain"))
+				Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(originalBBLState))
 
 				Expect(executor.DestroyCall.Receives.Credentials).To(Equal(originalBBLState.GCP.ServiceAccountKey))
 				Expect(executor.DestroyCall.Receives.EnvID).To(Equal(originalBBLState.EnvID))
