@@ -49,6 +49,11 @@ var _ = Describe("InputGenerator", func() {
 		inputGenerator = gcp.NewInputGenerator()
 	})
 
+	AfterEach(func() {
+		gcp.ResetTempDir()
+		gcp.ResetWriteFile()
+	})
+
 	It("receives BBL state and returns a map of terraform variables", func() {
 		inputs, err := inputGenerator.Generate(state)
 		Expect(err).NotTo(HaveOccurred())
