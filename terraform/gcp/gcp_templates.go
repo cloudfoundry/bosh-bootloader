@@ -1,4 +1,4 @@
-package terraform
+package gcp
 
 const VarsTemplate = `variable "project_id" {
 	type = "string"

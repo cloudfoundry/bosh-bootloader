@@ -44,6 +44,7 @@ type executor interface {
 type templateGenerator interface {
 	GenerateBackendService(region string) string
 	GenerateInstanceGroups(region string) string
+	Generate(region string, lbType string, domain string) string
 }
 
 type logger interface {
@@ -98,20 +99,7 @@ func (m Manager) ValidateVersion() error {
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("generating terraform template")
-	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
-	switch bblState.LB.Type {
-	case "concourse":
-		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")
-	case "cf":
-		instanceGroups := m.templateGenerator.GenerateInstanceGroups(bblState.GCP.Region)
-		backendService := m.templateGenerator.GenerateBackendService(bblState.GCP.Region)
-
-		template = strings.Join([]string{template, CFLBTemplate, instanceGroups, backendService}, "\n")
-
-		if bblState.LB.Domain != "" {
-			template = strings.Join([]string{template, CFDNSTemplate}, "\n")
-		}
-	}
+	template := m.templateGenerator.Generate(bblState.GCP.Region, bblState.LB.Type, bblState.LB.Domain)
 
 	tfState, err := m.executor.Apply(bblState.GCP.ServiceAccountKey,
 		bblState.EnvID,
@@ -141,8 +129,10 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		return bblState, nil
 	}
 
+	template := m.templateGenerator.Generate(bblState.GCP.Region, bblState.LB.Type, bblState.LB.Domain)
+
 	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
-		VarsTemplate, bblState.TFState)
+		template, bblState.TFState)
 	switch err.(type) {
 	case executorError:
 		return storage.State{}, NewManagerError(bblState, err.(executorError))

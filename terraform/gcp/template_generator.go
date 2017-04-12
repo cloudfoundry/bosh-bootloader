@@ -30,6 +30,24 @@ func NewTemplateGenerator(zones zones) TemplateGenerator {
 	}
 }
 
+func (t TemplateGenerator) Generate(region string, lbType string, domain string) string {
+	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
+	switch lbType {
+	case "concourse":
+		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")
+	case "cf":
+		instanceGroups := t.GenerateInstanceGroups(region)
+		backendService := t.GenerateBackendService(region)
+
+		template = strings.Join([]string{template, CFLBTemplate, instanceGroups, backendService}, "\n")
+
+		if domain != "" {
+			template = strings.Join([]string{template, CFDNSTemplate}, "\n")
+		}
+	}
+	return template
+}
+
 func (t TemplateGenerator) GenerateBackendService(region string) string {
 	zones := t.zones.Get(region)
 	var backends string
