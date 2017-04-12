@@ -49,7 +49,7 @@ func (t TemplateGenerator) GenerateInstanceGroups(region string) string {
 	var groups []string
 	for i, zone := range zones {
 		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
-  name        = "${var.env_id}-router-%[2]s"
+  name        = "${var.env_id}-router-lb-%[1]d-%[2]s"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"
   zone        = "%[2]s"
 }
