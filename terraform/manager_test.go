@@ -170,7 +170,7 @@ var _ = Describe("Manager", func() {
 	Describe("Destroy", func() {
 		Context("when the bbl state contains a non-empty TFState", func() {
 			var (
-				originalBBLState = storage.State{
+				incomingState = storage.State{
 					EnvID: "some-env-id",
 					GCP: storage.GCP{
 						ServiceAccountKey: "some-service-account-key",
@@ -189,21 +189,35 @@ var _ = Describe("Manager", func() {
 
 			BeforeEach(func() {
 				gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
+
+				gcpInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+					"env_id":        incomingState.EnvID,
+					"project_id":    incomingState.GCP.ProjectID,
+					"region":        incomingState.GCP.Region,
+					"zone":          incomingState.GCP.Zone,
+					"credentials":   "some-path",
+					"system_domain": incomingState.LB.Domain,
+				}
 			})
 
 			It("calls Executor.Destroy with the right arguments", func() {
-				_, err := manager.Destroy(originalBBLState)
+				_, err := manager.Destroy(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(originalBBLState))
+				Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
-				Expect(executor.DestroyCall.Receives.Credentials).To(Equal(originalBBLState.GCP.ServiceAccountKey))
-				Expect(executor.DestroyCall.Receives.EnvID).To(Equal(originalBBLState.EnvID))
-				Expect(executor.DestroyCall.Receives.ProjectID).To(Equal(originalBBLState.GCP.ProjectID))
-				Expect(executor.DestroyCall.Receives.Zone).To(Equal(originalBBLState.GCP.Zone))
-				Expect(executor.DestroyCall.Receives.Region).To(Equal(originalBBLState.GCP.Region))
+				Expect(gcpInputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+
+				Expect(executor.DestroyCall.Receives.Inputs).To(Equal(map[string]string{
+					"env_id":        incomingState.EnvID,
+					"project_id":    incomingState.GCP.ProjectID,
+					"region":        incomingState.GCP.Region,
+					"zone":          incomingState.GCP.Zone,
+					"credentials":   "some-path",
+					"system_domain": incomingState.LB.Domain,
+				}))
 				Expect(executor.DestroyCall.Receives.Template).To(Equal(gcpTemplateGenerator.GenerateCall.Returns.Template))
-				Expect(executor.DestroyCall.Receives.TFState).To(Equal(originalBBLState.TFState))
+				Expect(executor.DestroyCall.Receives.TFState).To(Equal(incomingState.TFState))
 			})
 
 			Context("when Executor.Destroy succeeds", func() {
@@ -216,13 +230,24 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("returns the bbl state updated with the TFState returned by Executor.Destroy", func() {
-					newBBLState, err := manager.Destroy(originalBBLState)
+					newBBLState, err := manager.Destroy(incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
-					expectedBBLState := originalBBLState
+					expectedBBLState := incomingState
 					expectedBBLState.TFState = updatedTFState
 					Expect(newBBLState.TFState).To(Equal(updatedTFState))
 					Expect(newBBLState).To(Equal(expectedBBLState))
+				})
+			})
+
+			Context("when InputGenerator.Generate returns an error", func() {
+				BeforeEach(func() {
+					gcpInputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
+				})
+
+				It("bubbles up the error", func() {
+					_, err := manager.Apply(incomingState)
+					Expect(err).To(MatchError("failed to generate inputs"))
 				})
 			})
 
@@ -249,9 +274,9 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("returns a ManagerError", func() {
-					_, err := manager.Destroy(originalBBLState)
+					_, err := manager.Destroy(incomingState)
 
-					expectedError := terraform.NewManagerError(originalBBLState, executorError)
+					expectedError := terraform.NewManagerError(incomingState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
@@ -268,7 +293,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("bubbles up the error", func() {
-					_, err := manager.Destroy(originalBBLState)
+					_, err := manager.Destroy(incomingState)
 					Expect(err).To(Equal(executorError))
 				})
 			})
@@ -276,16 +301,16 @@ var _ = Describe("Manager", func() {
 
 		Context("when the bbl state contains a non-empty TFState", func() {
 			var (
-				originalBBLState = storage.State{
+				incomingState = storage.State{
 					EnvID: "some-env-id",
 				}
 			)
 
 			It("returns the bbl state and skips calling executor destroy", func() {
-				bblState, err := manager.Destroy(originalBBLState)
+				bblState, err := manager.Destroy(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(bblState).To(Equal(originalBBLState))
+				Expect(bblState).To(Equal(incomingState))
 				Expect(executor.DestroyCall.CallCount).To(Equal(0))
 			})
 		})

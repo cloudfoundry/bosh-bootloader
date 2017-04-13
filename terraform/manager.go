@@ -37,7 +37,7 @@ type Outputs struct {
 
 type executor interface {
 	Version() (string, error)
-	Destroy(serviceAccountKey, envID, projectID, zone, region, terraformTemplate, tfState string) (string, error)
+	Destroy(inputs map[string]string, terraformTemplate, tfState string) (string, error)
 	Apply(inputs map[string]string, terraformTemplate, tfState string) (string, error)
 	Output(string, string) (string, error)
 }
@@ -134,8 +134,15 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 
 	template := m.templateGenerator.Generate(bblState)
 
-	tfState, err := m.executor.Destroy(bblState.GCP.ServiceAccountKey, bblState.EnvID, bblState.GCP.ProjectID, bblState.GCP.Zone, bblState.GCP.Region,
-		template, bblState.TFState)
+	input, err := m.inputGenerator.Generate(bblState)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	tfState, err := m.executor.Destroy(
+		input,
+		template,
+		bblState.TFState)
 	switch err.(type) {
 	case executorError:
 		return storage.State{}, NewManagerError(bblState, err.(executorError))

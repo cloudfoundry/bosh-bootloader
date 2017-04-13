@@ -210,8 +210,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Destroy", func() {
 		It("writes the template and tf state to a temp dir", func() {
-			_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-template", "some-tf-state")
+			_, err := executor.Destroy(input, "some-template", "some-tf-state")
 			Expect(err).NotTo(HaveOccurred())
 
 			templateContents, err := ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
@@ -223,30 +222,22 @@ var _ = Describe("Executor", func() {
 			Expect(string(tfStateContents)).To(Equal("some-tf-state"))
 		})
 
-		It("writes credentials to a file", func() {
-			_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-template", "some-tf-state")
-			Expect(err).NotTo(HaveOccurred())
-
-			templateContents, err := ioutil.ReadFile(filepath.Join(tempDir, "credentials.json"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(templateContents)).To(Equal("some-credentials-json"))
-		})
-
 		It("passes the correct args and dir to run command", func() {
-			_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-template", "some-tf-state")
+			_, err := executor.Destroy(input, "some-template", "some-tf-state")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"destroy",
 				"-force",
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
 				"-var", "zone=some-zone",
-				"-var", fmt.Sprintf("credentials=%s/credentials.json", tempDir),
+				"-var", "ssl_certificate=some/certificate/path",
+				"-var", "ssl_certificate_private_key=some/key/path",
+				"-var", "credentials=some/credentials/path",
+				"-var", "system_domain=some-domain",
 			}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
@@ -256,8 +247,7 @@ var _ = Describe("Executor", func() {
 				return []byte{}, nil
 			})
 
-			tfState, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-				"some-template", "some-tf-state")
+			tfState, err := executor.Destroy(input, "some-template", "some-tf-state")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(tfState).To(Equal(""))
@@ -269,21 +259,8 @@ var _ = Describe("Executor", func() {
 					return "", errors.New("failed to make temp dir")
 				})
 
-				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Destroy(input, "some-template", "")
 				Expect(err).To(MatchError("failed to make temp dir"))
-			})
-
-			It("returns an error when it fails to write the credentials file", func() {
-				terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-					if strings.Contains(file, "credentials.json") {
-						return errors.New("failed to write credentials file")
-					}
-
-					return nil
-				})
-
-				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
-				Expect(err).To(MatchError("failed to write credentials file"))
 			})
 
 			It("returns an error when it fails to write the template file", func() {
@@ -295,7 +272,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 
-				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Destroy(input, "some-template", "")
 				Expect(err).To(MatchError("failed to write template file"))
 			})
 
@@ -308,7 +285,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 
-				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "some-tf-state")
+				_, err := executor.Destroy(input, "some-template", "some-tf-state")
 				Expect(err).To(MatchError("failed to write tf state file"))
 			})
 
@@ -317,8 +294,7 @@ var _ = Describe("Executor", func() {
 				Expect(err).NotTo(HaveOccurred())
 				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-				_, err = executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-					"some-template", "")
+				_, err = executor.Destroy(input, "some-template", "")
 				tdErr := err.(terraform.ExecutorError)
 				Expect(tdErr).To(MatchError("failed to run terraform command"))
 
@@ -332,7 +308,7 @@ var _ = Describe("Executor", func() {
 					return []byte{}, errors.New("failed to read tf state file")
 				})
 
-				_, err := executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region", "some-template", "")
+				_, err := executor.Destroy(input, "some-template", "")
 				Expect(err).To(MatchError("failed to read tf state file"))
 			})
 
@@ -347,8 +323,7 @@ var _ = Describe("Executor", func() {
 
 					cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
 
-					_, err = executor.Destroy("some-credentials-json", "some-env-id", "some-project-id", "some-zone", "some-region",
-						"some-template", "")
+					_, err = executor.Destroy(input, "some-template", "")
 					tdErr := err.(terraform.ExecutorError)
 
 					tfState, err := tdErr.TFState()

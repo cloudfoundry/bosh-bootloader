@@ -64,14 +64,8 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 	return string(tfState), nil
 }
 
-func (e Executor) Destroy(credentials, envID, projectID, zone, region, template, prevTFState string) (string, error) {
+func (e Executor) Destroy(input map[string]string, template, prevTFState string) (string, error) {
 	tempDir, err := tempDir("", "")
-	if err != nil {
-		return "", err
-	}
-
-	credentialsPath := filepath.Join(tempDir, "credentials.json")
-	err = writeFile(credentialsPath, []byte(credentials), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -89,11 +83,9 @@ func (e Executor) Destroy(credentials, envID, projectID, zone, region, template,
 	}
 
 	args := []string{"destroy", "-force"}
-	args = append(args, makeVar("project_id", projectID)...)
-	args = append(args, makeVar("env_id", envID)...)
-	args = append(args, makeVar("region", region)...)
-	args = append(args, makeVar("zone", zone)...)
-	args = append(args, makeVar("credentials", credentialsPath)...)
+	for k, v := range input {
+		args = append(args, makeVar(k, v)...)
+	}
 	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
 	if err != nil {
 		return "", NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
