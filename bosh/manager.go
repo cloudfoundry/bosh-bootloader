@@ -9,7 +9,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 const (
@@ -62,7 +61,7 @@ type executor interface {
 }
 
 type terraformManager interface {
-	GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
+	GetOutputs(storage.State) (map[string]interface{}, error)
 }
 
 type stackManager interface {
@@ -169,18 +168,18 @@ internal_ip: 10.0.0.6`
 
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := m.terraformManager.GetOutputs(state)
 		if err != nil {
 			return "", err
 		}
 
 		vars = strings.Join([]string{vars,
 			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
-			fmt.Sprintf("external_ip: %s", terraformOutputs.ExternalIP),
+			fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
 			fmt.Sprintf("zone: %s", state.GCP.Zone),
-			fmt.Sprintf("network: %s", terraformOutputs.NetworkName),
-			fmt.Sprintf("subnetwork: %s", terraformOutputs.SubnetworkName),
-			fmt.Sprintf("tags: [%s, %s]", terraformOutputs.BOSHTag, terraformOutputs.InternalTag),
+			fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
+			fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
+			fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["internal_tag_name"]),
 			fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
 			fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
 		}, "\n")
@@ -210,7 +209,7 @@ internal_ip: 10.0.0.6`
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := m.terraformManager.GetOutputs(state)
 		if err != nil {
 			return iaasInputs{}, err
 		}
@@ -220,7 +219,7 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 				BOSHState: state.BOSH.State,
 				Variables: state.BOSH.Variables,
 			},
-			DirectorAddress: terraformOutputs.DirectorAddress,
+			DirectorAddress: terraformOutputs["director_address"].(string),
 		}, nil
 	case "aws":
 		stack, err := m.stackManager.Describe(state.Stack.Name)

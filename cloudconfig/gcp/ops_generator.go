@@ -8,7 +8,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type OpsGenerator struct {
@@ -17,7 +16,7 @@ type OpsGenerator struct {
 }
 
 type terraformManager interface {
-	GetOutputs(string, string, bool) (terraform.Outputs, error)
+	GetOutputs(storage.State) (map[string]interface{}, error)
 }
 
 type zones interface {
@@ -122,11 +121,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		}))
 	}
 
-	domainExists := false
-	if state.LB.Domain != "" {
-		domainExists = true
-	}
-	outputs, err := o.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
+	outputs, err := o.terraformManager.GetOutputs(state)
 	if err != nil {
 		return []op{}, err
 	}
@@ -137,10 +132,10 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
 			cidr,
-			outputs.NetworkName,
-			outputs.SubnetworkName,
-			outputs.BOSHTag,
-			outputs.InternalTag,
+			outputs["network_name"].(string),
+			outputs["subnetwork_name"].(string),
+			outputs["bosh_open_tag_name"].(string),
+			outputs["internal_tag_name"].(string),
 		)
 		if err != nil {
 			return []op{}, err
@@ -165,7 +160,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "lb",
 			CloudProperties: lbCloudProperties{
-				TargetPool: outputs.ConcourseTargetPool,
+				TargetPool: outputs["concourse_target_pool"].(string),
 			},
 		}))
 	}
@@ -174,11 +169,11 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-router-network-properties",
 			CloudProperties: lbCloudProperties{
-				BackendService: outputs.RouterBackendService,
-				TargetPool:     outputs.WSTargetPool,
+				BackendService: outputs["router_backend_service"].(string),
+				TargetPool:     outputs["ws_target_pool"].(string),
 				Tags: []string{
-					outputs.RouterBackendService,
-					outputs.WSTargetPool,
+					outputs["router_backend_service"].(string),
+					outputs["ws_target_pool"].(string),
 				},
 			},
 		}))
@@ -186,9 +181,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "diego-ssh-proxy-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: outputs.SSHProxyTargetPool,
+				TargetPool: outputs["ssh_proxy_target_pool"].(string),
 				Tags: []string{
-					outputs.SSHProxyTargetPool,
+					outputs["ssh_proxy_target_pool"].(string),
 				},
 			},
 		}))
@@ -196,9 +191,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-tcp-router-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: outputs.TCPRouterTargetPool,
+				TargetPool: outputs["tcp_router_target_pool"].(string),
 				Tags: []string{
-					outputs.TCPRouterTargetPool,
+					outputs["tcp_router_target_pool"].(string),
 				},
 			},
 		}))

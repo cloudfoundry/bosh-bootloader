@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -44,13 +43,13 @@ var _ = Describe("Manager", func() {
 			logger = &fakes.Logger{}
 			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 
-			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-				NetworkName:     "some-network",
-				SubnetworkName:  "some-subnetwork",
-				BOSHTag:         "some-bosh-tag",
-				InternalTag:     "some-internal-tag",
-				ExternalIP:      "some-external-ip",
-				DirectorAddress: "some-director-address",
+			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				"network_name":       "some-network",
+				"subnetwork_name":    "some-subnetwork",
+				"bosh_open_tag_name": "some-bosh-tag",
+				"internal_tag_name":  "some-internal-tag",
+				"external_ip":        "some-external-ip",
+				"director_address":   "some-director-address",
 			}
 
 			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
@@ -142,8 +141,7 @@ var _ = Describe("Manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stackManager.DescribeCall.CallCount).To(Equal(0))
-				Expect(terraformManager.GetOutputsCall.Receives.TFState).To(Equal("some-tf-state"))
-				Expect(terraformManager.GetOutputsCall.Receives.LBType).To(Equal("cf"))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
 			})
 		})
 
@@ -157,13 +155,14 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		DescribeTable("generates a bosh manifest", func(incomingStateFunc func() storage.State,
-			expectedInterpolateInput bosh.InterpolateInput) {
-			_, err := boshManager.Create(incomingStateFunc(), []byte("some-ops-file"))
-			Expect(err).NotTo(HaveOccurred())
+		DescribeTable("generates a bosh manifest",
+			func(incomingStateFunc func() storage.State,
+				expectedInterpolateInput bosh.InterpolateInput) {
+				_, err := boshManager.Create(incomingStateFunc(), []byte("some-ops-file"))
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(expectedInterpolateInput))
-		},
+				Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(expectedInterpolateInput))
+			},
 			Entry("for gcp", func() storage.State {
 				return incomingGCPState
 			}, bosh.InterpolateInput{
@@ -478,13 +477,13 @@ private_key: |-
 			logger = &fakes.Logger{}
 			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 
-			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-				NetworkName:     "some-network",
-				SubnetworkName:  "some-subnetwork",
-				BOSHTag:         "some-bosh-tag",
-				InternalTag:     "some-internal-tag",
-				ExternalIP:      "some-external-ip",
-				DirectorAddress: "some-director-address",
+			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				"network_name":       "some-network",
+				"subnetwork_name":    "some-subnetwork",
+				"bosh_open_tag_name": "some-bosh-tag",
+				"internal_tag_name":  "some-internal-tag",
+				"external_ip":        "some-external-ip",
+				"director_address":   "some-director-address",
 			}
 
 			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{

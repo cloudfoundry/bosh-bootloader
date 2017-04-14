@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
@@ -42,11 +41,11 @@ var _ = Describe("GCPOpsGenerator", func() {
 			}
 
 			zones.GetCall.Returns.Zones = []string{"us-east1-b", "us-east1-c", "us-east1-d"}
-			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-				NetworkName:    "some-network-name",
-				SubnetworkName: "some-subnetwork-name",
-				BOSHTag:        "some-bosh-tag",
-				InternalTag:    "some-internal-tag",
+			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				"network_name":       "some-network-name",
+				"subnetwork_name":    "some-subnetwork-name",
+				"bosh_open_tag_name": "some-bosh-tag",
+				"internal_tag_name":  "some-internal-tag",
 			}
 
 			var err error
@@ -61,46 +60,47 @@ var _ = Describe("GCPOpsGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(zones.GetCall.Receives.Region).To(Equal("us-east1"))
-			Expect(terraformManager.GetOutputsCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsFile))
 		})
 
-		DescribeTable("returns an ops file with additional vm extensions to support lb", func(lbType string, lbOutputs terraform.Outputs) {
-			incomingState.LB.Type = lbType
+		DescribeTable("returns an ops file with additional vm extensions to support lb",
+			func(lbType string, lbOutputs map[string]interface{}) {
+				incomingState.LB.Type = lbType
 
-			expectedLBOpsFile, err := ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("gcp-%s-lb-ops.yml", lbType)))
-			Expect(err).NotTo(HaveOccurred())
+				expectedLBOpsFile, err := ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("gcp-%s-lb-ops.yml", lbType)))
+				Expect(err).NotTo(HaveOccurred())
 
-			expectedOps := strings.Join([]string{string(expectedOpsFile), string(expectedLBOpsFile)}, "\n")
+				expectedOps := strings.Join([]string{string(expectedOpsFile), string(expectedLBOpsFile)}, "\n")
 
-			terraformManager.GetOutputsCall.Returns.Outputs = lbOutputs
+				terraformManager.GetOutputsCall.Returns.Outputs = lbOutputs
 
-			opsYAML, err := opsGenerator.Generate(incomingState)
-			Expect(err).NotTo(HaveOccurred())
+				opsYAML, err := opsGenerator.Generate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformManager.GetOutputsCall.Receives.LBType).To(Equal(lbType))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
-			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOps))
-		},
+				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOps))
+			},
 			Entry("cf load balancer exists", "cf",
-				terraform.Outputs{
-					NetworkName:          "some-network-name",
-					SubnetworkName:       "some-subnetwork-name",
-					BOSHTag:              "some-bosh-tag",
-					InternalTag:          "some-internal-tag",
-					RouterBackendService: "router-backend-service",
-					WSTargetPool:         "ws-target-pool",
-					SSHProxyTargetPool:   "ssh-proxy-target-pool",
-					TCPRouterTargetPool:  "tcp-router-target-pool",
+				map[string]interface{}{
+					"network_name":           "some-network-name",
+					"subnetwork_name":        "some-subnetwork-name",
+					"bosh_open_tag_name":     "some-bosh-tag",
+					"internal_tag_name":      "some-internal-tag",
+					"router_backend_service": "router-backend-service",
+					"ws_target_pool":         "ws-target-pool",
+					"ssh_proxy_target_pool":  "ssh-proxy-target-pool",
+					"tcp_router_target_pool": "tcp-router-target-pool",
 				}),
 			Entry("concourse load balancer exists", "concourse",
-				terraform.Outputs{
-					NetworkName:         "some-network-name",
-					SubnetworkName:      "some-subnetwork-name",
-					BOSHTag:             "some-bosh-tag",
-					InternalTag:         "some-internal-tag",
-					ConcourseTargetPool: "concourse-target-pool",
+				map[string]interface{}{
+					"network_name":          "some-network-name",
+					"subnetwork_name":       "some-subnetwork-name",
+					"bosh_open_tag_name":    "some-bosh-tag",
+					"internal_tag_name":     "some-internal-tag",
+					"concourse_target_pool": "concourse-target-pool",
 				}),
 		)
 

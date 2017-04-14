@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -95,8 +94,8 @@ var _ = Describe("StateQuery", func() {
 
 			Context("gcp", func() {
 				It("prints the eip as the director-address", func() {
-					fakeTerraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-						ExternalIP: "some-external-ip",
+					fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"external_ip": "some-external-ip",
 					}
 
 					state.IAAS = "gcp"

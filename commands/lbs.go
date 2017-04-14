@@ -60,12 +60,7 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 			return errors.New("no lbs found")
 		}
 	case "gcp":
-		domainExists := false
-		if state.LB.Domain != "" {
-			domainExists = true
-		}
-
-		terraformOutputs, err := c.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
+		terraformOutputs, err := c.terraformManager.GetOutputs(state)
 		if err != nil {
 			return err
 		}
@@ -73,7 +68,19 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 		switch state.LB.Type {
 		case "cf":
 			if len(subcommandFlags) > 0 && subcommandFlags[0] == "--json" {
-				lbOutput, err := json.Marshal(&terraformOutputs)
+				lbOutput, err := json.Marshal(struct {
+					RouterLBIP             string   `json:"cf_router_lb,omitempty"`
+					SSHProxyLBIP           string   `json:"cf_ssh_proxy_lb,omitempty"`
+					TCPRouterLBIP          string   `json:"cf_tcp_router_lb,omitempty"`
+					WebSocketLBIP          string   `json:"cf_websocket_lb,omitempty"`
+					SystemDomainDNSServers []string `json:"cf_system_domain_dns_servers,omitempty"`
+				}{
+					RouterLBIP:             terraformOutputs["router_lb_ip"].(string),
+					SSHProxyLBIP:           terraformOutputs["ssh_proxy_lb_ip"].(string),
+					TCPRouterLBIP:          terraformOutputs["tcp_router_lb_ip"].(string),
+					WebSocketLBIP:          terraformOutputs["ws_lb_ip"].(string),
+					SystemDomainDNSServers: terraformOutputs["system_domain_dns_servers"].([]string),
+				})
 				if err != nil {
 					// not tested
 					return err
@@ -81,17 +88,17 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 
 				fmt.Fprintf(c.stdout, "%s\n", string(lbOutput))
 			} else {
-				fmt.Fprintf(c.stdout, "CF Router LB: %s\n", terraformOutputs.RouterLBIP)
-				fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", terraformOutputs.SSHProxyLBIP)
-				fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", terraformOutputs.TCPRouterLBIP)
-				fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", terraformOutputs.WebSocketLBIP)
+				fmt.Fprintf(c.stdout, "CF Router LB: %s\n", terraformOutputs["router_lb_ip"])
+				fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", terraformOutputs["ssh_proxy_lb_ip"])
+				fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", terraformOutputs["tcp_router_lb_ip"])
+				fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", terraformOutputs["ws_lb_ip"])
 
-				if len(terraformOutputs.SystemDomainDNSServers) > 0 {
-					fmt.Fprintf(c.stdout, "CF System Domain DNS servers: %s\n", strings.Join(terraformOutputs.SystemDomainDNSServers, " "))
+				if dnsServers, ok := terraformOutputs["system_domain_dns_servers"]; ok {
+					fmt.Fprintf(c.stdout, "CF System Domain DNS servers: %s\n", strings.Join(dnsServers.([]string), " "))
 				}
 			}
 		case "concourse":
-			fmt.Fprintf(c.stdout, "Concourse LB: %s\n", terraformOutputs.ConcourseLBIP)
+			fmt.Fprintf(c.stdout, "Concourse LB: %s\n", terraformOutputs["concourse_lb_ip"])
 		default:
 			return errors.New("no lbs found")
 		}

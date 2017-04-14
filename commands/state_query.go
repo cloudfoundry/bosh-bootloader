@@ -94,11 +94,12 @@ func (s StateQuery) getEIP(state storage.State) (string, error) {
 		}
 		return stack.Outputs["BOSHEIP"], nil
 	case "gcp":
-		terraformOutputs, err := s.terraformManager.GetOutputs(state.TFState, state.LB.Type, false)
+		terraformOutputs, err := s.terraformManager.GetOutputs(state)
 		if err != nil {
 			return "", err
 		}
-		return terraformOutputs.ExternalIP, nil
+
+		return terraformOutputs["external_ip"].(string), nil
 	}
 
 	return "", errors.New("Could not find external IP for given IAAS")

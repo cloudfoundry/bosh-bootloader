@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 const (
@@ -140,21 +139,19 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	var terraformOutputs terraform.Outputs
+	var terraformOutputs map[string]interface{}
 	if state.IAAS == "gcp" {
-		domainExists := false
-		if state.LB.Domain != "" {
-			domainExists = true
-		}
-
-		terraformOutputs, err = d.terraformManager.GetOutputs(state.TFState, state.LB.Type, domainExists)
+		terraformOutputs, err = d.terraformManager.GetOutputs(state)
 		if err != nil {
 			return err
 		}
 
-		err = d.networkInstancesChecker.ValidateSafeToDelete(terraformOutputs.NetworkName)
-		if err != nil {
-			return err
+		networkName, ok := terraformOutputs["network_name"].(string)
+		if ok {
+			err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -193,7 +190,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	state, err = d.deleteBOSH(state, stack, terraformOutputs)
+	state, err = d.deleteBOSH(state, stack)
 	switch err.(type) {
 	case bosh.ManagerDeleteError:
 		mdErr := err.(bosh.ManagerDeleteError)
@@ -285,7 +282,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, terraformOutputs terraform.Outputs) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack) (storage.State, error) {
 	emptyBOSH := storage.BOSH{}
 	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
 		d.logger.Println("no BOSH director, skipping...")

@@ -11,7 +11,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 var (
@@ -52,13 +51,13 @@ type keyPairUpdater interface {
 }
 
 type gcpProvider interface {
-	SetConfig(serviceAccountKey, projectID, zone string) error
+	SetConfig(string, string, string) error
 }
 
 type terraformManager interface {
-	Destroy(bblState storage.State) (storage.State, error)
-	Apply(bblState storage.State) (storage.State, error)
-	GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error)
+	Destroy(storage.State) (storage.State, error)
+	Apply(storage.State) (storage.State, error)
+	GetOutputs(storage.State) (map[string]interface{}, error)
 	Version() (string, error)
 	ValidateVersion() error
 }

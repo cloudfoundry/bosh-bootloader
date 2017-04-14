@@ -8,7 +8,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,12 +29,12 @@ var _ = Describe("LBs", func() {
 		infrastructureManager = &fakes.InfrastructureManager{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
-		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-			RouterLBIP:    "some-router-lb-ip",
-			SSHProxyLBIP:  "some-ssh-proxy-lb-ip",
-			TCPRouterLBIP: "some-tcp-router-lb-ip",
-			WebSocketLBIP: "some-ws-lb-ip",
-			ConcourseLBIP: "some-concourse-lb-ip",
+		terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+			"router_lb_ip":     "some-router-lb-ip",
+			"ssh_proxy_lb_ip":  "some-ssh-proxy-lb-ip",
+			"tcp_router_lb_ip": "some-tcp-router-lb-ip",
+			"ws_lb_ip":         "some-ws-lb-ip",
+			"concourse_lb_ip":  "some-concourse-lb-ip",
 		}
 		stdout = bytes.NewBuffer([]byte{})
 
@@ -157,13 +156,13 @@ var _ = Describe("LBs", func() {
 
 			Context("when the domain is specified", func() {
 				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-						RouterLBIP:             "some-router-lb-ip",
-						SSHProxyLBIP:           "some-ssh-proxy-lb-ip",
-						TCPRouterLBIP:          "some-tcp-router-lb-ip",
-						WebSocketLBIP:          "some-ws-lb-ip",
-						ConcourseLBIP:          "some-concourse-lb-ip",
-						SystemDomainDNSServers: []string{"name-server-1.", "name-server-2."},
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"router_lb_ip":              "some-router-lb-ip",
+						"ssh_proxy_lb_ip":           "some-ssh-proxy-lb-ip",
+						"tcp_router_lb_ip":          "some-tcp-router-lb-ip",
+						"ws_lb_ip":                  "some-ws-lb-ip",
+						"concourse_lb_ip":           "some-concourse-lb-ip",
+						"system_domain_dns_servers": []string{"name-server-1.", "name-server-2."},
 					}
 				})
 
@@ -193,15 +192,15 @@ var _ = Describe("LBs", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(stdout.String()).To(MatchJSON(`{
-						"cf_router_lb": "some-router-lb-ip",
-						"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
-						"cf_tcp_router_lb": "some-tcp-router-lb-ip",
-						"cf_websocket_lb": "some-ws-lb-ip",
-						"cf_system_domain_dns_servers": [
-							"name-server-1.",
-							"name-server-2."
-						]
-					}`))
+							"cf_router_lb": "some-router-lb-ip",
+							"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
+							"cf_tcp_router_lb": "some-tcp-router-lb-ip",
+							"cf_websocket_lb": "some-ws-lb-ip",
+							"cf_system_domain_dns_servers": [
+								"name-server-1.",
+								"name-server-2."
+							]
+						}`))
 					})
 				})
 			})

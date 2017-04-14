@@ -12,7 +12,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -179,6 +178,20 @@ var _ = Describe("Destroy", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
+		})
+
+		Context("when there is no network name in the state", func() {
+			It("does not attempt to validate if it is safe to delete the network", func() {
+				stdin.Write([]byte("yes\n"))
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{}
+
+				err := destroy.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+			})
 		})
 
 		Context("failure cases", func() {
@@ -645,13 +658,13 @@ var _ = Describe("Destroy", func() {
 			var serviceAccountKey string
 			var bblState storage.State
 			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-					ExternalIP:      "some-external-ip",
-					NetworkName:     "some-network-name",
-					SubnetworkName:  "some-subnetwork-name",
-					BOSHTag:         "some-bosh-tag-name",
-					InternalTag:     "some-internal-tag-name",
-					DirectorAddress: "some-director-address",
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip":        "some-external-ip",
+					"network_name":       "some-network-name",
+					"subnetwork_name":    "some-subnetwork-name",
+					"bosh_open_tag_name": "some-bosh-tag",
+					"internal_tag_name":  "some-internal-tag",
+					"director_address":   "some-director-address",
 				}
 
 				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")

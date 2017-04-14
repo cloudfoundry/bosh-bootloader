@@ -116,11 +116,12 @@ func main() {
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
 
 	// Terraform
-	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
-	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	terraformCmd := terraform.NewCmd(os.Stderr)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
-	terraformManager := terraform.NewManager(terraformExecutor, gcpTemplateGenerator, gcpInputGenerator, logger)
+	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
+	gcpInputGenerator := gcpterraform.NewInputGenerator()
+	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
+	terraformManager := terraform.NewManager(terraformExecutor, gcpTemplateGenerator, gcpInputGenerator, gcpOutputGenerator, logger)
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)

@@ -2,7 +2,6 @@ package fakes
 
 import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type TerraformManager struct {
@@ -18,14 +17,12 @@ type TerraformManager struct {
 	}
 	GetOutputsCall struct {
 		CallCount int
-		Returns   struct {
-			Outputs terraform.Outputs
-			Error   error
+		Receives  struct {
+			BBLState storage.State
 		}
-		Receives struct {
-			TFState      string
-			LBType       string
-			DomainExists bool
+		Returns struct {
+			Outputs map[string]interface{}
+			Error   error
 		}
 	}
 	VersionCall struct {
@@ -67,11 +64,9 @@ func (t *TerraformManager) Destroy(bblState storage.State) (storage.State, error
 	return t.DestroyCall.Returns.BBLState, t.DestroyCall.Returns.Error
 }
 
-func (t *TerraformManager) GetOutputs(tfState, lbType string, domainExists bool) (terraform.Outputs, error) {
+func (t *TerraformManager) GetOutputs(bblState storage.State) (map[string]interface{}, error) {
 	t.GetOutputsCall.CallCount++
-	t.GetOutputsCall.Receives.TFState = tfState
-	t.GetOutputsCall.Receives.LBType = lbType
-	t.GetOutputsCall.Receives.DomainExists = domainExists
+	t.GetOutputsCall.Receives.BBLState = bblState
 
 	return t.GetOutputsCall.Returns.Outputs, t.GetOutputsCall.Returns.Error
 }

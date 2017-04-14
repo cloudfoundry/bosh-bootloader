@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -71,8 +70,8 @@ var _ = Describe("PrintEnv", func() {
 		})
 		Context("gcp", func() {
 			It("prints only the BOSH_ENVIRONMENT", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-					ExternalIP: "some-external-ip",
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip": "some-external-ip",
 				}
 
 				err := printEnv.Execute([]string{}, storage.State{
