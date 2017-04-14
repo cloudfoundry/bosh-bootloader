@@ -17,22 +17,22 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		executor             *fakes.TerraformExecutor
-		gcpTemplateGenerator *fakes.GCPTemplateGenerator
-		gcpInputGenerator    *fakes.GCPInputGenerator
-		gcpOutputGenerator   *fakes.GCPOutputGenerator
-		logger               *fakes.Logger
-		manager              terraform.Manager
+		executor           *fakes.TerraformExecutor
+		templateGenerator  *fakes.TemplateGenerator
+		gcpInputGenerator  *fakes.GCPInputGenerator
+		gcpOutputGenerator *fakes.GCPOutputGenerator
+		logger             *fakes.Logger
+		manager            terraform.Manager
 	)
 
 	BeforeEach(func() {
 		executor = &fakes.TerraformExecutor{}
-		gcpTemplateGenerator = &fakes.GCPTemplateGenerator{}
+		templateGenerator = &fakes.TemplateGenerator{}
 		gcpInputGenerator = &fakes.GCPInputGenerator{}
 		gcpOutputGenerator = &fakes.GCPOutputGenerator{}
 		logger = &fakes.Logger{}
 
-		manager = terraform.NewManager(executor, gcpTemplateGenerator, gcpInputGenerator, gcpOutputGenerator, logger)
+		manager = terraform.NewManager(executor, templateGenerator, gcpInputGenerator, gcpOutputGenerator, logger)
 	})
 
 	Describe("Apply", func() {
@@ -65,7 +65,7 @@ var _ = Describe("Manager", func() {
 			expectedState = incomingState
 			expectedState.TFState = expectedTFState
 
-			gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
+			templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
 			gcpInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,
@@ -89,7 +89,7 @@ var _ = Describe("Manager", func() {
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(gcpInputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
@@ -188,7 +188,7 @@ var _ = Describe("Manager", func() {
 			)
 
 			BeforeEach(func() {
-				gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
+				templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
 
 				gcpInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 					"env_id":        incomingState.EnvID,
@@ -204,7 +204,7 @@ var _ = Describe("Manager", func() {
 				_, err := manager.Destroy(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 				Expect(gcpInputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
@@ -216,7 +216,7 @@ var _ = Describe("Manager", func() {
 					"credentials":   "some-path",
 					"system_domain": incomingState.LB.Domain,
 				}))
-				Expect(executor.DestroyCall.Receives.Template).To(Equal(gcpTemplateGenerator.GenerateCall.Returns.Template))
+				Expect(executor.DestroyCall.Receives.Template).To(Equal(templateGenerator.GenerateCall.Returns.Template))
 				Expect(executor.DestroyCall.Receives.TFState).To(Equal(incomingState.TFState))
 			})
 
