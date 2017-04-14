@@ -123,7 +123,8 @@ func main() {
 	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator)
-	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, gcpOutputGenerator, logger)
+	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator)
+	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, outputGenerator, logger)
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)

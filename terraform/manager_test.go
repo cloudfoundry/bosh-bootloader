@@ -17,22 +17,22 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		executor           *fakes.TerraformExecutor
-		templateGenerator  *fakes.TemplateGenerator
-		inputGenerator     *fakes.InputGenerator
-		gcpOutputGenerator *fakes.GCPOutputGenerator
-		logger             *fakes.Logger
-		manager            terraform.Manager
+		executor          *fakes.TerraformExecutor
+		templateGenerator *fakes.TemplateGenerator
+		inputGenerator    *fakes.InputGenerator
+		outputGenerator   *fakes.OutputGenerator
+		logger            *fakes.Logger
+		manager           terraform.Manager
 	)
 
 	BeforeEach(func() {
 		executor = &fakes.TerraformExecutor{}
 		templateGenerator = &fakes.TemplateGenerator{}
 		inputGenerator = &fakes.InputGenerator{}
-		gcpOutputGenerator = &fakes.GCPOutputGenerator{}
+		outputGenerator = &fakes.OutputGenerator{}
 		logger = &fakes.Logger{}
 
-		manager = terraform.NewManager(executor, templateGenerator, inputGenerator, gcpOutputGenerator, logger)
+		manager = terraform.NewManager(executor, templateGenerator, inputGenerator, outputGenerator, logger)
 	})
 
 	Describe("Apply", func() {
@@ -318,7 +318,7 @@ var _ = Describe("Manager", func() {
 
 	Describe("GetOutputs", func() {
 		BeforeEach(func() {
-			gcpOutputGenerator.GenerateCall.Returns.Outputs = map[string]interface{}{
+			outputGenerator.GenerateCall.Returns.Outputs = map[string]interface{}{
 				"external_ip":        "some-external-ip",
 				"network_name":       "some-network-name",
 				"subnetwork_name":    "some-subnetwork-name",
@@ -347,7 +347,7 @@ var _ = Describe("Manager", func() {
 			terraformOutputs, err := manager.GetOutputs(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(gcpOutputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+			Expect(outputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(terraformOutputs).To(Equal(map[string]interface{}{
 				"external_ip":        "some-external-ip",
@@ -362,7 +362,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when the output generator fails", func() {
 				It("returns the error to the caller", func() {
-					gcpOutputGenerator.GenerateCall.Returns.Error = errors.New("fail")
+					outputGenerator.GenerateCall.Returns.Error = errors.New("fail")
 					_, err := manager.GetOutputs(storage.State{})
 					Expect(err).To(MatchError("fail"))
 				})
