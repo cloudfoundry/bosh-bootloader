@@ -19,7 +19,7 @@ var _ = Describe("Manager", func() {
 	var (
 		executor           *fakes.TerraformExecutor
 		templateGenerator  *fakes.TemplateGenerator
-		gcpInputGenerator  *fakes.GCPInputGenerator
+		inputGenerator     *fakes.InputGenerator
 		gcpOutputGenerator *fakes.GCPOutputGenerator
 		logger             *fakes.Logger
 		manager            terraform.Manager
@@ -28,11 +28,11 @@ var _ = Describe("Manager", func() {
 	BeforeEach(func() {
 		executor = &fakes.TerraformExecutor{}
 		templateGenerator = &fakes.TemplateGenerator{}
-		gcpInputGenerator = &fakes.GCPInputGenerator{}
+		inputGenerator = &fakes.InputGenerator{}
 		gcpOutputGenerator = &fakes.GCPOutputGenerator{}
 		logger = &fakes.Logger{}
 
-		manager = terraform.NewManager(executor, templateGenerator, gcpInputGenerator, gcpOutputGenerator, logger)
+		manager = terraform.NewManager(executor, templateGenerator, inputGenerator, gcpOutputGenerator, logger)
 	})
 
 	Describe("Apply", func() {
@@ -66,7 +66,7 @@ var _ = Describe("Manager", func() {
 			expectedState.TFState = expectedTFState
 
 			templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
-			gcpInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+			inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,
 				"region":        incomingState.GCP.Region,
@@ -91,7 +91,7 @@ var _ = Describe("Manager", func() {
 
 			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
-			Expect(gcpInputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{
 				"env_id":        incomingState.EnvID,
@@ -109,7 +109,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when InputGenerator.Generate returns an error", func() {
 				BeforeEach(func() {
-					gcpInputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
+					inputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
 				})
 
 				It("bubbles up the error", func() {
@@ -190,7 +190,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
 
-				gcpInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+				inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 					"env_id":        incomingState.EnvID,
 					"project_id":    incomingState.GCP.ProjectID,
 					"region":        incomingState.GCP.Region,
@@ -206,7 +206,7 @@ var _ = Describe("Manager", func() {
 
 				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
-				Expect(gcpInputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 				Expect(executor.DestroyCall.Receives.Inputs).To(Equal(map[string]string{
 					"env_id":        incomingState.EnvID,
@@ -242,7 +242,7 @@ var _ = Describe("Manager", func() {
 
 			Context("when InputGenerator.Generate returns an error", func() {
 				BeforeEach(func() {
-					gcpInputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
+					inputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
 				})
 
 				It("bubbles up the error", func() {
