@@ -18,12 +18,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("OpsGenerator", func() {
+var _ = Describe("CloudFormationOpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			infrastructureManager     *fakes.InfrastructureManager
-			opsGenerator              aws.OpsGenerator
+			opsGenerator              aws.CloudFormationOpsGenerator
 
 			incomingState   storage.State
 			expectedOpsFile []byte
@@ -61,7 +61,7 @@ var _ = Describe("OpsGenerator", func() {
 			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
 			Expect(err).NotTo(HaveOccurred())
 
-			opsGenerator = aws.NewOpsGenerator(availabilityZoneRetriever, infrastructureManager)
+			opsGenerator = aws.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
 		})
 
 		It("returns an ops file to transform base cloud config into aws specific cloud config", func() {

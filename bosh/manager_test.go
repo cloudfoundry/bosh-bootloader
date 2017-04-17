@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
@@ -26,9 +25,9 @@ director_ssl:
 var _ = Describe("Manager", func() {
 	Describe("Create", func() {
 		var (
-			stackManager     *fakes.StackManager
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
+			stackManager     *fakes.StackManager
 			logger           *fakes.Logger
 			boshManager      bosh.Manager
 			incomingGCPState storage.State
@@ -50,18 +49,6 @@ var _ = Describe("Manager", func() {
 				"internal_tag_name":  "some-internal-tag",
 				"external_ip":        "some-external-ip",
 				"director_address":   "some-director-address",
-			}
-
-			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-				Outputs: map[string]string{
-					"BOSHSubnetAZ":            "some-bosh-subnet-az",
-					"BOSHUserAccessKey":       "some-bosh-user-access-key",
-					"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
-					"BOSHSecurityGroup":       "some-bosh-security-group",
-					"BOSHSubnet":              "some-bosh-subnet",
-					"BOSHEIP":                 "some-bosh-elastic-ip",
-					"BOSHURL":                 "some-bosh-url",
-				},
 			}
 
 			incomingGCPState = storage.State{
@@ -96,14 +83,12 @@ var _ = Describe("Manager", func() {
 				AWS: storage.AWS{
 					Region: "some-region",
 				},
-				Stack: storage.Stack{
-					Name: "some-stack",
-				},
 				BOSH: storage.BOSH{
 					State: map[string]interface{}{
 						"some-key": "some-value",
 					},
 				},
+				TFState: "some-tf-state",
 				LB: storage.LB{
 					Type: "cf",
 				},
@@ -136,38 +121,20 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("when iaas is gcp", func() {
-			It("queries values from terraform output provider", func() {
+			It("queries values from terraform manager", func() {
 				_, err := boshManager.Create(incomingGCPState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stackManager.DescribeCall.CallCount).To(Equal(0))
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
 			})
-		})
 
-		Context("when iaas is aws", func() {
-			It("queries values from stack", func() {
-				_, err := boshManager.Create(incomingAWSState, []byte{})
+			It("generates a bosh manifest", func() {
+				_, err := boshManager.Create(incomingGCPState, []byte("some-ops-file"))
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
-				Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack"))
-			})
-		})
-
-		DescribeTable("generates a bosh manifest",
-			func(incomingStateFunc func() storage.State,
-				expectedInterpolateInput bosh.InterpolateInput) {
-				_, err := boshManager.Create(incomingStateFunc(), []byte("some-ops-file"))
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(expectedInterpolateInput))
-			},
-			Entry("for gcp", func() storage.State {
-				return incomingGCPState
-			}, bosh.InterpolateInput{
-				IAAS: "gcp",
-				DeploymentVars: `internal_cidr: 10.0.0.0/24
+				Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+					IAAS: "gcp",
+					DeploymentVars: `internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -178,52 +145,14 @@ subnetwork: some-subnetwork
 tags: [some-bosh-tag, some-internal-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`,
-				BOSHState: map[string]interface{}{
-					"some-key": "some-value",
-				},
-				Variables: "",
-				OpsFile:   []byte("some-ops-file"),
-			}),
-			Entry("for aws", func() storage.State {
-				return incomingAWSState
-			}, bosh.InterpolateInput{
-				IAAS: "aws",
-				DeploymentVars: `internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-some-env-id
-external_ip: some-bosh-elastic-ip
-az: some-bosh-subnet-az
-subnet_id: some-bosh-subnet
-access_key_id: some-bosh-user-access-key
-secret_access_key: some-bosh-user-secret-access-key
-default_key_name: some-keypair-name
-default_security_groups: [some-bosh-security-group]
-region: some-region
-private_key: |-
-  some-private-key`,
-				BOSHState: map[string]interface{}{
-					"some-key": "some-value",
-				},
-				Variables: "",
-				OpsFile:   []byte("some-ops-file"),
-			}),
-		)
+					BOSHState: map[string]interface{}{
+						"some-key": "some-value",
+					},
+					Variables: "",
+					OpsFile:   []byte("some-ops-file"),
+				}))
+			})
 
-		It("creates a bosh environment", func() {
-			_, err := boshManager.Create(incomingGCPState, []byte{})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
-				Manifest: "some-manifest",
-				State: map[string]interface{}{
-					"some-key": "some-value",
-				},
-				Variables: variablesYAML,
-			}))
-		})
-
-		Context("for gcp", func() {
 			It("returns a state with a proper bosh state", func() {
 				state, err := boshManager.Create(incomingGCPState, []byte{})
 				Expect(err).NotTo(HaveOccurred())
@@ -261,43 +190,152 @@ private_key: |-
 			})
 		})
 
-		Context("for aws", func() {
-			It("returns a state with a proper bosh state", func() {
-				state, err := boshManager.Create(incomingAWSState, []byte{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(state).To(Equal(storage.State{
-					IAAS:  "aws",
-					EnvID: "some-env-id",
-					KeyPair: storage.KeyPair{
-						Name:       "some-keypair-name",
-						PrivateKey: "some-private-key",
-					},
-					AWS: storage.AWS{
-						Region: "some-region",
-					},
-					Stack: storage.Stack{
-						Name: "some-stack",
-					},
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{
-							"some-new-key": "some-new-value",
+		Context("when iaas is aws", func() {
+			Context("when cloudformation was used to create infrastructure", func() {
+				BeforeEach(func() {
+					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+						Outputs: map[string]string{
+							"BOSHSubnetAZ":            "some-bosh-subnet-az",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+							"BOSHSecurityGroup":       "some-bosh-security-group",
+							"BOSHSubnet":              "some-bosh-subnet",
+							"BOSHEIP":                 "some-bosh-elastic-ip",
+							"BOSHURL":                 "some-bosh-url",
 						},
-						Variables:              variablesYAML,
-						Manifest:               "some-manifest",
-						DirectorName:           "bosh-some-env-id",
-						DirectorAddress:        "some-bosh-url",
-						DirectorUsername:       "admin",
-						DirectorPassword:       "some-admin-password",
-						DirectorSSLCA:          "some-ca",
-						DirectorSSLCertificate: "some-certificate",
-						DirectorSSLPrivateKey:  "some-private-key",
-					},
-					LB: storage.LB{
-						Type: "cf",
-					},
-				}))
+					}
+					incomingAWSState.TFState = ""
+					incomingAWSState.Stack = storage.Stack{
+						Name: "some-stack",
+					}
+				})
+
+				It("generates a bosh manifest", func() {
+					_, err := boshManager.Create(incomingAWSState, []byte("some-ops-file"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
+					Expect(stackManager.DescribeCall.CallCount).To(Equal(2))
+					Expect(stackManager.DescribeCall.Receives.StackName).To(Equal("some-stack"))
+
+					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+						IAAS: "aws",
+						DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-bosh-elastic-ip
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-bosh-user-access-key
+secret_access_key: some-bosh-user-secret-access-key
+default_key_name: some-keypair-name
+default_security_groups: [some-bosh-security-group]
+region: some-region
+private_key: |-
+  some-private-key`,
+						BOSHState: map[string]interface{}{
+							"some-key": "some-value",
+						},
+						Variables: "",
+						OpsFile:   []byte("some-ops-file"),
+					}))
+				})
 			})
+
+			Context("when terraform was used to create infrastructure", func() {
+				BeforeEach(func() {
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"az":                      "some-bosh-subnet-az",
+						"access_key_id":           "some-bosh-user-access-key",
+						"secret_access_key":       "some-bosh-user-secret-access-key",
+						"default_security_groups": "some-bosh-security-group",
+						"subnet_id":               "some-bosh-subnet",
+						"external_ip":             "some-bosh-elastic-ip",
+						"director_address":        "some-bosh-url",
+					}
+				})
+
+				It("generates a bosh manifest", func() {
+					_, err := boshManager.Create(incomingAWSState, []byte("some-ops-file"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(2))
+					Expect(stackManager.DescribeCall.CallCount).To(Equal(0))
+					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingAWSState))
+
+					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+						IAAS: "aws",
+						DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-bosh-elastic-ip
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-bosh-user-access-key
+secret_access_key: some-bosh-user-secret-access-key
+default_key_name: some-keypair-name
+default_security_groups: [some-bosh-security-group]
+region: some-region
+private_key: |-
+  some-private-key`,
+						BOSHState: map[string]interface{}{
+							"some-key": "some-value",
+						},
+						Variables: "",
+						OpsFile:   []byte("some-ops-file"),
+					}))
+				})
+
+				It("returns a state with a proper bosh state", func() {
+					state, err := boshManager.Create(incomingAWSState, []byte{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state).To(Equal(storage.State{
+						IAAS:  "aws",
+						EnvID: "some-env-id",
+						KeyPair: storage.KeyPair{
+							Name:       "some-keypair-name",
+							PrivateKey: "some-private-key",
+						},
+						AWS: storage.AWS{
+							Region: "some-region",
+						},
+						BOSH: storage.BOSH{
+							State: map[string]interface{}{
+								"some-new-key": "some-new-value",
+							},
+							Variables:              variablesYAML,
+							Manifest:               "some-manifest",
+							DirectorName:           "bosh-some-env-id",
+							DirectorAddress:        "some-bosh-url",
+							DirectorUsername:       "admin",
+							DirectorPassword:       "some-admin-password",
+							DirectorSSLCA:          "some-ca",
+							DirectorSSLCertificate: "some-certificate",
+							DirectorSSLPrivateKey:  "some-private-key",
+						},
+						TFState: "some-tf-state",
+						LB: storage.LB{
+							Type: "cf",
+						},
+					}))
+				})
+			})
+		})
+
+		It("creates a bosh environment", func() {
+			_, err := boshManager.Create(incomingGCPState, []byte{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
+				Manifest: "some-manifest",
+				State: map[string]interface{}{
+					"some-key": "some-value",
+				},
+				Variables: variablesYAML,
+			}))
 		})
 
 		Context("failure cases", func() {
@@ -307,14 +345,6 @@ private_key: |-
 					IAAS: "gcp",
 				}, []byte{})
 				Expect(err).To(MatchError("failed to output"))
-			})
-
-			It("returns an error when the stack manager fails", func() {
-				stackManager.DescribeCall.Returns.Error = errors.New("failed to get stack")
-				_, err := boshManager.Create(storage.State{
-					IAAS: "aws",
-				}, []byte{})
-				Expect(err).To(MatchError("failed to get stack"))
 			})
 
 			It("returns an error when an invalid iaas is provided", func() {
@@ -466,8 +496,6 @@ private_key: |-
 			terraformManager *fakes.TerraformManager
 			logger           *fakes.Logger
 			boshManager      bosh.Manager
-			incomingGCPState storage.State
-			incomingAWSState storage.State
 		)
 
 		BeforeEach(func() {
@@ -476,77 +504,48 @@ private_key: |-
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
 			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
-
-			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-				"network_name":       "some-network",
-				"subnetwork_name":    "some-subnetwork",
-				"bosh_open_tag_name": "some-bosh-tag",
-				"internal_tag_name":  "some-internal-tag",
-				"external_ip":        "some-external-ip",
-				"director_address":   "some-director-address",
-			}
-
-			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-				Outputs: map[string]string{
-					"BOSHSubnetAZ":            "some-bosh-subnet-az",
-					"BOSHUserAccessKey":       "some-bosh-user-access-key",
-					"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
-					"BOSHSecurityGroup":       "some-bosh-security-group",
-					"BOSHSubnet":              "some-bosh-subnet",
-					"BOSHEIP":                 "some-bosh-elastic-ip",
-					"BOSHURL":                 "some-bosh-url",
-				},
-			}
-
-			incomingGCPState = storage.State{
-				IAAS:  "gcp",
-				EnvID: "some-env-id",
-				KeyPair: storage.KeyPair{
-					PrivateKey: "some-private-key",
-				},
-				GCP: storage.GCP{
-					Zone:              "some-zone",
-					ProjectID:         "some-project-id",
-					ServiceAccountKey: "some-credential-json",
-				},
-				BOSH: storage.BOSH{
-					State: map[string]interface{}{
-						"some-key": "some-value",
-					},
-				},
-				TFState: "some-tf-state",
-				LB: storage.LB{
-					Type: "cf",
-				},
-			}
-
-			incomingAWSState = storage.State{
-				IAAS:  "aws",
-				EnvID: "some-env-id",
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-				},
-				AWS: storage.AWS{
-					Region: "some-region",
-				},
-				Stack: storage.Stack{
-					Name: "some-stack",
-				},
-				BOSH: storage.BOSH{
-					State: map[string]interface{}{
-						"some-key": "some-value",
-					},
-				},
-				LB: storage.LB{
-					Type: "cf",
-				},
-			}
 		})
 
 		Context("gcp", func() {
+			var (
+				incomingState storage.State
+			)
+
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					KeyPair: storage.KeyPair{
+						PrivateKey: "some-private-key",
+					},
+					GCP: storage.GCP{
+						Zone:              "some-zone",
+						ProjectID:         "some-project-id",
+						ServiceAccountKey: "some-credential-json",
+					},
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{
+							"some-key": "some-value",
+						},
+					},
+					TFState: "some-tf-state",
+					LB: storage.LB{
+						Type: "cf",
+					},
+				}
+
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"network_name":       "some-network",
+					"subnetwork_name":    "some-subnetwork",
+					"bosh_open_tag_name": "some-bosh-tag",
+					"internal_tag_name":  "some-internal-tag",
+					"external_ip":        "some-external-ip",
+					"director_address":   "some-director-address",
+				}
+			})
+
 			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars, err := boshManager.GetDeploymentVars(incomingGCPState)
+				vars, err := boshManager.GetDeploymentVars(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -563,10 +562,50 @@ gcp_credentials_json: 'some-credential-json'`))
 		})
 
 		Context("aws", func() {
-			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars, err := boshManager.GetDeploymentVars(incomingAWSState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+			var (
+				incomingState storage.State
+			)
+
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "aws",
+					EnvID: "some-env-id",
+					KeyPair: storage.KeyPair{
+						Name:       "some-keypair-name",
+						PrivateKey: "some-private-key",
+					},
+					AWS: storage.AWS{
+						Region: "some-region",
+					},
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{
+							"some-key": "some-value",
+						},
+					},
+					LB: storage.LB{
+						Type: "cf",
+					},
+				}
+			})
+
+			Context("when terraform was used to standup infrastructure", func() {
+				BeforeEach(func() {
+					incomingState.TFState = "some-tf-state"
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"az":                      "some-bosh-subnet-az",
+						"access_key_id":           "some-bosh-user-access-key",
+						"secret_access_key":       "some-bosh-user-secret-access-key",
+						"default_security_groups": "some-bosh-security-group",
+						"subnet_id":               "some-bosh-subnet",
+						"external_ip":             "some-bosh-elastic-ip",
+						"director_address":        "some-bosh-url",
+					}
+				})
+
+				It("returns a correct yaml string of bosh deployment variables", func() {
+					vars, err := boshManager.GetDeploymentVars(incomingState)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -580,6 +619,43 @@ default_security_groups: [some-bosh-security-group]
 region: some-region
 private_key: |-
   some-private-key`))
+				})
+			})
+
+			Context("when cloudformation was used to standup infrastructure", func() {
+				BeforeEach(func() {
+					incomingState.Stack.Name = "some-stack"
+					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+						Outputs: map[string]string{
+							"BOSHSubnetAZ":            "some-bosh-subnet-az",
+							"BOSHUserAccessKey":       "some-bosh-user-access-key",
+							"BOSHUserSecretAccessKey": "some-bosh-user-secret-access-key",
+							"BOSHSecurityGroup":       "some-bosh-security-group",
+							"BOSHSubnet":              "some-bosh-subnet",
+							"BOSHEIP":                 "some-bosh-elastic-ip",
+							"BOSHURL":                 "some-bosh-url",
+						},
+					}
+				})
+
+				It("returns a correct yaml string of bosh deployment variables", func() {
+					vars, err := boshManager.GetDeploymentVars(incomingState)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: some-bosh-elastic-ip
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-bosh-user-access-key
+secret_access_key: some-bosh-user-secret-access-key
+default_key_name: some-keypair-name
+default_security_groups: [some-bosh-security-group]
+region: some-region
+private_key: |-
+  some-private-key`))
+				})
 			})
 		})
 
@@ -590,14 +666,6 @@ private_key: |-
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to output"))
-			})
-
-			It("returns an error when the stack manager fails", func() {
-				stackManager.DescribeCall.Returns.Error = errors.New("failed to describe")
-				_, err := boshManager.GetDeploymentVars(storage.State{
-					IAAS: "aws",
-				})
-				Expect(err).To(MatchError("failed to describe"))
 			})
 		})
 	})

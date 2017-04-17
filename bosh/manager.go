@@ -184,23 +184,41 @@ internal_ip: 10.0.0.6`
 			fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
 		}, "\n")
 	case "aws":
-		stack, err := m.stackManager.Describe(state.Stack.Name)
-		if err != nil {
-			return "", err
+		if state.TFState != "" {
+			terraformOutputs, err := m.terraformManager.GetOutputs(state)
+			if err != nil {
+				return "", err
+			}
+			vars = strings.Join([]string{vars,
+				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+				fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
+				fmt.Sprintf("az: %s", terraformOutputs["az"]),
+				fmt.Sprintf("subnet_id: %s", terraformOutputs["subnet_id"]),
+				fmt.Sprintf("access_key_id: %s", terraformOutputs["access_key_id"]),
+				fmt.Sprintf("secret_access_key: %s", terraformOutputs["secret_access_key"]),
+				fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
+				fmt.Sprintf("default_security_groups: [%s]", terraformOutputs["default_security_groups"]),
+				fmt.Sprintf("region: %s", state.AWS.Region),
+				fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
+			}, "\n")
+		} else {
+			stack, err := m.stackManager.Describe(state.Stack.Name)
+			if err != nil {
+				panic(err)
+			}
+			vars = strings.Join([]string{vars,
+				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+				fmt.Sprintf("external_ip: %s", stack.Outputs["BOSHEIP"]),
+				fmt.Sprintf("az: %s", stack.Outputs["BOSHSubnetAZ"]),
+				fmt.Sprintf("subnet_id: %s", stack.Outputs["BOSHSubnet"]),
+				fmt.Sprintf("access_key_id: %s", stack.Outputs["BOSHUserAccessKey"]),
+				fmt.Sprintf("secret_access_key: %s", stack.Outputs["BOSHUserSecretAccessKey"]),
+				fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
+				fmt.Sprintf("default_security_groups: [%s]", stack.Outputs["BOSHSecurityGroup"]),
+				fmt.Sprintf("region: %s", state.AWS.Region),
+				fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
+			}, "\n")
 		}
-
-		vars = strings.Join([]string{vars,
-			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
-			fmt.Sprintf("external_ip: %s", stack.Outputs["BOSHEIP"]),
-			fmt.Sprintf("az: %s", stack.Outputs["BOSHSubnetAZ"]),
-			fmt.Sprintf("subnet_id: %s", stack.Outputs["BOSHSubnet"]),
-			fmt.Sprintf("access_key_id: %s", stack.Outputs["BOSHUserAccessKey"]),
-			fmt.Sprintf("secret_access_key: %s", stack.Outputs["BOSHUserSecretAccessKey"]),
-			fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
-			fmt.Sprintf("default_security_groups: [%s]", stack.Outputs["BOSHSecurityGroup"]),
-			fmt.Sprintf("region: %s", state.AWS.Region),
-			fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
-		}, "\n")
 	}
 
 	return strings.TrimSuffix(vars, "\n"), nil
@@ -222,18 +240,33 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 			DirectorAddress: terraformOutputs["director_address"].(string),
 		}, nil
 	case "aws":
-		stack, err := m.stackManager.Describe(state.Stack.Name)
-		if err != nil {
-			return iaasInputs{}, err
+		if state.TFState != "" {
+			terraformOutputs, err := m.terraformManager.GetOutputs(state)
+			if err != nil {
+				return iaasInputs{}, err
+			}
+			return iaasInputs{
+				InterpolateInput: InterpolateInput{
+					IAAS:      state.IAAS,
+					BOSHState: state.BOSH.State,
+					Variables: state.BOSH.Variables,
+				},
+				DirectorAddress: terraformOutputs["director_address"].(string),
+			}, nil
+		} else {
+			stack, err := m.stackManager.Describe(state.Stack.Name)
+			if err != nil {
+				panic(err)
+			}
+			return iaasInputs{
+				InterpolateInput: InterpolateInput{
+					IAAS:      state.IAAS,
+					BOSHState: state.BOSH.State,
+					Variables: state.BOSH.Variables,
+				},
+				DirectorAddress: stack.Outputs["BOSHURL"],
+			}, nil
 		}
-		return iaasInputs{
-			InterpolateInput: InterpolateInput{
-				IAAS:      state.IAAS,
-				BOSHState: state.BOSH.State,
-				Variables: state.BOSH.Variables,
-			},
-			DirectorAddress: stack.Outputs["BOSHURL"],
-		}, nil
 	default:
 		return iaasInputs{}, errors.New("A valid IAAS was not provided")
 	}

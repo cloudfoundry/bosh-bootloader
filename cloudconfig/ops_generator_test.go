@@ -2,7 +2,6 @@ package cloudconfig_test
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -16,34 +15,41 @@ import (
 var _ = Describe("OpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			awsOpsGenerator *fakes.CloudConfigOpsGenerator
-			gcpOpsGenerator *fakes.CloudConfigOpsGenerator
-			opsGenerator    cloudconfig.OpsGenerator
+			awsCloudFormationOpsGenerator *fakes.CloudConfigOpsGenerator
+			awsTerraformOpsGenerator      *fakes.CloudConfigOpsGenerator
+			gcpOpsGenerator               *fakes.CloudConfigOpsGenerator
+			opsGenerator                  cloudconfig.OpsGenerator
 
 			incomingState storage.State
 		)
 
 		BeforeEach(func() {
-			awsOpsGenerator = &fakes.CloudConfigOpsGenerator{}
+			awsCloudFormationOpsGenerator = &fakes.CloudConfigOpsGenerator{}
+			awsTerraformOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 			gcpOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 
-			awsOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-ops"
+			awsCloudFormationOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-cloudformation-ops"
+			awsTerraformOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-terraform-ops"
 			gcpOpsGenerator.GenerateCall.Returns.OpsYAML = "some-gcp-ops"
-			opsGenerator = cloudconfig.NewOpsGenerator(awsOpsGenerator, gcpOpsGenerator)
+			opsGenerator = cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
 		})
 
-		DescribeTable("returns an ops file to transform base cloud config to iaas specific cloud config", func(iaas string) {
-			incomingState = storage.State{
-				IAAS: iaas,
-			}
-			expectedIAAS := fmt.Sprintf("some-%s-ops", iaas)
-
+		DescribeTable("returns an ops file to transform base cloud config to iaas specific cloud config", func(incomingState storage.State, expectedOpsYAML string) {
 			opsYAML, err := opsGenerator.Generate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(opsYAML).To(Equal(expectedIAAS))
+			Expect(opsYAML).To(Equal(expectedOpsYAML))
 		},
-			Entry("when iaas is gcp", "gcp"),
-			Entry("when iaas is aws", "aws"),
+			Entry("when iaas is gcp", storage.State{
+				IAAS: "gcp",
+			}, "some-gcp-ops"),
+			Entry("when iaas is aws and terraform was used to create infrastructure", storage.State{
+				IAAS:    "aws",
+				TFState: "some-tf-state",
+			}, "some-aws-terraform-ops"),
+			Entry("when iaas is aws and cloudformation was used to create infrastructure", storage.State{
+				IAAS:    "aws",
+				TFState: "",
+			}, "some-aws-cloudformation-ops"),
 		)
 
 		Context("failure cases", func() {
@@ -55,19 +61,29 @@ var _ = Describe("OpsGenerator", func() {
 				Expect(err).To(MatchError("invalid iaas type"))
 			})
 
-			DescribeTable("returns an error when it fails to generate iaas cloud config", func(iaas string) {
-				awsOpsGenerator.GenerateCall.Returns.Error = errors.New("failed to generate aws cloud config")
-				gcpOpsGenerator.GenerateCall.Returns.Error = errors.New("failed to generate gcp cloud config")
-				incomingState = storage.State{
-					IAAS: iaas,
-				}
-				expectedError := fmt.Errorf("failed to generate %s cloud config", iaas)
+			DescribeTable("returns an error when it fails to generate iaas cloud config", func(incomingState storage.State, getOpsGenerator func() *fakes.CloudConfigOpsGenerator) {
+				getOpsGenerator().GenerateCall.Returns.Error = errors.New("failed to generate cloud config")
 
 				_, err := opsGenerator.Generate(incomingState)
-				Expect(err).To(MatchError(expectedError))
+				Expect(err).To(MatchError("failed to generate cloud config"))
 			},
-				Entry("when iaas is gcp", "gcp"),
-				Entry("when iaas is aws", "aws"),
+				Entry("when iaas is gcp", storage.State{
+					IAAS: "gcp",
+				}, func() *fakes.CloudConfigOpsGenerator {
+					return gcpOpsGenerator
+				}),
+				Entry("when iaas is aws and terraform was used to create infrastructure", storage.State{
+					IAAS:    "aws",
+					TFState: "some-tf-state",
+				}, func() *fakes.CloudConfigOpsGenerator {
+					return awsTerraformOpsGenerator
+				}),
+				Entry("when iaas is aws and cloudformation was used to create infrastructure", storage.State{
+					IAAS:    "aws",
+					TFState: "",
+				}, func() *fakes.CloudConfigOpsGenerator {
+					return awsCloudFormationOpsGenerator
+				}),
 			)
 		})
 	})

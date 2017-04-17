@@ -44,6 +44,17 @@ type TerraformExecutor struct {
 			Error  error
 		}
 	}
+	OutputsCall struct {
+		Stub      func() (map[string]interface{}, error)
+		CallCount int
+		Receives  struct {
+			TFState string
+		}
+		Returns struct {
+			Outputs map[string]interface{}
+			Error   error
+		}
+	}
 }
 
 func (t *TerraformExecutor) Apply(inputs map[string]string, template, tfState string) (string, error) {
@@ -77,4 +88,15 @@ func (t *TerraformExecutor) Output(tfState, outputName string) (string, error) {
 	}
 
 	return t.OutputCall.Returns.Output, t.OutputCall.Returns.Error
+}
+
+func (t *TerraformExecutor) Outputs(tfState string) (map[string]interface{}, error) {
+	t.OutputsCall.CallCount++
+	t.OutputsCall.Receives.TFState = tfState
+
+	if t.OutputsCall.Stub != nil {
+		return t.OutputsCall.Stub()
+	}
+
+	return t.OutputsCall.Returns.Outputs, t.OutputsCall.Returns.Error
 }

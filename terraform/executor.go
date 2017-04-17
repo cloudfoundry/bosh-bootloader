@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +20,12 @@ var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
 type Executor struct {
 	cmd   terraformCmd
 	debug bool
+}
+
+type tfOutput struct {
+	Sensitive bool
+	Type      string
+	Value     interface{}
 }
 
 type terraformCmd interface {
@@ -135,7 +142,39 @@ func (e Executor) Output(tfState, outputName string) (string, error) {
 	}
 
 	return strings.TrimSuffix(buffer.String(), "\n"), nil
+}
 
+func (e Executor) Outputs(tfState string) (map[string]interface{}, error) {
+	templateDir, err := tempDir("", "")
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	args := []string{"output", "--json"}
+	buffer := bytes.NewBuffer([]byte{})
+	err = e.cmd.Run(buffer, templateDir, args, true)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	var tfOutputs map[string]tfOutput
+	err = json.Unmarshal(buffer.Bytes(), &tfOutputs)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	outputs := map[string]interface{}{}
+
+	for tfKey, tfValue := range tfOutputs {
+		outputs[tfKey] = tfValue.Value
+	}
+
+	return outputs, nil
 }
 
 func makeVar(name string, value string) []string {

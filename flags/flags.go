@@ -21,7 +21,9 @@ func New(name string) Flags {
 
 func (f Flags) Bool(v *bool, short, long string, value bool) {
 	f.set.BoolVar(v, long, value, "")
-	f.set.BoolVar(v, short, value, "")
+	if short != "" {
+		f.set.BoolVar(v, short, value, "")
+	}
 }
 
 func (f Flags) String(v *string, name string, value string) {

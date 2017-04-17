@@ -415,4 +415,72 @@ var _ = Describe("Executor", func() {
 			})
 		})
 	})
+
+	Describe("Outputs", func() {
+		It("returns all outputs from the terraform state", func() {
+			cmd.RunCall.Stub = func(stdout io.Writer) {
+				fmt.Fprintf(stdout, `{
+					"director_address": {
+						"sensitive": false,
+						"type": "string",
+						"value": "some-director-address"
+					},
+					"external_ip": {
+						"sensitive": false,
+						"type": "string",
+						"value": "some-external-ip"
+					}
+				}`)
+			}
+			outputs, err := executor.Outputs("some-tf-state")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(outputs).To(Equal(map[string]interface{}{
+				"director_address": "some-director-address",
+				"external_ip":      "some-external-ip",
+			}))
+
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "--json"}))
+			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when it fails to create a temp dir", func() {
+				terraform.SetTempDir(func(dir, prefix string) (string, error) {
+					return "", errors.New("failed to make temp dir")
+				})
+				_, err := executor.Outputs("some-tf-state")
+				Expect(err).To(MatchError("failed to make temp dir"))
+			})
+
+			It("returns an error when it fails to write the tfstate file", func() {
+				terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
+					if strings.Contains(file, "terraform.tfstate") {
+						return errors.New("failed to write tf state file")
+					}
+
+					return nil
+				})
+
+				_, err := executor.Outputs("some-tf-state")
+				Expect(err).To(MatchError("failed to write tf state file"))
+			})
+
+			It("returns an error when it fails to call terraform command run", func() {
+				cmd.RunCall.Returns.Error = errors.New("failed to run terraform command")
+
+				_, err := executor.Outputs("some-tf-state")
+				Expect(err).To(MatchError("failed to run terraform command"))
+			})
+
+			It("returns an error when it fails to unmarshal the terraform outputs", func() {
+				cmd.RunCall.Stub = func(stdout io.Writer) {
+					fmt.Fprintf(stdout, "%%%")
+				}
+				_, err := executor.Outputs("some-tf-state")
+				Expect(err).To(MatchError("invalid character '%' looking for beginning of value"))
+			})
+		})
+	})
 })

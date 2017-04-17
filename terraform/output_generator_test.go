@@ -13,6 +13,7 @@ var _ = Describe("OutputGenerator", func() {
 	Describe("Generate", func() {
 		var (
 			gcpOutputGenerator *fakes.OutputGenerator
+			awsOutputGenerator *fakes.OutputGenerator
 
 			outputGenerator terraform.OutputGenerator
 		)
@@ -22,8 +23,12 @@ var _ = Describe("OutputGenerator", func() {
 			gcpOutputGenerator.GenerateCall.Returns.Outputs = map[string]interface{}{
 				"some-output": "some-value",
 			}
+			awsOutputGenerator = &fakes.OutputGenerator{}
+			awsOutputGenerator.GenerateCall.Returns.Outputs = map[string]interface{}{
+				"some-output": "some-value",
+			}
 
-			outputGenerator = terraform.NewOutputGenerator(gcpOutputGenerator)
+			outputGenerator = terraform.NewOutputGenerator(gcpOutputGenerator, awsOutputGenerator)
 		})
 
 		Context("when iaas is gcp", func() {
@@ -39,6 +44,24 @@ var _ = Describe("OutputGenerator", func() {
 				Expect(gcpOutputGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
 					IAAS: "gcp",
 				}))
+				Expect(awsOutputGenerator.GenerateCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when iaas is aws", func() {
+			It("returns the outputs from the aws output generator", func() {
+				output, err := outputGenerator.Generate(storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(output).To(Equal(map[string]interface{}{
+					"some-output": "some-value",
+				}))
+				Expect(gcpOutputGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(awsOutputGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "aws",
+				}))
 			})
 		})
 
@@ -51,6 +74,7 @@ var _ = Describe("OutputGenerator", func() {
 					Expect(err).To(MatchError(`invalid iaas: "some-invalid-iaas"`))
 
 					Expect(gcpOutputGenerator.GenerateCall.CallCount).To(Equal(0))
+					Expect(awsOutputGenerator.GenerateCall.CallCount).To(Equal(0))
 				})
 			})
 		})

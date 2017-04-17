@@ -144,6 +144,60 @@ var _ = Describe("bbl up aws", func() {
 			}
 		}))
 
+		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/output/--json":
+				responseWriter.Write([]byte(fmt.Sprintf(`{
+					"bosh_eip": {
+						"value": "some-bosh-eip"
+					},
+					"bosh_url": {
+						"value": %q
+					},
+					"bosh_user_access_key": {
+						"value": "some-bosh-user-access-key"
+					},
+					"bosh_user_secret_access_key": {
+						"value": "some-bosh-user-secret-access_key"
+					},
+					"nat_eip": {
+						"value": "some-nat-eip"
+					},
+					"bosh_subnet_id": {
+						"value": "some-bosh-subnet-id"
+					},
+					"bosh_subnet_availability_zone": {
+						"value": "some-bosh-subnet-availability-zone"
+					},
+					"bosh_security_group": {
+						"value": "some-bosh-security-group"
+					},
+					"internal_security_group": {
+						"value": "some-internal-security-group"
+					},
+					"internal_subnet_ids": {
+						"value": [
+							"some-internal-subnet-ids-1",
+							"some-internal-subnet-ids-2",
+							"some-internal-subnet-ids-3"
+						]
+					},
+					"internal_subnet_cidrs": {
+						"value": [
+							"10.0.16.0/24",
+							"10.0.32.0/24",
+							"10.0.48.0/24"
+						]
+					},
+					"vpc_id": {
+						"value": "some-vpc-id"
+					}
+				}`, fakeBOSHServer.URL)))
+			case "/version":
+				responseWriter.Write([]byte("0.8.6"))
+			}
+		}))
+
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
@@ -166,6 +220,29 @@ var _ = Describe("bbl up aws", func() {
 	})
 
 	Describe("up", func() {
+		Context("when the terraform flag is given", func() {
+			It("uses Terraform to create the infrastructure", func() {
+				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")
+				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-access-secret")
+				os.Setenv("BBL_AWS_REGION", "some-region")
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--iaas", "aws",
+					"--terraform",
+				}
+				session := executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+				Expect(state.Stack).To(Equal(storage.Stack{}))
+				Expect(state.TFState).To(Equal(`{"key":"value"}`))
+
+				Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+			})
+		})
+
 		Context("when AWS creds are provided through environment variables", func() {
 			It("honors the environment variables", func() {
 				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")

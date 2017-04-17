@@ -8,18 +8,23 @@ import (
 
 type InputGenerator struct {
 	gcpInputGenerator inputGenerator
+	awsInputGenerator inputGenerator
 }
 
-func NewInputGenerator(gcpInputGenerator inputGenerator) InputGenerator {
+func NewInputGenerator(gcpInputGenerator inputGenerator, awsInputGenerator inputGenerator) InputGenerator {
 	return InputGenerator{
 		gcpInputGenerator: gcpInputGenerator,
+		awsInputGenerator: awsInputGenerator,
 	}
 }
 
 func (i InputGenerator) Generate(state storage.State) (map[string]string, error) {
-	if state.IAAS == "gcp" {
+	switch state.IAAS {
+	case "gcp":
 		return i.gcpInputGenerator.Generate(state)
+	case "aws":
+		return i.awsInputGenerator.Generate(state)
+	default:
+		return map[string]string{}, fmt.Errorf("invalid iaas: %q", state.IAAS)
 	}
-
-	return map[string]string{}, fmt.Errorf("invalid iaas: %q", state.IAAS)
 }

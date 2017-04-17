@@ -74,6 +74,7 @@ type AWSUp struct {
 	stateStore                stateStore
 	configProvider            configProvider
 	envIDManager              envIDManager
+	terraformManager          terraformManager
 }
 
 type AWSUpConfig struct {
@@ -84,6 +85,7 @@ type AWSUpConfig struct {
 	BOSHAZ          string
 	Name            string
 	NoDirector      bool
+	Terraform       bool
 }
 
 func NewAWSUp(
@@ -92,7 +94,7 @@ func NewAWSUp(
 	availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	stateStore stateStore,
-	configProvider configProvider, envIDManager envIDManager) AWSUp {
+	configProvider configProvider, envIDManager envIDManager, terraformManager terraformManager) AWSUp {
 
 	return AWSUp{
 		credentialValidator:       credentialValidator,
@@ -105,6 +107,7 @@ func NewAWSUp(
 		stateStore:                stateStore,
 		configProvider:            configProvider,
 		envIDManager:              envIDManager,
+		terraformManager:          terraformManager,
 	}
 }
 
@@ -181,15 +184,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	if state.Stack.Name == "" {
-		state.Stack.Name = fmt.Sprintf("stack-%s", strings.Replace(state.EnvID, ":", "-", -1))
-		state.Stack.BOSHAZ = config.BOSHAZ
-
-		if err := u.stateStore.Set(state); err != nil {
-			return err
-		}
-	}
-
 	var certificateARN string
 	if lbExists(state.Stack.LBType) {
 		certificate, err := u.certificateDescriber.Describe(state.Stack.CertificateName)
@@ -199,9 +193,29 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	_, err = u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
-	if err != nil {
-		return err
+	if config.Terraform {
+		state, err = u.terraformManager.Apply(state)
+		if err != nil {
+			return handleTerraformError(err, u.stateStore)
+		}
+
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
+	} else {
+		if state.Stack.Name == "" {
+			state.Stack.Name = fmt.Sprintf("stack-%s", strings.Replace(state.EnvID, ":", "-", -1))
+			state.Stack.BOSHAZ = config.BOSHAZ
+
+			if err := u.stateStore.Set(state); err != nil {
+				return err
+			}
+		}
+		_, err = u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !state.NoDirector {

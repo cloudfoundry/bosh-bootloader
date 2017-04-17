@@ -13,15 +13,19 @@ var _ = Describe("TemplateGenerator", func() {
 	Describe("Generate", func() {
 		var (
 			gcpTemplateGenerator *fakes.TemplateGenerator
+			awsTemplateGenerator *fakes.TemplateGenerator
 
 			templateGenerator terraform.TemplateGenerator
 		)
 
 		BeforeEach(func() {
 			gcpTemplateGenerator = &fakes.TemplateGenerator{}
-			gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-template"
+			awsTemplateGenerator = &fakes.TemplateGenerator{}
 
-			templateGenerator = terraform.NewTemplateGenerator(gcpTemplateGenerator)
+			gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-template"
+			awsTemplateGenerator.GenerateCall.Returns.Template = "some-aws-template"
+
+			templateGenerator = terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
 		})
 
 		Context("when iaas is gcp", func() {
@@ -34,6 +38,21 @@ var _ = Describe("TemplateGenerator", func() {
 				Expect(gcpTemplateGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
 					IAAS: "gcp",
 				}))
+				Expect(awsTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when iaas is aws", func() {
+			It("returns the template from the aws template generator", func() {
+				template := templateGenerator.Generate(storage.State{
+					IAAS: "aws",
+				})
+
+				Expect(template).To(Equal("some-aws-template"))
+				Expect(gcpTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(awsTemplateGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "aws",
+				}))
 			})
 		})
 
@@ -43,6 +62,7 @@ var _ = Describe("TemplateGenerator", func() {
 
 				Expect(template).To(Equal(""))
 				Expect(gcpTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(awsTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
 			})
 		})
 	})

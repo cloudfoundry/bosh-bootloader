@@ -29,6 +29,7 @@ import (
 
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
 
@@ -121,9 +122,12 @@ func main() {
 	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
 	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
-	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator)
-	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator)
-	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator)
+	awsTemplateGenerator := awsterraform.NewTemplateGenerator()
+	awsInputGenerator := awsterraform.NewInputGenerator(availabilityZoneRetriever)
+	awsOutputGenerator := awsterraform.NewOutputGenerator(terraformExecutor)
+	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
+	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
+	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator, awsOutputGenerator)
 	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, outputGenerator, logger)
 
 	// BOSH
@@ -134,16 +138,17 @@ func main() {
 	boshClientProvider := bosh.NewClientProvider()
 
 	// Cloud Config
-	awsOpsGenerator := awscloudconfig.NewOpsGenerator(availabilityZoneRetriever, infrastructureManager)
+	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
+	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
 	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformManager, zones)
-	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsOpsGenerator, gcpOpsGenerator)
+	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider)
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
 		credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
 		availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, stateStore, clientProvider, envIDManager)
+		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, credentialValidator, certificateManager, infrastructureManager,

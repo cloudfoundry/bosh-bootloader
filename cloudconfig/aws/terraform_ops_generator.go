@@ -1,27 +1,27 @@
 package aws
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type OpsGenerator struct {
+type TerraformOpsGenerator struct {
 	availabilityZoneRetriever availabilityZoneRetriever
-	infrastructureManager     infrastructureManager
+	terraformManager          terraformManager
 }
 
 type availabilityZoneRetriever interface {
 	Retrieve(string) ([]string, error)
 }
 
-type infrastructureManager interface {
-	Describe(stackName string) (cloudformation.Stack, error)
+type terraformManager interface {
+	GetOutputs(storage.State) (map[string]interface{}, error)
 }
 
 type op struct {
@@ -71,15 +71,15 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-func NewOpsGenerator(availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager) OpsGenerator {
-	return OpsGenerator{
+func NewTerraformOpsGenerator(availabilityZoneRetriever availabilityZoneRetriever, terraformManager terraformManager) TerraformOpsGenerator {
+	return TerraformOpsGenerator{
 		availabilityZoneRetriever: availabilityZoneRetriever,
-		infrastructureManager:     infrastructureManager,
+		terraformManager:          terraformManager,
 	}
 }
 
-func (a OpsGenerator) Generate(state storage.State) (string, error) {
-	ops, err := a.generateAWSOps(state)
+func (a TerraformOpsGenerator) Generate(state storage.State) (string, error) {
+	ops, err := a.generateTerraformAWSOps(state)
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +106,7 @@ func createOp(opType, opPath string, value interface{}) op {
 	}
 }
 
-func (a OpsGenerator) generateAWSOps(state storage.State) ([]op, error) {
+func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]op, error) {
 	azs, err := a.availabilityZoneRetriever.Retrieve(state.AWS.Region)
 	if err != nil {
 		return []op{}, err
@@ -123,18 +123,33 @@ func (a OpsGenerator) generateAWSOps(state storage.State) ([]op, error) {
 		ops = append(ops, op)
 	}
 
-	stack, err := a.infrastructureManager.Describe(state.Stack.Name)
+	terraformOutputs, err := a.terraformManager.GetOutputs(state)
 	if err != nil {
 		return []op{}, err
+	}
+
+	subnetCIDRs, ok := terraformOutputs["internal_subnet_cidrs"].([]interface{})
+	if !ok {
+		return []op{}, errors.New("missing internal subnet cidrs terraform output")
+	}
+
+	subnetNames, ok := terraformOutputs["internal_subnet_ids"].([]interface{})
+	if !ok {
+		return []op{}, errors.New("missing internal subnet ids terraform output")
+	}
+
+	internalSecurityGroup, ok := terraformOutputs["internal_security_group"].(string)
+	if !ok {
+		return []op{}, errors.New("missing internal security group terraform output")
 	}
 
 	subnets := []networkSubnet{}
 	for i := range azs {
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
-			stack.Outputs[fmt.Sprintf("InternalSubnet%dCIDR", i+1)],
-			stack.Outputs[fmt.Sprintf("InternalSubnet%dName", i+1)],
-			stack.Outputs["InternalSecurityGroup"],
+			subnetCIDRs[i].(string),
+			subnetNames[i].(string),
+			internalSecurityGroup,
 		)
 		if err != nil {
 			return []op{}, err
@@ -154,45 +169,6 @@ func (a OpsGenerator) generateAWSOps(state storage.State) ([]op, error) {
 		Subnets: subnets,
 		Type:    "manual",
 	}))
-
-	if value := stack.Outputs["CFRouterLoadBalancer"]; value != "" {
-		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
-			Name: "router-lb",
-			CloudProperties: lbCloudProperties{
-				ELBs: []string{value},
-				SecurityGroups: []string{
-					stack.Outputs["CFRouterInternalSecurityGroup"],
-					stack.Outputs["InternalSecurityGroup"],
-				},
-			},
-		}))
-	}
-
-	if value := stack.Outputs["CFSSHProxyLoadBalancer"]; value != "" {
-		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
-			Name: "ssh-proxy-lb",
-			CloudProperties: lbCloudProperties{
-				ELBs: []string{value},
-				SecurityGroups: []string{
-					stack.Outputs["CFSSHProxyInternalSecurityGroup"],
-					stack.Outputs["InternalSecurityGroup"],
-				},
-			},
-		}))
-	}
-
-	if value := stack.Outputs["ConcourseLoadBalancer"]; value != "" {
-		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
-			Name: "lb",
-			CloudProperties: lbCloudProperties{
-				ELBs: []string{value},
-				SecurityGroups: []string{
-					stack.Outputs["ConcourseInternalSecurityGroup"],
-					stack.Outputs["InternalSecurityGroup"],
-				},
-			},
-		}))
-	}
 
 	return ops, nil
 }

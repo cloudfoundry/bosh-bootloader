@@ -28,10 +28,17 @@ var _ = Describe("Flags", func() {
 				Expect(boolVal).To(BeTrue())
 			})
 
-			It("can parse long flags", func() {
+			It("can parse short flags", func() {
 				err := f.Parse([]string{"-b"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(boolVal).To(BeTrue())
+			})
+
+			Context("when two bool flags are provided with no short", func() {
+				It("doesn't complain", func() {
+					f.Bool(&boolVal, "", "long-bool", false)
+					f.Bool(&boolVal, "", "other-long-bool", false)
+				})
 			})
 		})
 
