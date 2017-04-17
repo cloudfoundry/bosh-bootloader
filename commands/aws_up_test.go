@@ -99,7 +99,7 @@ var _ = Describe("AWSUp", func() {
 		})
 
 		It("returns an error when aws credential validator fails", func() {
-			credentialValidator.ValidateAWSCall.Returns.Error = errors.New("failed to validate aws credentials")
+			credentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
 			err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
@@ -118,7 +118,7 @@ var _ = Describe("AWSUp", func() {
 				SecretAccessKey: "new-aws-secret-access-key",
 				AccessKeyID:     "new-aws-access-key-id",
 			}))
-			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
+			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(0))
 		})
 
 		It("calls the env id manager and saves the env id", func() {
@@ -165,7 +165,7 @@ var _ = Describe("AWSUp", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(0))
-			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
+			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 
 			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
@@ -930,13 +930,6 @@ var _ = Describe("AWSUp", func() {
 
 			It("returns an error when only some of the AWS parameters are provided", func() {
 				err := command.Execute(commands.AWSUpConfig{AccessKeyID: "some-key-id", Region: "some-region"}, storage.State{})
-				Expect(err).To(MatchError("AWS secret access key must be provided"))
-			})
-
-			It("returns an error when no AWS parameters are provided and the bbl-state AWS values are empty", func() {
-				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("AWS secret access key must be provided")
-
-				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
 

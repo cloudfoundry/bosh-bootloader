@@ -304,7 +304,7 @@ var _ = Describe("AWS Update LBs", func() {
 			})
 
 			It("returns an error when aws credential validator fails", func() {
-				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("aws credentials validator failed")
+				credentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
 
 				err := command.Execute(commands.AWSCreateLBsConfig{}, storage.State{})
 

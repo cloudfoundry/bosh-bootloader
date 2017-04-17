@@ -1,49 +1,33 @@
 package application
 
-import "errors"
+import "fmt"
 
 type CredentialValidator struct {
-	configuration Configuration
+	configuration          Configuration
+	awsCredentialValidator credentialValidator
+	gcpCredentialValidator credentialValidator
 }
 
-func NewCredentialValidator(configuration Configuration) CredentialValidator {
+type credentialValidator interface {
+	Validate() error
+}
+
+func NewCredentialValidator(configuration Configuration, gcpCredentialValidator credentialValidator, awsCredentialValidator credentialValidator) CredentialValidator {
 	return CredentialValidator{
-		configuration: configuration,
+		configuration:          configuration,
+		awsCredentialValidator: awsCredentialValidator,
+		gcpCredentialValidator: gcpCredentialValidator,
 	}
 }
 
-func (c CredentialValidator) ValidateAWS() error {
-	if c.configuration.State.AWS.AccessKeyID == "" {
-		return errors.New("AWS access key ID must be provided")
+func (c CredentialValidator) Validate() error {
+	switch c.configuration.State.IAAS {
+	case "aws":
+		return c.awsCredentialValidator.Validate()
+	case "gcp":
+		return c.gcpCredentialValidator.Validate()
+	default:
+		return fmt.Errorf("cannot validate credentials: invalid iaas %q", c.configuration.State.IAAS)
 	}
-
-	if c.configuration.State.AWS.SecretAccessKey == "" {
-		return errors.New("AWS secret access key must be provided")
-	}
-
-	if c.configuration.State.AWS.Region == "" {
-		return errors.New("AWS region must be provided")
-	}
-
-	return nil
-}
-
-func (c CredentialValidator) ValidateGCP() error {
-	if c.configuration.State.GCP.ProjectID == "" {
-		return errors.New("GCP project ID must be provided")
-	}
-
-	if c.configuration.State.GCP.ServiceAccountKey == "" {
-		return errors.New("GCP service account key must be provided")
-	}
-
-	if c.configuration.State.GCP.Region == "" {
-		return errors.New("GCP region must be provided")
-	}
-
-	if c.configuration.State.GCP.Zone == "" {
-		return errors.New("GCP zone must be provided")
-	}
-
 	return nil
 }

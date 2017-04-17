@@ -40,7 +40,7 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 
 	switch state.IAAS {
 	case "aws":
-		err = c.credentialValidator.ValidateAWS()
+		err = c.credentialValidator.Validate()
 		if err != nil {
 			return err
 		}

@@ -68,7 +68,7 @@ var _ = Describe("LBs", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
+				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 
 				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
@@ -93,7 +93,7 @@ var _ = Describe("LBs", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
+				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 
 				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
@@ -112,7 +112,7 @@ var _ = Describe("LBs", func() {
 			Context("failure cases", func() {
 				Context("when credential validator fails", func() {
 					It("returns an error", func() {
-						credentialValidator.ValidateAWSCall.Returns.Error = errors.New("validator failed")
+						credentialValidator.ValidateCall.Returns.Error = errors.New("validator failed")
 
 						err := lbsCommand.Execute([]string{}, incomingState)
 

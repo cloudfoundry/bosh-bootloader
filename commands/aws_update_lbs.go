@@ -37,7 +37,7 @@ func NewAWSUpdateLBs(credentialValidator credentialValidator, certificateManager
 }
 
 func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
-	err := c.credentialValidator.ValidateAWS()
+	err := c.credentialValidator.Validate()
 	if err != nil {
 		return err
 	}

@@ -144,7 +144,7 @@ var _ = Describe("Delete LBs", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(1))
+			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
@@ -241,7 +241,7 @@ var _ = Describe("Delete LBs", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when aws credential validator fails to validate", func() {
-				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("validate failed")
+				credentialValidator.ValidateCall.Returns.Error = errors.New("validate failed")
 				err := command.Execute(incomingState)
 				Expect(err).To(MatchError("validate failed"))
 			})

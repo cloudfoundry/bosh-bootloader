@@ -102,6 +102,13 @@ var _ = Describe("Destroy", func() {
 			Expect(err).To(MatchError("state validator failed"))
 		})
 
+		It("returns an error when credential validator fails", func() {
+			credentialValidator.ValidateCall.Returns.Error = errors.New("credentials validator failed")
+
+			err := destroy.Execute([]string{}, storage.State{})
+			Expect(err).To(MatchError("credentials validator failed"))
+		})
+
 		DescribeTable("prompting the user for confirmation",
 			func(response string, proceed bool) {
 				fmt.Fprintf(stdin, "%s\n", response)
@@ -216,7 +223,7 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
-					Expect(credentialValidator.ValidateAWSCall.CallCount).To(Equal(0))
+					Expect(credentialValidator.ValidateCall.CallCount).To(Equal(0))
 				})
 			})
 
@@ -262,16 +269,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("when iaas is aws", func() {
-			It("returns an error when aws credential validator fails", func() {
-				credentialValidator.ValidateAWSCall.Returns.Error = errors.New("aws credentials validator failed")
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "aws",
-				})
-
-				Expect(err).To(MatchError("aws credentials validator failed"))
-			})
-
 			Describe("destroying the aws infrastructure", func() {
 				var (
 					state storage.State
@@ -689,16 +686,6 @@ var _ = Describe("Destroy", func() {
 					},
 				}
 				terraformManager.DestroyCall.Returns.BBLState = bblState
-			})
-
-			It("returns an error when gcp credential validator fails", func() {
-				credentialValidator.ValidateGCPCall.Returns.Error = errors.New("gcp credentials validator failed")
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-				})
-
-				Expect(err).To(MatchError("gcp credentials validator failed"))
 			})
 
 			It("calls terraform destroy", func() {

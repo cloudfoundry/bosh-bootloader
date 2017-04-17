@@ -126,17 +126,9 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	switch state.IAAS {
-	case "aws":
-		err = d.credentialValidator.ValidateAWS()
-		if err != nil {
-			return err
-		}
-	case "gcp":
-		err = d.credentialValidator.ValidateGCP()
-		if err != nil {
-			return err
-		}
+	err = d.credentialValidator.Validate()
+	if err != nil {
+		return err
 	}
 
 	var terraformOutputs map[string]interface{}

@@ -36,8 +36,7 @@ type availabilityZoneRetriever interface {
 }
 
 type credentialValidator interface {
-	ValidateAWS() error
-	ValidateGCP() error
+	Validate() error
 }
 
 type logger interface {
@@ -127,7 +126,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 			Region:          config.Region,
 		})
 	} else if u.awsCredentialsNotPresent(config) {
-		err := u.credentialValidator.ValidateAWS()
+		err := u.credentialValidator.Validate()
 		if err != nil {
 			return err
 		}

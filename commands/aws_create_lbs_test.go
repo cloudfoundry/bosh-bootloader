@@ -77,8 +77,8 @@ var _ = Describe("AWS Create LBs", func() {
 				stateStore)
 		})
 
-		It("returns an error if aws credential validator fails", func() {
-			credentialValidator.ValidateAWSCall.Returns.Error = errors.New("failed to validate aws credentials")
+		It("returns an error if credential validator fails", func() {
+			credentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
 			err := command.Execute(commands.AWSCreateLBsConfig{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})

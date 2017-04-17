@@ -41,7 +41,7 @@ func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRe
 }
 
 func (c AWSDeleteLBs) Execute(state storage.State) error {
-	err := c.credentialValidator.ValidateAWS()
+	err := c.credentialValidator.Validate()
 	if err != nil {
 		return err
 	}

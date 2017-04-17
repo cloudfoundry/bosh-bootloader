@@ -67,7 +67,7 @@ func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, cer
 }
 
 func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
-	err := c.credentialValidator.ValidateAWS()
+	err := c.credentialValidator.Validate()
 	if err != nil {
 		return err
 	}

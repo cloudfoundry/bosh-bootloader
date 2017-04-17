@@ -27,6 +27,8 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
+	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
+	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
@@ -77,6 +79,10 @@ func main() {
 	stateStore := storage.NewStore(configuration.Global.StateDir)
 	stateValidator := application.NewStateValidator(configuration.Global.StateDir)
 
+	awsCredentialValidator := awsapplication.NewCredentialValidator(configuration)
+	gcpCredentialValidator := gcpapplication.NewCredentialValidator(configuration)
+	credentialValidator := application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
+
 	// Amazon
 	awsConfiguration := aws.Config{
 		AccessKeyID:      configuration.State.AWS.AccessKeyID,
@@ -88,7 +94,6 @@ func main() {
 	clientProvider := &clientmanager.ClientProvider{EndpointOverride: configuration.Global.EndpointOverride}
 	clientProvider.SetConfig(awsConfiguration)
 
-	credentialValidator := application.NewCredentialValidator(configuration)
 	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
 	awsKeyPairCreator := ec2.NewKeyPairCreator(clientProvider)
 	awsKeyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
@@ -146,21 +151,21 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
+		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
 		availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
-		logger, credentialValidator, certificateManager, infrastructureManager,
+		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator,
 		uuidGenerator, stateStore,
 	)
 
-	awsUpdateLBs := commands.NewAWSUpdateLBs(credentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
+	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		boshClientProvider, logger, uuidGenerator, stateStore)
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
-		credentialValidator, availabilityZoneRetriever, certificateManager,
+		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigManager, boshClientProvider, stateStore,
 	)
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
@@ -194,7 +199,7 @@ func main() {
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
-	commandSet[commands.LBsCommand] = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformManager, os.Stdout)
+	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, stateValidator, infrastructureManager, terraformManager, os.Stdout)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
 	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
 	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)

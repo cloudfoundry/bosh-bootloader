@@ -1,137 +1,87 @@
 package application_test
 
 import (
+	"errors"
+
 	"github.com/cloudfoundry/bosh-bootloader/application"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("CredentialValidator", func() {
-	var credentialValidator application.CredentialValidator
+	Describe("Validate", func() {
+		var (
+			gcpCredentialValidator *fakes.CredentialValidator
+			awsCredentialValidator *fakes.CredentialValidator
 
-	Describe("ValidateCredentials", func() {
-		It("validates that the aws credentials have been set", func() {
-			credentialValidator = application.NewCredentialValidator(application.Configuration{
-				State: storage.State{
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-				},
-			})
-			err := credentialValidator.ValidateAWS()
-			Expect(err).NotTo(HaveOccurred())
+			credentialValidator application.CredentialValidator
+		)
+
+		BeforeEach(func() {
+			gcpCredentialValidator = &fakes.CredentialValidator{}
+			awsCredentialValidator = &fakes.CredentialValidator{}
+
+			gcpCredentialValidator.ValidateCall.Returns.Error = errors.New("gcp validation failed")
+			awsCredentialValidator.ValidateCall.Returns.Error = errors.New("aws validation failed")
 		})
 
-		It("validates that the gcp credentials have been set", func() {
-			credentialValidator = application.NewCredentialValidator(application.Configuration{
-				State: storage.State{
-					GCP: storage.GCP{
-						ProjectID:         "some-project-id",
-						ServiceAccountKey: "some-service-account-key",
-						Region:            "some-region",
-						Zone:              "some-zone",
+		Context("when iaas is gcp", func() {
+			BeforeEach(func() {
+				configuration := application.Configuration{
+					State: storage.State{
+						IAAS: "gcp",
 					},
-				},
+				}
+
+				credentialValidator = application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
 			})
-			err := credentialValidator.ValidateGCP()
-			Expect(err).NotTo(HaveOccurred())
+
+			It("validates using the gcp credential validator", func() {
+				err := credentialValidator.Validate()
+
+				Expect(err).To(MatchError("gcp validation failed"))
+				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+			})
 		})
 
-		Context("failure cases", func() {
-			Context("aws validator", func() {
-				It("returns an error when the access key id is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							AWS: storage.AWS{
-								SecretAccessKey: "some-secret-access-key",
-								Region:          "some-region",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateAWS()).To(MatchError("AWS access key ID must be provided"))
-				})
+		Context("when iaas is aws", func() {
+			BeforeEach(func() {
+				configuration := application.Configuration{
+					State: storage.State{
+						IAAS: "aws",
+					},
+				}
 
-				It("returns an error when the secret access key is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							AWS: storage.AWS{
-								AccessKeyID: "some-access-key-id",
-								Region:      "some-region",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateAWS()).To(MatchError("AWS secret access key must be provided"))
-				})
+				credentialValidator = application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
+			})
+			It("validates using the aws credential validator", func() {
+				err := credentialValidator.Validate()
 
-				It("returns an error when the region is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							AWS: storage.AWS{
-								AccessKeyID:     "some-access-key-id",
-								SecretAccessKey: "some-secret-access-key",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateAWS()).To(MatchError("AWS region must be provided"))
-				})
+				Expect(err).To(MatchError("aws validation failed"))
+				Expect(gcpCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when iaas is invalid", func() {
+			BeforeEach(func() {
+				configuration := application.Configuration{
+					State: storage.State{
+						IAAS: "invalid",
+					},
+				}
+
+				credentialValidator = application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
 			})
 
-			Context("gcp validator", func() {
-				It("returns an error when the project id is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							GCP: storage.GCP{
-								ServiceAccountKey: "some-service-account-key",
-								Region:            "some-region",
-								Zone:              "some-zone",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateGCP()).To(MatchError("GCP project ID must be provided"))
-				})
+			It("returns a helpful error message", func() {
+				err := credentialValidator.Validate()
 
-				It("returns an error when the service account key is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							GCP: storage.GCP{
-								ProjectID: "some-project-id",
-								Region:    "some-region",
-								Zone:      "some-zone",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateGCP()).To(MatchError("GCP service account key must be provided"))
-				})
-
-				It("returns an error when the region is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							GCP: storage.GCP{
-								ProjectID:         "some-project-id",
-								ServiceAccountKey: "some-service-account-key",
-								Zone:              "some-zone",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateGCP()).To(MatchError("GCP region must be provided"))
-				})
-
-				It("returns an error when the zone is missing", func() {
-					credentialValidator = application.NewCredentialValidator(application.Configuration{
-						State: storage.State{
-							GCP: storage.GCP{
-								ProjectID:         "some-project-id",
-								ServiceAccountKey: "some-service-account-key",
-								Region:            "some-region",
-							},
-						},
-					})
-					Expect(credentialValidator.ValidateGCP()).To(MatchError("GCP zone must be provided"))
-				})
-
+				Expect(err).To(MatchError(`cannot validate credentials: invalid iaas "invalid"`))
+				Expect(gcpCredentialValidator.ValidateCall.CallCount).To(Equal(0))
+				Expect(awsCredentialValidator.ValidateCall.CallCount).To(Equal(0))
 			})
 		})
 	})
