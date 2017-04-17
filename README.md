@@ -59,9 +59,11 @@ role 'roles/editor'
 
 Example:
 ```
-gcloud iam service-accounts create some-account-name
-gcloud iam service-accounts keys create "service-account.key.json" --iam-account "some-account-name@PROJECT_ID.iam.gserviceaccount.com"
-gcloud projects add-iam-policy-binding PROJECT_ID --member 'serviceAccount:some-account-name@PROJECT_ID.iam.gserviceaccount.com' --role 'roles/editor'
+gcloud iam service-accounts create <service account name>
+
+gcloud iam service-accounts keys create --iam-account=<service account name> <service account name>.key.json
+
+gcloud projects add-iam-policy-binding <project id> --member='<service account name>' --role='roles/editor'
 ```
 
 ## Usage
