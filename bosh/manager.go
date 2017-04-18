@@ -204,7 +204,7 @@ internal_ip: 10.0.0.6`
 		} else {
 			stack, err := m.stackManager.Describe(state.Stack.Name)
 			if err != nil {
-				panic(err)
+				return "", err
 			}
 			vars = strings.Join([]string{vars,
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
@@ -256,7 +256,7 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 		} else {
 			stack, err := m.stackManager.Describe(state.Stack.Name)
 			if err != nil {
-				panic(err)
+				return iaasInputs{}, err
 			}
 			return iaasInputs{
 				InterpolateInput: InterpolateInput{

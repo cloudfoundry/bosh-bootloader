@@ -400,6 +400,19 @@ private_key: |-
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
+
+			Context("when the stack manager returns an error", func() {
+				BeforeEach(func() {
+					stackManager.DescribeCall.Returns.Error = errors.New("stack manager describe failed")
+				})
+
+				It("returns the error", func() {
+					_, err := boshManager.Create(storage.State{
+						IAAS: "aws",
+					}, []byte{})
+					Expect(err).To(MatchError("stack manager describe failed"))
+				})
+			})
 		})
 	})
 
@@ -655,6 +668,19 @@ default_security_groups: [some-bosh-security-group]
 region: some-region
 private_key: |-
   some-private-key`))
+				})
+			})
+
+			Context("when the stack manager returns an error", func() {
+				BeforeEach(func() {
+					stackManager.DescribeCall.Returns.Error = errors.New("stack manager describe failed")
+				})
+
+				It("returns the error", func() {
+					_, err := boshManager.GetDeploymentVars(storage.State{
+						IAAS: "aws",
+					})
+					Expect(err).To(MatchError("stack manager describe failed"))
 				})
 			})
 		})

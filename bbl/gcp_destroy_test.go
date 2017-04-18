@@ -135,7 +135,10 @@ director_ssl:
 	})
 
 	Context("when the bbl-state does not contain a TFState", func() {
-		var args []string
+		var (
+			args []string
+		)
+
 		BeforeEach(func() {
 			state.TFState = ""
 			stateContents, err := json.Marshal(state)

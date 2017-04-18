@@ -237,6 +237,10 @@ var _ = Describe("Manager", func() {
 					expectedBBLState.TFState = updatedTFState
 					Expect(newBBLState.TFState).To(Equal(updatedTFState))
 					Expect(newBBLState).To(Equal(expectedBBLState))
+
+					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+						"destroying infrastructure", "finished destroying infrastructure",
+					}))
 				})
 			})
 

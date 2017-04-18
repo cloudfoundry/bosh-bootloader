@@ -112,6 +112,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 }
 
 func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
+	m.logger.Step("destroying infrastructure")
 	if bblState.TFState == "" {
 		return bblState, nil
 	}
@@ -133,6 +134,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	case error:
 		return storage.State{}, err
 	}
+	m.logger.Step("finished destroying infrastructure")
 
 	bblState.TFState = tfState
 	return bblState, nil

@@ -325,12 +325,90 @@ var _ = Describe("Destroy", func() {
 					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
 				})
 
-				It("deletes the stack", func() {
-					err := destroy.Execute([]string{}, state)
-					Expect(err).NotTo(HaveOccurred())
+				Context("when infrastructure was created with cloudformation", func() {
+					It("deletes the stack", func() {
+						err := destroy.Execute([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(logger.StepCall.Messages).To(ContainElement("destroying AWS stack"))
-					Expect(infrastructureManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
+						Expect(logger.StepCall.Messages).To(ContainElement("destroying AWS stack"))
+						Expect(infrastructureManager.DeleteCall.Receives.StackName).To(Equal("some-stack-name"))
+					})
+				})
+
+				Context("when infrastructure was created with terraform", func() {
+					BeforeEach(func() {
+						state.Stack = storage.Stack{}
+						state.TFState = "some-tf-state"
+					})
+
+					It("deletes infrastructure with terraform", func() {
+						err := destroy.Execute([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
+
+						expectedState := state
+						expectedState.BOSH = storage.BOSH{}
+						Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
+					})
+
+					Context("when terraform destroy fails", func() {
+						var (
+							expectedBBLState storage.State
+							updatedBBLState  storage.State
+						)
+
+						BeforeEach(func() {
+							expectedBBLState = state
+							expectedBBLState.BOSH = storage.BOSH{}
+
+							updatedBBLState = state
+							updatedBBLState.TFState = "some-updated-tf-state"
+
+							terraformManagerError.ErrorCall.Returns = "failed to destroy"
+							terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState
+
+							terraformManager.DestroyCall.Returns.BBLState = storage.State{}
+							terraformManager.DestroyCall.Returns.Error = terraformManagerError
+
+							stdin.Write([]byte("yes\n"))
+						})
+
+						It("saves the partially destroyed tf state", func() {
+							err := destroy.Execute([]string{}, state)
+							Expect(err).To(Equal(terraformManagerError))
+
+							Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
+							Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedBBLState))
+
+							Expect(terraformManagerError.BBLStateCall.CallCount).To(Equal(1))
+
+							Expect(stateStore.SetCall.CallCount).To(Equal(2))
+							Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedBBLState))
+						})
+
+						Context("when we cannot retrieve the updated bbl state", func() {
+							BeforeEach(func() {
+								terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
+							})
+
+							It("returns an error containing both messages", func() {
+								err := destroy.Execute([]string{}, state)
+
+								Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
+								Expect(stateStore.SetCall.CallCount).To(Equal(1))
+							})
+						})
+
+						Context("and the state fails to be set", func() {
+							It("returns an error containing both messages", func() {
+								stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+								err := destroy.Execute([]string{}, storage.State{
+									IAAS: "gcp",
+								})
+
+								Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
+							})
+						})
+					})
 				})
 
 				It("deletes the certificate", func() {
@@ -487,7 +565,7 @@ var _ = Describe("Destroy", func() {
 							err := destroy.Execute([]string{}, state)
 							Expect(err).NotTo(HaveOccurred())
 
-							Expect(logger.PrintlnCall.Receives.Message).To(Equal("no AWS stack, skipping..."))
+							Expect(logger.PrintlnCall.Receives.Message).To(Equal("No infrastructure found, skipping..."))
 							Expect(infrastructureManager.DeleteCall.CallCount).To(Equal(0))
 						})
 					})

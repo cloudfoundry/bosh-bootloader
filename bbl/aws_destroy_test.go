@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,7 +22,71 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	variables = `
+admin_password: rhkj9ys4l9guqfpc9vmp
+director_ssl:
+  certificate: some-certificate
+  private_key: some-private-key
+  ca: some-ca
+`
+)
+
 var _ = Describe("destroy", func() {
+	var (
+		fakeAWS        *awsbackend.Backend
+		fakeAWSServer  *httptest.Server
+		fakeBOSH       *fakeBOSHDirector
+		fakeBOSHServer *httptest.Server
+		tempDirectory  string
+
+		fastFail      bool
+		fastFailMutex sync.Mutex
+	)
+
+	BeforeEach(func() {
+		fakeBOSH = &fakeBOSHDirector{}
+		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			fakeBOSH.ServeHTTP(responseWriter, request)
+		}))
+
+		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
+		fakeAWS.Stacks.Set(awsbackend.Stack{
+			Name: "some-stack-name",
+		})
+		fakeAWS.Certificates.Set(awsbackend.Certificate{
+			Name: "some-certificate-name",
+		})
+		fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
+			Name: "some-keypair-name",
+		})
+		fakeAWS.Instances.Set([]awsbackend.Instance{
+			{Name: "NAT"},
+			{Name: "bosh/0"},
+		})
+		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
+
+		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			switch request.URL.Path {
+			case "/delete-env/fastfail":
+				fastFailMutex.Lock()
+				defer fastFailMutex.Unlock()
+				if fastFail {
+					responseWriter.WriteHeader(http.StatusInternalServerError)
+				} else {
+					responseWriter.WriteHeader(http.StatusOK)
+				}
+				return
+			case "/version":
+				responseWriter.Write([]byte("2.0.0"))
+			}
+		}))
+
+		var err error
+		tempDirectory, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Context("when the state file does not exist", func() {
 		BeforeEach(func() {
 			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -72,69 +135,9 @@ var _ = Describe("destroy", func() {
 		})
 	})
 
-	Context("when the bosh director, cloudformation stack, certificate, and ec2 keypair exists", func() {
-		var (
-			fakeAWS        *awsbackend.Backend
-			fakeAWSServer  *httptest.Server
-			fakeBOSH       *fakeBOSHDirector
-			fakeBOSHServer *httptest.Server
-			tempDirectory  string
-
-			fastFail      bool
-			fastFailMutex sync.Mutex
-		)
-
+	Context("when bosh director, infrastructure, certificate, and ec2 keypair exists", func() {
 		BeforeEach(func() {
-			fakeBOSH = &fakeBOSHDirector{}
-			fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				fakeBOSH.ServeHTTP(responseWriter, request)
-			}))
-
-			fakeAWS = awsbackend.New(fakeBOSHServer.URL)
-			fakeAWS.Stacks.Set(awsbackend.Stack{
-				Name: "some-stack-name",
-			})
-			fakeAWS.Certificates.Set(awsbackend.Certificate{
-				Name: "some-certificate-name",
-			})
-			fakeAWS.KeyPairs.Set(awsbackend.KeyPair{
-				Name: "some-keypair-name",
-			})
-			fakeAWS.Instances.Set([]awsbackend.Instance{
-				{Name: "NAT"},
-				{Name: "bosh/0"},
-			})
-			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
-
-			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				switch request.URL.Path {
-				case "/delete-env/fastfail":
-					fastFailMutex.Lock()
-					defer fastFailMutex.Unlock()
-					if fastFail {
-						responseWriter.WriteHeader(http.StatusInternalServerError)
-					} else {
-						responseWriter.WriteHeader(http.StatusOK)
-					}
-					return
-				case "/version":
-					responseWriter.Write([]byte("2.0.0"))
-				}
-			}))
-
-			var err error
-			tempDirectory, err = ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			variables := `
-admin_password: rhkj9ys4l9guqfpc9vmp
-director_ssl:
-  certificate: some-certificate
-  private_key: some-private-key
-  ca: some-ca
-`
-
-			buf, err := json.Marshal(storage.State{
+			state := storage.State{
 				Version: 3,
 				IAAS:    "aws",
 				AWS: storage.AWS{
@@ -152,10 +155,9 @@ director_ssl:
 						"new-key": "new-value",
 					},
 				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+			}
 
-			ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), buf, os.ModePerm)
+			writeStateJson(state, tempDirectory)
 		})
 
 		Context("asks for confirmation before it starts destroying things", func() {
@@ -231,41 +233,83 @@ director_ssl:
 			Expect(session.Out.Contents()).To(ContainSubstring("step: destroying bosh director"))
 		})
 
-		It("deletes the stack", func() {
-			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
-			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting cloudformation stack"))
-			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+		Context("when the bbl environment used terraform to create infrastructure", func() {
+			var (
+				state storage.State
+			)
+			BeforeEach(func() {
+				state = storage.State{
+					Version: 3,
+					IAAS:    "aws",
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key",
+						SecretAccessKey: "some-access-secret",
+						Region:          "some-region",
+					},
+					TFState: "some-tf-state",
+					BOSH: storage.BOSH{
+						Variables: variables,
+						State: map[string]interface{}{
+							"new-key": "new-value",
+						},
+					},
+				}
 
-			_, ok := fakeAWS.Stacks.Get("some-stack-name")
-			Expect(ok).To(BeFalse())
+				writeStateJson(state, tempDirectory)
+			})
+
+			It("deletes the infrastructure", func() {
+				session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+				Expect(session.Out.Contents()).To(ContainSubstring("step: destroying infrastructure"))
+				Expect(session.Out.Contents()).To(ContainSubstring("step: finished destroying infrastructure"))
+
+				Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
+			})
+
+			Context("when destroy fails to destroy terraform infrastructure", func() {
+				BeforeEach(func() {
+					state.AWS.Region = "fail-to-terraform"
+
+					writeStateJson(state, tempDirectory)
+				})
+
+				It("removes bosh properties from the state", func() {
+					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
+					Expect(session.Out.Contents()).To(ContainSubstring("step: destroying bosh director"))
+					Expect(session.Out.Contents()).To(ContainSubstring("step: destroying infrastructure"))
+
+					Expect(session.Out.Contents()).NotTo(ContainSubstring("step: finished destroying infrastructure"))
+					state := readStateJson(tempDirectory)
+
+					Expect(state.BOSH).To(Equal(storage.BOSH{}))
+				})
+
+				It("saves the tf state when terraform destroy fails with ManagerError", func() {
+					destroy(fakeAWSServer.URL, tempDirectory, 1)
+
+					state = readStateJson(tempDirectory)
+					Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
+				})
+
+				Context("when no --debug is provided", func() {
+					It("returns a helpful error message", func() {
+						session := destroyWithOptionalDebug(fakeAWSServer.URL, tempDirectory, 1, false)
+						Expect(session.Err.Contents()).To(ContainSubstring("use --debug for additional debug output"))
+					})
+				})
+			})
 		})
 
-		It("deletes the certificate", func() {
-			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
-			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting certificate"))
-			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+		Context("when the bbl environment used cloudformation to create infrastructure", func() {
+			It("deletes the stack", func() {
+				session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+				Expect(session.Out.Contents()).To(ContainSubstring("step: deleting cloudformation stack"))
+				Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
 
-			_, ok := fakeAWS.Stacks.Get("some-stack-name")
-			Expect(ok).To(BeFalse())
-		})
+				_, ok := fakeAWS.Stacks.Get("some-stack-name")
+				Expect(ok).To(BeFalse())
+			})
 
-		It("deletes the keypair", func() {
-			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
-			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting keypair"))
-			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
-
-			_, ok := fakeAWS.Stacks.Get("some-stack-name")
-			Expect(ok).To(BeFalse())
-		})
-
-		It("deletes the bbl state", func() {
-			destroy(fakeAWSServer.URL, tempDirectory, 0)
-
-			_, err := os.Stat(filepath.Join(tempDirectory, storage.StateFileName))
-			Expect(os.IsNotExist(err)).To(BeTrue())
-		})
-
-		Context("reentrance", func() {
 			Context("when destroy fails to delete the stack", func() {
 				It("removes bosh properties from the state", func() {
 					fakeAWS.Stacks.SetDeleteStackReturnError(&awsfaker.ErrorResponse{
@@ -305,6 +349,24 @@ director_ssl:
 				})
 			})
 
+			Context("when no stack exists", func() {
+				BeforeEach(func() {
+					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
+						HTTPStatusCode:  http.StatusBadRequest,
+						AWSErrorCode:    "InvalidRequest",
+						AWSErrorMessage: "failed to delete keypair",
+					})
+					destroy(fakeAWSServer.URL, tempDirectory, 1)
+
+					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(nil)
+				})
+
+				It("skips deleting aws stack", func() {
+					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+					Expect(session.Out.Contents()).To(ContainSubstring("No infrastructure found, skipping..."))
+				})
+			})
+
 			Context("when destroy fails to delete the keypair", func() {
 				It("removes the stack from the state", func() {
 					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
@@ -321,88 +383,136 @@ director_ssl:
 					Expect(state.Stack.Name).To(Equal(""))
 					Expect(state.Stack.LBType).To(Equal(""))
 				})
+			})
+		})
 
-				It("removes the certificate from the state", func() {
-					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
-						HTTPStatusCode:  http.StatusBadRequest,
-						AWSErrorCode:    "InvalidRequest",
-						AWSErrorMessage: "failed to delete keypair",
-					})
-					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
-					Expect(session.Out.Contents()).To(ContainSubstring("step: deleting certificate"))
-					state := readStateJson(tempDirectory)
+		It("deletes the certificate", func() {
+			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting certificate"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
 
-					Expect(state.Stack.CertificateName).To(Equal(""))
+			_, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeFalse())
+		})
+
+		It("deletes the keypair", func() {
+			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+			Expect(session.Out.Contents()).To(ContainSubstring("step: deleting keypair"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: finished deleting cloudformation stack"))
+
+			_, ok := fakeAWS.Stacks.Get("some-stack-name")
+			Expect(ok).To(BeFalse())
+		})
+
+		It("deletes the bbl state", func() {
+			destroy(fakeAWSServer.URL, tempDirectory, 0)
+
+			_, err := os.Stat(filepath.Join(tempDirectory, storage.StateFileName))
+			Expect(os.IsNotExist(err)).To(BeTrue())
+		})
+
+		Context("when destroy fails to delete the keypair", func() {
+			It("removes the certificate from the state", func() {
+				fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
+					HTTPStatusCode:  http.StatusBadRequest,
+					AWSErrorCode:    "InvalidRequest",
+					AWSErrorMessage: "failed to delete keypair",
 				})
+				session := destroy(fakeAWSServer.URL, tempDirectory, 1)
+				Expect(session.Out.Contents()).To(ContainSubstring("step: deleting certificate"))
+				state := readStateJson(tempDirectory)
+
+				Expect(state.Stack.CertificateName).To(Equal(""))
+			})
+		})
+
+		Context("when the bosh cli version is <2.0", func() {
+			BeforeEach(func() {
+				fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					switch request.URL.Path {
+					case "/version":
+						responseWriter.Write([]byte("1.9.0"))
+					}
+				}))
 			})
 
-			Context("when no stack exists", func() {
-				BeforeEach(func() {
-					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(&awsfaker.ErrorResponse{
-						HTTPStatusCode:  http.StatusBadRequest,
-						AWSErrorCode:    "InvalidRequest",
-						AWSErrorMessage: "failed to delete keypair",
-					})
-					destroy(fakeAWSServer.URL, tempDirectory, 1)
+			It("fast fails with a helpful error message", func() {
+				session := destroy(fakeAWSServer.URL, tempDirectory, 1)
 
-					fakeAWS.KeyPairs.SetDeleteKeyPairReturnError(nil)
-				})
+				Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+			})
+		})
 
-				It("skips deleting aws stack", func() {
-					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
-					Expect(session.Out.Contents()).To(ContainSubstring("no AWS stack, skipping..."))
-				})
+		Context("when bosh fails", func() {
+			BeforeEach(func() {
+				fastFailMutex.Lock()
+				fastFail = true
+				fastFailMutex.Unlock()
+
+				destroy(fakeAWSServer.URL, tempDirectory, 1)
 			})
 
-			Context("when the bosh cli version is <2.0", func() {
-				BeforeEach(func() {
-					fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-						switch request.URL.Path {
-						case "/version":
-							responseWriter.Write([]byte("1.9.0"))
-						}
-					}))
-				})
-
-				It("fast fails with a helpful error message", func() {
-					session := destroy(fakeAWSServer.URL, tempDirectory, 1)
-
-					Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
-				})
+			AfterEach(func() {
+				fastFailMutex.Lock()
+				fastFail = false
+				fastFailMutex.Unlock()
 			})
 
-			Context("when bosh fails", func() {
-				BeforeEach(func() {
-					fastFailMutex.Lock()
-					fastFail = true
-					fastFailMutex.Unlock()
-
-					destroy(fakeAWSServer.URL, tempDirectory, 1)
-				})
-
-				AfterEach(func() {
-					fastFailMutex.Lock()
-					fastFail = false
-					fastFailMutex.Unlock()
-				})
-
-				It("stores a partial bosh state", func() {
-					state := readStateJson(tempDirectory)
-					Expect(state.BOSH.State).To(Equal(map[string]interface{}{
-						"partial": "bosh-state",
-					}))
-				})
+			It("stores a partial bosh state", func() {
+				state := readStateJson(tempDirectory)
+				Expect(state.BOSH.State).To(Equal(map[string]interface{}{
+					"partial": "bosh-state",
+				}))
 			})
+		})
+	})
+
+	Context("when the state contains empty TFState and Stack", func() {
+		var (
+			state storage.State
+		)
+
+		BeforeEach(func() {
+			state = storage.State{
+				Version: 3,
+				IAAS:    "aws",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key",
+					SecretAccessKey: "some-access-secret",
+					Region:          "some-region",
+				},
+			}
+
+			writeStateJson(state, tempDirectory)
+		})
+
+		It("succeeds and prints a helpful message", func() {
+			session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("No infrastructure found, skipping..."))
 		})
 	})
 })
 
 func destroy(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
-	args := []string{
-		fmt.Sprintf("--endpoint-override=%s", serverURL),
-		"--debug",
-		"--state-dir", tempDirectory,
-		"destroy",
+	return destroyWithOptionalDebug(serverURL, tempDirectory, exitCode, true)
+}
+
+func destroyWithOptionalDebug(serverURL string, tempDirectory string, exitCode int, debug bool) *gexec.Session {
+	var args []string
+	if debug {
+		args = []string{
+			fmt.Sprintf("--endpoint-override=%s", serverURL),
+			"--debug",
+			"--state-dir", tempDirectory,
+			"destroy",
+		}
+	} else {
+		args = []string{
+			fmt.Sprintf("--endpoint-override=%s", serverURL),
+			"--state-dir", tempDirectory,
+			"destroy",
+		}
 	}
 	cmd := exec.Command(pathToBBL, args...)
 	stdin, err := cmd.StdinPipe()

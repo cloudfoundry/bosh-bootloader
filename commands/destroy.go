@@ -203,10 +203,16 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if state.IAAS == "aws" {
-		d.logger.Step("destroying AWS stack")
-		state, err = d.deleteStack(stack, state)
-		if err != nil {
-			return err
+		if state.TFState != "" {
+			state, err = d.terraformManager.Destroy(state)
+			if err != nil {
+				return handleTerraformError(err, d.stateStore)
+			}
+		} else {
+			state, err = d.deleteStack(stack, state)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -295,10 +301,11 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack) (st
 
 func (d Destroy) deleteStack(stack cloudformation.Stack, state storage.State) (storage.State, error) {
 	if state.Stack.Name == "" {
-		d.logger.Println("no AWS stack, skipping...")
+		d.logger.Println("No infrastructure found, skipping...")
 		return state, nil
 	}
 
+	d.logger.Step("destroying AWS stack")
 	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
 		return state, err
 	}
