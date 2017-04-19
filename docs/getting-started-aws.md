@@ -53,7 +53,7 @@ The user must have the following `policy`:
 ```
 
 To create a user and associated policy with the AWS CLI run the 
-following commands:
+following commands (policy text must be in your clipboard):
 ```
 $ aws iam create-user --user-name "bbl-user"
 $ aws iam put-user-policy --user-name "bbl-user" \
