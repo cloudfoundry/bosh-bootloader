@@ -147,10 +147,19 @@ MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
 -----END CERTIFICATE-----
 ```
 
+Save CA certificate to the file:
+
+```
+$ bbl director-ca-cert > bosh.crt
+$ export BOSH_CA_CERT=bosh.crt
+```
+
 To login:
 
 ```
-$ bosh target 23.248.87.55 <INSERT TARGET NAME>
+$ export BOSH_ENVIRONMENT=$(bbl director-address)
+$ bosh alias-env <INSERT TARGET NAME>
+$ bosh log-in
 Username: user-d3783rk
 Password: p-23dah71sk1
 ```
