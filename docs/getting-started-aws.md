@@ -12,9 +12,6 @@ any instances BOSH deploys.
 
 ### Preparing your environment
 
-`bbl` requires `bosh-init` to deploy the BOSH director. Head over to bosh.io
-for [installation instructions](http://bosh.io/docs/install-bosh-init.html).
-
 To install `bbl` go to the
 [releases page](https://github.com/cloudfoundry/bosh-bootloader/releases/latest)
 and download the latest version for your platform.
