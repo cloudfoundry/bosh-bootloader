@@ -1,5 +1,4 @@
 # Deploying Concourse
----
 
 This document will walk through deploying a concourse clustered install to GCP using bbl and bosh.
 
@@ -23,7 +22,7 @@ Scale instance types, disks and instance count based on your needs. Other sizes 
 1. Start with the sample manifest from the [Concourse documentation](http://concourse.ci/clusters-with-bosh.html)
 2. Replace all ```vm_type: REPLACE_ME``` with ```vm_type: n1-standard-1```.
 3. Add the vm_extension ```lb``` to the instance_group "web"
-4. Add the property ```tls_bind_port: 443``` to the instance_group "web"
+4. Add ```tls_bind_port: 443``` as a property of the job named "atc"
 5. Add the vm_extension ```50GB_ephemeral_disk``` to the instance_group "worker"
 6. Replace all ```persistent_disk_type: REPLACE_ME``` with ```persistent_disk_type: 5GB```
 7. Fill out the remaining REPLACE_ME in the sample manifest with your own data, such as auth groups, SSL certs, and external URL

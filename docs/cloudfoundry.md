@@ -8,15 +8,12 @@ This document will walk through deploying a cf-deployment based Cloud Foundry.
 * bbl
 * A GCP Service Account key as described in README.md
 * BBL up. e.g. ```bbl up --gcp-zone us-east1-b --gcp-region us-east1 --gcp-service-account-key service-account.key.json --gcp-project-id my-gcp-project-id --iaas gcp```
-* This guide will assume the [Bosh v2 CLI](https://bosh.io/docs/cli-v2.html) is installed, but bosh v1 CLI could work, with some minor changes.
+* [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html). bbl requires it and the examples below are examples of BOSH v2 CLI arguments
 
 ## Set the bosh environment
 
 ```
-export BOSH_CLIENT=`bbl director-username`
-export BOSH_CLIENT_SECRET=`bbl director-password`
-export BOSH_CA_CERT=`bbl director-ca-cert`
-export BOSH_ENVIRONMENT=`bbl director-address`
+eval "$(bbl print-env)"
 ```
 
 ## Create load balancer
