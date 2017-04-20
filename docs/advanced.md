@@ -27,16 +27,19 @@ bbl up --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key ser
 
 Next we use bosh-deployment to create the director. Take special care that ``-o external-ip-not-recommended.yml`` is supplied (or set up a tunnel to your IaaS such that you can route to 10.0.0.6, the director).
 ```
-git clone https://github.com/cloudfoundry/bosh-deployment.git && cd bosh-deployment
-bosh create-env bosh.yml  --state ./state.json  -o gcp/cpi.yml  --vars-store ./creds.yml  -l <(bbl bosh-deployment-vars) -o external-ip-not-recommended.yml
+git clone https://github.com/cloudfoundry/bosh-deployment.git deploy
+bosh create-env deploy/bosh.yml  \
+  --state ./state.json  \
+  -o deploy/gcp/cpi.yml  \
+  -o deploy/external-ip-not-recommended.yml \
+  --vars-store ./creds.yml  \
+  -l <(bbl bosh-deployment-vars)
 ```
-
 
 Now add load balancers
 ```
 bbl create-lbs --type cf --key mykey.key --cert mycert.crt --domain cf.example.com
 ```
-
 
 Then upload the load balancer VM extensions to your cloud-config
 ```
@@ -46,6 +49,5 @@ export BOSH_CLIENT_SECRET="$(bosh int creds.yml --path /admin_password)"
 export BOSH_CLIENT=admin
 bosh update-cloud-config <(bbl cloud-config)
 ```
-
 
 Finally deploy a bosh deployment manifest like [cf-deployment](https://github.com/cloudfoundry/cf-deployment)
