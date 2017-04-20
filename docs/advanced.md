@@ -19,6 +19,7 @@ The process to create a director with custom is as follows:
 
 
 ## A concrete example, with full arguments supplied
+
 First we create our network and firewall rules. Important here is the ``--no-director`` flag.
 ```
 bbl up --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-project-14478532 --iaas gcp --no-director
@@ -49,3 +50,39 @@ bosh update-cloud-config <(bbl cloud-config)
 
 
 Finally deploy a bosh deployment manifest like [cf-deployment](https://github.com/cloudfoundry/cf-deployment)
+
+## AWS Example
+
+First create AWS infrastructure but do not create `BOSH Director`
+
+```
+$ bbl up \
+	--aws-access-key-id <INSERT ACCESS KEY ID> \
+	--aws-secret-access-key <INSERT SECRET ACCESS KEY> \
+	--aws-region eu-central-1 \
+	--iaas aws \
+	--no-director
+```
+
+Now clone manifest, make necessary modifications and deploy BOSH.
+
+```
+$ git clone https://github.com/cloudfoundry/bosh-deployment.git deploy
+$ bosh create-env deploy/bosh.yml  \
+  --state ./state.json  \
+  -o deploy/aws/cpi.yml  \
+  -o deploy/external-ip-with-registry-not-recommended.yml \
+  --vars-store ./creds.yml  \
+  -l <(bbl bosh-deployment-vars) 
+```
+
+To verify list available deployments (should be empty):
+
+```
+$ eval "$(bbl print-env)"
+$ export BOSH_CA_CERT="$(bosh int creds.yml --path /default_ca/ca)"
+$ export BOSH_CLIENT_SECRET="$(bosh int creds.yml --path /admin_password)"
+$ export BOSH_CLIENT=admin
+$ bosh deployments
+```
+
