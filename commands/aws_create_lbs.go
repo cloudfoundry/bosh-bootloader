@@ -80,15 +80,15 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return nil
 	}
 
+	if err := c.checkFastFails(config.LBType, state.Stack.LBType); err != nil {
+		return err
+	}
+
 	if !state.NoDirector {
 		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 		if err := c.checkBOSHClient(state.Stack.Name, boshClient, state.TFState); err != nil {
 			return err
 		}
-	}
-
-	if err := c.checkFastFails(config.LBType, state.Stack.LBType); err != nil {
-		return err
 	}
 
 	if state.TFState != "" {
