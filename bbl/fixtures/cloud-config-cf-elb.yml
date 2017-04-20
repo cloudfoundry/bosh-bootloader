@@ -62,7 +62,7 @@ networks:
     cloud_properties:
       security_groups:
       - some-internal-security-group
-      subnet: some-subnet-1
+      subnet: some-internal-subnet-ids-1
     gateway: 10.0.16.1
     range: 10.0.16.0/20
     reserved:
@@ -74,7 +74,7 @@ networks:
     cloud_properties:
       security_groups:
       - some-internal-security-group
-      subnet: some-subnet-2
+      subnet: some-internal-subnet-ids-2
     gateway: 10.0.32.1
     range: 10.0.32.0/20
     reserved:
@@ -86,7 +86,7 @@ networks:
     cloud_properties:
       security_groups:
       - some-internal-security-group
-      subnet: some-subnet-3
+      subnet: some-internal-subnet-ids-3
     gateway: 10.0.48.1
     range: 10.0.48.0/20
     reserved:
@@ -101,7 +101,7 @@ networks:
     cloud_properties:
       security_groups:
       - some-internal-security-group
-      subnet: some-subnet-1
+      subnet: some-internal-subnet-ids-1
     gateway: 10.0.16.1
     range: 10.0.16.0/20
     reserved:
@@ -113,7 +113,7 @@ networks:
     cloud_properties:
       security_groups:
       - some-internal-security-group
-      subnet: some-subnet-2
+      subnet: some-internal-subnet-ids-2
     gateway: 10.0.32.1
     range: 10.0.32.0/20
     reserved:
@@ -125,7 +125,7 @@ networks:
     cloud_properties:
       security_groups:
       - some-internal-security-group
-      subnet: some-subnet-3
+      subnet: some-internal-subnet-ids-3
     gateway: 10.0.48.1
     range: 10.0.48.0/20
     reserved:

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -20,6 +21,7 @@ type AWSCreateLBs struct {
 	guidGenerator             guidGenerator
 	stateStore                stateStore
 	stateValidator            stateValidator
+	terraformManager          terraformManager
 }
 
 type AWSCreateLBsConfig struct {
@@ -51,7 +53,7 @@ type guidGenerator interface {
 func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
 	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
-	guidGenerator guidGenerator, stateStore stateStore) AWSCreateLBs {
+	guidGenerator guidGenerator, stateStore stateStore, terraformManager terraformManager) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
@@ -63,16 +65,12 @@ func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, cer
 		certificateValidator:      certificateValidator,
 		guidGenerator:             guidGenerator,
 		stateStore:                stateStore,
+		terraformManager:          terraformManager,
 	}
 }
 
 func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
 	err := c.credentialValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	err = c.certificateValidator.Validate(CreateLBsCommand, config.CertPath, config.KeyPath, config.ChainPath)
 	if err != nil {
 		return err
 	}
@@ -84,7 +82,7 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 
 	if !state.NoDirector {
 		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
-		if err := c.checkBOSHClient(state.Stack.Name, boshClient); err != nil {
+		if err := c.checkBOSHClient(state.Stack.Name, boshClient, state.TFState); err != nil {
 			return err
 		}
 	}
@@ -93,23 +91,50 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	c.logger.Step("uploading certificate")
+	if state.TFState != "" {
+		if config.LBType == "cf" {
+			certContents, err := ioutil.ReadFile(config.CertPath)
+			if err != nil {
+				return err
+			}
+			keyContents, err := ioutil.ReadFile(config.KeyPath)
+			if err != nil {
+				return err
+			}
+			state.LB.Cert = string(certContents)
+			state.LB.Key = string(keyContents)
+		}
 
-	certificateName, err := certificateNameFor(config.LBType, c.guidGenerator, state.EnvID)
-	if err != nil {
-		return err
-	}
+		state.LB.Type = config.LBType
 
-	err = c.certificateManager.Create(config.CertPath, config.KeyPath, config.ChainPath, certificateName)
-	if err != nil {
-		return err
-	}
+		state, err = c.terraformManager.Apply(state)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = c.certificateValidator.Validate(CreateLBsCommand, config.CertPath, config.KeyPath, config.ChainPath)
+		if err != nil {
+			return err
+		}
 
-	state.Stack.CertificateName = certificateName
-	state.Stack.LBType = config.LBType
+		c.logger.Step("uploading certificate")
 
-	if err := c.updateStack(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.BOSHAZ, config.LBType, state.EnvID); err != nil {
-		return err
+		certificateName, err := certificateNameFor(config.LBType, c.guidGenerator, state.EnvID)
+		if err != nil {
+			return err
+		}
+
+		err = c.certificateManager.Create(config.CertPath, config.KeyPath, config.ChainPath, certificateName)
+		if err != nil {
+			return err
+		}
+
+		state.Stack.CertificateName = certificateName
+		state.Stack.LBType = config.LBType
+
+		if err := c.updateStack(state.AWS.Region, certificateName, state.KeyPair.Name, state.Stack.Name, state.Stack.BOSHAZ, config.LBType, state.EnvID); err != nil {
+			return err
+		}
 	}
 
 	err = c.stateStore.Set(state)
@@ -131,8 +156,8 @@ func (AWSCreateLBs) isValidLBType(lbType string) bool {
 	return lbType == "concourse" || lbType == "cf"
 }
 
-func (c AWSCreateLBs) checkBOSHClient(stackName string, boshClient bosh.Client) error {
-	return bblExists(stackName, c.infrastructureManager, boshClient)
+func (c AWSCreateLBs) checkBOSHClient(stackName string, boshClient bosh.Client, tfState string) error {
+	return bblExists(stackName, c.infrastructureManager, boshClient, tfState)
 }
 
 func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) error {
@@ -151,11 +176,8 @@ func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) err
 	return nil
 }
 
-func (c AWSCreateLBs) updateStack(
-	awsRegion string, certificateName string, keyPairName string, stackName string, boshAZ,
-	lbType string, envID string,
-) error {
-
+func (c AWSCreateLBs) updateStack(awsRegion string, certificateName string, keyPairName string, stackName string, boshAZ, lbType string,
+	envID string) error {
 	availabilityZones, err := c.availabilityZoneRetriever.Retrieve(awsRegion)
 	if err != nil {
 		return err

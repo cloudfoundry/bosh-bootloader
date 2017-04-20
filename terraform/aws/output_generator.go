@@ -1,6 +1,8 @@
 package aws
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type executor interface {
 	Outputs(string) (map[string]interface{}, error)
@@ -34,6 +36,17 @@ func (o OutputGenerator) Generate(state storage.State) (map[string]interface{}, 
 		"internal_security_group":       "internal_security_group",
 		"internal_subnet_ids":           "internal_subnet_ids",
 		"internal_subnet_cidrs":         "internal_subnet_cidrs",
+	}
+
+	switch state.LB.Type {
+	case "cf":
+		outputMapping["cf_router_lb_name"] = "cf_router_load_balancer"
+		outputMapping["cf_router_lb_internal_security_group"] = "cf_router_internal_security_group"
+		outputMapping["cf_ssh_lb_name"] = "cf_ssh_proxy_load_balancer"
+		outputMapping["cf_ssh_lb_internal_security_group"] = "cf_ssh_proxy_internal_security_group"
+	case "concourse":
+		outputMapping["concourse_lb_name"] = "concourse_load_balancer"
+		outputMapping["concourse_lb_internal_security_group"] = "concourse_internal_security_group"
 	}
 
 	for tfKey, outputKey := range outputMapping {

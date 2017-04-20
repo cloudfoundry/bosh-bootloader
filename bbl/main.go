@@ -158,7 +158,7 @@ func main() {
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
 		availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator,
-		uuidGenerator, stateStore,
+		uuidGenerator, stateStore, terraformManager,
 	)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,

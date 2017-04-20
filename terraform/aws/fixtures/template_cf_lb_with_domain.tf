@@ -1,6 +1,4 @@
-package aws
-
-const BaseTemplate = `resource "aws_eip" "bosh_eip" {
+resource "aws_eip" "bosh_eip" {
   depends_on = ["aws_internet_gateway.ig"]
   vpc      = true
 }
@@ -394,9 +392,8 @@ resource "aws_internet_gateway" "ig" {
 output "vpc_id" {
   value = "${aws_vpc.vpc.id}"
 }
-`
 
-const LBSubnetTemplate = `resource "aws_subnet" "lb_subnets" {
+resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.0.0/20", 4, count.index+2)}"
@@ -433,128 +430,8 @@ output "lb_subnet_availability_zones" {
 output "lb_subnet_cidrs" {
   value = ["${aws_subnet.lb_subnets.*.cidr_block}"]
 }
-`
 
-const ConcourseLBTemplate = `resource "aws_security_group" "concourse_lb_security_group" {
-  name = "concourse_lb_security_group"
-  description = "Concourse"
-  vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
-  }
-
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    protocol    = "tcp"
-    from_port   = 2222
-    to_port     = 2222
-  }
-
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    protocol    = "tcp"
-    from_port   = 443
-    to_port     = 443
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "${var.env_id}-concourse-lb-security-group"
-  }
-}
-
-resource "aws_security_group" "concourse_lb_internal_security_group" {
-  name = "concourse_lb_internal_security_group"
-  description = "Concourse Internal"
-  vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 8080
-    to_port     = 8080
-  }
-
-  ingress {
-    security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 2222
-    to_port     = 2222
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "${var.env_id}-concourse-lb-internal-security-group"
-  }
-}
-
-output "concourse_lb_internal_security_group" {
-  value="${aws_security_group.concourse_lb_internal_security_group.id}"
-}
-
-resource "aws_elb" "concourse_lb" {
-  name                      = "${var.env_id}-concourse-lb"
-  cross_zone_load_balancing = true
-
-  health_check {
-    healthy_threshold   = 2
-    unhealthy_threshold = 10
-    interval            = 30
-    target              = "TCP:8080"
-    timeout             = 5
-  }
-
-  listener {
-    instance_port     = 8080
-    instance_protocol = "tcp"
-    lb_port           = 80
-    lb_protocol       = "tcp"
-  }
-
-  listener {
-    instance_port      = 2222
-    instance_protocol  = "tcp"
-    lb_port            = 2222
-    lb_protocol        = "tcp"
-  }
-
-  listener {
-    instance_port      = 4443
-    instance_protocol  = "tcp"
-    lb_port            = 443
-    lb_protocol        = "tcp"
-  }
-
-  security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
-  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
-}
-
-output "concourse_lb_name" {
-  value = "${aws_elb.concourse_lb.name}"
-}
-
-output "concourse_lb_url" {
-  value = "${aws_elb.concourse_lb.dns_name}"
-}
-`
-
-const CFLBTemplate = `resource "aws_security_group" "cf_ssh_lb_security_group" {
+resource "aws_security_group" "cf_ssh_lb_security_group" {
   name = "cf_ssh_lb_security_group"
   description = "CF SSH"
   vpc_id      = "${aws_vpc.vpc.id}"
@@ -1560,9 +1437,8 @@ output "cf_tcp_lb_name" {
 output "cf_tcp_lb_url" {
   value = "${aws_elb.cf_tcp_lb.dns_name}"
 }
-`
 
-const CFDNSTemplate = `variable "system_domain" {
+variable "system_domain" {
   type = "string"
 }
 
@@ -1613,4 +1489,3 @@ resource "aws_route53_record" "tcp" {
 
   records = ["${aws_elb.cf_tcp_lb.dns_name}"]
 }
-`

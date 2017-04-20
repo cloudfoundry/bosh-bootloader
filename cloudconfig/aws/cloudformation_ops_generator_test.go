@@ -26,7 +26,7 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 			opsGenerator              aws.CloudFormationOpsGenerator
 
 			incomingState   storage.State
-			expectedOpsFile []byte
+			expectedOpsYAML []byte
 		)
 
 		BeforeEach(func() {
@@ -48,17 +48,17 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 			infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
 				Outputs: map[string]string{
 					"InternalSecurityGroup": "some-internal-security-group",
-					"InternalSubnet1Name":   "some-subnet-1",
+					"InternalSubnet1Name":   "some-internal-subnet-ids-1",
 					"InternalSubnet1CIDR":   "10.0.16.0/20",
-					"InternalSubnet2Name":   "some-subnet-2",
+					"InternalSubnet2Name":   "some-internal-subnet-ids-2",
 					"InternalSubnet2CIDR":   "10.0.32.0/20",
-					"InternalSubnet3Name":   "some-subnet-3",
+					"InternalSubnet3Name":   "some-internal-subnet-ids-3",
 					"InternalSubnet3CIDR":   "10.0.48.0/20",
 				},
 			}
 
 			var err error
-			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+			expectedOpsYAML, err = ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
 			Expect(err).NotTo(HaveOccurred())
 
 			opsGenerator = aws.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
@@ -71,7 +71,7 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
 			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack"))
 
-			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsFile))
+			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
 		})
 
 		DescribeTable("returns an ops file with additional vm extensions to support lb", func(lbType string, lbOutputs map[string]string) {
@@ -80,7 +80,7 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 			expectedLBOpsFile, err := ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("aws-%s-lb-ops.yml", lbType)))
 			Expect(err).NotTo(HaveOccurred())
 
-			expectedOps := strings.Join([]string{string(expectedOpsFile), string(expectedLBOpsFile)}, "\n")
+			expectedOps := strings.Join([]string{string(expectedOpsYAML), string(expectedLBOpsFile)}, "\n")
 
 			for k, v := range lbOutputs {
 				infrastructureManager.DescribeCall.Returns.Stack.Outputs[k] = v

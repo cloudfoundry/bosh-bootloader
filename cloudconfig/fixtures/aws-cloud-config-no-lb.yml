@@ -68,7 +68,7 @@ networks:
     static:
     - 10.0.31.190-10.0.31.254
     cloud_properties:
-      subnet: some-subnet-1
+      subnet: some-internal-subnet-ids-1
       security_groups:
       - some-security-group-1
   - az: z2
@@ -80,7 +80,7 @@ networks:
     static:
     - 10.0.47.190-10.0.47.254
     cloud_properties:
-      subnet: some-subnet-2
+      subnet: some-internal-subnet-ids-2
       security_groups:
       - some-security-group-2
   - az: z3
@@ -92,7 +92,7 @@ networks:
     static:
     - 10.0.63.190-10.0.63.254
     cloud_properties:
-      subnet: some-subnet-3
+      subnet: some-internal-subnet-ids-3
       security_groups:
       - some-security-group-3
   type: manual
@@ -107,7 +107,7 @@ networks:
     static:
     - 10.0.31.190-10.0.31.254
     cloud_properties:
-      subnet: some-subnet-1
+      subnet: some-internal-subnet-ids-1
       security_groups:
       - some-security-group-1
   - az: z2
@@ -119,7 +119,7 @@ networks:
     static:
     - 10.0.47.190-10.0.47.254
     cloud_properties:
-      subnet: some-subnet-2
+      subnet: some-internal-subnet-ids-2
       security_groups:
       - some-security-group-2
   - az: z3
@@ -131,7 +131,7 @@ networks:
     static:
     - 10.0.63.190-10.0.63.254
     cloud_properties:
-      subnet: some-subnet-3
+      subnet: some-internal-subnet-ids-3
       security_groups:
       - some-security-group-3
   type: manual

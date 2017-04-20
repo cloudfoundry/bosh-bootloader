@@ -22,20 +22,22 @@ var _ = Describe("TemplateGenerator", func() {
 
 	Describe("Generate", func() {
 		DescribeTable("generates a terraform template for aws",
-			func(fixtureFilename, lbType string) {
+			func(fixtureFilename, lbType, domain string) {
 				expectedTemplate, err := ioutil.ReadFile(fixtureFilename)
 				Expect(err).NotTo(HaveOccurred())
 
 				template := templateGenerator.Generate(storage.State{
 					LB: storage.LB{
-						Type: lbType,
+						Type:   lbType,
+						Domain: domain,
 					},
 				})
 				Expect(template).To(Equal(string(expectedTemplate)))
 			},
-			Entry("when no lb type is provided", "fixtures/template_no_lb.tf", ""),
-			Entry("when a concourse lb type is provided", "fixtures/template_concourse_lb.tf", "concourse"),
-			Entry("when a cf lb type is provided", "fixtures/template_cf_lb.tf", "cf"),
+			Entry("when no lb type is provided", "fixtures/template_no_lb.tf", "", ""),
+			Entry("when a concourse lb type is provided", "fixtures/template_concourse_lb.tf", "concourse", ""),
+			Entry("when a cf lb type is provided", "fixtures/template_cf_lb.tf", "cf", ""),
+			Entry("when a cf lb type is provided with a system domain", "fixtures/template_cf_lb_with_domain.tf", "cf", "some-domain"),
 		)
 	})
 })

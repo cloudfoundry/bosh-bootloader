@@ -109,6 +109,13 @@ resource "aws_security_group" "nat_security_group" {
     security_groups = ["${aws_security_group.internal_security_group.id}"]
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
     Name = "${var.env_id}-nat-security-group"
   }
@@ -182,6 +189,13 @@ resource "aws_security_group" "internal_security_group" {
     to_port      = -1
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
     Name = "${var.env_id}-internal-security-group"
   }
@@ -233,6 +247,13 @@ resource "aws_security_group" "bosh_security_group" {
     from_port         = 0
     to_port           = 65535
     security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags {

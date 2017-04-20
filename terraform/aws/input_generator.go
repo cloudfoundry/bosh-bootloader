@@ -33,7 +33,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 		return map[string]string{}, err
 	}
 
-	return map[string]string{
+	inputs := map[string]string{
 		"env_id":                 state.EnvID,
 		"nat_ssh_key_pair_name":  state.KeyPair.Name,
 		"access_key":             state.AWS.AccessKeyID,
@@ -41,5 +41,16 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 		"region":                 state.AWS.Region,
 		"bosh_availability_zone": state.Stack.BOSHAZ,
 		"availability_zones":     string(azsString),
-	}, nil
+	}
+
+	if state.LB.Type == "cf" {
+		inputs["ssl_certificate"] = state.LB.Cert
+		inputs["ssl_certificate_chain"] = state.LB.Chain
+		inputs["ssl_certificate_private_key"] = state.LB.Key
+		if state.LB.Domain != "" {
+			inputs["system_domain"] = state.LB.Domain
+		}
+	}
+
+	return inputs, nil
 }

@@ -2,8 +2,10 @@ package aws_test
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -11,6 +13,7 @@ import (
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -22,7 +25,7 @@ var _ = Describe("TerraformOpsGenerator", func() {
 			opsGenerator              aws.TerraformOpsGenerator
 
 			incomingState   storage.State
-			expectedOpsFile []byte
+			expectedOpsYAML string
 		)
 
 		BeforeEach(func() {
@@ -50,28 +53,81 @@ var _ = Describe("TerraformOpsGenerator", func() {
 					"10.0.48.0/20",
 				},
 				"internal_subnet_ids": []interface{}{
-					"some-subnet-1",
-					"some-subnet-2",
-					"some-subnet-3",
+					"some-internal-subnet-ids-1",
+					"some-internal-subnet-ids-2",
+					"some-internal-subnet-ids-3",
 				},
-				"internal_security_group": "some-internal-security-group",
+				"internal_security_group":              "some-internal-security-group",
+				"cf_router_load_balancer":              "some-cf-router-lb",
+				"cf_router_internal_security_group":    "some-cf-router-internal-security-group",
+				"cf_ssh_proxy_load_balancer":           "some-cf-ssh-proxy-lb",
+				"cf_ssh_proxy_internal_security_group": "some-cf-ssh-proxy-internal-security-group",
+				"concourse_load_balancer":              "some-concourse-lb",
+				"concourse_internal_security_group":    "some-concourse-internal-security-group",
 			}
-
-			var err error
-			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
-			Expect(err).NotTo(HaveOccurred())
 
 			opsGenerator = aws.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
 		})
 
-		It("returns an ops file to transform base cloud config into aws specific cloud config", func() {
-			opsYAML, err := opsGenerator.Generate(incomingState)
-			Expect(err).NotTo(HaveOccurred())
+		Context("when there are no lbs", func() {
+			BeforeEach(func() {
+				var err error
+				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				expectedOpsYAML = string(baseOpsYAMLContents)
+			})
 
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
-			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+			It("returns an ops file to transform base cloud config into aws specific cloud config", func() {
+				opsYAML, err := opsGenerator.Generate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsFile))
+				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+
+				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
+			})
+		})
+
+		Context("when there are cf lbs", func() {
+			BeforeEach(func() {
+				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				lbsOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-cf-lb-ops.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				expectedOpsYAML = strings.Join([]string{string(baseOpsYAMLContents), string(lbsOpsYAMLContents)}, "\n")
+			})
+
+			It("returns an ops file to transform base cloud config into aws specific cloud config", func() {
+				incomingState.LB.Type = "cf"
+				opsYAML, err := opsGenerator.Generate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+
+				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
+			})
+		})
+
+		Context("when there is a concourse lb", func() {
+			BeforeEach(func() {
+				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				lbsOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-concourse-lb-ops.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				expectedOpsYAML = strings.Join([]string{string(baseOpsYAMLContents), string(lbsOpsYAMLContents)}, "\n")
+			})
+
+			It("returns an ops file to transform base cloud config into aws specific cloud config", func() {
+				incomingState.LB.Type = "concourse"
+				opsYAML, err := opsGenerator.Generate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+
+				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
+			})
 		})
 
 		Context("failure cases", func() {
@@ -104,51 +160,27 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				aws.ResetMarshal()
 			})
 
-			It("returns an error when no internal_subnet_cidrs output exists", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"internal_subnet_ids": []interface{}{
-						"some-subnet-1",
-						"some-subnet-2",
-						"some-subnet-3",
+			DescribeTable("when an terraform output is missing", func(outputKey, lbType string) {
+				delete(terraformManager.GetOutputsCall.Returns.Outputs, outputKey)
+				_, err := opsGenerator.Generate(storage.State{
+					LB: storage.LB{
+						Type: lbType,
 					},
-					"internal_security_group": "some-internal-security-group",
-				}
+				})
+				Expect(err).To(MatchError(fmt.Sprintf("missing %s terraform output", outputKey)))
+			},
+				Entry("when internal_subnet_cidrs is missing", "internal_subnet_cidrs", ""),
+				Entry("when internal_subnet_ids is missing", "internal_subnet_ids", ""),
+				Entry("when internal_security_group is missing", "internal_security_group", ""),
 
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("missing internal subnet cidrs terraform output"))
-			})
+				Entry("when cf_router_load_balancer is missing", "cf_router_load_balancer", "cf"),
+				Entry("when cf_router_internal_security_group is missing", "cf_router_internal_security_group", "cf"),
+				Entry("when cf_ssh_proxy_load_balancer is missing", "cf_ssh_proxy_load_balancer", "cf"),
+				Entry("when cf_ssh_proxy_internal_security_group is missing", "cf_ssh_proxy_internal_security_group", "cf"),
 
-			It("returns an error when no internal_subnet_ids output exists", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"internal_subnet_cidrs": []interface{}{
-						"10.0.16.0/20",
-						"10.0.32.0/20",
-						"10.0.48.0/20",
-					},
-					"internal_security_group": "some-internal-security-group",
-				}
-
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("missing internal subnet ids terraform output"))
-			})
-
-			It("returns an error when no internal_security_group output exists", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"internal_subnet_cidrs": []interface{}{
-						"10.0.16.0/20",
-						"10.0.32.0/20",
-						"10.0.48.0/20",
-					},
-					"internal_subnet_ids": []interface{}{
-						"some-subnet-1",
-						"some-subnet-2",
-						"some-subnet-3",
-					},
-				}
-
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("missing internal security group terraform output"))
-			})
+				Entry("when concourse_load_balancer is missing", "concourse_load_balancer", "concourse"),
+				Entry("when concourse_internal_security_group is missing", "concourse_internal_security_group", "concourse"),
+			)
 		})
 	})
 })

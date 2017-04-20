@@ -109,6 +109,13 @@ resource "aws_security_group" "nat_security_group" {
     security_groups = ["${aws_security_group.internal_security_group.id}"]
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
     Name = "${var.env_id}-nat-security-group"
   }
@@ -182,6 +189,13 @@ resource "aws_security_group" "internal_security_group" {
     to_port      = -1
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
     Name = "${var.env_id}-internal-security-group"
   }
@@ -233,6 +247,13 @@ resource "aws_security_group" "bosh_security_group" {
     from_port         = 0
     to_port           = 65535
     security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags {
@@ -422,9 +443,20 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
     to_port     = 2222
   }
 
-  tags {
-    Name = "${var.env_name}-cf-ssh-lb-security-group"
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags {
+    Name = "${var.env_id}-cf-ssh-lb-security-group"
+  }
+}
+
+output "cf_ssh_lb_security_group" {
+  value="${aws_security_group.cf_ssh_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
@@ -439,13 +471,24 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
     to_port     = 2222
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
-    Name = "${var.env_name}-cf-ssh-lb-internal-security-group"
+    Name = "${var.env_id}-cf-ssh-lb-internal-security-group"
   }
 }
 
+output "cf_ssh_lb_internal_security_group" {
+  value="${aws_security_group.cf_ssh_lb_internal_security_group.id}"
+}
+
 resource "aws_elb" "cf_ssh_lb" {
-  name                      = "${var.env_name}-cf-ssh-lb"
+  name                      = "${var.env_id}-cf-ssh-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -488,7 +531,7 @@ variable "ssl_certificate_private_key" {
 }
 
 resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${var.env_name}-"
+  name_prefix       = "${var.env_id}-"
   certificate_body  = "${var.ssl_certificate}"
   certificate_chain = "${var.ssl_certificate_chain}"
   private_key       = "${var.ssl_certificate_private_key}"
@@ -524,9 +567,20 @@ resource "aws_security_group" "cf_router_lb_security_group" {
     to_port     = 4443
   }
 
-  tags {
-    Name = "${var.env_name}-cf-router-lb-security-group"
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags {
+    Name = "${var.env_id}-cf-router-lb-security-group"
+  }
+}
+
+output "cf_router_lb_security_group" {
+  value="${aws_security_group.cf_router_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
@@ -541,13 +595,24 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
     to_port     = 80
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
-    Name = "${var.env_name}-cf-router-lb-internal-security-group"
+    Name = "${var.env_id}-cf-router-lb-internal-security-group"
   }
 }
 
+output "cf_router_lb_internal_security_group" {
+  value="${aws_security_group.cf_router_lb_internal_security_group.id}"
+}
+
 resource "aws_elb" "cf_router_lb" {
-  name                      = "${var.env_name}-cf-router-lb"
+  name                      = "${var.env_id}-cf-router-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -593,22 +658,6 @@ output "cf_router_lb_url" {
   value = "${aws_elb.cf_router_lb.dns_name}"
 }
 
-variable "system_domain" {
-  type = "string"
-}
-
-resource "aws_route53_zone" "env_dns_zone" {
-  name = "${var.system_domain}"
-
-  tags {
-    Name = "${var.env_name}-hosted-zone"
-  }
-}
-
-output "env_dns_zone_name_servers" {
-  value = "${aws_route53_zone.env_dns_zone.name_servers}"
-}
-
 resource "aws_security_group" "cf_tcp_lb_security_group" {
   name = "cf_tcp_lb_security_group"
   description = "CF TCP"
@@ -621,9 +670,20 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
     to_port     = 1123
   }
 
-  tags {
-    Name = "${var.env_name}-cf-tcp-lb-security-group"
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags {
+    Name = "${var.env_id}-cf-tcp-lb-security-group"
+  }
+}
+
+output "cf_tcp_lb_security_group" {
+  value="${aws_security_group.cf_tcp_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
@@ -638,13 +698,24 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
     to_port     = 1123
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
-    Name = "${var.env_name}-cf-tcp-lb-internal-security-group"
+    Name = "${var.env_id}-cf-tcp-lb-internal-security-group"
   }
 }
 
+output "cf_tcp_lb_internal_security_group" {
+  value="${aws_security_group.cf_tcp_lb_internal_security_group.id}"
+}
+
 resource "aws_elb" "cf_tcp_lb" {
-  name                      = "${var.env_name}-cf-tcp-lb"
+  name                      = "${var.env_id}-cf-tcp-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -1365,40 +1436,4 @@ output "cf_tcp_lb_name" {
 
 output "cf_tcp_lb_url" {
   value = "${aws_elb.cf_tcp_lb.dns_name}"
-}
-
-resource "aws_route53_record" "wildcard_dns" {
-  zone_id = "${aws_route53_zone.env_dns_zone.id}"
-  name    = "*.${var.system_domain}"
-  type    = "CNAME"
-  ttl     = 300
-
-  records = ["${aws_elb.cf_router_lb.dns_name}"]
-}
-
-resource "aws_route53_record" "ssh" {
-  zone_id = "${aws_route53_zone.env_dns_zone.id}"
-  name    = "ssh.${var.system_domain}"
-  type    = "CNAME"
-  ttl     = 300
-
-  records = ["${aws_elb.cf_ssh_lb.dns_name}"]
-}
-
-resource "aws_route53_record" "bosh" {
-  zone_id = "${aws_route53_zone.env_dns_zone.id}"
-  name    = "bosh.${var.system_domain}"
-  type    = "A"
-  ttl     = 300
-
-  records = ["${aws_eip.bosh_eip.public_ip}"]
-}
-
-resource "aws_route53_record" "tcp" {
-  zone_id = "${aws_route53_zone.env_dns_zone.id}"
-  name    = "tcp.${var.system_domain}"
-  type    = "CNAME"
-  ttl     = 300
-
-  records = ["${aws_elb.cf_tcp_lb.dns_name}"]
 }

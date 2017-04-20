@@ -90,162 +90,274 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("create-lbs", func() {
-		BeforeEach(func() {
-			upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = true
-		})
-
-		AfterEach(func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = false
-		})
-
-		DescribeTable("creates lbs with the specified cert, key, and chain attached",
-			func(lbType, fixtureLocation string) {
-				contents, err := ioutil.ReadFile(fixtureLocation)
-				Expect(err).NotTo(HaveOccurred())
-
-				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, lbType, 0, false)
-
-				certificates := fakeAWS.Certificates.All()
-				Expect(certificates).To(HaveLen(1))
-				Expect(certificates[0].CertificateBody).To(Equal(testhelpers.BBL_CERT))
-				Expect(certificates[0].PrivateKey).To(Equal(testhelpers.BBL_KEY))
-				Expect(certificates[0].Chain).To(Equal(testhelpers.BBL_CHAIN))
-				Expect(certificates[0].Name).To(MatchRegexp(fmt.Sprintf(`%s-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`, lbType)))
-
-				Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-			},
-			Entry("attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
-			Entry("attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
-		)
-
-		It("logs all the steps", func() {
-			session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
-			stdout := session.Out.Contents()
-			Expect(stdout).To(ContainSubstring("step: uploading certificate"))
-			Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
-			Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
-			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
-		})
-
-		It("no-ops if --skip-if-exists is provided and an lb exists", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
-
-			certificates := fakeAWS.Certificates.All()
-			Expect(certificates).To(HaveLen(1))
-
-			originalCertificate := certificates[0]
-
-			session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, true)
-
-			certificates = fakeAWS.Certificates.All()
-			Expect(certificates).To(HaveLen(1))
-
-			Expect(certificates[0].Name).To(Equal(originalCertificate.Name))
-
-			stdout := session.Out.Contents()
-			Expect(stdout).To(ContainSubstring(`lb type "cf" exists, skipping...`))
-		})
-
-		Context("failure cases", func() {
-			Context("when the bosh cli version is <2.0", func() {
-				BeforeEach(func() {
-					fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-						switch request.URL.Path {
-						case "/version":
-							responseWriter.Write([]byte("1.9.0"))
-						}
-					}))
-				})
-
-				It("fast fails with a helpful error message", func() {
-					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
-					Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
-				})
-			})
-
-			Context("when an lb already exists", func() {
-				BeforeEach(func() {
-					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
-				})
-
-				It("exits 1", func() {
-					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
-					stderr := session.Err.Contents()
-
-					Expect(stderr).To(ContainSubstring("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
-				})
-			})
-
-			It("exits 1 when an unknown lb-type is supplied", func() {
-				session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "some-fake-lb-type", 1, false)
-				stderr := session.Err.Contents()
-
-				Expect(stderr).To(ContainSubstring("\"some-fake-lb-type\" is not a valid lb type, valid lb types are: concourse and cf"))
-			})
-
-			Context("when the environment has not been provisioned", func() {
-				It("exits 1 when the cloudformation stack does not exist", func() {
-					state := readStateJson(tempDirectory)
-
-					fakeAWS.Stacks.Delete(state.Stack.Name)
-					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
-					stderr := session.Err.Contents()
-
-					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
-				})
-
-				It("exits 1 when the BOSH director does not exist", func() {
-					writeStateJson(storage.State{
-						Version: 3,
-						IAAS:    "aws",
-						AWS: storage.AWS{
-							AccessKeyID:     "some-access-key",
-							SecretAccessKey: "some-access-secret",
-							Region:          "some-region",
-						},
-						Stack: storage.Stack{
-							Name: "some-stack-name",
-						},
-						BOSH: storage.BOSH{
-							DirectorUsername: "admin",
-							DirectorPassword: "admin",
-							DirectorAddress:  "",
-						},
-					}, tempDirectory)
-
-					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
-					stderr := session.Err.Contents()
-
-					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
-				})
-			})
-
-			Context("when bbl-state.json does not exist", func() {
-				It("exits with status 1 and outputs helpful error message", func() {
-					tempDirectory, err := ioutil.TempDir("", "")
+		var createLBsTests = func(terraform bool) {
+			DescribeTable("creates lbs with the specified cert, key, and chain attached",
+				func(lbType, fixtureLocation string) {
+					contents, err := ioutil.ReadFile(fixtureLocation)
 					Expect(err).NotTo(HaveOccurred())
 
-					args := []string{
-						"--state-dir", tempDirectory,
-						"create-lbs",
+					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, lbType, 0, false)
+
+					if !terraform {
+						checkCertificatesForCloudFormation(fakeAWS, lbType)
 					}
-					cmd := exec.Command(pathToBBL, args...)
 
-					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
+				},
+				Entry("attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
+				Entry("attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
+			)
 
-					Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+			It("logs all the steps", func() {
+				session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
+				stdout := session.Out.Contents()
+				if !terraform {
+					Expect(stdout).To(ContainSubstring("step: uploading certificate"))
+					Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+					Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
+				}
+				Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+				Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+			})
 
-					Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+			if !terraform {
+				It("no-ops if --skip-if-exists is provided and an lb exists", func() {
+					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
+
+					certificates := fakeAWS.Certificates.All()
+					Expect(certificates).To(HaveLen(1))
+
+					originalCertificate := certificates[0]
+
+					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, true)
+
+					certificates = fakeAWS.Certificates.All()
+					Expect(certificates).To(HaveLen(1))
+
+					Expect(certificates[0].Name).To(Equal(originalCertificate.Name))
+
+					stdout := session.Out.Contents()
+					Expect(stdout).To(ContainSubstring(`lb type "cf" exists, skipping...`))
+				})
+			}
+
+			Context("failure cases", func() {
+				Context("when the bosh cli version is <2.0", func() {
+					BeforeEach(func() {
+						fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+							switch request.URL.Path {
+							case "/version":
+								responseWriter.Write([]byte("1.9.0"))
+							}
+						}))
+					})
+
+					It("fast fails with a helpful error message", func() {
+						session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
+						Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+					})
+				})
+
+				if !terraform {
+					Context("when an lb already exists", func() {
+						BeforeEach(func() {
+							createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
+						})
+
+						It("exits 1", func() {
+							session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
+							stderr := session.Err.Contents()
+
+							Expect(stderr).To(ContainSubstring("bbl already has a concourse load balancer attached, please remove the previous load balancer before attaching a new one"))
+						})
+					})
+				}
+
+				It("exits 1 when an unknown lb-type is supplied", func() {
+					session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "some-fake-lb-type", 1, false)
+					stderr := session.Err.Contents()
+
+					Expect(stderr).To(ContainSubstring("\"some-fake-lb-type\" is not a valid lb type, valid lb types are: concourse and cf"))
+				})
+
+				Context("when the environment has not been provisioned", func() {
+					if terraform {
+						It("exits 1 when the terraform state does not exist", func() {
+							state := readStateJson(tempDirectory)
+							state.TFState = ""
+							writeStateJson(state, tempDirectory)
+
+							session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
+							stderr := session.Err.Contents()
+
+							Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+						})
+					} else {
+						It("exits 1 when the cloudformation stack does not exist", func() {
+							state := readStateJson(tempDirectory)
+
+							fakeAWS.Stacks.Delete(state.Stack.Name)
+							session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
+							stderr := session.Err.Contents()
+
+							Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+						})
+					}
+
+					It("exits 1 when the BOSH director does not exist", func() {
+						writeStateJson(storage.State{
+							Version: 3,
+							IAAS:    "aws",
+							AWS: storage.AWS{
+								AccessKeyID:     "some-access-key",
+								SecretAccessKey: "some-access-secret",
+								Region:          "some-region",
+							},
+							Stack: storage.Stack{
+								Name: "some-stack-name",
+							},
+							BOSH: storage.BOSH{
+								DirectorUsername: "admin",
+								DirectorPassword: "admin",
+								DirectorAddress:  "",
+							},
+						}, tempDirectory)
+
+						session := createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 1, false)
+						stderr := session.Err.Contents()
+
+						Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+					})
+				})
+
+				Context("when bbl-state.json does not exist", func() {
+					It("exits with status 1 and outputs helpful error message", func() {
+						tempDirectory, err := ioutil.TempDir("", "")
+						Expect(err).NotTo(HaveOccurred())
+
+						args := []string{
+							"--state-dir", tempDirectory,
+							"create-lbs",
+						}
+						cmd := exec.Command(pathToBBL, args...)
+
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+
+						Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+
+						Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+					})
 				})
 			})
+		}
+
+		Context("when bbl'd up with cloudformation", func() {
+			BeforeEach(func() {
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = true
+			})
+
+			AfterEach(func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = false
+			})
+
+			createLBsTests(false)
+		})
+
+		Context("when bbl'd up with terraform", func() {
+			BeforeEach(func() {
+				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					switch request.URL.Path {
+					case "/output/--json":
+						responseWriter.Write([]byte(fmt.Sprintf(`{
+							"bosh_eip": {
+								"value": "some-bosh-eip"
+							},
+							"bosh_url": {
+								"value": %q
+							},
+							"bosh_user_access_key": {
+								"value": "some-bosh-user-access-key"
+							},
+							"bosh_user_secret_access_key": {
+								"value": "some-bosh-user-secret-access_key"
+							},
+							"nat_eip": {
+								"value": "some-nat-eip"
+							},
+							"bosh_subnet_id": {
+								"value": "some-bosh-subnet-id"
+							},
+							"bosh_subnet_availability_zone": {
+								"value": "some-bosh-subnet-availability-zone"
+							},
+							"bosh_security_group": {
+								"value": "some-bosh-security-group"
+							},
+							"internal_security_group": {
+								"value": "some-internal-security-group"
+							},
+							"internal_subnet_ids": {
+								"value": [
+									"some-internal-subnet-ids-1",
+									"some-internal-subnet-ids-2",
+									"some-internal-subnet-ids-3"
+								]
+							},
+							"internal_subnet_cidrs": {
+								"value": [
+									"10.0.16.0/20",
+									"10.0.32.0/20",
+									"10.0.48.0/20"
+								]
+							},
+							"vpc_id": {
+								"value": "some-vpc-id"
+							},
+							"cf_router_lb_name": {
+								"value": "some-cf-router-lb"
+							},
+							"cf_router_lb_internal_security_group": {
+								"value": "some-cf-router-internal-security-group"
+							},
+							"cf_ssh_lb_name":  {
+								"value": "some-cf-ssh-proxy-lb"
+							},
+							"cf_ssh_lb_internal_security_group":  {
+								"value": "some-cf-ssh-proxy-internal-security-group"
+							},
+							"concourse_lb_name":  {
+								"value": "some-concourse-lb"
+							},
+							"concourse_lb_internal_security_group":  {
+								"value": "some-concourse-internal-security-group"
+							}
+						}`, fakeBOSHServer.URL)))
+					case "/version":
+						responseWriter.Write([]byte("0.8.6"))
+					}
+				}))
+
+				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
+
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = true
+			})
+
+			AfterEach(func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = false
+			})
+
+			createLBsTests(true)
 		})
 	})
 
@@ -820,6 +932,7 @@ func createLBs(endpointOverrideURL string, stateDir string, certName string, key
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
 		"--state-dir", stateDir,
+		"--debug",
 		"create-lbs",
 		"--type", lbType,
 		"--cert", certName,
@@ -832,4 +945,13 @@ func createLBs(endpointOverrideURL string, stateDir string, certName string, key
 	}
 
 	return executeCommand(args, exitCode)
+}
+
+func checkCertificatesForCloudFormation(fakeAWS *awsbackend.Backend, lbType string) {
+	certificates := fakeAWS.Certificates.All()
+	Expect(certificates).To(HaveLen(1))
+	Expect(certificates[0].CertificateBody).To(Equal(testhelpers.BBL_CERT))
+	Expect(certificates[0].PrivateKey).To(Equal(testhelpers.BBL_KEY))
+	Expect(certificates[0].Chain).To(Equal(testhelpers.BBL_CHAIN))
+	Expect(certificates[0].Name).To(MatchRegexp(fmt.Sprintf(`%s-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`, lbType)))
 }

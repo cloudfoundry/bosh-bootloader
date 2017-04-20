@@ -20,18 +20,37 @@ var _ = Describe("OutputGenerator", func() {
 	BeforeEach(func() {
 		executor = &fakes.TerraformExecutor{}
 		executor.OutputsCall.Returns.Outputs = map[string]interface{}{
-			"bosh_eip":                      "some-bosh-eip",
-			"bosh_url":                      "some-bosh-url",
-			"bosh_user_access_key":          "some-bosh-user-access-key",
-			"bosh_user_secret_access_key":   "some-bosh-user-secret-access_key",
-			"nat_eip":                       "some-nat-eip",
-			"bosh_subnet_id":                "some-bosh-subnet-id",
-			"bosh_subnet_availability_zone": "some-bosh-subnet-availability-zone",
-			"bosh_security_group":           "some-bosh-security-group",
-			"internal_security_group":       "some-internal-security-group",
-			"internal_subnet_ids":           "some-internal-subnet-ids",
-			"internal_subnet_cidrs":         "some-internal-subnet-cidrs",
-			"vpc_id":                        "some-vpc-id",
+			"bosh_eip":                             "some-bosh-eip",
+			"bosh_url":                             "some-bosh-url",
+			"bosh_user_access_key":                 "some-bosh-user-access-key",
+			"bosh_user_secret_access_key":          "some-bosh-user-secret-access_key",
+			"bosh_subnet_id":                       "some-bosh-subnet-id",
+			"bosh_subnet_availability_zone":        "some-bosh-subnet-availability-zone",
+			"bosh_security_group":                  "some-bosh-security-group",
+			"internal_security_group":              "some-internal-security-group",
+			"internal_subnet_ids":                  "some-internal-subnet-ids",
+			"internal_subnet_cidrs":                "some-internal-subnet-cidrs",
+			"lb_subnet_ids":                        "some-lb-subnet-ids",
+			"lb_subnet_availability_zones":         "some-lb-subnet-availability-zones",
+			"lb_subnet_cidrs":                      "some-lb-subnet-cidrs",
+			"concourse_lb_name":                    "some-concourse-lb-name",
+			"concourse_lb_url":                     "some-concourse-lb-url",
+			"concourse_lb_internal_security_group": "some-concourse-internal-security-group",
+			"cf_ssh_lb_security_group":             "some-cf-ssh-lb-security_group",
+			"cf_ssh_lb_internal_security_group":    "some-cf-ssh-proxy-internal-security-group",
+			"cf_router_lb_security_group":          "some-cf-router-lb-security_group",
+			"cf_router_lb_internal_security_group": "some-cf-router-internal-security-group",
+			"cf_tcp_lb_security_group":             "some-cf-tcp-lb-security_group",
+			"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security_group",
+			"cf_ssh_lb_name":                       "some-cf-ssh-proxy-lb",
+			"cf_ssh_lb_url":                        "some-cf-ssh-lb-url",
+			"cf_router_lb_name":                    "some-cf-router-lb",
+			"cf_router_lb_url":                     "some-cf-router-lb-url",
+			"cf_tcp_lb_name":                       "some-cf-tcp-lb-name",
+			"cf_tcp_lb_url":                        "some-cf-tcp-lb-url",
+			"env_dns_zone_name_servers":            "some-env-dns-zone-name-servers",
+			"nat_eip":                              "some-nat-eip",
+			"vpc_id":                               "some-vpc-id",
 		}
 
 		outputGenerator = aws.NewOutputGenerator(executor)
@@ -63,6 +82,72 @@ var _ = Describe("OutputGenerator", func() {
 				"internal_security_group": "some-internal-security-group",
 				"internal_subnet_ids":     "some-internal-subnet-ids",
 				"internal_subnet_cidrs":   "some-internal-subnet-cidrs",
+			}))
+		})
+	})
+
+	Context("when cf lbs exist", func() {
+		It("returns all terraform outputs including cf lb related outputs", func() {
+			outputs, err := outputGenerator.Generate(storage.State{
+				IAAS:    "aws",
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
+				LB: storage.LB{
+					Type:   "cf",
+					Domain: "",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-tf-state"))
+
+			Expect(outputs).To(Equal(map[string]interface{}{
+				"az":                                   "some-bosh-subnet-availability-zone",
+				"external_ip":                          "some-bosh-eip",
+				"director_address":                     "some-bosh-url",
+				"access_key_id":                        "some-bosh-user-access-key",
+				"secret_access_key":                    "some-bosh-user-secret-access_key",
+				"subnet_id":                            "some-bosh-subnet-id",
+				"default_security_groups":              "some-bosh-security-group",
+				"internal_security_group":              "some-internal-security-group",
+				"internal_subnet_ids":                  "some-internal-subnet-ids",
+				"internal_subnet_cidrs":                "some-internal-subnet-cidrs",
+				"cf_router_load_balancer":              "some-cf-router-lb",
+				"cf_router_internal_security_group":    "some-cf-router-internal-security-group",
+				"cf_ssh_proxy_load_balancer":           "some-cf-ssh-proxy-lb",
+				"cf_ssh_proxy_internal_security_group": "some-cf-ssh-proxy-internal-security-group",
+			}))
+		})
+	})
+
+	Context("when the concourse lb exists", func() {
+		It("returns all terraform outputs including concourse lb related outputs", func() {
+			outputs, err := outputGenerator.Generate(storage.State{
+				IAAS:    "aws",
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
+				LB: storage.LB{
+					Type:   "concourse",
+					Domain: "",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-tf-state"))
+
+			Expect(outputs).To(Equal(map[string]interface{}{
+				"az":                                "some-bosh-subnet-availability-zone",
+				"external_ip":                       "some-bosh-eip",
+				"director_address":                  "some-bosh-url",
+				"access_key_id":                     "some-bosh-user-access-key",
+				"secret_access_key":                 "some-bosh-user-secret-access_key",
+				"subnet_id":                         "some-bosh-subnet-id",
+				"default_security_groups":           "some-bosh-security-group",
+				"internal_security_group":           "some-internal-security-group",
+				"internal_subnet_ids":               "some-internal-subnet-ids",
+				"internal_subnet_cidrs":             "some-internal-subnet-cidrs",
+				"concourse_load_balancer":           "some-concourse-lb-name",
+				"concourse_internal_security_group": "some-concourse-internal-security-group",
 			}))
 		})
 	})

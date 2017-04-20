@@ -52,9 +52,11 @@ var _ = Describe("Store", func() {
 					PublicKey:  "some-public",
 				},
 				LB: storage.LB{
-					Type: "some-type",
-					Cert: "some-cert",
-					Key:  "some-key",
+					Type:   "some-type",
+					Cert:   "some-cert",
+					Key:    "some-key",
+					Chain:  "some-chain",
+					Domain: "some-domain",
 				},
 				BOSH: storage.BOSH{
 					DirectorName:           "some-director-name",
@@ -121,7 +123,9 @@ var _ = Describe("Store", func() {
 				"lb": {
 					"type": "some-type",
 					"cert": "some-cert",
-					"key": "some-key"
+					"key": "some-key",
+					"chain": "some-chain",
+					"domain": "some-domain"
 				},
 				"bosh":{
 					"directorName": "some-director-name",

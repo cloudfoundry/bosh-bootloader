@@ -20,7 +20,11 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	case "concourse":
 		template = strings.Join([]string{template, LBSubnetTemplate, ConcourseLBTemplate}, "\n")
 	case "cf":
-		template = strings.Join([]string{template, LBSubnetTemplate, CFLBTemplate}, "\n")
+		if state.LB.Domain != "" {
+			template = strings.Join([]string{template, LBSubnetTemplate, CFLBTemplate, CFDNSTemplate}, "\n")
+		} else {
+			template = strings.Join([]string{template, LBSubnetTemplate, CFLBTemplate}, "\n")
+		}
 	}
 
 	return template

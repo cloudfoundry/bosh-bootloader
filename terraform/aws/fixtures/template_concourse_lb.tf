@@ -109,6 +109,13 @@ resource "aws_security_group" "nat_security_group" {
     security_groups = ["${aws_security_group.internal_security_group.id}"]
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
     Name = "${var.env_id}-nat-security-group"
   }
@@ -182,6 +189,13 @@ resource "aws_security_group" "internal_security_group" {
     to_port      = -1
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
     Name = "${var.env_id}-internal-security-group"
   }
@@ -233,6 +247,13 @@ resource "aws_security_group" "bosh_security_group" {
     from_port         = 0
     to_port           = 65535
     security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags {
@@ -436,8 +457,15 @@ resource "aws_security_group" "concourse_lb_security_group" {
     to_port     = 443
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
-    Name = "${var.env_name}-concourse-lb-security-group"
+    Name = "${var.env_id}-concourse-lb-security-group"
   }
 }
 
@@ -460,13 +488,24 @@ resource "aws_security_group" "concourse_lb_internal_security_group" {
     to_port     = 2222
   }
 
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags {
-    Name = "${var.env_name}-concourse-lb-internal-security-group"
+    Name = "${var.env_id}-concourse-lb-internal-security-group"
   }
 }
 
+output "concourse_lb_internal_security_group" {
+  value="${aws_security_group.concourse_lb_internal_security_group.id}"
+}
+
 resource "aws_elb" "concourse_lb" {
-  name                      = "${var.env_name}-concourse-lb"
+  name                      = "${var.env_id}-concourse-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -492,11 +531,10 @@ resource "aws_elb" "concourse_lb" {
   }
 
   listener {
-    instance_port      = 8080
+    instance_port      = 4443
     instance_protocol  = "tcp"
     lb_port            = 443
-    lb_protocol        = "ssl"
-    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+    lb_protocol        = "tcp"
   }
 
   security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]

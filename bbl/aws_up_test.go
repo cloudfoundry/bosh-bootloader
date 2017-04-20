@@ -184,9 +184,9 @@ var _ = Describe("bbl up aws", func() {
 					},
 					"internal_subnet_cidrs": {
 						"value": [
-							"10.0.16.0/24",
-							"10.0.32.0/24",
-							"10.0.48.0/24"
+							"10.0.16.0/20",
+							"10.0.32.0/20",
+							"10.0.48.0/20"
 						]
 					},
 					"vpc_id": {
@@ -840,6 +840,10 @@ var _ = Describe("bbl up aws", func() {
 })
 
 func upAWS(serverURL string, tempDirectory string, exitCode int) *gexec.Session {
+	return upAWSWithAdditionalFlags(serverURL, tempDirectory, []string{}, exitCode)
+}
+
+func upAWSWithAdditionalFlags(serverURL string, tempDirectory string, additionalArgs []string, exitCode int) *gexec.Session {
 	args := []string{
 		fmt.Sprintf("--endpoint-override=%s", serverURL),
 		"--state-dir", tempDirectory,
@@ -850,6 +854,7 @@ func upAWS(serverURL string, tempDirectory string, exitCode int) *gexec.Session 
 		"--aws-secret-access-key", "some-access-secret",
 		"--aws-region", "some-region",
 	}
+	args = append(args, additionalArgs...)
 
 	return executeCommand(args, exitCode)
 }

@@ -25,40 +25,165 @@ var _ = Describe("InputGenerator", func() {
 		inputGenerator = aws.NewInputGenerator(availabilityZoneRetriever)
 	})
 
-	It("receives BBL state and returns a map of terraform variables", func() {
-		inputs, err := inputGenerator.Generate(storage.State{
-			IAAS:    "aws",
-			EnvID:   "some-env-id",
-			TFState: "some-tf-state",
-			AWS: storage.AWS{
-				AccessKeyID:     "some-access-key-id",
-				SecretAccessKey: "some-secret-access-key",
-				Region:          "some-region",
-			},
-			KeyPair: storage.KeyPair{
-				Name: "some-key-pair-name",
-			},
-			Stack: storage.Stack{
-				BOSHAZ: "some-zone",
-			},
-			LB: storage.LB{
-				Type:   "",
-				Domain: "",
-			},
+	Context("when no lbs exist", func() {
+		It("receives BBL state and returns a map of terraform variables", func() {
+			inputs, err := inputGenerator.Generate(storage.State{
+				IAAS:    "aws",
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-key-pair-name",
+				},
+				Stack: storage.Stack{
+					BOSHAZ: "some-zone",
+				},
+				LB: storage.LB{
+					Type:   "",
+					Domain: "",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+
+			Expect(inputs).To(Equal(map[string]string{
+				"env_id":                 "some-env-id",
+				"nat_ssh_key_pair_name":  "some-key-pair-name",
+				"access_key":             "some-access-key-id",
+				"secret_key":             "some-secret-access-key",
+				"region":                 "some-region",
+				"bosh_availability_zone": "some-zone",
+				"availability_zones":     `["z1","z2","z3"]`,
+			}))
 		})
-		Expect(err).NotTo(HaveOccurred())
+	})
 
-		Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+	Context("when a cf lb exists", func() {
+		var (
+			state storage.State
+		)
 
-		Expect(inputs).To(Equal(map[string]string{
-			"env_id":                 "some-env-id",
-			"nat_ssh_key_pair_name":  "some-key-pair-name",
-			"access_key":             "some-access-key-id",
-			"secret_key":             "some-secret-access-key",
-			"region":                 "some-region",
-			"bosh_availability_zone": "some-zone",
-			"availability_zones":     `["z1","z2","z3"]`,
-		}))
+		BeforeEach(func() {
+			state = storage.State{
+				IAAS:    "aws",
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-key-pair-name",
+				},
+				Stack: storage.Stack{
+					BOSHAZ: "some-zone",
+				},
+				LB: storage.LB{
+					Type:  "cf",
+					Cert:  "some-cert",
+					Chain: "some-chain",
+					Key:   "some-key",
+				},
+			}
+		})
+
+		It("returns a map with additional cf load balancer inputs", func() {
+			inputs, err := inputGenerator.Generate(state)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+
+			Expect(inputs).To(Equal(map[string]string{
+				"env_id":                      "some-env-id",
+				"nat_ssh_key_pair_name":       "some-key-pair-name",
+				"access_key":                  "some-access-key-id",
+				"secret_key":                  "some-secret-access-key",
+				"region":                      "some-region",
+				"bosh_availability_zone":      "some-zone",
+				"availability_zones":          `["z1","z2","z3"]`,
+				"ssl_certificate":             "some-cert",
+				"ssl_certificate_chain":       "some-chain",
+				"ssl_certificate_private_key": "some-key",
+			}))
+		})
+
+		Context("when a domain name is supplied", func() {
+			BeforeEach(func() {
+				state.LB.Domain = "some-domain"
+			})
+
+			It("returns a map with additional domain input", func() {
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+
+				Expect(inputs).To(Equal(map[string]string{
+					"env_id":                      "some-env-id",
+					"nat_ssh_key_pair_name":       "some-key-pair-name",
+					"access_key":                  "some-access-key-id",
+					"secret_key":                  "some-secret-access-key",
+					"region":                      "some-region",
+					"bosh_availability_zone":      "some-zone",
+					"availability_zones":          `["z1","z2","z3"]`,
+					"ssl_certificate":             "some-cert",
+					"ssl_certificate_chain":       "some-chain",
+					"ssl_certificate_private_key": "some-key",
+					"system_domain":               "some-domain",
+				}))
+			})
+		})
+	})
+
+	Context("when a concourse lb exists", func() {
+		var (
+			state storage.State
+		)
+
+		BeforeEach(func() {
+			state = storage.State{
+				IAAS:    "aws",
+				EnvID:   "some-env-id",
+				TFState: "some-tf-state",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-key-pair-name",
+				},
+				Stack: storage.Stack{
+					BOSHAZ: "some-zone",
+				},
+				LB: storage.LB{
+					Type: "concourse",
+				},
+			}
+		})
+
+		It("returns a map with additional concourse load balancer inputs", func() {
+			inputs, err := inputGenerator.Generate(state)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+
+			Expect(inputs).To(Equal(map[string]string{
+				"env_id":                 "some-env-id",
+				"nat_ssh_key_pair_name":  "some-key-pair-name",
+				"access_key":             "some-access-key-id",
+				"secret_key":             "some-secret-access-key",
+				"region":                 "some-region",
+				"bosh_availability_zone": "some-zone",
+				"availability_zones":     `["z1","z2","z3"]`,
+			}))
+		})
 	})
 
 	Context("failure cases", func() {

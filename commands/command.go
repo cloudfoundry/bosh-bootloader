@@ -13,10 +13,13 @@ type Command interface {
 	Usage() string
 }
 
-func bblExists(stackName string, infrastructureManager infrastructureManager, boshClient bosh.Client) error {
-	if stackExists, err := infrastructureManager.Exists(stackName); err != nil {
+func bblExists(stackName string, infrastructureManager infrastructureManager, boshClient bosh.Client, tfState string) error {
+	stackExists, err := infrastructureManager.Exists(stackName)
+	if err != nil {
 		return err
-	} else if !stackExists {
+	}
+
+	if !stackExists && tfState == "" {
 		return BBLNotFound
 	}
 
@@ -32,7 +35,7 @@ func checkBBLAndLB(state storage.State, boshClientProvider boshClientProvider, i
 		boshClient := boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
 			state.BOSH.DirectorPassword)
 
-		if err := bblExists(state.Stack.Name, infrastructureManager, boshClient); err != nil {
+		if err := bblExists(state.Stack.Name, infrastructureManager, boshClient, state.TFState); err != nil {
 			return err
 		}
 	}
