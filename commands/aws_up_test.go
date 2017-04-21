@@ -21,18 +21,19 @@ import (
 var _ = Describe("AWSUp", func() {
 	Describe("Execute", func() {
 		var (
-			command                   commands.AWSUp
-			boshManager               *fakes.BOSHManager
-			terraformManager          *fakes.TerraformManager
-			infrastructureManager     *fakes.InfrastructureManager
-			keyPairManager            *fakes.KeyPairManager
-			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-			certificateDescriber      *fakes.CertificateDescriber
-			credentialValidator       *fakes.CredentialValidator
-			cloudConfigManager        *fakes.CloudConfigManager
-			stateStore                *fakes.StateStore
-			clientProvider            *fakes.ClientProvider
-			envIDManager              *fakes.EnvIDManager
+			command                    commands.AWSUp
+			boshManager                *fakes.BOSHManager
+			terraformManager           *fakes.TerraformManager
+			infrastructureManager      *fakes.InfrastructureManager
+			keyPairManager             *fakes.KeyPairManager
+			availabilityZoneRetriever  *fakes.AvailabilityZoneRetriever
+			certificateDescriber       *fakes.CertificateDescriber
+			credentialValidator        *fakes.CredentialValidator
+			cloudConfigManager         *fakes.CloudConfigManager
+			brokenEnvironmentValidator *fakes.BrokenEnvironmentValidator
+			stateStore                 *fakes.StateStore
+			clientProvider             *fakes.ClientProvider
+			envIDManager               *fakes.EnvIDManager
 		)
 
 		BeforeEach(func() {
@@ -93,10 +94,12 @@ var _ = Describe("AWSUp", func() {
 			envIDManager = &fakes.EnvIDManager{}
 			envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time-stamp"
 
+			brokenEnvironmentValidator = &fakes.BrokenEnvironmentValidator{}
+
 			command = commands.NewAWSUp(
 				credentialValidator, infrastructureManager, keyPairManager, boshManager,
 				availabilityZoneRetriever, certificateDescriber, cloudConfigManager,
-				stateStore, clientProvider, envIDManager, terraformManager,
+				stateStore, clientProvider, envIDManager, terraformManager, brokenEnvironmentValidator,
 			)
 		})
 
@@ -803,10 +806,10 @@ var _ = Describe("AWSUp", func() {
 				Expect(err).To(MatchError("failed to update"))
 			})
 
-			It("returns an error when the BOSH state exists, but the cloudformation stack does not", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = false
-
+			It("returns an error when the broken environment validator fails", func() {
+				brokenEnvironmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{
+					IAAS: "aws",
 					AWS: storage.AWS{
 						Region: "some-aws-region",
 					},
@@ -818,21 +821,22 @@ var _ = Describe("AWSUp", func() {
 					},
 				})
 
-				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack-name"))
+				Expect(brokenEnvironmentValidator.ValidateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "aws",
+					AWS: storage.AWS{
+						Region: "some-aws-region",
+					},
+					BOSH: storage.BOSH{
+						DirectorAddress: "some-director-address",
+					},
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+				}))
 
-				Expect(err).To(MatchError("Found BOSH data in state directory, " +
-					"but Cloud Formation stack \"some-stack-name\" cannot be found for region \"some-aws-region\" and given " +
-					"AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at " +
-					"https://github.com/cloudfoundry/bosh-bootloader/issues/new if you need assistance."))
+				Expect(err).To(MatchError("failed to validate"))
 
 				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
-			})
-
-			It("returns an error when checking if the infrastructure exists fails", func() {
-				infrastructureManager.ExistsCall.Returns.Error = errors.New("error checking if stack exists")
-
-				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-				Expect(err).To(MatchError("error checking if stack exists"))
 			})
 
 			It("returns an error when infrastructure cannot be created", func() {

@@ -150,6 +150,7 @@ func main() {
 	boshClientProvider := bosh.NewClientProvider()
 
 	// Environment Validators
+	awsBrokenEnvironmentValidator := awsapplication.NewBrokenEnvironmentValidator(infrastructureManager)
 	awsEnvironmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
 	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 
@@ -164,7 +165,7 @@ func main() {
 	awsUp := commands.NewAWSUp(
 		awsCredentialValidator, infrastructureManager, keyPairManager, boshManager,
 		availabilityZoneRetriever, certificateDescriber,
-		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager)
+		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,

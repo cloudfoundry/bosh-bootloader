@@ -62,18 +62,23 @@ type cloudConfigManager interface {
 	Generate(state storage.State) (string, error)
 }
 
+type brokenEnvironmentValidator interface {
+	Validate(state storage.State) error
+}
+
 type AWSUp struct {
-	credentialValidator       credentialValidator
-	infrastructureManager     infrastructureManager
-	keyPairManager            keyPairManager
-	boshManager               boshManager
-	availabilityZoneRetriever availabilityZoneRetriever
-	certificateDescriber      certificateDescriber
-	cloudConfigManager        cloudConfigManager
-	stateStore                stateStore
-	configProvider            configProvider
-	envIDManager              envIDManager
-	terraformManager          terraformManager
+	credentialValidator        credentialValidator
+	infrastructureManager      infrastructureManager
+	keyPairManager             keyPairManager
+	boshManager                boshManager
+	availabilityZoneRetriever  availabilityZoneRetriever
+	certificateDescriber       certificateDescriber
+	cloudConfigManager         cloudConfigManager
+	stateStore                 stateStore
+	configProvider             configProvider
+	envIDManager               envIDManager
+	terraformManager           terraformManager
+	brokenEnvironmentValidator brokenEnvironmentValidator
 }
 
 type AWSUpConfig struct {
@@ -92,21 +97,22 @@ func NewAWSUp(
 	keyPairManager keyPairManager, boshManager boshManager,
 	availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
-	stateStore stateStore,
-	configProvider configProvider, envIDManager envIDManager, terraformManager terraformManager) AWSUp {
+	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
+	terraformManager terraformManager, brokenEnvironmentValidator brokenEnvironmentValidator) AWSUp {
 
 	return AWSUp{
-		credentialValidator:       credentialValidator,
-		infrastructureManager:     infrastructureManager,
-		keyPairManager:            keyPairManager,
-		boshManager:               boshManager,
-		availabilityZoneRetriever: availabilityZoneRetriever,
-		certificateDescriber:      certificateDescriber,
-		cloudConfigManager:        cloudConfigManager,
-		stateStore:                stateStore,
-		configProvider:            configProvider,
-		envIDManager:              envIDManager,
-		terraformManager:          terraformManager,
+		credentialValidator:        credentialValidator,
+		infrastructureManager:      infrastructureManager,
+		keyPairManager:             keyPairManager,
+		boshManager:                boshManager,
+		availabilityZoneRetriever:  availabilityZoneRetriever,
+		certificateDescriber:       certificateDescriber,
+		cloudConfigManager:         cloudConfigManager,
+		stateStore:                 stateStore,
+		configProvider:             configProvider,
+		envIDManager:               envIDManager,
+		terraformManager:           terraformManager,
+		brokenEnvironmentValidator: brokenEnvironmentValidator,
 	}
 }
 
@@ -256,17 +262,9 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 }
 
 func (u AWSUp) checkForFastFails(state storage.State, config AWSUpConfig) error {
-	stackExists, err := u.infrastructureManager.Exists(state.Stack.Name)
+	err := u.brokenEnvironmentValidator.Validate(state)
 	if err != nil {
 		return err
-	}
-
-	if !state.BOSH.IsEmpty() && !stackExists {
-		return fmt.Errorf(
-			"Found BOSH data in state directory, but Cloud Formation stack %q cannot be found "+
-				"for region %q and given AWS credentials. bbl cannot safely proceed. Open an issue on GitHub at "+
-				"https://github.com/cloudfoundry/bosh-bootloader/issues/new if you need assistance.",
-			state.Stack.Name, state.AWS.Region)
 	}
 
 	if state.Stack.Name != "" && state.Stack.BOSHAZ != config.BOSHAZ {
