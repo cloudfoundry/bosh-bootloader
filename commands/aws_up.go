@@ -8,10 +8,10 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
+	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -19,8 +19,8 @@ const (
 	UpCommand = "up"
 )
 
-type keyPairSynchronizer interface {
-	Sync(keypair ec2.KeyPair) (ec2.KeyPair, error)
+type keyPairManager interface {
+	Sync(storage.State) (storage.State, error)
 }
 
 type infrastructureManager interface {
@@ -65,7 +65,7 @@ type cloudConfigManager interface {
 type AWSUp struct {
 	credentialValidator       credentialValidator
 	infrastructureManager     infrastructureManager
-	keyPairSynchronizer       keyPairSynchronizer
+	keyPairManager            keyPairManager
 	boshManager               boshManager
 	availabilityZoneRetriever availabilityZoneRetriever
 	certificateDescriber      certificateDescriber
@@ -89,7 +89,7 @@ type AWSUpConfig struct {
 
 func NewAWSUp(
 	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairSynchronizer keyPairSynchronizer, boshManager boshManager,
+	keyPairManager keyPairManager, boshManager boshManager,
 	availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	stateStore stateStore,
@@ -98,7 +98,7 @@ func NewAWSUp(
 	return AWSUp{
 		credentialValidator:       credentialValidator,
 		infrastructureManager:     infrastructureManager,
-		keyPairSynchronizer:       keyPairSynchronizer,
+		keyPairManager:            keyPairManager,
 		boshManager:               boshManager,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		certificateDescriber:      certificateDescriber,
@@ -154,25 +154,26 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 
 	state.EnvID = envID
 
-	if state.KeyPair.Name == "" {
-		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
-	}
-
 	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
-	keyPair, err := u.keyPairSynchronizer.Sync(ec2.KeyPair{
-		Name:       state.KeyPair.Name,
-		PublicKey:  state.KeyPair.PublicKey,
-		PrivateKey: state.KeyPair.PrivateKey,
-	})
-	if err != nil {
+	state, err = u.keyPairManager.Sync(state)
+	switch err := err.(type) {
+	case keypair.ManagerError:
+		updatedBBLState := err.BBLState()
+		setErr := u.stateStore.Set(updatedBBLState)
+		if setErr != nil {
+			errorList := helpers.Errors{}
+			errorList.Add(err)
+			errorList.Add(setErr)
+			return errorList
+		}
+		return err
+	case nil:
+	default:
 		return err
 	}
-
-	state.KeyPair.PublicKey = keyPair.PublicKey
-	state.KeyPair.PrivateKey = keyPair.PrivateKey
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err

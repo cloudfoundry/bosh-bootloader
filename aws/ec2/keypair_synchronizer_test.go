@@ -8,53 +8,161 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("KeyPairSynchronizer", func() {
-	var (
-		synchronizer   ec2.KeyPairSynchronizer
-		keyPairManager *fakes.KeyPairManager
-	)
+	Describe("Sync", func() {
+		var (
+			stateKeyPair ec2.KeyPair
+			creator      *fakes.KeyPairCreator
+			checker      *fakes.KeyPairChecker
+			logger       *fakes.Logger
+			manager      ec2.KeyPairSynchronizer
+		)
 
-	BeforeEach(func() {
-		keyPairManager = &fakes.KeyPairManager{}
-		keyPairManager.SyncCall.Returns.KeyPair = ec2.KeyPair{
-			Name:       "updated-keypair-name",
-			PrivateKey: "updated-private-key",
-			PublicKey:  "updated-public-key",
-		}
-
-		synchronizer = ec2.NewKeyPairSynchronizer(keyPairManager)
-	})
-
-	It("syncs the keypair", func() {
-		keyPair, err := synchronizer.Sync(ec2.KeyPair{
-			Name:       "some-keypair-name",
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
+		BeforeEach(func() {
+			creator = &fakes.KeyPairCreator{}
+			checker = &fakes.KeyPairChecker{}
+			logger = &fakes.Logger{}
+			manager = ec2.NewKeyPairSynchronizer(creator, checker, logger)
 		})
-		Expect(err).NotTo(HaveOccurred())
 
-		Expect(keyPairManager.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
-			Name:       "some-keypair-name",
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
-		}))
+		It("checks if keypair already exists", func() {
+			stateKeyPair = ec2.KeyPair{Name: "keypair-some-env-id"}
 
-		Expect(keyPair).To(Equal(ec2.KeyPair{
-			Name:       "updated-keypair-name",
-			PublicKey:  "updated-public-key",
-			PrivateKey: "updated-private-key",
-		}))
-	})
+			_, err := manager.Sync(stateKeyPair)
+			Expect(err).NotTo(HaveOccurred())
 
-	Context("failure cases", func() {
-		Context("when the key pair cannot by synced", func() {
-			It("returns an error", func() {
-				keyPairManager.SyncCall.Returns.Error = errors.New("failed to sync")
+			Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
 
-				_, err := synchronizer.Sync(ec2.KeyPair{})
-				Expect(err).To(MatchError("failed to sync"))
+			Expect(logger.StepCall.Messages).To(ContainElement(`checking if keypair "keypair-some-env-id" exists`))
+		})
+
+		Context("no keypair in state file", func() {
+			BeforeEach(func() {
+				stateKeyPair = ec2.KeyPair{Name: "keypair-some-env-id"}
+				checker.HasKeyPairCall.Returns.Present = false
+			})
+
+			It("creates a keypair", func() {
+				creator.CreateCall.Returns.KeyPair = ec2.KeyPair{
+					Name:       "keypair-some-env-id",
+					PublicKey:  "public",
+					PrivateKey: "private",
+				}
+
+				keypair, err := manager.Sync(stateKeyPair)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(keypair).To(Equal(ec2.KeyPair{
+					Name:       "keypair-some-env-id",
+					PublicKey:  "public",
+					PrivateKey: "private",
+				}))
+
+				Expect(creator.CreateCall.Receives.KeyPairName).To(Equal("keypair-some-env-id"))
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					`checking if keypair "keypair-some-env-id" exists`,
+					"creating keypair",
+				}))
+			})
+
+			Context("error cases", func() {
+				Context("when the keypair cannot be created", func() {
+					It("returns an error", func() {
+						creator.CreateCall.Returns.Error = errors.New("failed to create key pair")
+
+						_, err := manager.Sync(stateKeyPair)
+						Expect(err).To(MatchError("failed to create key pair"))
+					})
+				})
+
+				Context("when remote keypair retrieve fails", func() {
+					It("returns an error", func() {
+						checker.HasKeyPairCall.Stub = nil
+						checker.HasKeyPairCall.Returns.Error = errors.New("keypair retrieve failed")
+
+						_, err := manager.Sync(stateKeyPair)
+						Expect(err).To(MatchError("keypair retrieve failed"))
+					})
+				})
+			})
+		})
+
+		Context("when the keypair is in the state file, but not on ec2", func() {
+			BeforeEach(func() {
+				stateKeyPair = ec2.KeyPair{
+					Name:       "my-keypair",
+					PublicKey:  "public",
+					PrivateKey: "private",
+				}
+				checker.HasKeyPairCall.Stub = func(name string) (bool, error) {
+					if checker.HasKeyPairCall.CallCount == 1 {
+						return false, nil
+					}
+
+					return true, nil
+				}
+			})
+
+			It("creates a keypair", func() {
+				creator.CreateCall.Returns.KeyPair = ec2.KeyPair{
+					Name:       "my-keypair",
+					PublicKey:  "public",
+					PrivateKey: "private",
+				}
+
+				keypair, err := manager.Sync(stateKeyPair)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(keypair).To(Equal(ec2.KeyPair{
+					Name:       "my-keypair",
+					PublicKey:  "public",
+					PrivateKey: "private",
+				}))
+
+				Expect(checker.HasKeyPairCall.CallCount).To(Equal(1))
+			})
+
+			Context("failure cases", func() {
+				Context("when the keypair cannot be created", func() {
+					It("returns an error", func() {
+						creator.CreateCall.Returns.Error = errors.New("failed to create key pair")
+
+						_, err := manager.Sync(stateKeyPair)
+						Expect(err).To(MatchError("failed to create key pair"))
+					})
+				})
+
+				Context("remote keypair retrieve fails", func() {
+					It("returns an error", func() {
+						checker.HasKeyPairCall.Stub = nil
+						checker.HasKeyPairCall.Returns.Error = errors.New("keypair retrieve failed")
+
+						_, err := manager.Sync(ec2.KeyPair{})
+						Expect(err).To(MatchError("keypair retrieve failed"))
+					})
+				})
+			})
+		})
+
+		Context("when the keypair is in the state file and on ec2", func() {
+			BeforeEach(func() {
+				stateKeyPair = ec2.KeyPair{
+					Name:       "my-keypair",
+					PublicKey:  "public",
+					PrivateKey: "private",
+				}
+				checker.HasKeyPairCall.Returns.Present = true
+			})
+
+			It("logs that the existing keypair will be used", func() {
+				_, err := manager.Sync(stateKeyPair)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					`checking if keypair "my-keypair" exists`,
+					"using existing keypair",
+				}))
 			})
 		})
 	})

@@ -7,11 +7,11 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -25,7 +25,7 @@ var _ = Describe("AWSUp", func() {
 			boshManager               *fakes.BOSHManager
 			terraformManager          *fakes.TerraformManager
 			infrastructureManager     *fakes.InfrastructureManager
-			keyPairSynchronizer       *fakes.KeyPairSynchronizer
+			keyPairManager            *fakes.KeyPairManager
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			certificateDescriber      *fakes.CertificateDescriber
 			credentialValidator       *fakes.CredentialValidator
@@ -36,11 +36,13 @@ var _ = Describe("AWSUp", func() {
 		)
 
 		BeforeEach(func() {
-			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
-			keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
-				Name:       "keypair-bbl-lake-time:stamp",
-				PrivateKey: "some-private-key",
-				PublicKey:  "some-public-key",
+			keyPairManager = &fakes.KeyPairManager{}
+			keyPairManager.SyncCall.Returns.State = storage.State{
+				KeyPair: storage.KeyPair{
+					Name:       "keypair-bbl-lake-time-stamp",
+					PublicKey:  "some-public-key",
+					PrivateKey: "some-private-key",
+				},
 			}
 
 			terraformManager = &fakes.TerraformManager{}
@@ -92,7 +94,7 @@ var _ = Describe("AWSUp", func() {
 			envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time-stamp"
 
 			command = commands.NewAWSUp(
-				credentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
+				credentialValidator, infrastructureManager, keyPairManager, boshManager,
 				availabilityZoneRetriever, certificateDescriber, cloudConfigManager,
 				stateStore, clientProvider, envIDManager, terraformManager,
 			)
@@ -151,15 +153,11 @@ var _ = Describe("AWSUp", func() {
 
 		It("syncs the keypair", func() {
 			err := command.Execute(commands.AWSUpConfig{}, storage.State{
+				IAAS: "aws",
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
 					AccessKeyID:     "some-access-key-id",
-				},
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
 				},
 				EnvID: "bbl-lake-time-stamp",
 			})
@@ -167,16 +165,20 @@ var _ = Describe("AWSUp", func() {
 			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(0))
 			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 
-			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
-				Name:       "some-keypair-name",
-				PrivateKey: "some-private-key",
-				PublicKey:  "some-public-key",
+			Expect(keyPairManager.SyncCall.Receives.State).To(Equal(storage.State{
+				IAAS: "aws",
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+				EnvID: "bbl-lake-time-stamp",
 			}))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(4))
 			actualState := stateStore.SetCall.Receives[3].State
 			Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
-				Name:       "some-keypair-name",
+				Name:       "keypair-bbl-lake-time-stamp",
 				PublicKey:  "some-public-key",
 				PrivateKey: "some-private-key",
 			}))
@@ -377,7 +379,7 @@ var _ = Describe("AWSUp", func() {
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
 				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
-				Expect(keyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
+				Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.CallCount).To(Equal(4))
 			})
 
@@ -395,7 +397,7 @@ var _ = Describe("AWSUp", func() {
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
 					Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
-					Expect(keyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
+					Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 				})
 			})
@@ -428,7 +430,7 @@ var _ = Describe("AWSUp", func() {
 					Name: "some-stack-name",
 				},
 				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
+					Name:       "keypair-bbl-lake-time-stamp",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
@@ -554,12 +556,32 @@ var _ = Describe("AWSUp", func() {
 		Describe("reentrant", func() {
 			Context("when the key pair fails to sync", func() {
 				It("saves the keypair name and returns an error", func() {
-					keyPairSynchronizer.SyncCall.Returns.Error = errors.New("error syncing key pair")
+					keyPairManager.SyncCall.Returns.Error = keypair.NewManagerError(storage.State{
+						KeyPair: storage.KeyPair{
+							Name: "keypair-bbl-lake-time-stamp",
+						},
+					}, errors.New("error syncing key pair"))
 
 					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("error syncing key pair"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.Receives[0].State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
+				})
+
+				Context("when it can't save the state", func() {
+					It("returns an error", func() {
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set")}}
+						keyPairManager.SyncCall.Returns.Error = keypair.NewManagerError(storage.State{
+							KeyPair: storage.KeyPair{
+								Name: "keypair-bbl-lake-time-stamp",
+							},
+						}, errors.New("error syncing key pair"))
+
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+						Expect(err).To(MatchError("the following errors occurred:\nerror syncing key pair,\nfailed to set"))
+						Expect(stateStore.SetCall.CallCount).To(Equal(2))
+						Expect(stateStore.SetCall.Receives[1].State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
+					})
 				})
 			})
 
@@ -671,65 +693,6 @@ var _ = Describe("AWSUp", func() {
 							AccessKeyID:     "aws-access-key-id",
 							SecretAccessKey: "aws-secret-access-key",
 							Region:          "aws-region",
-						}))
-					})
-				})
-			})
-
-			Context("aws keypair", func() {
-				Context("when the keypair exists", func() {
-					It("saves the given state unmodified", func() {
-						keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
-							Name:       "some-existing-keypair",
-							PrivateKey: "some-private-key",
-							PublicKey:  "some-public-key",
-						}
-
-						incomingState := storage.State{
-							KeyPair: storage.KeyPair{
-								Name:       "some-existing-keypair",
-								PrivateKey: "some-private-key",
-								PublicKey:  "some-public-key",
-							},
-						}
-
-						err := command.Execute(commands.AWSUpConfig{}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
-							Name:       "some-existing-keypair",
-							PrivateKey: "some-private-key",
-							PublicKey:  "some-public-key",
-						}))
-
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State.KeyPair).To(Equal(incomingState.KeyPair))
-					})
-				})
-
-				Context("when the keypair doesn't exist", func() {
-					It("saves the state with a new key pair", func() {
-						keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
-							Name:       "keypair-bbl-lake-time:stamp",
-							PrivateKey: "some-private-key",
-							PublicKey:  "some-public-key",
-						}
-
-						envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time:stamp"
-
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
-							Name: "keypair-bbl-lake-time:stamp",
-						}))
-
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						actualState := stateStore.SetCall.Receives[3].State
-						Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
-							Name:       "keypair-bbl-lake-time:stamp",
-							PrivateKey: "some-private-key",
-							PublicKey:  "some-public-key",
 						}))
 					})
 				})

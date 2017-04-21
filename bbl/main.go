@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
+	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
@@ -98,8 +99,7 @@ func main() {
 	awsKeyPairCreator := ec2.NewKeyPairCreator(clientProvider)
 	awsKeyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
 	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
-	keyPairManager := ec2.NewKeyPairManager(awsKeyPairCreator, keyPairChecker, logger)
-	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(keyPairManager)
+	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(awsKeyPairCreator, keyPairChecker, logger)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(clientProvider, logger)
@@ -120,6 +120,9 @@ func main() {
 
 	// EnvID
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
+
+	// Keypair Manager
+	keyPairManager := keypair.NewManager(keyPairSynchronizer)
 
 	// Terraform
 	terraformCmd := terraform.NewCmd(os.Stderr)
@@ -151,7 +154,7 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		awsCredentialValidator, infrastructureManager, keyPairSynchronizer, boshManager,
+		awsCredentialValidator, infrastructureManager, keyPairManager, boshManager,
 		availabilityZoneRetriever, certificateDescriber,
 		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager)
 
