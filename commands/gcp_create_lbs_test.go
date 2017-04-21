@@ -18,12 +18,11 @@ import (
 var _ = Describe("GCPCreateLBs", func() {
 	var (
 		terraformManager       *fakes.TerraformManager
-		boshClientProvider     *fakes.BOSHClientProvider
-		boshClient             *fakes.BOSHClient
 		cloudConfigManager     *fakes.CloudConfigManager
 		stateStore             *fakes.StateStore
 		logger                 *fakes.Logger
 		terraformExecutorError *fakes.TerraformExecutorError
+		environmentValidator   *fakes.EnvironmentValidator
 
 		command     commands.GCPCreateLBs
 		certPath    string
@@ -34,15 +33,13 @@ var _ = Describe("GCPCreateLBs", func() {
 
 	BeforeEach(func() {
 		terraformManager = &fakes.TerraformManager{}
-		boshClient = &fakes.BOSHClient{}
-		boshClientProvider = &fakes.BOSHClientProvider{}
-		boshClientProvider.ClientCall.Returns.Client = boshClient
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		logger = &fakes.Logger{}
 		terraformExecutorError = &fakes.TerraformExecutorError{}
+		environmentValidator = &fakes.EnvironmentValidator{}
 
-		command = commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
+		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, environmentValidator)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
@@ -222,8 +219,6 @@ var _ = Describe("GCPCreateLBs", func() {
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
 			})
 
 			It("does not call the CloudConfigManager", func() {
@@ -314,15 +309,13 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 			})
 
-			Context("when there is a director", func() {
-				It("returns an error when it cannot connect to a bosh director", func() {
-					boshClient.InfoCall.Returns.Error = errors.New("no director")
+			It("returns an error when environment validator fails", func() {
+				environmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate environment")
 
-					err := command.Execute(commands.GCPCreateLBsConfig{
-						LBType: "concourse",
-					}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError(commands.BBLNotFound))
-				})
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("failed to validate environment"))
 			})
 
 			It("returns an error when the iaas type is not gcp", func() {

@@ -149,6 +149,10 @@ func main() {
 	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 	boshClientProvider := bosh.NewClientProvider()
 
+	// Environment Validators
+	awsEnvironmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
+	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
+
 	// Cloud Config
 	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
 	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
@@ -164,8 +168,8 @@ func main() {
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, awsCredentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator,
-		uuidGenerator, stateStore, terraformManager,
+		availabilityZoneRetriever, cloudConfigManager, certificateValidator,
+		uuidGenerator, stateStore, terraformManager, awsEnvironmentValidator,
 	)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
@@ -188,7 +192,7 @@ func main() {
 		CloudConfigManager: cloudConfigManager,
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, boshClientProvider, cloudConfigManager, stateStore, logger)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator)
 
 	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
 

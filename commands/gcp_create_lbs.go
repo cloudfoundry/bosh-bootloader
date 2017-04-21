@@ -11,11 +11,11 @@ import (
 )
 
 type GCPCreateLBs struct {
-	terraformManager   terraformManager
-	boshClientProvider boshClientProvider
-	cloudConfigManager cloudConfigManager
-	stateStore         stateStore
-	logger             logger
+	terraformManager     terraformManager
+	cloudConfigManager   cloudConfigManager
+	stateStore           stateStore
+	logger               logger
+	environmentValidator environmentValidator
 }
 
 type GCPCreateLBsConfig struct {
@@ -27,14 +27,14 @@ type GCPCreateLBsConfig struct {
 }
 
 func NewGCPCreateLBs(terraformManager terraformManager,
-	boshClientProvider boshClientProvider, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, logger logger) GCPCreateLBs {
+	cloudConfigManager cloudConfigManager,
+	stateStore stateStore, logger logger, environmentValidator environmentValidator) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformManager:   terraformManager,
-		boshClientProvider: boshClientProvider,
-		cloudConfigManager: cloudConfigManager,
-		stateStore:         stateStore,
-		logger:             logger,
+		terraformManager:     terraformManager,
+		cloudConfigManager:   cloudConfigManager,
+		stateStore:           stateStore,
+		logger:               logger,
+		environmentValidator: environmentValidator,
 	}
 }
 
@@ -49,14 +49,9 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	if !state.NoDirector {
-		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername,
-			state.BOSH.DirectorPassword)
-
-		_, err := boshClient.Info()
-		if err != nil {
-			return BBLNotFound
-		}
+	err = c.environmentValidator.Validate(state)
+	if err != nil {
+		return err
 	}
 
 	if config.SkipIfExists && config.LBType == state.LB.Type {

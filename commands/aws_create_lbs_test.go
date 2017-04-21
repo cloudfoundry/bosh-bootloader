@@ -23,8 +23,6 @@ var _ = Describe("AWS Create LBs", func() {
 			certificateManager        *fakes.CertificateManager
 			infrastructureManager     *fakes.InfrastructureManager
 			terraformManager          *fakes.TerraformManager
-			boshClient                *fakes.BOSHClient
-			boshClientProvider        *fakes.BOSHClientProvider
 			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 			credentialValidator       *fakes.CredentialValidator
 			logger                    *fakes.Logger
@@ -32,6 +30,7 @@ var _ = Describe("AWS Create LBs", func() {
 			certificateValidator      *fakes.CertificateValidator
 			guidGenerator             *fakes.GuidGenerator
 			stateStore                *fakes.StateStore
+			environmentValidator      *fakes.EnvironmentValidator
 			incomingState             storage.State
 		)
 
@@ -40,16 +39,13 @@ var _ = Describe("AWS Create LBs", func() {
 			infrastructureManager = &fakes.InfrastructureManager{}
 			terraformManager = &fakes.TerraformManager{}
 			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
-			boshClient = &fakes.BOSHClient{}
-			boshClientProvider = &fakes.BOSHClientProvider{}
 			credentialValidator = &fakes.CredentialValidator{}
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			certificateValidator = &fakes.CertificateValidator{}
 			guidGenerator = &fakes.GuidGenerator{}
 			stateStore = &fakes.StateStore{}
-
-			boshClientProvider.ClientCall.Returns.Client = boshClient
+			environmentValidator = &fakes.EnvironmentValidator{}
 
 			infrastructureManager.ExistsCall.Returns.Exists = true
 
@@ -77,8 +73,8 @@ var _ = Describe("AWS Create LBs", func() {
 			}
 
 			command = commands.NewAWSCreateLBs(logger, credentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, boshClientProvider, cloudConfigManager, certificateValidator, guidGenerator,
-				stateStore, terraformManager)
+				availabilityZoneRetriever, cloudConfigManager, certificateValidator, guidGenerator,
+				stateStore, terraformManager, environmentValidator)
 		})
 
 		It("returns an error if credential validator fails", func() {
@@ -310,8 +306,6 @@ var _ = Describe("AWS Create LBs", func() {
 					KeyPath:  "temp/some-key.key",
 				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
 			})
 
 			It("does not call cloudConfigManager", func() {
@@ -398,39 +392,17 @@ var _ = Describe("AWS Create LBs", func() {
 			})
 		})
 
-		Context("fast fail if the stack or BOSH director does not exist", func() {
-			It("returns an error when the stack does not exist", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = false
+		It("returns an error when the environment validator fails", func() {
+			environmentValidator.ValidateCall.Returns.Error = errors.New("environment not found")
 
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
-				}, incomingState)
+			err := command.Execute(commands.AWSCreateLBsConfig{
+				LBType:   "concourse",
+				CertPath: "temp/some-cert.crt",
+				KeyPath:  "temp/some-key.key",
+			}, incomingState)
 
-				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack"))
-
-				Expect(err).To(MatchError(commands.BBLNotFound))
-			})
-
-			It("returns an error when the BOSH director does not exist", func() {
-				boshClient.InfoCall.Returns.Error = errors.New("director not found")
-				infrastructureManager.ExistsCall.Returns.Exists = true
-
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
-				}, incomingState)
-
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
-
-				Expect(err).To(MatchError(commands.BBLNotFound))
-			})
+			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
+			Expect(err).To(MatchError("environment not found"))
 		})
 
 		Context("state manipulation", func() {
@@ -505,16 +477,6 @@ var _ = Describe("AWS Create LBs", func() {
 				Entry("when the previous lb type is concourse", "concourse", "cf"),
 				Entry("when the previous lb type is cf", "cf", "concourse"),
 			)
-
-			It("returns an error when the infrastructure manager fails to check the existance of a stack", func() {
-				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check for stack")
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: "/path/to/cert",
-					KeyPath:  "/path/to/key",
-				}, storage.State{})
-				Expect(err).To(MatchError("failed to check for stack"))
-			})
 
 			Context("when availability zone retriever fails", func() {
 				It("returns an error", func() {

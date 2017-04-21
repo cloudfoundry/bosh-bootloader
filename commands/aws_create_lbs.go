@@ -13,7 +13,6 @@ type AWSCreateLBs struct {
 	logger                    logger
 	certificateManager        certificateManager
 	infrastructureManager     infrastructureManager
-	boshClientProvider        boshClientProvider
 	availabilityZoneRetriever availabilityZoneRetriever
 	credentialValidator       credentialValidator
 	cloudConfigManager        cloudConfigManager
@@ -22,6 +21,7 @@ type AWSCreateLBs struct {
 	stateStore                stateStore
 	stateValidator            stateValidator
 	terraformManager          terraformManager
+	environmentValidator      environmentValidator
 }
 
 type AWSCreateLBsConfig struct {
@@ -46,19 +46,22 @@ type certificateValidator interface {
 	Validate(command, certPath, keyPath, chainPath string) error
 }
 
+type environmentValidator interface {
+	Validate(state storage.State) error
+}
+
 type guidGenerator interface {
 	Generate() (string, error)
 }
 
 func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, certificateManager certificateManager,
-	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever, boshClientProvider boshClientProvider,
+	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
 	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
-	guidGenerator guidGenerator, stateStore stateStore, terraformManager terraformManager) AWSCreateLBs {
+	guidGenerator guidGenerator, stateStore stateStore, terraformManager terraformManager, environmentValidator environmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,
 		infrastructureManager:     infrastructureManager,
-		boshClientProvider:        boshClientProvider,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		credentialValidator:       credentialValidator,
 		cloudConfigManager:        cloudConfigManager,
@@ -66,6 +69,7 @@ func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, cer
 		guidGenerator:             guidGenerator,
 		stateStore:                stateStore,
 		terraformManager:          terraformManager,
+		environmentValidator:      environmentValidator,
 	}
 }
 
@@ -84,11 +88,8 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	if !state.NoDirector {
-		boshClient := c.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
-		if err := c.checkBOSHClient(state.Stack.Name, boshClient, state.TFState); err != nil {
-			return err
-		}
+	if err := c.environmentValidator.Validate(state); err != nil {
+		return err
 	}
 
 	if state.TFState != "" {
@@ -154,10 +155,6 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 
 func (AWSCreateLBs) isValidLBType(lbType string) bool {
 	return lbType == "concourse" || lbType == "cf"
-}
-
-func (c AWSCreateLBs) checkBOSHClient(stackName string, boshClient bosh.Client, tfState string) error {
-	return bblExists(stackName, c.infrastructureManager, boshClient, tfState)
 }
 
 func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) error {
