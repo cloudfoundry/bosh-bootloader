@@ -3,7 +3,6 @@ package keypair_test
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -14,95 +13,98 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		keyPairSynchronizer *fakes.KeyPairSynchronizer
+		awsManager *fakes.KeyPairManager
+		gcpManager *fakes.KeyPairManager
 
 		keyPairManager keypair.Manager
-
-		incomingState storage.State
 	)
 
 	BeforeEach(func() {
-		keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
-		incomingState = storage.State{
-			EnvID: "some-env-id",
-		}
+		awsManager = &fakes.KeyPairManager{}
+		gcpManager = &fakes.KeyPairManager{}
 
-		keyPairManager = keypair.NewManager(keyPairSynchronizer)
-	})
-
-	It("generates a keypair name if one doesn't exist", func() {
-		updatedState, err := keyPairManager.Sync(incomingState)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(updatedState).To(Equal(storage.State{
-			EnvID: "some-env-id",
+		awsManager.SyncCall.Returns.State = storage.State{
 			KeyPair: storage.KeyPair{
-				Name: "keypair-some-env-id",
+				Name: "some-aws-keypair",
 			},
-		}))
-	})
-
-	It("syncs the keypair", func() {
-		incomingState.KeyPair = storage.KeyPair{
-			Name:       "some-keypair-name",
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
 		}
-		_, err := keyPairManager.Sync(incomingState)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(keyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
-		Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
-			Name:       "some-keypair-name",
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
-		}))
-	})
 
-	It("saves the keypair to the state", func() {
-		keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
-			Name:       "some-keypair-name",
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
-		}
-		updatedState, err := keyPairManager.Sync(incomingState)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(updatedState).To(Equal(storage.State{
-			EnvID: "some-env-id",
+		gcpManager.SyncCall.Returns.State = storage.State{
 			KeyPair: storage.KeyPair{
-				Name:       "keypair-some-env-id",
-				PrivateKey: "some-private-key",
-				PublicKey:  "some-public-key",
+				Name: "some-gcp-keypair",
 			},
-		}))
+		}
+
+		keyPairManager = keypair.NewManager(awsManager, gcpManager)
 	})
 
-	Context("when a keypair name already exists", func() {
-		It("reuses that keypair name", func() {
-			incomingState.KeyPair.Name = "some-other-keypair-name"
-			updatedState, err := keyPairManager.Sync(incomingState)
+	Context("when iaas is aws", func() {
+		It("calls the aws manager sync and returns state", func() {
+			state, err := keyPairManager.Sync(storage.State{
+				IAAS: "aws",
+			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(updatedState).To(Equal(storage.State{
-				EnvID: "some-env-id",
+			Expect(awsManager.SyncCall.CallCount).To(Equal(1))
+			Expect(awsManager.SyncCall.Receives.State).To(Equal(storage.State{
+				IAAS: "aws",
+			}))
+
+			Expect(state).To(Equal(storage.State{
+				IAAS: "aws",
 				KeyPair: storage.KeyPair{
-					Name: "some-other-keypair-name",
+					Name: "some-aws-keypair",
 				},
 			}))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when sync fails", func() {
+				awsManager.SyncCall.Returns.Error = errors.New("call to sync failed")
+				_, err := keyPairManager.Sync(storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).To(MatchError("call to sync failed"))
+			})
+		})
+	})
+
+	Context("when iaas is gcp", func() {
+		It("calls the gcp manager sync and returns state", func() {
+			state, err := keyPairManager.Sync(storage.State{
+				IAAS: "gcp",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(gcpManager.SyncCall.CallCount).To(Equal(1))
+			Expect(gcpManager.SyncCall.Receives.State).To(Equal(storage.State{
+				IAAS: "gcp",
+			}))
+
+			Expect(state).To(Equal(storage.State{
+				IAAS: "gcp",
+				KeyPair: storage.KeyPair{
+					Name: "some-gcp-keypair",
+				},
+			}))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when sync fails", func() {
+				gcpManager.SyncCall.Returns.Error = errors.New("call to sync failed")
+				_, err := keyPairManager.Sync(storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).To(MatchError("call to sync failed"))
+			})
 		})
 	})
 
 	Context("failure cases", func() {
-		Context("when the state doesn't have an env id", func() {
+		Context("when iaas is invalid", func() {
 			It("returns an error", func() {
-				_, err := keyPairManager.Sync(storage.State{})
-				Expect(err).To(MatchError("env id must be set to generate a keypair"))
-			})
-		})
-
-		Context("when the keypair synchronizer fails", func() {
-			It("returns a manager error", func() {
-				keyPairSynchronizer.SyncCall.Returns.Error = errors.New("failed to sync")
-				incomingState.KeyPair.Name = "some-keypair-name"
-				_, err := keyPairManager.Sync(incomingState)
-				Expect(err).To(MatchError(keypair.NewManagerError(incomingState, errors.New("failed to sync"))))
+				_, err := keyPairManager.Sync(storage.State{
+					IAAS: "invalid-iaas",
+				})
+				Expect(err).To(MatchError("invalid iaas was provided: invalid-iaas"))
 			})
 		})
 	})

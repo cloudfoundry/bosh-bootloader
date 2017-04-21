@@ -32,6 +32,8 @@ import (
 	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	awskeypair "github.com/cloudfoundry/bosh-bootloader/keypair/aws"
+	gcpkeypair "github.com/cloudfoundry/bosh-bootloader/keypair/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
@@ -100,6 +102,7 @@ func main() {
 	awsKeyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
 	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(awsKeyPairCreator, keyPairChecker, logger)
+	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(clientProvider, logger)
@@ -116,13 +119,14 @@ func main() {
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
+	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater)
 	zones := gcp.NewZones()
 
 	// EnvID
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
 
 	// Keypair Manager
-	keyPairManager := keypair.NewManager(keyPairSynchronizer)
+	keyPairManager := keypair.NewManager(awsKeyPairManager, gcpKeyPairManager)
 
 	// Terraform
 	terraformCmd := terraform.NewCmd(os.Stderr)
@@ -175,7 +179,7 @@ func main() {
 
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
 		StateStore:         stateStore,
-		KeyPairUpdater:     gcpKeyPairUpdater,
+		KeyPairManager:     keyPairManager,
 		GCPProvider:        gcpClientProvider,
 		TerraformManager:   terraformManager,
 		BoshManager:        boshManager,

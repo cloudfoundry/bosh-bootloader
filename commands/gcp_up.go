@@ -23,7 +23,7 @@ const (
 
 type GCPUp struct {
 	stateStore         stateStore
-	keyPairUpdater     keyPairUpdater
+	keyPairManager     keyPairManager
 	gcpProvider        gcpProvider
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
@@ -80,7 +80,7 @@ type envIDManager interface {
 
 type NewGCPUpArgs struct {
 	StateStore         stateStore
-	KeyPairUpdater     keyPairUpdater
+	KeyPairManager     keyPairManager
 	GCPProvider        gcpProvider
 	TerraformManager   terraformManager
 	BoshManager        boshManager
@@ -92,7 +92,7 @@ type NewGCPUpArgs struct {
 func NewGCPUp(args NewGCPUpArgs) GCPUp {
 	return GCPUp{
 		stateStore:         args.StateStore,
-		keyPairUpdater:     args.KeyPairUpdater,
+		keyPairManager:     args.KeyPairManager,
 		gcpProvider:        args.GCPProvider,
 		terraformManager:   args.TerraformManager,
 		boshManager:        args.BoshManager,
@@ -153,15 +153,13 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if state.KeyPair.IsEmpty() {
-		keyPair, err := u.keyPairUpdater.Update()
-		if err != nil {
-			return err
-		}
-		state.KeyPair = keyPair
-		if err := u.stateStore.Set(state); err != nil {
-			return err
-		}
+	state, err = u.keyPairManager.Sync(state)
+	if err != nil {
+		return err
+	}
+
+	if err := u.stateStore.Set(state); err != nil {
+		return err
 	}
 
 	state, err = u.terraformManager.Apply(state)

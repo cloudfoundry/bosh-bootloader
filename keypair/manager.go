@@ -1,47 +1,34 @@
 package keypair
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Manager struct {
-	keyPairSynchronizer keyPairSynchronizer
+	awsManager keyPairManager
+	gcpManager keyPairManager
 }
 
-type keyPairSynchronizer interface {
-	Sync(ec2.KeyPair) (ec2.KeyPair, error)
+type keyPairManager interface {
+	Sync(state storage.State) (storage.State, error)
 }
 
-func NewManager(keyPairSynchronizer keyPairSynchronizer) Manager {
+func NewManager(awsManager keyPairManager, gcpManager keyPairManager) Manager {
 	return Manager{
-		keyPairSynchronizer: keyPairSynchronizer,
+		awsManager: awsManager,
+		gcpManager: gcpManager,
 	}
 }
 
 func (m Manager) Sync(state storage.State) (storage.State, error) {
-	if state.EnvID == "" {
-		return storage.State{}, errors.New("env id must be set to generate a keypair")
+	switch state.IAAS {
+	case "aws":
+		return m.awsManager.Sync(state)
+	case "gcp":
+		return m.gcpManager.Sync(state)
+	default:
+		return storage.State{}, fmt.Errorf("invalid iaas was provided: %s", state.IAAS)
 	}
-
-	if state.KeyPair.Name == "" {
-		state.KeyPair.Name = fmt.Sprintf("keypair-%s", state.EnvID)
-	}
-
-	keyPair, err := m.keyPairSynchronizer.Sync(ec2.KeyPair{
-		Name:       state.KeyPair.Name,
-		PublicKey:  state.KeyPair.PublicKey,
-		PrivateKey: state.KeyPair.PrivateKey,
-	})
-	if err != nil {
-		return storage.State{}, NewManagerError(state, err)
-	}
-
-	state.KeyPair.PrivateKey = keyPair.PrivateKey
-	state.KeyPair.PublicKey = keyPair.PublicKey
-
-	return state, nil
 }

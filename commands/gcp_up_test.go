@@ -30,7 +30,7 @@ var _ = Describe("GCPUp", func() {
 	var (
 		gcpUp                 commands.GCPUp
 		stateStore            *fakes.StateStore
-		keyPairUpdater        *fakes.GCPKeyPairUpdater
+		keyPairManager        *fakes.KeyPairManager
 		gcpClientProvider     *fakes.GCPClientProvider
 		gcpClient             *fakes.GCPClient
 		terraformManager      *fakes.TerraformManager
@@ -54,7 +54,7 @@ var _ = Describe("GCPUp", func() {
 
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
-		keyPairUpdater = &fakes.GCPKeyPairUpdater{}
+		keyPairManager = &fakes.KeyPairManager{}
 		gcpClientProvider = &fakes.GCPClientProvider{}
 		gcpClient = &fakes.GCPClient{}
 		gcpClientProvider.ClientCall.Returns.Client = gcpClient
@@ -114,16 +114,13 @@ var _ = Describe("GCPUp", func() {
 
 		terraformManager.VersionCall.Returns.Version = "0.8.7"
 		envIDManager.SyncCall.Returns.EnvID = "some-env-id"
-		keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
-		}
+		keyPairManager.SyncCall.Returns.State = expectedKeyPairState
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateCall.Returns.State = expectedBOSHState
 
 		gcpUp = commands.NewGCPUp(commands.NewGCPUpArgs{
 			StateStore:         stateStore,
-			KeyPairUpdater:     keyPairUpdater,
+			KeyPairManager:     keyPairManager,
 			GCPProvider:        gcpClientProvider,
 			TerraformManager:   terraformManager,
 			BoshManager:        boshManager,
@@ -215,16 +212,35 @@ var _ = Describe("GCPUp", func() {
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(expectedEnvIDState))
 		})
 
-		It("updates the key pair if it is empty in the state", func() {
+		It("syncs the keypair", func() {
 			err := gcpUp.Execute(commands.GCPUpConfig{
 				ServiceAccountKey: serviceAccountKeyPath,
 				ProjectID:         "some-project-id",
 				Zone:              "some-zone",
 				Region:            "us-west1",
-			}, storage.State{})
+			}, storage.State{
+				IAAS:  "gcp",
+				EnvID: "some-env-id",
+				GCP: storage.GCP{
+					ServiceAccountKey: `{"real": "json"}`,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(1))
+			Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
+			Expect(keyPairManager.SyncCall.Receives.State).To(Equal(storage.State{
+				IAAS:  "gcp",
+				EnvID: "some-env-id",
+				GCP: storage.GCP{
+					ServiceAccountKey: `{"real": "json"}`,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+				},
+			}))
 		})
 
 		It("saves the key pair to the state", func() {
@@ -318,24 +334,6 @@ var _ = Describe("GCPUp", func() {
 
 				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-other-env-id"))
-			})
-		})
-
-		Context("when the key pair is not empty", func() {
-			It("does not upload the ssh keys", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{
-					KeyPair: storage.KeyPair{
-						Name: "some-key-pair",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -441,24 +439,6 @@ var _ = Describe("GCPUp", func() {
 					}, storage.State{})
 				Expect(err).To(MatchError("GCP project ID must be provided"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
-			})
-
-			It("does not create a new ssh key", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-key-name",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(0))
 			})
 
 			It("saves the keypair when the terraform fails", func() {
@@ -613,7 +593,7 @@ var _ = Describe("GCPUp", func() {
 					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
 
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(0))
-					Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(0))
+					Expect(keyPairManager.SyncCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
 				})
@@ -693,7 +673,7 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			It("returns an error when the keypair could not be updated", func() {
-				keyPairUpdater.UpdateCall.Returns.Error = errors.New("keypair update failed")
+				keyPairManager.SyncCall.Returns.Error = errors.New("keypair sync failed")
 
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKey: serviceAccountKeyPath,
@@ -701,7 +681,7 @@ var _ = Describe("GCPUp", func() {
 					Zone:              "some-zone",
 					Region:            "us-west1",
 				}, storage.State{})
-				Expect(err).To(MatchError("keypair update failed"))
+				Expect(err).To(MatchError("keypair sync failed"))
 			})
 
 			It("returns an error when the state fails to be set after updating keypair", func() {
