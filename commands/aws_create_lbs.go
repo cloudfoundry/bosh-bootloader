@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -36,10 +35,6 @@ type certificateManager interface {
 	Create(certificate, privateKey, chain, certificateName string) error
 	Describe(certificateName string) (iam.Certificate, error)
 	Delete(certificateName string) error
-}
-
-type boshClientProvider interface {
-	Client(directorAddress, directorUsername, directorPassword string) bosh.Client
 }
 
 type certificateValidator interface {

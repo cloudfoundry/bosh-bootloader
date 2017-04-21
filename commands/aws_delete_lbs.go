@@ -15,8 +15,8 @@ type AWSDeleteLBs struct {
 	infrastructureManager     infrastructureManager
 	logger                    logger
 	cloudConfigManager        cloudConfigManager
-	boshClientProvider        boshClientProvider
 	stateStore                stateStore
+	environmentValidator      environmentValidator
 }
 
 type deleteLBsConfig struct {
@@ -25,8 +25,8 @@ type deleteLBsConfig struct {
 
 func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
-	cloudConfigManager cloudConfigManager,
-	boshClientProvider boshClientProvider, stateStore stateStore,
+	cloudConfigManager cloudConfigManager, stateStore stateStore,
+	environmentValidator environmentValidator,
 ) AWSDeleteLBs {
 	return AWSDeleteLBs{
 		credentialValidator:       credentialValidator,
@@ -35,8 +35,8 @@ func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRe
 		infrastructureManager:     infrastructureManager,
 		logger:                    logger,
 		cloudConfigManager:        cloudConfigManager,
-		boshClientProvider:        boshClientProvider,
 		stateStore:                stateStore,
+		environmentValidator:      environmentValidator,
 	}
 }
 
@@ -46,8 +46,13 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
+	err = c.environmentValidator.Validate(state)
+	if err != nil {
 		return err
+	}
+
+	if !lbExists(state.Stack.LBType) {
+		return LBNotFound
 	}
 
 	azs, err := c.availabilityZoneRetriever.Retrieve(state.AWS.Region)

@@ -173,11 +173,11 @@ func main() {
 	)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
-		boshClientProvider, logger, uuidGenerator, stateStore)
+		logger, uuidGenerator, stateStore, awsEnvironmentValidator)
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
-		infrastructureManager, logger, cloudConfigManager, boshClientProvider, stateStore,
+		infrastructureManager, logger, cloudConfigManager, stateStore, awsEnvironmentValidator,
 	)
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 

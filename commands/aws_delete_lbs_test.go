@@ -19,10 +19,9 @@ var _ = Describe("Delete LBs", func() {
 		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
 		certificateManager        *fakes.CertificateManager
 		infrastructureManager     *fakes.InfrastructureManager
+		environmentValidator      *fakes.EnvironmentValidator
 		logger                    *fakes.Logger
 		cloudConfigManager        *fakes.CloudConfigManager
-		boshClient                *fakes.BOSHClient
-		boshClientProvider        *fakes.BOSHClientProvider
 		stateStore                *fakes.StateStore
 		incomingState             storage.State
 	)
@@ -32,12 +31,9 @@ var _ = Describe("Delete LBs", func() {
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		certificateManager = &fakes.CertificateManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
+		environmentValidator = &fakes.EnvironmentValidator{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		boshClient = &fakes.BOSHClient{}
-		boshClientProvider = &fakes.BOSHClientProvider{}
 		stateStore = &fakes.StateStore{}
-
-		boshClientProvider.ClientCall.Returns.Client = boshClient
 
 		logger = &fakes.Logger{}
 
@@ -66,7 +62,7 @@ var _ = Describe("Delete LBs", func() {
 
 		command = commands.NewAWSDeleteLBs(credentialValidator, availabilityZoneRetriever,
 			certificateManager, infrastructureManager, logger, cloudConfigManager,
-			boshClientProvider, stateStore)
+			stateStore, environmentValidator)
 	})
 
 	Describe("Execute", func() {
@@ -79,10 +75,6 @@ var _ = Describe("Delete LBs", func() {
 
 				err := command.Execute(incomingState)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
 
 				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
@@ -113,29 +105,6 @@ var _ = Describe("Delete LBs", func() {
 
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})
-
-			It("does not check for the existence of a bosh director", func() {
-				state := storage.State{
-					Stack: storage.Stack{
-						LBType:          "concourse",
-						CertificateName: "some-certificate",
-						Name:            "some-stack-name",
-						BOSHAZ:          "some-bosh-az",
-					},
-					NoDirector: true,
-					AWS: storage.AWS{
-						Region: "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-keypair",
-					},
-					EnvID: "some-env-id",
-				}
-				err := command.Execute(state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(0))
-			})
 		})
 
 		It("delete lbs from cloudformation and deletes certificate", func() {
@@ -161,30 +130,12 @@ var _ = Describe("Delete LBs", func() {
 			Expect(logger.StepCall.Messages).To(ContainElement("deleting certificate"))
 		})
 
-		It("checks if the bosh director exists", func() {
+		It("returns an error if the environment validator fails", func() {
+			environmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
 			err := command.Execute(incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-			Expect(boshClient.InfoCall.CallCount).To(Equal(1))
-		})
-
-		Context("if the user hasn't bbl'd up yet", func() {
-			It("returns an error if the stack does not exist", func() {
-				infrastructureManager.ExistsCall.Returns.Exists = false
-				err := command.Execute(storage.State{})
-				Expect(err).To(MatchError(commands.BBLNotFound))
-			})
-
-			It("returns an error if the bosh director does not exist", func() {
-				boshClient.InfoCall.Returns.Error = errors.New("director not found")
-
-				err := command.Execute(incomingState)
-				Expect(err).To(MatchError(commands.BBLNotFound))
-			})
+			Expect(err).To(MatchError("failed to validate"))
+			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
+			Expect(environmentValidator.ValidateCall.CallCount).To(Equal(1))
 		})
 
 		It("returns an error if there is no lb", func() {

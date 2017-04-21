@@ -14,25 +14,25 @@ type AWSUpdateLBs struct {
 	availabilityZoneRetriever availabilityZoneRetriever
 	infrastructureManager     infrastructureManager
 	credentialValidator       credentialValidator
-	boshClientProvider        boshClientProvider
 	logger                    logger
 	guidGenerator             guidGenerator
 	stateStore                stateStore
+	environmentValidator      environmentValidator
 }
 
 func NewAWSUpdateLBs(credentialValidator credentialValidator, certificateManager certificateManager,
-	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager, boshClientProvider boshClientProvider,
-	logger logger, guidGenerator guidGenerator, stateStore stateStore) AWSUpdateLBs {
+	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager,
+	logger logger, guidGenerator guidGenerator, stateStore stateStore, environmentValidator environmentValidator) AWSUpdateLBs {
 
 	return AWSUpdateLBs{
 		credentialValidator:       credentialValidator,
 		certificateManager:        certificateManager,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		infrastructureManager:     infrastructureManager,
-		boshClientProvider:        boshClientProvider,
 		logger:                    logger,
 		guidGenerator:             guidGenerator,
 		stateStore:                stateStore,
+		environmentValidator:      environmentValidator,
 	}
 }
 
@@ -42,8 +42,13 @@ func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	if err := checkBBLAndLB(state, c.boshClientProvider, c.infrastructureManager); err != nil {
+	err = c.environmentValidator.Validate(state)
+	if err != nil {
 		return err
+	}
+
+	if !lbExists(state.Stack.LBType) {
+		return LBNotFound
 	}
 
 	if match, err := c.checkCertificateAndChain(config.CertPath, config.ChainPath, state.Stack.CertificateName); err != nil {
