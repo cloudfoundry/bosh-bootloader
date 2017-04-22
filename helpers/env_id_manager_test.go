@@ -36,19 +36,19 @@ var _ = Describe("EnvIDManager", func() {
 	Describe("Sync", func() {
 		Context("when no previous env id exists", func() {
 			It("calls env id generator if name is not passed in", func() {
-				envID, err := envIDManager.Sync(storage.State{}, "")
+				state, err := envIDManager.Sync(storage.State{}, "")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
-				Expect(envID).To(Equal("some-env-id"))
+				Expect(state.EnvID).To(Equal("some-env-id"))
 			})
 
 			It("uses the name passed in if an environment does not exist", func() {
-				envID, err := envIDManager.Sync(storage.State{}, "some-other-env-id")
+				state, err := envIDManager.Sync(storage.State{}, "some-other-env-id")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
-				Expect(envID).To(Equal("some-other-env-id"))
+				Expect(state.EnvID).To(Equal("some-other-env-id"))
 			})
 
 			Context("for gcp", func() {
@@ -86,11 +86,11 @@ var _ = Describe("EnvIDManager", func() {
 
 		Context("when an env id exists in the state", func() {
 			It("returns the existing env id", func() {
-				envID, err := envIDManager.Sync(storage.State{EnvID: "some-previous-env-id"}, "")
+				state, err := envIDManager.Sync(storage.State{EnvID: "some-previous-env-id"}, "")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
-				Expect(envID).To(Equal("some-previous-env-id"))
+				Expect(state.EnvID).To(Equal("some-previous-env-id"))
 			})
 		})
 
@@ -119,6 +119,13 @@ var _ = Describe("EnvIDManager", func() {
 				_, err := envIDManager.Sync(storage.State{}, "some_bad_name")
 
 				Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
+			})
+
+			It("returns an error when the env id generator fails", func() {
+				envIDGenerator.GenerateCall.Returns.Error = errors.New("failed to generate")
+				_, err := envIDManager.Sync(storage.State{}, "")
+
+				Expect(err).To(MatchError("failed to generate"))
 			})
 
 			It("returns an error when regex match string fails", func() {

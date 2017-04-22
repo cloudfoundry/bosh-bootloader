@@ -75,7 +75,7 @@ type boshManager interface {
 }
 
 type envIDManager interface {
-	Sync(storage.State, string) (string, error)
+	Sync(storage.State, string) (storage.State, error)
 }
 
 type NewGCPUpArgs struct {
@@ -142,12 +142,10 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	envID, err := u.envIDManager.Sync(state, upConfig.Name)
+	state, err = u.envIDManager.Sync(state, upConfig.Name)
 	if err != nil {
 		return err
 	}
-
-	state.EnvID = envID
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err

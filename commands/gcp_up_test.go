@@ -113,7 +113,9 @@ var _ = Describe("GCPUp", func() {
 		}
 
 		terraformManager.VersionCall.Returns.Version = "0.8.7"
-		envIDManager.SyncCall.Returns.EnvID = "some-env-id"
+		envIDManager.SyncCall.Returns.State = storage.State{
+			EnvID: "some-env-id",
+		}
 		keyPairManager.SyncCall.Returns.State = expectedKeyPairState
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateCall.Returns.State = expectedBOSHState

@@ -153,12 +153,10 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	envID, err := u.envIDManager.Sync(state, config.Name)
+	state, err = u.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return err
 	}
-
-	state.EnvID = envID
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err

@@ -92,7 +92,9 @@ var _ = Describe("AWSUp", func() {
 			clientProvider = &fakes.ClientProvider{}
 
 			envIDManager = &fakes.EnvIDManager{}
-			envIDManager.SyncCall.Returns.EnvID = "bbl-lake-time-stamp"
+			envIDManager.SyncCall.Returns.State = storage.State{
+				EnvID: "bbl-lake-time-stamp",
+			}
 
 			brokenEnvironmentValidator = &fakes.BrokenEnvironmentValidator{}
 

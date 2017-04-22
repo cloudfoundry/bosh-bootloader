@@ -10,16 +10,17 @@ type EnvIDManager struct {
 			Name  string
 		}
 		Returns struct {
-			EnvID string
+			State storage.State
 			Error error
 		}
 	}
 }
 
-func (e *EnvIDManager) Sync(state storage.State, name string) (string, error) {
+func (e *EnvIDManager) Sync(state storage.State, name string) (storage.State, error) {
 	e.SyncCall.CallCount++
 
 	e.SyncCall.Receives.State = state
 	e.SyncCall.Receives.Name = name
-	return e.SyncCall.Returns.EnvID, e.SyncCall.Returns.Error
+	state.EnvID = e.SyncCall.Returns.State.EnvID
+	return state, e.SyncCall.Returns.Error
 }

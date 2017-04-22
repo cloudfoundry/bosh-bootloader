@@ -38,26 +38,31 @@ func NewEnvIDManager(envIDGenerator envIDGenerator, gcpClientProvider gcpClientP
 	}
 }
 
-func (e EnvIDManager) Sync(state storage.State, envID string) (string, error) {
+func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, error) {
 	if state.EnvID != "" {
-		return state.EnvID, nil
+		return state, nil
 	}
 
 	err := e.checkFastFail(state.IAAS, envID)
 	if err != nil {
-		return "", err
+		return storage.State{}, err
 	}
 
 	err = e.validateName(envID)
 	if err != nil {
-		return "", err
+		return storage.State{}, err
 	}
 
 	if envID != "" {
-		return envID, nil
+		state.EnvID = envID
+	} else {
+		state.EnvID, err = e.envIDGenerator.Generate()
+		if err != nil {
+			return storage.State{}, err
+		}
 	}
 
-	return e.envIDGenerator.Generate()
+	return state, nil
 }
 
 func (e EnvIDManager) checkFastFail(iaas, envID string) error {
