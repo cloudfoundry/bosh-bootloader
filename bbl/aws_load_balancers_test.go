@@ -358,6 +358,42 @@ var _ = Describe("load balancers", func() {
 			})
 
 			createLBsTests(true)
+
+			Context("when domain is provided", func() {
+				var (
+					expectedCloudConfig []byte
+				)
+
+				BeforeEach(func() {
+					var err error
+					expectedCloudConfig, err = ioutil.ReadFile("fixtures/cloud-config-cf-elb.yml")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("creates and attaches a cf lb type and ns when domain is provided", func() {
+					args := []string{
+						fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+						"--state-dir", tempDirectory,
+						"create-lbs",
+						"--type", "cf",
+						"--cert", lbCertPath,
+						"--key", lbKeyPath,
+						"--domain", "cf.example.com",
+					}
+
+					executeCommand(args, 0)
+
+					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(expectedCloudConfig)))
+
+					state := readStateJson(tempDirectory)
+					Expect(state.LB).NotTo(BeNil())
+					Expect(state.LB.Type).To(Equal("cf"))
+					Expect(state.LB.Cert).To(Equal(testhelpers.BBL_CERT))
+					Expect(state.LB.Key).To(Equal(testhelpers.BBL_KEY))
+					Expect(state.LB.Domain).To(Equal("cf.example.com"))
+				})
+			})
+
 		})
 	})
 

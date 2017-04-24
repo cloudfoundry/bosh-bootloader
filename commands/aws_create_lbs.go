@@ -28,6 +28,7 @@ type AWSCreateLBsConfig struct {
 	CertPath     string
 	KeyPath      string
 	ChainPath    string
+	Domain       string
 	SkipIfExists bool
 }
 
@@ -99,6 +100,10 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 			}
 			state.LB.Cert = string(certContents)
 			state.LB.Key = string(keyContents)
+
+			if config.Domain != "" {
+				state.LB.Domain = config.Domain
+			}
 		}
 
 		state.LB.Type = config.LBType

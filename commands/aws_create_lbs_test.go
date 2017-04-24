@@ -221,6 +221,62 @@ var _ = Describe("AWS Create LBs", func() {
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
 				})
+
+				Context("when a domain is provided", func() {
+					BeforeEach(func() {
+						statePassedToTerraform.LB = storage.LB{
+							Type:   "cf",
+							Cert:   "some-cert",
+							Key:    "some-key",
+							Domain: "some-domain",
+						}
+
+						stateReturnedFromTerraform = statePassedToTerraform
+						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
+					})
+
+					It("creates dns records for provided domain", func() {
+						err := command.Execute(commands.AWSCreateLBsConfig{
+							LBType:   "cf",
+							CertPath: certPath,
+							KeyPath:  keyPath,
+							Domain:   "some-domain",
+						}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+					})
+				})
+
+				Context("when a domain exists", func() {
+					BeforeEach(func() {
+						incomingState.LB = storage.LB{
+							Type:   "cf",
+							Cert:   "some-cert",
+							Key:    "some-key",
+							Domain: "some-domain",
+						}
+						statePassedToTerraform = incomingState
+
+						stateReturnedFromTerraform = statePassedToTerraform
+						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
+					})
+
+					It("does not change domain", func() {
+						err := command.Execute(commands.AWSCreateLBsConfig{
+							LBType:   "cf",
+							CertPath: certPath,
+							KeyPath:  keyPath,
+						}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+					})
+				})
 			})
 
 			Context("when lb type desired is concourse", func() {

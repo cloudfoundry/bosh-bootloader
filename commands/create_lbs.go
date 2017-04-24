@@ -74,6 +74,7 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 			CertPath:     config.certPath,
 			KeyPath:      config.keyPath,
 			ChainPath:    config.chainPath,
+			Domain:       config.domain,
 			SkipIfExists: config.skipIfExists,
 		}, state); err != nil {
 			return err
