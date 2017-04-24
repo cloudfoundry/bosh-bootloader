@@ -611,7 +611,7 @@ output "cf_ssh_lb_internal_security_group" {
 }
 
 resource "aws_elb" "cf_ssh_lb" {
-  name                      = "${var.env_id}-cf-ssh-lb"
+  name                      = "${substr(var.env_id, 0, 21)}-cf-ssh-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -654,7 +654,7 @@ variable "ssl_certificate_private_key" {
 }
 
 resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${var.env_id}-"
+  name_prefix       = "${substr(var.env_id, 0, 28)}-"
   certificate_body  = "${var.ssl_certificate}"
   certificate_chain = "${var.ssl_certificate_chain}"
   private_key       = "${var.ssl_certificate_private_key}"
@@ -735,7 +735,7 @@ output "cf_router_lb_internal_security_group" {
 }
 
 resource "aws_elb" "cf_router_lb" {
-  name                      = "${var.env_id}-cf-router-lb"
+  name                      = "${substr(var.env_id, 0, 18)}-cf-router-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -838,7 +838,7 @@ output "cf_tcp_lb_internal_security_group" {
 }
 
 resource "aws_elb" "cf_tcp_lb" {
-  name                      = "${var.env_id}-cf-tcp-lb"
+  name                      = "${substr(var.env_id, 0, 21)}-cf-tcp-lb"
   cross_zone_load_balancing = true
 
   health_check {
