@@ -509,7 +509,7 @@ output "concourse_lb_internal_security_group" {
 }
 
 resource "aws_elb" "concourse_lb" {
-  name                      = "${var.env_id}-concourse-lb"
+  name                      = "${substr(var.env_id, 0, 18)}-concourse-lb"
   cross_zone_load_balancing = true
 
   health_check {
