@@ -197,7 +197,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	if config.Terraform {
+	if config.Terraform || state.TFState != "" {
 		state, err = u.terraformManager.Apply(state)
 		if err != nil {
 			return handleTerraformError(err, u.stateStore)

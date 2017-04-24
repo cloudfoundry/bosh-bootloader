@@ -243,6 +243,39 @@ var _ = Describe("bbl up aws", func() {
 			})
 		})
 
+		Context("when terraform has already created the infrastructure", func() {
+			BeforeEach(func() {
+				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")
+				os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-access-secret")
+				os.Setenv("BBL_AWS_REGION", "some-region")
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--iaas", "aws",
+					"--terraform",
+				}
+				executeCommand(args, 0)
+			})
+
+			It("idempotently bbl ups again with terraform", func() {
+				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+				}
+				session := executeCommand(args, 0)
+
+				state := readStateJson(tempDirectory)
+				Expect(state.Stack).To(Equal(storage.Stack{}))
+				Expect(state.TFState).To(Equal(`{"key":"value"}`))
+
+				Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+			})
+		})
+
 		Context("when AWS creds are provided through environment variables", func() {
 			It("honors the environment variables", func() {
 				os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key")

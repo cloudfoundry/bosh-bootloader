@@ -232,7 +232,7 @@ var _ = Describe("AWSUp", func() {
 				}
 			})
 
-			It("creates/updates infrastructure using terraform", func() {
+			It("creates infrastructure using terraform", func() {
 				incomingState := storage.State{
 					AWS: storage.AWS{
 						Region:          "some-aws-region",
@@ -280,6 +280,32 @@ var _ = Describe("AWSUp", func() {
 					},
 					TFState: "some-tf-state",
 				}))
+			})
+
+			Context("when infrastructure was previously created with terraform", func() {
+				var (
+					incomingState storage.State
+				)
+
+				BeforeEach(func() {
+					incomingState = storage.State{
+						AWS: storage.AWS{
+							Region:          "some-aws-region",
+							SecretAccessKey: "some-secret-access-key",
+							AccessKeyID:     "some-access-key-id",
+						},
+						EnvID:   "bbl-lake-time-stamp",
+						TFState: "some-tf-state",
+					}
+				})
+
+				It("creates infrastructure with terraform again", func() {
+					err := command.Execute(commands.AWSUpConfig{}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
+					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				})
 			})
 
 			Context("failure cases", func() {
