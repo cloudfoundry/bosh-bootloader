@@ -12,9 +12,6 @@ any instances BOSH deploys.
 
 ### Preparing your environment
 
-`bbl` requires `bosh-init` to deploy the BOSH director. Head over to bosh.io
-for [installation instructions](http://bosh.io/docs/install-bosh-init.html).
-
 To install `bbl` go to the
 [releases page](https://github.com/cloudfoundry/bosh-bootloader/releases/latest)
 and download the latest version for your platform.
@@ -56,7 +53,7 @@ The user must have the following `policy`:
 ```
 
 To create a user and associated policy with the AWS CLI run the 
-following commands:
+following commands (policy text must be in your clipboard):
 ```
 $ aws iam create-user --user-name "bbl-user"
 $ aws iam put-user-policy --user-name "bbl-user" \
@@ -150,10 +147,19 @@ MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
 -----END CERTIFICATE-----
 ```
 
+Save CA certificate to the file:
+
+```
+$ bbl director-ca-cert > bosh.crt
+$ export BOSH_CA_CERT=bosh.crt
+```
+
 To login:
 
 ```
-$ bosh target 23.248.87.55 <INSERT TARGET NAME>
+$ export BOSH_ENVIRONMENT=$(bbl director-address)
+$ bosh alias-env <INSERT TARGET NAME>
+$ bosh log-in
 Username: user-d3783rk
 Password: p-23dah71sk1
 ```
