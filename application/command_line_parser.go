@@ -25,12 +25,18 @@ type CommandLineConfiguration struct {
 type CommandLineParser struct {
 	usage      func()
 	commandSet CommandSet
+	envGetter  envGetter
 }
 
-func NewCommandLineParser(usage func(), commandSet CommandSet) CommandLineParser {
+type envGetter interface {
+	Get(name string) string
+}
+
+func NewCommandLineParser(usage func(), commandSet CommandSet, envGetter envGetter) CommandLineParser {
 	return CommandLineParser{
 		usage:      usage,
 		commandSet: commandSet,
+		envGetter:  envGetter,
 	}
 }
 
@@ -83,11 +89,13 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 		return commandLineConfiguration, []string{}, err
 	}
 
+	debugEnv := c.envGetter.Get("BBL_DEBUG")
+
 	globalFlags := flags.New("global")
 
 	globalFlags.String(&commandLineConfiguration.EndpointOverride, "endpoint-override", "")
 	globalFlags.String(&commandLineConfiguration.StateDir, "state-dir", "")
-	globalFlags.Bool(&commandLineConfiguration.Debug, "d", "debug", false)
+	globalFlags.Bool(&commandLineConfiguration.Debug, "d", "debug", (debugEnv == "true"))
 
 	globalFlags.Bool(&commandLineConfiguration.help, "h", "help", false)
 	globalFlags.Bool(&commandLineConfiguration.version, "v", "version", false)

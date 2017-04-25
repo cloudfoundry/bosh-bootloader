@@ -70,13 +70,14 @@ func main() {
 	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
+	envGetter := helpers.NewEnvGetter()
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
 
 	// Usage Command
 	usage := commands.NewUsage(os.Stdout)
 
-	configuration := getConfiguration(usage.Print, commandSet)
+	configuration := getConfiguration(usage.Print, commandSet, envGetter)
 
 	storage.GetStateLogger = stderrLogger
 
@@ -198,8 +199,6 @@ func main() {
 
 	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
 
-	envGetter := commands.NewEnvGetter()
-
 	// Commands
 	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
 	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
@@ -237,8 +236,8 @@ func fail(err error) {
 	os.Exit(1)
 }
 
-func getConfiguration(printUsage func(), commandSet application.CommandSet) application.Configuration {
-	commandLineParser := application.NewCommandLineParser(printUsage, commandSet)
+func getConfiguration(printUsage func(), commandSet application.CommandSet, envGetter helpers.EnvGetter) application.Configuration {
+	commandLineParser := application.NewCommandLineParser(printUsage, commandSet, envGetter)
 	configurationParser := application.NewConfigurationParser(commandLineParser)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {

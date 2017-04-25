@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -15,6 +16,7 @@ var _ = Describe("CommandLineParser", func() {
 	var (
 		commandLineParser application.CommandLineParser
 		usageCallCount    int
+		fakeEnvGetter     *fakes.EnvGetter
 	)
 
 	BeforeEach(func() {
@@ -27,8 +29,9 @@ var _ = Describe("CommandLineParser", func() {
 			commands.VersionCommand: nil,
 			commands.HelpCommand:    nil,
 		}
+		fakeEnvGetter = &fakes.EnvGetter{}
 
-		commandLineParser = application.NewCommandLineParser(usageFunc, commandSet)
+		commandLineParser = application.NewCommandLineParser(usageFunc, commandSet, fakeEnvGetter)
 	})
 
 	Describe("Parse", func() {
@@ -73,6 +76,29 @@ var _ = Describe("CommandLineParser", func() {
 			Entry("-state-dir with mixed spaces/equal signs", "-state-dir=/some/state/dir -state-dir /some/other/state/dir up"),
 			Entry("--state-dir/-state-dir", "--state-dir=/some/state/dir -state-dir /some/other/state/dir up"),
 		)
+
+		Context("when the BBL_DEBUG environment variable is provided", func() {
+			BeforeEach(func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_DEBUG": "true",
+				}
+			})
+
+			It("returns a command line configuration with the debug configuration set to true", func() {
+				args := []string{
+					"--endpoint-override=some-endpoint-override",
+					"--state-dir", "some/state/dir",
+					"up",
+					"--subcommand-flag", "some-value",
+				}
+				commandLineConfiguration, err := commandLineParser.Parse(args)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(commandLineConfiguration.EndpointOverride).To(Equal("some-endpoint-override"))
+				Expect(commandLineConfiguration.StateDir).To(Equal("some/state/dir"))
+				Expect(commandLineConfiguration.Debug).To(BeTrue())
+			})
+		})
 
 		Context("when no --state-dir is provided", func() {
 			BeforeEach(func() {
