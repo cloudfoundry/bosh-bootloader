@@ -15,6 +15,7 @@ import (
 
 const (
 	DestroyCommand = "destroy"
+	DownCommand    = "down"
 )
 
 type Destroy struct {

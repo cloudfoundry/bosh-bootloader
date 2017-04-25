@@ -50,6 +50,7 @@ func main() {
 		commands.VersionCommand:            nil,
 		commands.UpCommand:                 nil,
 		commands.DestroyCommand:            nil,
+		commands.DownCommand:               nil,
 		commands.DirectorAddressCommand:    nil,
 		commands.DirectorUsernameCommand:   nil,
 		commands.DirectorPasswordCommand:   nil,
@@ -208,6 +209,7 @@ func main() {
 		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
+	commandSet[commands.DownCommand] = commandSet[commands.DestroyCommand]
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)

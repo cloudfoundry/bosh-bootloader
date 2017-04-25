@@ -134,6 +134,30 @@ director_ssl:
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})
 
+	Context("when using bbl down", func() {
+		It("deletes the bbl-state", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"down", "--no-confirm",
+			}
+			_ = executeCommand(args, 0)
+
+			_, err := os.Stat(statePath)
+			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+		})
+
+		It("calls out to terraform", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"down", "--no-confirm",
+			}
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
+		})
+	})
+
 	Context("when the bbl-state does not contain a TFState", func() {
 		var (
 			args []string
