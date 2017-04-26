@@ -4,7 +4,6 @@ For many users, especially cloudfoundry core teams, you may want to specify conf
 * External Credential Store
 * CA cert for the director
 * ARP cache flushing
-* Warden CPI (aka bosh-lite)
 
 In previous versions of bosh-bootloader the only option was to allow bosh-bootloader to manage your bosh director entirely, but as of v3.0 we have introduced the option to only have bbl pave the IaaS but leave director management up to you.
 
