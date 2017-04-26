@@ -89,28 +89,39 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	}
 
 	if state.TFState != "" {
-		if config.LBType == "cf" {
+		if config.LBType == "cf" || config.LBType == "concourse" {
 			certContents, err := ioutil.ReadFile(config.CertPath)
 			if err != nil {
 				return err
 			}
+
 			keyContents, err := ioutil.ReadFile(config.KeyPath)
 			if err != nil {
 				return err
 			}
+
 			state.LB.Cert = string(certContents)
 			state.LB.Key = string(keyContents)
 
-			if config.Domain != "" {
-				state.LB.Domain = config.Domain
+			if config.ChainPath != "" {
+				chainContents, err := ioutil.ReadFile(config.ChainPath)
+				if err != nil {
+					return err
+				}
+
+				state.LB.Chain = string(chainContents)
 			}
+		}
+
+		if config.Domain != "" {
+			state.LB.Domain = config.Domain
 		}
 
 		state.LB.Type = config.LBType
 
 		state, err = c.terraformManager.Apply(state)
 		if err != nil {
-			return err
+			return handleTerraformError(err, c.stateStore)
 		}
 	} else {
 		err = c.certificateValidator.Validate(CreateLBsCommand, config.CertPath, config.KeyPath, config.ChainPath)

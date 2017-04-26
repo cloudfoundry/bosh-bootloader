@@ -148,8 +148,9 @@ var _ = Describe("AWS Create LBs", func() {
 				statePassedToTerraform     storage.State
 				stateReturnedFromTerraform storage.State
 
-				certPath string
-				keyPath  string
+				certPath  string
+				keyPath   string
+				chainPath string
 			)
 
 			BeforeEach(func() {
@@ -191,6 +192,14 @@ var _ = Describe("AWS Create LBs", func() {
 				keyPath = tempKeyFile.Name()
 				err = ioutil.WriteFile(keyPath, []byte(key), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
+
+				tempChainFile, err := ioutil.TempFile("", "chain")
+				Expect(err).NotTo(HaveOccurred())
+
+				chain := "some-chain"
+				chainPath = tempChainFile.Name()
+				err = ioutil.WriteFile(chainPath, []byte(chain), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when lb type desired is cf", func() {
@@ -220,6 +229,29 @@ var _ = Describe("AWS Create LBs", func() {
 					Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+				})
+
+				Context("when the optional chain is provided", func() {
+					BeforeEach(func() {
+						statePassedToTerraform.LB.Chain = "some-chain"
+
+						stateReturnedFromTerraform = statePassedToTerraform
+						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
+					})
+
+					It("creates a load balancer with certificate using terraform", func() {
+						err := command.Execute(commands.AWSCreateLBsConfig{
+							LBType:    "cf",
+							CertPath:  certPath,
+							KeyPath:   keyPath,
+							ChainPath: chainPath,
+						}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+					})
 				})
 
 				Context("when a domain is provided", func() {
@@ -284,6 +316,8 @@ var _ = Describe("AWS Create LBs", func() {
 					statePassedToTerraform = incomingState
 					statePassedToTerraform.LB = storage.LB{
 						Type: "concourse",
+						Cert: "some-cert",
+						Key:  "some-key",
 					}
 
 					stateReturnedFromTerraform = statePassedToTerraform
@@ -293,7 +327,9 @@ var _ = Describe("AWS Create LBs", func() {
 
 				It("creates a load balancer with certificate using terraform", func() {
 					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType: "concourse",
+						LBType:   "concourse",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					}, incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -302,6 +338,29 @@ var _ = Describe("AWS Create LBs", func() {
 					Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+				})
+
+				Context("when optional chain is provided", func() {
+					BeforeEach(func() {
+						statePassedToTerraform.LB.Chain = "some-chain"
+
+						stateReturnedFromTerraform = statePassedToTerraform
+						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
+					})
+
+					It("creates a load balancer with certificate using terraform", func() {
+						err := command.Execute(commands.AWSCreateLBsConfig{
+							LBType:    "concourse",
+							CertPath:  certPath,
+							KeyPath:   keyPath,
+							ChainPath: chainPath,
+						}, incomingState)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+					})
 				})
 			})
 		})
@@ -594,16 +653,143 @@ var _ = Describe("AWS Create LBs", func() {
 				})
 			})
 
+			Context("when lb is cf and chain path is invalid", func() {
+				var (
+					certPath string
+					keyPath  string
+				)
+
+				BeforeEach(func() {
+					tempCertFile, err := ioutil.TempFile("", "cert")
+					Expect(err).NotTo(HaveOccurred())
+					certPath = tempCertFile.Name()
+
+					tempKeyFile, err := ioutil.TempFile("", "key")
+					Expect(err).NotTo(HaveOccurred())
+					keyPath = tempKeyFile.Name()
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(commands.AWSCreateLBsConfig{
+						LBType:    "cf",
+						CertPath:  certPath,
+						KeyPath:   keyPath,
+						ChainPath: "/fake/chain/path",
+					}, storage.State{
+						TFState: "some-tf-state",
+					})
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
+			})
+
 			Context("when terraform manager fails to apply", func() {
+				var (
+					certPath string
+					keyPath  string
+				)
+
+				BeforeEach(func() {
+					tempCertFile, err := ioutil.TempFile("", "cert")
+					Expect(err).NotTo(HaveOccurred())
+					certPath = tempCertFile.Name()
+
+					tempKeyFile, err := ioutil.TempFile("", "key")
+					Expect(err).NotTo(HaveOccurred())
+					keyPath = tempKeyFile.Name()
+				})
+
 				It("returns an error", func() {
 					terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
 
 					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType: "concourse",
+						LBType:   "concourse",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					}, storage.State{
 						TFState: "some-tf-state",
 					})
 					Expect(err).To(MatchError("failed to apply"))
+				})
+			})
+
+			Context("when the terraform manager fails with terraformManagerError", func() {
+				var (
+					certPath string
+					keyPath  string
+
+					managerError *fakes.TerraformManagerError
+				)
+
+				BeforeEach(func() {
+					tempCertFile, err := ioutil.TempFile("", "cert")
+					Expect(err).NotTo(HaveOccurred())
+					certPath = tempCertFile.Name()
+
+					tempKeyFile, err := ioutil.TempFile("", "key")
+					Expect(err).NotTo(HaveOccurred())
+					keyPath = tempKeyFile.Name()
+
+					managerError = &fakes.TerraformManagerError{}
+					managerError.BBLStateCall.Returns.BBLState = storage.State{
+						TFState: "some-partial-tf-state",
+					}
+					managerError.ErrorCall.Returns = "cannot apply"
+					terraformManager.ApplyCall.Returns.Error = managerError
+				})
+
+				It("saves the bbl state and returns the error", func() {
+					err := command.Execute(commands.AWSCreateLBsConfig{
+						LBType:   "concourse",
+						CertPath: certPath,
+						KeyPath:  keyPath,
+					}, storage.State{
+						TFState: "some-tf-state",
+					})
+					Expect(err).To(MatchError("cannot apply"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+						TFState: "some-partial-tf-state",
+					}))
+				})
+
+				Context("when the terraform manager error fails to return a bbl state", func() {
+					BeforeEach(func() {
+						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
+					})
+
+					It("saves the bbl state and returns the error", func() {
+						err := command.Execute(commands.AWSCreateLBsConfig{
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
+						}, storage.State{
+							TFState: "some-tf-state",
+						})
+						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
+					})
+				})
+
+				Context("when we fail to set the bbl state", func() {
+					BeforeEach(func() {
+						managerError.BBLStateCall.Returns.BBLState = storage.State{
+							TFState: "some-partial-tf-state",
+						}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{
+							{errors.New("failed to set bbl state")},
+						}
+					})
+
+					It("saves the bbl state and returns the error", func() {
+						err := command.Execute(commands.AWSCreateLBsConfig{
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
+						}, storage.State{
+							TFState: "some-tf-state",
+						})
+						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to set bbl state"))
+					})
 				})
 			})
 

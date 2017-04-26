@@ -163,7 +163,10 @@ var _ = Describe("InputGenerator", func() {
 					BOSHAZ: "some-zone",
 				},
 				LB: storage.LB{
-					Type: "concourse",
+					Type:  "concourse",
+					Cert:  "some-cert",
+					Chain: "some-chain",
+					Key:   "some-key",
 				},
 			}
 		})
@@ -175,13 +178,16 @@ var _ = Describe("InputGenerator", func() {
 			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs).To(Equal(map[string]string{
-				"env_id":                 "some-env-id",
-				"nat_ssh_key_pair_name":  "some-key-pair-name",
-				"access_key":             "some-access-key-id",
-				"secret_key":             "some-secret-access-key",
-				"region":                 "some-region",
-				"bosh_availability_zone": "some-zone",
-				"availability_zones":     `["z1","z2","z3"]`,
+				"env_id":                      "some-env-id",
+				"nat_ssh_key_pair_name":       "some-key-pair-name",
+				"access_key":                  "some-access-key-id",
+				"secret_key":                  "some-secret-access-key",
+				"region":                      "some-region",
+				"bosh_availability_zone":      "some-zone",
+				"availability_zones":          `["z1","z2","z3"]`,
+				"ssl_certificate":             "some-cert",
+				"ssl_certificate_chain":       "some-chain",
+				"ssl_certificate_private_key": "some-key",
 			}))
 		})
 	})
