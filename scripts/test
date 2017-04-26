@@ -11,6 +11,7 @@ function unset_env_vars() {
   unset BBL_GCP_REGION
   unset BBL_GCP_ZONE
   unset BBL_GCP_PROJECT_ID
+  unset BBL_DEBUG
 }
 
 function main() {
