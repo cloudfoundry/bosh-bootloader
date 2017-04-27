@@ -142,6 +142,9 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		input,
 		template,
 		bblState.TFState)
+
+	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
+
 	switch err.(type) {
 	case executorError:
 		return storage.State{}, NewManagerError(bblState, err.(executorError))

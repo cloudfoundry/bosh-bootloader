@@ -25,6 +25,8 @@ var _ = Describe("Manager", func() {
 		logger                *fakes.Logger
 		manager               terraform.Manager
 		terraformOutputBuffer bytes.Buffer
+		expectedTFState       string
+		expectedTFOutput      string
 	)
 
 	BeforeEach(func() {
@@ -33,6 +35,9 @@ var _ = Describe("Manager", func() {
 		inputGenerator = &fakes.InputGenerator{}
 		outputGenerator = &fakes.OutputGenerator{}
 		logger = &fakes.Logger{}
+
+		expectedTFOutput = "some terraform output"
+		expectedTFState = "some-updated-tf-state"
 
 		manager = terraform.NewManager(terraform.NewManagerArgs{
 			Executor:              executor,
@@ -46,10 +51,8 @@ var _ = Describe("Manager", func() {
 
 	Describe("Apply", func() {
 		var (
-			incomingState    storage.State
-			expectedState    storage.State
-			expectedTFState  string
-			expectedTFOutput string
+			incomingState storage.State
+			expectedState storage.State
 		)
 
 		BeforeEach(func() {
@@ -69,10 +72,7 @@ var _ = Describe("Manager", func() {
 				},
 			}
 
-			expectedTFState = "some-updated-tf-state"
 			executor.ApplyCall.Returns.TFState = expectedTFState
-
-			expectedTFOutput = "some terraform output"
 
 			expectedState = incomingState
 			expectedState.TFState = expectedTFState
@@ -189,6 +189,11 @@ var _ = Describe("Manager", func() {
 	Describe("Destroy", func() {
 		Context("when the bbl state contains a non-empty TFState", func() {
 			var (
+				incomingState storage.State
+				expectedState storage.State
+			)
+
+			BeforeEach(func() {
 				incomingState = storage.State{
 					EnvID: "some-env-id",
 					GCP: storage.GCP{
@@ -203,12 +208,13 @@ var _ = Describe("Manager", func() {
 					},
 					TFState: "some-tf-state",
 				}
-				updatedTFState = "some-updated-tf-state"
-			)
+				executor.DestroyCall.Returns.TFState = expectedTFState
 
-			BeforeEach(func() {
+				expectedState = incomingState
+				expectedState.TFState = expectedTFState
+				expectedState.LatestTFOutput = expectedTFOutput
+
 				templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
-
 				inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 					"env_id":        incomingState.EnvID,
 					"project_id":    incomingState.GCP.ProjectID,
@@ -217,6 +223,15 @@ var _ = Describe("Manager", func() {
 					"credentials":   "some-path",
 					"system_domain": incomingState.LB.Domain,
 				}
+			})
+
+			It("logs steps", func() {
+				_, err := manager.Destroy(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					"destroying infrastructure", "finished destroying infrastructure",
+				}))
 			})
 
 			It("calls Executor.Destroy with the right arguments", func() {
@@ -239,28 +254,13 @@ var _ = Describe("Manager", func() {
 				Expect(executor.DestroyCall.Receives.TFState).To(Equal(incomingState.TFState))
 			})
 
-			Context("when Executor.Destroy succeeds", func() {
-				BeforeEach(func() {
-					executor.DestroyCall.Returns.TFState = updatedTFState
-				})
+			It("returns the bbl state updated with the TFState and output from executor destroy", func() {
+				terraformOutputBuffer.Write([]byte(expectedTFOutput))
 
-				AfterEach(func() {
-					executor.DestroyCall.Returns.TFState = ""
-				})
+				newBBLState, err := manager.Destroy(incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-				It("returns the bbl state updated with the TFState returned by Executor.Destroy", func() {
-					newBBLState, err := manager.Destroy(incomingState)
-					Expect(err).NotTo(HaveOccurred())
-
-					expectedBBLState := incomingState
-					expectedBBLState.TFState = updatedTFState
-					Expect(newBBLState.TFState).To(Equal(updatedTFState))
-					Expect(newBBLState).To(Equal(expectedBBLState))
-
-					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
-						"destroying infrastructure", "finished destroying infrastructure",
-					}))
-				})
+				Expect(newBBLState).To(Equal(expectedState))
 			})
 
 			Context("when InputGenerator.Generate returns an error", func() {
@@ -290,6 +290,8 @@ var _ = Describe("Manager", func() {
 
 					executorError = &fakes.TerraformExecutorError{}
 					executor.DestroyCall.Returns.Error = executorError
+
+					terraformOutputBuffer.Write([]byte(expectedTFOutput))
 				})
 
 				AfterEach(func() {
@@ -299,7 +301,9 @@ var _ = Describe("Manager", func() {
 				It("returns a ManagerError", func() {
 					_, err := manager.Destroy(incomingState)
 
-					expectedError := terraform.NewManagerError(incomingState, executorError)
+					expectedState := incomingState
+					expectedState.LatestTFOutput = expectedTFOutput
+					expectedError := terraform.NewManagerError(expectedState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
