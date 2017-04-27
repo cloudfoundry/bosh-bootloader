@@ -37,6 +37,11 @@ func (l *Logger) Dot() {
 	l.newline = false
 }
 
+func (l *Logger) Printf(message string, a ...interface{}) {
+	l.clear()
+	fmt.Fprintf(l.writer, "%s", fmt.Sprintf(message, a...))
+}
+
 func (l *Logger) Println(message string) {
 	l.clear()
 	fmt.Fprintf(l.writer, "%s\n", message)

@@ -3,8 +3,6 @@ package commands
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -19,16 +17,16 @@ type LBs struct {
 	infrastructureManager infrastructureManager
 	stateValidator        stateValidator
 	terraformManager      terraformManager
-	stdout                io.Writer
+	logger                logger
 }
 
-func NewLBs(credentialValidator credentialValidator, stateValidator stateValidator, infrastructureManager infrastructureManager, terraformManager terraformManager, stdout io.Writer) LBs {
+func NewLBs(credentialValidator credentialValidator, stateValidator stateValidator, infrastructureManager infrastructureManager, terraformManager terraformManager, logger logger) LBs {
 	return LBs{
 		credentialValidator:   credentialValidator,
 		infrastructureManager: infrastructureManager,
 		stateValidator:        stateValidator,
 		terraformManager:      terraformManager,
-		stdout:                stdout,
+		logger:                logger,
 	}
 }
 
@@ -52,10 +50,10 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 
 		switch state.Stack.LBType {
 		case "cf":
-			fmt.Fprintf(c.stdout, "CF Router LB: %s [%s]\n", stack.Outputs["CFRouterLoadBalancer"], stack.Outputs["CFRouterLoadBalancerURL"])
-			fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s [%s]\n", stack.Outputs["CFSSHProxyLoadBalancer"], stack.Outputs["CFSSHProxyLoadBalancerURL"])
+			c.logger.Printf("CF Router LB: %s [%s]\n", stack.Outputs["CFRouterLoadBalancer"], stack.Outputs["CFRouterLoadBalancerURL"])
+			c.logger.Printf("CF SSH Proxy LB: %s [%s]\n", stack.Outputs["CFSSHProxyLoadBalancer"], stack.Outputs["CFSSHProxyLoadBalancerURL"])
 		case "concourse":
-			fmt.Fprintf(c.stdout, "Concourse LB: %s [%s]\n", stack.Outputs["ConcourseLoadBalancer"], stack.Outputs["ConcourseLoadBalancerURL"])
+			c.logger.Printf("Concourse LB: %s [%s]\n", stack.Outputs["ConcourseLoadBalancer"], stack.Outputs["ConcourseLoadBalancerURL"])
 		default:
 			return errors.New("no lbs found")
 		}
@@ -86,19 +84,19 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 					return err
 				}
 
-				fmt.Fprintf(c.stdout, "%s\n", string(lbOutput))
+				c.logger.Println(string(lbOutput))
 			} else {
-				fmt.Fprintf(c.stdout, "CF Router LB: %s\n", terraformOutputs["router_lb_ip"])
-				fmt.Fprintf(c.stdout, "CF SSH Proxy LB: %s\n", terraformOutputs["ssh_proxy_lb_ip"])
-				fmt.Fprintf(c.stdout, "CF TCP Router LB: %s\n", terraformOutputs["tcp_router_lb_ip"])
-				fmt.Fprintf(c.stdout, "CF WebSocket LB: %s\n", terraformOutputs["ws_lb_ip"])
+				c.logger.Printf("CF Router LB: %s\n", terraformOutputs["router_lb_ip"])
+				c.logger.Printf("CF SSH Proxy LB: %s\n", terraformOutputs["ssh_proxy_lb_ip"])
+				c.logger.Printf("CF TCP Router LB: %s\n", terraformOutputs["tcp_router_lb_ip"])
+				c.logger.Printf("CF WebSocket LB: %s\n", terraformOutputs["ws_lb_ip"])
 
 				if dnsServers, ok := terraformOutputs["system_domain_dns_servers"]; ok {
-					fmt.Fprintf(c.stdout, "CF System Domain DNS servers: %s\n", strings.Join(dnsServers.([]string), " "))
+					c.logger.Printf("CF System Domain DNS servers: %s\n", strings.Join(dnsServers.([]string), " "))
 				}
 			}
 		case "concourse":
-			fmt.Fprintf(c.stdout, "Concourse LB: %s\n", terraformOutputs["concourse_lb_ip"])
+			c.logger.Printf("Concourse LB: %s\n", terraformOutputs["concourse_lb_ip"])
 		default:
 			return errors.New("no lbs found")
 		}

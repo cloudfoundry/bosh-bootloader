@@ -1,7 +1,6 @@
 package commands_test
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -20,7 +19,7 @@ var _ = Describe("LBs", func() {
 		stateValidator        *fakes.StateValidator
 		terraformManager      *fakes.TerraformManager
 		lbsCommand            commands.LBs
-		stdout                *bytes.Buffer
+		logger                *fakes.Logger
 		incomingState         storage.State
 	)
 
@@ -36,9 +35,9 @@ var _ = Describe("LBs", func() {
 			"ws_lb_ip":         "some-ws-lb-ip",
 			"concourse_lb_ip":  "some-concourse-lb-ip",
 		}
-		stdout = bytes.NewBuffer([]byte{})
+		logger = &fakes.Logger{}
 
-		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformManager, stdout)
+		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformManager, logger)
 	})
 
 	Describe("Execute", func() {
@@ -59,21 +58,21 @@ var _ = Describe("LBs", func() {
 						"CFSSHProxyLoadBalancerURL": "http://some.other.lb.url",
 					},
 				}
-
 				incomingState.Stack = storage.Stack{
 					LBType: "cf",
 					Name:   "some-stack-name",
 				}
-				err := lbsCommand.Execute([]string{}, incomingState)
 
+				err := lbsCommand.Execute([]string{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
-
 				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-				Expect(stdout.String()).To(ContainSubstring("CF Router LB: some-lb-name [http://some.lb.url]"))
-				Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-other-lb-name [http://some.other.lb.url]"))
+				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+					"CF Router LB: some-lb-name [http://some.lb.url]\n",
+					"CF SSH Proxy LB: some-other-lb-name [http://some.other.lb.url]\n",
+				}))
 			})
 
 			It("prints LB names and URLs for lb type concourse", func() {
@@ -84,20 +83,20 @@ var _ = Describe("LBs", func() {
 						"ConcourseLoadBalancerURL": "http://some.lb.url",
 					},
 				}
-
 				incomingState.Stack = storage.Stack{
 					LBType: "concourse",
 					Name:   "some-stack-name",
 				}
-				err := lbsCommand.Execute([]string{}, incomingState)
 
+				err := lbsCommand.Execute([]string{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
-
 				Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack-name"))
 
-				Expect(stdout.String()).To(ContainSubstring("Concourse LB: some-lb-name [http://some.lb.url]"))
+				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+					"Concourse LB: some-lb-name [http://some.lb.url]\n",
+				}))
 			})
 
 			It("returns error when lb type is not cf or concourse", func() {
@@ -147,11 +146,12 @@ var _ = Describe("LBs", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stdout.String()).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
-				Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
-				Expect(stdout.String()).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
-				Expect(stdout.String()).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
-				Expect(stdout.String()).NotTo(ContainSubstring("CF System Domain DNS servers"))
+				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+					"CF Router LB: some-router-lb-ip\n",
+					"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
+					"CF TCP Router LB: some-tcp-router-lb-ip\n",
+					"CF WebSocket LB: some-ws-lb-ip\n",
+				}))
 			})
 
 			Context("when the domain is specified", func() {
@@ -175,11 +175,13 @@ var _ = Describe("LBs", func() {
 
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(stdout.String()).To(ContainSubstring("CF Router LB: some-router-lb-ip"))
-					Expect(stdout.String()).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-ip"))
-					Expect(stdout.String()).To(ContainSubstring("CF TCP Router LB: some-tcp-router-lb-ip"))
-					Expect(stdout.String()).To(ContainSubstring("CF WebSocket LB: some-ws-lb-ip"))
-					Expect(stdout.String()).To(ContainSubstring("CF System Domain DNS servers: name-server-1. name-server-2."))
+					Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+						"CF Router LB: some-router-lb-ip\n",
+						"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
+						"CF TCP Router LB: some-tcp-router-lb-ip\n",
+						"CF WebSocket LB: some-ws-lb-ip\n",
+						"CF System Domain DNS servers: name-server-1. name-server-2.\n",
+					}))
 				})
 
 				Context("when the json flag is provided", func() {
@@ -191,7 +193,7 @@ var _ = Describe("LBs", func() {
 						err := lbsCommand.Execute([]string{"--json"}, incomingState)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stdout.String()).To(MatchJSON(`{
+						Expect(logger.PrintlnCall.Receives.Message).To(MatchJSON(`{
 							"cf_router_lb": "some-router-lb-ip",
 							"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
 							"cf_tcp_router_lb": "some-tcp-router-lb-ip",
@@ -213,7 +215,9 @@ var _ = Describe("LBs", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(stdout.String()).To(ContainSubstring("Concourse LB: some-concourse-lb-ip"))
+				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+					"Concourse LB: some-concourse-lb-ip\n",
+				}))
 			})
 
 			Context("failure cases", func() {

@@ -1,10 +1,10 @@
 package commands_test
 
 import (
-	"bytes"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -14,19 +14,20 @@ import (
 var _ = Describe("Usage", func() {
 	var (
 		usage  commands.Usage
-		stdout *bytes.Buffer
+		logger *fakes.Logger
 	)
 
 	BeforeEach(func() {
-		stdout = bytes.NewBuffer([]byte{})
-		usage = commands.NewUsage(stdout)
+		logger = &fakes.Logger{}
+
+		usage = commands.NewUsage(logger)
 	})
 
 	Describe("Execute", func() {
 		It("prints out the usage information", func() {
 			err := usage.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stdout.String()).To(Equal(strings.TrimLeft(`
+			Expect(logger.PrintlnCall.Receives.Message).To(Equal(strings.TrimLeft(`
 Usage:
   bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
 
@@ -63,7 +64,8 @@ Commands:
 	Describe("PrintCommandUsage", func() {
 		It("prints the usage for given command", func() {
 			usage.PrintCommandUsage("my-command", "some message")
-			Expect(stdout.String()).To(Equal(strings.TrimLeft(`Usage:
+
+			Expect(logger.PrintlnCall.Receives.Message).To(Equal(strings.TrimLeft(`Usage:
   bbl [GLOBAL OPTIONS] my-command [OPTIONS]
 
 Global Options:

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -50,11 +49,13 @@ Commands:
   Use "bbl [command] --help" for more information about a command.`
 
 type Usage struct {
-	stdout io.Writer
+	logger logger
 }
 
-func NewUsage(stdout io.Writer) Usage {
-	return Usage{stdout}
+func NewUsage(logger logger) Usage {
+	return Usage{
+		logger: logger,
+	}
 }
 
 func (u Usage) Execute(subcommandFlags []string, state storage.State) error {
@@ -64,11 +65,11 @@ func (u Usage) Execute(subcommandFlags []string, state storage.State) error {
 
 func (u Usage) Print() {
 	content := fmt.Sprintf(UsageHeader, "COMMAND", GlobalUsage)
-	fmt.Fprint(u.stdout, strings.TrimLeft(content, "\n"))
+	u.logger.Println(strings.TrimLeft(content, "\n"))
 }
 
 func (u Usage) PrintCommandUsage(command, message string) {
 	commandUsage := fmt.Sprintf(CommandUsage, command, message)
 	content := fmt.Sprintf(UsageHeader, command, commandUsage)
-	fmt.Fprint(u.stdout, strings.TrimLeft(content, "\n"))
+	u.logger.Println(strings.TrimLeft(content, "\n"))
 }

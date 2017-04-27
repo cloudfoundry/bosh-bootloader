@@ -77,7 +77,7 @@ func main() {
 	stderrLogger := application.NewLogger(os.Stderr)
 
 	// Usage Command
-	usage := commands.NewUsage(os.Stdout)
+	usage := commands.NewUsage(logger)
 
 	configuration := getConfiguration(usage.Print, commandSet, envGetter)
 
@@ -211,8 +211,8 @@ func main() {
 	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
 
 	// Commands
-	commandSet[commands.HelpCommand] = commands.NewUsage(os.Stdout)
-	commandSet[commands.VersionCommand] = commands.NewVersion(Version, os.Stdout)
+	commandSet[commands.HelpCommand] = usage
+	commandSet[commands.VersionCommand] = commands.NewVersion(Version, logger)
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
@@ -223,7 +223,7 @@ func main() {
 	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
-	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, stateValidator, infrastructureManager, terraformManager, os.Stdout)
+	commandSet[commands.LBsCommand] = commands.NewLBs(awsCredentialValidator, stateValidator, infrastructureManager, terraformManager, logger)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
 	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
 	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)

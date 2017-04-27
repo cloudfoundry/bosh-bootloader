@@ -16,6 +16,15 @@ type Logger struct {
 		CallCount int
 	}
 
+	PrintfCall struct {
+		CallCount int
+		Receives  struct {
+			Message   string
+			Arguments []interface{}
+		}
+		Messages []string
+	}
+
 	PrintlnCall struct {
 		CallCount int
 		Stub      func(string)
@@ -43,6 +52,14 @@ func (l *Logger) Step(message string, a ...interface{}) {
 
 func (l *Logger) Dot() {
 	l.DotCall.CallCount++
+}
+
+func (l *Logger) Printf(message string, a ...interface{}) {
+	l.PrintfCall.CallCount++
+	l.PrintfCall.Receives.Message = message
+	l.PrintfCall.Receives.Arguments = a
+
+	l.PrintfCall.Messages = append(l.PrintfCall.Messages, fmt.Sprintf(message, a...))
 }
 
 func (l *Logger) Println(message string) {

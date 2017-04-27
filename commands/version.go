@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -14,21 +13,21 @@ const (
 )
 
 type Version struct {
-	stdout  io.Writer
+	logger  logger
 	version string
 }
 
-func NewVersion(version string, stdout io.Writer) Version {
+func NewVersion(version string, logger logger) Version {
 	if version == "" {
 		version = BBLDevVersion
 	}
 	return Version{
-		stdout:  stdout,
+		logger:  logger,
 		version: fmt.Sprintf("%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH),
 	}
 }
 
 func (v Version) Execute(subcommandFlags []string, state storage.State) error {
-	fmt.Fprintln(v.stdout, fmt.Sprintf("bbl %s", v.version))
+	v.logger.Printf("bbl %s\n", v.version)
 	return nil
 }
