@@ -17,7 +17,7 @@ import (
 	"github.com/rosenhouse/awsfaker"
 )
 
-var _ = Describe("bbl", func() {
+var _ = Describe("bbl print-env", func() {
 	var (
 		tempDirectory string
 	)
@@ -145,8 +145,6 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).NotTo(ContainSubstring("export BOSH_CLIENT_SECRET="))
 				Expect(session.Out.Contents()).NotTo(ContainSubstring("export BOSH_CA_CERT="))
 			})
-
 		})
-
 	})
 })

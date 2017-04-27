@@ -19,10 +19,11 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Cmd", func() {
+var _ = Describe("Run", func() {
 	var (
-		stdout *bytes.Buffer
-		stderr *bytes.Buffer
+		stdout       *bytes.Buffer
+		stderr       *bytes.Buffer
+		outputBuffer *bytes.Buffer
 
 		cmd terraform.Cmd
 
@@ -51,8 +52,9 @@ var _ = Describe("Cmd", func() {
 	BeforeEach(func() {
 		stdout = bytes.NewBuffer([]byte{})
 		stderr = bytes.NewBuffer([]byte{})
+		outputBuffer = bytes.NewBuffer([]byte{})
 
-		cmd = terraform.NewCmd(stderr)
+		cmd = terraform.NewCmd(stderr, outputBuffer)
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			if getFastFailTerraform() {
@@ -102,6 +104,19 @@ var _ = Describe("Cmd", func() {
 		Expect(stdout).NotTo(ContainSubstring("apply some-arg"))
 	})
 
+	It("redirects command stdout to the provided buffer", func() {
+		err := cmd.Run(nil, "/tmp", []string{"apply", "some-arg"}, false)
+		Expect(err).NotTo(HaveOccurred())
+
+		terraformArgsMutex.Lock()
+		defer terraformArgsMutex.Unlock()
+		Expect(terraformArgs).To(Equal([]string{"apply", "some-arg"}))
+
+		outputBufferContents := string(outputBuffer.Bytes())
+		Expect(outputBufferContents).To(MatchRegexp("working directory: (.*)/tmp"))
+		Expect(outputBufferContents).To(ContainSubstring("apply some-arg"))
+	})
+
 	It("redirects command stdout to provided stdout when debug is true", func() {
 		err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"}, true)
 		Expect(err).NotTo(HaveOccurred())
@@ -119,14 +134,20 @@ var _ = Describe("Cmd", func() {
 			setFastFailTerraform(false)
 		})
 
-		It("returns an error when terraform fails", func() {
+		It("returns an error and redirects command stderr to the provided buffer when terraform fails", func() {
 			err := cmd.Run(stdout, "", []string{"fast-fail"}, false)
 			Expect(err).To(MatchError("exit status 1"))
+
+			outputBufferContents := string(outputBuffer.Bytes())
+			Expect(outputBufferContents).To(ContainSubstring("failed to terraform"))
 		})
 
-		It("redirects command stderr to provided stderr when debug is true", func() {
+		It("redirects command stderr to provided stderr and buffer when debug is true", func() {
 			_ = cmd.Run(stdout, "", []string{"fast-fail"}, true)
 			Expect(stderr).To(ContainSubstring("failed to terraform"))
+
+			outputBufferContents := string(outputBuffer.Bytes())
+			Expect(outputBufferContents).To(ContainSubstring("failed to terraform"))
 		})
 	})
 })

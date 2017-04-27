@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"bytes"
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -8,11 +9,12 @@ import (
 )
 
 type Manager struct {
-	executor          executor
-	templateGenerator templateGenerator
-	inputGenerator    inputGenerator
-	outputGenerator   outputGenerator
-	logger            logger
+	executor              executor
+	templateGenerator     templateGenerator
+	inputGenerator        inputGenerator
+	outputGenerator       outputGenerator
+	terraformOutputBuffer *bytes.Buffer
+	logger                logger
 }
 
 type executor interface {
@@ -37,13 +39,23 @@ type logger interface {
 	Step(string, ...interface{})
 }
 
-func NewManager(executor executor, templateGenerator templateGenerator, inputGenerator inputGenerator, outputGenerator outputGenerator, logger logger) Manager {
+type NewManagerArgs struct {
+	Executor              executor
+	TemplateGenerator     templateGenerator
+	InputGenerator        inputGenerator
+	OutputGenerator       outputGenerator
+	TerraformOutputBuffer *bytes.Buffer
+	Logger                logger
+}
+
+func NewManager(args NewManagerArgs) Manager {
 	return Manager{
-		executor:          executor,
-		templateGenerator: templateGenerator,
-		inputGenerator:    inputGenerator,
-		outputGenerator:   outputGenerator,
-		logger:            logger,
+		executor:              args.Executor,
+		templateGenerator:     args.TemplateGenerator,
+		inputGenerator:        args.InputGenerator,
+		outputGenerator:       args.OutputGenerator,
+		terraformOutputBuffer: args.TerraformOutputBuffer,
+		logger:                args.Logger,
 	}
 }
 
@@ -99,6 +111,8 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 		template,
 		bblState.TFState)
 
+	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
+
 	switch err.(type) {
 	case executorError:
 		return storage.State{}, NewManagerError(bblState, err.(executorError))
@@ -147,4 +161,11 @@ func (m Manager) GetOutputs(bblState storage.State) (map[string]interface{}, err
 	}
 
 	return outputs, nil
+}
+
+func readAndReset(buf *bytes.Buffer) string {
+	contents := buf.Bytes()
+	buf.Reset()
+
+	return string(contents)
 }

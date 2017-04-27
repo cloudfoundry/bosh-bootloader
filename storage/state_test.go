@@ -164,7 +164,8 @@ var _ = Describe("Store", func() {
 					"boshAZ": "some-bosh-az"
 				},
 				"envID": "some-env-id",
-				"tfState": "some-tf-state"
+				"tfState": "some-tf-state",
+				"latestTFOutput": ""
 			}`))
 
 			fileInfo, err := os.Stat(filepath.Join(tempDir, "bbl-state.json"))

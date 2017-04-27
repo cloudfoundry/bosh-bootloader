@@ -6,12 +6,14 @@ import (
 )
 
 type Cmd struct {
-	stderr io.Writer
+	stderr       io.Writer
+	outputBuffer io.Writer
 }
 
-func NewCmd(stderr io.Writer) Cmd {
+func NewCmd(stderr, outputBuffer io.Writer) Cmd {
 	return Cmd{
-		stderr: stderr,
+		stderr:       stderr,
+		outputBuffer: outputBuffer,
 	}
 }
 
@@ -20,8 +22,11 @@ func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string, debug
 	command.Dir = workingDirectory
 
 	if debug {
-		command.Stdout = stdout
-		command.Stderr = c.stderr
+		command.Stdout = io.MultiWriter(stdout, c.outputBuffer)
+		command.Stderr = io.MultiWriter(c.stderr, c.outputBuffer)
+	} else {
+		command.Stdout = c.outputBuffer
+		command.Stderr = c.outputBuffer
 	}
 
 	return command.Run()

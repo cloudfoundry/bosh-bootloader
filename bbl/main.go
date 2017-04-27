@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
@@ -61,6 +62,7 @@ func main() {
 		commands.DeleteLBsCommand:          nil,
 		commands.LBsCommand:                nil,
 		commands.EnvIDCommand:              nil,
+		commands.LatestErrorCommand:        nil,
 		commands.PrintEnvCommand:           nil,
 		commands.CloudConfigCommand:        nil,
 		commands.BOSHDeploymentVarsCommand: nil,
@@ -131,7 +133,9 @@ func main() {
 	keyPairManager := keypair.NewManager(awsKeyPairManager, gcpKeyPairManager)
 
 	// Terraform
-	terraformCmd := terraform.NewCmd(os.Stderr)
+	terraformOutputBuffer := bytes.NewBuffer([]byte{})
+
+	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
 	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
 	gcpInputGenerator := gcpterraform.NewInputGenerator()
@@ -142,7 +146,14 @@ func main() {
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
 	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator, awsOutputGenerator)
-	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, outputGenerator, logger)
+	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
+		Executor:              terraformExecutor,
+		TemplateGenerator:     templateGenerator,
+		InputGenerator:        inputGenerator,
+		OutputGenerator:       outputGenerator,
+		TerraformOutputBuffer: terraformOutputBuffer,
+		Logger:                logger,
+	})
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)
@@ -219,6 +230,7 @@ func main() {
 	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorCACertPropertyName)
 	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.SSHKeyPropertyName)
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
+	commandSet[commands.LatestErrorCommand] = commands.NewLatestError(logger)
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)

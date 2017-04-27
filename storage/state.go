@@ -51,17 +51,18 @@ type LB struct {
 }
 
 type State struct {
-	Version    int     `json:"version"`
-	IAAS       string  `json:"iaas"`
-	NoDirector bool    `json:"noDirector"`
-	AWS        AWS     `json:"aws,omitempty"`
-	GCP        GCP     `json:"gcp,omitempty"`
-	KeyPair    KeyPair `json:"keyPair,omitempty"`
-	BOSH       BOSH    `json:"bosh,omitempty"`
-	Stack      Stack   `json:"stack"`
-	EnvID      string  `json:"envID"`
-	TFState    string  `json:"tfState"`
-	LB         LB      `json:"lb"`
+	Version        int     `json:"version"`
+	IAAS           string  `json:"iaas"`
+	NoDirector     bool    `json:"noDirector"`
+	AWS            AWS     `json:"aws,omitempty"`
+	GCP            GCP     `json:"gcp,omitempty"`
+	KeyPair        KeyPair `json:"keyPair,omitempty"`
+	BOSH           BOSH    `json:"bosh,omitempty"`
+	Stack          Stack   `json:"stack"`
+	EnvID          string  `json:"envID"`
+	TFState        string  `json:"tfState"`
+	LB             LB      `json:"lb"`
+	LatestTFOutput string  `json:"latestTFOutput"`
 }
 
 type Store struct {

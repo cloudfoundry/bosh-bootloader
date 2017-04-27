@@ -1,6 +1,7 @@
 package terraform_test
 
 import (
+	"bytes"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -17,12 +18,13 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		executor          *fakes.TerraformExecutor
-		templateGenerator *fakes.TemplateGenerator
-		inputGenerator    *fakes.InputGenerator
-		outputGenerator   *fakes.OutputGenerator
-		logger            *fakes.Logger
-		manager           terraform.Manager
+		executor              *fakes.TerraformExecutor
+		templateGenerator     *fakes.TemplateGenerator
+		inputGenerator        *fakes.InputGenerator
+		outputGenerator       *fakes.OutputGenerator
+		logger                *fakes.Logger
+		manager               terraform.Manager
+		terraformOutputBuffer bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -32,14 +34,22 @@ var _ = Describe("Manager", func() {
 		outputGenerator = &fakes.OutputGenerator{}
 		logger = &fakes.Logger{}
 
-		manager = terraform.NewManager(executor, templateGenerator, inputGenerator, outputGenerator, logger)
+		manager = terraform.NewManager(terraform.NewManagerArgs{
+			Executor:              executor,
+			TemplateGenerator:     templateGenerator,
+			InputGenerator:        inputGenerator,
+			OutputGenerator:       outputGenerator,
+			TerraformOutputBuffer: &terraformOutputBuffer,
+			Logger:                logger,
+		})
 	})
 
 	Describe("Apply", func() {
 		var (
-			incomingState   storage.State
-			expectedState   storage.State
-			expectedTFState string
+			incomingState    storage.State
+			expectedState    storage.State
+			expectedTFState  string
+			expectedTFOutput string
 		)
 
 		BeforeEach(func() {
@@ -62,8 +72,11 @@ var _ = Describe("Manager", func() {
 			expectedTFState = "some-updated-tf-state"
 			executor.ApplyCall.Returns.TFState = expectedTFState
 
+			expectedTFOutput = "some terraform output"
+
 			expectedState = incomingState
 			expectedState.TFState = expectedTFState
+			expectedState.LatestTFOutput = expectedTFOutput
 
 			templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
 			inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
@@ -76,7 +89,7 @@ var _ = Describe("Manager", func() {
 			}
 		})
 
-		It("returns a state with new tfState from executor apply", func() {
+		It("logs steps", func() {
 			_, err := manager.Apply(storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -85,7 +98,9 @@ var _ = Describe("Manager", func() {
 			}))
 		})
 
-		It("returns a state with new tfState from executor apply", func() {
+		It("returns a state with new tfState and output from executor apply", func() {
+			terraformOutputBuffer.Write([]byte(expectedTFOutput))
+
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -134,16 +149,20 @@ var _ = Describe("Manager", func() {
 
 					executorError = &fakes.TerraformExecutorError{}
 					executor.ApplyCall.Returns.Error = executorError
+
+					terraformOutputBuffer.Write([]byte(expectedTFOutput))
 				})
 
 				AfterEach(func() {
 					executor.ApplyCall.Returns.Error = nil
 				})
 
-				It("returns a ManagerError", func() {
+				It("returns the bblState with latest terraform output and a ManagerError", func() {
 					_, err := manager.Apply(incomingState)
 
-					expectedError := terraform.NewManagerError(incomingState, executorError)
+					expectedState := incomingState
+					expectedState.LatestTFOutput = expectedTFOutput
+					expectedError := terraform.NewManagerError(expectedState, executorError)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
