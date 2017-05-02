@@ -160,7 +160,11 @@ vm_types:
     machine_type: n1-standard-1
     root_disk_size_gb: 10
     root_disk_type: pd-ssd
-
+- name: minimal
+  cloud_properties:
+    machine_type: n1-standard-1
+    root_disk_size_gb: 10
+    root_disk_type: pd-ssd
 - name: sharedcpu
   cloud_properties:
     machine_type: g1-small

@@ -56,6 +56,13 @@ const (
     root_disk_type: pd-ssd
 
 - type: replace
+  path: /vm_types/name=minimal/cloud_properties?
+  value:
+    machine_type: n1-standard-1
+    root_disk_size_gb: 10
+    root_disk_type: pd-ssd
+
+- type: replace
   path: /vm_types/name=sharedcpu/cloud_properties?
   value:
     machine_type: g1-small

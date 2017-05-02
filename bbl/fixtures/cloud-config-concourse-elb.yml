@@ -142,7 +142,12 @@ vm_types:
     ephemeral_disk:
       size: 10240
       type: gp2
-
+- name: minimal
+  cloud_properties:
+    instance_type: m3.medium
+    ephemeral_disk:
+      size: 10240
+      type: gp2
 - name: sharedcpu
   cloud_properties:
     instance_type: t2.small
