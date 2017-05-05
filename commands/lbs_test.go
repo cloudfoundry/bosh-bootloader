@@ -14,30 +14,26 @@ import (
 
 var _ = Describe("LBs", func() {
 	var (
+		lbsCommand commands.LBs
+
+		gcpLBs                *fakes.GCPLBs
 		credentialValidator   *fakes.CredentialValidator
 		infrastructureManager *fakes.InfrastructureManager
 		stateValidator        *fakes.StateValidator
-		terraformManager      *fakes.TerraformManager
-		lbsCommand            commands.LBs
 		logger                *fakes.Logger
-		incomingState         storage.State
+
+		incomingState storage.State
 	)
 
 	BeforeEach(func() {
+		gcpLBs = &fakes.GCPLBs{}
+
 		credentialValidator = &fakes.CredentialValidator{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		stateValidator = &fakes.StateValidator{}
-		terraformManager = &fakes.TerraformManager{}
-		terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-			"router_lb_ip":     "some-router-lb-ip",
-			"ssh_proxy_lb_ip":  "some-ssh-proxy-lb-ip",
-			"tcp_router_lb_ip": "some-tcp-router-lb-ip",
-			"ws_lb_ip":         "some-ws-lb-ip",
-			"concourse_lb_ip":  "some-concourse-lb-ip",
-		}
 		logger = &fakes.Logger{}
 
-		lbsCommand = commands.NewLBs(credentialValidator, stateValidator, infrastructureManager, terraformManager, logger)
+		lbsCommand = commands.NewLBs(gcpLBs, credentialValidator, stateValidator, infrastructureManager, logger)
 	})
 
 	Describe("Execute", func() {
@@ -132,108 +128,15 @@ var _ = Describe("LBs", func() {
 		})
 
 		Context("when bbl'd up on gcp", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
+			It("prints LB ips for lb type cf", func() {
+				incomingState := storage.State{
 					IAAS: "gcp",
 				}
-			})
-
-			It("prints LB ips for lb type cf", func() {
-				incomingState.LB = storage.LB{
-					Type: "cf",
-				}
 				err := lbsCommand.Execute([]string{}, incomingState)
-
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-					"CF Router LB: some-router-lb-ip\n",
-					"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
-					"CF TCP Router LB: some-tcp-router-lb-ip\n",
-					"CF WebSocket LB: some-ws-lb-ip\n",
-				}))
-			})
-
-			Context("when the domain is specified", func() {
-				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-						"router_lb_ip":              "some-router-lb-ip",
-						"ssh_proxy_lb_ip":           "some-ssh-proxy-lb-ip",
-						"tcp_router_lb_ip":          "some-tcp-router-lb-ip",
-						"ws_lb_ip":                  "some-ws-lb-ip",
-						"concourse_lb_ip":           "some-concourse-lb-ip",
-						"system_domain_dns_servers": []string{"name-server-1.", "name-server-2."},
-					}
-				})
-
-				It("prints LB ips for lb type cf in human readable format", func() {
-					incomingState.LB = storage.LB{
-						Type:   "cf",
-						Domain: "some-domain",
-					}
-					err := lbsCommand.Execute([]string{}, incomingState)
-
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-						"CF Router LB: some-router-lb-ip\n",
-						"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
-						"CF TCP Router LB: some-tcp-router-lb-ip\n",
-						"CF WebSocket LB: some-ws-lb-ip\n",
-						"CF System Domain DNS servers: name-server-1. name-server-2.\n",
-					}))
-				})
-
-				Context("when the json flag is provided", func() {
-					It("prints LB ips for lb type cf in json format", func() {
-						incomingState.LB = storage.LB{
-							Type:   "cf",
-							Domain: "some-domain",
-						}
-						err := lbsCommand.Execute([]string{"--json"}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(logger.PrintlnCall.Receives.Message).To(MatchJSON(`{
-							"cf_router_lb": "some-router-lb-ip",
-							"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
-							"cf_tcp_router_lb": "some-tcp-router-lb-ip",
-							"cf_websocket_lb": "some-ws-lb-ip",
-							"cf_system_domain_dns_servers": [
-								"name-server-1.",
-								"name-server-2."
-							]
-						}`))
-					})
-				})
-			})
-
-			It("prints LB ips for lb type concourse", func() {
-				incomingState.LB = storage.LB{
-					Type: "concourse",
-				}
-				err := lbsCommand.Execute([]string{}, incomingState)
-
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-					"Concourse LB: some-concourse-lb-ip\n",
-				}))
-			})
-
-			Context("failure cases", func() {
-				It("returns an error when terraform output provider fails", func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to return terraform output")
-					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("failed to return terraform output"))
-				})
-
-				It("returns an nice error message when no lb type is found", func() {
-					incomingState.LB = storage.LB{
-						Type: "",
-					}
-					err := lbsCommand.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("no lbs found"))
-				})
+				Expect(gcpLBs.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
+				Expect(gcpLBs.ExecuteCall.Receives.State).To(Equal(incomingState))
 			})
 		})
 
@@ -245,6 +148,15 @@ var _ = Describe("LBs", func() {
 
 				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(err).To(MatchError("state validator failed"))
+			})
+
+			It("returns an error when the GCPLBs fails", func() {
+				gcpLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+
+				err := lbsCommand.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).To(MatchError("something bad happened"))
 			})
 		})
 	})
