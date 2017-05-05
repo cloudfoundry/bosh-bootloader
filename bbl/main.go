@@ -192,6 +192,7 @@ func main() {
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
 		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
 		infrastructureManager, logger, cloudConfigManager, stateStore, awsEnvironmentValidator,
+		terraformManager,
 	)
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
