@@ -300,6 +300,12 @@ var _ = Describe("load balancers", func() {
 							"bosh_security_group": {
 								"value": "some-bosh-security-group"
 							},
+							"env_dns_zone_name_servers": {
+								"value": [
+									"name-server-1.",
+									"name-server-2."
+								]
+							},
 							"internal_security_group": {
 								"value": "some-internal-security-group"
 							},
@@ -889,37 +895,173 @@ var _ = Describe("load balancers", func() {
 	})
 
 	Describe("lbs", func() {
-		BeforeEach(func() {
-			upAWS(fakeAWSServer.URL, tempDirectory, 0)
-		})
-
-		It("prints out the currently attached lb names and urls", func() {
-			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
-
-			session := lbs(fakeAWSServer.URL, []string{}, tempDirectory, 0)
-			stdout := session.Out.Contents()
-
-			Expect(stdout).To(ContainSubstring("CF Router LB: some-cf-router-lb [some-cf-router-lb-url]"))
-			Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-cf-ssh-proxy-lb [some-cf-ssh-proxy-lb-url]"))
-		})
-
-		Context("when bbl-state.json does not exist", func() {
-			It("exits with status 1 and outputs helpful error message", func() {
-				tempDirectory, err := ioutil.TempDir("", "")
-				Expect(err).NotTo(HaveOccurred())
+		Context("when bbl'd up with terraform", func() {
+			BeforeEach(func() {
+				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					switch request.URL.Path {
+					case "/output/--json":
+						responseWriter.Write([]byte(fmt.Sprintf(`{
+							"bosh_eip": {
+								"value": "some-bosh-eip"
+							},
+							"bosh_url": {
+								"value": %q
+							},
+							"bosh_user_access_key": {
+								"value": "some-bosh-user-access-key"
+							},
+							"bosh_user_secret_access_key": {
+								"value": "some-bosh-user-secret-access_key"
+							},
+							"nat_eip": {
+								"value": "some-nat-eip"
+							},
+							"bosh_subnet_id": {
+								"value": "some-bosh-subnet-id"
+							},
+							"bosh_subnet_availability_zone": {
+								"value": "some-bosh-subnet-availability-zone"
+							},
+							"bosh_security_group": {
+								"value": "some-bosh-security-group"
+							},
+							"env_dns_zone_name_servers": {
+								"value": [
+									"name-server-1.",
+									"name-server-2."
+								]
+							},
+							"internal_security_group": {
+								"value": "some-internal-security-group"
+							},
+							"internal_subnet_ids": {
+								"value": [
+									"some-internal-subnet-ids-1",
+									"some-internal-subnet-ids-2",
+									"some-internal-subnet-ids-3"
+								]
+							},
+							"internal_subnet_cidrs": {
+								"value": [
+									"10.0.16.0/20",
+									"10.0.32.0/20",
+									"10.0.48.0/20"
+								]
+							},
+							"vpc_id": {
+								"value": "some-vpc-id"
+							},
+							"cf_router_lb_name": {
+								"value": "some-router-lb-name"
+							},
+							"cf_router_lb_url": {
+								"value": "some-router-lb-url"
+							},
+							"cf_router_lb_internal_security_group": {
+								"value": "some-cf-router-internal-security-group"
+							},
+							"cf_ssh_lb_name":  {
+								"value": "some-ssh-proxy-lb-name"
+							},
+							"cf_ssh_lb_url":  {
+								"value": "some-ssh-proxy-lb-url"
+							},
+							"cf_ssh_lb_internal_security_group":  {
+								"value": "some-cf-ssh-proxy-internal-security-group"
+							},
+							"concourse_lb_name":  {
+								"value": "some-concourse-lb"
+							},
+							"concourse_lb_internal_security_group":  {
+								"value": "some-concourse-internal-security-group"
+							}
+						}`, fakeBOSHServer.URL)))
+					}
+				}))
+				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 
 				args := []string{
+					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
 					"--state-dir", tempDirectory,
-					"lbs",
+					"--debug",
+					"create-lbs",
+					"--type", "cf",
+					"--cert", lbCertPath,
+					"--key", lbKeyPath,
+					"--domain", "cf.example.com",
 				}
-				cmd := exec.Command(pathToBBL, args...)
 
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
+				executeCommand(args, 0)
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = true
+			})
 
-				Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+			AfterEach(func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = false
+			})
 
-				Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+			It("prints out the currently attached lb names and urls", func() {
+				session := lbs("", []string{}, tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-name [some-router-lb-url]\n"))
+				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-name [some-ssh-proxy-lb-url]\n"))
+				Expect(stdout).To(ContainSubstring("CF System Domain DNS servers: name-server-1. name-server-2.\n"))
+			})
+
+			It("prints out the currently attached lb names and urls in JSON", func() {
+				session := lbs("", []string{"--json"}, tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(MatchJSON(`{
+					"cf_router_lb": "some-router-lb-name",
+					"cf_router_lb_url": "some-router-lb-url",
+					"cf_ssh_proxy_lb": "some-ssh-proxy-lb-name",
+					"cf_ssh_proxy_lb_url": "some-ssh-proxy-lb-url",
+					"env_dns_zone_name_servers": [
+						"name-server-1.",
+						"name-server-2."
+					]
+				}`))
+			})
+		})
+
+		Context("when bbl'd up with cloudformation", func() {
+			BeforeEach(func() {
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
+			})
+
+			It("prints out the currently attached lb names and urls", func() {
+				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
+
+				session := lbs(fakeAWSServer.URL, []string{}, tempDirectory, 0)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(ContainSubstring("CF Router LB: some-cf-router-lb [some-cf-router-lb-url]"))
+				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-cf-ssh-proxy-lb [some-cf-ssh-proxy-lb-url]"))
+			})
+
+			Context("when bbl-state.json does not exist", func() {
+				It("exits with status 1 and outputs helpful error message", func() {
+					tempDirectory, err := ioutil.TempDir("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					args := []string{
+						"--state-dir", tempDirectory,
+						"lbs",
+					}
+					cmd := exec.Command(pathToBBL, args...)
+
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+
+					Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+				})
 			})
 		})
 	})

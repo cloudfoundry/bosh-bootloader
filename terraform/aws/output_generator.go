@@ -6,6 +6,7 @@ import (
 
 type executor interface {
 	Outputs(string) (map[string]interface{}, error)
+	Output(string, string) (string, error)
 }
 
 type OutputGenerator struct {
@@ -41,11 +42,23 @@ func (o OutputGenerator) Generate(state storage.State) (map[string]interface{}, 
 	switch state.LB.Type {
 	case "cf":
 		outputMapping["cf_router_lb_name"] = "cf_router_load_balancer"
+		outputMapping["cf_router_lb_url"] = "cf_router_load_balancer_url"
 		outputMapping["cf_router_lb_internal_security_group"] = "cf_router_internal_security_group"
 		outputMapping["cf_ssh_lb_name"] = "cf_ssh_proxy_load_balancer"
+		outputMapping["cf_ssh_lb_url"] = "cf_ssh_proxy_load_balancer_url"
 		outputMapping["cf_ssh_lb_internal_security_group"] = "cf_ssh_proxy_internal_security_group"
+
+		if state.LB.Domain != "" {
+			systemDomainDNSServersRaw := tfOutputs["env_dns_zone_name_servers"]
+			servers := []string{}
+			for _, server := range systemDomainDNSServersRaw.([]interface{}) {
+				servers = append(servers, server.(string))
+			}
+			outputs["cf_system_domain_dns_servers"] = servers
+		}
 	case "concourse":
 		outputMapping["concourse_lb_name"] = "concourse_load_balancer"
+		outputMapping["concourse_lb_url"] = "concourse_load_balancer_url"
 		outputMapping["concourse_lb_internal_security_group"] = "concourse_internal_security_group"
 	}
 

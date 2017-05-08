@@ -20,7 +20,7 @@ type gcpLBs interface {
 }
 
 type awsLBs interface {
-	Execute(storage.State) error
+	Execute([]string, storage.State) error
 }
 
 func NewLBs(gcpLBs gcpLBs, awsLBs awsLBs, stateValidator stateValidator, logger logger) LBs {
@@ -40,7 +40,7 @@ func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
 
 	switch state.IAAS {
 	case "aws":
-		if err := c.awsLBs.Execute(state); err != nil {
+		if err := c.awsLBs.Execute(subcommandFlags, state); err != nil {
 			return err
 		}
 	case "gcp":

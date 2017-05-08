@@ -40,6 +40,7 @@ var _ = Describe("LBs", func() {
 				err := lbsCommand.Execute([]string{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(awsLBs.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
 				Expect(awsLBs.ExecuteCall.Receives.State).To(Equal(incomingState))
 			})
 		})

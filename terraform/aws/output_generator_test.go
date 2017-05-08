@@ -43,12 +43,12 @@ var _ = Describe("OutputGenerator", func() {
 			"cf_tcp_lb_security_group":             "some-cf-tcp-lb-security_group",
 			"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security_group",
 			"cf_ssh_lb_name":                       "some-cf-ssh-proxy-lb",
-			"cf_ssh_lb_url":                        "some-cf-ssh-lb-url",
+			"cf_ssh_lb_url":                        "some-cf-ssh-proxy-lb-url",
 			"cf_router_lb_name":                    "some-cf-router-lb",
 			"cf_router_lb_url":                     "some-cf-router-lb-url",
 			"cf_tcp_lb_name":                       "some-cf-tcp-lb-name",
 			"cf_tcp_lb_url":                        "some-cf-tcp-lb-url",
-			"env_dns_zone_name_servers":            "some-env-dns-zone-name-servers",
+			"env_dns_zone_name_servers":            []interface{}{"some-name-server-1", "some-name-server-2"},
 			"nat_eip":                              "some-nat-eip",
 			"vpc_id":                               "some-vpc-id",
 		}
@@ -94,7 +94,7 @@ var _ = Describe("OutputGenerator", func() {
 				TFState: "some-tf-state",
 				LB: storage.LB{
 					Type:   "cf",
-					Domain: "",
+					Domain: "some-domain",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -113,9 +113,12 @@ var _ = Describe("OutputGenerator", func() {
 				"internal_subnet_ids":                  "some-internal-subnet-ids",
 				"internal_subnet_cidrs":                "some-internal-subnet-cidrs",
 				"cf_router_load_balancer":              "some-cf-router-lb",
+				"cf_router_load_balancer_url":          "some-cf-router-lb-url",
 				"cf_router_internal_security_group":    "some-cf-router-internal-security-group",
 				"cf_ssh_proxy_load_balancer":           "some-cf-ssh-proxy-lb",
+				"cf_ssh_proxy_load_balancer_url":       "some-cf-ssh-proxy-lb-url",
 				"cf_ssh_proxy_internal_security_group": "some-cf-ssh-proxy-internal-security-group",
+				"cf_system_domain_dns_servers":         []string{"some-name-server-1", "some-name-server-2"},
 			}))
 		})
 	})
@@ -147,6 +150,7 @@ var _ = Describe("OutputGenerator", func() {
 				"internal_subnet_ids":               "some-internal-subnet-ids",
 				"internal_subnet_cidrs":             "some-internal-subnet-cidrs",
 				"concourse_load_balancer":           "some-concourse-lb-name",
+				"concourse_load_balancer_url":       "some-concourse-lb-url",
 				"concourse_internal_security_group": "some-concourse-internal-security-group",
 			}))
 		})

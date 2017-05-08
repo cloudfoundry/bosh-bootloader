@@ -186,7 +186,7 @@ func main() {
 		uuidGenerator, stateStore, terraformManager, awsEnvironmentValidator,
 	)
 
-	awsLBs := commands.NewAWSLBs(awsCredentialValidator, infrastructureManager, logger)
+	awsLBs := commands.NewAWSLBs(awsCredentialValidator, infrastructureManager, terraformManager, logger)
 
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		logger, uuidGenerator, stateStore, awsEnvironmentValidator)
