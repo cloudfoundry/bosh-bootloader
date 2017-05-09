@@ -60,9 +60,9 @@ Example:
 ```
 gcloud iam service-accounts create <service account name>
 
-gcloud iam service-accounts keys create --iam-account=<service account name> <service account name>.key.json
+gcloud iam service-accounts keys create --iam-account='<service account name>@<project id>.iam.gserviceaccount.com' <service account name>.key.json
 
-gcloud projects add-iam-policy-binding <project id> --member='<service account name>' --role='roles/editor'
+gcloud projects add-iam-policy-binding <project id> --member='user:<service account name>@<project id>.iam.gserviceaccount.com' --role='roles/editor'
 ```
 
 ## Usage
