@@ -188,7 +188,7 @@ func main() {
 
 	awsLBs := commands.NewAWSLBs(awsCredentialValidator, infrastructureManager, terraformManager, logger)
 
-	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
+	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs, awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
 		logger, uuidGenerator, stateStore, awsEnvironmentValidator)
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(

@@ -10,6 +10,7 @@ import (
 )
 
 type AWSUpdateLBs struct {
+	awsCreateLBs              awsCreateLBs
 	certificateManager        certificateManager
 	availabilityZoneRetriever availabilityZoneRetriever
 	infrastructureManager     infrastructureManager
@@ -20,11 +21,12 @@ type AWSUpdateLBs struct {
 	environmentValidator      environmentValidator
 }
 
-func NewAWSUpdateLBs(credentialValidator credentialValidator, certificateManager certificateManager,
+func NewAWSUpdateLBs(awsCreateLBs awsCreateLBs, credentialValidator credentialValidator, certificateManager certificateManager,
 	availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager,
 	logger logger, guidGenerator guidGenerator, stateStore stateStore, environmentValidator environmentValidator) AWSUpdateLBs {
 
 	return AWSUpdateLBs{
+		awsCreateLBs:              awsCreateLBs,
 		credentialValidator:       credentialValidator,
 		certificateManager:        certificateManager,
 		availabilityZoneRetriever: availabilityZoneRetriever,
@@ -45,6 +47,17 @@ func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	err = c.environmentValidator.Validate(state)
 	if err != nil {
 		return err
+	}
+
+	if state.TFState != "" {
+		if config.Domain == "" {
+			config.Domain = state.LB.Domain
+		}
+		if config.LBType == "" {
+			config.LBType = state.LB.Type
+		}
+
+		return c.awsCreateLBs.Execute(config, state)
 	}
 
 	if !lbExists(state.Stack.LBType) {

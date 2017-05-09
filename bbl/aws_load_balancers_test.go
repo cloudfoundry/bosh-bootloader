@@ -399,162 +399,15 @@ var _ = Describe("load balancers", func() {
 					Expect(state.LB.Domain).To(Equal("cf.example.com"))
 				})
 			})
-
 		})
 	})
 
 	Describe("update-lbs", func() {
-		It("updates the load balancer with the given cert, key and chain", func() {
-			upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-			writeStateJson(storage.State{
-				Version: 3,
-				IAAS:    "aws",
-				AWS: storage.AWS{
-					AccessKeyID:     "some-access-key",
-					SecretAccessKey: "some-access-secret",
-					Region:          "some-region",
-				},
-				Stack: storage.Stack{
-					Name:            "some-stack-name",
-					LBType:          "cf",
-					CertificateName: "bbl-cert-old-certificate",
-				},
-				BOSH: storage.BOSH{
-					DirectorUsername: "admin",
-					DirectorPassword: "admin",
-					DirectorAddress:  fakeBOSHServer.URL,
-				},
-			}, tempDirectory)
-
-			fakeAWS.Stacks.Set(awsbackend.Stack{
-				Name: "some-stack-name",
-			})
-
-			fakeAWS.Certificates.Set(awsbackend.Certificate{
-				Name:            "bbl-cert-old-certificate",
-				CertificateBody: "some-old-certificate-body",
-				PrivateKey:      "some-old-private-key",
-			})
-
-			updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath,
-				otherLBKeyPath, otherLBChainPath, 0, false)
-
-			certificates := fakeAWS.Certificates.All()
-			Expect(certificates).To(HaveLen(1))
-			Expect(certificates[0].Chain).To(Equal(testhelpers.OTHER_BBL_CHAIN))
-			Expect(certificates[0].CertificateBody).To(Equal(testhelpers.OTHER_BBL_CERT))
-			Expect(certificates[0].PrivateKey).To(Equal(testhelpers.OTHER_BBL_KEY))
-			Expect(certificates[0].Name).To(MatchRegexp(`cf-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
-
-			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
-			Expect(ok).To(BeTrue())
-			Expect(stack.WasUpdated).To(BeTrue())
-		})
-
-		It("does nothing if the certificate is unchanged", func() {
-			upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-			writeStateJson(storage.State{
-				Version: 3,
-				IAAS:    "aws",
-				AWS: storage.AWS{
-					AccessKeyID:     "some-access-key",
-					SecretAccessKey: "some-access-secret",
-					Region:          "some-region",
-				},
-				Stack: storage.Stack{
-					Name:            "some-stack-name",
-					LBType:          "cf",
-					CertificateName: "bbl-cert-certificate",
-				},
-				BOSH: storage.BOSH{
-					DirectorUsername: "admin",
-					DirectorPassword: "admin",
-					DirectorAddress:  fakeBOSHServer.URL,
-				},
-			}, tempDirectory)
-
-			fakeAWS.Stacks.Set(awsbackend.Stack{
-				Name: "some-stack-name",
-			})
-
-			fakeAWS.Certificates.Set(awsbackend.Certificate{
-				Name:            "bbl-cert-certificate",
-				CertificateBody: testhelpers.BBL_CERT,
-				PrivateKey:      testhelpers.BBL_KEY,
-			})
-
-			session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, false)
-			stdout := session.Out.Contents()
-
-			Expect(stdout).To(ContainSubstring("no updates are to be performed"))
-
-			stack, ok := fakeAWS.Stacks.Get("some-stack-name")
-			Expect(ok).To(BeTrue())
-			Expect(stack.WasUpdated).To(BeFalse())
-		})
-
-		It("logs all the steps", func() {
-			upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-			createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
-			session := updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath, otherLBKeyPath, "", 0, false)
-			stdout := session.Out.Contents()
-			Expect(stdout).To(ContainSubstring("step: uploading new certificate"))
-			Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
-			Expect(stdout).To(ContainSubstring("step: updating cloudformation stack"))
-			Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
-			Expect(stdout).To(ContainSubstring("step: deleting old certificate"))
-		})
-
-		It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
-			upAWS(fakeAWSServer.URL, tempDirectory, 0)
-
-			certificates := fakeAWS.Certificates.All()
-			Expect(certificates).To(HaveLen(0))
-
-			session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, true)
-
-			certificates = fakeAWS.Certificates.All()
-			Expect(certificates).To(HaveLen(0))
-
-			stdout := session.Out.Contents()
-			Expect(stdout).To(ContainSubstring(`no lb type exists, skipping...`))
-		})
-
-		Context("failure cases", func() {
-			BeforeEach(func() {
-				upAWS(fakeAWSServer.URL, tempDirectory, 0)
-			})
-
-			Context("when the bosh cli version is < 2.0.0", func() {
-				BeforeEach(func() {
-					fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-						switch request.URL.Path {
-						case "/version":
-							responseWriter.Write([]byte("1.9.0"))
-						}
-					}))
-				})
-
-				It("fast fails with a helpful error message", func() {
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
-					Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
-				})
-			})
-
-			Context("when an lb type does not exist", func() {
-				It("exits 1", func() {
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
-					stderr := session.Err.Contents()
-
-					Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
-				})
-			})
-
-			Context("when bbl environment is not up", func() {
-				It("exits 1 when the cloudformation stack does not exist", func() {
+		var updateLBsTests = func(terraform bool) {
+			It("updates the load balancer with the given cert, key and chain", func() {
+				if terraform {
+					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
+				} else {
 					writeStateJson(storage.State{
 						Version: 3,
 						IAAS:    "aws",
@@ -564,20 +417,54 @@ var _ = Describe("load balancers", func() {
 							Region:          "some-region",
 						},
 						Stack: storage.Stack{
-							LBType: "concourse",
+							Name:            "some-stack-name",
+							LBType:          "cf",
+							CertificateName: "bbl-cert-old-certificate",
+						},
+						BOSH: storage.BOSH{
+							DirectorUsername: "admin",
+							DirectorPassword: "admin",
+							DirectorAddress:  fakeBOSHServer.URL,
 						},
 					}, tempDirectory)
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
-					stderr := session.Err.Contents()
 
-					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
-				})
-
-				It("exits 1 when the BOSH director does not exist", func() {
 					fakeAWS.Stacks.Set(awsbackend.Stack{
 						Name: "some-stack-name",
 					})
 
+					fakeAWS.Certificates.Set(awsbackend.Certificate{
+						Name:            "bbl-cert-old-certificate",
+						CertificateBody: "some-old-certificate-body",
+						PrivateKey:      "some-old-private-key",
+					})
+				}
+
+				updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath,
+					otherLBKeyPath, otherLBChainPath, 0, false)
+
+				if terraform {
+					state := readStateJson(tempDirectory)
+					Expect(state.LB.Cert).To(Equal(testhelpers.OTHER_BBL_CERT))
+					Expect(state.LB.Key).To(Equal(testhelpers.OTHER_BBL_KEY))
+					Expect(state.LB.Chain).To(Equal(testhelpers.OTHER_BBL_CHAIN))
+				} else {
+					certificates := fakeAWS.Certificates.All()
+					Expect(certificates).To(HaveLen(1))
+					Expect(certificates[0].Chain).To(Equal(testhelpers.OTHER_BBL_CHAIN))
+					Expect(certificates[0].CertificateBody).To(Equal(testhelpers.OTHER_BBL_CERT))
+					Expect(certificates[0].PrivateKey).To(Equal(testhelpers.OTHER_BBL_KEY))
+					Expect(certificates[0].Name).To(MatchRegexp(`cf-elb-cert-\w{8}-\w{4}-\w{4}-\w{4}-\w{12}`))
+
+					stack, ok := fakeAWS.Stacks.Get("some-stack-name")
+					Expect(ok).To(BeTrue())
+					Expect(stack.WasUpdated).To(BeTrue())
+				}
+			})
+
+			It("does nothing if the certificate is unchanged", func() {
+				if terraform {
+					createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", "cf", 0, false)
+				} else {
 					writeStateJson(storage.State{
 						Version: 3,
 						IAAS:    "aws",
@@ -587,37 +474,294 @@ var _ = Describe("load balancers", func() {
 							Region:          "some-region",
 						},
 						Stack: storage.Stack{
-							Name:   "some-stack-name",
-							LBType: "concourse",
+							Name:            "some-stack-name",
+							LBType:          "cf",
+							CertificateName: "bbl-cert-certificate",
+						},
+						BOSH: storage.BOSH{
+							DirectorUsername: "admin",
+							DirectorPassword: "admin",
+							DirectorAddress:  fakeBOSHServer.URL,
 						},
 					}, tempDirectory)
 
-					session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
-					stderr := session.Err.Contents()
+					fakeAWS.Stacks.Set(awsbackend.Stack{
+						Name: "some-stack-name",
+					})
 
-					Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
-				})
+					fakeAWS.Certificates.Set(awsbackend.Certificate{
+						Name:            "bbl-cert-certificate",
+						CertificateBody: testhelpers.BBL_CERT,
+						PrivateKey:      testhelpers.BBL_KEY,
+					})
+				}
+
+				session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, false)
+				stdout := session.Out.Contents()
+
+				if terraform {
+					state := readStateJson(tempDirectory)
+					Expect(state.LB.Cert).To(Equal(testhelpers.BBL_CERT))
+					Expect(state.LB.Key).To(Equal(testhelpers.BBL_KEY))
+				} else {
+					Expect(stdout).To(ContainSubstring("no updates are to be performed"))
+					stack, ok := fakeAWS.Stacks.Get("some-stack-name")
+					Expect(ok).To(BeTrue())
+					Expect(stack.WasUpdated).To(BeFalse())
+				}
 			})
 
-			Context("when bbl-state.json does not exist", func() {
-				It("exits with status 1 and outputs helpful error message", func() {
-					tempDirectory, err := ioutil.TempDir("", "")
-					Expect(err).NotTo(HaveOccurred())
+			It("logs all the steps", func() {
+				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "concourse", 0, false)
 
-					args := []string{
-						"--state-dir", tempDirectory,
-						"update-lbs",
+				session := updateLBs(fakeAWSServer.URL, tempDirectory, otherLBCertPath, otherLBKeyPath, "", 0, false)
+				stdout := session.Out.Contents()
+
+				if terraform {
+					Expect(stdout).To(ContainSubstring("step: generating terraform template"))
+					Expect(stdout).To(ContainSubstring("step: applied terraform template"))
+				} else {
+					Expect(stdout).To(ContainSubstring("step: uploading new certificate"))
+					Expect(stdout).To(ContainSubstring("step: generating cloudformation template"))
+					Expect(stdout).To(ContainSubstring("step: updating cloudformation stack"))
+					Expect(stdout).To(ContainSubstring("step: finished applying cloudformation template"))
+					Expect(stdout).To(ContainSubstring("step: deleting old certificate"))
+				}
+			})
+
+			It("no-ops if --skip-if-missing is provided and an lb does not exist", func() {
+				if !terraform {
+					certificates := fakeAWS.Certificates.All()
+					Expect(certificates).To(HaveLen(0))
+				}
+
+				session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 0, true)
+				stdout := session.Out.Contents()
+
+				Expect(stdout).To(ContainSubstring(`no lb type exists, skipping...`))
+
+				if !terraform {
+					certificates := fakeAWS.Certificates.All()
+					Expect(certificates).To(HaveLen(0))
+				}
+			})
+
+			Context("failure cases", func() {
+				Context("when the bosh cli version is < 2.0.0", func() {
+					BeforeEach(func() {
+						fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+							switch request.URL.Path {
+							case "/version":
+								responseWriter.Write([]byte("1.9.0"))
+							}
+						}))
+					})
+
+					It("fast fails with a helpful error message", func() {
+						session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
+						Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
+					})
+				})
+
+				Context("when an lb type does not exist", func() {
+					It("exits 1", func() {
+						session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
+						stderr := session.Err.Contents()
+
+						Expect(stderr).To(ContainSubstring("no load balancer has been found for this bbl environment"))
+					})
+				})
+
+				Context("when bbl environment is not up", func() {
+					if terraform {
+						It("exits 1 when the terraform state does not exist", func() {
+							createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
+
+							state := readStateJson(tempDirectory)
+							state.TFState = ""
+							writeStateJson(state, tempDirectory)
+
+							session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
+							stderr := session.Err.Contents()
+
+							Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+						})
+					} else {
+						It("exits 1 when the cloudformation stack does not exist", func() {
+							writeStateJson(storage.State{
+								Version: 3,
+								IAAS:    "aws",
+								AWS: storage.AWS{
+									AccessKeyID:     "some-access-key",
+									SecretAccessKey: "some-access-secret",
+									Region:          "some-region",
+								},
+								Stack: storage.Stack{
+									LBType: "concourse",
+								},
+							}, tempDirectory)
+
+							session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
+							stderr := session.Err.Contents()
+
+							Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+						})
 					}
-					cmd := exec.Command(pathToBBL, args...)
 
-					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-					Expect(err).NotTo(HaveOccurred())
+					It("exits 1 when the BOSH director does not exist", func() {
+						fakeAWS.Stacks.Set(awsbackend.Stack{
+							Name: "some-stack-name",
+						})
 
-					Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+						writeStateJson(storage.State{
+							Version: 3,
+							IAAS:    "aws",
+							AWS: storage.AWS{
+								AccessKeyID:     "some-access-key",
+								SecretAccessKey: "some-access-secret",
+								Region:          "some-region",
+							},
+							Stack: storage.Stack{
+								Name:   "some-stack-name",
+								LBType: "concourse",
+							},
+						}, tempDirectory)
 
-					Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+						session := updateLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, "", 1, false)
+						stderr := session.Err.Contents()
+
+						Expect(stderr).To(ContainSubstring(commands.BBLNotFound.Error()))
+					})
+				})
+
+				Context("when bbl-state.json does not exist", func() {
+					It("exits with status 1 and outputs helpful error message", func() {
+						tempDirectory, err := ioutil.TempDir("", "")
+						Expect(err).NotTo(HaveOccurred())
+
+						args := []string{
+							"--state-dir", tempDirectory,
+							"update-lbs",
+						}
+						cmd := exec.Command(pathToBBL, args...)
+
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+
+						Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+
+						Expect(session.Err.Contents()).To(ContainSubstring(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
+					})
 				})
 			})
+		}
+
+		Context("when bbl'd up with cloudformation", func() {
+			BeforeEach(func() {
+				upAWS(fakeAWSServer.URL, tempDirectory, 0)
+
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = true
+			})
+
+			AfterEach(func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = false
+			})
+
+			updateLBsTests(false)
+		})
+
+		Context("when bbl'd up with terraform", func() {
+			BeforeEach(func() {
+				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					switch request.URL.Path {
+					case "/output/--json":
+						responseWriter.Write([]byte(fmt.Sprintf(`{
+							"bosh_eip": {
+								"value": "some-bosh-eip"
+							},
+							"bosh_url": {
+								"value": %q
+							},
+							"bosh_user_access_key": {
+								"value": "some-bosh-user-access-key"
+							},
+							"bosh_user_secret_access_key": {
+								"value": "some-bosh-user-secret-access_key"
+							},
+							"nat_eip": {
+								"value": "some-nat-eip"
+							},
+							"bosh_subnet_id": {
+								"value": "some-bosh-subnet-id"
+							},
+							"bosh_subnet_availability_zone": {
+								"value": "some-bosh-subnet-availability-zone"
+							},
+							"bosh_security_group": {
+								"value": "some-bosh-security-group"
+							},
+							"internal_security_group": {
+								"value": "some-internal-security-group"
+							},
+							"internal_subnet_ids": {
+								"value": [
+									"some-internal-subnet-ids-1",
+									"some-internal-subnet-ids-2",
+									"some-internal-subnet-ids-3"
+								]
+							},
+							"internal_subnet_cidrs": {
+								"value": [
+									"10.0.16.0/20",
+									"10.0.32.0/20",
+									"10.0.48.0/20"
+								]
+							},
+							"vpc_id": {
+								"value": "some-vpc-id"
+							},
+							"cf_router_lb_name": {
+								"value": "some-cf-router-lb"
+							},
+							"cf_router_lb_internal_security_group": {
+								"value": "some-cf-router-internal-security-group"
+							},
+							"cf_ssh_lb_name":  {
+								"value": "some-cf-ssh-proxy-lb"
+							},
+							"cf_ssh_lb_internal_security_group":  {
+								"value": "some-cf-ssh-proxy-internal-security-group"
+							},
+							"concourse_lb_name":  {
+								"value": "some-concourse-lb"
+							},
+							"concourse_lb_internal_security_group":  {
+								"value": "some-concourse-internal-security-group"
+							}
+						}`, fakeBOSHServer.URL)))
+					case "/version":
+						responseWriter.Write([]byte("0.8.6"))
+					}
+				}))
+
+				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
+
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = true
+			})
+
+			AfterEach(func() {
+				callRealInterpolateMutex.Lock()
+				defer callRealInterpolateMutex.Unlock()
+				callRealInterpolate = false
+			})
+
+			updateLBsTests(true)
 		})
 	})
 

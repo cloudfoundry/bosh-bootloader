@@ -16,7 +16,6 @@ import (
 var _ = Describe("AWS Update LBs", func() {
 	var (
 		command                   commands.AWSUpdateLBs
-		incomingState             storage.State
 		certFilePath              string
 		keyFilePath               string
 		chainFilePath             string
@@ -28,6 +27,11 @@ var _ = Describe("AWS Update LBs", func() {
 		guidGenerator             *fakes.GuidGenerator
 		stateStore                *fakes.StateStore
 		environmentValidator      *fakes.EnvironmentValidator
+
+		awsCreateLBs *fakes.AWSCreateLBs
+
+		incomingCloudformationState storage.State
+		incomingTerraformState      storage.State
 	)
 
 	var updateLBs = func(certificatePath, keyPath, chainPath string, state storage.State) error {
@@ -39,8 +43,6 @@ var _ = Describe("AWS Update LBs", func() {
 	}
 
 	BeforeEach(func() {
-		var err error
-
 		certificateManager = &fakes.CertificateManager{}
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 		infrastructureManager = &fakes.InfrastructureManager{}
@@ -59,7 +61,7 @@ var _ = Describe("AWS Update LBs", func() {
 		guidGenerator.GenerateCall.Returns.Output = "abcd"
 		infrastructureManager.ExistsCall.Returns.Exists = true
 
-		incomingState = storage.State{
+		incomingCloudformationState = storage.State{
 			Stack: storage.Stack{
 				LBType:          "concourse",
 				CertificateName: "some-certificate-name",
@@ -72,6 +74,20 @@ var _ = Describe("AWS Update LBs", func() {
 			},
 		}
 
+		awsCreateLBs = &fakes.AWSCreateLBs{}
+
+		incomingTerraformState = storage.State{
+			IAAS:    "aws",
+			TFState: "some-tf-state",
+			LB: storage.LB{
+				Type:   "cf",
+				Cert:   "some-cert",
+				Key:    "some-key",
+				Domain: "some-domain",
+			},
+		}
+
+		var err error
 		certFilePath, err = testhelpers.WriteContentsToTempFile("some-certificate-contents")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -81,12 +97,78 @@ var _ = Describe("AWS Update LBs", func() {
 		chainFilePath, err = testhelpers.WriteContentsToTempFile("some-chain-contents")
 		Expect(err).NotTo(HaveOccurred())
 
-		command = commands.NewAWSUpdateLBs(credentialValidator, certificateManager,
+		command = commands.NewAWSUpdateLBs(awsCreateLBs, credentialValidator, certificateManager,
 			availabilityZoneRetriever, infrastructureManager, logger, guidGenerator,
 			stateStore, environmentValidator)
 	})
 
 	Describe("Execute", func() {
+		Context("when tfState is not empty", func() {
+			It("calls out to AWS Create LBs", func() {
+				config := commands.AWSCreateLBsConfig{
+					CertPath: "some-cert-path",
+					KeyPath:  "some-key-path",
+					LBType:   "cf",
+					Domain:   "some-domain",
+				}
+				err := command.Execute(config, incomingTerraformState)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(awsCreateLBs.ExecuteCall.CallCount).To(Equal(1))
+				Expect(awsCreateLBs.ExecuteCall.Receives.Config).To(Equal(commands.AWSCreateLBsConfig{
+					CertPath: "some-cert-path",
+					KeyPath:  "some-key-path",
+					LBType:   "cf",
+					Domain:   "some-domain",
+				}))
+				Expect(awsCreateLBs.ExecuteCall.Receives.State).To(Equal(incomingTerraformState))
+			})
+
+			Context("when config does not contain system domain", func() {
+				It("passes system domain from the state", func() {
+					config := commands.AWSCreateLBsConfig{
+						CertPath: "some-cert-path",
+						KeyPath:  "some-key-path",
+						LBType:   "cf",
+						Domain:   "",
+					}
+					err := command.Execute(config, incomingTerraformState)
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(awsCreateLBs.ExecuteCall.CallCount).To(Equal(1))
+					Expect(awsCreateLBs.ExecuteCall.Receives.Config).To(Equal(commands.AWSCreateLBsConfig{
+						CertPath: "some-cert-path",
+						KeyPath:  "some-key-path",
+						LBType:   "cf",
+						Domain:   "some-domain",
+					}))
+					Expect(awsCreateLBs.ExecuteCall.Receives.State).To(Equal(incomingTerraformState))
+				})
+			})
+
+			Context("when config does not contain lb type", func() {
+				It("passes lb type from the state", func() {
+					config := commands.AWSCreateLBsConfig{
+						CertPath: "some-cert-path",
+						KeyPath:  "some-key-path",
+						LBType:   "",
+						Domain:   "some-domain",
+					}
+					err := command.Execute(config, incomingTerraformState)
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(awsCreateLBs.ExecuteCall.CallCount).To(Equal(1))
+					Expect(awsCreateLBs.ExecuteCall.Receives.Config).To(Equal(commands.AWSCreateLBsConfig{
+						CertPath: "some-cert-path",
+						KeyPath:  "some-key-path",
+						LBType:   "cf",
+						Domain:   "some-domain",
+					}))
+					Expect(awsCreateLBs.ExecuteCall.Receives.State).To(Equal(incomingTerraformState))
+				})
+			})
+		})
+
 		It("creates the new certificate with private key", func() {
 			updateLBs(certFilePath, keyFilePath, "", storage.State{
 				Stack: storage.Stack{
@@ -191,9 +273,9 @@ var _ = Describe("AWS Update LBs", func() {
 
 		It("returns an error if the environment validator fails", func() {
 			environmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
-			err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+			err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 			Expect(err).To(MatchError("failed to validate"))
-			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
+			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingCloudformationState))
 			Expect(environmentValidator.ValidateCall.CallCount).To(Equal(1))
 		})
 
@@ -203,7 +285,7 @@ var _ = Describe("AWS Update LBs", func() {
 				Chain: "\nsome-chain-contents\n",
 			}
 
-			err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
+			err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingCloudformationState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.PrintlnCall.Receives.Message).To(Equal("no updates are to be performed"))
 
@@ -217,7 +299,7 @@ var _ = Describe("AWS Update LBs", func() {
 				Body: "\nsome-certificate-contents\n",
 			}
 
-			err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingState)
+			err := updateLBs(certFilePath, keyFilePath, chainFilePath, incomingCloudformationState)
 			Expect(err).To(MatchError("you cannot change the chain after the lb has been created, please delete and re-create the lb with the chain"))
 
 			Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
@@ -275,7 +357,7 @@ var _ = Describe("AWS Update LBs", func() {
 					return iam.Certificate{}, nil
 				}
 
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("old certificate failed to describe"))
 			})
 
@@ -288,48 +370,48 @@ var _ = Describe("AWS Update LBs", func() {
 					return iam.Certificate{}, nil
 				}
 
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("new certificate failed to describe"))
 			})
 
 			It("returns an error when the certificate file cannot be read", func() {
-				err := updateLBs("some-fake-file", keyFilePath, "", incomingState)
+				err := updateLBs("some-fake-file", keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 
 			It("returns an error when infrastructure update fails", func() {
 				infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update stack")
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("failed to update stack"))
 			})
 
 			It("returns an error when availability zone retriever fails", func() {
 				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("az retrieve failed")
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("az retrieve failed"))
 			})
 
 			It("returns an error when certificate creation fails", func() {
 				certificateManager.CreateCall.Returns.Error = errors.New("certificate creation failed")
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("certificate creation failed"))
 			})
 
 			It("returns an error when certificate deletion fails", func() {
 				certificateManager.DeleteCall.Returns.Error = errors.New("certificate deletion failed")
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("certificate deletion failed"))
 			})
 
 			It("returns an error when a GUID cannot be generated", func() {
 				guidGenerator.GenerateCall.Returns.Error = errors.New("Out of entropy in the universe")
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("Out of entropy in the universe"))
 			})
 
 			It("returns an error when state cannot be set", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
-				err := updateLBs(certFilePath, keyFilePath, "", incomingState)
+				err := updateLBs(certFilePath, keyFilePath, "", incomingCloudformationState)
 				Expect(err).To(MatchError("failed to set state"))
 			})
 		})
