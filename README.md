@@ -17,14 +17,6 @@ support bootstrapping a CloudFoundry installation on AWS.
 
 ## Prerequisites
 
-### Install bosh-bootloader using a package manager
-
-**Mac OS X** (using [Homebrew](http://brew.sh/) via the [cloudfoundry tap](https://github.com/cloudfoundry/homebrew-tap)):
-
-```sh
-$ brew install cloudfoundry/tap/bbl
-```
-
 ### Install Dependencies
 
 The following should be installed on your local machine
