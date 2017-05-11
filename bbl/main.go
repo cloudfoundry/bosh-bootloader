@@ -66,6 +66,7 @@ func main() {
 		commands.PrintEnvCommand:           nil,
 		commands.CloudConfigCommand:        nil,
 		commands.BOSHDeploymentVarsCommand: nil,
+		commands.RotateCommand:             nil,
 	}
 
 	// Utilities
@@ -123,7 +124,7 @@ func main() {
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
-	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater)
+	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater, gcpKeyPairDeleter, gcpClientProvider)
 	zones := gcp.NewZones()
 
 	// EnvID
@@ -240,6 +241,7 @@ func main() {
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)
+	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

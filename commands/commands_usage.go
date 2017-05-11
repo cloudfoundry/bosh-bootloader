@@ -54,6 +54,8 @@ const (
 
 	SSHKeyCommandUsage = "Prints SSH private key"
 
+	RotateCommandUsage = "Rotates the keypair for BOSH"
+
 	DirectorUsernameCommandUsage = "Prints BOSH director username"
 
 	DirectorPasswordCommandUsage = "Prints BOSH director password"
@@ -94,6 +96,8 @@ func (LatestError) Usage() string { return LatestErrorCommandUsage }
 func (CloudConfig) Usage() string { return CloudConfigUsage }
 
 func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage }
+
+func (Rotate) Usage() string { return RotateCommandUsage }
 
 func (s StateQuery) Usage() string {
 	switch s.propertyName {

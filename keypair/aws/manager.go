@@ -46,3 +46,7 @@ func (m Manager) Sync(state storage.State) (storage.State, error) {
 
 	return state, nil
 }
+
+func (m Manager) Rotate(state storage.State) (storage.State, error) {
+	return storage.State{}, errors.New("rotating aws keys is not yet implemented")
+}

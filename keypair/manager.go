@@ -13,6 +13,7 @@ type Manager struct {
 
 type keyPairManager interface {
 	Sync(state storage.State) (storage.State, error)
+	Rotate(state storage.State) (storage.State, error)
 }
 
 func NewManager(awsManager keyPairManager, gcpManager keyPairManager) Manager {
@@ -28,6 +29,17 @@ func (m Manager) Sync(state storage.State) (storage.State, error) {
 		return m.awsManager.Sync(state)
 	case "gcp":
 		return m.gcpManager.Sync(state)
+	default:
+		return storage.State{}, fmt.Errorf("invalid iaas was provided: %s", state.IAAS)
+	}
+}
+
+func (m Manager) Rotate(state storage.State) (storage.State, error) {
+	switch state.IAAS {
+	case "aws":
+		return m.awsManager.Rotate(state)
+	case "gcp":
+		return m.gcpManager.Rotate(state)
 	default:
 		return storage.State{}, fmt.Errorf("invalid iaas was provided: %s", state.IAAS)
 	}

@@ -21,6 +21,7 @@ const (
 
 type keyPairManager interface {
 	Sync(storage.State) (storage.State, error)
+	Rotate(storage.State) (storage.State, error)
 }
 
 type infrastructureManager interface {
