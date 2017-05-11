@@ -48,8 +48,9 @@ var _ = Describe("Manager", func() {
 			return tempDir, nil
 		})
 
-		cmd.RunCall.Stub = func(stdout io.Writer) {
+		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-cloud-config"))
+			return nil
 		}
 
 		incomingState = storage.State{
@@ -93,9 +94,10 @@ var _ = Describe("Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(ops)).To(Equal("some-ops"))
 
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
+			Expect(cmd.RunCallCount()).To(Equal(1))
+			_, workingDirectory, args := cmd.RunArgsForCall(0)
+			Expect(workingDirectory).To(Equal(tempDir))
+			Expect(args).To(Equal(expectedArgs))
 
 			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
 		})
@@ -171,7 +173,7 @@ var _ = Describe("Manager", func() {
 
 			Context("when command fails to run", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Error = errors.New("failed to run")
+					cmd.RunReturns(errors.New("failed to run"))
 				})
 
 				It("returns an error", func() {
@@ -206,7 +208,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when manager generate's command fails to run", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Error = errors.New("failed to run")
+					cmd.RunReturns(errors.New("failed to run"))
 				})
 
 				It("returns an error", func() {

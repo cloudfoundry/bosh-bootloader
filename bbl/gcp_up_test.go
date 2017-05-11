@@ -301,6 +301,7 @@ var _ = Describe("bbl up gcp", func() {
 			defer callRealInterpolateMutex.Unlock()
 			callRealInterpolate = true
 		})
+
 		It("passes those ops files to bosh create env", func() {
 			args := []string{
 				"--state-dir", tempDirectory,

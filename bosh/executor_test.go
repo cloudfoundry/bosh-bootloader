@@ -128,7 +128,6 @@ gcp_credentials_json: 'some-credential-json'`,
 			expectedArgs = append([]string{
 				"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
 				"--var-errs",
-				"--var-errs-unused",
 				"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
 				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 				"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
@@ -231,7 +230,6 @@ networks
 				expectedArgsWithUserOpsfile := append([]string{
 					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
 					"--var-errs",
-					"--var-errs-unused",
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
 					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
