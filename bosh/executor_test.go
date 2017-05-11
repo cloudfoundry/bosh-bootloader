@@ -39,6 +39,7 @@ var _ = Describe("Executor", func() {
 			var err error
 
 			cmd = &fakes.BOSHCommand{}
+
 			tempDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -101,14 +102,15 @@ gcp_credentials_json: 'some-credential-json'`,
 		})
 
 		DescribeTable("generates a bosh manifest", func(interpolateInputFunc func() bosh.InterpolateInput) {
-			cmd.RunCall.Stub = func(stdout io.Writer) {
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 				stdout.Write([]byte("some-manifest"))
+				return nil
 			}
 
 			interpolateOutput, err := executor.Interpolate(interpolateInputFunc())
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
+			Expect(cmd.RunCallCount()).To(Equal(2))
 			Expect(tempDirCallCount).To(Equal(1))
 
 			expectedArgs := append([]string{
@@ -117,15 +119,22 @@ gcp_credentials_json: 'some-credential-json'`,
 				"--var-errs-unused",
 				"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
+				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+				"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
+
+			_, _, args := cmd.RunArgsForCall(0)
+			Expect(args).To(Equal(expectedArgs))
+
+			expectedArgs = append([]string{
+				"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
+				"--var-errs",
+				"--var-errs-unused",
 				"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
 				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 				"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
 
-			Expect(cmd.RunCall.Receives.Args).To(Equal(expectedArgs))
-
-			opsFileContents, err := ioutil.ReadFile(fmt.Sprintf("%s/user-ops-file.yml", tempDir))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(opsFileContents).To(Equal([]byte("some-ops-file")))
+			_, _, args = cmd.RunArgsForCall(1)
+			Expect(args).To(Equal(expectedArgs))
 
 			Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 			Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
@@ -139,6 +148,107 @@ gcp_credentials_json: 'some-credential-json'`,
 				return gcpInterpolateInput
 			}),
 		)
+
+		Context("when a user opsfile is provided", func() {
+			It("re-interpolates the bosh manifest", func() {
+				interpolateInput := bosh.InterpolateInput{
+					IAAS: "gcp",
+					DeploymentVars: `internal_cidr: 10.0.0.0/24
+		internal_gw: 10.0.0.1
+		internal_ip: 10.0.0.6
+		director_name: bosh-some-env-id
+		external_ip: some-external-ip
+		zone: some-zone
+		network: some-network
+		subnetwork: some-subnetwork
+		tags: [some-bosh-tag, some-internal-tag]
+		project_id: some-project-id
+		gcp_credentials_json: 'some-credential-json'`,
+					BOSHState: map[string]interface{}{
+						"key": "value",
+					},
+					Variables: variablesYMLContents,
+					OpsFile: []byte(`
+---
+- type: replace
+path: /networks/name=default/subnets/0/cloud_properties/tags/-
+value: sabeti-bosh-isolation
+		`),
+				}
+
+				manifest := `
+---
+networks
+- name: default
+  subnets:
+  - az: z1
+  cloud_properties:
+    tags:
+      - some-bosh-tag
+      - some-internal-tag
+`
+				manifestWithUserOpsFile := `
+---
+networks
+- name: default
+  subnets:
+  - az: z1
+  cloud_properties:
+    tags:
+      - some-bosh-tag
+      - some-internal-tag
+      - sabeti-bosh-isolation
+`
+
+				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+					for _, arg := range args {
+						if arg == fmt.Sprintf("%s/user-ops-file.yml", tempDir) {
+							manifest = manifestWithUserOpsFile
+						}
+					}
+					stdout.Write([]byte(manifest))
+					return nil
+				}
+
+				interpolateOutput, err := executor.Interpolate(interpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(2))
+				Expect(tempDirCallCount).To(Equal(1))
+
+				expectedArgs := append([]string{
+					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
+					"--var-errs",
+					"--var-errs-unused",
+					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+					"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
+					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
+
+				_, _, args := cmd.RunArgsForCall(0)
+				Expect(args).To(Equal(expectedArgs))
+
+				expectedArgsWithUserOpsfile := append([]string{
+					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
+					"--var-errs",
+					"--var-errs-unused",
+					"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
+					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
+
+				_, _, args = cmd.RunArgsForCall(1)
+				Expect(args).To(Equal(expectedArgsWithUserOpsfile))
+
+				opsFileContents, err := ioutil.ReadFile(fmt.Sprintf("%s/user-ops-file.yml", tempDir))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(opsFileContents).To(Equal(interpolateInput.OpsFile))
+
+				Expect(interpolateOutput.Manifest).To(Equal(manifestWithUserOpsFile))
+				Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
+					"key": "value",
+				}))
+			})
+		})
 
 		It("does not pass in false to run command on interpolate", func() {
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
@@ -242,11 +352,22 @@ gcp_credentials_json: 'some-credential-json'`,
 			})
 
 			It("fails when trying to run command", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run command")
+				cmd.RunReturnsOnCall(0, errors.New("failed to run command"))
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS: "aws",
+				})
+				Expect(err).To(MatchError("failed to run command"))
+			})
+
+			It("fails when trying to run the command to interpolate with the user opsfile", func() {
+				cmd.RunReturnsOnCall(1, errors.New("failed to run command"))
+
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+				_, err := executor.Interpolate(bosh.InterpolateInput{
+					IAAS:    "aws",
+					OpsFile: []byte("some-ops-file"),
 				})
 				Expect(err).To(MatchError("failed to run command"))
 			})
@@ -302,7 +423,6 @@ gcp_credentials_json: 'some-credential-json'`,
 			}
 
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-
 		})
 
 		It("fails when the temporary directory cannot be created", func() {
@@ -336,7 +456,7 @@ gcp_credentials_json: 'some-credential-json'`,
 		})
 
 		It("fails when the run command returns an error", func() {
-			cmd.RunCall.Returns.Error = errors.New("failed to run")
+			cmd.RunReturnsOnCall(0, errors.New("failed to run"))
 			err := callback(executor)
 			Expect(err).To(MatchError("failed to run"))
 		})
@@ -382,9 +502,8 @@ gcp_credentials_json: 'some-credential-json'`,
 			variablesPath = fmt.Sprintf("%s/variables.yml", tempDir)
 			statePath = fmt.Sprintf("%s/state.json", tempDir)
 
-			cmd.RunCall.Stub = func(io.Writer) {
-				err = ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+				return ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
 			}
 		})
 
@@ -406,9 +525,10 @@ gcp_credentials_json: 'some-credential-json'`,
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(variablesContents)).To(Equal("some-variables"))
 
-			Expect(cmd.RunCall.Receives.Stdout).To(Equal(os.Stdout))
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+			writer, dir, args := cmd.RunArgsForCall(0)
+			Expect(writer).To(Equal(os.Stdout))
+			Expect(dir).To(Equal(tempDir))
+			Expect(args).To(Equal([]string{
 				"create-env", manifestPath,
 				"--vars-store", variablesPath,
 				"--state", statePath,
@@ -432,8 +552,13 @@ gcp_credentials_json: 'some-credential-json'`,
 
 			Context("when command run fails", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Error = errors.New("failed to run")
+					cmd.RunReturns(errors.New("failed to run"))
 					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+
+					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+						ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
+						return errors.New("failed to run")
+					}
 				})
 
 				It("returns a create env error with a valid bosh state", func() {
@@ -537,9 +662,8 @@ gcp_credentials_json: 'some-credential-json'`,
 			variablesPath = fmt.Sprintf("%s/variables.yml", tempDir)
 			statePath = fmt.Sprintf("%s/state.json", tempDir)
 
-			cmd.RunCall.Stub = func(io.Writer) {
-				err = ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+				return ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
 			}
 		})
 
@@ -561,9 +685,10 @@ gcp_credentials_json: 'some-credential-json'`,
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(variablesContents)).To(Equal("some-variables"))
 
-			Expect(cmd.RunCall.Receives.Stdout).To(Equal(os.Stdout))
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+			writer, dir, args := cmd.RunArgsForCall(0)
+			Expect(writer).To(Equal(os.Stdout))
+			Expect(dir).To(Equal(tempDir))
+			Expect(args).To(Equal([]string{
 				"delete-env", manifestPath,
 				"--vars-store", variablesPath,
 				"--state", statePath,
@@ -582,13 +707,13 @@ gcp_credentials_json: 'some-credential-json'`,
 
 			Context("when command run fails", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Stub = func(io.Writer) {
-						err := ioutil.WriteFile(statePath, []byte(`{"partial": "state"}`), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					}
-
-					cmd.RunCall.Returns.Error = errors.New("failed to run")
+					cmd.RunReturnsOnCall(0, errors.New("failed to run"))
 					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+
+					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+						ioutil.WriteFile(statePath, []byte(`{"partial": "state"}`), os.ModePerm)
+						return errors.New("failed to run")
+					}
 				})
 
 				It("returns a create env error with a valid bosh state", func() {
@@ -628,8 +753,9 @@ gcp_credentials_json: 'some-credential-json'`,
 		)
 		BeforeEach(func() {
 			cmd = &fakes.BOSHCommand{}
-			cmd.RunCall.Stub = func(stdout io.Writer) {
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 				stdout.Write([]byte("some-text version 2.0.0 some-other-text"))
+				return nil
 			}
 
 			var err error
@@ -648,7 +774,8 @@ gcp_credentials_json: 'some-credential-json'`,
 			_, err := executor.Version()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"-v"}))
+			_, _, args := cmd.RunArgsForCall(0)
+			Expect(args).To(Equal([]string{"-v"}))
 		})
 
 		It("returns the correctly trimmed version", func() {
@@ -669,14 +796,15 @@ gcp_credentials_json: 'some-credential-json'`,
 			})
 
 			It("returns an error when the run cmd fails", func() {
-				cmd.RunCall.Returns.Error = errors.New("failed to run cmd")
+				cmd.RunReturns(errors.New("failed to run cmd"))
 				_, err := executor.Version()
 				Expect(err).To(MatchError("failed to run cmd"))
 			})
 
 			It("returns an error when the version cannot be parsed", func() {
-				cmd.RunCall.Stub = func(stdout io.Writer) {
+				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 					stdout.Write([]byte(""))
+					return nil
 				}
 				_, err := executor.Version()
 				Expect(err).To(MatchError("BOSH version could not be parsed"))

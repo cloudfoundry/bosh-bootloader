@@ -145,7 +145,6 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		"--var-errs-unused",
 		"-o", cpiOpsFilePath,
 		"-o", externalIPNotRecommendedOpsFilePath,
-		"-o", userOpsFilePath,
 		"--vars-store", variablesPath,
 		"--vars-file", deploymentVarsPath,
 	}
@@ -154,6 +153,22 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 	err = e.command.Run(buffer, tempDir, args)
 	if err != nil {
 		return InterpolateOutput{}, err
+	}
+
+	if interpolateInput.OpsFile != nil {
+		args = []string{
+			"interpolate", boshManifestPath,
+			"--var-errs",
+			"-o", userOpsFilePath,
+			"--vars-store", variablesPath,
+			"--vars-file", deploymentVarsPath,
+		}
+
+		buffer = bytes.NewBuffer([]byte{})
+		err = e.command.Run(buffer, tempDir, args)
+		if err != nil {
+			return InterpolateOutput{}, err
+		}
 	}
 
 	variablesContents, err := e.readFile(variablesPath)

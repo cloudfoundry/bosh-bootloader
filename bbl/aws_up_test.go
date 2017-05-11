@@ -355,7 +355,7 @@ var _ = Describe("bbl up aws", func() {
 
 				executeCommand(args, 0)
 
-				Expect(interpolateArgs[0]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+				Expect(interpolateArgs[1]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 			})
 		})
 

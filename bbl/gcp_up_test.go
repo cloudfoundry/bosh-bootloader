@@ -296,6 +296,11 @@ var _ = Describe("bbl up gcp", func() {
 	})
 
 	Context("when ops files are provides via --ops-file flag", func() {
+		By("allowing the bosh interpolate call to be run", func() {
+			callRealInterpolateMutex.Lock()
+			defer callRealInterpolateMutex.Unlock()
+			callRealInterpolate = true
+		})
 		It("passes those ops files to bosh create env", func() {
 			args := []string{
 				"--state-dir", tempDirectory,
@@ -311,7 +316,7 @@ var _ = Describe("bbl up gcp", func() {
 
 			executeCommand(args, 0)
 
-			Expect(interpolateArgs[0]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+			Expect(interpolateArgs[1]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 		})
 	})
 

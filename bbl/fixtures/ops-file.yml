@@ -1,1 +1,4 @@
-some-ops-file
+---
+- type: replace
+  path: /networks/name=default/subnets/0/cloud_properties?/tags/-
+  value: sabeti-bosh-isolation
