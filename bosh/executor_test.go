@@ -199,10 +199,17 @@ networks
       - sabeti-bosh-isolation
 `
 
+				writtenManifest := []byte{}
 				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 					for _, arg := range args {
 						if arg == fmt.Sprintf("%s/user-ops-file.yml", tempDir) {
-							manifest = manifestWithUserOpsFile
+							var err error
+							writtenManifest, err = ioutil.ReadFile(fmt.Sprintf("%s/bosh.yml", tempDir))
+							if err != nil {
+								return err
+							}
+							stdout.Write([]byte(manifestWithUserOpsFile))
+							return nil
 						}
 					}
 					stdout.Write([]byte(manifest))
@@ -240,6 +247,7 @@ networks
 				opsFileContents, err := ioutil.ReadFile(fmt.Sprintf("%s/user-ops-file.yml", tempDir))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(opsFileContents).To(Equal(interpolateInput.OpsFile))
+				Expect(string(writtenManifest)).To(Equal(manifest))
 
 				Expect(interpolateOutput.Manifest).To(Equal(manifestWithUserOpsFile))
 				Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{

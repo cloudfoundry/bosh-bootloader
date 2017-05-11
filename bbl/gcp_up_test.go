@@ -30,8 +30,9 @@ var _ = Describe("bbl up gcp", func() {
 		callRealInterpolate      bool
 		callRealInterpolateMutex sync.Mutex
 
-		createEnvArgs   string
-		interpolateArgs []string
+		createEnvArgs        string
+		interpolateArgs      []string
+		interpolateArgsMutex sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -54,6 +55,8 @@ var _ = Describe("bbl up gcp", func() {
 			case "/interpolate/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
+				interpolateArgsMutex.Lock()
+				defer interpolateArgsMutex.Unlock()
 				interpolateArgs = append(interpolateArgs, string(body))
 			case "/create-env/fastfail":
 				fastFailMutex.Lock()
@@ -107,6 +110,10 @@ var _ = Describe("bbl up gcp", func() {
 		fastFailMutex.Lock()
 		defer fastFailMutex.Unlock()
 		fastFail = false
+
+		interpolateArgsMutex.Lock()
+		defer interpolateArgsMutex.Unlock()
+		interpolateArgs = []string{}
 	})
 
 	It("writes gcp details to state", func() {
@@ -317,6 +324,8 @@ var _ = Describe("bbl up gcp", func() {
 
 			executeCommand(args, 0)
 
+			interpolateArgsMutex.Lock()
+			defer interpolateArgsMutex.Unlock()
 			Expect(interpolateArgs[1]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 		})
 	})

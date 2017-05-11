@@ -156,6 +156,12 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 	}
 
 	if interpolateInput.OpsFile != nil {
+		err = e.writeFile(boshManifestPath, buffer.Bytes(), os.ModePerm)
+		if err != nil {
+			//not tested
+			return InterpolateOutput{}, err
+		}
+
 		args = []string{
 			"interpolate", boshManifestPath,
 			"--var-errs",
