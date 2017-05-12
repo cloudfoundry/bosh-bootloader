@@ -114,7 +114,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		It("logs bosh director status messages", func() {
-			_, err := boshManager.Create(incomingGCPState, []byte{})
+			_, err := boshManager.Create(incomingGCPState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Messages).To(ContainSequence([]string{"creating bosh director", "created bosh director"}))
@@ -122,14 +122,15 @@ var _ = Describe("Manager", func() {
 
 		Context("when iaas is gcp", func() {
 			It("queries values from terraform manager", func() {
-				_, err := boshManager.Create(incomingGCPState, []byte{})
+				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
 			})
 
 			It("generates a bosh manifest", func() {
-				_, err := boshManager.Create(incomingGCPState, []byte("some-ops-file"))
+				incomingGCPState.BOSH.UserOpsFile = "some-ops-file"
+				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
@@ -149,12 +150,12 @@ gcp_credentials_json: 'some-credential-json'`,
 						"some-key": "some-value",
 					},
 					Variables: "",
-					OpsFile:   []byte("some-ops-file"),
+					OpsFile:   "some-ops-file",
 				}))
 			})
 
 			It("returns a state with a proper bosh state", func() {
-				state, err := boshManager.Create(incomingGCPState, []byte{})
+				state, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
@@ -211,7 +212,8 @@ gcp_credentials_json: 'some-credential-json'`,
 				})
 
 				It("generates a bosh manifest", func() {
-					_, err := boshManager.Create(incomingAWSState, []byte("some-ops-file"))
+					incomingAWSState.BOSH.UserOpsFile = "some-ops-file"
+					_, err := boshManager.Create(incomingAWSState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
@@ -238,7 +240,7 @@ private_key: |-
 							"some-key": "some-value",
 						},
 						Variables: "",
-						OpsFile:   []byte("some-ops-file"),
+						OpsFile:   "some-ops-file",
 					}))
 				})
 			})
@@ -257,7 +259,8 @@ private_key: |-
 				})
 
 				It("generates a bosh manifest", func() {
-					_, err := boshManager.Create(incomingAWSState, []byte("some-ops-file"))
+					incomingAWSState.BOSH.UserOpsFile = "some-ops-file"
+					_, err := boshManager.Create(incomingAWSState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(2))
@@ -284,12 +287,12 @@ private_key: |-
 							"some-key": "some-value",
 						},
 						Variables: "",
-						OpsFile:   []byte("some-ops-file"),
+						OpsFile:   "some-ops-file",
 					}))
 				})
 
 				It("returns a state with a proper bosh state", func() {
-					state, err := boshManager.Create(incomingAWSState, []byte{})
+					state, err := boshManager.Create(incomingAWSState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state).To(Equal(storage.State{
@@ -326,7 +329,7 @@ private_key: |-
 		})
 
 		It("creates a bosh environment", func() {
-			_, err := boshManager.Create(incomingGCPState, []byte{})
+			_, err := boshManager.Create(incomingGCPState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
@@ -343,12 +346,12 @@ private_key: |-
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "gcp",
-				}, []byte{})
+				})
 				Expect(err).To(MatchError("failed to output"))
 			})
 
 			It("returns an error when an invalid iaas is provided", func() {
-				_, err := boshManager.Create(storage.State{}, []byte{})
+				_, err := boshManager.Create(storage.State{})
 				Expect(err).To(MatchError("A valid IAAS was not provided"))
 			})
 
@@ -356,7 +359,7 @@ private_key: |-
 				boshExecutor.InterpolateCall.Returns.Error = errors.New("failed to interpolate")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "gcp",
-				}, []byte{})
+				})
 				Expect(err).To(MatchError("failed to interpolate"))
 			})
 
@@ -364,7 +367,7 @@ private_key: |-
 				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
 				_, err := boshManager.Create(storage.State{
 					IAAS: "gcp",
-				}, []byte{})
+				})
 				Expect(err).To(MatchError("failed to create"))
 			})
 
@@ -396,7 +399,7 @@ private_key: |-
 				})
 
 				It("returns a bosh manager create error with a valid state", func() {
-					_, err := boshManager.Create(incomingState, []byte{})
+					_, err := boshManager.Create(incomingState)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
@@ -409,7 +412,7 @@ private_key: |-
 				It("returns the error", func() {
 					_, err := boshManager.Create(storage.State{
 						IAAS: "aws",
-					}, []byte{})
+					})
 					Expect(err).To(MatchError("stack manager describe failed"))
 				})
 			})

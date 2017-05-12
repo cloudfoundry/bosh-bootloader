@@ -358,7 +358,7 @@ var _ = Describe("GCPUp", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshManager.CreateCall.Receives.OpsFile).To(Equal([]byte("some-ops-file-contents")))
+				Expect(boshManager.CreateCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
 			})
 		})
 

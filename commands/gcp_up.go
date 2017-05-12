@@ -68,7 +68,7 @@ type terraformManagerError interface {
 }
 
 type boshManager interface {
-	Create(storage.State, []byte) (storage.State, error)
+	Create(storage.State) (storage.State, error)
 	Delete(storage.State) error
 	GetDeploymentVars(storage.State) (string, error)
 	Version() (string, error)
@@ -171,7 +171,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		state, err = u.boshManager.Create(state, opsFileContents)
+		state.BOSH.UserOpsFile = string(opsFileContents)
+		state, err = u.boshManager.Create(state)
 		switch err.(type) {
 		case bosh.ManagerCreateError:
 			bcErr := err.(bosh.ManagerCreateError)

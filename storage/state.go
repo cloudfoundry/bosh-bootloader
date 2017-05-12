@@ -166,5 +166,4 @@ func stateAndBBLStateExist(dir string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-
 }

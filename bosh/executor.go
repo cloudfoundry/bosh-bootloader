@@ -27,7 +27,7 @@ type InterpolateInput struct {
 	DeploymentVars string
 	BOSHState      map[string]interface{}
 	Variables      string
-	OpsFile        []byte
+	OpsFile        string
 }
 
 type InterpolateOutput struct {
@@ -94,7 +94,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
-	err = e.writeFile(userOpsFilePath, interpolateInput.OpsFile, os.ModePerm)
+	err = e.writeFile(userOpsFilePath, []byte(interpolateInput.OpsFile), os.ModePerm)
 	if err != nil {
 		return InterpolateOutput{}, err
 	}
@@ -155,7 +155,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
-	if interpolateInput.OpsFile != nil {
+	if interpolateInput.OpsFile != "" {
 		err = e.writeFile(boshManifestPath, buffer.Bytes(), os.ModePerm)
 		if err != nil {
 			//not tested

@@ -232,8 +232,9 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 				return err
 			}
 		}
+		state.BOSH.UserOpsFile = string(opsFile)
 
-		state, err = u.boshManager.Create(state, opsFile)
+		state, err = u.boshManager.Create(state)
 		switch err.(type) {
 		case bosh.ManagerCreateError:
 			bcErr := err.(bosh.ManagerCreateError)

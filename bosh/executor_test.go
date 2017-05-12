@@ -71,7 +71,7 @@ private_key: |-
 					"key": "value",
 				},
 				Variables: variablesYMLContents,
-				OpsFile:   []byte("some-ops-file"),
+				OpsFile:   "some-ops-file",
 			}
 
 			gcpInterpolateInput = bosh.InterpolateInput{
@@ -91,7 +91,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					"key": "value",
 				},
 				Variables: variablesYMLContents,
-				OpsFile:   []byte("some-ops-file"),
+				OpsFile:   "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
@@ -167,12 +167,12 @@ gcp_credentials_json: 'some-credential-json'`,
 						"key": "value",
 					},
 					Variables: variablesYMLContents,
-					OpsFile: []byte(`
+					OpsFile: `
 ---
 - type: replace
 path: /networks/name=default/subnets/0/cloud_properties/tags/-
 value: sabeti-bosh-isolation
-		`),
+		`,
 				}
 
 				manifest := `
@@ -246,7 +246,7 @@ networks
 
 				opsFileContents, err := ioutil.ReadFile(fmt.Sprintf("%s/user-ops-file.yml", tempDir))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(opsFileContents).To(Equal(interpolateInput.OpsFile))
+				Expect(string(opsFileContents)).To(Equal(interpolateInput.OpsFile))
 				Expect(string(writtenManifest)).To(Equal(manifest))
 
 				Expect(interpolateOutput.Manifest).To(Equal(manifestWithUserOpsFile))
@@ -373,7 +373,7 @@ networks
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 				_, err := executor.Interpolate(bosh.InterpolateInput{
 					IAAS:    "aws",
-					OpsFile: []byte("some-ops-file"),
+					OpsFile: "some-ops-file",
 				})
 				Expect(err).To(MatchError("failed to run command"))
 			})

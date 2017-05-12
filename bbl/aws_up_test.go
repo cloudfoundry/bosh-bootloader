@@ -102,7 +102,8 @@ var _ = Describe("bbl up aws", func() {
 		callRealInterpolate      bool
 		callRealInterpolateMutex sync.Mutex
 
-		interpolateArgs []string
+		interpolateArgsMutex sync.Mutex
+		interpolateArgs      []string
 	)
 
 	BeforeEach(func() {
@@ -120,6 +121,8 @@ var _ = Describe("bbl up aws", func() {
 			case "/interpolate/args":
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
+				interpolateArgsMutex.Lock()
+				defer interpolateArgsMutex.Unlock()
 				interpolateArgs = append(interpolateArgs, string(body))
 			case "/create-env/fastfail":
 				fastFailMutex.Lock()
@@ -217,6 +220,10 @@ var _ = Describe("bbl up aws", func() {
 		fastFailMutex.Lock()
 		defer fastFailMutex.Unlock()
 		fastFail = false
+
+		interpolateArgsMutex.Lock()
+		defer interpolateArgsMutex.Unlock()
+		interpolateArgs = []string{}
 	})
 
 	Describe("up", func() {
@@ -355,6 +362,8 @@ var _ = Describe("bbl up aws", func() {
 
 				executeCommand(args, 0)
 
+				interpolateArgsMutex.Lock()
+				defer interpolateArgsMutex.Unlock()
 				Expect(interpolateArgs[1]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 			})
 		})

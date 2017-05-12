@@ -6,8 +6,7 @@ type BOSHManager struct {
 	CreateCall struct {
 		CallCount int
 		Receives  struct {
-			State   storage.State
-			OpsFile []byte
+			State storage.State
 		}
 		Returns struct {
 			State storage.State
@@ -42,10 +41,9 @@ type BOSHManager struct {
 	}
 }
 
-func (b *BOSHManager) Create(state storage.State, opsFile []byte) (storage.State, error) {
+func (b *BOSHManager) Create(state storage.State) (storage.State, error) {
 	b.CreateCall.CallCount++
 	b.CreateCall.Receives.State = state
-	b.CreateCall.Receives.OpsFile = opsFile
 	state.BOSH = b.CreateCall.Returns.State.BOSH
 	return state, b.CreateCall.Returns.Error
 }

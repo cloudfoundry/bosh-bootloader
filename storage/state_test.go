@@ -69,7 +69,8 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
-					Manifest: "name: bosh",
+					Manifest:    "name: bosh",
+					UserOpsFile: "some-ops-file",
 					Credentials: map[string]string{
 						"mbusUsername":              "some-mbus-username",
 						"natsUsername":              "some-nats-username",
@@ -153,6 +154,7 @@ var _ = Describe("Store", func() {
 					},
 					"variables": "",
 					"manifest": "name: bosh",
+					"userOpsFile": "some-ops-file",
 					"state": {
 						"key": "value"
 					}
