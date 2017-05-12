@@ -107,7 +107,7 @@ func main() {
 	awsKeyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
 	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(awsKeyPairCreator, keyPairChecker, logger)
-	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer)
+	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer, awsKeyPairDeleter, clientProvider)
 	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(clientProvider, logger)
@@ -241,7 +241,7 @@ func main() {
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)
-	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager)
+	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, boshManager)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

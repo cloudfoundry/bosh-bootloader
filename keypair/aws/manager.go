@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -11,15 +12,27 @@ import (
 
 type Manager struct {
 	keyPairSynchronizer keyPairSynchronizer
+	keyPairDeleter      keyPairDeleter
+	clientProvider      clientProvider
 }
 
 type keyPairSynchronizer interface {
 	Sync(ec2.KeyPair) (ec2.KeyPair, error)
 }
 
-func NewManager(keyPairSynchronizer keyPairSynchronizer) Manager {
+type keyPairDeleter interface {
+	Delete(keyPairName string) error
+}
+
+type clientProvider interface {
+	SetConfig(config aws.Config)
+}
+
+func NewManager(keyPairSynchronizer keyPairSynchronizer, keyPairDeleter keyPairDeleter, clientProvider clientProvider) Manager {
 	return Manager{
 		keyPairSynchronizer: keyPairSynchronizer,
+		keyPairDeleter:      keyPairDeleter,
+		clientProvider:      clientProvider,
 	}
 }
 
@@ -48,5 +61,29 @@ func (m Manager) Sync(state storage.State) (storage.State, error) {
 }
 
 func (m Manager) Rotate(state storage.State) (storage.State, error) {
-	return storage.State{}, errors.New("rotating aws keys is not yet implemented")
+	if state.KeyPair.IsEmpty() {
+		return storage.State{}, errors.New("no key found to rotate")
+	}
+
+	m.clientProvider.SetConfig(aws.Config{
+		AccessKeyID:     state.AWS.AccessKeyID,
+		SecretAccessKey: state.AWS.SecretAccessKey,
+		Region:          state.AWS.Region,
+	})
+
+	err := m.keyPairDeleter.Delete(state.KeyPair.Name)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	keyPair, err := m.keyPairSynchronizer.Sync(ec2.KeyPair{
+		Name: state.KeyPair.Name,
+	})
+	if err != nil {
+		return storage.State{}, err
+	}
+	state.KeyPair.PrivateKey = keyPair.PrivateKey
+	state.KeyPair.PublicKey = keyPair.PublicKey
+
+	return state, nil
 }
