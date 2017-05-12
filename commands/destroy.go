@@ -50,7 +50,7 @@ type gcpKeyPairDeleter interface {
 }
 
 type vpcStatusChecker interface {
-	ValidateSafeToDelete(string) error
+	ValidateSafeToDelete(vpcID string, envID string) error
 }
 
 type stackManager interface {
@@ -163,6 +163,19 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 	var stack cloudformation.Stack
 	if state.IAAS == "aws" {
+		if state.TFState != "" {
+			outputs, err := d.terraformManager.GetOutputs(state)
+			if err != nil {
+				return err
+			}
+			var vpcID = outputs["vpc_id"]
+			if vpcID != nil {
+				if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID.(string), state.EnvID); err != nil {
+					return err
+				}
+			}
+		}
+
 		stackExists := true
 		var err error
 		stack, err = d.stackManager.Describe(state.Stack.Name)
@@ -177,7 +190,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 		if stackExists {
 			var vpcID = stack.Outputs["VPCID"]
-			if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID); err != nil {
+			if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID, ""); err != nil {
 				return err
 			}
 		}

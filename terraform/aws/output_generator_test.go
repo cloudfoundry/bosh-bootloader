@@ -82,6 +82,7 @@ var _ = Describe("OutputGenerator", func() {
 				"internal_security_group": "some-internal-security-group",
 				"internal_subnet_ids":     "some-internal-subnet-ids",
 				"internal_subnet_cidrs":   "some-internal-subnet-cidrs",
+				"vpc_id":                  "some-vpc-id",
 			}))
 		})
 	})
@@ -119,6 +120,7 @@ var _ = Describe("OutputGenerator", func() {
 				"cf_ssh_proxy_load_balancer_url":       "some-cf-ssh-proxy-lb-url",
 				"cf_ssh_proxy_internal_security_group": "some-cf-ssh-proxy-internal-security-group",
 				"cf_system_domain_dns_servers":         []string{"some-name-server-1", "some-name-server-2"},
+				"vpc_id":                               "some-vpc-id",
 			}))
 		})
 	})
@@ -152,6 +154,7 @@ var _ = Describe("OutputGenerator", func() {
 				"concourse_load_balancer":           "some-concourse-lb-name",
 				"concourse_load_balancer_url":       "some-concourse-lb-url",
 				"concourse_internal_security_group": "some-concourse-internal-security-group",
+				"vpc_id": "some-vpc-id",
 			}))
 		})
 	})

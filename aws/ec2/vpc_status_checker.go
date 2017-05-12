@@ -22,7 +22,7 @@ func NewVPCStatusChecker(ec2ClientProvider ec2ClientProvider) VPCStatusChecker {
 	}
 }
 
-func (v VPCStatusChecker) ValidateSafeToDelete(vpcID string) error {
+func (v VPCStatusChecker) ValidateSafeToDelete(vpcID, envID string) error {
 	output, err := v.ec2ClientProvider.GetEC2Client().DescribeInstances(&awsec2.DescribeInstancesInput{
 		Filters: []*awsec2.Filter{{
 			Name:   aws.String("vpc-id"),
@@ -34,6 +34,9 @@ func (v VPCStatusChecker) ValidateSafeToDelete(vpcID string) error {
 	}
 
 	vms := v.flattenVMs(output.Reservations)
+	if envID != "" {
+		vms = v.removeOneVM(vms, fmt.Sprintf("%s-nat", envID))
+	}
 	vms = v.removeOneVM(vms, "NAT")
 	vms = v.removeOneVM(vms, "bosh/0")
 

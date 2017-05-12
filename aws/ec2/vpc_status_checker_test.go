@@ -47,7 +47,7 @@ var _ = Describe("VPCStatusChecker", func() {
 				},
 			}
 
-			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(ec2Client.DescribeInstancesCall.Receives.Input).To(Equal(&awsec2.DescribeInstancesInput{
@@ -58,12 +58,33 @@ var _ = Describe("VPCStatusChecker", func() {
 			}))
 		})
 
+		Context("when passed an environment ID", func() {
+			It("returns nil when the only EC2 instances are bosh and envID-nat", func() {
+				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
+					Reservations: []*awsec2.Reservation{
+						reservationContainingInstance("example-env-id-nat"),
+						reservationContainingInstance("bosh/0"),
+					},
+				}
+
+				err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "example-env-id")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ec2Client.DescribeInstancesCall.Receives.Input).To(Equal(&awsec2.DescribeInstancesInput{
+					Filters: []*awsec2.Filter{{
+						Name:   aws.String("vpc-id"),
+						Values: []*string{aws.String("some-vpc-id")},
+					}},
+				}))
+			})
+		})
+
 		It("returns nil when there are no instances at all", func() {
 			ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
 				Reservations: []*awsec2.Reservation{},
 			}
 
-			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -77,7 +98,7 @@ var _ = Describe("VPCStatusChecker", func() {
 				},
 			}
 
-			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 			Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete; vms still exist: [first-bosh-deployed-vm, second-bosh-deployed-vm]"))
 		})
 
@@ -89,7 +110,7 @@ var _ = Describe("VPCStatusChecker", func() {
 				},
 			}
 
-			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 			Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete; vms still exist: [not-bosh, not-nat]"))
 		})
 
@@ -104,7 +125,7 @@ var _ = Describe("VPCStatusChecker", func() {
 				},
 			}
 
-			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 			Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete; vms still exist: [NAT, bosh/0, bosh/0]"))
 		})
 
@@ -122,14 +143,14 @@ var _ = Describe("VPCStatusChecker", func() {
 				},
 			}
 
-			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+			err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 			Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete; vms still exist: [unnamed, unnamed, unnamed]"))
 		})
 
 		Describe("failure cases", func() {
 			It("returns an error when the describe instances call fails", func() {
 				ec2Client.DescribeInstancesCall.Returns.Error = errors.New("failed to describe instances")
-				err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id")
+				err := vpcStatusChecker.ValidateSafeToDelete("some-vpc-id", "")
 				Expect(err).To(MatchError("failed to describe instances"))
 			})
 		})

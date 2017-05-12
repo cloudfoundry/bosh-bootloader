@@ -37,6 +37,7 @@ func (o OutputGenerator) Generate(state storage.State) (map[string]interface{}, 
 		"internal_security_group":       "internal_security_group",
 		"internal_subnet_ids":           "internal_subnet_ids",
 		"internal_subnet_cidrs":         "internal_subnet_cidrs",
+		"vpc_id":                        "vpc_id",
 	}
 
 	switch state.LB.Type {

@@ -238,6 +238,83 @@ var _ = Describe("destroy", func() {
 				state storage.State
 			)
 			BeforeEach(func() {
+				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+					switch request.URL.Path {
+					case "/output/--json":
+						responseWriter.Write([]byte(fmt.Sprintf(`{
+							"bosh_eip": {
+								"value": "some-bosh-eip"
+							},
+							"bosh_url": {
+								"value": %q
+							},
+							"bosh_user_access_key": {
+								"value": "some-bosh-user-access-key"
+							},
+							"bosh_user_secret_access_key": {
+								"value": "some-bosh-user-secret-access_key"
+							},
+							"nat_eip": {
+								"value": "some-nat-eip"
+							},
+							"bosh_subnet_id": {
+								"value": "some-bosh-subnet-id"
+							},
+							"bosh_subnet_availability_zone": {
+								"value": "some-bosh-subnet-availability-zone"
+							},
+							"bosh_security_group": {
+								"value": "some-bosh-security-group"
+							},
+							"env_dns_zone_name_servers": {
+								"value": [
+									"name-server-1.",
+									"name-server-2."
+								]
+							},
+							"internal_security_group": {
+								"value": "some-internal-security-group"
+							},
+							"internal_subnet_ids": {
+								"value": [
+									"some-internal-subnet-ids-1",
+									"some-internal-subnet-ids-2",
+									"some-internal-subnet-ids-3"
+								]
+							},
+							"internal_subnet_cidrs": {
+								"value": [
+									"10.0.16.0/20",
+									"10.0.32.0/20",
+									"10.0.48.0/20"
+								]
+							},
+							"vpc_id": {
+								"value": "some-vpc-id"
+							},
+							"cf_router_lb_name": {
+								"value": "some-cf-router-lb"
+							},
+							"cf_router_lb_internal_security_group": {
+								"value": "some-cf-router-internal-security-group"
+							},
+							"cf_ssh_lb_name":  {
+								"value": "some-cf-ssh-proxy-lb"
+							},
+							"cf_ssh_lb_internal_security_group":  {
+								"value": "some-cf-ssh-proxy-internal-security-group"
+							},
+							"concourse_lb_name":  {
+								"value": "some-concourse-lb"
+							},
+							"concourse_lb_internal_security_group":  {
+								"value": "some-concourse-internal-security-group"
+							}
+						}`, fakeBOSHServer.URL)))
+					case "/version":
+						responseWriter.Write([]byte("0.8.6"))
+					}
+				}))
 				state = storage.State{
 					Version: 3,
 					IAAS:    "aws",
@@ -287,7 +364,7 @@ var _ = Describe("destroy", func() {
 				It("saves the tf state when terraform destroy fails with ManagerError", func() {
 					destroy(fakeAWSServer.URL, tempDirectory, 1)
 
-					state = readStateJson(tempDirectory)
+					state := readStateJson(tempDirectory)
 					Expect(state.TFState).To(Equal(`{"key":"partial-apply"}`))
 				})
 

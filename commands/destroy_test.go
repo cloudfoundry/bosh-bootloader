@@ -309,7 +309,7 @@ var _ = Describe("Destroy", func() {
 					}
 				})
 
-				It("fails fast if BOSH deployed VMs still exist in the VPC", func() {
+				It("fails fast if BOSH deployed VMs still exist in the VPC with cloudformation", func() {
 					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
 						Name:   "some-stack-name",
 						Status: "some-stack-status",
@@ -323,6 +323,7 @@ var _ = Describe("Destroy", func() {
 					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
 
 					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
+					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal(""))
 				})
 
 				Context("when infrastructure was created with cloudformation", func() {
@@ -339,6 +340,7 @@ var _ = Describe("Destroy", func() {
 					BeforeEach(func() {
 						state.Stack = storage.Stack{}
 						state.TFState = "some-tf-state"
+						state.EnvID = "some-env-id"
 					})
 
 					It("deletes infrastructure with terraform", func() {
@@ -348,6 +350,21 @@ var _ = Describe("Destroy", func() {
 						expectedState := state
 						expectedState.BOSH = storage.BOSH{}
 						Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
+					})
+
+					It("fails fast if BOSH deployed VMs still exist in the VPC", func() {
+						terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+							"vpc_id": "some-vpc-id",
+						}
+
+						vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
+						Expect(state.Stack.Name).To(BeEmpty())
+
+						err := destroy.Execute([]string{}, state)
+						Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
+
+						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
+						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal("some-env-id"))
 					})
 
 					Context("when terraform destroy fails", func() {
@@ -637,6 +654,19 @@ var _ = Describe("Destroy", func() {
 							},
 						})
 						Expect(err).To(MatchError("failed to set state"))
+					})
+				})
+
+				Context("when terraform manager fails to get outputs", func() {
+					It("returns an error", func() {
+						terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
+
+						err := destroy.Execute([]string{}, storage.State{
+							IAAS:    "aws",
+							TFState: "some-tf-state",
+						})
+						Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+						Expect(err).To(MatchError("failed to get outputs"))
 					})
 				})
 
