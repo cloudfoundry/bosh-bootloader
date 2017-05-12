@@ -2,7 +2,7 @@ package fakes
 
 import "github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 
-type KeyPairSynchronizer struct {
+type AWSKeyPairSynchronizer struct {
 	SyncCall struct {
 		CallCount int
 		Receives  struct {
@@ -15,7 +15,7 @@ type KeyPairSynchronizer struct {
 	}
 }
 
-func (s *KeyPairSynchronizer) Sync(keyPair ec2.KeyPair) (ec2.KeyPair, error) {
+func (s *AWSKeyPairSynchronizer) Sync(keyPair ec2.KeyPair) (ec2.KeyPair, error) {
 	s.SyncCall.CallCount++
 	s.SyncCall.Receives.KeyPair = keyPair
 

@@ -16,14 +16,14 @@ import (
 var _ = Describe("Manager", func() {
 	Describe("Rotate", func() {
 		var (
-			keyPairSynchronizer *fakes.KeyPairSynchronizer
-			keyPairManager      aws.Manager
+			awsKeyPairSynchronizer *fakes.AWSKeyPairSynchronizer
+			keyPairManager         aws.Manager
 		)
 
 		BeforeEach(func() {
-			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
+			awsKeyPairSynchronizer = &fakes.AWSKeyPairSynchronizer{}
 
-			keyPairManager = aws.NewManager(keyPairSynchronizer)
+			keyPairManager = aws.NewManager(awsKeyPairSynchronizer)
 		})
 
 		It("returns a helpful error message", func() {
@@ -34,7 +34,7 @@ var _ = Describe("Manager", func() {
 
 	Describe("Sync", func() {
 		var (
-			keyPairSynchronizer *fakes.KeyPairSynchronizer
+			awsKeyPairSynchronizer *fakes.AWSKeyPairSynchronizer
 
 			keyPairManager aws.Manager
 
@@ -42,12 +42,12 @@ var _ = Describe("Manager", func() {
 		)
 
 		BeforeEach(func() {
-			keyPairSynchronizer = &fakes.KeyPairSynchronizer{}
+			awsKeyPairSynchronizer = &fakes.AWSKeyPairSynchronizer{}
 			incomingState = storage.State{
 				EnvID: "some-env-id",
 			}
 
-			keyPairManager = aws.NewManager(keyPairSynchronizer)
+			keyPairManager = aws.NewManager(awsKeyPairSynchronizer)
 		})
 
 		It("generates a keypair name if one doesn't exist", func() {
@@ -69,8 +69,8 @@ var _ = Describe("Manager", func() {
 			}
 			_, err := keyPairManager.Sync(incomingState)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(keyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
-			Expect(keyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
+			Expect(awsKeyPairSynchronizer.SyncCall.CallCount).To(Equal(1))
+			Expect(awsKeyPairSynchronizer.SyncCall.Receives.KeyPair).To(Equal(ec2.KeyPair{
 				Name:       "some-keypair-name",
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
@@ -78,7 +78,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		It("saves the keypair to the state", func() {
-			keyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
+			awsKeyPairSynchronizer.SyncCall.Returns.KeyPair = ec2.KeyPair{
 				Name:       "some-keypair-name",
 				PrivateKey: "some-private-key",
 				PublicKey:  "some-public-key",
@@ -119,7 +119,7 @@ var _ = Describe("Manager", func() {
 
 			Context("when the keypair synchronizer fails", func() {
 				It("returns a manager error", func() {
-					keyPairSynchronizer.SyncCall.Returns.Error = errors.New("failed to sync")
+					awsKeyPairSynchronizer.SyncCall.Returns.Error = errors.New("failed to sync")
 					incomingState.KeyPair.Name = "some-keypair-name"
 					_, err := keyPairManager.Sync(incomingState)
 					Expect(err).To(MatchError(keypair.NewManagerError(incomingState, errors.New("failed to sync"))))
