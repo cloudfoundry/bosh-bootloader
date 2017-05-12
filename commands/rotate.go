@@ -31,14 +31,16 @@ func (r Rotate) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	state, err = r.boshManager.Create(state)
-	if err != nil {
-		return err
-	}
+	if !state.NoDirector {
+		state, err = r.boshManager.Create(state)
+		if err != nil {
+			return err
+		}
 
-	err = r.stateStore.Set(state)
-	if err != nil {
-		return err
+		err = r.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

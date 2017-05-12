@@ -102,11 +102,12 @@ var _ = Describe("bbl rotate", func() {
 				"keyPair": {
 					"privateKey": "some-private-key",
 					"publicKey": "some-public-key"
-				}
+				},
+				"noDirector": true
 			}`, serviceAccountKey))
 		})
 
-		It("rotates the keys of the director", func() {
+		It("rotates the keys", func() {
 			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), stateContents, os.ModePerm)
 
 			Expect(err).NotTo(HaveOccurred())

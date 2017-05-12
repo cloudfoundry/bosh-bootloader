@@ -97,6 +97,20 @@ var _ = Describe("Rotate", func() {
 			}))
 		})
 
+		Context("when no director exists", func() {
+			BeforeEach(func() {
+				incomingState.NoDirector = true
+			})
+
+			It("does not deploy bosh", func() {
+				err := command.Execute([]string{}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+			})
+		})
+
 		Context("failure cases", func() {
 			It("returns an error when key pair manager rotate fails", func() {
 				keyPairManager.RotateCall.Returns.Error = errors.New("failed to rotate")
