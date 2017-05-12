@@ -7,7 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 )
 
-type ClientProvider struct {
+type AWSClientProvider struct {
 	SetConfigCall struct {
 		CallCount int
 		Receives  struct {
@@ -34,22 +34,22 @@ type ClientProvider struct {
 	}
 }
 
-func (c *ClientProvider) SetConfig(config aws.Config) {
+func (c *AWSClientProvider) SetConfig(config aws.Config) {
 	c.SetConfigCall.CallCount++
 	c.SetConfigCall.Receives.Config = config
 }
 
-func (c *ClientProvider) GetEC2Client() ec2.Client {
+func (c *AWSClientProvider) GetEC2Client() ec2.Client {
 	c.GetEC2ClientCall.CallCount++
 	return c.GetEC2ClientCall.Returns.EC2Client
 }
 
-func (c *ClientProvider) GetCloudFormationClient() cloudformation.Client {
+func (c *AWSClientProvider) GetCloudFormationClient() cloudformation.Client {
 	c.GetCloudFormationClientCall.CallCount++
 	return c.GetCloudFormationClientCall.Returns.CloudFormationClient
 }
 
-func (c *ClientProvider) GetIAMClient() iam.Client {
+func (c *AWSClientProvider) GetIAMClient() iam.Client {
 	c.GetIAMClientCall.CallCount++
 	return c.GetIAMClientCall.Returns.IAMClient
 }

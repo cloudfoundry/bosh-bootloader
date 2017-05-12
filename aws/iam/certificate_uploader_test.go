@@ -17,7 +17,7 @@ import (
 var _ = Describe("CertificateUploader", func() {
 	var (
 		iamClient         *fakes.IAMClient
-		iamClientProvider *fakes.ClientProvider
+		awsClientProvider *fakes.AWSClientProvider
 		uploader          iam.CertificateUploader
 		certificateFile   *os.File
 		privateKeyFile    *os.File
@@ -27,10 +27,10 @@ var _ = Describe("CertificateUploader", func() {
 	BeforeEach(func() {
 		var err error
 		iamClient = &fakes.IAMClient{}
-		iamClientProvider = &fakes.ClientProvider{}
-		iamClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
+		awsClientProvider = &fakes.AWSClientProvider{}
+		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
 
-		uploader = iam.NewCertificateUploader(iamClientProvider)
+		uploader = iam.NewCertificateUploader(awsClientProvider)
 
 		certificateFile, err = ioutil.TempFile("", "")
 		Expect(err).NotTo(HaveOccurred())

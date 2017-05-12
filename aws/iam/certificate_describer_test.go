@@ -18,14 +18,14 @@ var _ = Describe("CertificateDescriber", func() {
 	var (
 		iamClient         *fakes.IAMClient
 		describer         iam.CertificateDescriber
-		iamClientProvider *fakes.ClientProvider
+		awsClientProvider *fakes.AWSClientProvider
 	)
 
 	BeforeEach(func() {
 		iamClient = &fakes.IAMClient{}
-		iamClientProvider = &fakes.ClientProvider{}
-		iamClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
-		describer = iam.NewCertificateDescriber(iamClientProvider)
+		awsClientProvider = &fakes.AWSClientProvider{}
+		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
+		describer = iam.NewCertificateDescriber(awsClientProvider)
 	})
 
 	Describe("Describe", func() {
@@ -46,7 +46,7 @@ var _ = Describe("CertificateDescriber", func() {
 			certificate, err := describer.Describe("some-certificate")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(iamClientProvider.GetIAMClientCall.CallCount).To(Equal(1))
+			Expect(awsClientProvider.GetIAMClientCall.CallCount).To(Equal(1))
 
 			Expect(iamClient.GetServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
 			Expect(certificate.Name).To(Equal("some-certificate"))

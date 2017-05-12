@@ -14,16 +14,16 @@ import (
 
 var _ = Describe("KeyPairCreator", func() {
 	var (
-		keyPairCreator ec2.KeyPairCreator
-		ec2Client      *fakes.EC2Client
-		clientProvider *fakes.ClientProvider
+		keyPairCreator    ec2.KeyPairCreator
+		ec2Client         *fakes.EC2Client
+		awsClientProvider *fakes.AWSClientProvider
 	)
 
 	BeforeEach(func() {
-		clientProvider = &fakes.ClientProvider{}
+		awsClientProvider = &fakes.AWSClientProvider{}
 		ec2Client = &fakes.EC2Client{}
-		clientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
-		keyPairCreator = ec2.NewKeyPairCreator(clientProvider)
+		awsClientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
+		keyPairCreator = ec2.NewKeyPairCreator(awsClientProvider)
 	})
 
 	Describe("Create", func() {

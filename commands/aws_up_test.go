@@ -32,7 +32,7 @@ var _ = Describe("AWSUp", func() {
 			cloudConfigManager         *fakes.CloudConfigManager
 			brokenEnvironmentValidator *fakes.BrokenEnvironmentValidator
 			stateStore                 *fakes.StateStore
-			clientProvider             *fakes.ClientProvider
+			awsClientProvider          *fakes.AWSClientProvider
 			envIDManager               *fakes.EnvIDManager
 		)
 
@@ -89,7 +89,7 @@ var _ = Describe("AWSUp", func() {
 			credentialValidator = &fakes.CredentialValidator{}
 
 			stateStore = &fakes.StateStore{}
-			clientProvider = &fakes.ClientProvider{}
+			awsClientProvider = &fakes.AWSClientProvider{}
 
 			envIDManager = &fakes.EnvIDManager{}
 			envIDManager.SyncCall.Returns.State = storage.State{
@@ -101,7 +101,7 @@ var _ = Describe("AWSUp", func() {
 			command = commands.NewAWSUp(
 				credentialValidator, infrastructureManager, keyPairManager, boshManager,
 				availabilityZoneRetriever, certificateDescriber, cloudConfigManager,
-				stateStore, clientProvider, envIDManager, terraformManager, brokenEnvironmentValidator,
+				stateStore, awsClientProvider, envIDManager, terraformManager, brokenEnvironmentValidator,
 			)
 		})
 
@@ -119,8 +119,8 @@ var _ = Describe("AWSUp", func() {
 			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(1))
-			Expect(clientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
+			Expect(awsClientProvider.SetConfigCall.CallCount).To(Equal(1))
+			Expect(awsClientProvider.SetConfigCall.Receives.Config).To(Equal(aws.Config{
 				Region:          "new-aws-region",
 				SecretAccessKey: "new-aws-secret-access-key",
 				AccessKeyID:     "new-aws-access-key-id",
@@ -167,7 +167,7 @@ var _ = Describe("AWSUp", func() {
 				EnvID: "bbl-lake-time-stamp",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(clientProvider.SetConfigCall.CallCount).To(Equal(0))
+			Expect(awsClientProvider.SetConfigCall.CallCount).To(Equal(0))
 			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 
 			Expect(keyPairManager.SyncCall.Receives.State).To(Equal(storage.State{

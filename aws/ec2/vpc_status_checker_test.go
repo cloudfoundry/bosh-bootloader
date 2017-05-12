@@ -15,16 +15,16 @@ import (
 
 var _ = Describe("VPCStatusChecker", func() {
 	var (
-		vpcStatusChecker ec2.VPCStatusChecker
-		ec2Client        *fakes.EC2Client
-		clientProvider   *fakes.ClientProvider
+		vpcStatusChecker  ec2.VPCStatusChecker
+		ec2Client         *fakes.EC2Client
+		awsClientProvider *fakes.AWSClientProvider
 	)
 
 	BeforeEach(func() {
-		clientProvider = &fakes.ClientProvider{}
+		awsClientProvider = &fakes.AWSClientProvider{}
 		ec2Client = &fakes.EC2Client{}
-		clientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
-		vpcStatusChecker = ec2.NewVPCStatusChecker(clientProvider)
+		awsClientProvider.GetEC2ClientCall.Returns.EC2Client = ec2Client
+		vpcStatusChecker = ec2.NewVPCStatusChecker(awsClientProvider)
 	})
 
 	Describe("ValidateSafeToDelete", func() {
