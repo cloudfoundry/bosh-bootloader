@@ -49,10 +49,10 @@ type awsBOSHDeploymentVars struct {
 
 var _ = Describe("bosh-deployment-vars", func() {
 	var (
-		tempDirectory            string
-		serviceAccountKeyPath    string
-		fakeBOSH                 *fakeBOSHDirector
-		fakeBOSHServer           *httptest.Server
+		tempDirectory         string
+		serviceAccountKeyPath string
+		fakeBOSH              *fakeBOSHDirector
+		fakeBOSHServer        *httptest.Server
 	)
 
 	BeforeEach(func() {
@@ -61,13 +61,6 @@ var _ = Describe("bosh-deployment-vars", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/version":
-				responseWriter.Write([]byte("2.0.0"))
-			}
 		}))
 
 		fakeTerraformBackendServer.SetHandler(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -97,6 +90,10 @@ var _ = Describe("bosh-deployment-vars", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	Context("GCP", func() {
@@ -197,12 +194,7 @@ var _ = Describe("bosh-deployment-vars", func() {
 
 	Context("when the bosh cli version is <2.0", func() {
 		BeforeEach(func() {
-			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				switch request.URL.Path {
-				case "/version":
-					responseWriter.Write([]byte("1.9.0"))
-				}
-			}))
+			fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 		})
 
 		It("fast fails with a helpful error message", func() {

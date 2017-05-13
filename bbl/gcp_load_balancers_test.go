@@ -24,14 +24,12 @@ import (
 
 var _ = Describe("load balancers", func() {
 	var (
-		tempDirectory            string
-		serviceAccountKeyPath    string
-		fakeBOSHServer           *httptest.Server
-		fakeBOSH                 *fakeBOSHDirector
-		fastFailTerraform        bool
-		fastFailTerraformMutex   sync.Mutex
-		callRealInterpolate      bool
-		callRealInterpolateMutex sync.Mutex
+		tempDirectory          string
+		serviceAccountKeyPath  string
+		fakeBOSHServer         *httptest.Server
+		fakeBOSH               *fakeBOSHDirector
+		fastFailTerraform      bool
+		fastFailTerraformMutex sync.Mutex
 	)
 
 	var setFastFailTerraform = func(on bool) {
@@ -51,23 +49,6 @@ var _ = Describe("load balancers", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/version":
-				responseWriter.Write([]byte("v2.0.0"))
-			case "/path":
-				responseWriter.Write([]byte(noFakesPath))
-			case "/call-real-interpolate":
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				if callRealInterpolate {
-					responseWriter.Write([]byte("true"))
-				} else {
-					responseWriter.Write([]byte("false"))
-				}
-			}
 		}))
 
 		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -128,19 +109,12 @@ var _ = Describe("load balancers", func() {
 
 	AfterEach(func() {
 		setFastFailTerraform(false)
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	Describe("create-lbs", func() {
 		BeforeEach(func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = true
-		})
-
-		AfterEach(func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = false
+			fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 		})
 
 		It("creates and attaches a concourse lb type", func() {
@@ -272,12 +246,7 @@ var _ = Describe("load balancers", func() {
 
 				Context("when the bosh cli version is <2.0", func() {
 					BeforeEach(func() {
-						fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-							switch request.URL.Path {
-							case "/version":
-								responseWriter.Write([]byte("1.9.0"))
-							}
-						}))
+						fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 					})
 
 					It("fast fails with a helpful error message", func() {
@@ -630,15 +599,7 @@ var _ = Describe("load balancers", func() {
 				"--gcp-region", "us-west1",
 			}, 0)
 
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = true
-		})
-
-		AfterEach(func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = false
+			fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 		})
 
 		It("deletes lbs", func() {
@@ -856,9 +817,7 @@ var _ = Describe("load balancers", func() {
 
 	Describe("when no bosh director exists", func() {
 		BeforeEach(func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = true
+			fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 
 			executeCommand([]string{
 				"--state-dir", tempDirectory,
@@ -870,12 +829,6 @@ var _ = Describe("load balancers", func() {
 				"--gcp-zone", "us-east1-a",
 				"--gcp-region", "us-east1",
 			}, 0)
-		})
-
-		AfterEach(func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = false
 		})
 
 		It("creates and attaches a lb", func() {

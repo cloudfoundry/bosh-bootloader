@@ -27,13 +27,6 @@ var _ = Describe("bbl up", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/version":
-				responseWriter.Write([]byte("2.0.0"))
-			}
-		}))
-
 		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			switch request.URL.Path {
 			case "/output/external_ip":
@@ -54,6 +47,10 @@ var _ = Describe("bbl up", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	It("writes iaas to state", func() {
@@ -136,12 +133,7 @@ var _ = Describe("bbl up", func() {
 
 	Context("when the bosh cli version is <2.0", func() {
 		BeforeEach(func() {
-			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				switch request.URL.Path {
-				case "/version":
-					responseWriter.Write([]byte("1.9.0"))
-				}
-			}))
+			fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 		})
 
 		It("fast fails with a helpful error message", func() {

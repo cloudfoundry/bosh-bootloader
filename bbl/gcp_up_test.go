@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/onsi/gomega/gexec"
@@ -24,15 +23,6 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath string
 		fakeBOSHServer        *httptest.Server
 		fakeBOSH              *fakeBOSHDirector
-
-		fastFail                 bool
-		fastFailMutex            sync.Mutex
-		callRealInterpolate      bool
-		callRealInterpolateMutex sync.Mutex
-
-		createEnvArgs        string
-		interpolateArgs      []string
-		interpolateArgsMutex sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -40,42 +30,6 @@ var _ = Describe("bbl up gcp", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/version":
-				responseWriter.Write([]byte("v2.0.0"))
-			case "/path":
-				responseWriter.Write([]byte(noFakesPath))
-			case "/create-env/args":
-				body, err := ioutil.ReadAll(request.Body)
-				Expect(err).NotTo(HaveOccurred())
-				createEnvArgs = string(body)
-			case "/interpolate/args":
-				body, err := ioutil.ReadAll(request.Body)
-				Expect(err).NotTo(HaveOccurred())
-				interpolateArgsMutex.Lock()
-				defer interpolateArgsMutex.Unlock()
-				interpolateArgs = append(interpolateArgs, string(body))
-			case "/create-env/fastfail":
-				fastFailMutex.Lock()
-				defer fastFailMutex.Unlock()
-				if fastFail {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
-				} else {
-					responseWriter.WriteHeader(http.StatusOK)
-				}
-				return
-			case "/call-real-interpolate":
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				if callRealInterpolate {
-					responseWriter.Write([]byte("true"))
-				} else {
-					responseWriter.Write([]byte("false"))
-				}
-			}
 		}))
 
 		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -106,14 +60,10 @@ var _ = Describe("bbl up gcp", func() {
 		serviceAccountKeyPath = tempFile.Name()
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
 
-		fastFailMutex.Lock()
-		defer fastFailMutex.Unlock()
-		fastFail = false
-
-		interpolateArgsMutex.Lock()
-		defer interpolateArgsMutex.Unlock()
-		interpolateArgs = []string{}
+	AfterEach(func() {
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	It("writes gcp details to state", func() {
@@ -303,10 +253,8 @@ var _ = Describe("bbl up gcp", func() {
 	})
 
 	Context("when ops files are provides via --ops-file flag", func() {
-		By("allowing the bosh interpolate call to be run", func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = true
+		BeforeEach(func() {
+			fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 		})
 
 		It("passes those ops files to bosh create env", func() {
@@ -324,9 +272,7 @@ var _ = Describe("bbl up gcp", func() {
 
 			executeCommand(args, 0)
 
-			interpolateArgsMutex.Lock()
-			defer interpolateArgsMutex.Unlock()
-			Expect(interpolateArgs[1]).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
+			Expect(fakeBOSHCLIBackendServer.GetInterpolateArgs(1)).To(MatchRegexp(`\"-o\",\".*user-ops-file.yml\"`))
 		})
 	})
 
@@ -500,9 +446,7 @@ var _ = Describe("bbl up gcp", func() {
 
 	DescribeTable("cloud config", func(fixtureLocation string) {
 		By("allowing the bosh interpolate call to be run", func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = true
+			fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 		})
 
 		contents, err := ioutil.ReadFile(fixtureLocation)
@@ -530,12 +474,6 @@ var _ = Describe("bbl up gcp", func() {
 
 			executeCommand(args, 0)
 			Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
-		})
-
-		By("resetting the ability to call interpolate to false", func() {
-			callRealInterpolateMutex.Lock()
-			defer callRealInterpolateMutex.Unlock()
-			callRealInterpolate = false
 		})
 	},
 		Entry("generates a cloud config with no lb type", "../cloudconfig/fixtures/gcp-cloud-config-no-lb.yml"),
@@ -646,9 +584,7 @@ var _ = Describe("bbl up gcp", func() {
 
 		Context("when bosh fails", func() {
 			BeforeEach(func() {
-				fastFailMutex.Lock()
-				fastFail = true
-				fastFailMutex.Unlock()
+				fakeBOSHCLIBackendServer.SetCreateEnvFastFail(true)
 
 				args := []string{
 					"--state-dir", tempDirectory,

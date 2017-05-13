@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
@@ -39,9 +38,6 @@ var _ = Describe("destroy", func() {
 		fakeBOSH       *fakeBOSHDirector
 		fakeBOSHServer *httptest.Server
 		tempDirectory  string
-
-		fastFail      bool
-		fastFailMutex sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -66,37 +62,18 @@ var _ = Describe("destroy", func() {
 		})
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/delete-env/fastfail":
-				fastFailMutex.Lock()
-				defer fastFailMutex.Unlock()
-				if fastFail {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
-				} else {
-					responseWriter.WriteHeader(http.StatusOK)
-				}
-				return
-			case "/version":
-				responseWriter.Write([]byte("2.0.0"))
-			}
-		}))
-
 		var err error
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
+
+		fakeBOSHCLIBackendServer.ResetAll()
+	})
+
+	AfterEach(func() {
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	Context("when the state file does not exist", func() {
-		BeforeEach(func() {
-			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				switch request.URL.Path {
-				case "/version":
-					responseWriter.Write([]byte("2.0.0"))
-				}
-			}))
-		})
-
 		It("exits with status 0 if --skip-if-missing flag is provided", func() {
 			tempDirectory, err := ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
@@ -505,12 +482,7 @@ var _ = Describe("destroy", func() {
 
 		Context("when the bosh cli version is <2.0", func() {
 			BeforeEach(func() {
-				fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/version":
-						responseWriter.Write([]byte("1.9.0"))
-					}
-				}))
+				fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 			})
 
 			It("fast fails with a helpful error message", func() {
@@ -522,17 +494,9 @@ var _ = Describe("destroy", func() {
 
 		Context("when bosh fails", func() {
 			BeforeEach(func() {
-				fastFailMutex.Lock()
-				fastFail = true
-				fastFailMutex.Unlock()
+				fakeBOSHCLIBackendServer.SetDeleteEnvFastFail(true)
 
 				destroy(fakeAWSServer.URL, tempDirectory, 1)
-			})
-
-			AfterEach(func() {
-				fastFailMutex.Lock()
-				fastFail = false
-				fastFailMutex.Unlock()
 			})
 
 			It("stores a partial bosh state", func() {
@@ -545,9 +509,7 @@ var _ = Describe("destroy", func() {
 	})
 
 	Context("when the state contains empty TFState and Stack", func() {
-		var (
-			state storage.State
-		)
+		var state storage.State
 
 		BeforeEach(func() {
 			state = storage.State{

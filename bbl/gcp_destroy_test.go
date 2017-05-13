@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -23,8 +22,6 @@ var _ = Describe("bbl destroy gcp", func() {
 		statePath      string
 		fakeBOSHServer *httptest.Server
 		fakeBOSH       *fakeBOSHDirector
-		fastFail       bool
-		fastFailMutex  sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -33,22 +30,6 @@ var _ = Describe("bbl destroy gcp", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/version":
-				responseWriter.Write([]byte("2.0.0"))
-			case "/delete-env/fastfail":
-				fastFailMutex.Lock()
-				defer fastFailMutex.Unlock()
-				if fastFail {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
-				} else {
-					responseWriter.WriteHeader(http.StatusOK)
-				}
-				return
-			}
 		}))
 
 		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -110,6 +91,10 @@ director_ssl:
 		statePath = filepath.Join(tempDirectory, "bbl-state.json")
 		err = ioutil.WriteFile(statePath, stateContents, os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	It("deletes the bbl-state", func() {
@@ -221,9 +206,7 @@ director_ssl:
 
 		Context("when bosh fails", func() {
 			BeforeEach(func() {
-				fastFailMutex.Lock()
-				fastFail = true
-				fastFailMutex.Unlock()
+				fakeBOSHCLIBackendServer.SetDeleteEnvFastFail(true)
 
 				args := []string{
 					"--debug",
@@ -232,12 +215,6 @@ director_ssl:
 				}
 
 				executeCommand(args, 1)
-			})
-
-			AfterEach(func() {
-				fastFailMutex.Lock()
-				fastFail = false
-				fastFailMutex.Unlock()
 			})
 
 			It("stores a partial bosh state", func() {
@@ -251,12 +228,7 @@ director_ssl:
 
 	Context("when the bosh cli version is <2.0", func() {
 		BeforeEach(func() {
-			fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				switch request.URL.Path {
-				case "/version":
-					responseWriter.Write([]byte("1.9.0"))
-				}
-			}))
+			fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 		})
 
 		It("fast fails with a helpful error message", func() {

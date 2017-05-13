@@ -73,6 +73,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	noFakesPath = os.Getenv("PATH")
+	fakeBOSHCLIBackendServer.SetPath(noFakesPath)
 
 	os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), filepath.Dir(pathToTerraform), os.Getenv("PATH")}, ":"))
 

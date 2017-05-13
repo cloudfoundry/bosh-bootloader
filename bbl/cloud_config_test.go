@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
 	. "github.com/onsi/ginkgo"
@@ -25,11 +24,6 @@ var _ = Describe("bbl cloud-config", func() {
 
 		tempDirectory         string
 		serviceAccountKeyPath string
-		createEnvArgs         string
-		interpolateArgs       []string
-
-		callRealInterpolate      bool
-		callRealInterpolateMutex sync.Mutex
 	)
 
 	BeforeEach(func() {
@@ -37,29 +31,6 @@ var _ = Describe("bbl cloud-config", func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/path":
-				responseWriter.Write([]byte(noFakesPath))
-			case "/create-env/args":
-				body, err := ioutil.ReadAll(request.Body)
-				Expect(err).NotTo(HaveOccurred())
-				createEnvArgs = string(body)
-			case "/interpolate/args":
-				body, err := ioutil.ReadAll(request.Body)
-				Expect(err).NotTo(HaveOccurred())
-				interpolateArgs = append(interpolateArgs, string(body))
-			case "/call-real-interpolate":
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				if callRealInterpolate {
-					responseWriter.Write([]byte("true"))
-				} else {
-					responseWriter.Write([]byte("false"))
-				}
-			}
 		}))
 
 		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -111,16 +82,11 @@ var _ = Describe("bbl cloud-config", func() {
 		err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
-		callRealInterpolateMutex.Lock()
-		defer callRealInterpolateMutex.Unlock()
-		callRealInterpolate = true
-
+		fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 	})
 
 	AfterEach(func() {
-		callRealInterpolateMutex.Lock()
-		defer callRealInterpolateMutex.Unlock()
-		callRealInterpolate = false
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	Context("when there is no lb", func() {

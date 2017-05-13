@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os/exec"
-	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
@@ -35,32 +34,12 @@ var _ = Describe("load balancers", func() {
 		otherLBCertPath  string
 		otherLBChainPath string
 		otherLBKeyPath   string
-
-		callRealInterpolate      bool
-		callRealInterpolateMutex sync.Mutex
 	)
 
 	BeforeEach(func() {
 		fakeBOSH = &fakeBOSHDirector{}
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
-		}))
-
-		fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/version":
-				responseWriter.Write([]byte("2.0.0"))
-			case "/path":
-				responseWriter.Write([]byte(noFakesPath))
-			case "/call-real-interpolate":
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				if callRealInterpolate {
-					responseWriter.Write([]byte("true"))
-				} else {
-					responseWriter.Write([]byte("false"))
-				}
-			}
 		}))
 
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
@@ -87,6 +66,10 @@ var _ = Describe("load balancers", func() {
 
 		otherLBKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		fakeBOSHCLIBackendServer.ResetAll()
 	})
 
 	Describe("create-lbs", func() {
@@ -144,12 +127,7 @@ var _ = Describe("load balancers", func() {
 			Context("failure cases", func() {
 				Context("when the bosh cli version is <2.0", func() {
 					BeforeEach(func() {
-						fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-							switch request.URL.Path {
-							case "/version":
-								responseWriter.Write([]byte("1.9.0"))
-							}
-						}))
+						fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 					})
 
 					It("fast fails with a helpful error message", func() {
@@ -256,15 +234,7 @@ var _ = Describe("load balancers", func() {
 			BeforeEach(func() {
 				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			createLBsTests(false)
@@ -352,15 +322,7 @@ var _ = Describe("load balancers", func() {
 
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			createLBsTests(true)
@@ -549,12 +511,7 @@ var _ = Describe("load balancers", func() {
 			Context("failure cases", func() {
 				Context("when the bosh cli version is < 2.0.0", func() {
 					BeforeEach(func() {
-						fakeBOSHCLIBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-							switch request.URL.Path {
-							case "/version":
-								responseWriter.Write([]byte("1.9.0"))
-							}
-						}))
+						fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 					})
 
 					It("fast fails with a helpful error message", func() {
@@ -660,15 +617,7 @@ var _ = Describe("load balancers", func() {
 			BeforeEach(func() {
 				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			updateLBsTests(false)
@@ -750,15 +699,7 @@ var _ = Describe("load balancers", func() {
 
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			updateLBsTests(true)
@@ -932,15 +873,7 @@ var _ = Describe("load balancers", func() {
 				upAWS(fakeAWSServer.URL, tempDirectory, 0)
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			deleteLBsTests(false)
@@ -1023,15 +956,7 @@ var _ = Describe("load balancers", func() {
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			deleteLBsTests(true)
@@ -1136,15 +1061,7 @@ var _ = Describe("load balancers", func() {
 				}
 
 				executeCommand(args, 0)
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = true
-			})
-
-			AfterEach(func() {
-				callRealInterpolateMutex.Lock()
-				defer callRealInterpolateMutex.Unlock()
-				callRealInterpolate = false
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 			})
 
 			It("prints out the currently attached lb names and urls", func() {
