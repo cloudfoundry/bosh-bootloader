@@ -29,7 +29,7 @@ const (
   [--cert]            Path to SSL certificate (required when type="cf")
   [--key]             Path to SSL certificate key (required when type="cf")
   [--chain]           Path to SSL certificate chain (optional)
-  [--domain]          Creates a nameserver with a zone for given domain
+  [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
   [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)`
 
 	UpdateLBsCommandUsage = `Updates load balancer(s) with the supplied certificate, key, and optional chain
@@ -37,7 +37,7 @@ const (
   --cert               Path to SSL certificate
   --key                Path to SSL certificate key
   [--chain]            Path to SSL certificate chain (optional)
-  [--domain]           Updates domain in the nameserver zone (optional)
+  [--domain]           Updates domain in the nameserver zone (supported when type="cf", optional)
   [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`
 
 	DeleteLBsCommandUsage = `Deletes load balancer(s)
