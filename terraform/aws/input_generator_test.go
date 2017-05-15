@@ -25,6 +25,37 @@ var _ = Describe("InputGenerator", func() {
 		inputGenerator = aws.NewInputGenerator(availabilityZoneRetriever)
 	})
 
+	Context("when env-id is greater than 18 characters", func() {
+		It("creates a short env-id with truncated env_id and sha1sum[0:7]", func() {
+			inputs, err := inputGenerator.Generate(storage.State{
+				IAAS:    "aws",
+				EnvID:   "some-env-id-that-is-pretty-long",
+				TFState: "some-tf-state",
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+				KeyPair: storage.KeyPair{
+					Name: "some-key-pair-name",
+				},
+				Stack: storage.Stack{
+					BOSHAZ: "some-zone",
+				},
+				LB: storage.LB{
+					Type:   "",
+					Domain: "",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+
+			Expect(inputs["env_id"]).To(Equal("some-env-id-that-is-pretty-long"))
+			Expect(inputs["short_env_id"]).To(Equal("some-env-i-1fc794e"))
+		})
+	})
+
 	Context("when no lbs exist", func() {
 		It("receives BBL state and returns a map of terraform variables", func() {
 			inputs, err := inputGenerator.Generate(storage.State{
@@ -53,6 +84,7 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                 "some-env-id",
+				"short_env_id":           "some-env-id",
 				"nat_ssh_key_pair_name":  "some-key-pair-name",
 				"access_key":             "some-access-key-id",
 				"secret_key":             "some-secret-access-key",
@@ -101,6 +133,7 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                      "some-env-id",
+				"short_env_id":                "some-env-id",
 				"nat_ssh_key_pair_name":       "some-key-pair-name",
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
@@ -126,6 +159,7 @@ var _ = Describe("InputGenerator", func() {
 
 				Expect(inputs).To(Equal(map[string]string{
 					"env_id":                      "some-env-id",
+					"short_env_id":                "some-env-id",
 					"nat_ssh_key_pair_name":       "some-key-pair-name",
 					"access_key":                  "some-access-key-id",
 					"secret_key":                  "some-secret-access-key",
@@ -179,6 +213,7 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                      "some-env-id",
+				"short_env_id":                "some-env-id",
 				"nat_ssh_key_pair_name":       "some-key-pair-name",
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",

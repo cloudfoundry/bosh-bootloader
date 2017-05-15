@@ -394,6 +394,10 @@ variable "env_id" {
   type = "string"
 }
 
+variable "short_env_id" {
+  type = "string"
+}
+
 variable "vpc_cidr" {
   type = "string"
   default = "10.0.0.0/16"
@@ -470,7 +474,7 @@ variable "ssl_certificate_private_key" {
 }
 
 resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${substr(var.env_id, 0, 28)}-"
+  name_prefix       = "${var.short_env_id}-"
 
   certificate_body  = "${var.ssl_certificate}"
   certificate_chain = "${var.ssl_certificate_chain}"
@@ -556,7 +560,7 @@ output "concourse_lb_internal_security_group" {
 }
 
 resource "aws_elb" "concourse_lb" {
-  name                      = "${substr(var.env_id, 0, 18)}-concourse-lb"
+  name                      = "${var.short_env_id}-concourse-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -659,7 +663,7 @@ output "cf_ssh_lb_internal_security_group" {
 }
 
 resource "aws_elb" "cf_ssh_lb" {
-  name                      = "${substr(var.env_id, 0, 21)}-cf-ssh-lb"
+  name                      = "${var.short_env_id}-cf-ssh-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -760,7 +764,7 @@ output "cf_router_lb_internal_security_group" {
 }
 
 resource "aws_elb" "cf_router_lb" {
-  name                      = "${substr(var.env_id, 0, 18)}-cf-router-lb"
+  name                      = "${var.short_env_id}-cf-router-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -863,7 +867,7 @@ output "cf_tcp_lb_internal_security_group" {
 }
 
 resource "aws_elb" "cf_tcp_lb" {
-  name                      = "${substr(var.env_id, 0, 21)}-cf-tcp-lb"
+  name                      = "${var.short_env_id}-cf-tcp-lb"
   cross_zone_load_balancing = true
 
   health_check {
