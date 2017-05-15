@@ -41,6 +41,7 @@ var _ = Describe("load balancers", func() {
 		fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
+		fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
 
 		fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 		fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
@@ -70,6 +71,7 @@ var _ = Describe("load balancers", func() {
 
 	AfterEach(func() {
 		fakeBOSHCLIBackendServer.ResetAll()
+		fakeTerraformBackendServer.ResetAll()
 	})
 
 	Describe("create-lbs", func() {
@@ -242,84 +244,6 @@ var _ = Describe("load balancers", func() {
 
 		Context("when bbl'd up with terraform", func() {
 			BeforeEach(func() {
-				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/output/--json":
-						responseWriter.Write([]byte(fmt.Sprintf(`{
-							"bosh_eip": {
-								"value": "some-bosh-eip"
-							},
-							"bosh_url": {
-								"value": %q
-							},
-							"bosh_user_access_key": {
-								"value": "some-bosh-user-access-key"
-							},
-							"bosh_user_secret_access_key": {
-								"value": "some-bosh-user-secret-access_key"
-							},
-							"nat_eip": {
-								"value": "some-nat-eip"
-							},
-							"bosh_subnet_id": {
-								"value": "some-bosh-subnet-id"
-							},
-							"bosh_subnet_availability_zone": {
-								"value": "some-bosh-subnet-availability-zone"
-							},
-							"bosh_security_group": {
-								"value": "some-bosh-security-group"
-							},
-							"env_dns_zone_name_servers": {
-								"value": [
-									"name-server-1.",
-									"name-server-2."
-								]
-							},
-							"internal_security_group": {
-								"value": "some-internal-security-group"
-							},
-							"internal_subnet_ids": {
-								"value": [
-									"some-internal-subnet-ids-1",
-									"some-internal-subnet-ids-2",
-									"some-internal-subnet-ids-3"
-								]
-							},
-							"internal_subnet_cidrs": {
-								"value": [
-									"10.0.16.0/20",
-									"10.0.32.0/20",
-									"10.0.48.0/20"
-								]
-							},
-							"vpc_id": {
-								"value": "some-vpc-id"
-							},
-							"cf_router_lb_name": {
-								"value": "some-cf-router-lb"
-							},
-							"cf_router_lb_internal_security_group": {
-								"value": "some-cf-router-internal-security-group"
-							},
-							"cf_ssh_lb_name":  {
-								"value": "some-cf-ssh-proxy-lb"
-							},
-							"cf_ssh_lb_internal_security_group":  {
-								"value": "some-cf-ssh-proxy-internal-security-group"
-							},
-							"concourse_lb_name":  {
-								"value": "some-concourse-lb"
-							},
-							"concourse_lb_internal_security_group":  {
-								"value": "some-concourse-internal-security-group"
-							}
-						}`, fakeBOSHServer.URL)))
-					case "/version":
-						responseWriter.Write([]byte("0.8.6"))
-					}
-				}))
-
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 
 				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
@@ -625,78 +549,6 @@ var _ = Describe("load balancers", func() {
 
 		Context("when bbl'd up with terraform", func() {
 			BeforeEach(func() {
-				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/output/--json":
-						responseWriter.Write([]byte(fmt.Sprintf(`{
-							"bosh_eip": {
-								"value": "some-bosh-eip"
-							},
-							"bosh_url": {
-								"value": %q
-							},
-							"bosh_user_access_key": {
-								"value": "some-bosh-user-access-key"
-							},
-							"bosh_user_secret_access_key": {
-								"value": "some-bosh-user-secret-access_key"
-							},
-							"nat_eip": {
-								"value": "some-nat-eip"
-							},
-							"bosh_subnet_id": {
-								"value": "some-bosh-subnet-id"
-							},
-							"bosh_subnet_availability_zone": {
-								"value": "some-bosh-subnet-availability-zone"
-							},
-							"bosh_security_group": {
-								"value": "some-bosh-security-group"
-							},
-							"internal_security_group": {
-								"value": "some-internal-security-group"
-							},
-							"internal_subnet_ids": {
-								"value": [
-									"some-internal-subnet-ids-1",
-									"some-internal-subnet-ids-2",
-									"some-internal-subnet-ids-3"
-								]
-							},
-							"internal_subnet_cidrs": {
-								"value": [
-									"10.0.16.0/20",
-									"10.0.32.0/20",
-									"10.0.48.0/20"
-								]
-							},
-							"vpc_id": {
-								"value": "some-vpc-id"
-							},
-							"cf_router_lb_name": {
-								"value": "some-cf-router-lb"
-							},
-							"cf_router_lb_internal_security_group": {
-								"value": "some-cf-router-internal-security-group"
-							},
-							"cf_ssh_lb_name":  {
-								"value": "some-cf-ssh-proxy-lb"
-							},
-							"cf_ssh_lb_internal_security_group":  {
-								"value": "some-cf-ssh-proxy-internal-security-group"
-							},
-							"concourse_lb_name":  {
-								"value": "some-concourse-lb"
-							},
-							"concourse_lb_internal_security_group":  {
-								"value": "some-concourse-internal-security-group"
-							}
-						}`, fakeBOSHServer.URL)))
-					case "/version":
-						responseWriter.Write([]byte("0.8.6"))
-					}
-				}))
-
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 
 				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
@@ -881,78 +733,6 @@ var _ = Describe("load balancers", func() {
 
 		Context("when bbl'd up with terraform", func() {
 			BeforeEach(func() {
-				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/output/--json":
-						responseWriter.Write([]byte(fmt.Sprintf(`{
-							"bosh_eip": {
-								"value": "some-bosh-eip"
-							},
-							"bosh_url": {
-								"value": %q
-							},
-							"bosh_user_access_key": {
-								"value": "some-bosh-user-access-key"
-							},
-							"bosh_user_secret_access_key": {
-								"value": "some-bosh-user-secret-access_key"
-							},
-							"nat_eip": {
-								"value": "some-nat-eip"
-							},
-							"bosh_subnet_id": {
-								"value": "some-bosh-subnet-id"
-							},
-							"bosh_subnet_availability_zone": {
-								"value": "some-bosh-subnet-availability-zone"
-							},
-							"bosh_security_group": {
-								"value": "some-bosh-security-group"
-							},
-							"internal_security_group": {
-								"value": "some-internal-security-group"
-							},
-							"internal_subnet_ids": {
-								"value": [
-									"some-internal-subnet-ids-1",
-									"some-internal-subnet-ids-2",
-									"some-internal-subnet-ids-3"
-								]
-							},
-							"internal_subnet_cidrs": {
-								"value": [
-									"10.0.16.0/20",
-									"10.0.32.0/20",
-									"10.0.48.0/20"
-								]
-							},
-							"vpc_id": {
-								"value": "some-vpc-id"
-							},
-							"cf_router_lb_name": {
-								"value": "some-cf-router-lb"
-							},
-							"cf_router_lb_internal_security_group": {
-								"value": "some-cf-router-internal-security-group"
-							},
-							"cf_ssh_lb_name":  {
-								"value": "some-cf-ssh-proxy-lb"
-							},
-							"cf_ssh_lb_internal_security_group":  {
-								"value": "some-cf-ssh-proxy-internal-security-group"
-							},
-							"concourse_lb_name":  {
-								"value": "some-concourse-lb"
-							},
-							"concourse_lb_internal_security_group":  {
-								"value": "some-concourse-internal-security-group"
-							}
-						}`, fakeBOSHServer.URL)))
-					case "/version":
-						responseWriter.Write([]byte("0.8.6"))
-					}
-				}))
-
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 				createLBs(fakeAWSServer.URL, tempDirectory, lbCertPath, lbKeyPath, lbChainPath, "cf", 0, false)
 
@@ -966,87 +746,6 @@ var _ = Describe("load balancers", func() {
 	Describe("lbs", func() {
 		Context("when bbl'd up with terraform", func() {
 			BeforeEach(func() {
-				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/output/--json":
-						responseWriter.Write([]byte(fmt.Sprintf(`{
-							"bosh_eip": {
-								"value": "some-bosh-eip"
-							},
-							"bosh_url": {
-								"value": %q
-							},
-							"bosh_user_access_key": {
-								"value": "some-bosh-user-access-key"
-							},
-							"bosh_user_secret_access_key": {
-								"value": "some-bosh-user-secret-access_key"
-							},
-							"nat_eip": {
-								"value": "some-nat-eip"
-							},
-							"bosh_subnet_id": {
-								"value": "some-bosh-subnet-id"
-							},
-							"bosh_subnet_availability_zone": {
-								"value": "some-bosh-subnet-availability-zone"
-							},
-							"bosh_security_group": {
-								"value": "some-bosh-security-group"
-							},
-							"env_dns_zone_name_servers": {
-								"value": [
-									"name-server-1.",
-									"name-server-2."
-								]
-							},
-							"internal_security_group": {
-								"value": "some-internal-security-group"
-							},
-							"internal_subnet_ids": {
-								"value": [
-									"some-internal-subnet-ids-1",
-									"some-internal-subnet-ids-2",
-									"some-internal-subnet-ids-3"
-								]
-							},
-							"internal_subnet_cidrs": {
-								"value": [
-									"10.0.16.0/20",
-									"10.0.32.0/20",
-									"10.0.48.0/20"
-								]
-							},
-							"vpc_id": {
-								"value": "some-vpc-id"
-							},
-							"cf_router_lb_name": {
-								"value": "some-router-lb-name"
-							},
-							"cf_router_lb_url": {
-								"value": "some-router-lb-url"
-							},
-							"cf_router_lb_internal_security_group": {
-								"value": "some-cf-router-internal-security-group"
-							},
-							"cf_ssh_lb_name":  {
-								"value": "some-ssh-proxy-lb-name"
-							},
-							"cf_ssh_lb_url":  {
-								"value": "some-ssh-proxy-lb-url"
-							},
-							"cf_ssh_lb_internal_security_group":  {
-								"value": "some-cf-ssh-proxy-internal-security-group"
-							},
-							"concourse_lb_name":  {
-								"value": "some-concourse-lb"
-							},
-							"concourse_lb_internal_security_group":  {
-								"value": "some-concourse-internal-security-group"
-							}
-						}`, fakeBOSHServer.URL)))
-					}
-				}))
 				upAWSWithAdditionalFlags(fakeAWSServer.URL, tempDirectory, []string{"--terraform"}, 0)
 
 				args := []string{
@@ -1068,8 +767,8 @@ var _ = Describe("load balancers", func() {
 				session := lbs("", []string{}, tempDirectory, 0)
 				stdout := session.Out.Contents()
 
-				Expect(stdout).To(ContainSubstring("CF Router LB: some-router-lb-name [some-router-lb-url]\n"))
-				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-ssh-proxy-lb-name [some-ssh-proxy-lb-url]\n"))
+				Expect(stdout).To(ContainSubstring("CF Router LB: some-cf-router-lb [some-cf-router-lb-url]\n"))
+				Expect(stdout).To(ContainSubstring("CF SSH Proxy LB: some-cf-ssh-proxy-lb [some-cf-ssh-proxy-lb-url]\n"))
 				Expect(stdout).To(ContainSubstring("CF System Domain DNS servers: name-server-1. name-server-2.\n"))
 			})
 
@@ -1078,10 +777,10 @@ var _ = Describe("load balancers", func() {
 				stdout := session.Out.Contents()
 
 				Expect(stdout).To(MatchJSON(`{
-					"cf_router_lb": "some-router-lb-name",
-					"cf_router_lb_url": "some-router-lb-url",
-					"cf_ssh_proxy_lb": "some-ssh-proxy-lb-name",
-					"cf_ssh_proxy_lb_url": "some-ssh-proxy-lb-url",
+					"cf_router_lb": "some-cf-router-lb",
+					"cf_router_lb_url": "some-cf-router-lb-url",
+					"cf_ssh_proxy_lb": "some-cf-ssh-proxy-lb",
+					"cf_ssh_proxy_lb_url": "some-cf-ssh-proxy-lb-url",
 					"env_dns_zone_name_servers": [
 						"name-server-1.",
 						"name-server-2."

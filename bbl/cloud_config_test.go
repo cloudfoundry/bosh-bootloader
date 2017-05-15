@@ -33,44 +33,7 @@ var _ = Describe("bbl cloud-config", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/output/external_ip":
-				responseWriter.Write([]byte("127.0.0.1"))
-			case "/output/director_address":
-				responseWriter.Write([]byte(fakeBOSHServer.URL))
-			case "/output/network_name":
-				responseWriter.Write([]byte("some-network-name"))
-			case "/output/subnetwork_name":
-				responseWriter.Write([]byte("some-subnetwork-name"))
-			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-internal-tag"))
-			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-tag"))
-			case "/version":
-				responseWriter.Write([]byte("0.8.6"))
-			case "/output/concourse_target_pool":
-				responseWriter.Write([]byte("concourse-target-pool"))
-			case "/output/router_backend_service":
-				responseWriter.Write([]byte("router-backend-service"))
-			case "/output/ssh_proxy_target_pool":
-				responseWriter.Write([]byte("ssh-proxy-target-pool"))
-			case "/output/tcp_router_target_pool":
-				responseWriter.Write([]byte("tcp-router-target-pool"))
-			case "/output/ws_target_pool":
-				responseWriter.Write([]byte("ws-target-pool"))
-			case "/output/router_lb_ip":
-				responseWriter.Write([]byte("some-router-lb-ip"))
-			case "/output/ssh_proxy_lb_ip":
-				responseWriter.Write([]byte("some-ssh-proxy-lb-ip"))
-			case "/output/tcp_router_lb_ip":
-				responseWriter.Write([]byte("some-tcp-router-lb-ip"))
-			case "/output/concourse_lb_ip":
-				responseWriter.Write([]byte("some-concourse-lb-ip"))
-			case "/output/ws_lb_ip":
-				responseWriter.Write([]byte("some-ws-lb-ip"))
-			}
-		}))
+		fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -87,6 +50,7 @@ var _ = Describe("bbl cloud-config", func() {
 
 	AfterEach(func() {
 		fakeBOSHCLIBackendServer.ResetAll()
+		fakeTerraformBackendServer.ResetAll()
 	})
 
 	Context("when there is no lb", func() {

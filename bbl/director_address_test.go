@@ -60,21 +60,13 @@ var _ = Describe("director-address", func() {
 	Context("when bbl does not manage the director", func() {
 		Context("gcp", func() {
 			BeforeEach(func() {
-				var err error
-				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/output/external_ip":
-						responseWriter.Write([]byte("some-external-ip"))
-					}
-				}))
-
 				state := []byte(`{
 					"version":3,
 					"iaas": "gcp",
 					"noDirector": true,
 					"tfState": "some-tf-state"
 				}`)
-				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -83,7 +75,7 @@ var _ = Describe("director-address", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("https://some-external-ip:25555"))
+				Expect(session.Out.Contents()).To(ContainSubstring("https://127.0.0.1:25555"))
 			})
 		})
 
@@ -102,6 +94,8 @@ var _ = Describe("director-address", func() {
 					fakeBOSH.ServeHTTP(responseWriter, request)
 				}))
 
+				fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
+
 				fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 				fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
@@ -118,6 +112,10 @@ var _ = Describe("director-address", func() {
 				}
 
 				executeCommand(upArgs, 0)
+			})
+
+			AfterEach(func() {
+				fakeTerraformBackendServer.ResetAll()
 			})
 
 			It("returns the eip reserved for the director", func() {

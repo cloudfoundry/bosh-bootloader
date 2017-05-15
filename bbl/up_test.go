@@ -27,16 +27,7 @@ var _ = Describe("bbl up", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/output/external_ip":
-				responseWriter.Write([]byte("127.0.0.1"))
-			case "/output/director_address":
-				responseWriter.Write([]byte(fakeBOSHServer.URL))
-			case "/version":
-				responseWriter.Write([]byte("0.8.6"))
-			}
-		}))
+		fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -51,6 +42,7 @@ var _ = Describe("bbl up", func() {
 
 	AfterEach(func() {
 		fakeBOSHCLIBackendServer.ResetAll()
+		fakeTerraformBackendServer.ResetAll()
 	})
 
 	It("writes iaas to state", func() {

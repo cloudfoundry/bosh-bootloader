@@ -61,21 +61,13 @@ var _ = Describe("bbl print-env", func() {
 	Context("when the bosh environment has no director", func() {
 		Context("gcp", func() {
 			BeforeEach(func() {
-				var err error
-				fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					switch request.URL.Path {
-					case "/output/external_ip":
-						responseWriter.Write([]byte("some-external-ip"))
-					}
-				}))
-
 				state := []byte(`{
 					"version":3,
 					"iaas": "gcp",
 					"noDirector": true,
 					"tfState": "some-tf-state"
 				}`)
-				err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -89,7 +81,7 @@ var _ = Describe("bbl print-env", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
+				Expect(session.Out.Contents()).To(ContainSubstring("export BOSH_ENVIRONMENT=https://127.0.0.1:25555"))
 				Expect(session.Out.Contents()).NotTo(ContainSubstring("export BOSH_CLIENT="))
 				Expect(session.Out.Contents()).NotTo(ContainSubstring("export BOSH_CLIENT_SECRET="))
 				Expect(session.Out.Contents()).NotTo(ContainSubstring("export BOSH_CA_CERT="))
@@ -110,6 +102,8 @@ var _ = Describe("bbl print-env", func() {
 				fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 					fakeBOSH.ServeHTTP(responseWriter, request)
 				}))
+
+				fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
 
 				fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 				fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))

@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
@@ -24,25 +23,11 @@ import (
 
 var _ = Describe("load balancers", func() {
 	var (
-		tempDirectory          string
-		serviceAccountKeyPath  string
-		fakeBOSHServer         *httptest.Server
-		fakeBOSH               *fakeBOSHDirector
-		fastFailTerraform      bool
-		fastFailTerraformMutex sync.Mutex
+		tempDirectory         string
+		serviceAccountKeyPath string
+		fakeBOSHServer        *httptest.Server
+		fakeBOSH              *fakeBOSHDirector
 	)
-
-	var setFastFailTerraform = func(on bool) {
-		fastFailTerraformMutex.Lock()
-		defer fastFailTerraformMutex.Unlock()
-		fastFailTerraform = on
-	}
-
-	var getFastFailTerraform = func() bool {
-		fastFailTerraformMutex.Lock()
-		defer fastFailTerraformMutex.Unlock()
-		return fastFailTerraform
-	}
 
 	BeforeEach(func() {
 		var err error
@@ -51,50 +36,7 @@ var _ = Describe("load balancers", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/output/external_ip":
-				responseWriter.Write([]byte("127.0.0.1"))
-			case "/output/director_address":
-				responseWriter.Write([]byte(fakeBOSHServer.URL))
-			case "/output/network_name":
-				responseWriter.Write([]byte("some-network-name"))
-			case "/output/subnetwork_name":
-				responseWriter.Write([]byte("some-subnetwork-name"))
-			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-internal-tag"))
-			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-tag"))
-			case "/output/concourse_target_pool":
-				responseWriter.Write([]byte("concourse-target-pool"))
-			case "/fastfail":
-				if getFastFailTerraform() {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
-				}
-			case "/output/router_backend_service":
-				responseWriter.Write([]byte("router-backend-service"))
-			case "/output/ssh_proxy_target_pool":
-				responseWriter.Write([]byte("ssh-proxy-target-pool"))
-			case "/output/tcp_router_target_pool":
-				responseWriter.Write([]byte("tcp-router-target-pool"))
-			case "/output/ws_target_pool":
-				responseWriter.Write([]byte("ws-target-pool"))
-			case "/output/router_lb_ip":
-				responseWriter.Write([]byte("some-router-lb-ip"))
-			case "/output/ssh_proxy_lb_ip":
-				responseWriter.Write([]byte("some-ssh-proxy-lb-ip"))
-			case "/output/tcp_router_lb_ip":
-				responseWriter.Write([]byte("some-tcp-router-lb-ip"))
-			case "/output/concourse_lb_ip":
-				responseWriter.Write([]byte("some-concourse-lb-ip"))
-			case "/output/ws_lb_ip":
-				responseWriter.Write([]byte("some-ws-lb-ip"))
-			case "/output/system_domain_dns_servers":
-				responseWriter.Write([]byte("name-server-1.,\nname-server-2.,\nname-server-3."))
-			case "/version":
-				responseWriter.Write([]byte("0.8.6"))
-			}
-		}))
+		fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -108,8 +50,8 @@ var _ = Describe("load balancers", func() {
 	})
 
 	AfterEach(func() {
-		setFastFailTerraform(false)
 		fakeBOSHCLIBackendServer.ResetAll()
+		fakeTerraformBackendServer.ResetAll()
 	})
 
 	Describe("create-lbs", func() {
@@ -221,12 +163,7 @@ var _ = Describe("load balancers", func() {
 			Describe("failure cases", func() {
 				Context("when the terraform version is <0.8.5", func() {
 					BeforeEach(func() {
-						fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-							switch request.URL.Path {
-							case "/version":
-								responseWriter.Write([]byte("0.8.4"))
-							}
-						}))
+						fakeTerraformBackendServer.SetVersion("0.8.4")
 					})
 
 					It("fast fails with a helpful error message", func() {
@@ -657,7 +594,7 @@ var _ = Describe("load balancers", func() {
 			})
 
 			By("running delete-lbs and it fails", func() {
-				setFastFailTerraform(true)
+				fakeTerraformBackendServer.SetFastFail(true)
 				args := []string{
 					"--state-dir", tempDirectory,
 					"delete-lbs",

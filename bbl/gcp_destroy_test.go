@@ -32,24 +32,7 @@ var _ = Describe("bbl destroy gcp", func() {
 			fakeBOSH.ServeHTTP(responseWriter, request)
 		}))
 
-		fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			switch request.URL.Path {
-			case "/output/external_ip":
-				responseWriter.Write([]byte("127.0.0.1"))
-			case "/output/director_address":
-				responseWriter.Write([]byte(fakeBOSHServer.URL))
-			case "/output/network_name":
-				responseWriter.Write([]byte("some-network-name"))
-			case "/output/subnetwork_name":
-				responseWriter.Write([]byte("some-subnetwork-name"))
-			case "/output/internal_tag_name":
-				responseWriter.Write([]byte("some-internal-tag"))
-			case "/output/bosh_open_tag_name":
-				responseWriter.Write([]byte("some-bosh-tag"))
-			case "/version":
-				responseWriter.Write([]byte("0.8.6"))
-			}
-		}))
+		fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
 
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -95,6 +78,7 @@ director_ssl:
 
 	AfterEach(func() {
 		fakeBOSHCLIBackendServer.ResetAll()
+		fakeTerraformBackendServer.ResetAll()
 	})
 
 	It("deletes the bbl-state", func() {
@@ -245,12 +229,7 @@ director_ssl:
 
 	Context("when the terraform version is <0.8.5", func() {
 		BeforeEach(func() {
-			fakeTerraformBackendServer.SetHandler(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-				switch request.URL.Path {
-				case "/version":
-					responseWriter.Write([]byte("0.8.4"))
-				}
-			}))
+			fakeTerraformBackendServer.SetVersion("0.8.4")
 		})
 
 		It("fast fails with a helpful error message", func() {
