@@ -389,6 +389,12 @@
                         "ToPort": "65535"
                     },
                     {
+                        "FromPort": "-1",
+                        "IpProtocol": "icmp",
+                        "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},
+                        "ToPort": "-1"
+                    },
+                    {
                         "FromPort": "0",
                         "IpProtocol": "udp",
                         "SourceSecurityGroupId": {"Ref": "InternalSecurityGroup"},

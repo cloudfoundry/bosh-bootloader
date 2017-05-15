@@ -38,6 +38,12 @@ func (t NATTemplateBuilder) NAT() Template {
 						},
 						{
 							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
+							IpProtocol:            "icmp",
+							FromPort:              "-1",
+							ToPort:                "-1",
+						},
+						{
+							SourceSecurityGroupId: Ref{"InternalSecurityGroup"},
 							IpProtocol:            "udp",
 							FromPort:              "0",
 							ToPort:                "65535",

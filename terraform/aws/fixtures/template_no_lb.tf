@@ -109,6 +109,13 @@ resource "aws_security_group" "nat_security_group" {
     security_groups = ["${aws_security_group.internal_security_group.id}"]
   }
 
+  ingress {
+    protocol    = "icmp"
+    from_port   = -1
+    to_port     = -1
+    security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
   egress {
     from_port = 0
     to_port = 0

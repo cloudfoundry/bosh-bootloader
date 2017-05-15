@@ -48,6 +48,12 @@ var _ = Describe("NATTemplateBuilder", func() {
 						},
 						{
 							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
+							IpProtocol:            "icmp",
+							FromPort:              "-1",
+							ToPort:                "-1",
+						},
+						{
+							SourceSecurityGroupId: templates.Ref{"InternalSecurityGroup"},
 							IpProtocol:            "udp",
 							FromPort:              "0",
 							ToPort:                "65535",
