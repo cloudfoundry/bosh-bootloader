@@ -12,9 +12,10 @@ const (
 )
 
 type dataBackend struct {
-	fakeBOSHServerURL string
-	version           string
-	fastFail          bool
+	fakeBOSHServerURL     string
+	version               string
+	outputJsonReturnError bool
+	fastFail              bool
 }
 
 type Backend struct {
@@ -61,6 +62,66 @@ func (b *Backend) SetFakeBOSHServer(url string) {
 func (b *Backend) defaultHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	switch request.URL.Path {
 	case "/output/--json":
+		b.handleOutputJson(responseWriter)
+	case "/output/external_ip":
+		responseWriter.Write([]byte("127.0.0.1"))
+	case "/output/director_address":
+		responseWriter.Write([]byte(b.backend.fakeBOSHServerURL))
+	case "/output/network_name":
+		b.handleOutput(responseWriter, "some-network-name")
+	case "/output/subnetwork_name":
+		b.handleOutput(responseWriter, "some-subnetwork-name")
+	case "/output/internal_tag_name":
+		b.handleOutput(responseWriter, "some-internal-tag")
+	case "/output/bosh_open_tag_name":
+		b.handleOutput(responseWriter, "some-bosh-tag")
+	case "/output/concourse_target_pool":
+		b.handleOutput(responseWriter, "concourse-target-pool")
+	case "/output/router_backend_service":
+		b.handleOutput(responseWriter, "router-backend-service")
+	case "/output/ssh_proxy_target_pool":
+		b.handleOutput(responseWriter, "ssh-proxy-target-pool")
+	case "/output/tcp_router_target_pool":
+		b.handleOutput(responseWriter, "tcp-router-target-pool")
+	case "/output/ws_target_pool":
+		b.handleOutput(responseWriter, "ws-target-pool")
+	case "/output/router_lb_ip":
+		b.handleOutput(responseWriter, "some-router-lb-ip")
+	case "/output/ssh_proxy_lb_ip":
+		b.handleOutput(responseWriter, "some-ssh-proxy-lb-ip")
+	case "/output/tcp_router_lb_ip":
+		b.handleOutput(responseWriter, "some-tcp-router-lb-ip")
+	case "/output/concourse_lb_ip":
+		b.handleOutput(responseWriter, "some-concourse-lb-ip")
+	case "/output/ws_lb_ip":
+		b.handleOutput(responseWriter, "some-ws-lb-ip")
+	case "/output/system_domain_dns_servers":
+		b.handleOutput(responseWriter, "name-server-1.,\nname-server-2.,\nname-server-3.")
+	case "/fastfail":
+		b.handleFastFail(responseWriter)
+	case "/version":
+		b.handleVersion(responseWriter)
+	}
+}
+
+func (b *Backend) handleOutput(responseWriter http.ResponseWriter, output string) {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
+	if b.backend.outputJsonReturnError {
+		responseWriter.WriteHeader(http.StatusInternalServerError)
+	} else {
+		responseWriter.Write([]byte(output))
+	}
+}
+
+func (b *Backend) handleOutputJson(responseWriter http.ResponseWriter) {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
+	if b.backend.outputJsonReturnError {
+		responseWriter.WriteHeader(http.StatusInternalServerError)
+	} else {
 		responseWriter.Write([]byte(fmt.Sprintf(`{
 			"bosh_eip": {
 				"value": "some-bosh-eip"
@@ -137,57 +198,26 @@ func (b *Backend) defaultHandler(responseWriter http.ResponseWriter, request *ht
 				"value": "some-concourse-internal-security-group"
 			}
 		}`, b.backend.fakeBOSHServerURL)))
-	case "/output/external_ip":
-		responseWriter.Write([]byte("127.0.0.1"))
-	case "/output/director_address":
-		responseWriter.Write([]byte(b.backend.fakeBOSHServerURL))
-	case "/output/network_name":
-		responseWriter.Write([]byte("some-network-name"))
-	case "/output/subnetwork_name":
-		responseWriter.Write([]byte("some-subnetwork-name"))
-	case "/output/internal_tag_name":
-		responseWriter.Write([]byte("some-internal-tag"))
-	case "/output/bosh_open_tag_name":
-		responseWriter.Write([]byte("some-bosh-tag"))
-	case "/output/concourse_target_pool":
-		responseWriter.Write([]byte("concourse-target-pool"))
-	case "/output/router_backend_service":
-		responseWriter.Write([]byte("router-backend-service"))
-	case "/output/ssh_proxy_target_pool":
-		responseWriter.Write([]byte("ssh-proxy-target-pool"))
-	case "/output/tcp_router_target_pool":
-		responseWriter.Write([]byte("tcp-router-target-pool"))
-	case "/output/ws_target_pool":
-		responseWriter.Write([]byte("ws-target-pool"))
-	case "/output/router_lb_ip":
-		responseWriter.Write([]byte("some-router-lb-ip"))
-	case "/output/ssh_proxy_lb_ip":
-		responseWriter.Write([]byte("some-ssh-proxy-lb-ip"))
-	case "/output/tcp_router_lb_ip":
-		responseWriter.Write([]byte("some-tcp-router-lb-ip"))
-	case "/output/concourse_lb_ip":
-		responseWriter.Write([]byte("some-concourse-lb-ip"))
-	case "/output/ws_lb_ip":
-		responseWriter.Write([]byte("some-ws-lb-ip"))
-	case "/output/system_domain_dns_servers":
-		responseWriter.Write([]byte("name-server-1.,\nname-server-2.,\nname-server-3."))
-	case "/fastfail":
-		b.handleFastFail(responseWriter)
-	case "/version":
-		b.handleVersion(responseWriter)
 	}
 }
 
+func (b *Backend) SetOutputJsonReturnError(errorOut bool) {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
+	b.backend.outputJsonReturnError = errorOut
+}
+
 func (b *Backend) SetVersion(version string) {
-	b.handlerMutex.Lock()
-	defer b.handlerMutex.Unlock()
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
 
 	b.backend.version = version
 }
 
 func (b *Backend) ResetVersion() {
-	b.handlerMutex.Lock()
-	defer b.handlerMutex.Unlock()
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
 
 	b.backend.version = defaultVersion
 }

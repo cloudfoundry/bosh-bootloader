@@ -135,15 +135,13 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	var terraformOutputs map[string]interface{}
 	if state.IAAS == "gcp" {
 		terraformOutputs, err = d.terraformManager.GetOutputs(state)
-		if err != nil {
-			return err
-		}
-
-		networkName, ok := terraformOutputs["network_name"].(string)
-		if ok {
-			err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
-			if err != nil {
-				return err
+		if err == nil {
+			networkName, ok := terraformOutputs["network_name"].(string)
+			if ok {
+				err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -165,33 +163,32 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	if state.IAAS == "aws" {
 		if state.TFState != "" {
 			outputs, err := d.terraformManager.GetOutputs(state)
-			if err != nil {
-				return err
-			}
-			var vpcID = outputs["vpc_id"]
-			if vpcID != nil {
-				if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID.(string), state.EnvID); err != nil {
-					return err
+			if err == nil {
+				var vpcID = outputs["vpc_id"]
+				if vpcID != nil {
+					if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID.(string), state.EnvID); err != nil {
+						return err
+					}
 				}
 			}
-		}
-
-		stackExists := true
-		var err error
-		stack, err = d.stackManager.Describe(state.Stack.Name)
-		switch err {
-		case cloudformation.StackNotFound:
-			stackExists = false
-		case nil:
-			break
-		default:
-			return err
-		}
-
-		if stackExists {
-			var vpcID = stack.Outputs["VPCID"]
-			if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID, ""); err != nil {
+		} else {
+			stackExists := true
+			var err error
+			stack, err = d.stackManager.Describe(state.Stack.Name)
+			switch err {
+			case cloudformation.StackNotFound:
+				stackExists = false
+			case nil:
+				break
+			default:
 				return err
+			}
+
+			if stackExists {
+				var vpcID = stack.Outputs["VPCID"]
+				if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID, ""); err != nil {
+					return err
+				}
 			}
 		}
 	}

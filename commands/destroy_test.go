@@ -352,6 +352,22 @@ var _ = Describe("Destroy", func() {
 						Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
 					})
 
+					Context("when terraform manager fails to get outputs", func() {
+						It("ignores the error and deletes the infrastructure", func() {
+							terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
+
+							err := destroy.Execute([]string{}, state)
+							Expect(err).NotTo(HaveOccurred())
+
+							Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+							Expect(vpcStatusChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+
+							expectedState := state
+							expectedState.BOSH = storage.BOSH{}
+							Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
+						})
+					})
+
 					It("fails fast if BOSH deployed VMs still exist in the VPC", func() {
 						terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
 							"vpc_id": "some-vpc-id",
@@ -657,19 +673,6 @@ var _ = Describe("Destroy", func() {
 					})
 				})
 
-				Context("when terraform manager fails to get outputs", func() {
-					It("returns an error", func() {
-						terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
-
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS:    "aws",
-							TFState: "some-tf-state",
-						})
-						Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-						Expect(err).To(MatchError("failed to get outputs"))
-					})
-				})
-
 				Context("when bosh fails to delete the director", func() {
 					var (
 						state storage.State
@@ -805,6 +808,21 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 			})
 
+			Context("when terraform output provider fails to get terraform outputs", func() {
+				It("ignores the error and continues to destroy terraform", func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform output provider failed")
+
+					stdin.Write([]byte("yes\n"))
+					err := destroy.Execute([]string{}, storage.State{
+						IAAS: "gcp",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
+					Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+				})
+			})
+
 			Context("when terraform destroy fails", func() {
 				var (
 					updatedBBLState storage.State
@@ -884,7 +902,6 @@ var _ = Describe("Destroy", func() {
 			})
 
 			Context("deleting the keypair", func() {
-
 				It("deletes the keypair", func() {
 					stdin.Write([]byte("yes\n"))
 					err := destroy.Execute([]string{}, storage.State{
@@ -912,18 +929,6 @@ var _ = Describe("Destroy", func() {
 
 						Expect(err).To(MatchError("failed to destroy"))
 					})
-				})
-			})
-
-			Context("when terraform output provider fails to get terraform outputs", func() {
-				It("returns an error", func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform output provider failed")
-
-					err := destroy.Execute([]string{}, storage.State{
-						IAAS: "gcp",
-					})
-
-					Expect(err).To(MatchError("terraform output provider failed"))
 				})
 			})
 		})

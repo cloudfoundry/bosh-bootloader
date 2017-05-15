@@ -50,13 +50,19 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-
-		body, err := ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
-		if err != nil {
-			panic(err)
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Print(string(body))
+		case http.StatusInternalServerError:
+			fmt.Fprintf(os.Stderr, "Returning error in fake terraform.")
+			os.Exit(1)
 		}
-		fmt.Print(string(body))
 	}
 
 	if os.Args[1] == "apply" || os.Args[1] == "destroy" {

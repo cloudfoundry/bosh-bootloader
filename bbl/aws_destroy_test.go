@@ -245,6 +245,20 @@ var _ = Describe("destroy", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 			})
 
+			Context("when no outputs exists", func() {
+				BeforeEach(func() {
+					fakeTerraformBackendServer.SetOutputJsonReturnError(true)
+				})
+
+				It("successfully deletes the environment", func() {
+					session := destroy(fakeAWSServer.URL, tempDirectory, 0)
+					Expect(session.Out.Contents()).To(ContainSubstring("step: destroying infrastructure"))
+					Expect(session.Out.Contents()).To(ContainSubstring("step: finished destroying infrastructure"))
+
+					Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
+				})
+			})
+
 			Context("when destroy fails to destroy terraform infrastructure", func() {
 				BeforeEach(func() {
 					state.AWS.Region = "fail-to-terraform"

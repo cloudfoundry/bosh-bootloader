@@ -103,6 +103,23 @@ director_ssl:
 		Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
 	})
 
+	Context("when no outputs exists", func() {
+		BeforeEach(func() {
+			fakeTerraformBackendServer.SetOutputJsonReturnError(true)
+		})
+
+		It("successfully deletes the environment", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"destroy", "--no-confirm",
+			}
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("terraform destroy"))
+		})
+	})
+
 	Context("when using bbl down", func() {
 		It("deletes the bbl-state", func() {
 			args := []string{
