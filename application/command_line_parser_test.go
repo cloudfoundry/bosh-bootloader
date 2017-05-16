@@ -134,6 +134,7 @@ var _ = Describe("CommandLineParser", func() {
 			Entry("returns the help command provided help", "help", "help"),
 
 			Entry("returns the version command provided version", "version", "version"),
+			Entry("returns the version command provided --version", "--version", "version"),
 		)
 
 		It("runs help without error if more arguments are provided to help", func() {

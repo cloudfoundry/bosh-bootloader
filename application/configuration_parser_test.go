@@ -31,7 +31,6 @@ var _ = Describe("ConfigurationParser", func() {
 
 	Describe("Parse", func() {
 		It("returns a configuration based on arguments provided", func() {
-
 			commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
 				Command:          "up",
 				SubcommandFlags:  []string{"--some-flag", "some-value"},

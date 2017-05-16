@@ -35,6 +35,7 @@ Global Options:
   --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
   --debug                Prints debugging output
+  --version              Prints version
 
 Commands:
   bosh-deployment-vars   Prints required variables for BOSH deployment
@@ -73,6 +74,7 @@ Global Options:
   --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
   --debug                Prints debugging output
+  --version              Prints version
 
 [my-command command options]
   some message

@@ -72,7 +72,7 @@ func (a App) execute() error {
 		return nil
 	}
 
-	if a.configuration.SubcommandFlags.ContainsAny("--version", "-v") {
+	if a.configuration.Command == "--version" || a.configuration.Command == "-v" || a.configuration.SubcommandFlags.ContainsAny("--version", "-v") {
 		versionCommand, err := a.getCommand(commands.VersionCommand)
 		if err != nil {
 			return err

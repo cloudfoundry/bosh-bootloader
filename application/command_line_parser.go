@@ -65,7 +65,9 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 	}
 
 	commandLineConfiguration.Command = commandFinderResult.Command
-	if commandLineConfiguration.help || commandWasBlank {
+	if commandLineConfiguration.version {
+		commandLineConfiguration.Command = "version"
+	} else if commandLineConfiguration.help || commandWasBlank {
 		commandLineConfiguration.Command = "help"
 		if !commandWasBlank {
 			commandLineConfiguration.SubcommandFlags = append([]string{commandFinderResult.Command}, commandLineConfiguration.SubcommandFlags...)

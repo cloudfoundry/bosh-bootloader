@@ -42,6 +42,7 @@ var _ = Describe("App", func() {
 		return application.New(application.CommandSet{
 			"help":                 helpCmd,
 			"version":              versionCmd,
+			"--version":            versionCmd,
 			"some":                 someCmd,
 			"error":                errorCmd,
 			"set-new-keypair-name": setNewKeyPairName{},
@@ -148,6 +149,23 @@ var _ = Describe("App", func() {
 					Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
 					Expect(usage.PrintCall.CallCount).To(Equal(1))
 				})
+			})
+		})
+
+		Context("when --version is the command", func() {
+			It("executes the command", func() {
+				app = NewAppWithConfiguration(application.Configuration{
+					Command: "--version",
+					SubcommandFlags: []string{
+						"--first-subcommand-flag", "first-value",
+						"--second-subcommand-flag", "second-value",
+					},
+				})
+
+				Expect(app.Run()).To(Succeed())
+
+				Expect(versionCmd.ExecuteCall.CallCount).To(Equal(1))
+				Expect(versionCmd.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
 			})
 		})
 

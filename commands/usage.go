@@ -18,6 +18,7 @@ Global Options:
   --help      [-h]       Prints usage
   --state-dir            Directory containing bbl-state.json
   --debug                Prints debugging output
+  --version              Prints version
 %s
 `
 	CommandUsage = `
