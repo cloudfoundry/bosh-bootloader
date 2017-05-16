@@ -13,7 +13,6 @@ type concourseManifestInputs struct {
 
 type concourseManifest struct {
 	Name           string                 `yaml:"name"`
-	DirectorUUID   string                 `yaml:"director_uuid"`
 	Releases       []map[string]string    `yaml:"releases"`
 	Stemcells      []map[string]string    `yaml:"stemcells"`
 	InstanceGroups []instanceGroup        `yaml:"instance_groups"`
