@@ -3,7 +3,6 @@ package integration_test
 import "gopkg.in/yaml.v2"
 
 type concourseManifestInputs struct {
-	boshDirectorUUID        string
 	webExternalURL          string
 	stemcellVersion         string
 	concourseReleaseVersion string
@@ -148,7 +147,6 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 		return "", err
 	}
 
-	concourseManifest.DirectorUUID = concourseManifestInputs.boshDirectorUUID
 	concourseManifest.Stemcells[0]["version"] = concourseManifestInputs.stemcellVersion
 
 	for releaseIdx, release := range concourseManifest.Releases {

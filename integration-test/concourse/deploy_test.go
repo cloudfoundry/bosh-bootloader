@@ -68,7 +68,6 @@ var _ = Describe("concourse deployment test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseManifestInputs := concourseManifestInputs{
-			boshDirectorUUID:        info.UUID,
 			webExternalURL:          lbURL,
 			tlsMode:                 tlsMode,
 			tlsBindPort:             tlsBindPort,
