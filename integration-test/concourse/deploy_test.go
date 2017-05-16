@@ -52,9 +52,6 @@ var _ = Describe("concourse deployment test", func() {
 		concourseExampleManifest, err := downloadConcourseExampleManifest()
 		Expect(err).NotTo(HaveOccurred())
 
-		info, err := boshClient.Info()
-		Expect(err).NotTo(HaveOccurred())
-
 		stemcell, err := boshClient.StemcellByName(stemcellName)
 		Expect(err).NotTo(HaveOccurred())
 
