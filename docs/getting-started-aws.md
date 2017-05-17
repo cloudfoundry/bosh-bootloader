@@ -42,6 +42,7 @@ The user must have the following `policy`:
                 "ec2:*",
                 "cloudformation:*",
                 "elasticloadbalancing:*",
+		"route53:*",
                 "iam:*"
             ],
             "Resource": [

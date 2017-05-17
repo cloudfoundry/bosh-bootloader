@@ -3,7 +3,6 @@ package integration_test
 import "gopkg.in/yaml.v2"
 
 type concourseManifestInputs struct {
-	boshDirectorUUID        string
 	webExternalURL          string
 	stemcellVersion         string
 	concourseReleaseVersion string
@@ -14,7 +13,6 @@ type concourseManifestInputs struct {
 
 type concourseManifest struct {
 	Name           string                 `yaml:"name"`
-	DirectorUUID   string                 `yaml:"director_uuid"`
 	Releases       []map[string]string    `yaml:"releases"`
 	Stemcells      []map[string]string    `yaml:"stemcells"`
 	InstanceGroups []instanceGroup        `yaml:"instance_groups"`
@@ -148,7 +146,6 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 		return "", err
 	}
 
-	concourseManifest.DirectorUUID = concourseManifestInputs.boshDirectorUUID
 	concourseManifest.Stemcells[0]["version"] = concourseManifestInputs.stemcellVersion
 
 	for releaseIdx, release := range concourseManifest.Releases {
@@ -161,7 +158,8 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 	}
 
 	for i, _ := range concourseManifest.InstanceGroups {
-		concourseManifest.InstanceGroups[i].VMType = "m3.medium"
+		concourseManifest.InstanceGroups[i].VMType = "default"
+		concourseManifest.Update["update_watch_time"] = "1000-90000"
 
 		switch concourseManifest.InstanceGroups[i].Name {
 		case "web":

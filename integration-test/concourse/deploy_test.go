@@ -52,9 +52,6 @@ var _ = Describe("concourse deployment test", func() {
 		concourseExampleManifest, err := downloadConcourseExampleManifest()
 		Expect(err).NotTo(HaveOccurred())
 
-		info, err := boshClient.Info()
-		Expect(err).NotTo(HaveOccurred())
-
 		stemcell, err := boshClient.StemcellByName(stemcellName)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -68,7 +65,6 @@ var _ = Describe("concourse deployment test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseManifestInputs := concourseManifestInputs{
-			boshDirectorUUID:        info.UUID,
 			webExternalURL:          lbURL,
 			tlsMode:                 tlsMode,
 			tlsBindPort:             tlsBindPort,
@@ -139,6 +135,7 @@ var _ = Describe("concourse deployment test", func() {
 			aws = actors.NewAWS(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
+			fmt.Printf("using state-dir: %s\n", configuration.StateFileDir)
 			bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
 			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
@@ -174,6 +171,7 @@ var _ = Describe("concourse deployment test", func() {
 			gcp = actors.NewGCP(configuration)
 			state = integration.NewState(configuration.StateFileDir)
 
+			fmt.Printf("using state-dir: %s\n", configuration.StateFileDir)
 			bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
 			bbl.CreateGCPLB("concourse")
