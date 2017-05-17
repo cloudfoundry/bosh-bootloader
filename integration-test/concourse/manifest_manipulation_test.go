@@ -159,7 +159,7 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 
 	for i, _ := range concourseManifest.InstanceGroups {
 		concourseManifest.InstanceGroups[i].VMType = "default"
-		concourseManifest.Update["update_watch_time"] = "1000-60000"
+		concourseManifest.Update["update_watch_time"] = "1000-90000"
 
 		switch concourseManifest.InstanceGroups[i].Name {
 		case "web":
