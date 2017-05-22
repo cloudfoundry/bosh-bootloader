@@ -118,6 +118,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				"--var-errs",
 				"--var-errs-unused",
 				"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+				"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
 				"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
 				"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 				"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
@@ -227,6 +228,7 @@ networks
 					"--var-errs",
 					"--var-errs-unused",
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
 					"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
 					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
@@ -325,6 +327,21 @@ networks
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write CPI Ops file"))
+			})
+
+			It("fails when trying to write the Jumpbox User Ops file", func() {
+				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
+					if path == fmt.Sprintf("%s/jumpbox-user.yml", tempDir) {
+						return errors.New("failed to write Jumpbox User Ops file")
+					}
+					return nil
+				}
+
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal, json.Marshal, writeFileFunc)
+				_, err := executor.Interpolate(bosh.InterpolateInput{
+					IAAS: "gcp",
+				})
+				Expect(err).To(MatchError("failed to write Jumpbox User Ops file"))
 			})
 
 			It("fails when trying to write the external ip not recommended Ops file", func() {

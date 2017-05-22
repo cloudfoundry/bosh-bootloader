@@ -80,6 +80,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
+	jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
 	externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
 
 	if interpolateInput.Variables != "" {
@@ -119,6 +120,16 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
+	jumpboxUserOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml")
+	if err != nil {
+		//not tested
+		return InterpolateOutput{}, err
+	}
+	err = e.writeFile(jumpboxUserOpsFilePath, jumpboxUserOpsFileContents, os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
 	var externalIPNotRecommendedOpsFileContents []byte
 	switch interpolateInput.IAAS {
 	case "gcp":
@@ -144,6 +155,7 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		"--var-errs",
 		"--var-errs-unused",
 		"-o", cpiOpsFilePath,
+		"-o", jumpboxUserOpsFilePath,
 		"-o", externalIPNotRecommendedOpsFilePath,
 		"--vars-store", variablesPath,
 		"--vars-file", deploymentVarsPath,
