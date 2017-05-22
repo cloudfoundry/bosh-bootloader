@@ -76,8 +76,7 @@ following command:
 bbl up \
 	--aws-access-key-id <INSERT ACCESS KEY ID> \
 	--aws-secret-access-key <INSERT SECRET ACCESS KEY> \
-	--aws-region us-west-1 \
-	--iaas aws
+	--aws-region us-west-1
 ```
 
 The process takes around 5-8 minutes. When the process is finished
