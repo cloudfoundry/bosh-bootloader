@@ -112,7 +112,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("director-username", newStateQuery("director username"), "Prints BOSH director username"),
 		Entry("director-ca-cert", newStateQuery("director ca cert"), "Prints BOSH director CA certificate"),
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
-		Entry("ssh-key", newStateQuery("ssh key"), "Prints SSH private key"),
+		Entry("ssh-key", commands.SSHKey{}, "Prints SSH private key for the jumpbox user. This can be used to ssh to the director/use the director as a gateway host."),
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
 		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),

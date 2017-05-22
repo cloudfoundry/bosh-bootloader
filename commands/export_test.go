@@ -9,3 +9,11 @@ func SetMarshal(f func(interface{}) ([]byte, error)) {
 func ResetMarshal() {
 	marshal = yaml.Marshal
 }
+
+func SetUnmarshal(f func([]byte, interface{}) error) {
+	unmarshal = f
+}
+
+func ResetUnmarshal() {
+	unmarshal = yaml.Unmarshal
+}

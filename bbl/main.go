@@ -235,7 +235,7 @@ func main() {
 	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
 	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)
 	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorCACertPropertyName)
-	commandSet[commands.SSHKeyCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.SSHKeyPropertyName)
+	commandSet[commands.SSHKeyCommand] = commands.NewSSHKey(logger, stateValidator)
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
 	commandSet[commands.LatestErrorCommand] = commands.NewLatestError(logger)
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)

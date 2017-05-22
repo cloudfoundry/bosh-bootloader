@@ -28,8 +28,8 @@ var _ = Describe("ssh-key", func() {
 	It("returns the ssh key from the given state file", func() {
 		state := []byte(`{
 			"version": 3,
-			"keyPair": {
-				"privateKey": "some-ssh-private-key"
+			"bosh": {
+				"variables": "jumpbox_ssh:\n  private_key: some-ssh-private-key"
 			}
 		}`)
 		err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
@@ -80,7 +80,7 @@ var _ = Describe("ssh-key", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(1))
-			Expect(session.Err.Contents()).To(ContainSubstring("Could not retrieve ssh key"))
+			Expect(session.Err.Contents()).To(ContainSubstring("Could not retrieve the ssh key"))
 		})
 	})
 })

@@ -52,7 +52,7 @@ const (
 
 	EnvIdCommandUsage = "Prints environment ID"
 
-	SSHKeyCommandUsage = "Prints SSH private key"
+	SSHKeyCommandUsage = "Prints SSH private key for the jumpbox user. This can be used to ssh to the director/use the director as a gateway host."
 
 	RotateCommandUsage = "Rotates the keypair for BOSH"
 
@@ -99,12 +99,12 @@ func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage
 
 func (Rotate) Usage() string { return RotateCommandUsage }
 
+func (SSHKey) Usage() string { return SSHKeyCommandUsage }
+
 func (s StateQuery) Usage() string {
 	switch s.propertyName {
 	case EnvIDPropertyName:
 		return EnvIdCommandUsage
-	case SSHKeyPropertyName:
-		return SSHKeyCommandUsage
 	case DirectorUsernamePropertyName:
 		return DirectorUsernameCommandUsage
 	case DirectorPasswordPropertyName:

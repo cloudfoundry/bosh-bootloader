@@ -2,6 +2,9 @@ package integration_test
 
 import (
 	"fmt"
+	"net/url"
+
+	"golang.org/x/crypto/ssh"
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
@@ -58,6 +61,23 @@ var _ = Describe("up test", func() {
 			exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
+		})
+
+		By("checking that the user can ssh", func() {
+			privateKey, err := ssh.ParsePrivateKey([]byte(bbl.SSHKey()))
+			Expect(err).NotTo(HaveOccurred())
+
+			directorAddressURL, err := url.Parse(bbl.DirectorAddress())
+			Expect(err).NotTo(HaveOccurred())
+
+			address := fmt.Sprintf("%s:22", directorAddressURL.Hostname())
+			_, err = ssh.Dial("tcp", address, &ssh.ClientConfig{
+				User: "jumpbox",
+				Auth: []ssh.AuthMethod{
+					ssh.PublicKeys(privateKey),
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("checking that the cloud config exists", func() {

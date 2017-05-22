@@ -9,14 +9,12 @@ import (
 
 const (
 	EnvIDCommand            = "env-id"
-	SSHKeyCommand           = "ssh-key"
 	DirectorUsernameCommand = "director-username"
 	DirectorPasswordCommand = "director-password"
 	DirectorAddressCommand  = "director-address"
 	DirectorCACertCommand   = "director-ca-cert"
 
 	EnvIDPropertyName            = "environment id"
-	SSHKeyPropertyName           = "ssh key"
 	DirectorUsernamePropertyName = "director username"
 	DirectorPasswordPropertyName = "director password"
 	DirectorAddressPropertyName  = "director address"
@@ -71,8 +69,6 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 		propertyValue = state.BOSH.DirectorPassword
 	case DirectorCACertPropertyName:
 		propertyValue = state.BOSH.DirectorSSLCA
-	case SSHKeyPropertyName:
-		propertyValue = state.KeyPair.PrivateKey
 	case EnvIDPropertyName:
 		propertyValue = state.EnvID
 	}
