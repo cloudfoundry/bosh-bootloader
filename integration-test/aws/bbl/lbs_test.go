@@ -26,7 +26,7 @@ var _ = Describe("load balancer tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadAWSConfig()
+		configuration, err := integration.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")

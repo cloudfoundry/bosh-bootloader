@@ -17,7 +17,7 @@ var _ = Describe("no director test", func() {
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadAWSConfig()
+		configuration, err := integration.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "no-director-env")

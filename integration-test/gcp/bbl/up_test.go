@@ -25,7 +25,7 @@ var _ = Describe("up test", func() {
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadGCPConfig()
+		configuration, err := integration.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		state = integration.NewState(configuration.StateFileDir)
