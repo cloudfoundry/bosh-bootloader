@@ -157,6 +157,11 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 		}
 	}
 
+	var (
+		web    instanceGroup
+		worker instanceGroup
+		db     instanceGroup
+	)
 	for i, _ := range concourseManifest.InstanceGroups {
 		concourseManifest.InstanceGroups[i].VMType = "default"
 		concourseManifest.Update["serial"] = true
@@ -173,14 +178,18 @@ func populateManifest(baseManifest string, concourseManifestInputs concourseMani
 				concourseManifest.InstanceGroups[i].Jobs[0].Properties.TLSCert = tlsCert
 				concourseManifest.InstanceGroups[i].Jobs[0].Properties.TLSKey = tlsKey
 			}
+			web = concourseManifest.InstanceGroups[i]
 		case "worker":
 			concourseManifest.InstanceGroups[i].VMExtensions = []string{"50GB_ephemeral_disk"}
+			worker = concourseManifest.InstanceGroups[i]
 		case "db":
 			concourseManifest.InstanceGroups[i].PersistentDiskType = "1GB"
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.Databases[0].Role = "admin"
 			concourseManifest.InstanceGroups[i].Jobs[0].Properties.Databases[0].Password = "admin"
+			db = concourseManifest.InstanceGroups[i]
 		}
 	}
+	concourseManifest.InstanceGroups = []instanceGroup{db, web, worker}
 
 	finalConcourseManifestYAML, err := yaml.Marshal(concourseManifest)
 	if err != nil {
