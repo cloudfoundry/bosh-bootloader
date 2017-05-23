@@ -125,6 +125,8 @@ resource "google_compute_address" "concourse-address" {
 
 resource "google_compute_target_pool" "target-pool" {
   name = "${var.env_id}-concourse"
+
+  session_affinity = "NONE"
 }
 
 resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {

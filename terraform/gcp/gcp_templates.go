@@ -129,6 +129,8 @@ resource "google_compute_address" "concourse-address" {
 
 resource "google_compute_target_pool" "target-pool" {
   name = "${var.env_id}-concourse"
+
+  session_affinity = "NONE"
 }
 
 resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
@@ -281,6 +283,8 @@ resource "google_compute_firewall" "cf-ssh-proxy" {
 
 resource "google_compute_target_pool" "cf-ssh-proxy" {
   name = "${var.env_id}-cf-ssh-proxy"
+
+  session_affinity = "NONE"
 }
 
 resource "google_compute_forwarding_rule" "cf-ssh-proxy" {
@@ -321,6 +325,8 @@ resource "google_compute_http_health_check" "cf-tcp-router" {
 resource "google_compute_target_pool" "cf-tcp-router" {
   name = "${var.env_id}-cf-tcp-router"
 
+  session_affinity = "NONE"
+
   health_checks = [
     "${google_compute_http_health_check.cf-tcp-router.name}",
   ]
@@ -344,6 +350,8 @@ resource "google_compute_address" "cf-ws" {
 
 resource "google_compute_target_pool" "cf-ws" {
   name = "${var.env_id}-cf-ws"
+
+  session_affinity = "NONE"
 
   health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
 }
