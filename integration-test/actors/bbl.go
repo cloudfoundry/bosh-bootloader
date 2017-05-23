@@ -243,7 +243,7 @@ func LBURL(config integration.Config, bbl BBL, state integration.State) (string,
 		url = aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"]
 	}
 
-	return fmt.Sprintf("http://%s", url), nil
+	return fmt.Sprintf("https://%s", url), nil
 }
 
 func GetIAAS(config integration.Config) IAAS {
