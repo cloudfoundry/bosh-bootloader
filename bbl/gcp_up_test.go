@@ -191,7 +191,7 @@ var _ = Describe("bbl up gcp", func() {
 		})
 	})
 
-	Context("when a bbl enviornment already exists", func() {
+	Context("when a bbl environment already exists", func() {
 		BeforeEach(func() {
 			args := []string{
 				"--state-dir", tempDirectory,
@@ -226,7 +226,7 @@ var _ = Describe("bbl up gcp", func() {
 		})
 	})
 
-	Context("when ops files are provides via --ops-file flag", func() {
+	Context("when a user provides an ops file via the --ops-file flag", func() {
 		BeforeEach(func() {
 			fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
 		})
