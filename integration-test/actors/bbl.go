@@ -147,8 +147,7 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 		"--type", loadBalancerType,
 	}
 
-	switch GetIAAS(b.configuration) {
-	case AWSIAAS:
+	if loadBalancerType == "cf" || GetIAAS(b.configuration) == AWSIAAS {
 		args = append(args,
 			"--cert", cert,
 			"--key", key,
