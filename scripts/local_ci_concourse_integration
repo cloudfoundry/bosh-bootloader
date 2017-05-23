@@ -24,13 +24,13 @@ function main {
     docker pull cfinfrastructure/deployment
 
     docker run \
-      -e AWS_REGION="${AWS_REGION}" \
-      -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
-      -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
-      -e GCP_PROJECT_ID="${GCP_PROJECT_ID}" \
-      -e GCP_REGION="${GCP_REGION}" \
-      -e GCP_SERVICE_ACCOUNT_KEY="${GCP_SERVICE_ACCOUNT_KEY}" \
-      -e GCP_ZONE="${GCP_ZONE}" \
+      -e AWS_REGION="${AWS_REGION:-""}" \
+      -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-""}" \
+      -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-""}" \
+      -e GCP_PROJECT_ID="${GCP_PROJECT_ID:-""}" \
+      -e GCP_REGION="${GCP_REGION:-""}" \
+      -e GCP_SERVICE_ACCOUNT_KEY="${GCP_SERVICE_ACCOUNT_KEY:-""}" \
+      -e GCP_ZONE="${GCP_ZONE:-""}" \
       -e STEMCELL_NAME="bosh-google-kvm-ubuntu-trusty-go_agent" \
       -e STATE_DIR="/tmp/state" \
       -v ${PWD}:/bosh-bootloader \
@@ -40,7 +40,7 @@ function main {
       -v ${binary_dir}/stemcell:/stemcell \
       -v ${STATE_DIR:-${PWD}}:/bbl-integration-s3 \
       cfinfrastructure/deployment ${TEST_TASK:-"/ci/scripts/bosh-bootloader/concourse-integration/task"}
-  popd
+  popd > /dev/null
 }
 
 main

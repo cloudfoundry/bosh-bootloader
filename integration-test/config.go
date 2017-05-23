@@ -2,6 +2,7 @@ package integration
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -16,62 +17,71 @@ type Config struct {
 	GCPZone                  string
 	GCPEnvPrefix             string
 	StateFileDir             string
+	StemcellName             string
+	StemcellPath             string
+	GardenReleasePath        string
+	ConcourseReleasePath     string
 }
 
-func LoadAWSConfig() (Config, error) {
+func LoadConfig() (Config, error) {
 	config := loadConfigFromEnvVars()
 
+	awsCredsValidationError := validateAWSCreds(config)
+	gcpCredsValidationError := validateGCPCreds(config)
+
+	if awsCredsValidationError == nil && gcpCredsValidationError == nil {
+		return Config{}, errors.New("Multiple IAAS Credentials provided:\n Provide a set of credentials for a single IAAS.")
+	}
+
+	if awsCredsValidationError != nil && gcpCredsValidationError != nil {
+		return Config{}, fmt.Errorf("Multiple Credential Errors Found: %s\n%s\nProvide a full set of credentials for a single IAAS.", awsCredsValidationError, gcpCredsValidationError)
+	}
+
+	if config.StateFileDir == "" {
+		dir, err := ioutil.TempDir("", "")
+		if err != nil {
+			return Config{}, err
+		}
+		config.StateFileDir = dir
+	}
+
+	return config, nil
+}
+
+func validateAWSCreds(config Config) error {
 	if config.AWSAccessKeyID == "" {
-		return Config{}, errors.New("aws access key id is missing")
+		return errors.New("aws access key id is missing")
 	}
 
 	if config.AWSSecretAccessKey == "" {
-		return Config{}, errors.New("aws secret access key is missing")
+		return errors.New("aws secret access key is missing")
 	}
 
 	if config.AWSRegion == "" {
-		return Config{}, errors.New("aws region is missing")
+		return errors.New("aws region is missing")
 	}
 
-	if config.StateFileDir == "" {
-		dir, err := ioutil.TempDir("", "")
-		if err != nil {
-			return Config{}, err
-		}
-		config.StateFileDir = dir
-	}
-
-	return config, nil
+	return nil
 }
 
-func LoadGCPConfig() (Config, error) {
-	config := loadConfigFromEnvVars()
-
+func validateGCPCreds(config Config) error {
 	if config.GCPServiceAccountKeyPath == "" {
-		return Config{}, errors.New("gcp service account key path is missing")
+		return errors.New("gcp service account key path is missing")
 	}
 
 	if config.GCPProjectID == "" {
-		return Config{}, errors.New("project id is missing")
+		return errors.New("project id is missing")
 	}
 
 	if config.GCPRegion == "" {
-		return Config{}, errors.New("gcp region is missing")
+		return errors.New("gcp region is missing")
 	}
 
 	if config.GCPZone == "" {
-		return Config{}, errors.New("gcp zone is missing")
+		return errors.New("gcp zone is missing")
 	}
 
-	if config.StateFileDir == "" {
-		dir, err := ioutil.TempDir("", "")
-		if err != nil {
-			return Config{}, err
-		}
-		config.StateFileDir = dir
-	}
-
-	return config, nil
+	return nil
 }
 
 func loadConfigFromEnvVars() Config {
@@ -85,5 +95,9 @@ func loadConfigFromEnvVars() Config {
 		GCPZone:                  os.Getenv("GCP_ZONE"),
 		GCPEnvPrefix:             os.Getenv("GCP_ENV_PREFIX"),
 		StateFileDir:             os.Getenv("STATE_DIR"),
+		StemcellName:             os.Getenv("STEMCELL_NAME"),
+		StemcellPath:             os.Getenv("STEMCELL_PATH"),
+		GardenReleasePath:        os.Getenv("GARDEN_RELEASE_PATH"),
+		ConcourseReleasePath:     os.Getenv("CONCOURSE_RELEASE_PATH"),
 	}
 }

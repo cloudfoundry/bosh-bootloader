@@ -145,9 +145,15 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 		"--state-dir", b.stateDirectory,
 		"create-lbs",
 		"--type", loadBalancerType,
-		"--cert", cert,
-		"--key", key,
-		"--chain", chain,
+	}
+
+	switch GetIAAS(b.configuration) {
+	case AWSIAAS:
+		args = append(args,
+			"--cert", cert,
+			"--key", key,
+			"--chain", chain,
+		)
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)
@@ -218,4 +224,36 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 	Expect(err).NotTo(HaveOccurred())
 
 	return session
+}
+
+func LBURL(config integration.Config, bbl BBL, state integration.State) (string, error) {
+	var url string
+	switch GetIAAS(config) {
+	case GCPIAAS:
+		gcp := NewGCP(config)
+		envID := bbl.EnvID()
+
+		var err error
+		computeAddress, err := gcp.GetAddress(envID + "-concourse")
+		if err != nil {
+			return "", err
+		}
+		url = computeAddress.Address
+	case AWSIAAS:
+		aws := NewAWS(config)
+		url = aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"]
+	}
+
+	return fmt.Sprintf("http://%s", url), nil
+}
+
+func GetIAAS(config integration.Config) IAAS {
+	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
+		return AWSIAAS
+	}
+	if config.GCPServiceAccountKeyPath != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
+		return GCPIAAS
+	}
+
+	return -1
 }

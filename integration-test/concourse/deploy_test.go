@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -22,17 +23,40 @@ import (
 
 const (
 	ConcourseExampleManifestURL = "https://raw.githubusercontent.com/concourse/concourse/master/docs/setting-up/installing.any"
-	ConcourseReleaseURL         = "https://bosh.io/d/github.com/concourse/concourse"
-	GardenReleaseURL            = "https://bosh.io/d/github.com/cloudfoundry/garden-runc-release"
-	GardenReleaseName           = "garden-runc"
-	AWSStemcellURL              = "https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
-	AWSStemcellName             = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
-	GCPStemcellURL              = "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent"
-	GCPStemcellName             = "bosh-google-kvm-ubuntu-trusty-go_agent"
 )
 
 var _ = Describe("concourse deployment test", func() {
-	var deployConcourseTest = func(bbl actors.BBL, stemcellURL, stemcellName, lbURL string, tlsMode bool, tlsBindPort int) {
+	var (
+		bbl           actors.BBL
+		state         integration.State
+		lbURL         string
+		configuration integration.Config
+	)
+
+	BeforeEach(func() {
+		var err error
+		configuration, err = integration.LoadConfig()
+		Expect(err).NotTo(HaveOccurred())
+
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
+		state = integration.NewState(configuration.StateFileDir)
+
+		fmt.Printf("using state-dir: %s\n", configuration.StateFileDir)
+		bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID()})
+
+		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+		Expect(err).NotTo(HaveOccurred())
+
+		bbl.CreateLB("concourse", certPath, keyPath, "")
+
+		lbURL, err = actors.LBURL(configuration, bbl, state)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("is able to deploy concourse", func() {
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
@@ -40,29 +64,37 @@ var _ = Describe("concourse deployment test", func() {
 			AllowInsecureSSL: true,
 		})
 
-		err := downloadAndUploadRelease(boshClient, ConcourseReleaseURL)
+		err := uploadRelease(boshClient, configuration.ConcourseReleasePath)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = downloadAndUploadRelease(boshClient, GardenReleaseURL)
+		err = uploadRelease(boshClient, configuration.GardenReleasePath)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = downloadAndUploadStemcell(boshClient, stemcellURL)
+		err = uploadStemcell(boshClient, configuration.StemcellPath)
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseExampleManifest, err := downloadConcourseExampleManifest()
 		Expect(err).NotTo(HaveOccurred())
 
-		stemcell, err := boshClient.StemcellByName(stemcellName)
+		stemcell, err := boshClient.StemcellByName(configuration.StemcellName)
 		Expect(err).NotTo(HaveOccurred())
 
 		concourseRelease, err := boshClient.Release("concourse")
 		Expect(err).NotTo(HaveOccurred())
 
-		gardenRelease, err := boshClient.Release(GardenReleaseName)
+		gardenRelease, err := boshClient.Release("garden-runc")
 		Expect(err).NotTo(HaveOccurred())
 
 		stemcellLatest, err := stemcell.Latest()
 		Expect(err).NotTo(HaveOccurred())
+
+		tlsMode := false
+		tlsBindPort := 0
+		switch actors.GetIAAS(configuration) {
+		case actors.GCPIAAS:
+			tlsMode = true
+			tlsBindPort = 443
+		}
 
 		concourseManifestInputs := concourseManifestInputs{
 			webExternalURL:          lbURL,
@@ -116,98 +148,41 @@ var _ = Describe("concourse deployment test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl.Destroy()
-	}
-
-	Describe("aws", func() {
-		var (
-			bbl   actors.BBL
-			aws   actors.AWS
-			state integration.State
-			lbURL string
-		)
-
-		BeforeEach(func() {
-			var err error
-			configuration, err := integration.LoadAWSConfig()
-			Expect(err).NotTo(HaveOccurred())
-
-			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
-			aws = actors.NewAWS(configuration)
-			state = integration.NewState(configuration.StateFileDir)
-
-			fmt.Printf("using state-dir: %s\n", configuration.StateFileDir)
-			bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
-
-			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
-			Expect(err).NotTo(HaveOccurred())
-
-			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
-			Expect(err).NotTo(HaveOccurred())
-
-			bbl.CreateLB("concourse", certPath, keyPath, "")
-
-			lbURL = fmt.Sprintf("http://%s", aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"])
-		})
-
-		It("is able to deploy concourse", func() {
-			deployConcourseTest(bbl, AWSStemcellURL, AWSStemcellName, lbURL, false, 0)
-		})
 	})
-
-	Describe("gcp", func() {
-		var (
-			bbl   actors.BBL
-			gcp   actors.GCP
-			state integration.State
-			lbURL string
-		)
-
-		BeforeEach(func() {
-			var err error
-			configuration, err := integration.LoadGCPConfig()
-			Expect(err).NotTo(HaveOccurred())
-
-			bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
-			gcp = actors.NewGCP(configuration)
-			state = integration.NewState(configuration.StateFileDir)
-
-			fmt.Printf("using state-dir: %s\n", configuration.StateFileDir)
-			bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID()})
-
-			bbl.CreateGCPLB("concourse")
-
-			envID := bbl.EnvID()
-			address, err := gcp.GetAddress(envID + "-concourse")
-			Expect(err).NotTo(HaveOccurred())
-
-			lbURL = fmt.Sprintf("https://%s", address.Address)
-		})
-
-		It("is able to deploy concourse", func() {
-			deployConcourseTest(bbl, GCPStemcellURL, GCPStemcellName, lbURL, true, 443)
-		})
-	})
-
 })
 
-func downloadAndUploadStemcell(boshClient bosh.Client, stemcell string) error {
-	file, size, err := download(stemcell)
+func uploadStemcell(boshClient bosh.Client, stemcellPath string) error {
+	stemcell, err := openFile(stemcellPath)
 	if err != nil {
 		return err
 	}
 
-	_, err = boshClient.UploadStemcell(bosh.NewSizeReader(file, size))
+	_, err = boshClient.UploadStemcell(stemcell)
 	return err
 }
 
-func downloadAndUploadRelease(boshClient bosh.Client, release string) error {
-	file, size, err := download(release)
+func uploadRelease(boshClient bosh.Client, releasePath string) error {
+	release, err := openFile(releasePath)
 	if err != nil {
 		return err
 	}
 
-	_, err = boshClient.UploadRelease(bosh.NewSizeReader(file, size))
+	_, err = boshClient.UploadRelease(release)
 	return err
+}
+
+func openFile(filePath string) (bosh.SizeReader, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	return bosh.NewSizeReader(file, stat.Size()), nil
 }
 
 func downloadConcourseExampleManifest() (string, error) {
