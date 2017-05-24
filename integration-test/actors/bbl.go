@@ -136,6 +136,10 @@ func (b BBL) DirectorAddress() string {
 	return b.fetchValue("director-address")
 }
 
+func (b BBL) LBs() string {
+	return b.fetchValue("lbs")
+}
+
 func (b BBL) DirectorCACert() string {
 	return b.fetchValue("director-ca-cert")
 }
@@ -234,22 +238,9 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 }
 
 func LBURL(config integration.Config, bbl BBL, state integration.State) (string, error) {
-	var url string
-	switch GetIAAS(config) {
-	case GCPIAAS:
-		gcp := NewGCP(config)
-		envID := bbl.EnvID()
-
-		var err error
-		computeAddress, err := gcp.GetAddress(envID + "-concourse")
-		if err != nil {
-			return "", err
-		}
-		url = computeAddress.Address
-	case AWSIAAS:
-		aws := NewAWS(config)
-		url = aws.LoadBalancers(state.StackName())["ConcourseLoadBalancerURL"]
-	}
+	lbs := bbl.LBs()
+	cutLBsPrefix := strings.Split(lbs, "[")[1]
+	url := strings.Split(cutLBsPrefix, "]")[0]
 
 	return fmt.Sprintf("https://%s", url), nil
 }
