@@ -132,6 +132,10 @@ func (b BBL) DirectorAddress() string {
 	return b.fetchValue("director-address")
 }
 
+func (b BBL) DirectorCACert() string {
+	return b.fetchValue("director-ca-cert")
+}
+
 func (b BBL) SSHKey() string {
 	return b.fetchValue("ssh-key")
 }

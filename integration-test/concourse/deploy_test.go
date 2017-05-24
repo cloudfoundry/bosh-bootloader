@@ -66,6 +66,10 @@ var _ = Describe("concourse deployment test", func() {
 		err = uploadStemcell(boshClient, configuration.StemcellPath)
 		Expect(err).NotTo(HaveOccurred())
 
+		os.Setenv("BOSH_CLIENT", bbl.DirectorUsername())
+		os.Setenv("BOSH_CLIENT_SECRET", bbl.DirectorPassword())
+		os.Setenv("BOSH_ENVIRONMENT", bbl.DirectorAddress())
+		os.Setenv("BOSH_CA_CERT", bbl.DirectorCACert())
 		args := []string{
 			"-d", "concourse",
 			"deploy",
