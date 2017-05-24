@@ -17,10 +17,10 @@ type Config struct {
 	GCPZone                  string
 	GCPEnvPrefix             string
 	StateFileDir             string
-	StemcellName             string
 	StemcellPath             string
 	GardenReleasePath        string
 	ConcourseReleasePath     string
+	ConcourseDeploymentPath  string
 }
 
 func LoadConfig() (Config, error) {
@@ -95,9 +95,9 @@ func loadConfigFromEnvVars() Config {
 		GCPZone:                  os.Getenv("GCP_ZONE"),
 		GCPEnvPrefix:             os.Getenv("GCP_ENV_PREFIX"),
 		StateFileDir:             os.Getenv("STATE_DIR"),
-		StemcellName:             os.Getenv("STEMCELL_NAME"),
 		StemcellPath:             os.Getenv("STEMCELL_PATH"),
 		GardenReleasePath:        os.Getenv("GARDEN_RELEASE_PATH"),
 		ConcourseReleasePath:     os.Getenv("CONCOURSE_RELEASE_PATH"),
+		ConcourseDeploymentPath:  os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
 	}
 }

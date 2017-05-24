@@ -246,6 +246,17 @@ func LBURL(config integration.Config, bbl BBL, state integration.State) (string,
 	return fmt.Sprintf("https://%s", url), nil
 }
 
+func IAASString(config integration.Config) string {
+	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
+		return "aws"
+	}
+	if config.GCPServiceAccountKeyPath != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
+		return "gcp"
+	}
+
+	return ""
+}
+
 func GetIAAS(config integration.Config) IAAS {
 	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
 		return AWSIAAS
