@@ -77,6 +77,7 @@ var _ = Describe("concourse deployment test", func() {
 			"-o", fmt.Sprintf("%s/operations/%s.yml", configuration.ConcourseDeploymentPath, actors.IAASString(configuration)),
 			"--vars-store", "concourse-vars.yml",
 			"-v", fmt.Sprintf("domain=%s", lbURL),
+			"-n",
 		}
 		cmd := exec.Command("bosh", args...)
 		cmd.Stdout = os.Stdout
