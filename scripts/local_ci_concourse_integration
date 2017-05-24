@@ -14,9 +14,11 @@ function main {
   wget -nc -O "${binary_dir}/garden-release/release.tgz" "http://bosh.io/d/github.com/cloudfoundry/garden-runc-release"
   wget -nc -O "${binary_dir}/stemcell/stemcell.tgz" "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent"
 
-  local version
-  version="$(curl -v http://bosh.io/api/v1/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\?all\=1 | jq -r '.[0].version')"
-  echo -n "${version}" > "${binary_dir}/stemcell/version"
+  local stemcell_name
+  local stemcell_version
+  stemcell_name="$(curl -v http://bosh.io/api/v1/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\?all\=1 | jq -r '.[0].name')"
+  stemcell_version="$(curl -v http://bosh.io/api/v1/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\?all\=1 | jq -r '.[0].version')"
+  echo -n "${stemcell_version}" > "${binary_dir}/stemcell/version"
   set -e
 
   pushd "${ROOT_DIRECTORY}" > /dev/null
@@ -31,13 +33,14 @@ function main {
       -e GCP_REGION="${GCP_REGION:-""}" \
       -e GCP_SERVICE_ACCOUNT_KEY="${GCP_SERVICE_ACCOUNT_KEY:-""}" \
       -e GCP_ZONE="${GCP_ZONE:-""}" \
-      -e STEMCELL_NAME="bosh-google-kvm-ubuntu-trusty-go_agent" \
+      -e STEMCELL_NAME="${stemcell_name}" \
       -e STATE_DIR="/tmp/state" \
       -v ${PWD}:/bosh-bootloader \
       -v ${CIPATH:-"${GOPATH}/src/github.com/cloudfoundry/infrastructure-ci"}:/ci \
       -v ${binary_dir}/concourse-release:/concourse-release \
       -v ${binary_dir}/garden-release:/garden-release \
       -v ${binary_dir}/stemcell:/stemcell \
+      -v ${CONCOURSE_DEPLOYMENT_PATH:-${GOPATH}/src/github.com/evanfarrar/concourse-deployment}:/concourse-deployment \
       -v ${STATE_DIR:-${PWD}}:/bbl-integration-s3 \
       cfinfrastructure/deployment ${TEST_TASK:-"/ci/scripts/bosh-bootloader/concourse-integration/task"}
   popd > /dev/null
