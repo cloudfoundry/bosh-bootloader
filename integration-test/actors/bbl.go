@@ -136,10 +136,6 @@ func (b BBL) DirectorAddress() string {
 	return b.fetchValue("director-address")
 }
 
-func (b BBL) LBs() string {
-	return b.fetchValue("lbs")
-}
-
 func (b BBL) DirectorCACert() string {
 	return b.fetchValue("director-ca-cert")
 }
@@ -238,7 +234,7 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 }
 
 func LBURL(config integration.Config, bbl BBL, state integration.State) (string, error) {
-	lbs := bbl.LBs()
+	lbs := bbl.fetchValue("lbs")
 	cutLBsPrefix := strings.Split(lbs, "[")[1]
 	url := strings.Split(cutLBsPrefix, "]")[0]
 
