@@ -235,8 +235,13 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 
 func LBURL(config integration.Config, bbl BBL, state integration.State) (string, error) {
 	lbs := bbl.fetchValue("lbs")
-	cutLBsPrefix := strings.Split(lbs, "[")[1]
-	url := strings.Split(cutLBsPrefix, "]")[0]
+	var url string
+	if IAASString(config) == "aws" {
+		cutLBsPrefix := strings.Split(lbs, "[")[1]
+		url = strings.Split(cutLBsPrefix, "]")[0]
+	} else {
+		url = strings.Split(lbs, " ")[2]
+	}
 
 	return fmt.Sprintf("https://%s", url), nil
 }
