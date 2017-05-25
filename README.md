@@ -5,7 +5,7 @@ This is a command line utility for standing up a CloudFoundry or Concourse insta
 on an IAAS. This CLI is currently under heavy development, and the initial goal is to
 support bootstrapping a CloudFoundry installation on AWS.
 
-* [CI](https://p-concourse.wings.cf-app.com/teams/system-team-infra-infra1-08f1/pipelines/bosh-bootloader)
+* [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
 
 ## Guides
