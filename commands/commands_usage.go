@@ -26,11 +26,20 @@ const (
 	CreateLBsCommandUsage = `Attaches load balancer(s) with a certificate, key, and optional chain
 
   --type              Load balancer(s) type. Valid options: "concourse" or "cf"
-  [--cert]            Path to SSL certificate (required when type="cf")
-  [--key]             Path to SSL certificate key (required when type="cf")
-  [--chain]           Path to SSL certificate chain (optional)
+  [--cert]            Path to SSL certificate (conditionally required; refer to table below)
+  [--key]             Path to SSL certificate key (conditionally required; refer to table below)
+  [--chain]           Path to SSL certificate chain (optional; applicable if --cert/--key are required; refer to table below)
   [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
-  [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)`
+  [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)
+
+  --cert/--key requirements:
+  ------------------------------
+  |     | cf       | concourse |
+  ------------------------------
+  | aws | required | required  |
+  ------------------------------
+  | gcp | required | n/a       |
+  ------------------------------`
 
 	UpdateLBsCommandUsage = `Updates load balancer(s) with the supplied certificate, key, and optional chain
 
