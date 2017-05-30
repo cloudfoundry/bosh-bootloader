@@ -333,6 +333,29 @@ var _ = Describe("Up", func() {
 						Region:            "some-region",
 					}))
 				})
+
+				Context("when the --jumpbox flag is specified", func() {
+					It("executes the GCP up with gcp details from args", func() {
+						err := command.Execute([]string{
+							"--iaas", "gcp",
+							"--jumpbox",
+							"--gcp-service-account-key", "some-service-account-key",
+							"--gcp-project-id", "some-project-id",
+							"--gcp-zone", "some-zone",
+							"--gcp-region", "some-region",
+						}, storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+						Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+							ServiceAccountKey: "some-service-account-key",
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "some-region",
+							Jumpbox:           true,
+						}))
+					})
+				})
 			})
 
 			Context("when desired iaas is aws", func() {
@@ -507,7 +530,7 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the user provides the no-director", func() {
+		Context("when the user provides the no-director flag", func() {
 			It("passes no-director as true in the up config", func() {
 				err := command.Execute([]string{
 					"--iaas", "aws",
@@ -526,6 +549,18 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.NoDirector).To(Equal(true))
+			})
+		})
+
+		Context("when the user provides the jumpbox flag", func() {
+			It("passes jumpbox as true in the up config", func() {
+				err := command.Execute([]string{
+					"--iaas", "gcp",
+					"--jumpbox",
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.Jumpbox).To(Equal(true))
 			})
 		})
 	})

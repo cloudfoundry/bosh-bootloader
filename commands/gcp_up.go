@@ -40,6 +40,7 @@ type GCPUpConfig struct {
 	OpsFilePath       string
 	Name              string
 	NoDirector        bool
+	Jumpbox           bool
 }
 
 type gcpKeyPairCreator interface {
@@ -130,6 +131,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 			state.NoDirector = true
 		}
+
+		state.Jumpbox = upConfig.Jumpbox
 
 		state.GCP = gcpDetails
 	}

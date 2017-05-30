@@ -188,6 +188,125 @@ gcp_credentials_json: 'some-credential-json'`,
 						Type: "cf",
 					},
 				}))
+
+			})
+
+			Context("when jumpbox is true", func() {
+				var jumpboxDeploymentVars string
+				var deploymentVars string
+				BeforeEach(func() {
+					incomingGCPState = storage.State{
+						IAAS:    "gcp",
+						EnvID:   "some-env-id",
+						Jumpbox: true,
+						KeyPair: storage.KeyPair{
+							PrivateKey: "some-private-key",
+						},
+						GCP: storage.GCP{
+							Zone:              "some-zone",
+							ProjectID:         "some-project-id",
+							ServiceAccountKey: "some-credential-json",
+						},
+						BOSH: storage.BOSH{
+							State: map[string]interface{}{
+								"some-key": "some-value",
+							},
+						},
+						TFState: "some-tf-state",
+						LB: storage.LB{
+							Type: "cf",
+						},
+					}
+
+					jumpboxDeploymentVars = `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-bosh-tag, some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`
+
+					deploymentVars = `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`
+				})
+
+				It("queries values from terraform manager", func() {
+					_, err := boshManager.Create(incomingGCPState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
+				})
+
+				It("logs jumpbox status messages", func() {
+					_, err := boshManager.Create(incomingGCPState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.StepCall.Messages).To(ContainSequence([]string{"creating jumpbox", "created jumpbox"}))
+				})
+
+				It("generates a jumpbox and bosh manifest", func() {
+					_, err := boshManager.Create(incomingGCPState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+						IAAS: "gcp",
+						JumpboxDeploymentVars: jumpboxDeploymentVars,
+						DeploymentVars:        deploymentVars,
+						BOSHState: map[string]interface{}{
+							"some-key": "some-value",
+						},
+						Variables: "",
+					}))
+				})
+
+				It("returns a bbl state with a proper bosh state", func() {
+					state, err := boshManager.Create(incomingGCPState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(state).To(Equal(storage.State{
+						IAAS:    "gcp",
+						EnvID:   "some-env-id",
+						Jumpbox: true,
+						KeyPair: storage.KeyPair{
+							PrivateKey: "some-private-key",
+						},
+						GCP: storage.GCP{
+							Zone:              "some-zone",
+							ProjectID:         "some-project-id",
+							ServiceAccountKey: "some-credential-json",
+						},
+						BOSH: storage.BOSH{
+							State: map[string]interface{}{
+								"some-new-key": "some-new-value",
+							},
+							Variables:              variablesYAML,
+							Manifest:               "some-manifest",
+							DirectorName:           "bosh-some-env-id",
+							DirectorAddress:        "some-director-address",
+							DirectorUsername:       "admin",
+							DirectorPassword:       "some-admin-password",
+							DirectorSSLCA:          "some-ca",
+							DirectorSSLCertificate: "some-certificate",
+							DirectorSSLPrivateKey:  "some-private-key",
+						},
+						TFState: "some-tf-state",
+						LB: storage.LB{
+							Type: "cf",
+						},
+					}))
+				})
 			})
 		})
 

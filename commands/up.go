@@ -40,6 +40,7 @@ type upConfig struct {
 	name                 string
 	opsFile              string
 	noDirector           bool
+	jumpbox              bool
 	terraform            bool
 }
 
@@ -107,6 +108,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			OpsFilePath:       config.opsFile,
 			Name:              config.name,
 			NoDirector:        config.noDirector,
+			Jumpbox:           config.jumpbox,
 		}, state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)
@@ -139,6 +141,7 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.name, "name", "")
 	upFlags.String(&config.opsFile, "ops-file", "")
 	upFlags.Bool(&config.noDirector, "", "no-director", false)
+	upFlags.Bool(&config.jumpbox, "", "jumpbox", false)
 	upFlags.Bool(&config.terraform, "", "terraform", false)
 
 	err := upFlags.Parse(args)

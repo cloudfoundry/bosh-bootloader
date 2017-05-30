@@ -224,6 +224,30 @@ var _ = Describe("bbl up gcp", func() {
 
 			executeCommand(args, 0)
 		})
+
+		Context("when the user provides the --jumpbox flag", func() {
+			BeforeEach(func() {
+				fakeBOSHCLIBackendServer.SetCallRealInterpolate(true)
+			})
+
+			PIt("creates a jumpbox in front of the bosh director", func() {
+				args := []string{
+					"--state-dir", tempDirectory,
+					"--debug",
+					"up",
+					"--iaas", "gcp",
+					"--jumpbox",
+					"--gcp-service-account-key", serviceAccountKeyPath,
+					"--gcp-project-id", "some-project-id",
+					"--gcp-zone", "some-zone",
+					"--gcp-region", "us-west1",
+				}
+
+				executeCommand(args, 0)
+
+				Expect(fakeBOSHCLIBackendServer.GetInterpolateArgs(0)).To(MatchRegexp(`\"-o\",\".*jumpbox.yml\"`))
+			})
+		})
 	})
 
 	Context("when a user provides an ops file via the --ops-file flag", func() {
@@ -483,6 +507,48 @@ var _ = Describe("bbl up gcp", func() {
 		})
 	})
 
+	Context("when the --jumpbox flag is provided", func() {
+		It("creates the infrastructure for a jumpbox", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--jumpbox",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+		})
+
+		It("invokes the bosh cli", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--jumpbox",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: creating jumpbox"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: created jumpbox"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: creating bosh director"))
+			Expect(session.Out.Contents()).To(ContainSubstring("step: created bosh director"))
+		})
+	})
+
 	Context("when the --no-director flag is provided", func() {
 		It("creates the infrastructure for a bosh director", func() {
 			args := []string{
@@ -500,7 +566,6 @@ var _ = Describe("bbl up gcp", func() {
 			session := executeCommand(args, 0)
 
 			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
-
 		})
 
 		It("does not invoke the bosh cli or create a cloud config", func() {

@@ -55,6 +55,7 @@ type iaasInputs struct {
 
 type executor interface {
 	Interpolate(InterpolateInput) (InterpolateOutput, error)
+	JumpboxInterpolate(InterpolateInput) (InterpolateOutput, error)
 	CreateEnv(CreateEnvInput) (CreateEnvOutput, error)
 	DeleteEnv(DeleteEnvInput) error
 	Version() (string, error)
@@ -86,12 +87,48 @@ func (m Manager) Version() (string, error) {
 }
 
 func (m Manager) Create(state storage.State) (storage.State, error) {
-	m.logger.Step("creating bosh director")
 	iaasInputs, err := m.generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
 	}
 
+	if state.Jumpbox {
+		m.logger.Step("creating jumpbox")
+		iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state)
+		if err != nil {
+			//not tested
+			return storage.State{}, err
+		}
+
+		interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs.InterpolateInput)
+		if err != nil {
+			return storage.State{}, err
+		}
+
+		variables, err := yaml.Marshal(interpolateOutputs.Variables)
+		_, err = m.executor.CreateEnv(CreateEnvInput{
+			Manifest:  interpolateOutputs.Manifest,
+			Variables: string(variables),
+		})
+		switch err.(type) {
+		case CreateEnvError:
+			ceErr := err.(CreateEnvError)
+			state.JumpboxDeployment = storage.JumpboxDeployment{
+				Variables: string(variables),
+				State:     ceErr.BOSHState(),
+				Manifest:  interpolateOutputs.Manifest,
+			}
+			return storage.State{}, NewManagerCreateError(state, err)
+		case error:
+			return storage.State{}, err
+		}
+		m.logger.Step("created jumpbox")
+	}
+
+	m.logger.Step("setup proxy")
+	// TODO: Setup socks5 proxy
+
+	m.logger.Step("creating bosh director")
 	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
 	if err != nil {
 		//not tested
@@ -161,10 +198,31 @@ func (m Manager) Delete(state storage.State) error {
 	return nil
 }
 
+func (m Manager) GetJumpboxDeploymentVars(state storage.State) (string, error) {
+	terraformOutputs, err := m.terraformManager.GetOutputs(state)
+	if err != nil {
+		return "", err
+	}
+
+	vars := strings.Join([]string{
+		"internal_cidr: 10.0.0.0/24",
+		"internal_gw: 10.0.0.1",
+		"internal_ip: 10.0.0.5",
+		fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+		fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
+		fmt.Sprintf("zone: %s", state.GCP.Zone),
+		fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
+		fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
+		fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["internal_tag_name"]),
+		fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
+		fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
+	}, "\n")
+
+	return strings.TrimSuffix(vars, "\n"), nil
+}
+
 func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
-	vars := `internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6`
+	var vars string
 
 	switch state.IAAS {
 	case "gcp":
@@ -173,23 +231,44 @@ internal_ip: 10.0.0.6`
 			return "", err
 		}
 
-		vars = strings.Join([]string{vars,
-			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
-			fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
-			fmt.Sprintf("zone: %s", state.GCP.Zone),
-			fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
-			fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
-			fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["internal_tag_name"]),
-			fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
-			fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
-		}, "\n")
+		if state.Jumpbox {
+			vars = strings.Join([]string{
+				"internal_cidr: 10.0.0.0/24",
+				"internal_gw: 10.0.0.1",
+				"internal_ip: 10.0.0.6",
+				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+				fmt.Sprintf("zone: %s", state.GCP.Zone),
+				fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
+				fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
+				fmt.Sprintf("tags: [%s]", terraformOutputs["internal_tag_name"]),
+				fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
+				fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
+			}, "\n")
+		} else {
+			vars = strings.Join([]string{
+				"internal_cidr: 10.0.0.0/24",
+				"internal_gw: 10.0.0.1",
+				"internal_ip: 10.0.0.6",
+				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+				fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
+				fmt.Sprintf("zone: %s", state.GCP.Zone),
+				fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
+				fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
+				fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["internal_tag_name"]),
+				fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
+				fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
+			}, "\n")
+		}
 	case "aws":
 		if state.TFState != "" {
 			terraformOutputs, err := m.terraformManager.GetOutputs(state)
 			if err != nil {
 				return "", err
 			}
-			vars = strings.Join([]string{vars,
+			vars = strings.Join([]string{
+				"internal_cidr: 10.0.0.0/24",
+				"internal_gw: 10.0.0.1",
+				"internal_ip: 10.0.0.6",
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
 				fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
 				fmt.Sprintf("az: %s", terraformOutputs["az"]),
@@ -206,7 +285,10 @@ internal_ip: 10.0.0.6`
 			if err != nil {
 				return "", err
 			}
-			vars = strings.Join([]string{vars,
+			vars = strings.Join([]string{
+				"internal_cidr: 10.0.0.0/24",
+				"internal_gw: 10.0.0.1",
+				"internal_ip: 10.0.0.6",
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
 				fmt.Sprintf("external_ip: %s", stack.Outputs["BOSHEIP"]),
 				fmt.Sprintf("az: %s", stack.Outputs["BOSHSubnetAZ"]),

@@ -23,11 +23,12 @@ type Executor struct {
 }
 
 type InterpolateInput struct {
-	IAAS           string
-	DeploymentVars string
-	BOSHState      map[string]interface{}
-	Variables      string
-	OpsFile        string
+	IAAS                  string
+	DeploymentVars        string
+	JumpboxDeploymentVars string
+	BOSHState             map[string]interface{}
+	Variables             string
+	OpsFile               string
 }
 
 type InterpolateOutput struct {
@@ -69,6 +70,80 @@ func NewExecutor(cmd command, tempDir func(string, string) (string, error), read
 	}
 }
 
+func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
+	tempDir, err := e.tempDir("", "")
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	deploymentVarsPath := filepath.Join(tempDir, "jumpbox-deployment-vars.yml")
+	variablesPath := filepath.Join(tempDir, "variables.yml")
+	manifestPath := filepath.Join(tempDir, "jumpbox.yml")
+	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
+
+	if interpolateInput.Variables != "" {
+		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
+		if err != nil {
+			return InterpolateOutput{}, err
+		}
+	}
+
+	err = e.writeFile(deploymentVarsPath, []byte(interpolateInput.JumpboxDeploymentVars), os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	manifestContents, err := Asset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml")
+	if err != nil {
+		//not tested
+		return InterpolateOutput{}, err
+	}
+	err = e.writeFile(manifestPath, manifestContents, os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	cpiOpsFileContents, err := Asset(fmt.Sprintf("vendor/github.com/cppforlife/jumpbox-deployment/%s/cpi.yml", interpolateInput.IAAS))
+	if err != nil {
+		//not tested
+		return InterpolateOutput{}, err
+	}
+	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	args := []string{
+		"interpolate", manifestPath,
+		"--var-errs",
+		"-o", cpiOpsFilePath,
+		"--vars-store", variablesPath,
+		"--vars-file", deploymentVarsPath,
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	err = e.command.Run(buffer, tempDir, args)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	varsStore, err := e.readFile(variablesPath)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	var variables map[interface{}]interface{}
+	err = e.unmarshalYAML(varsStore, &variables)
+	if err != nil {
+		return InterpolateOutput{}, err
+	}
+
+	return InterpolateOutput{
+		Variables: variables,
+		Manifest:  buffer.String(),
+	}, nil
+}
+
 func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
@@ -81,7 +156,6 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
 	jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
-	externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
 
 	if interpolateInput.Variables != "" {
 		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
@@ -130,35 +204,51 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
-	var externalIPNotRecommendedOpsFileContents []byte
-	switch interpolateInput.IAAS {
-	case "gcp":
-		externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml")
-		if err != nil {
-			//not tested
-			return InterpolateOutput{}, err
-		}
-	case "aws":
-		externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml")
-		if err != nil {
-			//not tested
-			return InterpolateOutput{}, err
-		}
-	}
-	err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
-	if err != nil {
-		return InterpolateOutput{}, err
-	}
+	var args []string
+	var externalIPNotRecommendedOpsFilePath string
 
-	args := []string{
-		"interpolate", boshManifestPath,
-		"--var-errs",
-		"--var-errs-unused",
-		"-o", cpiOpsFilePath,
-		"-o", jumpboxUserOpsFilePath,
-		"-o", externalIPNotRecommendedOpsFilePath,
-		"--vars-store", variablesPath,
-		"--vars-file", deploymentVarsPath,
+	if interpolateInput.JumpboxDeploymentVars == "" {
+		externalIPNotRecommendedOpsFilePath = filepath.Join(tempDir, "external-ip-not-recommended.yml")
+		var externalIPNotRecommendedOpsFileContents []byte
+		switch interpolateInput.IAAS {
+		case "gcp":
+			externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml")
+			if err != nil {
+				//not tested
+				return InterpolateOutput{}, err
+			}
+		case "aws":
+			externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml")
+			if err != nil {
+				//not tested
+				return InterpolateOutput{}, err
+			}
+		}
+		err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
+		if err != nil {
+			return InterpolateOutput{}, err
+		}
+
+		args = []string{
+			"interpolate", boshManifestPath,
+			"--var-errs",
+			"--var-errs-unused",
+			"-o", cpiOpsFilePath,
+			"-o", jumpboxUserOpsFilePath,
+			"-o", externalIPNotRecommendedOpsFilePath,
+			"--vars-store", variablesPath,
+			"--vars-file", deploymentVarsPath,
+		}
+	} else {
+		args = []string{
+			"interpolate", boshManifestPath,
+			"--var-errs",
+			"--var-errs-unused",
+			"-o", cpiOpsFilePath,
+			"-o", jumpboxUserOpsFilePath,
+			"--vars-store", variablesPath,
+			"--vars-file", deploymentVarsPath,
+		}
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -214,10 +304,10 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, err
 
 	statePath := fmt.Sprintf("%s/state.json", tempDir)
 	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
-	boshManifestPath := filepath.Join(tempDir, "manifest.yml")
+	manifestPath := filepath.Join(tempDir, "manifest.yml")
 
 	args := []string{
-		"create-env", boshManifestPath,
+		"create-env", manifestPath,
 		"--vars-store", variablesPath,
 		"--state", statePath,
 	}

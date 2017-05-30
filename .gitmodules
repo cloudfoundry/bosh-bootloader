@@ -46,3 +46,6 @@
 [submodule "vendor/github.com/coreos/go-semver"]
 	path = vendor/github.com/coreos/go-semver
 	url = https://github.com/coreos/go-semver.git
+[submodule "vendor/github.com/cppforlife/jumpbox-deployment"]
+	path = vendor/github.com/cppforlife/jumpbox-deployment
+	url = https://github.com/cppforlife/jumpbox-deployment.git

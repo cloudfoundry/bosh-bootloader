@@ -149,6 +149,88 @@ gcp_credentials_json: 'some-credential-json'`,
 			}),
 		)
 
+		Context("when there are jumpbox deployment vars is true", func() {
+			It("interpolates the jumpbox and bosh manifests", func() {
+				interpolateInput := bosh.InterpolateInput{
+					IAAS: "gcp",
+					JumpboxDeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-bosh-tag, some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`,
+					DeploymentVars: `internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-some-env-id
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags: [some-internal-tag]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`,
+					BOSHState: map[string]interface{}{
+						"key": "value",
+					},
+					Variables: variablesYMLContents,
+				}
+
+				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+					stdout.Write([]byte("some-manifest"))
+					return nil
+				}
+
+				interpolateOutput, err := executor.JumpboxInterpolate(interpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(1))
+				Expect(tempDirCallCount).To(Equal(1))
+
+				expectedArgs := append([]string{
+					"interpolate", fmt.Sprintf("%s/jumpbox.yml", tempDir),
+					"--var-errs",
+					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", tempDir)})
+
+				_, _, args := cmd.RunArgsForCall(0)
+				Expect(args).To(Equal(expectedArgs))
+
+				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
+				Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
+					"key": "value",
+				}))
+
+				interpolateOutput, err = executor.Interpolate(interpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(2))
+				Expect(tempDirCallCount).To(Equal(2))
+
+				expectedArgs = append([]string{
+					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
+					"--var-errs",
+					"--var-errs-unused",
+					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
+					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
+
+				_, _, args = cmd.RunArgsForCall(1)
+				Expect(args).To(Equal(expectedArgs))
+
+				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
+				Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
+					"key": "value",
+				}))
+			})
+		})
+
 		Context("when a user opsfile is provided", func() {
 			It("re-interpolates the bosh manifest", func() {
 				interpolateInput := bosh.InterpolateInput{

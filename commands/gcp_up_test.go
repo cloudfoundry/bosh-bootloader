@@ -405,6 +405,50 @@ var _ = Describe("GCPUp", func() {
 			})
 		})
 
+		Context("when the jumpbox flag is provided", func() {
+			BeforeEach(func() {
+				terraformManager.ApplyCall.Returns.BBLState.Jumpbox = true
+			})
+
+			It("creates a jumpbox, a bosh director and updates the cloud config", func() {
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKey: serviceAccountKeyPath,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+					NoDirector:        false,
+					Jumpbox:           true,
+				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateCall.CallCount).To(Equal(1))
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.Receives[0].State.Jumpbox).To(Equal(true))
+			})
+
+			Context("when re-bbling up an environment without a jumpbox", func() {
+				PIt("does not create a jumpbox", func() {
+					err := gcpUp.Execute(commands.GCPUpConfig{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					}, storage.State{
+						Jumpbox: false,
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives[2].State.Jumpbox).To(Equal(false))
+				})
+			})
+		})
+
 		Context("reentrance", func() {
 			var (
 				updatedServiceAccountKey     string
@@ -824,7 +868,6 @@ var _ = Describe("GCPUp", func() {
 					})
 
 					It("returns the error and saves the state", func() {
-
 						err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)
 						Expect(err).To(MatchError("failed to create"))
 						Expect(stateStore.SetCall.CallCount).To(Equal(4))
@@ -833,6 +876,7 @@ var _ = Describe("GCPUp", func() {
 
 					It("returns a compound error when it fails to save the state", func() {
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+
 						err := gcpUp.Execute(commands.GCPUpConfig{
 							ServiceAccountKey: serviceAccountKeyPath,
 							ProjectID:         "some-project-id",

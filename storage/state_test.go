@@ -58,6 +58,13 @@ var _ = Describe("Store", func() {
 					Chain:  "some-chain",
 					Domain: "some-domain",
 				},
+				Jumpbox: true,
+				JumpboxDeployment: storage.JumpboxDeployment{
+					Manifest: "name: jumpbox",
+					State: map[string]interface{}{
+						"key": "value",
+					},
+				},
 				BOSH: storage.BOSH{
 					DirectorName:           "some-director-name",
 					DirectorUsername:       "some-director-username",
@@ -105,6 +112,7 @@ var _ = Describe("Store", func() {
 				"version": 3,
 				"iaas": "aws",
 				"noDirector": false,
+				"jumpbox": true,
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",
 					"secretAccessKey": "some-aws-secret-access-key",
@@ -127,6 +135,13 @@ var _ = Describe("Store", func() {
 					"key": "some-key",
 					"chain": "some-chain",
 					"domain": "some-domain"
+				},
+				"jumpboxDeployment":{
+					"variables": "",
+					"manifest": "name: jumpbox",
+					"state": {
+						"key": "value"
+					}
 				},
 				"bosh":{
 					"directorName": "some-director-name",
