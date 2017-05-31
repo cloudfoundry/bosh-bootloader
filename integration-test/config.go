@@ -27,15 +27,17 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	config := loadConfigFromEnvVars()
 
-	awsCredsValidationError := validateAWSCreds(config)
+	// awsCredsValidationError := validateAWSCreds(config)
 	gcpCredsValidationError := validateGCPCreds(config)
 
-	if awsCredsValidationError == nil && gcpCredsValidationError == nil {
+	// if awsCredsValidationError == nil && gcpCredsValidationError == nil {
+	if gcpCredsValidationError != nil {
 		return Config{}, errors.New("Multiple IAAS Credentials provided:\n Provide a set of credentials for a single IAAS.")
 	}
 
-	if awsCredsValidationError != nil && gcpCredsValidationError != nil {
-		return Config{}, fmt.Errorf("Multiple Credential Errors Found: %s\n%s\nProvide a full set of credentials for a single IAAS.", awsCredsValidationError, gcpCredsValidationError)
+	// if awsCredsValidationError != nil && gcpCredsValidationError != nil {
+	if gcpCredsValidationError != nil {
+		return Config{}, fmt.Errorf("Multiple Credential Errors Found: %s\nProvide a full set of credentials for a single IAAS.", gcpCredsValidationError)
 	}
 
 	if config.StateFileDir == "" {
@@ -90,12 +92,12 @@ func loadConfigFromEnvVars() Config {
 		AWSAccessKeyID:           os.Getenv("AWS_ACCESS_KEY_ID"),
 		AWSSecretAccessKey:       os.Getenv("AWS_SECRET_ACCESS_KEY"),
 		AWSRegion:                os.Getenv("AWS_REGION"),
-		GCPServiceAccountKeyPath: os.Getenv("GCP_SERVICE_ACCOUNT_KEY"),
-		GCPProjectID:             os.Getenv("GCP_PROJECT_ID"),
-		GCPRegion:                os.Getenv("GCP_REGION"),
-		GCPZone:                  os.Getenv("GCP_ZONE"),
-		GCPEnvPrefix:             os.Getenv("GCP_ENV_PREFIX"),
-		StateFileDir:             os.Getenv("STATE_DIR"),
+		GCPServiceAccountKeyPath: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
+		GCPProjectID:             os.Getenv("BBL_GCP_PROJECT_ID"),
+		GCPRegion:                os.Getenv("BBL_GCP_REGION"),
+		GCPZone:                  os.Getenv("BBL_GCP_ZONE"),
+		GCPEnvPrefix:             os.Getenv("BBL_GCP_ENV_PREFIX"),
+		StateFileDir:             os.Getenv("BBL_STATE_DIR"),
 		StemcellPath:             os.Getenv("STEMCELL_PATH"),
 		GardenReleasePath:        os.Getenv("GARDEN_RELEASE_PATH"),
 		ConcourseReleasePath:     os.Getenv("CONCOURSE_RELEASE_PATH"),

@@ -34,6 +34,7 @@ func NewTemplateGenerator(zones zones) TemplateGenerator {
 
 func (t TemplateGenerator) Generate(state storage.State) string {
 	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
+
 	switch state.LB.Type {
 	case "concourse":
 		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")

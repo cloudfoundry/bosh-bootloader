@@ -50,21 +50,27 @@ type LB struct {
 	Domain string `json:"domain,omitempty"`
 }
 
+type Jumpbox struct {
+	Enabled   bool                   `json:"enabled"`
+	Variables map[string]interface{} `json:"variables"`
+	Manifest  string                 `json:"manifest"`
+	State     map[string]interface{} `json:"state"`
+}
+
 type State struct {
-	Version           int               `json:"version"`
-	IAAS              string            `json:"iaas"`
-	NoDirector        bool              `json:"noDirector"`
-	Jumpbox           bool              `json:"jumpbox"`
-	AWS               AWS               `json:"aws,omitempty"`
-	GCP               GCP               `json:"gcp,omitempty"`
-	KeyPair           KeyPair           `json:"keyPair,omitempty"`
-	JumpboxDeployment JumpboxDeployment `json:"jumpboxDeployment,omitempty"`
-	BOSH              BOSH              `json:"bosh,omitempty"`
-	Stack             Stack             `json:"stack"`
-	EnvID             string            `json:"envID"`
-	TFState           string            `json:"tfState"`
-	LB                LB                `json:"lb"`
-	LatestTFOutput    string            `json:"latestTFOutput"`
+	Version        int     `json:"version"`
+	IAAS           string  `json:"iaas"`
+	NoDirector     bool    `json:"noDirector"`
+	AWS            AWS     `json:"aws,omitempty"`
+	GCP            GCP     `json:"gcp,omitempty"`
+	KeyPair        KeyPair `json:"keyPair,omitempty"`
+	Jumpbox        Jumpbox `json:"jumpbox,omitempty"`
+	BOSH           BOSH    `json:"bosh,omitempty"`
+	Stack          Stack   `json:"stack"`
+	EnvID          string  `json:"envID"`
+	TFState        string  `json:"tfState"`
+	LB             LB      `json:"lb"`
+	LatestTFOutput string  `json:"latestTFOutput"`
 }
 
 type Store struct {

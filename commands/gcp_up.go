@@ -132,7 +132,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 			state.NoDirector = true
 		}
 
-		state.Jumpbox = upConfig.Jumpbox
+		state.Jumpbox.Enabled = upConfig.Jumpbox
 
 		state.GCP = gcpDetails
 	}

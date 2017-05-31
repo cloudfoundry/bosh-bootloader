@@ -526,7 +526,7 @@ var _ = Describe("bbl up gcp", func() {
 			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
 		})
 
-		It("invokes the bosh cli", func() {
+		FIt("invokes the bosh cli", func() {
 			args := []string{
 				"--state-dir", tempDirectory,
 				"--debug",

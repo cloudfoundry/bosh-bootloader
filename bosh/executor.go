@@ -36,6 +36,11 @@ type InterpolateOutput struct {
 	Manifest  string
 }
 
+type JumpboxInterpolateOutput struct {
+	Variables map[string]interface{}
+	Manifest  string
+}
+
 type CreateEnvInput struct {
 	Manifest  string
 	Variables string
@@ -70,10 +75,10 @@ func NewExecutor(cmd command, tempDir func(string, string) (string, error), read
 	}
 }
 
-func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
+func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (JumpboxInterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
 	deploymentVarsPath := filepath.Join(tempDir, "jumpbox-deployment-vars.yml")
@@ -84,33 +89,33 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Interpo
 	if interpolateInput.Variables != "" {
 		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, err
+			return JumpboxInterpolateOutput{}, err
 		}
 	}
 
 	err = e.writeFile(deploymentVarsPath, []byte(interpolateInput.JumpboxDeploymentVars), os.ModePerm)
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
 	manifestContents, err := Asset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml")
 	if err != nil {
 		//not tested
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 	err = e.writeFile(manifestPath, manifestContents, os.ModePerm)
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
 	cpiOpsFileContents, err := Asset(fmt.Sprintf("vendor/github.com/cppforlife/jumpbox-deployment/%s/cpi.yml", interpolateInput.IAAS))
 	if err != nil {
 		//not tested
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
 	args := []string{
@@ -124,21 +129,21 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Interpo
 	buffer := bytes.NewBuffer([]byte{})
 	err = e.command.Run(buffer, tempDir, args)
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
 	varsStore, err := e.readFile(variablesPath)
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
-	var variables map[interface{}]interface{}
+	var variables map[string]interface{}
 	err = e.unmarshalYAML(varsStore, &variables)
 	if err != nil {
-		return InterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, err
 	}
 
-	return InterpolateOutput{
+	return JumpboxInterpolateOutput{
 		Variables: variables,
 		Manifest:  buffer.String(),
 	}, nil
@@ -155,7 +160,6 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
-	jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
 
 	if interpolateInput.Variables != "" {
 		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
@@ -194,21 +198,30 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		return InterpolateOutput{}, err
 	}
 
-	jumpboxUserOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml")
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
-	err = e.writeFile(jumpboxUserOpsFilePath, jumpboxUserOpsFileContents, os.ModePerm)
-	if err != nil {
-		return InterpolateOutput{}, err
-	}
-
 	var args []string
-	var externalIPNotRecommendedOpsFilePath string
 
-	if interpolateInput.JumpboxDeploymentVars == "" {
-		externalIPNotRecommendedOpsFilePath = filepath.Join(tempDir, "external-ip-not-recommended.yml")
+	if interpolateInput.JumpboxDeploymentVars != "" {
+		args = []string{
+			"interpolate", boshManifestPath,
+			"--var-errs",
+			"--var-errs-unused",
+			"-o", cpiOpsFilePath,
+			"--vars-store", variablesPath,
+			"--vars-file", deploymentVarsPath,
+		}
+	} else {
+		jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
+		jumpboxUserOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml")
+		if err != nil {
+			//not tested
+			return InterpolateOutput{}, err
+		}
+		err = e.writeFile(jumpboxUserOpsFilePath, jumpboxUserOpsFileContents, os.ModePerm)
+		if err != nil {
+			return InterpolateOutput{}, err
+		}
+
+		externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
 		var externalIPNotRecommendedOpsFileContents []byte
 		switch interpolateInput.IAAS {
 		case "gcp":
@@ -236,16 +249,6 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 			"-o", cpiOpsFilePath,
 			"-o", jumpboxUserOpsFilePath,
 			"-o", externalIPNotRecommendedOpsFilePath,
-			"--vars-store", variablesPath,
-			"--vars-file", deploymentVarsPath,
-		}
-	} else {
-		args = []string{
-			"interpolate", boshManifestPath,
-			"--var-errs",
-			"--var-errs-unused",
-			"-o", cpiOpsFilePath,
-			"-o", jumpboxUserOpsFilePath,
 			"--vars-store", variablesPath,
 			"--vars-file", deploymentVarsPath,
 		}

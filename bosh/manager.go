@@ -55,7 +55,7 @@ type iaasInputs struct {
 
 type executor interface {
 	Interpolate(InterpolateInput) (InterpolateOutput, error)
-	JumpboxInterpolate(InterpolateInput) (InterpolateOutput, error)
+	JumpboxInterpolate(InterpolateInput) (JumpboxInterpolateOutput, error)
 	CreateEnv(CreateEnvInput) (CreateEnvOutput, error)
 	DeleteEnv(DeleteEnvInput) error
 	Version() (string, error)
@@ -92,7 +92,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	if state.Jumpbox {
+	if state.Jumpbox.Enabled {
 		m.logger.Step("creating jumpbox")
 		iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state)
 		if err != nil {
@@ -106,15 +106,20 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		}
 
 		variables, err := yaml.Marshal(interpolateOutputs.Variables)
-		_, err = m.executor.CreateEnv(CreateEnvInput{
+		if err != nil {
+			return storage.State{}, err
+		}
+		createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
 			Manifest:  interpolateOutputs.Manifest,
+			State:     state.Jumpbox.State,
 			Variables: string(variables),
 		})
 		switch err.(type) {
 		case CreateEnvError:
 			ceErr := err.(CreateEnvError)
-			state.JumpboxDeployment = storage.JumpboxDeployment{
-				Variables: string(variables),
+			state.Jumpbox = storage.Jumpbox{
+				Enabled:   true,
+				Variables: interpolateOutputs.Variables,
 				State:     ceErr.BOSHState(),
 				Manifest:  interpolateOutputs.Manifest,
 			}
@@ -122,11 +127,15 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		case error:
 			return storage.State{}, err
 		}
+
+		state.Jumpbox = storage.Jumpbox{
+			Enabled:   true,
+			Variables: interpolateOutputs.Variables,
+			State:     createEnvOutputs.State,
+			Manifest:  interpolateOutputs.Manifest,
+		}
 		m.logger.Step("created jumpbox")
 	}
-
-	m.logger.Step("setup proxy")
-	// TODO: Setup socks5 proxy
 
 	m.logger.Step("creating bosh director")
 	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
@@ -231,7 +240,7 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			return "", err
 		}
 
-		if state.Jumpbox {
+		if state.Jumpbox.Enabled {
 			vars = strings.Join([]string{
 				"internal_cidr: 10.0.0.0/24",
 				"internal_gw: 10.0.0.1",

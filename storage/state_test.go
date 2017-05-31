@@ -58,8 +58,8 @@ var _ = Describe("Store", func() {
 					Chain:  "some-chain",
 					Domain: "some-domain",
 				},
-				Jumpbox: true,
-				JumpboxDeployment: storage.JumpboxDeployment{
+				Jumpbox: storage.Jumpbox{
+					Enabled:  true,
 					Manifest: "name: jumpbox",
 					State: map[string]interface{}{
 						"key": "value",
@@ -136,7 +136,8 @@ var _ = Describe("Store", func() {
 					"chain": "some-chain",
 					"domain": "some-domain"
 				},
-				"jumpboxDeployment":{
+				"jumpbox":{
+					"enabled": true,
 					"variables": "",
 					"manifest": "name: jumpbox",
 					"state": {

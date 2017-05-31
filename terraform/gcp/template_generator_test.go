@@ -49,17 +49,6 @@ var _ = Describe("TemplateGenerator", func() {
 			Entry("when a cf lb type is provided", "fixtures/gcp_template_cf_lb.tf", "some-region", "cf", ""),
 			Entry("when a cf lb type is provided with a domain", "fixtures/gcp_template_cf_lb_dns.tf", "some-region", "cf", "some-domain"),
 		)
-
-		It("generates a terraform template for gcp with a jumpbox", func() {
-			expectedTemplate, err := ioutil.ReadFile("fixtures/gcp_template_jumpbox.tf")
-			Expect(err).NotTo(HaveOccurred())
-
-			template := templateGenerator.Generate(storage.State{
-				Jumpbox: true,
-				GCP:     storage.GCP{},
-			})
-			Expect(template).To(Equal(string(expectedTemplate)))
-		})
 	})
 
 	Describe("GenerateBackendService", func() {

@@ -102,18 +102,14 @@ var _ = Describe("Manager", func() {
 				},
 			}
 
+		})
+
+		It("logs bosh director status messages", func() {
 			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
 				Variables: variablesMap,
 			}
-			boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
-				State: map[string]interface{}{
-					"some-new-key": "some-new-value",
-				},
-			}
-		})
 
-		It("logs bosh director status messages", func() {
 			_, err := boshManager.Create(incomingGCPState)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -122,6 +118,11 @@ var _ = Describe("Manager", func() {
 
 		Context("when iaas is gcp", func() {
 			It("queries values from terraform manager", func() {
+				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					Manifest:  "some-manifest",
+					Variables: variablesMap,
+				}
+
 				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -129,6 +130,17 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("generates a bosh manifest", func() {
+				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					Manifest:  "some-manifest",
+					Variables: variablesMap,
+				}
+
+				boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
+					State: map[string]interface{}{
+						"some-new-key": "some-new-value",
+					},
+				}
+
 				incomingGCPState.BOSH.UserOpsFile = "some-ops-file"
 				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
@@ -155,6 +167,17 @@ gcp_credentials_json: 'some-credential-json'`,
 			})
 
 			It("returns a state with a proper bosh state", func() {
+				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					Manifest:  "some-manifest",
+					Variables: variablesMap,
+				}
+
+				boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
+					State: map[string]interface{}{
+						"some-new-key": "some-new-value",
+					},
+				}
+
 				state, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -188,17 +211,15 @@ gcp_credentials_json: 'some-credential-json'`,
 						Type: "cf",
 					},
 				}))
-
 			})
 
-			Context("when jumpbox is true", func() {
+			Context("when jumpbox enabled is true", func() {
 				var jumpboxDeploymentVars string
 				var deploymentVars string
 				BeforeEach(func() {
 					incomingGCPState = storage.State{
-						IAAS:    "gcp",
-						EnvID:   "some-env-id",
-						Jumpbox: true,
+						IAAS:  "gcp",
+						EnvID: "some-env-id",
 						KeyPair: storage.KeyPair{
 							PrivateKey: "some-private-key",
 						},
@@ -206,6 +227,17 @@ gcp_credentials_json: 'some-credential-json'`,
 							Zone:              "some-zone",
 							ProjectID:         "some-project-id",
 							ServiceAccountKey: "some-credential-json",
+						},
+						Jumpbox: storage.Jumpbox{
+							Enabled: true,
+							Variables: map[string]interface{}{
+								"jumpbox_ssh": "some-ssh-key",
+								"external_ip": "some-external-ip",
+							},
+							Manifest: "name: jumpbox",
+							State: map[string]interface{}{
+								"some-key": "some-value",
+							},
 						},
 						BOSH: storage.BOSH{
 							State: map[string]interface{}{
@@ -240,9 +272,27 @@ subnetwork: some-subnetwork
 tags: [some-internal-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`
+
+					boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
+						Manifest: "name: jumpbox",
+						Variables: map[string]interface{}{
+							"jumpbox_ssh": "some-ssh-key",
+							"external_ip": "some-external-ip",
+						},
+					}
+
+					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+						Manifest:  "some-manifest",
+						Variables: variablesMap,
+					}
 				})
 
 				It("queries values from terraform manager", func() {
+					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
+						State: map[string]interface{}{
+							"some-key": "some-value",
+						},
+					}
 					_, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -272,13 +322,18 @@ gcp_credentials_json: 'some-credential-json'`
 				})
 
 				It("returns a bbl state with a proper bosh state", func() {
+					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
+						State: map[string]interface{}{
+							"some-new-key": "some-new-value",
+						},
+					}
+
 					state, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state).To(Equal(storage.State{
-						IAAS:    "gcp",
-						EnvID:   "some-env-id",
-						Jumpbox: true,
+						IAAS:  "gcp",
+						EnvID: "some-env-id",
 						KeyPair: storage.KeyPair{
 							PrivateKey: "some-private-key",
 						},
@@ -286,6 +341,17 @@ gcp_credentials_json: 'some-credential-json'`
 							Zone:              "some-zone",
 							ProjectID:         "some-project-id",
 							ServiceAccountKey: "some-credential-json",
+						},
+						Jumpbox: storage.Jumpbox{
+							Enabled: true,
+							Variables: map[string]interface{}{
+								"jumpbox_ssh": "some-ssh-key",
+								"external_ip": "some-external-ip",
+							},
+							Manifest: "name: jumpbox",
+							State: map[string]interface{}{
+								"some-new-key": "some-new-value",
+							},
 						},
 						BOSH: storage.BOSH{
 							State: map[string]interface{}{
@@ -327,6 +393,17 @@ gcp_credentials_json: 'some-credential-json'`
 					incomingAWSState.TFState = ""
 					incomingAWSState.Stack = storage.Stack{
 						Name: "some-stack",
+					}
+
+					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+						Manifest:  "some-manifest",
+						Variables: variablesMap,
+					}
+
+					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
+						State: map[string]interface{}{
+							"some-new-key": "some-new-value",
+						},
 					}
 				})
 
@@ -374,6 +451,17 @@ private_key: |-
 						"subnet_id":               "some-bosh-subnet",
 						"external_ip":             "some-bosh-elastic-ip",
 						"director_address":        "some-bosh-url",
+					}
+
+					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+						Manifest:  "some-manifest",
+						Variables: variablesMap,
+					}
+
+					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
+						State: map[string]interface{}{
+							"some-new-key": "some-new-value",
+						},
 					}
 				})
 
@@ -448,6 +536,11 @@ private_key: |-
 		})
 
 		It("creates a bosh environment", func() {
+			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+				Manifest:  "some-manifest",
+				Variables: variablesMap,
+			}
+
 			_, err := boshManager.Create(incomingGCPState)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -463,9 +556,7 @@ private_key: |-
 		Context("failure cases", func() {
 			It("returns an error when terraform output provider fails", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
-				_, err := boshManager.Create(storage.State{
-					IAAS: "gcp",
-				})
+				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).To(MatchError("failed to output"))
 			})
 
@@ -476,39 +567,36 @@ private_key: |-
 
 			It("returns an error when the executor's interpolate call fails", func() {
 				boshExecutor.InterpolateCall.Returns.Error = errors.New("failed to interpolate")
-				_, err := boshManager.Create(storage.State{
-					IAAS: "gcp",
-				})
+				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).To(MatchError("failed to interpolate"))
 			})
 
 			It("returns an error when the executor's create env call fails with non create env error", func() {
 				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
-				_, err := boshManager.Create(storage.State{
-					IAAS: "gcp",
-				})
+				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).To(MatchError("failed to create"))
 			})
 
 			Context("when the executor's create env call fails with create env error", func() {
 				var (
-					incomingState storage.State
 					expectedError bosh.ManagerCreateError
 					expectedState storage.State
 				)
 
 				BeforeEach(func() {
-					incomingState = storage.State{
-						IAAS: "aws",
-					}
-
 					boshState := map[string]interface{}{
 						"partial": "bosh-state",
 					}
+
+					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+						Manifest:  "some-manifest",
+						Variables: variablesMap,
+					}
+
 					createEnvError := bosh.NewCreateEnvError(boshState, errors.New("failed to create env"))
 					boshExecutor.CreateEnvCall.Returns.Error = createEnvError
 
-					expectedState = incomingState
+					expectedState = incomingAWSState
 					expectedState.BOSH = storage.BOSH{
 						Manifest:  "some-manifest",
 						State:     boshState,
@@ -518,7 +606,7 @@ private_key: |-
 				})
 
 				It("returns a bosh manager create error with a valid state", func() {
-					_, err := boshManager.Create(incomingState)
+					_, err := boshManager.Create(incomingAWSState)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})

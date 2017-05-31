@@ -149,7 +149,7 @@ gcp_credentials_json: 'some-credential-json'`,
 			}),
 		)
 
-		Context("when there are jumpbox deployment vars is true", func() {
+		Context("when there are jumpbox deployment vars", func() {
 			It("interpolates the jumpbox and bosh manifests", func() {
 				interpolateInput := bosh.InterpolateInput{
 					IAAS: "gcp",
@@ -185,7 +185,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					return nil
 				}
 
-				interpolateOutput, err := executor.JumpboxInterpolate(interpolateInput)
+				jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(1))
@@ -201,12 +201,12 @@ gcp_credentials_json: 'some-credential-json'`,
 				_, _, args := cmd.RunArgsForCall(0)
 				Expect(args).To(Equal(expectedArgs))
 
-				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-				Expect(interpolateOutput.Variables).To(Equal(map[interface{}]interface{}{
+				Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
+				Expect(jumpboxInterpolateOutput.Variables).To(Equal(map[string]interface{}{
 					"key": "value",
 				}))
 
-				interpolateOutput, err = executor.Interpolate(interpolateInput)
+				interpolateOutput, err := executor.Interpolate(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(2))
@@ -217,7 +217,6 @@ gcp_credentials_json: 'some-credential-json'`,
 					"--var-errs",
 					"--var-errs-unused",
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
 					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir)})
 
