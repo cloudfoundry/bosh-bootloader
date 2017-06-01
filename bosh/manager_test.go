@@ -32,7 +32,6 @@ var _ = Describe("Manager", func() {
 			boshManager      bosh.Manager
 			incomingGCPState storage.State
 			incomingAWSState storage.State
-			variablesMap     map[interface{}]interface{}
 		)
 
 		BeforeEach(func() {
@@ -93,21 +92,12 @@ var _ = Describe("Manager", func() {
 					Type: "cf",
 				},
 			}
-			variablesMap = map[interface{}]interface{}{
-				"admin_password": "some-admin-password",
-				"director_ssl": map[interface{}]interface{}{
-					"ca":          "some-ca",
-					"certificate": "some-certificate",
-					"private_key": "some-private-key",
-				},
-			}
-
 		})
 
 		It("logs bosh director status messages", func() {
 			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
-				Variables: variablesMap,
+				Variables: variablesYAML,
 			}
 
 			_, err := boshManager.Create(incomingGCPState)
@@ -120,7 +110,7 @@ var _ = Describe("Manager", func() {
 			It("queries values from terraform manager", func() {
 				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 					Manifest:  "some-manifest",
-					Variables: variablesMap,
+					Variables: variablesYAML,
 				}
 
 				_, err := boshManager.Create(incomingGCPState)
@@ -132,7 +122,7 @@ var _ = Describe("Manager", func() {
 			It("generates a bosh manifest", func() {
 				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 					Manifest:  "some-manifest",
-					Variables: variablesMap,
+					Variables: variablesYAML,
 				}
 
 				boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
@@ -169,7 +159,7 @@ gcp_credentials_json: 'some-credential-json'`,
 			It("returns a state with a proper bosh state", func() {
 				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 					Manifest:  "some-manifest",
-					Variables: variablesMap,
+					Variables: variablesYAML,
 				}
 
 				boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
@@ -229,12 +219,9 @@ gcp_credentials_json: 'some-credential-json'`,
 							ServiceAccountKey: "some-credential-json",
 						},
 						Jumpbox: storage.Jumpbox{
-							Enabled: true,
-							Variables: map[string]interface{}{
-								"jumpbox_ssh": "some-ssh-key",
-								"external_ip": "some-external-ip",
-							},
-							Manifest: "name: jumpbox",
+							Enabled:   true,
+							Variables: "some-jumpbox-vars",
+							Manifest:  "name: jumpbox",
 							State: map[string]interface{}{
 								"some-key": "some-value",
 							},
@@ -274,16 +261,13 @@ project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`
 
 					boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
-						Manifest: "name: jumpbox",
-						Variables: map[string]interface{}{
-							"jumpbox_ssh": "some-ssh-key",
-							"external_ip": "some-external-ip",
-						},
+						Manifest:  "name: jumpbox",
+						Variables: "some-jumpbox-vars",
 					}
 
 					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
-						Variables: variablesMap,
+						Variables: variablesYAML,
 					}
 				})
 
@@ -321,7 +305,7 @@ gcp_credentials_json: 'some-credential-json'`
 					}))
 				})
 
-				It("returns a bbl state with a proper bosh state", func() {
+				It("returns a bbl state with a proper jumpbox state", func() {
 					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
 						State: map[string]interface{}{
 							"some-new-key": "some-new-value",
@@ -343,12 +327,9 @@ gcp_credentials_json: 'some-credential-json'`
 							ServiceAccountKey: "some-credential-json",
 						},
 						Jumpbox: storage.Jumpbox{
-							Enabled: true,
-							Variables: map[string]interface{}{
-								"jumpbox_ssh": "some-ssh-key",
-								"external_ip": "some-external-ip",
-							},
-							Manifest: "name: jumpbox",
+							Enabled:   true,
+							Variables: "some-jumpbox-vars",
+							Manifest:  "name: jumpbox",
 							State: map[string]interface{}{
 								"some-new-key": "some-new-value",
 							},
@@ -397,7 +378,7 @@ gcp_credentials_json: 'some-credential-json'`
 
 					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
-						Variables: variablesMap,
+						Variables: variablesYAML,
 					}
 
 					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
@@ -455,7 +436,7 @@ private_key: |-
 
 					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
-						Variables: variablesMap,
+						Variables: variablesYAML,
 					}
 
 					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
@@ -538,7 +519,7 @@ private_key: |-
 		It("creates a bosh environment", func() {
 			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
-				Variables: variablesMap,
+				Variables: variablesYAML,
 			}
 
 			_, err := boshManager.Create(incomingGCPState)
@@ -577,6 +558,17 @@ private_key: |-
 				Expect(err).To(MatchError("failed to create"))
 			})
 
+			Context("when interpolate outputs invalid yaml", func() {
+				It("returns an error", func() {
+					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+						Manifest:  "some-manifest",
+						Variables: "%%%",
+					}
+
+					_, err := boshManager.Create(incomingAWSState)
+					Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
+				})
+			})
 			Context("when the executor's create env call fails with create env error", func() {
 				var (
 					expectedError bosh.ManagerCreateError
@@ -590,7 +582,7 @@ private_key: |-
 
 					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
-						Variables: variablesMap,
+						Variables: variablesYAML,
 					}
 
 					createEnvError := bosh.NewCreateEnvError(boshState, errors.New("failed to create env"))

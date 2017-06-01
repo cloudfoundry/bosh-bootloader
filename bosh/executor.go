@@ -16,7 +16,6 @@ type Executor struct {
 	command       command
 	tempDir       func(string, string) (string, error)
 	readFile      func(string) ([]byte, error)
-	unmarshalYAML func([]byte, interface{}) error
 	unmarshalJSON func([]byte, interface{}) error
 	marshalJSON   func(interface{}) ([]byte, error)
 	writeFile     func(string, []byte, os.FileMode) error
@@ -32,12 +31,12 @@ type InterpolateInput struct {
 }
 
 type InterpolateOutput struct {
-	Variables map[interface{}]interface{}
+	Variables string
 	Manifest  string
 }
 
 type JumpboxInterpolateOutput struct {
-	Variables map[string]interface{}
+	Variables string
 	Manifest  string
 }
 
@@ -62,13 +61,12 @@ type command interface {
 }
 
 func NewExecutor(cmd command, tempDir func(string, string) (string, error), readFile func(string) ([]byte, error),
-	unmarshalYAML func([]byte, interface{}) error, unmarshalJSON func([]byte, interface{}) error,
+	unmarshalJSON func([]byte, interface{}) error,
 	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error) Executor {
 	return Executor{
 		command:       cmd,
 		tempDir:       tempDir,
 		readFile:      readFile,
-		unmarshalYAML: unmarshalYAML,
 		unmarshalJSON: unmarshalJSON,
 		marshalJSON:   marshalJSON,
 		writeFile:     writeFile,
@@ -137,14 +135,8 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 		return JumpboxInterpolateOutput{}, err
 	}
 
-	var variables map[string]interface{}
-	err = e.unmarshalYAML(varsStore, &variables)
-	if err != nil {
-		return JumpboxInterpolateOutput{}, err
-	}
-
 	return JumpboxInterpolateOutput{
-		Variables: variables,
+		Variables: string(varsStore),
 		Manifest:  buffer.String(),
 	}, nil
 }
@@ -282,19 +274,13 @@ func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOut
 		}
 	}
 
-	variablesContents, err := e.readFile(variablesPath)
-	if err != nil {
-		return InterpolateOutput{}, err
-	}
-
-	var variables map[interface{}]interface{}
-	err = e.unmarshalYAML(variablesContents, &variables)
+	varsStore, err := e.readFile(variablesPath)
 	if err != nil {
 		return InterpolateOutput{}, err
 	}
 
 	return InterpolateOutput{
-		Variables: variables,
+		Variables: string(varsStore),
 		Manifest:  buffer.String(),
 	}, nil
 }

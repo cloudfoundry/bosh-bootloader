@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
@@ -158,7 +156,7 @@ func main() {
 
 	// BOSH
 	boshCommand := bosh.NewCmd(os.Stderr)
-	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, yaml.Unmarshal, json.Unmarshal,
+	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile)
 	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
 	boshClientProvider := bosh.NewClientProvider()

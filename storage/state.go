@@ -52,7 +52,7 @@ type LB struct {
 
 type Jumpbox struct {
 	Enabled   bool                   `json:"enabled"`
-	Variables map[string]interface{} `json:"variables"`
+	Variables string                 `json:"variables"`
 	Manifest  string                 `json:"manifest"`
 	State     map[string]interface{} `json:"state"`
 }

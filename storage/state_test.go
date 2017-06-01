@@ -59,8 +59,9 @@ var _ = Describe("Store", func() {
 					Domain: "some-domain",
 				},
 				Jumpbox: storage.Jumpbox{
-					Enabled:  true,
-					Manifest: "name: jumpbox",
+					Enabled:   true,
+					Manifest:  "name: jumpbox",
+					Variables: "some-jumpbox-vars",
 					State: map[string]interface{}{
 						"key": "value",
 					},
@@ -76,6 +77,7 @@ var _ = Describe("Store", func() {
 					State: map[string]interface{}{
 						"key": "value",
 					},
+					Variables:   "some-vars",
 					Manifest:    "name: bosh",
 					UserOpsFile: "some-ops-file",
 					Credentials: map[string]string{
@@ -138,7 +140,7 @@ var _ = Describe("Store", func() {
 				},
 				"jumpbox":{
 					"enabled": true,
-					"variables": "",
+					"variables": "some-jumpbox-vars",
 					"manifest": "name: jumpbox",
 					"state": {
 						"key": "value"
@@ -168,7 +170,7 @@ var _ = Describe("Store", func() {
 						"blobstoreAgentPassword": "some-blobstore-agent-password",
 						"hmPassword": "some-hm-password"
 					},
-					"variables": "",
+					"variables":   "some-vars",
 					"manifest": "name: bosh",
 					"userOpsFile": "some-ops-file",
 					"state": {

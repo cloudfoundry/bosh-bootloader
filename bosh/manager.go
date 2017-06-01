@@ -151,17 +151,16 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	variables, err := yaml.Marshal(interpolateOutputs.Variables)
 	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
 		Manifest:  interpolateOutputs.Manifest,
 		State:     state.BOSH.State,
-		Variables: string(variables),
+		Variables: interpolateOutputs.Variables,
 	})
 	switch err.(type) {
 	case CreateEnvError:
 		ceErr := err.(CreateEnvError)
 		state.BOSH = storage.BOSH{
-			Variables: string(variables),
+			Variables: interpolateOutputs.Variables,
 			State:     ceErr.BOSHState(),
 			Manifest:  interpolateOutputs.Manifest,
 		}
@@ -170,7 +169,10 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	directorOutputs := getDirectorOutputs(interpolateOutputs.Variables)
+	directorOutputs, err := getDirectorOutputs(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
+	}
 
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
@@ -180,7 +182,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		DirectorSSLCA:          directorOutputs.directorSSLCA,
 		DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
 		DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
-		Variables:              string(variables),
+		Variables:              interpolateOutputs.Variables,
 		State:                  createEnvOutputs.State,
 		Manifest:               interpolateOutputs.Manifest,
 	}
@@ -363,7 +365,14 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	}
 }
 
-func getDirectorOutputs(variables map[interface{}]interface{}) directorOutputs {
+func getDirectorOutputs(v string) (directorOutputs, error) {
+	variables := map[string]interface{}{}
+
+	err := yaml.Unmarshal([]byte(v), &variables)
+	if err != nil {
+		return directorOutputs{}, err
+	}
+
 	directorSSLInterfaceMap := variables["director_ssl"].(map[interface{}]interface{})
 	directorSSL := map[string]string{}
 	for k, v := range directorSSLInterfaceMap {
@@ -375,5 +384,5 @@ func getDirectorOutputs(variables map[interface{}]interface{}) directorOutputs {
 		directorSSLCA:          directorSSL["ca"],
 		directorSSLCertificate: directorSSL["certificate"],
 		directorSSLPrivateKey:  directorSSL["private_key"],
-	}
+	}, nil
 }
