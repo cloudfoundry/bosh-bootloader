@@ -29,9 +29,13 @@ var _ = Describe("Manager", func() {
 			terraformManager *fakes.TerraformManager
 			stackManager     *fakes.StackManager
 			logger           *fakes.Logger
+			socks5Proxy      *fakes.Socks5Proxy
 			boshManager      bosh.Manager
 			incomingGCPState storage.State
 			incomingAWSState storage.State
+
+			osSetenvKey   string
+			osSetenvValue string
 		)
 
 		BeforeEach(func() {
@@ -39,7 +43,15 @@ var _ = Describe("Manager", func() {
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
+			socks5Proxy = &fakes.Socks5Proxy{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger, socks5Proxy)
+
+			bosh.SetOSSetenv(func(key, value string) error {
+				osSetenvKey = key
+				osSetenvValue = value
+
+				return nil
+			})
 
 			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
 				"network_name":       "some-network",
@@ -94,6 +106,10 @@ var _ = Describe("Manager", func() {
 			}
 		})
 
+		AfterEach(func() {
+			bosh.ResetOSSetenv()
+		})
+
 		It("logs bosh director status messages", func() {
 			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
@@ -135,6 +151,7 @@ var _ = Describe("Manager", func() {
 				_, err := boshManager.Create(incomingGCPState)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
 				Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
 					IAAS: "gcp",
 					DeploymentVars: `internal_cidr: 10.0.0.0/24
@@ -154,6 +171,10 @@ gcp_credentials_json: 'some-credential-json'`,
 					Variables: "",
 					OpsFile:   "some-ops-file",
 				}))
+
+				Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
+				Expect(boshExecutor.JumpboxInterpolateCall.CallCount).To(Equal(0))
+				Expect(socks5Proxy.StopCall.CallCount).To(Equal(0))
 			})
 
 			It("returns a state with a proper bosh state", func() {
@@ -262,7 +283,7 @@ gcp_credentials_json: 'some-credential-json'`
 
 					boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
 						Manifest:  "name: jumpbox",
-						Variables: "some-jumpbox-vars",
+						Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 					}
 
 					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
@@ -302,6 +323,27 @@ gcp_credentials_json: 'some-credential-json'`
 							"some-key": "some-value",
 						},
 						Variables: "",
+					}))
+				})
+
+				It("starts a socks5 proxy for the duration of creating the bosh director", func() {
+					_, err := boshManager.Create(incomingGCPState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
+					Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
+					Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-external-ip:22"))
+					Expect(socks5Proxy.StopCall.CallCount).To(Equal(1))
+					Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
+					Expect(osSetenvValue).To(Equal("socks5://localhost:9999"))
+
+					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+						"creating jumpbox",
+						"created jumpbox",
+						"starting socks5 proxy to jumpbox",
+						"creating bosh director",
+						"created bosh director",
+						"stopping socks5 proxy",
 					}))
 				})
 
@@ -569,6 +611,7 @@ private_key: |-
 					Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
 				})
 			})
+
 			Context("when the executor's create env call fails with create env error", func() {
 				var (
 					expectedError bosh.ManagerCreateError
@@ -624,6 +667,7 @@ private_key: |-
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
 			logger           *fakes.Logger
+			socks5Proxy      *fakes.Socks5Proxy
 			boshManager      bosh.Manager
 		)
 
@@ -632,7 +676,8 @@ private_key: |-
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
+			socks5Proxy = &fakes.Socks5Proxy{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger, socks5Proxy)
 		})
 
 		It("calls delete env", func() {
@@ -710,6 +755,7 @@ private_key: |-
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
 			logger           *fakes.Logger
+			socks5Proxy      *fakes.Socks5Proxy
 			boshManager      bosh.Manager
 		)
 
@@ -718,7 +764,8 @@ private_key: |-
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
+			socks5Proxy = &fakes.Socks5Proxy{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger, socks5Proxy)
 		})
 
 		Context("gcp", func() {
@@ -904,6 +951,7 @@ private_key: |-
 			boshExecutor     *fakes.BOSHExecutor
 			terraformManager *fakes.TerraformManager
 			logger           *fakes.Logger
+			socks5Proxy      *fakes.Socks5Proxy
 			boshManager      bosh.Manager
 		)
 
@@ -912,7 +960,8 @@ private_key: |-
 			stackManager = &fakes.StackManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
+			socks5Proxy = &fakes.Socks5Proxy{}
+			boshManager = bosh.NewManager(boshExecutor, terraformManager, stackManager, logger, socks5Proxy)
 
 			boshExecutor.VersionCall.Returns.Version = "2.0.0"
 		})

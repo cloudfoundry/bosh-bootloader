@@ -49,3 +49,6 @@
 [submodule "vendor/github.com/cppforlife/jumpbox-deployment"]
 	path = vendor/github.com/cppforlife/jumpbox-deployment
 	url = https://github.com/cppforlife/jumpbox-deployment.git
+[submodule "vendor/github.com/armon/go-socks5"]
+	path = vendor/github.com/armon/go-socks5
+	url = https://github.com/armon/go-socks5

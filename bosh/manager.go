@@ -3,6 +3,7 @@ package bosh
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -10,6 +11,8 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
+
+var osSetenv = os.Setenv
 
 const (
 	DIRECTOR_USERNAME = "admin"
@@ -20,6 +23,7 @@ type Manager struct {
 	terraformManager terraformManager
 	stackManager     stackManager
 	logger           logger
+	socks5Proxy      socks5Proxy
 }
 
 type directorOutputs struct {
@@ -73,12 +77,18 @@ type logger interface {
 	Step(string, ...interface{})
 }
 
-func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager, logger logger) Manager {
+type socks5Proxy interface {
+	Start(string, string) error
+	Stop() error
+}
+
+func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager, logger logger, socks5Proxy socks5Proxy) Manager {
 	return Manager{
 		executor:         executor,
 		terraformManager: terraformManager,
 		stackManager:     stackManager,
 		logger:           logger,
+		socks5Proxy:      socks5Proxy,
 	}
 }
 
@@ -94,6 +104,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 
 	if state.Jumpbox.Enabled {
 		m.logger.Step("creating jumpbox")
+
 		iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state)
 		if err != nil {
 			//not tested
@@ -135,6 +146,26 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 			Manifest:  interpolateOutputs.Manifest,
 		}
 		m.logger.Step("created jumpbox")
+
+		m.logger.Step("starting socks5 proxy to jumpbox")
+
+		jumpboxPrivateKey, err := getJumpboxOutputs(interpolateOutputs.Variables)
+		if err != nil {
+			panic(err)
+		}
+
+		terraformOutputs, err := m.terraformManager.GetOutputs(state)
+		if err != nil {
+			panic(err)
+		}
+
+		jumpboxURL := fmt.Sprintf("%s:%d", terraformOutputs["external_ip"], 22)
+
+		osSetenv("BOSH_ALL_PROXY", "socks5://localhost:9999")
+		err = m.socks5Proxy.Start(jumpboxPrivateKey, jumpboxURL)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	m.logger.Step("creating bosh director")
@@ -188,6 +219,15 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 	}
 
 	m.logger.Step("created bosh director")
+
+	if state.Jumpbox.Enabled {
+		m.logger.Step("stopping socks5 proxy")
+		err = m.socks5Proxy.Stop()
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return state, nil
 }
 
@@ -212,7 +252,7 @@ func (m Manager) Delete(state storage.State) error {
 func (m Manager) GetJumpboxDeploymentVars(state storage.State) (string, error) {
 	terraformOutputs, err := m.terraformManager.GetOutputs(state)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
 	vars := strings.Join([]string{
@@ -363,6 +403,23 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	default:
 		return iaasInputs{}, errors.New("A valid IAAS was not provided")
 	}
+}
+
+func getJumpboxOutputs(v string) (string, error) {
+	variables := map[string]interface{}{}
+
+	err := yaml.Unmarshal([]byte(v), &variables)
+	if err != nil {
+		return "", err
+	}
+
+	jumpboxMap := variables["jumpbox_ssh"].(map[interface{}]interface{})
+	jumpboxSSH := map[string]string{}
+	for k, v := range jumpboxMap {
+		jumpboxSSH[k.(string)] = v.(string)
+	}
+
+	return jumpboxSSH["private_key"], nil
 }
 
 func getDirectorOutputs(v string) (directorOutputs, error) {
