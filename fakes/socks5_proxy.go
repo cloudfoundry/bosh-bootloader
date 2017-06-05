@@ -11,10 +11,10 @@ type Socks5Proxy struct {
 			Error error
 		}
 	}
-	StopCall struct {
+	AddrCall struct {
 		CallCount int
 		Returns   struct {
-			Error error
+			Addr string
 		}
 	}
 }
@@ -27,8 +27,8 @@ func (s *Socks5Proxy) Start(jumpboxPrivateKey, jumpboxExternalURL string) error 
 	return s.StartCall.Returns.Error
 }
 
-func (s *Socks5Proxy) Stop() error {
-	s.StopCall.CallCount++
+func (s *Socks5Proxy) Addr() string {
+	s.AddrCall.CallCount++
 
-	return s.StopCall.Returns.Error
+	return s.AddrCall.Returns.Addr
 }

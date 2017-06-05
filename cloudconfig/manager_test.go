@@ -18,12 +18,15 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		logger             *fakes.Logger
-		cmd                *fakes.BOSHCommand
-		opsGenerator       *fakes.CloudConfigOpsGenerator
-		boshClientProvider *fakes.BOSHClientProvider
-		boshClient         *fakes.BOSHClient
-		manager            cloudconfig.Manager
+		logger              *fakes.Logger
+		cmd                 *fakes.BOSHCommand
+		opsGenerator        *fakes.CloudConfigOpsGenerator
+		boshClientProvider  *fakes.BOSHClientProvider
+		boshClient          *fakes.BOSHClient
+		socks5Proxy         *fakes.Socks5Proxy
+		terraformManager    *fakes.TerraformManager
+		jumpboxSSHKeyGetter *fakes.JumpboxSSHKeyGetter
+		manager             cloudconfig.Manager
 
 		tempDir       string
 		incomingState storage.State
@@ -37,6 +40,9 @@ var _ = Describe("Manager", func() {
 		opsGenerator = &fakes.CloudConfigOpsGenerator{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
+		socks5Proxy = &fakes.Socks5Proxy{}
+		terraformManager = &fakes.TerraformManager{}
+		jumpboxSSHKeyGetter = &fakes.JumpboxSSHKeyGetter{}
 
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -67,7 +73,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, opsGenerator, boshClientProvider)
+		manager = cloudconfig.NewManager(logger, cmd, opsGenerator, boshClientProvider, socks5Proxy, terraformManager, jumpboxSSHKeyGetter)
 	})
 
 	AfterEach(func() {
@@ -185,46 +191,99 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe("Update", func() {
-		It("logs steps taken", func() {
-			err := manager.Update(incomingState)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(logger.StepCall.Messages).To(Equal([]string{
-				"generating cloud config",
-				"applying cloud config",
-			}))
-		})
-
-		It("updates the bosh director with a cloud config provided a valid bbl state", func() {
-			err := manager.Update(incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal([]byte("some-cloud-config")))
-		})
-
-		Context("failure cases", func() {
-			Context("when manager generate's command fails to run", func() {
-				BeforeEach(func() {
-					cmd.RunReturns(errors.New("failed to run"))
-				})
-
-				It("returns an error", func() {
-					err := manager.Update(storage.State{})
-					Expect(err).To(MatchError("failed to run"))
-				})
+		Context("when no jumpbox exists", func() {
+			It("logs steps taken", func() {
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.StepCall.Messages).To(Equal([]string{
+					"generating cloud config",
+					"applying cloud config",
+				}))
 			})
 
-			Context("when bosh client fails to update cloud config", func() {
-				BeforeEach(func() {
-					boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update")
+			It("updates the bosh director with a cloud config provided a valid bbl state", func() {
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+
+				Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal([]byte("some-cloud-config")))
+			})
+
+			Context("failure cases", func() {
+				Context("when manager generate's command fails to run", func() {
+					BeforeEach(func() {
+						cmd.RunReturns(errors.New("failed to run"))
+					})
+
+					It("returns an error", func() {
+						err := manager.Update(storage.State{})
+						Expect(err).To(MatchError("failed to run"))
+					})
 				})
 
-				It("returns an error", func() {
-					err := manager.Update(storage.State{})
-					Expect(err).To(MatchError("failed to update"))
+				Context("when bosh client fails to update cloud config", func() {
+					BeforeEach(func() {
+						boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update")
+					})
+
+					It("returns an error", func() {
+						err := manager.Update(storage.State{})
+						Expect(err).To(MatchError("failed to update"))
+					})
+				})
+			})
+		})
+
+		Context("when a jumpbox exists", func() {
+			BeforeEach(func() {
+				incomingState.Jumpbox.Enabled = true
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip": "some-external-url",
+				}
+				jumpboxSSHKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+			})
+
+			It("logs steps taken", func() {
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.StepCall.Messages).To(Equal([]string{
+					"starting socks5 proxy",
+					"generating cloud config",
+					"applying cloud config",
+				}))
+			})
+
+			It("starts a socks5 proxy", func() {
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(jumpboxSSHKeyGetter.GetCall.Receives.State).To(Equal(incomingState))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+
+				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
+				Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-private-key"))
+				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-external-url:22"))
+			})
+
+			Context("failure cases", func() {
+				It("returns an error when jumpboxSSHKeyGetter.Get fails", func() {
+					jumpboxSSHKeyGetter.GetCall.Returns.Error = errors.New("failed to get jumpbox ssh key")
+					err := manager.Update(incomingState)
+					Expect(err).To(MatchError("failed to get jumpbox ssh key"))
+				})
+
+				It("returns an error when terraformManager.GetOutputs fails", func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform outputs")
+					err := manager.Update(incomingState)
+					Expect(err).To(MatchError("failed to get terraform outputs"))
+				})
+
+				It("returns an error when the socks5Proxy fails to start", func() {
+					socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5 proxy")
+					err := manager.Update(incomingState)
+					Expect(err).To(MatchError("failed to start socks5 proxy"))
 				})
 			})
 		})

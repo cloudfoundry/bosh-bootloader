@@ -2,58 +2,29 @@ package proxy_test
 
 import (
 	"bufio"
-	"fmt"
-	"log"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/proxy"
 
 	"golang.org/x/crypto/ssh"
-
 	goproxy "golang.org/x/net/proxy"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-const (
-	sshPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAoxA4a1jmeJHabb+ACuIjPdAEURB9GTbwjHJzJrGWw6ppQCKS
-QtCzgLY2WdKzZef9G0eSKF7YgVtLvMHM6O0ph4eChtH1gArMpU46DcOZH8LXvrlX
-d4z2aD4zvDwDbCP8HszOSCmQIy9UVxYD6wsOw4xBvOP0EDGK5jtM7nZ/vg9bMRtK
-SP8Z59cDtiy2EeDezRAW2t1i8v5Uy9Bg2fjPl6g1b1PI64F1nm5IOKvb8vyT9GRT
-VnSRKUypREFJr6QFVo8xvLc35f8pe9sJSgxJXzEjf43/FLL5eAIgmxpwMhAks5yd
-/a4jv8EBXL9ZUMUjXJHzf4xmkNkkHTmxEhgD7wIDAQABAoIBAAmDuMcKuOfwGr6s
-ndwEtem1aYsRWztNaVvIkc+ALTvdhaaoXcBoTREFkMZM9QrNLoeY9X5FinyBxzmM
-VViB/hpaXdNgDOMbvjUnC1wiPZ0M0WnfhqsDHp2Wg45IMirtLpjdemvbgP2MlW8/
-aZsdWg8u7+cFpggL2/7zFtoTMAD27JM7gk/06IN4vx+G2G7c0g4T0Xn+redTj9Hq
-V9mpy/fke/esi4JgLqdw8l7P1qqQZtrl6imbPrvBdb0/moIW6w8txUofTOdlBUN2
-XJlaL7JjdWfTN7P80KGIklLJiDmlPyS267fNxOWpDOjGMxe1Ctzx12MzS8Jjn2S2
-6zq6XIECgYEAzbOZP9gg+3/PTfpvtCujZSCYuk8GXMjgoxsx4/ongaA1cLmpddvW
-My/lGvGkwJ7b2JviTUQLV+TzvU8f6S8J4yOeYp6IuUIerZaEn78YFWXWXbcUNdkv
-TIZ/j6YrCGSsX27hI7OJcK8ZjdGVgFGJh4tShDcWFzioNMO4wjws8YsCgYEAyu+T
-4Phq8NugtS3zGic6M1IZIcfQEYt9ngr8F+t9YSJDYVoMp8CxngngWkfzda2hLCEG
-gUitN7oonuw0I1WpUf3dOsYKrVJXmmQGEszo4swn6F//tXhEK3KAKnBkfhVTHYFh
-eU3K8gg48/T/R3annuXR47LcIwwurGGmbR5he60CgYEAgHBo+yVfisoGTiFWiEBL
-OQS+eG6JgXvoT8/WOgxjiJvZYnZ7Kl1HBRUdz9IcVi2bBkhnaGlZT9tkmcsDGN3H
-Ja2C4v8sTcjMUQVP8FMonYvF6yQ6mVjwIK9GjRJrgkUiIECikWE0K0kaAqRf3gyL
-fDfxIR8oSv2UgcXH4ngic/sCgYA3/oD8Ky8+xCsEsugICFjbvkRm+L4liSqhCADl
-DLosqgqTewhQ5S9dHvaDkqTPjJgTGA22cHozDS+WIjCEq2cr03NOe0SI7FZ1qDGw
-0E9V/OTqDkr9JHES1+YbT6W60GF9m6xsjxV3UON+FNS3QDsh8eHHBRwOo5bhQ5Rr
-OV3GhQKBgH5ZxIGKybkjkqrrzY/sDVrmteTHAPrBCcrCW3bWHKjRqCAUfML3ixvV
-5wTm9J7ak28ylLR+ESqhNE5Shqga3cc7jvZQJ3MEg3oKgrItpCH0JaOtQJ+g2S6V
-mfK1ysRq5wxNtSQoADf1XklMhEUWGUEh/8LnkP/DceWhqPAMGyOY
------END RSA PRIVATE KEY-----`
-)
-
 var _ = Describe("Socks5Proxy", func() {
 	Describe("Start", func() {
 		var (
-			socks5Proxy proxy.Socks5Proxy
+			socks5Proxy   *proxy.Socks5Proxy
+			hostKeyGetter *fakes.HostKeyGetter
+			logger        *fakes.Logger
 
 			sshServerURL       string
 			httpServerHostPort string
@@ -68,7 +39,14 @@ var _ = Describe("Socks5Proxy", func() {
 
 			sshServerURL = startSSHServer(httpServerHostPort)
 
-			socks5Proxy = proxy.NewSocks5Proxy()
+			signer, err := ssh.ParsePrivateKey([]byte(sshPrivateKey))
+			Expect(err).NotTo(HaveOccurred())
+
+			hostKeyGetter = &fakes.HostKeyGetter{}
+			hostKeyGetter.GetCall.Returns.HostKey = signer.PublicKey()
+
+			logger = &fakes.Logger{}
+			socks5Proxy = proxy.NewSocks5Proxy(logger, hostKeyGetter, 0)
 		})
 
 		It("starts a proxy to the jumpbox", func() {
@@ -78,8 +56,13 @@ var _ = Describe("Socks5Proxy", func() {
 			// Wait for socks5 proxy to start
 			time.Sleep(1 * time.Second)
 
-			socks5Client, err := goproxy.SOCKS5("tcp", "127.0.0.1:9999", nil, goproxy.Direct)
+			socks5Addr := socks5Proxy.Addr()
+			socks5Client, err := goproxy.SOCKS5("tcp", socks5Addr, nil, goproxy.Direct)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(hostKeyGetter.GetCall.CallCount).To(Equal(1))
+			Expect(hostKeyGetter.GetCall.Receives.PrivateKey).To(Equal(sshPrivateKey))
+			Expect(hostKeyGetter.GetCall.Receives.ServerURL).To(Equal(sshServerURL))
 
 			conn, err := socks5Client.Dial("tcp", httpServerHostPort)
 			Expect(err).NotTo(HaveOccurred())
@@ -91,81 +74,101 @@ var _ = Describe("Socks5Proxy", func() {
 			status, err := bufio.NewReader(conn).ReadString('\n')
 			Expect(status).To(Equal("HTTP/1.0 200 OK\r\n"))
 		})
+
+		Context("when starting the proxy a second time", func() {
+			It("no-ops on the second run", func() {
+				err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Wait for socks5 proxy to start
+				time.Sleep(1 * time.Second)
+
+				err = socks5Proxy.Start(sshPrivateKey, sshServerURL)
+				Expect(err).NotTo(HaveOccurred())
+
+				socks5Addr := socks5Proxy.Addr()
+				socks5Client, err := goproxy.SOCKS5("tcp", socks5Addr, nil, goproxy.Direct)
+				Expect(err).NotTo(HaveOccurred())
+
+				conn, err := socks5Client.Dial("tcp", httpServerHostPort)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = conn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
+				Expect(err).NotTo(HaveOccurred())
+				defer conn.Close()
+
+				status, err := bufio.NewReader(conn).ReadString('\n')
+				Expect(status).To(Equal("HTTP/1.0 200 OK\r\n"))
+			})
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when it cannot parse the private key", func() {
+				err := socks5Proxy.Start("some-bad-private-key", sshServerURL)
+				Expect(err).To(MatchError("ssh: no key found"))
+			})
+
+			It("returns an error when it cannot get the host key", func() {
+				hostKeyGetter.GetCall.Returns.Error = errors.New("failed to get host key")
+				err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
+				Expect(err).To(MatchError("failed to get host key"))
+			})
+
+			It("returns an error when it cannot dial the jumpbox url", func() {
+				err := socks5Proxy.Start(sshPrivateKey, "some-bad-url")
+				Expect(err).To(MatchError("dial tcp: address some-bad-url: missing port in address"))
+			})
+
+			Context("when it cannot start a socks5 proxy server", func() {
+				var (
+					fakeServer net.Listener
+				)
+
+				BeforeEach(func() {
+					var err error
+					fakeServer, err = net.Listen("tcp", "127.0.0.1:9999")
+					Expect(err).NotTo(HaveOccurred())
+
+					socks5Proxy = proxy.NewSocks5Proxy(logger, hostKeyGetter, 9999)
+				})
+
+				AfterEach(func() {
+					fakeServer.Close()
+				})
+
+				It("logs a helpful error message", func() {
+					err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(func() []string {
+						return logger.PrintlnMessages()
+					}, "10s").Should(ContainElement("err: failed to start socks5 proxy: listen tcp 127.0.0.1:9999: bind: address already in use"))
+				})
+			})
+
+			It("returns an error when netListen fails", func() {
+				proxy.SetNetListen(func(string, string) (net.Listener, error) {
+					return nil, errors.New("failed to listen")
+				})
+
+				socks5Proxy.Start(sshPrivateKey, sshServerURL)
+			})
+		})
+	})
+
+	Describe("Addr", func() {
+		var (
+			socks5Proxy   *proxy.Socks5Proxy
+			logger        *fakes.Logger
+			hostKeyGetter *fakes.HostKeyGetter
+		)
+
+		BeforeEach(func() {
+			logger = &fakes.Logger{}
+			socks5Proxy = proxy.NewSocks5Proxy(logger, hostKeyGetter, 9999)
+		})
+
+		It("returns a valid address of the socks5 proxy", func() {
+			Expect(socks5Proxy.Addr()).To(Equal("127.0.0.1:9999"))
+		})
 	})
 })
-
-func startSSHServer(httpServerURL string) string {
-	signer, err := ssh.ParsePrivateKey([]byte(sshPrivateKey))
-	if err != nil {
-		log.Fatal("Failed to parse private key: ", err)
-	}
-
-	config := &ssh.ServerConfig{
-		PublicKeyCallback: func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
-			if string(signer.PublicKey().Marshal()) == string(pubKey.Marshal()) {
-				return nil, nil
-			}
-			return nil, fmt.Errorf("unknown public key for %q", c.User())
-		},
-	}
-
-	config.AddHostKey(signer)
-
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		log.Fatal("failed to listen for connection: ", err)
-	}
-
-	go func() {
-		nConn, err := listener.Accept()
-		if err != nil {
-			log.Fatal("failed to accept incoming connection: ", err)
-		}
-
-		_, chans, reqs, err := ssh.NewServerConn(nConn, config)
-		if err != nil {
-			log.Fatal("failed to handshake: ", err)
-		}
-		go ssh.DiscardRequests(reqs)
-
-		for newChannel := range chans {
-			if newChannel.ChannelType() != "direct-tcpip" {
-				newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
-				continue
-			}
-			channel, _, err := newChannel.Accept()
-			if err != nil {
-				log.Fatalf("Could not accept channel: %v", err)
-			}
-			defer channel.Close()
-
-			data, err := bufio.NewReader(channel).ReadString('\n')
-			if err != nil {
-				log.Fatalf("Can't read data from channel: %v", err)
-			}
-
-			httpConn, err := net.Dial("tcp", httpServerURL)
-			if err != nil {
-				log.Fatalf("Could not open connection to http server: %v", err)
-			}
-			defer httpConn.Close()
-
-			_, err = httpConn.Write([]byte(data + "\r\n\r\n"))
-			if err != nil {
-				log.Fatalf("Could not write to http server: %v", err)
-			}
-
-			data, err = bufio.NewReader(httpConn).ReadString('\n')
-			if err != nil {
-				log.Fatalf("Can't read data from http conn: %v", err)
-			}
-
-			_, err = channel.Write([]byte(data))
-			if err != nil {
-				log.Fatalf("Can't write data to channel: %v", err)
-			}
-		}
-	}()
-
-	return listener.Addr().String()
-}

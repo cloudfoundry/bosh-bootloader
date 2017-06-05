@@ -79,7 +79,7 @@ type logger interface {
 
 type socks5Proxy interface {
 	Start(string, string) error
-	Stop() error
+	Addr() string
 }
 
 func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager, logger logger, socks5Proxy socks5Proxy) Manager {
@@ -151,21 +151,23 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 
 		jumpboxPrivateKey, err := getJumpboxOutputs(interpolateOutputs.Variables)
 		if err != nil {
-			panic(err)
+			return storage.State{}, err
 		}
 
 		terraformOutputs, err := m.terraformManager.GetOutputs(state)
 		if err != nil {
-			panic(err)
+			// not tested
+			return storage.State{}, err
 		}
 
 		jumpboxURL := fmt.Sprintf("%s:%d", terraformOutputs["external_ip"], 22)
 
-		osSetenv("BOSH_ALL_PROXY", "socks5://localhost:9999")
 		err = m.socks5Proxy.Start(jumpboxPrivateKey, jumpboxURL)
 		if err != nil {
-			panic(err)
+			return storage.State{}, err
 		}
+
+		osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
 	}
 
 	m.logger.Step("creating bosh director")
@@ -220,14 +222,6 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 
 	m.logger.Step("created bosh director")
 
-	if state.Jumpbox.Enabled {
-		m.logger.Step("stopping socks5 proxy")
-		err = m.socks5Proxy.Stop()
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	return state, nil
 }
 
@@ -252,7 +246,8 @@ func (m Manager) Delete(state storage.State) error {
 func (m Manager) GetJumpboxDeploymentVars(state storage.State) (string, error) {
 	terraformOutputs, err := m.terraformManager.GetOutputs(state)
 	if err != nil {
-		panic(err)
+		// not tested
+		return "", err
 	}
 
 	vars := strings.Join([]string{

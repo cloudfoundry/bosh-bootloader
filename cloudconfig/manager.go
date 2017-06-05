@@ -18,10 +18,13 @@ var (
 )
 
 type Manager struct {
-	logger             logger
-	command            command
-	opsGenerator       opsGenerator
-	boshClientProvider boshClientProvider
+	logger              logger
+	command             command
+	opsGenerator        opsGenerator
+	boshClientProvider  boshClientProvider
+	socks5Proxy         socks5Proxy
+	terraformManager    terraformManager
+	jumpboxSSHKeyGetter jumpboxSSHKeyGetter
 }
 
 type logger interface {
@@ -40,12 +43,28 @@ type boshClientProvider interface {
 	Client(directorAddress, directorUsername, directorPassword string) bosh.Client
 }
 
-func NewManager(logger logger, cmd command, opsGenerator opsGenerator, boshClientProvider boshClientProvider) Manager {
+type socks5Proxy interface {
+	Start(string, string) error
+}
+
+type terraformManager interface {
+	GetOutputs(storage.State) (map[string]interface{}, error)
+}
+
+type jumpboxSSHKeyGetter interface {
+	Get(storage.State) (string, error)
+}
+
+func NewManager(logger logger, cmd command, opsGenerator opsGenerator, boshClientProvider boshClientProvider,
+	socks5Proxy socks5Proxy, terraformManager terraformManager, jumpboxSSHKeyGetter jumpboxSSHKeyGetter) Manager {
 	return Manager{
-		logger:             logger,
-		command:            cmd,
-		opsGenerator:       opsGenerator,
-		boshClientProvider: boshClientProvider,
+		logger:              logger,
+		command:             cmd,
+		opsGenerator:        opsGenerator,
+		boshClientProvider:  boshClientProvider,
+		socks5Proxy:         socks5Proxy,
+		terraformManager:    terraformManager,
+		jumpboxSSHKeyGetter: jumpboxSSHKeyGetter,
 	}
 }
 
@@ -85,6 +104,24 @@ func (m Manager) Generate(state storage.State) (string, error) {
 }
 
 func (m Manager) Update(state storage.State) error {
+	if state.Jumpbox.Enabled {
+		privateKey, err := m.jumpboxSSHKeyGetter.Get(state)
+		if err != nil {
+			return err
+		}
+		terraformOutputs, err := m.terraformManager.GetOutputs(state)
+		if err != nil {
+			return err
+		}
+		jumpboxURL := fmt.Sprintf("%s:%d", terraformOutputs["external_ip"], 22)
+
+		m.logger.Step("starting socks5 proxy")
+		err = m.socks5Proxy.Start(privateKey, jumpboxURL)
+		if err != nil {
+			return err
+		}
+	}
+
 	m.logger.Step("generating cloud config")
 	cloudConfig, err := m.Generate(state)
 	if err != nil {

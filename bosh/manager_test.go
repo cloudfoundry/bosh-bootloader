@@ -2,6 +2,7 @@ package bosh_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -174,7 +175,6 @@ gcp_credentials_json: 'some-credential-json'`,
 
 				Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
 				Expect(boshExecutor.JumpboxInterpolateCall.CallCount).To(Equal(0))
-				Expect(socks5Proxy.StopCall.CallCount).To(Equal(0))
 			})
 
 			It("returns a state with a proper bosh state", func() {
@@ -241,7 +241,7 @@ gcp_credentials_json: 'some-credential-json'`,
 						},
 						Jumpbox: storage.Jumpbox{
 							Enabled:   true,
-							Variables: "some-jumpbox-vars",
+							Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 							Manifest:  "name: jumpbox",
 							State: map[string]interface{}{
 								"some-key": "some-value",
@@ -327,15 +327,17 @@ gcp_credentials_json: 'some-credential-json'`
 				})
 
 				It("starts a socks5 proxy for the duration of creating the bosh director", func() {
+					socks5ProxyAddr := "localhost:1234"
+					socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
+
 					_, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 					Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
 					Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-external-ip:22"))
-					Expect(socks5Proxy.StopCall.CallCount).To(Equal(1))
 					Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
-					Expect(osSetenvValue).To(Equal("socks5://localhost:9999"))
+					Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 
 					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
 						"creating jumpbox",
@@ -343,7 +345,6 @@ gcp_credentials_json: 'some-credential-json'`
 						"starting socks5 proxy to jumpbox",
 						"creating bosh director",
 						"created bosh director",
-						"stopping socks5 proxy",
 					}))
 				})
 
@@ -370,7 +371,7 @@ gcp_credentials_json: 'some-credential-json'`
 						},
 						Jumpbox: storage.Jumpbox{
 							Enabled:   true,
-							Variables: "some-jumpbox-vars",
+							Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 							Manifest:  "name: jumpbox",
 							State: map[string]interface{}{
 								"some-new-key": "some-new-value",
@@ -395,6 +396,25 @@ gcp_credentials_json: 'some-credential-json'`
 							Type: "cf",
 						},
 					}))
+				})
+
+				Context("failure cases", func() {
+					Context("when the jumpbox variables cannot be parsed", func() {
+						BeforeEach(func() {
+							boshExecutor.JumpboxInterpolateCall.Returns.Output.Variables = "%%%"
+						})
+
+						It("returns an error", func() {
+							_, err := boshManager.Create(incomingGCPState)
+							Expect(err).To(MatchError("yaml: could not find expected directive name"))
+						})
+					})
+
+					It("returns an error when the socks5Proxy fails to start", func() {
+						socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
+						_, err := boshManager.Create(incomingGCPState)
+						Expect(err).To(MatchError("failed to start socks5Proxy"))
+					})
 				})
 			})
 		})

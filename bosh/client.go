@@ -5,8 +5,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
+
+	"golang.org/x/net/proxy"
 )
 
 type Client interface {
@@ -68,14 +71,30 @@ func (c client) Info() (Info, error) {
 }
 
 func (c client) UpdateCloudConfig(yaml []byte) error {
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/cloud_configs", c.directorAddress), bytes.NewBuffer(yaml))
+	socks5Client, err := proxy.SOCKS5("tcp", "127.0.0.1:9999", nil, proxy.Direct)
+	if err != nil {
+		panic(err)
+	}
+
+	httpClient := http.Client{
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				return socks5Client.Dial(network, addr)
+			},
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	request, err := http.NewRequest("POST", fmt.Sprintf("%s/cloud_configs", "https://10.0.0.6:25555"), bytes.NewBuffer(yaml))
 	if err != nil {
 		return err
 	}
 	request.Header.Set("Content-Type", "text/yaml")
 	request.SetBasicAuth(c.username, c.password)
 
-	response, err := c.httpClient.Do(request)
+	response, err := httpClient.Do(request)
 	if err != nil {
 		return err
 	}

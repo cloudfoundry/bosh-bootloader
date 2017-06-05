@@ -1,8 +1,13 @@
 package fakes
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type Logger struct {
+	mutex sync.Mutex
+
 	StepCall struct {
 		CallCount int
 		Receives  struct {
@@ -63,6 +68,9 @@ func (l *Logger) Printf(message string, a ...interface{}) {
 }
 
 func (l *Logger) Println(message string) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
 	l.PrintlnCall.CallCount++
 	l.PrintlnCall.Receives.Message = message
 
@@ -76,4 +84,11 @@ func (l *Logger) Println(message string) {
 func (l *Logger) Prompt(message string) {
 	l.PromptCall.CallCount++
 	l.PromptCall.Receives.Message = message
+}
+
+func (l *Logger) PrintlnMessages() []string {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
+	return l.PrintlnCall.Messages
 }

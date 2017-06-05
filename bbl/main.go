@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/keypair"
+	"github.com/cloudfoundry/bosh-bootloader/proxy"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
@@ -155,10 +156,12 @@ func main() {
 	})
 
 	// BOSH
+	hostKeyGetter := proxy.NewHostKeyGetter()
+	socks5Proxy := proxy.NewSocks5Proxy(logger, hostKeyGetter, 0)
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile)
-	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger)
+	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger, socks5Proxy)
 	boshClientProvider := bosh.NewClientProvider()
 
 	// Environment Validators
@@ -167,11 +170,12 @@ func main() {
 	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 
 	// Cloud Config
+	jumpboxSSHKeyGetter := bosh.NewJumpboxSSHKeyGetter()
 	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
 	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
 	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformManager, zones)
 	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
-	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, jumpboxSSHKeyGetter)
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(

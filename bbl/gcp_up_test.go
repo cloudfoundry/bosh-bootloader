@@ -508,7 +508,7 @@ var _ = Describe("bbl up gcp", func() {
 	})
 
 	Context("when the --jumpbox flag is provided", func() {
-		It("creates the infrastructure for a jumpbox", func() {
+		PIt("creates the infrastructure for a jumpbox", func() {
 			args := []string{
 				"--state-dir", tempDirectory,
 				"--debug",
@@ -526,7 +526,7 @@ var _ = Describe("bbl up gcp", func() {
 			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
 		})
 
-		It("invokes the bosh cli", func() {
+		PIt("invokes the bosh cli", func() {
 			args := []string{
 				"--state-dir", tempDirectory,
 				"--debug",
