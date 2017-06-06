@@ -17,7 +17,7 @@ type GCP struct {
 }
 
 func NewGCP(config integration.Config) GCP {
-	googleConfig, err := google.JWTConfigFromJSON(config.GCPServiceAccountKeyPath, "https://www.googleapis.com/auth/compute")
+	googleConfig, err := google.JWTConfigFromJSON([]byte(config.GCPServiceAccountKeyPath), "https://www.googleapis.com/auth/compute")
 	if err != nil {
 		panic(err)
 	}
