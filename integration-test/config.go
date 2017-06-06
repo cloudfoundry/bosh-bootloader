@@ -27,16 +27,14 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	config := loadConfigFromEnvVars()
 
-	// awsCredsValidationError := validateAWSCreds(config)
+	awsCredsValidationError := validateAWSCreds(config)
 	gcpCredsValidationError := validateGCPCreds(config)
 
-	// if awsCredsValidationError == nil && gcpCredsValidationError == nil {
-	if gcpCredsValidationError != nil {
+	if awsCredsValidationError == nil && gcpCredsValidationError == nil {
 		return Config{}, errors.New("Multiple IAAS Credentials provided:\n Provide a set of credentials for a single IAAS.")
 	}
 
-	// if awsCredsValidationError != nil && gcpCredsValidationError != nil {
-	if gcpCredsValidationError != nil {
+	if awsCredsValidationError != nil && gcpCredsValidationError != nil {
 		return Config{}, fmt.Errorf("Multiple Credential Errors Found: %s\nProvide a full set of credentials for a single IAAS.", gcpCredsValidationError)
 	}
 
