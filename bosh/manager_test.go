@@ -384,7 +384,7 @@ gcp_credentials_json: 'some-credential-json'`
 							Variables:              variablesYAML,
 							Manifest:               "some-manifest",
 							DirectorName:           "bosh-some-env-id",
-							DirectorAddress:        "some-director-address",
+							DirectorAddress:        "https://10.0.0.6:25555",
 							DirectorUsername:       "admin",
 							DirectorPassword:       "some-admin-password",
 							DirectorSSLCA:          "some-ca",

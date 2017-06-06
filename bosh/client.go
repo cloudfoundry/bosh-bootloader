@@ -14,6 +14,7 @@ import (
 
 type Client interface {
 	UpdateCloudConfig(yaml []byte) error
+	ConfigureHTTPClient(proxy.Dialer)
 	Info() (Info, error)
 }
 
@@ -47,6 +48,19 @@ func NewClient(directorAddress, username, password string) Client {
 	}
 }
 
+func (c client) ConfigureHTTPClient(socks5Client proxy.Dialer) {
+	if socks5Client != nil {
+		c.httpClient.Transport = &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				return socks5Client.Dial(network, addr)
+			},
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
+}
+
 func (c client) Info() (Info, error) {
 	request, err := http.NewRequest("GET", fmt.Sprintf("%s/info", c.directorAddress), strings.NewReader(""))
 	if err != nil {
@@ -71,30 +85,14 @@ func (c client) Info() (Info, error) {
 }
 
 func (c client) UpdateCloudConfig(yaml []byte) error {
-	socks5Client, err := proxy.SOCKS5("tcp", "127.0.0.1:9999", nil, proxy.Direct)
-	if err != nil {
-		panic(err)
-	}
-
-	httpClient := http.Client{
-		Transport: &http.Transport{
-			Dial: func(network, addr string) (net.Conn, error) {
-				return socks5Client.Dial(network, addr)
-			},
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/cloud_configs", "https://10.0.0.6:25555"), bytes.NewBuffer(yaml))
+	request, err := http.NewRequest("POST", fmt.Sprintf("%s/cloud_configs", c.directorAddress), bytes.NewBuffer(yaml))
 	if err != nil {
 		return err
 	}
 	request.Header.Set("Content-Type", "text/yaml")
 	request.SetBasicAuth(c.username, c.password)
 
-	response, err := httpClient.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return err
 	}

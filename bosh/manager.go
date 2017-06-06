@@ -15,7 +15,8 @@ import (
 var osSetenv = os.Setenv
 
 const (
-	DIRECTOR_USERNAME = "admin"
+	DIRECTOR_USERNAME    = "admin"
+	DIRECTOR_INTERNAL_IP = "10.0.0.6"
 )
 
 type Manager struct {
@@ -168,6 +169,8 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		}
 
 		osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+
+		iaasInputs.DirectorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
 	}
 
 	m.logger.Step("creating bosh director")
@@ -281,7 +284,7 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			vars = strings.Join([]string{
 				"internal_cidr: 10.0.0.0/24",
 				"internal_gw: 10.0.0.1",
-				"internal_ip: 10.0.0.6",
+				fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
 				fmt.Sprintf("zone: %s", state.GCP.Zone),
 				fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
@@ -294,7 +297,7 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			vars = strings.Join([]string{
 				"internal_cidr: 10.0.0.0/24",
 				"internal_gw: 10.0.0.1",
-				"internal_ip: 10.0.0.6",
+				fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
 				fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
 				fmt.Sprintf("zone: %s", state.GCP.Zone),
@@ -314,7 +317,7 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			vars = strings.Join([]string{
 				"internal_cidr: 10.0.0.0/24",
 				"internal_gw: 10.0.0.1",
-				"internal_ip: 10.0.0.6",
+				fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
 				fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
 				fmt.Sprintf("az: %s", terraformOutputs["az"]),
@@ -334,7 +337,7 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			vars = strings.Join([]string{
 				"internal_cidr: 10.0.0.0/24",
 				"internal_gw: 10.0.0.1",
-				"internal_ip: 10.0.0.6",
+				fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
 				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
 				fmt.Sprintf("external_ip: %s", stack.Outputs["BOSHEIP"]),
 				fmt.Sprintf("az: %s", stack.Outputs["BOSHSubnetAZ"]),

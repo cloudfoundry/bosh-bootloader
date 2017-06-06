@@ -2,17 +2,57 @@ package bosh_test
 
 import (
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Client", func() {
+	Describe("ConfigureHttpClient", func() {
+		var (
+			socks5Client *fakes.Socks5Client
+			fakeBOSH     *httptest.Server
+		)
+
+		BeforeEach(func() {
+			socks5Client = &fakes.Socks5Client{}
+			socks5Client.DialCall.Stub = func(network, addr string) (net.Conn, error) {
+				return net.Dial(network, addr)
+			}
+
+			fakeBOSH = httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+				responseWriter.Write([]byte(`{
+					"name": "some-bosh-director",
+					"uuid": "some-uuid",
+					"version": "some-version"
+				}`))
+			}))
+		})
+
+		It("configures the http client to use the socks5 proxy", func() {
+			client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+			client.ConfigureHTTPClient(socks5Client)
+			info, err := client.Info()
+
+			Expect(socks5Client.DialCall.CallCount).To(Equal(1))
+			Expect(socks5Client.DialCall.Receives.Network).To(Equal("tcp"))
+			Expect(socks5Client.DialCall.Receives.Addr).To(Equal(fakeBOSH.Listener.Addr().String()))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(info).To(Equal(bosh.Info{
+				Name:    "some-bosh-director",
+				UUID:    "some-uuid",
+				Version: "some-version",
+			}))
+		})
+	})
+
 	Describe("Info", func() {
 		It("returns the director info", func() {
 			fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {

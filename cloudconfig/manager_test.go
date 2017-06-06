@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/net/proxy"
+
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -238,12 +240,34 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("when a jumpbox exists", func() {
+			var (
+				socks5Network string
+				socks5Addr    string
+				socks5Auth    *proxy.Auth
+				socks5Forward proxy.Dialer
+				socks5Client  *fakes.Socks5Client
+			)
+
 			BeforeEach(func() {
 				incomingState.Jumpbox.Enabled = true
 				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
 					"external_ip": "some-external-url",
 				}
 				jumpboxSSHKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+
+				socks5Client = &fakes.Socks5Client{}
+				cloudconfig.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
+					socks5Network = network
+					socks5Addr = addr
+					socks5Auth = auth
+					socks5Forward = forward
+
+					return socks5Client, nil
+				})
+			})
+
+			AfterEach(func() {
+				cloudconfig.ResetProxySOCKS5()
 			})
 
 			It("logs steps taken", func() {
@@ -267,6 +291,22 @@ var _ = Describe("Manager", func() {
 				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-external-url:22"))
 			})
 
+			It("configures the bosh client", func() {
+				socks5Proxy.AddrCall.Returns.Addr = "some-socks-proxy-addr"
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshClient.ConfigureHTTPClientCall.CallCount).To(Equal(1))
+				Expect(boshClient.ConfigureHTTPClientCall.Receives.Socks5Client).To(Equal(socks5Client))
+
+				Expect(socks5Proxy.AddrCall.CallCount).To(Equal(1))
+
+				Expect(socks5Network).To(Equal("tcp"))
+				Expect(socks5Addr).To(Equal("some-socks-proxy-addr"))
+				Expect(socks5Auth).To(BeNil())
+				Expect(socks5Forward).To(Equal(proxy.Direct))
+			})
+
 			Context("failure cases", func() {
 				It("returns an error when jumpboxSSHKeyGetter.Get fails", func() {
 					jumpboxSSHKeyGetter.GetCall.Returns.Error = errors.New("failed to get jumpbox ssh key")
@@ -284,6 +324,14 @@ var _ = Describe("Manager", func() {
 					socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5 proxy")
 					err := manager.Update(incomingState)
 					Expect(err).To(MatchError("failed to start socks5 proxy"))
+				})
+
+				It("returns an error when it cannot create a socks5 proxy client", func() {
+					cloudconfig.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
+						return nil, errors.New("failed to create socks5 proxy client")
+					})
+					err := manager.Update(incomingState)
+					Expect(err).To(MatchError("failed to create socks5 proxy client"))
 				})
 			})
 		})

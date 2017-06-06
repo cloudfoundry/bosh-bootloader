@@ -8,13 +8,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/net/proxy"
+
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 var (
-	tempDir   func(string, string) (string, error)    = ioutil.TempDir
-	writeFile func(string, []byte, os.FileMode) error = ioutil.WriteFile
+	tempDir     func(string, string) (string, error)                                  = ioutil.TempDir
+	writeFile   func(string, []byte, os.FileMode) error                               = ioutil.WriteFile
+	proxySOCKS5 func(string, string, *proxy.Auth, proxy.Dialer) (proxy.Dialer, error) = proxy.SOCKS5
 )
 
 type Manager struct {
@@ -45,6 +48,7 @@ type boshClientProvider interface {
 
 type socks5Proxy interface {
 	Start(string, string) error
+	Addr() string
 }
 
 type terraformManager interface {
@@ -104,6 +108,8 @@ func (m Manager) Generate(state storage.State) (string, error) {
 }
 
 func (m Manager) Update(state storage.State) error {
+	boshClient := m.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+
 	if state.Jumpbox.Enabled {
 		privateKey, err := m.jumpboxSSHKeyGetter.Get(state)
 		if err != nil {
@@ -120,6 +126,12 @@ func (m Manager) Update(state storage.State) error {
 		if err != nil {
 			return err
 		}
+
+		socks5Client, err := proxySOCKS5("tcp", m.socks5Proxy.Addr(), nil, proxy.Direct)
+		if err != nil {
+			return err
+		}
+		boshClient.ConfigureHTTPClient(socks5Client)
 	}
 
 	m.logger.Step("generating cloud config")
@@ -129,7 +141,6 @@ func (m Manager) Update(state storage.State) error {
 	}
 
 	m.logger.Step("applying cloud config")
-	boshClient := m.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 	err = boshClient.UpdateCloudConfig([]byte(cloudConfig))
 	if err != nil {
 		return err
