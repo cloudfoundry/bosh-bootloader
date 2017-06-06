@@ -37,7 +37,7 @@ var _ = Describe("up test", func() {
 		bbl.Destroy()
 	})
 
-	FIt("successfully bbls up and destroys", func() {
+	PIt("successfully bbls up and destroys", func() {
 		By("calling bbl up", func() {
 			bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--jumpbox"})
 		})
@@ -51,7 +51,7 @@ var _ = Describe("up test", func() {
 		})
 
 		By("checking the user can create a tunnel", func() {
-			
+
 		})
 
 		// bosh int ./jumpbox-vars-store.yml --path /jumpbox_ssh/private_key > jumpbox.key
