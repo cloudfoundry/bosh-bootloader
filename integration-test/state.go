@@ -31,6 +31,7 @@ type state struct {
 	EnvID   string  `json:"envID"`
 	TFState string  `json:"tfState"`
 	Jumpbox struct {
+		State     map[string]interface{} `json:"state"`
 		Variables map[string]interface{} `json:"variables"`
 	} `json:"jumpbox"`
 	BOSH struct {
