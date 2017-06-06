@@ -77,11 +77,10 @@ func (s *Socks5Proxy) Start(key, url string) error {
 	}
 
 	if s.port == 0 {
-		s.port = 9999
-		//s.port, err = openPort()
-		//if err != nil {
-		//return err
-		//}
+		s.port, err = openPort()
+		if err != nil {
+			return err
+		}
 	}
 	go func() {
 		err = server.ListenAndServe("tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
