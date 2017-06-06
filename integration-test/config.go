@@ -87,9 +87,9 @@ func validateGCPCreds(config Config) error {
 
 func loadConfigFromEnvVars() Config {
 	return Config{
-		AWSAccessKeyID:           os.Getenv("AWS_ACCESS_KEY_ID"),
-		AWSSecretAccessKey:       os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		AWSRegion:                os.Getenv("AWS_REGION"),
+		AWSAccessKeyID:           os.Getenv("BBL_AWS_ACCESS_KEY_ID"),
+		AWSSecretAccessKey:       os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"),
+		AWSRegion:                os.Getenv("BBL_AWS_REGION"),
 		GCPServiceAccountKeyPath: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPProjectID:             os.Getenv("BBL_GCP_PROJECT_ID"),
 		GCPRegion:                os.Getenv("BBL_GCP_REGION"),
