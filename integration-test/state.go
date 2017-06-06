@@ -30,11 +30,7 @@ type state struct {
 	KeyPair keyPair `json:"keyPair"`
 	EnvID   string  `json:"envID"`
 	TFState string  `json:"tfState"`
-	Jumpbox struct {
-		State     map[string]interface{} `json:"state"`
-		Variables map[string]interface{} `json:"variables"`
-	} `json:"jumpbox"`
-	BOSH struct {
+	BOSH    struct {
 		State    map[string]interface{} `json:"state"`
 		Manifest string                 `json:"manifest"`
 	} `json:"bosh"`
@@ -84,15 +80,6 @@ func (s State) BOSHState() string {
 		panic(err)
 	}
 	return string(boshState)
-}
-
-func (s State) JumpboxState() string {
-	state := s.readStateFile()
-	jumpboxState, err := json.Marshal(state.Jumpbox.State)
-	if err != nil {
-		panic(err)
-	}
-	return string(jumpboxState)
 }
 
 func (s State) BOSHManifest() string {
