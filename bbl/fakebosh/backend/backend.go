@@ -14,12 +14,19 @@ const (
 type backendData struct {
 	version             string
 	path                string
-	createEnvFastFail   bool
-	deleteEnvFastFail   bool
 	callRealInterpolate bool
-	interpolateArgs     []string
-	createEnvArgs       string
-	createEnvCallCount  int
+
+	createEnvCall struct {
+		fastFail  bool
+		args      string
+		callCount int
+	}
+	deleteEnvCall struct {
+		fastFail bool
+	}
+	interpolateCall struct {
+		args []string
+	}
 }
 
 type Backend struct {
@@ -122,14 +129,14 @@ func (b *Backend) SetCreateEnvFastFail(fastFail bool) {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	b.backend.createEnvFastFail = fastFail
+	b.backend.createEnvCall.fastFail = fastFail
 }
 
 func (b *Backend) SetDeleteEnvFastFail(fastFail bool) {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	b.backend.deleteEnvFastFail = fastFail
+	b.backend.deleteEnvCall.fastFail = fastFail
 }
 
 func (b *Backend) SetCallRealInterpolate(callRealInterpolate bool) {
@@ -143,21 +150,21 @@ func (b *Backend) ResetInterpolateArgs() {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	b.backend.interpolateArgs = []string{}
+	b.backend.interpolateCall.args = []string{}
 }
 
 func (b *Backend) GetInterpolateArgs(index int) string {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	return b.backend.interpolateArgs[index]
+	return b.backend.interpolateCall.args[index]
 }
 
 func (b *Backend) CreateEnvCallCount() int {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	return b.backend.createEnvCallCount
+	return b.backend.createEnvCall.callCount
 }
 
 func (b *Backend) handleInterpolateArgs(request *http.Request) {
@@ -168,7 +175,7 @@ func (b *Backend) handleInterpolateArgs(request *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	b.backend.interpolateArgs = append(b.backend.interpolateArgs, string(body))
+	b.backend.interpolateCall.args = append(b.backend.interpolateCall.args, string(body))
 }
 
 func (b *Backend) handleCreateEnvArgs(request *http.Request) {
@@ -179,14 +186,14 @@ func (b *Backend) handleCreateEnvArgs(request *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	b.backend.createEnvArgs = string(body)
+	b.backend.createEnvCall.args = string(body)
 }
 
 func (b *Backend) handleCreateEnvFastFail(responseWriter http.ResponseWriter) {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	if b.backend.createEnvFastFail {
+	if b.backend.createEnvCall.fastFail {
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 	} else {
 		responseWriter.WriteHeader(http.StatusOK)
@@ -197,14 +204,14 @@ func (b *Backend) handleCreateEnvCallCount(responseWriter http.ResponseWriter) {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	b.backend.createEnvCallCount++
+	b.backend.createEnvCall.callCount++
 }
 
 func (b *Backend) handleDeleteEnvFastFail(responseWriter http.ResponseWriter) {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
 
-	if b.backend.deleteEnvFastFail {
+	if b.backend.deleteEnvCall.fastFail {
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 	} else {
 		responseWriter.WriteHeader(http.StatusOK)
