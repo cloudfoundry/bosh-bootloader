@@ -19,9 +19,17 @@ func NewJumpboxSSHKeyGetter() JumpboxSSHKeyGetter {
 
 func (j JumpboxSSHKeyGetter) Get(state storage.State) (string, error) {
 	var variables jumpboxVariables
-	err := yaml.Unmarshal([]byte(state.Jumpbox.Variables), &variables)
-	if err != nil {
-		return "", err
+
+	if state.Jumpbox.Enabled {
+		err := yaml.Unmarshal([]byte(state.Jumpbox.Variables), &variables)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err := yaml.Unmarshal([]byte(state.BOSH.Variables), &variables)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return variables.JumpboxSSH.PrivateKey, nil

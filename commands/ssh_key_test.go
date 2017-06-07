@@ -14,23 +14,24 @@ var _ = Describe("SSHKey", func() {
 	var (
 		sshKeyCommand commands.SSHKey
 
-		stateValidator *fakes.StateValidator
-		logger         *fakes.Logger
-
 		incomingState storage.State
+
+		stateValidator      *fakes.StateValidator
+		logger              *fakes.Logger
+		jumpboxSSHKeyGetter *fakes.JumpboxSSHKeyGetter
 	)
 
 	BeforeEach(func() {
-		stateValidator = &fakes.StateValidator{}
-		logger = &fakes.Logger{}
-
 		incomingState = storage.State{
-			BOSH: storage.BOSH{
-				Variables: "jumpbox_ssh:\n  private_key: some-private-ssh-key",
-			},
+			Version: 3,
 		}
 
-		sshKeyCommand = commands.NewSSHKey(logger, stateValidator)
+		stateValidator = &fakes.StateValidator{}
+		logger = &fakes.Logger{}
+		jumpboxSSHKeyGetter = &fakes.JumpboxSSHKeyGetter{}
+		jumpboxSSHKeyGetter.GetCall.Returns.PrivateKey = "some-private-ssh-key"
+
+		sshKeyCommand = commands.NewSSHKey(logger, stateValidator, jumpboxSSHKeyGetter)
 	})
 
 	Describe("Execute", func() {
@@ -44,6 +45,8 @@ var _ = Describe("SSHKey", func() {
 			err := sshKeyCommand.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(jumpboxSSHKeyGetter.GetCall.CallCount).To(Equal(1))
+			Expect(jumpboxSSHKeyGetter.GetCall.Receives.State).To(Equal(incomingState))
 			Expect(logger.PrintlnCall.Messages).To(Equal([]string{"some-private-ssh-key"}))
 		})
 
@@ -54,21 +57,14 @@ var _ = Describe("SSHKey", func() {
 				Expect(err).To(MatchError("state validator failed"))
 			})
 
-			It("returns an error when yaml unmarshal fails", func() {
-				commands.SetUnmarshal(func([]byte, interface{}) error {
-					return errors.New("yaml unmarshal failed")
-				})
+			It("returns an error when the jumpbox ssh key getter fails", func() {
+				jumpboxSSHKeyGetter.GetCall.Returns.Error = errors.New("jumpbox ssh key getter failed")
 				err := sshKeyCommand.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("yaml unmarshal failed"))
-				commands.ResetUnmarshal()
+				Expect(err).To(MatchError("jumpbox ssh key getter failed"))
 			})
 
 			It("returns an error when the jumpbox ssh private key is empty", func() {
-				incomingState = storage.State{
-					BOSH: storage.BOSH{
-						Variables: "some_other_key:\n value: pair",
-					},
-				}
+				jumpboxSSHKeyGetter.GetCall.Returns.PrivateKey = ""
 				err := sshKeyCommand.Execute([]string{}, incomingState)
 				Expect(err).To(MatchError("Could not retrieve the ssh key, please make sure you are targeting the proper state dir."))
 			})

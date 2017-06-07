@@ -11,23 +11,23 @@ const (
 	SSHKeyCommand = "ssh-key"
 )
 
-type variables struct {
-	JumpboxSSH struct {
-		PrivateKey string `yaml:"private_key"`
-	} `yaml:"jumpbox_ssh"`
+type SSHKey struct {
+	logger              logger
+	stateValidator      stateValidator
+	jumpboxSSHKeyGetter jumpboxSSHKeyGetter
 }
 
-type SSHKey struct {
-	logger         logger
-	stateValidator stateValidator
+type jumpboxSSHKeyGetter interface {
+	Get(storage.State) (string, error)
 }
 
 var unmarshal = yaml.Unmarshal
 
-func NewSSHKey(logger logger, stateValidator stateValidator) SSHKey {
+func NewSSHKey(logger logger, stateValidator stateValidator, jumpboxSSHKeyGetter jumpboxSSHKeyGetter) SSHKey {
 	return SSHKey{
-		logger:         logger,
-		stateValidator: stateValidator,
+		logger:              logger,
+		stateValidator:      stateValidator,
+		jumpboxSSHKeyGetter: jumpboxSSHKeyGetter,
 	}
 }
 
@@ -37,17 +37,16 @@ func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	v := variables{}
-	err = unmarshal([]byte(state.BOSH.Variables), &v)
+	privateKey, err := s.jumpboxSSHKeyGetter.Get(state)
 	if err != nil {
 		return err
 	}
 
-	if v.JumpboxSSH.PrivateKey == "" {
+	if privateKey == "" {
 		return errors.New("Could not retrieve the ssh key, please make sure you are targeting the proper state dir.")
 	}
 
-	s.logger.Println(v.JumpboxSSH.PrivateKey)
+	s.logger.Println(privateKey)
 
 	return nil
 }

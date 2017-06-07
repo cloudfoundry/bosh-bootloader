@@ -47,6 +47,31 @@ var _ = Describe("ssh-key", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("some-ssh-private-key"))
 	})
 
+	Context("when a jumpbox was deployed", func() {
+		It("returns the ssh key from the given state file", func() {
+			state := []byte(`{
+				"version": 3,
+				"jumpbox": {
+					"enabled": true,
+					"variables": "jumpbox_ssh:\n  private_key: some-ssh-private-key"
+				}
+			}`)
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			args := []string{
+				"--state-dir", tempDirectory,
+				"ssh-key",
+			}
+
+			session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(ContainSubstring("some-ssh-private-key"))
+		})
+	})
+
 	Context("failure cases", func() {
 		It("returns a non zero exit code when the bbl-state.json does not exist", func() {
 			tempDirectory, err := ioutil.TempDir("", "")
