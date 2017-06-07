@@ -62,6 +62,7 @@ var _ = Describe("load balancer tests", func() {
 			Auth: []ssh.AuthMethod{
 				ssh.PublicKeys(privateKey),
 			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		})
 		Expect(err).NotTo(HaveOccurred())
 
