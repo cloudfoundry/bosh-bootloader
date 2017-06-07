@@ -50,34 +50,10 @@ var _ = Describe("bbl up gcp", func() {
 		fakeTerraformBackendServer.ResetAll()
 	})
 
-	It("writes gcp details to state", func() {
+	It("creates infrastructure on GCP", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
 			"--debug",
-			"up",
-			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKeyPath,
-			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-west1",
-		}
-
-		executeCommand(args, 0)
-
-		state := readStateJson(tempDirectory)
-		Expect(state.Version).To(Equal(3))
-		Expect(state.IAAS).To(Equal("gcp"))
-		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
-		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
-		Expect(state.GCP.Zone).To(Equal("some-zone"))
-		Expect(state.GCP.Region).To(Equal("us-west1"))
-		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
-		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
-	})
-
-	It("writes logging messages to stdout", func() {
-		args := []string{
-			"--state-dir", tempDirectory,
 			"up",
 			"--iaas", "gcp",
 			"--gcp-service-account-key", serviceAccountKeyPath,
@@ -88,40 +64,84 @@ var _ = Describe("bbl up gcp", func() {
 
 		session := executeCommand(args, 0)
 
-		stdout := session.Out.Contents()
+		By("writing gcp details to state", func() {
+			state := readStateJson(tempDirectory)
+			Expect(state.Version).To(Equal(3))
+			Expect(state.IAAS).To(Equal("gcp"))
+			Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+			Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
+			Expect(state.GCP.Zone).To(Equal("some-zone"))
+			Expect(state.GCP.Region).To(Equal("us-west1"))
+			Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
+			Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
+		})
 
-		Expect(stdout).To(ContainSubstring("step: appending new ssh-keys"))
-		Expect(stdout).To(ContainSubstring("step: generating terraform template"))
-		Expect(stdout).To(ContainSubstring("step: applied terraform template"))
-		Expect(stdout).To(ContainSubstring("step: creating bosh director"))
-		Expect(stdout).To(ContainSubstring("step: created bosh director"))
-		Expect(stdout).To(ContainSubstring("step: generating cloud config"))
-		Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+		By("writing logging messages to stdout", func() {
+			stdout := session.Out.Contents()
+
+			Expect(stdout).To(ContainSubstring("step: appending new ssh-keys"))
+			Expect(stdout).To(ContainSubstring("step: generating terraform template"))
+			Expect(stdout).To(ContainSubstring("step: applied terraform template"))
+			Expect(stdout).To(ContainSubstring("step: creating bosh director"))
+			Expect(stdout).To(ContainSubstring("step: created bosh director"))
+			Expect(stdout).To(ContainSubstring("step: generating cloud config"))
+			Expect(stdout).To(ContainSubstring("step: applying cloud config"))
+		})
+
+		By("calling out to terraform", func() {
+			Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
+		})
+
+		By("invoking the bosh cli", func() {
+			Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+		})
 	})
 
-	It("accepts the service account key contents", func() {
+	It("can invoke the bosh cli idempotently", func() {
 		args := []string{
 			"--state-dir", tempDirectory,
 			"--debug",
 			"up",
 			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKey,
+			"--gcp-service-account-key", serviceAccountKeyPath,
 			"--gcp-project-id", "some-project-id",
 			"--gcp-zone", "some-zone",
 			"--gcp-region", "us-west1",
 		}
 
-		executeCommand(args, 0)
+		session := executeCommand(args, 0)
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
 
-		state := readStateJson(tempDirectory)
-		Expect(state.Version).To(Equal(3))
-		Expect(state.IAAS).To(Equal("gcp"))
-		Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
-		Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
-		Expect(state.GCP.Zone).To(Equal("some-zone"))
-		Expect(state.GCP.Region).To(Equal("us-west1"))
-		Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
-		Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
+		session = executeCommand(args, 0)
+		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
+		Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
+	})
+
+	Context("when the gcp service account key not passed as a file", func() {
+		It("accepts the service account key contents", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKey,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+
+			executeCommand(args, 0)
+
+			state := readStateJson(tempDirectory)
+			Expect(state.Version).To(Equal(3))
+			Expect(state.IAAS).To(Equal("gcp"))
+			Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+			Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
+			Expect(state.GCP.Zone).To(Equal("some-zone"))
+			Expect(state.GCP.Region).To(Equal("us-west1"))
+			Expect(state.KeyPair.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----((.|\n)*)-----END RSA PRIVATE KEY-----`))
+			Expect(state.KeyPair.PublicKey).To(HavePrefix("ssh-rsa"))
+		})
 	})
 
 	Context("when provided a name with invalid characters", func() {
@@ -386,60 +406,6 @@ var _ = Describe("bbl up gcp", func() {
 				Expect(session.Err.Contents()).To(ContainSubstring("The project id cannot be changed for an existing environment. The current project id is some-project-id."))
 			})
 		})
-	})
-
-	It("calls out to terraform", func() {
-		args := []string{
-			"--state-dir", tempDirectory,
-			"--debug",
-			"up",
-			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKeyPath,
-			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-west1",
-		}
-
-		session := executeCommand(args, 0)
-
-		Expect(session.Out.Contents()).To(ContainSubstring("terraform apply"))
-	})
-
-	It("invokes the bosh cli", func() {
-		args := []string{
-			"--state-dir", tempDirectory,
-			"--debug",
-			"up",
-			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKeyPath,
-			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-west1",
-		}
-
-		session := executeCommand(args, 0)
-
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
-	})
-
-	It("can invoke the bosh cli idempotently", func() {
-		args := []string{
-			"--state-dir", tempDirectory,
-			"--debug",
-			"up",
-			"--iaas", "gcp",
-			"--gcp-service-account-key", serviceAccountKeyPath,
-			"--gcp-project-id", "some-project-id",
-			"--gcp-zone", "some-zone",
-			"--gcp-region", "us-west1",
-		}
-
-		session := executeCommand(args, 0)
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
-
-		session = executeCommand(args, 0)
-		Expect(session.Out.Contents()).To(ContainSubstring("bosh create-env"))
-		Expect(session.Out.Contents()).To(ContainSubstring("No new changes, skipping deployment..."))
 	})
 
 	DescribeTable("cloud config", func(fixtureLocation string) {

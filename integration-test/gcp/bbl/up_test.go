@@ -76,6 +76,7 @@ var _ = Describe("up test", func() {
 				Auth: []ssh.AuthMethod{
 					ssh.PublicKeys(privateKey),
 				},
+				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			})
 			Expect(err).NotTo(HaveOccurred())
 		})
