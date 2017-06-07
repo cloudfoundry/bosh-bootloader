@@ -40,6 +40,8 @@ var _ = Describe("OutputGenerator", func() {
 					return "some-internal-tag-name", nil
 				case "director_address":
 					return "some-director-address", nil
+				case "jumpbox_url":
+					return "some-jumpbox-url", nil
 				default:
 					return "", fmt.Errorf("unexpected output requested: %s", output)
 				}
@@ -71,6 +73,7 @@ var _ = Describe("OutputGenerator", func() {
 				"bosh_open_tag_name": "some-bosh-open-tag-name",
 				"internal_tag_name":  "some-internal-tag-name",
 				"director_address":   "some-director-address",
+				"jumpbox_url":        "some-jumpbox-url",
 			}))
 		})
 	})
@@ -92,6 +95,8 @@ var _ = Describe("OutputGenerator", func() {
 						return "some-internal-tag-name", nil
 					case "director_address":
 						return "some-director-address", nil
+					case "jumpbox_url":
+						return "some-jumpbox-url", nil
 					case "router_backend_service":
 						return "some-router-backend-service", nil
 					case "ssh_proxy_target_pool":
@@ -139,6 +144,7 @@ var _ = Describe("OutputGenerator", func() {
 					"bosh_open_tag_name":     "some-bosh-open-tag-name",
 					"internal_tag_name":      "some-internal-tag-name",
 					"director_address":       "some-director-address",
+					"jumpbox_url":            "some-jumpbox-url",
 					"router_backend_service": "some-router-backend-service",
 					"ssh_proxy_target_pool":  "some-ssh-proxy-target-pool",
 					"tcp_router_target_pool": "some-tcp-router-target-pool",
@@ -167,6 +173,8 @@ var _ = Describe("OutputGenerator", func() {
 						return "some-internal-tag-name", nil
 					case "director_address":
 						return "some-director-address", nil
+					case "jumpbox_url":
+						return "some-jumpbox-url", nil
 					case "router_backend_service":
 						return "some-router-backend-service", nil
 					case "ssh_proxy_target_pool":
@@ -216,6 +224,7 @@ var _ = Describe("OutputGenerator", func() {
 					"bosh_open_tag_name":        "some-bosh-open-tag-name",
 					"internal_tag_name":         "some-internal-tag-name",
 					"director_address":          "some-director-address",
+					"jumpbox_url":               "some-jumpbox-url",
 					"router_backend_service":    "some-router-backend-service",
 					"ssh_proxy_target_pool":     "some-ssh-proxy-target-pool",
 					"tcp_router_target_pool":    "some-tcp-router-target-pool",
@@ -246,6 +255,8 @@ var _ = Describe("OutputGenerator", func() {
 					return "some-internal-tag-name", nil
 				case "director_address":
 					return "some-director-address", nil
+				case "jumpbox_url":
+					return "some-jumpbox-url", nil
 				case "concourse_target_pool":
 					return "some-concourse-target-pool", nil
 				case "concourse_lb_ip":
@@ -281,6 +292,7 @@ var _ = Describe("OutputGenerator", func() {
 				"bosh_open_tag_name":    "some-bosh-open-tag-name",
 				"internal_tag_name":     "some-internal-tag-name",
 				"director_address":      "some-director-address",
+				"jumpbox_url":           "some-jumpbox-url",
 				"concourse_target_pool": "some-concourse-target-pool",
 				"concourse_lb_ip":       "some-concourse-lb-ip",
 			}))
@@ -351,6 +363,7 @@ var _ = Describe("OutputGenerator", func() {
 			Entry("failed to get bosh_open_tag_name", "bosh_open_tag_name", ""),
 			Entry("failed to get internal_tag_name", "internal_tag_name", ""),
 			Entry("failed to get director_address", "director_address", ""),
+			Entry("failed to get jumpbox_url", "jumpbox_url", ""),
 			Entry("failed to get router_backend_service", "router_backend_service", "cf"),
 			Entry("failed to get ssh_proxy_target_pool", "ssh_proxy_target_pool", "cf"),
 			Entry("failed to get tcp_router_target_pool", "tcp_router_target_pool", "cf"),

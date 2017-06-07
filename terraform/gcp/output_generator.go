@@ -62,6 +62,12 @@ func (g OutputGenerator) Generate(bblState storage.State) (map[string]interface{
 	}
 	outputs["director_address"] = directorAddress
 
+	jumpboxURL, err := g.executor.Output(bblState.TFState, "jumpbox_url")
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+	outputs["jumpbox_url"] = jumpboxURL
+
 	var (
 		routerBackendService      string
 		sshProxyTargetPool        string

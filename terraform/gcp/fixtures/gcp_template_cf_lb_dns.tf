@@ -99,6 +99,10 @@ resource "google_compute_firewall" "internal" {
   source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
 }
 
+output "jumpbox_url" {
+    value = "${google_compute_address.bosh-external-ip.address}:22"
+}
+
 variable "ssl_certificate" {
   type = "string"
 }

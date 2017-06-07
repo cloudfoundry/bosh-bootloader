@@ -35,6 +35,7 @@ var _ = Describe("Manager", func() {
 			incomingGCPState storage.State
 			incomingAWSState storage.State
 
+			osUnsetenvKey string
 			osSetenvKey   string
 			osSetenvValue string
 		)
@@ -50,7 +51,11 @@ var _ = Describe("Manager", func() {
 			bosh.SetOSSetenv(func(key, value string) error {
 				osSetenvKey = key
 				osSetenvValue = value
+				return nil
+			})
 
+			bosh.SetOSUnsetenv(func(key string) error {
+				osUnsetenvKey = key
 				return nil
 			})
 
@@ -61,6 +66,7 @@ var _ = Describe("Manager", func() {
 				"internal_tag_name":  "some-internal-tag",
 				"external_ip":        "some-external-ip",
 				"director_address":   "some-director-address",
+				"jumpbox_url":        "some-jumpbox-url",
 			}
 
 			incomingGCPState = storage.State{
@@ -333,9 +339,10 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
+					Expect(osUnsetenvKey).To(Equal("BOSH_ALL_PROXY"))
 					Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 					Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
-					Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-external-ip:22"))
+					Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-jumpbox-url"))
 					Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
 					Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 

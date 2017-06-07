@@ -12,7 +12,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-var osSetenv = os.Setenv
+var (
+	osSetenv   = os.Setenv
+	osUnsetenv = os.Unsetenv
+)
 
 const (
 	DIRECTOR_USERNAME    = "admin"
@@ -121,6 +124,8 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		if err != nil {
 			return storage.State{}, err
 		}
+
+		osUnsetenv("BOSH_ALL_PROXY")
 		createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
 			Manifest:  interpolateOutputs.Manifest,
 			State:     state.Jumpbox.State,
@@ -161,9 +166,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 			return storage.State{}, err
 		}
 
-		jumpboxURL := fmt.Sprintf("%s:%d", terraformOutputs["external_ip"], 22)
-
-		err = m.socks5Proxy.Start(jumpboxPrivateKey, jumpboxURL)
+		err = m.socks5Proxy.Start(jumpboxPrivateKey, terraformOutputs["jumpbox_url"].(string))
 		if err != nil {
 			return storage.State{}, err
 		}
