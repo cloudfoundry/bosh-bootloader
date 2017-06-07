@@ -13,6 +13,7 @@ const (
 
 type dataBackend struct {
 	fakeBOSHServerURL     string
+	fakeJumpboxServerURL  string
 	version               string
 	outputJsonReturnError bool
 	fastFail              bool
@@ -22,8 +23,6 @@ type Backend struct {
 	server *httptest.Server
 
 	backendMutex sync.Mutex
-	handlerMutex sync.Mutex
-	handler      func(w http.ResponseWriter, r *http.Request)
 
 	backend *dataBackend
 }
@@ -39,27 +38,18 @@ func NewBackend() *Backend {
 }
 
 func (b *Backend) ResetAll() {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
 	b.backend = &dataBackend{
 		version: defaultVersion,
 	}
 }
 
-func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	b.handlerMutex.Lock()
-	defer b.handlerMutex.Unlock()
+func (b *Backend) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
 
-	if b.handler != nil {
-		b.handler(w, r)
-	} else {
-		b.defaultHandler(w, r)
-	}
-}
-
-func (b *Backend) SetFakeBOSHServer(url string) {
-	b.backend.fakeBOSHServerURL = url
-}
-
-func (b *Backend) defaultHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	switch request.URL.Path {
 	case "/output/--json":
 		b.handleOutputJson(responseWriter)
@@ -67,6 +57,8 @@ func (b *Backend) defaultHandler(responseWriter http.ResponseWriter, request *ht
 		responseWriter.Write([]byte("127.0.0.1"))
 	case "/output/director_address":
 		responseWriter.Write([]byte(b.backend.fakeBOSHServerURL))
+	case "/output/jumpbox_url":
+		responseWriter.Write([]byte(b.backend.fakeJumpboxServerURL))
 	case "/output/network_name":
 		b.handleOutput(responseWriter, "some-network-name")
 	case "/output/subnetwork_name":
@@ -104,10 +96,11 @@ func (b *Backend) defaultHandler(responseWriter http.ResponseWriter, request *ht
 	}
 }
 
-func (b *Backend) handleOutput(responseWriter http.ResponseWriter, output string) {
-	b.backendMutex.Lock()
-	defer b.backendMutex.Unlock()
+func (b *Backend) SetFakeBOSHServer(url string) {
+	b.backend.fakeBOSHServerURL = url
+}
 
+func (b *Backend) handleOutput(responseWriter http.ResponseWriter, output string) {
 	if b.backend.outputJsonReturnError {
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -116,9 +109,6 @@ func (b *Backend) handleOutput(responseWriter http.ResponseWriter, output string
 }
 
 func (b *Backend) handleOutputJson(responseWriter http.ResponseWriter) {
-	b.backendMutex.Lock()
-	defer b.backendMutex.Unlock()
-
 	if b.backend.outputJsonReturnError {
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -196,8 +186,11 @@ func (b *Backend) handleOutputJson(responseWriter http.ResponseWriter) {
 			},
 			"concourse_lb_internal_security_group":  {
 				"value": "some-concourse-internal-security-group"
+			},
+			"jumpbox_url": {
+				"value": %q
 			}
-		}`, b.backend.fakeBOSHServerURL)))
+		}`, b.backend.fakeBOSHServerURL, b.backend.fakeJumpboxServerURL)))
 	}
 }
 
@@ -223,9 +216,6 @@ func (b *Backend) ResetVersion() {
 }
 
 func (b *Backend) handleVersion(responseWriter http.ResponseWriter) {
-	b.backendMutex.Lock()
-	defer b.backendMutex.Unlock()
-
 	responseWriter.Write([]byte(b.backend.version))
 }
 
@@ -237,9 +227,6 @@ func (b *Backend) SetFastFail(fastFail bool) {
 }
 
 func (b *Backend) handleFastFail(responseWriter http.ResponseWriter) {
-	b.backendMutex.Lock()
-	defer b.backendMutex.Unlock()
-
 	if b.backend.fastFail {
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -247,13 +234,13 @@ func (b *Backend) handleFastFail(responseWriter http.ResponseWriter) {
 	}
 }
 
-func (b *Backend) SetHandler(f func(w http.ResponseWriter, r *http.Request)) {
-	b.handlerMutex.Lock()
-	defer b.handlerMutex.Unlock()
-
-	b.handler = f
-}
-
 func (b *Backend) ServerURL() string {
 	return b.server.URL
+}
+
+func (b *Backend) SetJumpboxURLOutput(url string) {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
+	b.backend.fakeJumpboxServerURL = url
 }

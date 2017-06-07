@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 )
 
 var (
@@ -29,6 +31,7 @@ func main() {
 	}
 
 	if os.Args[1] == "create-env" {
+		incrementCallCountOnBackendServer(os.Args[1])
 		if checkFastFail(os.Args[1]) {
 			log.Fatal("failed to bosh")
 		}
@@ -89,7 +92,7 @@ func getOldArgMD5() string {
 }
 
 func writeVariablesToFile() {
-	variables := `
+	variables := fmt.Sprintf(`
 admin_password: rhkj9ys4l9guqfpc9vmp
 director_ssl:
   certificate: some-certificate
@@ -97,36 +100,10 @@ director_ssl:
   ca: some-ca
 jumpbox_ssh:
   private_key: |
-    -----BEGIN RSA PRIVATE KEY-----
-    MIIEpAIBAAKCAQEA38qPrL8q3OP8k0tWdaL9lhRR2mbMrYBnJs2mDhE/r8shmVHe
-    GhcYYWNFGp1oZiTgq6rnT9QrSxJvrgqbUbqghvGT+tw3ebEqMVSuaWbgzJAoKlRS
-    +Ghvvi3nAM1o61tLcX0TbVhwfjtoG0j4GJllBMBgz9Y3aEjXL3cz16Fo1ZKT8wk5
-    NQJQhp/nRkE2rBUcRky0mXLmNr7ium50Z330INjI24B94UpPO3kk+rFMlcIDsbFX
-    o+dJXOhq3ND8f+rdedWbv3q18WqGSaTReHcERzrBnz4P2DJ0/XQbbXxjlVrVHAQ7
-    8b50aVixDnozUC1RtVWmItHxpSkK3rRvC0y5WQIDAQABAoIBAQCNVfKzWPCLHPmx
-    VM0/8jZRiHfBhVcS5JtA6HRNQhuEvLd1izzIIXnmV7mW+36ps/SotoDr68WD3hrm
-    QhCh50nmr7+TmWz30CojiaW1L6Idz5VuVl8oP10DMR5JZXEz4y6ceC/CyS4SqxYu
-    1UDK2GXyQEVkPZg0pnwwoAn/zxLUflXC6+I25RsT/X5vDPW9l8VpFE4QjWT9XeOu
-    ElfiX66IW5V6/y/SEll1pzueDM+M6ec1p/pS24iiLuNHWA4feyVJTQ8nzxQuYz1q
-    yI4uQZLHIMiFCNY2nhoK2EZtocKPFo8DUuWph1k0uycv8GGm8gOd8spg1na27ja9
-    iXJxEyF5AoGBAOnC1wvtIUzTmARtBY5S7s0ho3NueR5GUi5ku5S3TdFGCmUaA3zE
-    2VYJ7h0eioabtJwY1tzsKxahJNeKkRgW7SUDBxnEltbN7WA/mDgu5d+NAT59Ho6T
-    7A1DZIKCTo8hBvHzgSIang63fqoFco6WOv9JG4V7BHIegYISpweJbT/7AoGBAPUU
-    6OB1GJTOgFgKNc04Xy5LlFE05mAGeaMaeGmsNSDJ5UAs+w0NiMObJ7DNqdM26rSn
-    RQkt7sU8GECc9PtiY9TQTW9VNyXALC/vap5Ee/8bAuZ3dM08LtkuCpeIplOD5RAJ
-    r7Buh+GbHPZ6LqL8f/5hWeeIUMXXc09HCP0Cc2e7AoGBAIP1nXf6EQZRnEtDUBOb
-    9XqPNrn+7xiMEfBmpQ26vI8avtt75+QTK61KRcTibMi4NSi5TPHB0EEiDq4uZuH2
-    b0CpiOSe+ZehABOJUuDEeLfN3Zns/8b08hg6pw6ViMt7lXQYRhl+dSNRqotIL/cW
-    D4/1MTgUzdmuJuXKqcezaJzpAoGALnyj24d6fSdaQtjU8bNCopZlcK3XENnJkr1/
-    n5OxlCGXoX+mswghK/EvKyMnlk+xX0jnGGGlC7ZlZ0QeV9yG0SQdvANu7XMxLnp8
-    P77/whjOiQaZmiBTRpCsI6gg3HCFL3CW6aFdltaEPOBaHkJEyOyQUBGUOKKwVZZE
-    xzEC0OcCgYBo70a2s0VzC8BR7BwcuNgVQp8e90+AeHHzgx1Z/yjxzkRw533Tlpj8
-    eYYHipQy737P1l9vz2BX6YHn8Kos0Y1pzG7CqRjwrCfGRDM4DcA64P4oR55RULWa
-    e2rINGOsVkW6atdh+5XwGMLS8QDccwaPMpcqdVbdo4c0YcfGRWgB3w==
-    -----END RSA PRIVATE KEY-----
+    %s
   public_key: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDfyo+svyrc4/yTS1Z1ov2WFFHaZsytgGcmzaYOET+vyyGZUd4aFxhhY0UanWhmJOCrqudP1CtLEm+uCptRuqCG8ZP63Dd5sSoxVK5pZuDMkCgqVFL4aG++LecAzWjrW0txfRNtWHB+O2gbSPgYmWUEwGDP1jdoSNcvdzPXoWjVkpPzCTk1AlCGn+dGQTasFRxGTLSZcuY2vuK6bnRnffQg2MjbgH3hSk87eST6sUyVwgOxsVej50lc6Grc0Px/6t151Zu/erXxaoZJpNF4dwRHOsGfPg/YMnT9dBttfGOVWtUcBDvxvnRpWLEOejNQLVG1VaYi0fGlKQretG8LTLlZ
-`
+`, strings.Replace(testhelpers.JUMPBOX_SSH_KEY, "\n", "\n    ", -1))
 	err := ioutil.WriteFile("variables.yml", []byte(variables), os.ModePerm)
 	if err != nil {
 		panic(err)
@@ -147,6 +124,13 @@ func postArgsToBackendServer(command string, args []string) {
 	}
 
 	_, err = http.Post(fmt.Sprintf("%s/%s/args", backendURL, command), "application/json", strings.NewReader(string(postArgs)))
+	if err != nil {
+		panic(err)
+	}
+}
+
+func incrementCallCountOnBackendServer(command string) {
+	_, err := http.Get(fmt.Sprintf("%s/%s/call-count", backendURL, command))
 	if err != nil {
 		panic(err)
 	}

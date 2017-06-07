@@ -19,6 +19,7 @@ type backendData struct {
 	callRealInterpolate bool
 	interpolateArgs     []string
 	createEnvArgs       string
+	createEnvCallCount  int
 }
 
 type Backend struct {
@@ -62,6 +63,8 @@ func (b *Backend) defaultHandler(responseWriter http.ResponseWriter, request *ht
 		b.handleCreateEnvArgs(request)
 	case "/create-env/fastfail":
 		b.handleCreateEnvFastFail(responseWriter)
+	case "/create-env/call-count":
+		b.handleCreateEnvCallCount(responseWriter)
 	case "/delete-env/fastfail":
 		b.handleDeleteEnvFastFail(responseWriter)
 	case "/call-real-interpolate":
@@ -150,6 +153,13 @@ func (b *Backend) GetInterpolateArgs(index int) string {
 	return b.backend.interpolateArgs[index]
 }
 
+func (b *Backend) CreateEnvCallCount() int {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
+	return b.backend.createEnvCallCount
+}
+
 func (b *Backend) handleInterpolateArgs(request *http.Request) {
 	b.backendMutex.Lock()
 	defer b.backendMutex.Unlock()
@@ -181,6 +191,13 @@ func (b *Backend) handleCreateEnvFastFail(responseWriter http.ResponseWriter) {
 	} else {
 		responseWriter.WriteHeader(http.StatusOK)
 	}
+}
+
+func (b *Backend) handleCreateEnvCallCount(responseWriter http.ResponseWriter) {
+	b.backendMutex.Lock()
+	defer b.backendMutex.Unlock()
+
+	b.backend.createEnvCallCount++
 }
 
 func (b *Backend) handleDeleteEnvFastFail(responseWriter http.ResponseWriter) {
