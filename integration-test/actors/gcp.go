@@ -3,6 +3,7 @@ package actors
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
@@ -17,7 +18,12 @@ type GCP struct {
 }
 
 func NewGCP(config integration.Config) GCP {
-	googleConfig, err := google.JWTConfigFromJSON([]byte(config.GCPServiceAccountKeyPath), "https://www.googleapis.com/auth/compute")
+	rawServiceAccountKey, err := ioutil.ReadFile(config.GCPServiceAccountKeyPath)
+	if err != nil {
+		rawServiceAccountKey = []byte(config.GCPServiceAccountKeyPath)
+	}
+
+	googleConfig, err := google.JWTConfigFromJSON(rawServiceAccountKey, "https://www.googleapis.com/auth/compute")
 	if err != nil {
 		panic(err)
 	}
