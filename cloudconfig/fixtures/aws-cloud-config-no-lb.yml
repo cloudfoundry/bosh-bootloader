@@ -20,6 +20,11 @@ compilation:
   workers: 6
 
 disk_types:
+- name: default
+  disk_size: 1024
+  cloud_properties:
+    type: gp2
+    encrypted: true
 - name: 1GB
   disk_size: 1024
   cloud_properties:

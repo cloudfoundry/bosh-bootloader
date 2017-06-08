@@ -7,6 +7,12 @@ const (
   value: c3.large
 
 - type: replace
+  path: /disk_types/name=default/cloud_properties?
+  value:
+    type: gp2
+    encrypted: true
+
+- type: replace
   path: /disk_types/name=1GB/cloud_properties?
   value:
     type: gp2

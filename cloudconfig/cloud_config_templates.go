@@ -14,6 +14,8 @@ compilation:
   workers: 6
 
 disk_types:
+- name: default
+  disk_size: 1024
 - name: 1GB
   disk_size: 1024
 - name: 5GB

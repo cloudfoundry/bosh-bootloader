@@ -7,6 +7,12 @@ const (
   value: n1-highcpu-8
 
 - type: replace
+  path: /disk_types/name=default/cloud_properties?
+  value:
+    type: pd-ssd
+    encrypted: true
+
+- type: replace
   path: /disk_types/name=1GB/cloud_properties?
   value:
     type: pd-ssd

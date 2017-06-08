@@ -20,6 +20,11 @@ compilation:
   - 100GB_ephemeral_disk
 
 disk_types:
+- name: default
+  disk_size: 1024
+  cloud_properties:
+    type: pd-ssd
+    encrypted: true
 - name: 1GB
   disk_size: 1024
   cloud_properties:
