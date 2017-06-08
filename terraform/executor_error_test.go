@@ -23,7 +23,7 @@ var _ = Describe("ExecutorError", func() {
 			err := errors.New("some-error")
 			executorError := terraform.NewExecutorError("", err, false)
 
-			Expect(executorError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "use --debug for additional debug output")))
+			Expect(executorError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "Some output has been redacted, use `bbl latest-error` to see it or or run again with --debug for additional debug output")))
 		})
 	})
 

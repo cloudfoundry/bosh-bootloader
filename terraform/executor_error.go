@@ -23,7 +23,7 @@ func (t ExecutorError) Error() string {
 	if t.debug {
 		return t.err.Error()
 	} else {
-		return fmt.Sprintf("%s\n%s", t.err.Error(), "use --debug for additional debug output")
+		return fmt.Sprintf("%s\n%s", t.err.Error(), "Some output has been redacted, use `bbl latest-error` to see it or or run again with --debug for additional debug output")
 	}
 }
 

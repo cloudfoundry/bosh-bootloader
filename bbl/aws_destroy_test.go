@@ -287,7 +287,7 @@ var _ = Describe("destroy", func() {
 				Context("when no --debug is provided", func() {
 					It("returns a helpful error message", func() {
 						session := destroyWithOptionalDebug(fakeAWSServer.URL, tempDirectory, 1, false)
-						Expect(session.Err.Contents()).To(ContainSubstring("use --debug for additional debug output"))
+						Expect(session.Err.Contents()).To(ContainSubstring("Some output has been redacted, use `bbl latest-error` to see it or or run again with --debug for additional debug output"))
 					})
 				})
 			})
