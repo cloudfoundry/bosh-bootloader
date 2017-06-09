@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -35,6 +36,18 @@ var _ = Describe("Up", func() {
 	})
 
 	Describe("Execute", func() {
+		Context("when the version of BOSH is a dev build", func() {
+			It("does not fail", func() {
+				fakeBOSHManager.VersionCall.Returns.Error = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
+
+				err := command.Execute([]string{
+					"--iaas", "aws",
+				}, storage.State{Version: 999})
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		Context("when the version of BOSH is lower than 2.0.0", func() {
 			It("returns a helpful error message when bbling up with a director", func() {
 				fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
@@ -72,7 +85,7 @@ var _ = Describe("Up", func() {
 
 			Context("when the version of BOSH is invalid", func() {
 				It("returns an error", func() {
-					fakeBOSHManager.VersionCall.Returns.Version = "lol.5.2"
+					fakeBOSHManager.VersionCall.Returns.Version = "X.5.2"
 					err := command.Execute([]string{
 						"--iaas", "aws",
 					}, storage.State{Version: 999})

@@ -1000,6 +1000,24 @@ private_key: |-
 			Expect(version).To(Equal("2.0.0"))
 		})
 
+		Context("when executor returns a bosh version error", func() {
+			var expectedError bosh.BOSHVersionError
+			BeforeEach(func() {
+				boshExecutor.VersionCall.Returns.Version = ""
+				expectedError = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
+				boshExecutor.VersionCall.Returns.Error = expectedError
+			})
+
+			It("logs a warning and returns the error", func() {
+				version, err := boshManager.Version()
+
+				Expect(boshExecutor.VersionCall.CallCount).To(Equal(1))
+				Expect(logger.PrintlnCall.CallCount).To(Equal(1))
+				Expect(err).To(Equal(expectedError))
+				Expect(version).To(Equal(""))
+			})
+		})
+
 		It("returns an error when executor fails", func() {
 			boshExecutor.VersionCall.Returns.Error = errors.New("failed to execute")
 			_, err := boshManager.Version()

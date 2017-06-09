@@ -3,12 +3,16 @@ package commands
 import (
 	"errors"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/coreos/go-semver/semver"
 )
 
 func fastFailBOSHVersion(boshManager boshManager) error {
 	version, err := boshManager.Version()
-	if err != nil {
+	switch err.(type) {
+	case bosh.BOSHVersionError:
+		return nil
+	case error:
 		return err
 	}
 

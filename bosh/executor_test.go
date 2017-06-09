@@ -883,13 +883,14 @@ networks
 				Expect(err).To(MatchError("failed to run cmd"))
 			})
 
-			It("returns an error when the version cannot be parsed", func() {
+			It("returns a bosh version error when the version cannot be parsed", func() {
+				expectedError := bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
 				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 					stdout.Write([]byte(""))
 					return nil
 				}
 				_, err := executor.Version()
-				Expect(err).To(MatchError("BOSH version could not be parsed"))
+				Expect(err).To(Equal(expectedError))
 			})
 		})
 	})

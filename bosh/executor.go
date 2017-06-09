@@ -60,6 +60,8 @@ type command interface {
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
+const VERSION_DEV_BUILD = "[DEV BUILD]"
+
 func NewExecutor(cmd command, tempDir func(string, string) (string, error), readFile func(string) ([]byte, error),
 	unmarshalJSON func([]byte, interface{}) error,
 	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error) Executor {
@@ -389,7 +391,7 @@ func (e Executor) Version() (string, error) {
 
 	version := regex.FindString(versionOutput)
 	if version == "" {
-		return "", errors.New("BOSH version could not be parsed")
+		return "", NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
 	}
 
 	return version, nil

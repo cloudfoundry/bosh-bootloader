@@ -107,6 +107,30 @@ var _ = Describe("bbl up", func() {
 		})
 	})
 
+	Context("when the bosh cli version is a dev build", func() {
+		BeforeEach(func() {
+			fakeBOSHCLIBackendServer.SetVersion("[DEV BUILD]")
+
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), []byte("{}"), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("continues to delete the environment with a warning message", func() {
+			args := []string{
+				"--state-dir", tempDirectory,
+				"up",
+				"--iaas", "gcp",
+				"--gcp-service-account-key", serviceAccountKeyPath,
+				"--gcp-project-id", "some-project-id",
+				"--gcp-zone", "some-zone",
+				"--gcp-region", "us-west1",
+			}
+			session := executeCommand(args, 0)
+
+			Expect(session.Out.Contents()).To(ContainSubstring("warning: BOSH version could not be parsed"))
+		})
+	})
+
 	It("exits 1 and prints error message when --iaas is not provided", func() {
 		session := executeCommand([]string{"--state-dir", tempDirectory, "up"}, 1)
 		Expect(session.Err.Contents()).To(ContainSubstring("--iaas [gcp, aws] must be provided"))

@@ -79,6 +79,7 @@ type stackManager interface {
 
 type logger interface {
 	Step(string, ...interface{})
+	Println(string)
 }
 
 type socks5Proxy interface {
@@ -97,7 +98,12 @@ func NewManager(executor executor, terraformManager terraformManager, stackManag
 }
 
 func (m Manager) Version() (string, error) {
-	return m.executor.Version()
+	version, err := m.executor.Version()
+	switch err.(type) {
+	case BOSHVersionError:
+		m.logger.Println("warning: BOSH version could not be parsed")
+	}
+	return version, err
 }
 
 func (m Manager) Create(state storage.State) (storage.State, error) {
