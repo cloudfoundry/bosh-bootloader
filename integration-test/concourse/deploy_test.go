@@ -49,7 +49,7 @@ var _ = Describe("concourse deployment test", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("is able to deploy concourse", func() {
+	It("is able to deploy concourse and teardown infrastructure", func() {
 		boshClient := bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
@@ -57,74 +57,86 @@ var _ = Describe("concourse deployment test", func() {
 			AllowInsecureSSL: true,
 		})
 
-		err := uploadRelease(boshClient, configuration.ConcourseReleasePath)
-		Expect(err).NotTo(HaveOccurred())
+		By("uploading releases and stemcells", func() {
+			err := uploadRelease(boshClient, configuration.ConcourseReleasePath)
+			Expect(err).NotTo(HaveOccurred())
 
-		err = uploadRelease(boshClient, configuration.GardenReleasePath)
-		Expect(err).NotTo(HaveOccurred())
+			err = uploadRelease(boshClient, configuration.GardenReleasePath)
+			Expect(err).NotTo(HaveOccurred())
 
-		err = uploadStemcell(boshClient, configuration.StemcellPath)
-		Expect(err).NotTo(HaveOccurred())
+			err = uploadStemcell(boshClient, configuration.StemcellPath)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-		os.Setenv("BOSH_CLIENT", bbl.DirectorUsername())
-		os.Setenv("BOSH_CLIENT_SECRET", bbl.DirectorPassword())
-		os.Setenv("BOSH_ENVIRONMENT", bbl.DirectorAddress())
-		os.Setenv("BOSH_CA_CERT", bbl.DirectorCACert())
-		args := []string{
-			"-d", "concourse",
-			"deploy",
-			fmt.Sprintf("%s/concourse-deployment.yml", configuration.ConcourseDeploymentPath),
-			"-o", fmt.Sprintf("%s/operations/%s.yml", configuration.ConcourseDeploymentPath, actors.IAASString(configuration)),
-			"--vars-store", "concourse-vars.yml",
-			"-v", fmt.Sprintf("domain=%s", lbURL),
-			"-n",
-		}
-		cmd := exec.Command("bosh", args...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err = cmd.Run()
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(func() ([]bosh.VM, error) {
-			vms, err := boshClient.DeploymentVMs("concourse")
-			if err != nil {
-				return []bosh.VM{}, err
+		By("running bosh deploy and checking all the vms are running", func() {
+			os.Setenv("BOSH_CLIENT", bbl.DirectorUsername())
+			os.Setenv("BOSH_CLIENT_SECRET", bbl.DirectorPassword())
+			os.Setenv("BOSH_ENVIRONMENT", bbl.DirectorAddress())
+			os.Setenv("BOSH_CA_CERT", bbl.DirectorCACert())
+			args := []string{
+				"-d", "concourse",
+				"deploy",
+				fmt.Sprintf("%s/concourse-deployment.yml", configuration.ConcourseDeploymentPath),
+				"-o", fmt.Sprintf("%s/operations/%s.yml", configuration.ConcourseDeploymentPath, actors.IAASString(configuration)),
+				"--vars-store", "concourse-vars.yml",
+				"-v", fmt.Sprintf("domain=%s", lbURL),
+				"-n",
 			}
+			cmd := exec.Command("bosh", args...)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			Expect(err).NotTo(HaveOccurred())
 
-			vmsNoID := []bosh.VM{}
-			for _, vm := range vms {
-				vm.ID = ""
-				vm.IPs = nil
-				vmsNoID = append(vmsNoID, vm)
+			Eventually(func() ([]bosh.VM, error) {
+				vms, err := boshClient.DeploymentVMs("concourse")
+				if err != nil {
+					return []bosh.VM{}, err
+				}
+
+				vmsNoID := []bosh.VM{}
+				for _, vm := range vms {
+					vm.ID = ""
+					vm.IPs = nil
+					vmsNoID = append(vmsNoID, vm)
+				}
+				return vmsNoID, nil
+			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{JobName: "worker", Index: 0, State: "running"},
+				{JobName: "db", Index: 0, State: "running"},
+				{JobName: "web", Index: 0, State: "running"},
+			}))
+		})
+
+		By("testing the deployment", func() {
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}
-			return vmsNoID, nil
-		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-			{JobName: "worker", Index: 0, State: "running"},
-			{JobName: "db", Index: 0, State: "running"},
-			{JobName: "web", Index: 0, State: "running"},
-		}))
+			client := &http.Client{Transport: tr}
 
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		client := &http.Client{Transport: tr}
+			resp, err := client.Get(lbURL)
+			Expect(err).NotTo(HaveOccurred())
 
-		resp, err := client.Get(lbURL)
-		Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			body, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
 
-		body, err := ioutil.ReadAll(resp.Body)
-		Expect(err).NotTo(HaveOccurred())
+			Expect(string(body)).To(ContainSubstring("<title>Concourse</title>"))
+		})
 
-		Expect(string(body)).To(ContainSubstring("<title>Concourse</title>"))
+		By("deleting the deployment", func() {
+			err := boshClient.DeleteDeployment("concourse")
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-		err = boshClient.DeleteDeployment("concourse")
-		Expect(err).NotTo(HaveOccurred())
+		By("deleting load balancers", func() {
+			bbl.DeleteLBs()
+		})
 
-		bbl.DeleteLBs()
-
-		bbl.Destroy()
+		By("tearing down the infrastructure", func() {
+			bbl.Destroy()
+		})
 	})
 })
 
