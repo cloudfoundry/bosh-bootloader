@@ -71,7 +71,7 @@ func validateGCPCreds(config Config) error {
 	}
 
 	if config.GCPProjectID == "" {
-		return errors.New("project id is missing")
+		return errors.New("gcp project id is missing")
 	}
 
 	if config.GCPRegion == "" {

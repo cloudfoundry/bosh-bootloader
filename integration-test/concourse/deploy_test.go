@@ -122,6 +122,8 @@ var _ = Describe("concourse deployment test", func() {
 		err = boshClient.DeleteDeployment("concourse")
 		Expect(err).NotTo(HaveOccurred())
 
+		bbl.DeleteLBs()
+
 		bbl.Destroy()
 	})
 })
