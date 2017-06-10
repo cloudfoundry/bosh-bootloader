@@ -7,9 +7,9 @@ function main {
     docker pull cfinfrastructure/deployment
 
     docker run \
-      -e AWS_REGION="${AWS_REGION}" \
-      -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
-      -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+      -e BBL_AWS_REGION="${BBL_AWS_REGION}" \
+      -e BBL_AWS_ACCESS_KEY_ID="${BBL_AWS_ACCESS_KEY_ID}" \
+      -e BBL_AWS_SECRET_ACCESS_KEY="${BBL_AWS_SECRET_ACCESS_KEY}" \
       -v $PWD:/bosh-bootloader \
       -v ${INFRASTRUCTURE_CI:-"${GOPATH}/src/github.com/cloudfoundry/infrastructure-ci"}:/infrastructure-ci \
       cfinfrastructure/deployment ${TEST_TASK:-"/infrastructure-ci/scripts/ci/bosh-bootloader/aws_integration"}
