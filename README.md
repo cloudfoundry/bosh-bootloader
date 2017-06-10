@@ -2,8 +2,7 @@
 ---
 
 This is a command line utility for standing up a CloudFoundry or Concourse installation
-on an IAAS. This CLI is currently under heavy development, and the initial goal is to
-support bootstrapping a CloudFoundry installation on AWS.
+on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installation on AWS and GCP.
 
 * [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
@@ -29,7 +28,7 @@ $ brew install cloudfoundry/tap/bbl
 
 The following should be installed on your local machine
 - BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html)
-- terraform >= 0.9.1 ([download here](https://www.terraform.io/downloads.html))
+- terraform >= 0.9.7 ([download here](https://www.terraform.io/downloads.html))
 
 ### Install bosh-bootloader
 
@@ -115,8 +114,7 @@ Commands:
 
 Due to `bbl`'s use of Terraform to create infrastructure on GCP, re-running
 `bbl up` after deploying either CloudFoundry or Concourse will detach any
-instances that were attached to a load balancer created by `bbl`. At this
-time, the only known work-around is to recreate the affected instance
-using `bosh recreate`.
+instances that were attached to a load balancer created by `bbl`.
 
-The `bbl` team is planning to address this issue in an upcoming release.
+At this time, the only known work-arounds are to recreate the affected instance
+using `bosh recreate` **or** use Terraform 0.9.7+.
