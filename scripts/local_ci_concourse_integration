@@ -24,13 +24,13 @@ function main {
     docker pull cfinfrastructure/deployment
 
     docker run \
-      -e AWS_REGION="${AWS_REGION:-""}" \
-      -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-""}" \
-      -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-""}" \
-      -e GCP_PROJECT_ID="${GCP_PROJECT_ID:-""}" \
-      -e GCP_REGION="${GCP_REGION:-""}" \
-      -e GCP_SERVICE_ACCOUNT_KEY="${GCP_SERVICE_ACCOUNT_KEY:-""}" \
-      -e GCP_ZONE="${GCP_ZONE:-""}" \
+      -e BBL_AWS_REGION="${BBL_AWS_REGION:-""}" \
+      -e BBL_AWS_ACCESS_KEY_ID="${BBL_AWS_ACCESS_KEY_ID:-""}" \
+      -e BBL_AWS_SECRET_ACCESS_KEY="${BBL_AWS_SECRET_ACCESS_KEY:-""}" \
+      -e BBL_GCP_PROJECT_ID="${BBL_GCP_PROJECT_ID:-""}" \
+      -e BBL_GCP_REGION="${BBL_GCP_REGION:-""}" \
+      -e BBL_GCP_SERVICE_ACCOUNT_KEY="${BBL_GCP_SERVICE_ACCOUNT_KEY:-""}" \
+      -e BBL_GCP_ZONE="${BBL_GCP_ZONE:-""}" \
       -e ENABLE_TERRAFORM_FLAG="${ENABLE_TERRAFORM_FLAG-""}" \
       -e CONCOURSE_DEPLOYMENT_PATH="/concourse-deployment" \
       -e STATE_DIR="/tmp/state" \
