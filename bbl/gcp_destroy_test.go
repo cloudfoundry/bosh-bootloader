@@ -200,7 +200,7 @@ director_ssl:
 
 			Context("when no --debug is provided", func() {
 				It("returns a helpful error message", func() {
-					Expect(session.Err.Contents()).To(ContainSubstring("Some output has been redacted, use `bbl latest-error` to see it or or run again with --debug for additional debug output"))
+					Expect(session.Err.Contents()).To(ContainSubstring("Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"))
 				})
 			})
 		})
