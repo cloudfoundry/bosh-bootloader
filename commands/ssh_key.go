@@ -12,22 +12,22 @@ const (
 )
 
 type SSHKey struct {
-	logger              logger
-	stateValidator      stateValidator
-	jumpboxSSHKeyGetter jumpboxSSHKeyGetter
+	logger         logger
+	stateValidator stateValidator
+	sshKeyGetter   sshKeyGetter
 }
 
-type jumpboxSSHKeyGetter interface {
+type sshKeyGetter interface {
 	Get(storage.State) (string, error)
 }
 
 var unmarshal = yaml.Unmarshal
 
-func NewSSHKey(logger logger, stateValidator stateValidator, jumpboxSSHKeyGetter jumpboxSSHKeyGetter) SSHKey {
+func NewSSHKey(logger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter) SSHKey {
 	return SSHKey{
-		logger:              logger,
-		stateValidator:      stateValidator,
-		jumpboxSSHKeyGetter: jumpboxSSHKeyGetter,
+		logger:         logger,
+		stateValidator: stateValidator,
+		sshKeyGetter:   sshKeyGetter,
 	}
 }
 
@@ -37,7 +37,7 @@ func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	privateKey, err := s.jumpboxSSHKeyGetter.Get(state)
+	privateKey, err := s.sshKeyGetter.Get(state)
 	if err != nil {
 		return err
 	}

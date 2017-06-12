@@ -25,6 +25,32 @@ var _ = Describe("ssh-key", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	Context("when bosh/jumpbox variables does not exist", func() {
+		Context("when keypair.privateKey exists", func() {
+			It("returns the ssh key from keypair.privateKey", func() {
+				state := []byte(`{
+					"version": 3,
+					"keyPair": {
+						"privateKey": "some-ssh-private-key"
+					}
+				}`)
+				err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				args := []string{
+					"--state-dir", tempDirectory,
+					"ssh-key",
+				}
+
+				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
+
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(session.Out.Contents()).To(ContainSubstring("some-ssh-private-key"))
+			})
+		})
+	})
+
 	It("returns the ssh key from the given state file", func() {
 		state := []byte(`{
 			"version": 3,

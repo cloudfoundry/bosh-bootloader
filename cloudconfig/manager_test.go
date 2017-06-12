@@ -20,15 +20,15 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		logger              *fakes.Logger
-		cmd                 *fakes.BOSHCommand
-		opsGenerator        *fakes.CloudConfigOpsGenerator
-		boshClientProvider  *fakes.BOSHClientProvider
-		boshClient          *fakes.BOSHClient
-		socks5Proxy         *fakes.Socks5Proxy
-		terraformManager    *fakes.TerraformManager
-		jumpboxSSHKeyGetter *fakes.JumpboxSSHKeyGetter
-		manager             cloudconfig.Manager
+		logger             *fakes.Logger
+		cmd                *fakes.BOSHCommand
+		opsGenerator       *fakes.CloudConfigOpsGenerator
+		boshClientProvider *fakes.BOSHClientProvider
+		boshClient         *fakes.BOSHClient
+		socks5Proxy        *fakes.Socks5Proxy
+		terraformManager   *fakes.TerraformManager
+		sshKeyGetter       *fakes.SSHKeyGetter
+		manager            cloudconfig.Manager
 
 		tempDir       string
 		incomingState storage.State
@@ -44,7 +44,7 @@ var _ = Describe("Manager", func() {
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		socks5Proxy = &fakes.Socks5Proxy{}
 		terraformManager = &fakes.TerraformManager{}
-		jumpboxSSHKeyGetter = &fakes.JumpboxSSHKeyGetter{}
+		sshKeyGetter = &fakes.SSHKeyGetter{}
 
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
@@ -75,7 +75,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, opsGenerator, boshClientProvider, socks5Proxy, terraformManager, jumpboxSSHKeyGetter)
+		manager = cloudconfig.NewManager(logger, cmd, opsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 	})
 
 	AfterEach(func() {
@@ -253,7 +253,7 @@ var _ = Describe("Manager", func() {
 				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
 					"external_ip": "some-external-url",
 				}
-				jumpboxSSHKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+				sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
 
 				socks5Client = &fakes.Socks5Client{}
 				cloudconfig.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
@@ -283,7 +283,7 @@ var _ = Describe("Manager", func() {
 			It("starts a socks5 proxy", func() {
 				err := manager.Update(incomingState)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(jumpboxSSHKeyGetter.GetCall.Receives.State).To(Equal(incomingState))
+				Expect(sshKeyGetter.GetCall.Receives.State).To(Equal(incomingState))
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
 				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
@@ -308,8 +308,8 @@ var _ = Describe("Manager", func() {
 			})
 
 			Context("failure cases", func() {
-				It("returns an error when jumpboxSSHKeyGetter.Get fails", func() {
-					jumpboxSSHKeyGetter.GetCall.Returns.Error = errors.New("failed to get jumpbox ssh key")
+				It("returns an error when sshKeyGetter.Get fails", func() {
+					sshKeyGetter.GetCall.Returns.Error = errors.New("failed to get jumpbox ssh key")
 					err := manager.Update(incomingState)
 					Expect(err).To(MatchError("failed to get jumpbox ssh key"))
 				})

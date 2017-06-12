@@ -170,12 +170,12 @@ func main() {
 	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 
 	// Cloud Config
-	jumpboxSSHKeyGetter := bosh.NewJumpboxSSHKeyGetter()
+	sshKeyGetter := bosh.NewSSHKeyGetter()
 	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
 	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
 	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformManager, zones)
 	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
-	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, jumpboxSSHKeyGetter)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
@@ -237,7 +237,7 @@ func main() {
 	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
 	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)
 	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorCACertPropertyName)
-	commandSet[commands.SSHKeyCommand] = commands.NewSSHKey(logger, stateValidator, jumpboxSSHKeyGetter)
+	commandSet[commands.SSHKeyCommand] = commands.NewSSHKey(logger, stateValidator, sshKeyGetter)
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
 	commandSet[commands.LatestErrorCommand] = commands.NewLatestError(logger)
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)

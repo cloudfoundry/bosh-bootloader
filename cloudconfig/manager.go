@@ -21,13 +21,13 @@ var (
 )
 
 type Manager struct {
-	logger              logger
-	command             command
-	opsGenerator        opsGenerator
-	boshClientProvider  boshClientProvider
-	socks5Proxy         socks5Proxy
-	terraformManager    terraformManager
-	jumpboxSSHKeyGetter jumpboxSSHKeyGetter
+	logger             logger
+	command            command
+	opsGenerator       opsGenerator
+	boshClientProvider boshClientProvider
+	socks5Proxy        socks5Proxy
+	terraformManager   terraformManager
+	sshKeyGetter       sshKeyGetter
 }
 
 type logger interface {
@@ -55,20 +55,20 @@ type terraformManager interface {
 	GetOutputs(storage.State) (map[string]interface{}, error)
 }
 
-type jumpboxSSHKeyGetter interface {
+type sshKeyGetter interface {
 	Get(storage.State) (string, error)
 }
 
 func NewManager(logger logger, cmd command, opsGenerator opsGenerator, boshClientProvider boshClientProvider,
-	socks5Proxy socks5Proxy, terraformManager terraformManager, jumpboxSSHKeyGetter jumpboxSSHKeyGetter) Manager {
+	socks5Proxy socks5Proxy, terraformManager terraformManager, sshKeyGetter sshKeyGetter) Manager {
 	return Manager{
-		logger:              logger,
-		command:             cmd,
-		opsGenerator:        opsGenerator,
-		boshClientProvider:  boshClientProvider,
-		socks5Proxy:         socks5Proxy,
-		terraformManager:    terraformManager,
-		jumpboxSSHKeyGetter: jumpboxSSHKeyGetter,
+		logger:             logger,
+		command:            cmd,
+		opsGenerator:       opsGenerator,
+		boshClientProvider: boshClientProvider,
+		socks5Proxy:        socks5Proxy,
+		terraformManager:   terraformManager,
+		sshKeyGetter:       sshKeyGetter,
 	}
 }
 
@@ -111,7 +111,7 @@ func (m Manager) Update(state storage.State) error {
 	boshClient := m.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
 
 	if state.Jumpbox.Enabled {
-		privateKey, err := m.jumpboxSSHKeyGetter.Get(state)
+		privateKey, err := m.sshKeyGetter.Get(state)
 		if err != nil {
 			return err
 		}

@@ -2,7 +2,7 @@ package fakes
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-type JumpboxSSHKeyGetter struct {
+type SSHKeyGetter struct {
 	GetCall struct {
 		CallCount int
 		Receives  struct {
@@ -15,9 +15,9 @@ type JumpboxSSHKeyGetter struct {
 	}
 }
 
-func (j *JumpboxSSHKeyGetter) Get(state storage.State) (string, error) {
-	j.GetCall.CallCount++
-	j.GetCall.Receives.State = state
+func (s *SSHKeyGetter) Get(state storage.State) (string, error) {
+	s.GetCall.CallCount++
+	s.GetCall.Receives.State = state
 
-	return j.GetCall.Returns.PrivateKey, j.GetCall.Returns.Error
+	return s.GetCall.Returns.PrivateKey, s.GetCall.Returns.Error
 }
