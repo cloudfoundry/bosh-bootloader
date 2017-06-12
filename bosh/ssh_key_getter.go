@@ -20,10 +20,6 @@ func (j SSHKeyGetter) Get(state storage.State) (string, error) {
 		vars = state.BOSH.Variables
 	}
 
-	if vars == "" {
-		return state.KeyPair.PrivateKey, nil
-	}
-
 	var variables struct {
 		JumpboxSSH struct {
 			PrivateKey string `yaml:"private_key"`
@@ -33,6 +29,10 @@ func (j SSHKeyGetter) Get(state storage.State) (string, error) {
 	err := yaml.Unmarshal([]byte(vars), &variables)
 	if err != nil {
 		return "", err
+	}
+
+	if variables.JumpboxSSH.PrivateKey == "" {
+		return state.KeyPair.PrivateKey, nil
 	}
 
 	return variables.JumpboxSSH.PrivateKey, nil

@@ -41,6 +41,9 @@ var _ = Describe("SSHKeyGetter", func() {
 			Context("when there is a top-level keypair", func() {
 				BeforeEach(func() {
 					state = storage.State{
+						BOSH: storage.BOSH{
+							Variables: "some-var: wut",
+						},
 						KeyPair: storage.KeyPair{
 							PrivateKey: "some-private-key",
 							PublicKey:  "some-public-key",
@@ -60,6 +63,10 @@ var _ = Describe("SSHKeyGetter", func() {
 					state = storage.State{
 						BOSH: storage.BOSH{
 							Variables: "jumpbox_ssh:\n  private_key: some-private-key",
+						},
+						KeyPair: storage.KeyPair{
+							PrivateKey: "some-old-private-key",
+							PublicKey:  "some-public-key",
 						},
 					}
 				})

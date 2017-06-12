@@ -32,6 +32,9 @@ var _ = Describe("ssh-key", func() {
 					"version": 3,
 					"keyPair": {
 						"privateKey": "some-ssh-private-key"
+					},
+					"bosh": {
+						"variables": "some-var: wut"
 					}
 				}`)
 				err := ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
@@ -54,6 +57,9 @@ var _ = Describe("ssh-key", func() {
 	It("returns the ssh key from the given state file", func() {
 		state := []byte(`{
 			"version": 3,
+			"keyPair": {
+				"privateKey": "some-old-ssh-private-key"
+			},
 			"bosh": {
 				"variables": "jumpbox_ssh:\n  private_key: some-ssh-private-key"
 			}
