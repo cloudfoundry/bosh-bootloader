@@ -40,9 +40,10 @@ var _ = Describe("PrintEnv", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
+		It("returns an error when the state does not exist", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
 			err := printEnv.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(MatchError("failed to validate state"))
 		})
 	})
 
@@ -96,12 +97,6 @@ var _ = Describe("PrintEnv", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the state does not exist", func() {
-				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
-				err := printEnv.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("failed to validate state"))
-			})
-
 			It("returns an error when the terraform outputter fails", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 				err := printEnv.Execute([]string{}, storage.State{

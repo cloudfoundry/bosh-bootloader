@@ -32,15 +32,15 @@ func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager 
 }
 
 func (p PrintEnv) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (p PrintEnv) Execute(args []string, state storage.State) error {
 	err := p.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (p PrintEnv) Execute(args []string, state storage.State) error {
 	if !state.NoDirector {
 		p.logger.Println(fmt.Sprintf("export BOSH_CLIENT=%s", state.BOSH.DirectorUsername))
 		p.logger.Println(fmt.Sprintf("export BOSH_CLIENT_SECRET=%s", state.BOSH.DirectorPassword))
