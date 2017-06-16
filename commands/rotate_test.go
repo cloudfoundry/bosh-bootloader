@@ -20,6 +20,13 @@ var _ = Describe("Rotate", func() {
 		incomingState  storage.State
 	)
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := command.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		BeforeEach(func() {
 			stateStore = &fakes.StateStore{}

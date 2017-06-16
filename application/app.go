@@ -81,6 +81,11 @@ func (a App) execute() error {
 		return versionCommand.Execute([]string{}, storage.State{})
 	}
 
+	err = command.CheckFastFails(a.configuration.SubcommandFlags, a.configuration.State)
+	if err != nil {
+		return err
+	}
+
 	err = command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
 	if err != nil {
 		switch err.(type) {

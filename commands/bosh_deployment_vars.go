@@ -18,6 +18,10 @@ func NewBOSHDeploymentVars(logger logger, boshManager boshManager) BOSHDeploymen
 	}
 }
 
+func (b BOSHDeploymentVars) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
 	if !state.NoDirector {
 		err := fastFailBOSHVersion(b.boshManager)

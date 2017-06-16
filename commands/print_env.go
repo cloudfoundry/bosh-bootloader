@@ -31,6 +31,10 @@ func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager 
 	}
 }
 
+func (p PrintEnv) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (p PrintEnv) Execute(args []string, state storage.State) error {
 	err := p.stateValidator.Validate()
 	if err != nil {

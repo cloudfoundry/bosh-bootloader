@@ -14,6 +14,10 @@ func NewLatestError(logger logger) LatestError {
 	}
 }
 
+func (l LatestError) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (l LatestError) Execute(subcommandFlags []string, bblState storage.State) error {
 	l.logger.Println(bblState.LatestTFOutput)
 	return nil

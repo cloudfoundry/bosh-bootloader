@@ -27,35 +27,44 @@ var _ = Describe("BOSHDeploymentVars", func() {
 		boshDeploymentVars = commands.NewBOSHDeploymentVars(logger, boshManager)
 	})
 
-	It("calls out to bosh manager and prints the resulting information", func() {
-		boshManager.GetDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
-		err := boshDeploymentVars.Execute([]string{}, storage.State{})
-		Expect(err).NotTo(HaveOccurred())
-		Expect(boshManager.GetDeploymentVarsCall.CallCount).To(Equal(1))
-		Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
-	})
-
-	It("runs successfully if the version is less than 2.0.0 but the state has no director", func() {
-		boshManager.VersionCall.Returns.Version = "1.9.9"
-
-		err := boshDeploymentVars.Execute([]string{}, storage.State{
-			NoDirector: true,
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := boshDeploymentVars.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
 		})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Context("failure cases", func() {
-		It("returns an error when we fail to get deployment vars", func() {
-			boshManager.GetDeploymentVarsCall.Returns.Error = errors.New("failed to get deployment vars")
+	Describe("Execute", func() {
+		It("calls out to bosh manager and prints the resulting information", func() {
+			boshManager.GetDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
 			err := boshDeploymentVars.Execute([]string{}, storage.State{})
-			Expect(err).To(MatchError("failed to get deployment vars"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(boshManager.GetDeploymentVarsCall.CallCount).To(Equal(1))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
 		})
 
-		It("fast fails if the bosh installed is less than v2.0.0", func() {
+		It("runs successfully if the version is less than 2.0.0 but the state has no director", func() {
 			boshManager.VersionCall.Returns.Version = "1.9.9"
 
-			err := boshDeploymentVars.Execute([]string{}, storage.State{})
-			Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			err := boshDeploymentVars.Execute([]string{}, storage.State{
+				NoDirector: true,
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when we fail to get deployment vars", func() {
+				boshManager.GetDeploymentVarsCall.Returns.Error = errors.New("failed to get deployment vars")
+				err := boshDeploymentVars.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to get deployment vars"))
+			})
+
+			It("fast fails if the bosh installed is less than v2.0.0", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.9"
+
+				err := boshDeploymentVars.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+			})
 		})
 	})
 })

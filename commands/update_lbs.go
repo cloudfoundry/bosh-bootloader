@@ -101,6 +101,10 @@ func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 	return nil
 }
 
+func (u UpdateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
 	lbFlags := flags.New("update-lbs")
 

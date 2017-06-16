@@ -35,6 +35,13 @@ var _ = Describe("Up", func() {
 		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter, fakeBOSHManager)
 	})
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := command.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		Context("when the version of BOSH is a dev build", func() {
 			It("does not fail", func() {

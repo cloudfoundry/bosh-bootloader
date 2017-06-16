@@ -53,6 +53,10 @@ func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter, boshManager boshManage
 	}
 }
 
+func (u Up) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (u Up) Execute(args []string, state storage.State) error {
 	var desiredIAAS string
 

@@ -30,6 +30,21 @@ var _ = Describe("StateQuery", func() {
 		fakeInfrastructureManager = &fakes.InfrastructureManager{}
 	})
 
+	Describe("CheckFastFails", func() {
+		var (
+			command commands.StateQuery
+		)
+
+		BeforeEach(func() {
+			command = commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "n/a")
+		})
+
+		It("returns no error", func() {
+			err := command.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		Context("bbl does manage the bosh director", func() {
 			var state storage.State

@@ -41,6 +41,10 @@ func NewStateQuery(logger logger, stateValidator stateValidator, terraformManage
 	}
 }
 
+func (s StateQuery) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error {
 	err := s.stateValidator.Validate()
 	if err != nil {

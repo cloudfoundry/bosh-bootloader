@@ -22,36 +22,49 @@ var _ = Describe("Version", func() {
 		logger = &fakes.Logger{}
 	})
 
-	Context("when no version number was passed in", func() {
+	Describe("CheckFastFails", func() {
 		BeforeEach(func() {
 			version = commands.NewVersion("", logger)
 		})
 
-		Describe("Execute", func() {
-			It("prints out dev as the version", func() {
-				err := version.Execute([]string{}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-					fmt.Sprintf("bbl dev (%s/%s)\n", runtime.GOOS, runtime.GOARCH),
-				}))
-			})
+		It("returns no error", func() {
+			err := version.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
-	Context("when a version number was passed in", func() {
-		BeforeEach(func() {
-			version = commands.NewVersion("1.2.3", logger)
+	Describe("Execute", func() {
+		Context("when no version number was passed in", func() {
+			BeforeEach(func() {
+				version = commands.NewVersion("", logger)
+			})
+
+			Describe("Execute", func() {
+				It("prints out dev as the version", func() {
+					err := version.Execute([]string{}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+						fmt.Sprintf("bbl dev (%s/%s)\n", runtime.GOOS, runtime.GOARCH),
+					}))
+				})
+			})
 		})
 
-		Describe("Execute", func() {
-			It("prints out the passed in version information", func() {
-				err := version.Execute([]string{}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
+		Context("when a version number was passed in", func() {
+			BeforeEach(func() {
+				version = commands.NewVersion("1.2.3", logger)
+			})
 
-				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-					fmt.Sprintf("bbl 1.2.3 (%s/%s)\n", runtime.GOOS, runtime.GOARCH),
-				}))
+			Describe("Execute", func() {
+				It("prints out the passed in version information", func() {
+					err := version.Execute([]string{}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+						fmt.Sprintf("bbl 1.2.3 (%s/%s)\n", runtime.GOOS, runtime.GOARCH),
+					}))
+				})
 			})
 		})
 	})

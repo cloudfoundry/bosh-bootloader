@@ -15,6 +15,10 @@ import (
 
 type setNewKeyPairName struct{}
 
+func (snkp setNewKeyPairName) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (snkp setNewKeyPairName) Execute(subcommandFlags []string, state storage.State) error {
 	state.KeyPair = storage.KeyPair{
 		Name:       "some-new-keypair-name",
@@ -202,6 +206,22 @@ var _ = Describe("App", func() {
 		})
 
 		Context("error cases", func() {
+			Context("when a fast fail occurs", func() {
+				BeforeEach(func() {
+					someCmd.CheckFastFailsCall.Returns.Error = errors.New("fast failed command")
+				})
+
+				It("returns an error and does not execute the command", func() {
+					app = NewAppWithConfiguration(application.Configuration{
+						Command: "some",
+					})
+					err := app.Run()
+					Expect(someCmd.CheckFastFailsCall.CallCount).To(Equal(1))
+					Expect(err).To(MatchError("fast failed command"))
+					Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
+				})
+			})
+
 			Context("when an unknown command is provided", func() {
 				It("prints usage and returns an error", func() {
 					app = NewAppWithConfiguration(application.Configuration{

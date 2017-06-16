@@ -31,3 +31,7 @@ func (v Version) Execute(subcommandFlags []string, state storage.State) error {
 	v.logger.Printf("bbl %s\n", v.version)
 	return nil
 }
+
+func (v Version) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}

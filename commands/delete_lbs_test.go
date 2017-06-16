@@ -13,28 +13,35 @@ import (
 )
 
 var _ = Describe("DeleteLBs", func() {
-	Describe("Execute", func() {
-		var (
-			command commands.DeleteLBs
+	var (
+		command commands.DeleteLBs
 
-			gcpDeleteLBs   *fakes.GCPDeleteLBs
-			awsDeleteLBs   *fakes.AWSDeleteLBs
-			stateValidator *fakes.StateValidator
-			logger         *fakes.Logger
-			boshManager    *fakes.BOSHManager
-		)
+		gcpDeleteLBs   *fakes.GCPDeleteLBs
+		awsDeleteLBs   *fakes.AWSDeleteLBs
+		stateValidator *fakes.StateValidator
+		logger         *fakes.Logger
+		boshManager    *fakes.BOSHManager
+	)
 
-		BeforeEach(func() {
-			gcpDeleteLBs = &fakes.GCPDeleteLBs{}
-			awsDeleteLBs = &fakes.AWSDeleteLBs{}
-			stateValidator = &fakes.StateValidator{}
-			logger = &fakes.Logger{}
-			boshManager = &fakes.BOSHManager{}
-			boshManager.VersionCall.Returns.Version = "2.0.0"
+	BeforeEach(func() {
+		gcpDeleteLBs = &fakes.GCPDeleteLBs{}
+		awsDeleteLBs = &fakes.AWSDeleteLBs{}
+		stateValidator = &fakes.StateValidator{}
+		logger = &fakes.Logger{}
+		boshManager = &fakes.BOSHManager{}
+		boshManager.VersionCall.Returns.Version = "2.0.0"
 
-			command = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+		command = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+	})
+
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := command.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
 		})
+	})
 
+	Describe("Execute", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"

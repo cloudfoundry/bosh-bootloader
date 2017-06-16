@@ -97,6 +97,10 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 	}
 }
 
+func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	if !state.NoDirector {
 		err := fastFailBOSHVersion(d.boshManager)

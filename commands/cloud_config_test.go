@@ -38,25 +38,34 @@ var _ = Describe("CloudConfig", func() {
 		cloudConfig = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	})
 
-	It("prints the cloud configuration for the bbl environment", func() {
-		err := cloudConfig.Execute([]string{}, state)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(cloudConfigManager.GenerateCall.CallCount).To(Equal(1))
-		Expect(cloudConfigManager.GenerateCall.Receives.State).To(Equal(state))
-		Expect(logger.PrintlnCall.Messages).To(ContainElement("some-cloud-config"))
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := cloudConfig.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
-	Context("failure cases", func() {
-		It("returns an error when the cloud config manager fails to generate", func() {
-			cloudConfigManager.GenerateCall.Returns.Error = errors.New("failed to generate cloud configuration")
+	Describe("Execute", func() {
+		It("prints the cloud configuration for the bbl environment", func() {
 			err := cloudConfig.Execute([]string{}, state)
-			Expect(err).To(MatchError("failed to generate cloud configuration"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cloudConfigManager.GenerateCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.GenerateCall.Receives.State).To(Equal(state))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-cloud-config"))
 		})
 
-		It("returns an error when the state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
-			err := cloudConfig.Execute([]string{}, storage.State{})
-			Expect(err).To(MatchError("failed to validate state"))
+		Context("failure cases", func() {
+			It("returns an error when the cloud config manager fails to generate", func() {
+				cloudConfigManager.GenerateCall.Returns.Error = errors.New("failed to generate cloud configuration")
+				err := cloudConfig.Execute([]string{}, state)
+				Expect(err).To(MatchError("failed to generate cloud configuration"))
+			})
+
+			It("returns an error when the state validator fails", func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
+				err := cloudConfig.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to validate state"))
+			})
 		})
 	})
 })

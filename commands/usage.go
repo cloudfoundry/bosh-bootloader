@@ -60,6 +60,10 @@ func NewUsage(logger logger) Usage {
 	}
 }
 
+func (u Usage) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (u Usage) Execute(subcommandFlags []string, state storage.State) error {
 	u.Print()
 	return nil

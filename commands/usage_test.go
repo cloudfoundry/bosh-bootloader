@@ -23,6 +23,13 @@ var _ = Describe("Usage", func() {
 		usage = commands.NewUsage(logger)
 	})
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := usage.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		It("prints out the usage information", func() {
 			err := usage.Execute([]string{}, storage.State{})

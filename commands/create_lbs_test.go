@@ -30,6 +30,13 @@ var _ = Describe("create-lbs", func() {
 		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
 	})
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := command.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
 			It("returns a helpful error message", func() {

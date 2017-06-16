@@ -65,6 +65,13 @@ var _ = Describe("Destroy", func() {
 			stateValidator, terraformManager, networkInstancesChecker)
 	})
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := destroy.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
 			It("returns a helpful error message", func() {

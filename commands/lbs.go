@@ -32,19 +32,23 @@ func NewLBs(gcpLBs gcpLBs, awsLBs awsLBs, stateValidator stateValidator, logger 
 	}
 }
 
-func (c LBs) Execute(subcommandFlags []string, state storage.State) error {
-	err := c.stateValidator.Validate()
+func (l LBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
+func (l LBs) Execute(subcommandFlags []string, state storage.State) error {
+	err := l.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
 	switch state.IAAS {
 	case "aws":
-		if err := c.awsLBs.Execute(subcommandFlags, state); err != nil {
+		if err := l.awsLBs.Execute(subcommandFlags, state); err != nil {
 			return err
 		}
 	case "gcp":
-		if err := c.gcpLBs.Execute(subcommandFlags, state); err != nil {
+		if err := l.gcpLBs.Execute(subcommandFlags, state); err != nil {
 			return err
 		}
 	}

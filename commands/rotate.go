@@ -20,6 +20,10 @@ func NewRotate(stateStore stateStore, keyPairManager keyPairManager, boshManager
 	}
 }
 
+func (r Rotate) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	return nil
+}
+
 func (r Rotate) Execute(args []string, state storage.State) error {
 	state, err := r.keyPairManager.Rotate(state)
 	if err != nil {

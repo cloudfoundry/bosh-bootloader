@@ -34,6 +34,13 @@ var _ = Describe("SSHKey", func() {
 		sshKeyCommand = commands.NewSSHKey(logger, stateValidator, sshKeyGetter)
 	})
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := sshKeyCommand.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		It("validates state", func() {
 			err := sshKeyCommand.Execute([]string{}, incomingState)

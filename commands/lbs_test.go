@@ -31,6 +31,13 @@ var _ = Describe("LBs", func() {
 		lbsCommand = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)
 	})
 
+	Describe("CheckFastFails", func() {
+		It("returns no error", func() {
+			err := lbsCommand.CheckFastFails([]string{}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("Execute", func() {
 		Context("when bbl'd up on aws", func() {
 			It("prints LB ips", func() {
