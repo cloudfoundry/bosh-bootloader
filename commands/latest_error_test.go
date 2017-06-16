@@ -1,6 +1,8 @@
 package commands_test
 
 import (
+	"errors"
+
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -11,20 +13,24 @@ import (
 
 var _ = Describe("latest-error", func() {
 	var (
+		logger         *fakes.Logger
+		stateValidator *fakes.StateValidator
+
 		command commands.LatestError
-		logger  *fakes.Logger
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
+		stateValidator = &fakes.StateValidator{}
 
-		command = commands.NewLatestError(logger)
+		command = commands.NewLatestError(logger, stateValidator)
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
+		It("returns an error when the state does not exist", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
 			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(MatchError("failed to validate state"))
 		})
 	})
 

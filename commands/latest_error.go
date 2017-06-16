@@ -5,16 +5,23 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 const LatestErrorCommand = "latest-error"
 
 type LatestError struct {
-	logger logger
+	logger         logger
+	stateValidator stateValidator
 }
 
-func NewLatestError(logger logger) LatestError {
+func NewLatestError(logger logger, stateValidator stateValidator) LatestError {
 	return LatestError{
-		logger: logger,
+		logger:         logger,
+		stateValidator: stateValidator,
 	}
 }
 
 func (l LatestError) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	err := l.stateValidator.Validate()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
