@@ -32,15 +32,15 @@ func NewSSHKey(logger logger, stateValidator stateValidator, sshKeyGetter sshKey
 }
 
 func (s SSHKey) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
 	err := s.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
 	privateKey, err := s.sshKeyGetter.Get(state)
 	if err != nil {
 		return err

@@ -35,9 +35,10 @@ var _ = Describe("SSHKey", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
-			err := sshKeyCommand.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			err := sshKeyCommand.CheckFastFails([]string{}, incomingState)
+			Expect(err).To(MatchError("state validator failed"))
 		})
 	})
 
@@ -58,12 +59,6 @@ var _ = Describe("SSHKey", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when state validator fails", func() {
-				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-				err := sshKeyCommand.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("state validator failed"))
-			})
-
 			It("returns an error when the ssh key getter fails", func() {
 				sshKeyGetter.GetCall.Returns.Error = errors.New("jumpbox ssh key getter failed")
 				err := sshKeyCommand.Execute([]string{}, incomingState)
