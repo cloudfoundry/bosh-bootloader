@@ -33,15 +33,15 @@ func NewLBs(gcpLBs gcpLBs, awsLBs awsLBs, stateValidator stateValidator, logger 
 }
 
 func (l LBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (l LBs) Execute(subcommandFlags []string, state storage.State) error {
 	err := l.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (l LBs) Execute(subcommandFlags []string, state storage.State) error {
 	switch state.IAAS {
 	case "aws":
 		if err := l.awsLBs.Execute(subcommandFlags, state); err != nil {

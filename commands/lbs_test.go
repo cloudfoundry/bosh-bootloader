@@ -32,10 +32,15 @@ var _ = Describe("LBs", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+
 			err := lbsCommand.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+
+			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(err).To(MatchError("state validator failed"))
 		})
+
 	})
 
 	Describe("Execute", func() {
@@ -66,15 +71,6 @@ var _ = Describe("LBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when state validator fails", func() {
-				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-
-				err := lbsCommand.Execute([]string{}, storage.State{})
-
-				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-				Expect(err).To(MatchError("state validator failed"))
-			})
-
 			It("returns an error when the AWSLBs fails", func() {
 				awsLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
 
