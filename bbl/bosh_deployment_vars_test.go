@@ -178,7 +178,29 @@ var _ = Describe("bosh-deployment-vars", func() {
 	})
 
 	Context("when the bosh cli version is <2.0", func() {
+		var (
+			fakeAWS       *awsbackend.Backend
+			fakeAWSServer *httptest.Server
+		)
+
 		BeforeEach(func() {
+			fakeAWS = awsbackend.New(fakeBOSHServer.URL)
+			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
+
+			args := []string{
+				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
+				"--state-dir", tempDirectory,
+				"--debug",
+				"up",
+				"--name", "some-env-id",
+				"--iaas", "aws",
+				"--aws-access-key-id", "some-access-key",
+				"--aws-secret-access-key", "some-access-secret",
+				"--aws-region", "some-region",
+			}
+
+			executeCommand(args, 0)
+
 			fakeBOSHCLIBackendServer.SetVersion("1.9.0")
 		})
 
