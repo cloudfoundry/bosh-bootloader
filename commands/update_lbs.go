@@ -51,6 +51,41 @@ func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
+	lbExists := lbExists(state.Stack.LBType) || lbExists(state.LB.Type)
+	if config.skipIfMissing && !lbExists {
+		u.logger.Println("no lb type exists, skipping...")
+		return nil
+	}
+
+	switch state.IAAS {
+	case "gcp":
+		if err := u.gcpUpdateLBs.Execute(GCPCreateLBsConfig{
+			LBType:   state.LB.Type,
+			CertPath: config.certPath,
+			KeyPath:  config.keyPath,
+			Domain:   config.domain,
+		}, state); err != nil {
+			return err
+		}
+	case "aws":
+		if err := u.awsUpdateLBs.Execute(AWSCreateLBsConfig{
+			LBType:    state.Stack.LBType,
+			CertPath:  config.certPath,
+			KeyPath:   config.keyPath,
+			ChainPath: config.chainPath,
+		}, state); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u UpdateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	config, err := u.parseFlags(subcommandFlags)
+	if err != nil {
+		return err
+	}
+
 	err = u.stateValidator.Validate()
 	if err != nil {
 		return err
@@ -78,30 +113,6 @@ func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return err
 	}
 
-	switch state.IAAS {
-	case "gcp":
-		if err := u.gcpUpdateLBs.Execute(GCPCreateLBsConfig{
-			LBType:   state.LB.Type,
-			CertPath: config.certPath,
-			KeyPath:  config.keyPath,
-			Domain:   config.domain,
-		}, state); err != nil {
-			return err
-		}
-	case "aws":
-		if err := u.awsUpdateLBs.Execute(AWSCreateLBsConfig{
-			LBType:    state.Stack.LBType,
-			CertPath:  config.certPath,
-			KeyPath:   config.keyPath,
-			ChainPath: config.chainPath,
-		}, state); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (u UpdateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
 	return nil
 }
 
