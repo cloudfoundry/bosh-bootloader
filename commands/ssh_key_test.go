@@ -43,12 +43,6 @@ var _ = Describe("SSHKey", func() {
 	})
 
 	Describe("Execute", func() {
-		It("validates state", func() {
-			err := sshKeyCommand.Execute([]string{}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-		})
-
 		It("prints the private ssh key of the jumpbox user", func() {
 			err := sshKeyCommand.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
