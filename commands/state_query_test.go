@@ -31,17 +31,36 @@ var _ = Describe("StateQuery", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		var (
-			command commands.StateQuery
-		)
+		It("returns an error when the state validator fails", func() {
+			fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "")
 
-		BeforeEach(func() {
-			command = commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "n/a")
+			err := command.CheckFastFails([]string{}, storage.State{})
+
+			Expect(err).To(MatchError("state validator failed"))
 		})
 
-		It("returns no error", func() {
-			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+		Context("bbl does not manage the bosh director", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					EnvID:      "some-env-id",
+					NoDirector: true,
+				}
+			})
+
+			DescribeTable("prints out the director information",
+				func(propertyName string) {
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, propertyName)
+
+					err := command.CheckFastFails([]string{}, state)
+					Expect(err).To(MatchError("Error BBL does not manage this director."))
+				},
+				Entry("director-username", "director username"),
+				Entry("director-password", "director password"),
+				Entry("director-ssl-ca", "director ca cert"),
+			)
 		})
 	})
 
@@ -86,18 +105,6 @@ var _ = Describe("StateQuery", func() {
 				}
 			})
 
-			DescribeTable("prints out the director information",
-				func(propertyName string) {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, propertyName)
-
-					err := command.Execute([]string{}, state)
-					Expect(err).To(MatchError("Error BBL does not manage this director."))
-				},
-				Entry("director-username", "director username"),
-				Entry("director-password", "director password"),
-				Entry("director-ssl-ca", "director ca cert"),
-			)
-
 			It("prints the env id", func() {
 				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "environment id")
 
@@ -141,17 +148,6 @@ var _ = Describe("StateQuery", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the state validator fails", func() {
-				fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "")
-
-				err := command.Execute([]string{}, storage.State{
-					BOSH: storage.BOSH{},
-				})
-
-				Expect(err).To(MatchError("state validator failed"))
-			})
-
 			It("returns an error when the terraform output provider fails", func() {
 				fakeTerraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
