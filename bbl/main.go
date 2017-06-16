@@ -243,7 +243,7 @@ func main() {
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager)
-	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, boshManager)
+	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, boshManager, stateValidator)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

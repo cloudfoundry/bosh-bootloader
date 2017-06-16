@@ -16,24 +16,32 @@ var _ = Describe("Rotate", func() {
 		stateStore     *fakes.StateStore
 		keyPairManager *fakes.KeyPairManager
 		boshManager    *fakes.BOSHManager
-		command        commands.Rotate
-		incomingState  storage.State
+		stateValidator *fakes.StateValidator
+
+		command commands.Rotate
+
+		incomingState storage.State
 	)
 
+	BeforeEach(func() {
+		stateStore = &fakes.StateStore{}
+		keyPairManager = &fakes.KeyPairManager{}
+		boshManager = &fakes.BOSHManager{}
+		stateValidator = &fakes.StateValidator{}
+
+		command = commands.NewRotate(stateStore, keyPairManager, boshManager, stateValidator)
+	})
+
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
-			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			err := command.CheckFastFails([]string{}, incomingState)
+			Expect(err).To(MatchError("state validator failed"))
 		})
 	})
 
 	Describe("Execute", func() {
 		BeforeEach(func() {
-			stateStore = &fakes.StateStore{}
-			keyPairManager = &fakes.KeyPairManager{}
-			boshManager = &fakes.BOSHManager{}
-
-			command = commands.NewRotate(stateStore, keyPairManager, boshManager)
 			incomingState = storage.State{
 				KeyPair: storage.KeyPair{
 					Name:       "some-name",

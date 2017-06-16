@@ -10,17 +10,24 @@ type Rotate struct {
 	stateStore     stateStore
 	keyPairManager keyPairManager
 	boshManager    boshManager
+	stateValidator stateValidator
 }
 
-func NewRotate(stateStore stateStore, keyPairManager keyPairManager, boshManager boshManager) Rotate {
+func NewRotate(stateStore stateStore, keyPairManager keyPairManager, boshManager boshManager, stateValidator stateValidator) Rotate {
 	return Rotate{
 		stateStore:     stateStore,
 		keyPairManager: keyPairManager,
 		boshManager:    boshManager,
+		stateValidator: stateValidator,
 	}
 }
 
 func (r Rotate) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	err := r.stateValidator.Validate()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
