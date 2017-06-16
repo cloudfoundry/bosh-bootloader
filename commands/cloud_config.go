@@ -21,15 +21,15 @@ func NewCloudConfig(logger logger, stateValidator stateValidator, cloudConfigMan
 }
 
 func (c CloudConfig) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (c CloudConfig) Execute(args []string, state storage.State) error {
 	err := c.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (c CloudConfig) Execute(args []string, state storage.State) error {
 	contents, err := c.cloudConfigManager.Generate(state)
 	if err != nil {
 		return err

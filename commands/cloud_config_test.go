@@ -39,9 +39,10 @@ var _ = Describe("CloudConfig", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
+		It("returns an error when the state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
 			err := cloudConfig.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(MatchError("failed to validate state"))
 		})
 	})
 
@@ -59,12 +60,6 @@ var _ = Describe("CloudConfig", func() {
 				cloudConfigManager.GenerateCall.Returns.Error = errors.New("failed to generate cloud configuration")
 				err := cloudConfig.Execute([]string{}, state)
 				Expect(err).To(MatchError("failed to generate cloud configuration"))
-			})
-
-			It("returns an error when the state validator fails", func() {
-				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
-				err := cloudConfig.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("failed to validate state"))
 			})
 		})
 	})
