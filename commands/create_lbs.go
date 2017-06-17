@@ -41,10 +41,6 @@ func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateVal
 }
 
 func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (c CreateLBs) Execute(args []string, state storage.State) error {
 	if err := c.stateValidator.Validate(); err != nil {
 		return err
 	}
@@ -56,6 +52,10 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 		}
 	}
 
+	return nil
+}
+
+func (c CreateLBs) Execute(args []string, state storage.State) error {
 	config, err := c.parseFlags(args)
 	if err != nil {
 		return err

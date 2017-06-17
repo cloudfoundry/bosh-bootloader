@@ -31,17 +31,18 @@ var _ = Describe("create-lbs", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
 			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
 
-	Describe("Execute", func() {
+			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(err).To(MatchError("state validator failed"))
+		})
+
 		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := command.Execute([]string{
+				err := command.CheckFastFails([]string{
 					"--type", "concourse",
 				}, storage.State{
 					IAAS:       "gcp",
@@ -54,7 +55,7 @@ var _ = Describe("create-lbs", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
 			It("does not fast fail", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := command.Execute([]string{
+				err := command.CheckFastFails([]string{
 					"--type", "concourse",
 				}, storage.State{
 					IAAS:       "gcp",
@@ -64,6 +65,9 @@ var _ = Describe("create-lbs", func() {
 			})
 		})
 
+	})
+
+	Describe("Execute", func() {
 		It("creates a GCP lb type if the iaas if GCP", func() {
 			err := command.Execute([]string{
 				"--type", "concourse",
@@ -122,14 +126,6 @@ var _ = Describe("create-lbs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when state validator fails", func() {
-				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-				err := command.Execute([]string{}, storage.State{})
-
-				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-				Expect(err).To(MatchError("state validator failed"))
-			})
-
 			It("returns an error when an invalid command line flag is supplied", func() {
 				err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 				Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
