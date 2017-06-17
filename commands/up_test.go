@@ -36,18 +36,11 @@ var _ = Describe("Up", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
-			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-
-	Describe("Execute", func() {
 		Context("when the version of BOSH is a dev build", func() {
 			It("does not fail", func() {
 				fakeBOSHManager.VersionCall.Returns.Error = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
 
-				err := command.Execute([]string{
+				err := command.CheckFastFails([]string{
 					"--iaas", "aws",
 				}, storage.State{Version: 999})
 
@@ -58,7 +51,7 @@ var _ = Describe("Up", func() {
 		Context("when the version of BOSH is lower than 2.0.0", func() {
 			It("returns a helpful error message when bbling up with a director", func() {
 				fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
-				err := command.Execute([]string{
+				err := command.CheckFastFails([]string{
 					"--iaas", "aws",
 				}, storage.State{Version: 999})
 
@@ -68,7 +61,7 @@ var _ = Describe("Up", func() {
 			Context("when the no-director flag is specified", func() {
 				It("does not return an error", func() {
 					fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
-					err := command.Execute([]string{
+					err := command.CheckFastFails([]string{
 						"--iaas", "aws",
 						"--no-director",
 					}, storage.State{Version: 999})
@@ -78,30 +71,79 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("failure cases", func() {
-			Context("when the version of BOSH cannot be retrieved", func() {
-				It("returns an error", func() {
-					fakeBOSHManager.VersionCall.Returns.Error = errors.New("BOOM")
-					err := command.Execute([]string{
-						"--iaas", "aws",
-					}, storage.State{Version: 999})
+		Context("when the version of BOSH cannot be retrieved", func() {
+			It("returns an error", func() {
+				fakeBOSHManager.VersionCall.Returns.Error = errors.New("BOOM")
+				err := command.CheckFastFails([]string{
+					"--iaas", "aws",
+				}, storage.State{Version: 999})
 
-					Expect(err.Error()).To(ContainSubstring("BOOM"))
-				})
-			})
-
-			Context("when the version of BOSH is invalid", func() {
-				It("returns an error", func() {
-					fakeBOSHManager.VersionCall.Returns.Version = "X.5.2"
-					err := command.Execute([]string{
-						"--iaas", "aws",
-					}, storage.State{Version: 999})
-
-					Expect(err.Error()).To(ContainSubstring("invalid syntax"))
-				})
+				Expect(err.Error()).To(ContainSubstring("BOOM"))
 			})
 		})
 
+		Context("when the version of BOSH is invalid", func() {
+			It("returns an error", func() {
+				fakeBOSHManager.VersionCall.Returns.Version = "X.5.2"
+				err := command.CheckFastFails([]string{
+					"--iaas", "aws",
+				}, storage.State{Version: 999})
+
+				Expect(err.Error()).To(ContainSubstring("invalid syntax"))
+			})
+		})
+
+		Context("when iaas is not provided", func() {
+			It("returns an error", func() {
+				err := command.CheckFastFails([]string{}, storage.State{})
+				Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
+			})
+		})
+
+		Context("when iaas specified is different than the iaas in state", func() {
+			It("returns an error when the iaas is provided via args", func() {
+				err := command.CheckFastFails([]string{"--iaas", "aws"}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
+			})
+
+			It("returns an error when the iaas is provided via env vars", func() {
+				fakeEnvGetter.Values = map[string]string{
+					"BBL_IAAS": "aws",
+				}
+				err := command.CheckFastFails([]string{}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
+			})
+		})
+
+		Context("when bbl-state contains an env-id", func() {
+			var (
+				name  = "some-name"
+				state = storage.State{EnvID: name}
+			)
+
+			Context("when the passed in name matches the env-id", func() {
+				It("returns no error", func() {
+					err := command.CheckFastFails([]string{
+						"--iaas", "aws",
+						"--name", name,
+					}, state)
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("when the passed in name does not match the env-id", func() {
+				It("returns an error", func() {
+					err := command.CheckFastFails([]string{
+						"--iaas", "aws",
+						"--name", "some-other-name",
+					}, state)
+					Expect(err).To(MatchError(fmt.Sprintf("The director name cannot be changed for an existing environment. Current name is %s.", name)))
+				})
+			})
+		})
+	})
+
+	Describe("Execute", func() {
 		Context("when aws args are provided through environment variables", func() {
 			BeforeEach(func() {
 				fakeEnvGetter.Values = map[string]string{
@@ -422,13 +464,6 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("when iaas is not provided", func() {
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
-				})
-			})
-
 			Context("when an invalid iaas is provided", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{"--iaas", "bad-iaas"}, storage.State{})
@@ -494,21 +529,6 @@ var _ = Describe("Up", func() {
 					}))
 				})
 			})
-
-			Context("when iaas specified is different than the iaas in state", func() {
-				It("returns an error when the iaas is provided via args", func() {
-					err := command.Execute([]string{"--iaas", "aws"}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
-				})
-
-				It("returns an error when the iaas is provided via env vars", func() {
-					fakeEnvGetter.Values = map[string]string{
-						"BBL_IAAS": "aws",
-					}
-					err := command.Execute([]string{}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
-				})
-			})
 		})
 
 		Context("when the user provides the name flag", func() {
@@ -520,33 +540,6 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Name).To(Equal("a-better-name"))
-			})
-
-			Context("when bbl-state contains an env-id", func() {
-				var (
-					name  = "some-name"
-					state = storage.State{EnvID: name}
-				)
-
-				Context("when the passed in name matches the env-id", func() {
-					It("succeeds", func() {
-						err := command.Execute([]string{
-							"--iaas", "aws",
-							"--name", name,
-						}, state)
-						Expect(err).NotTo(HaveOccurred())
-					})
-				})
-
-				Context("when the passed in name does not match the env-id", func() {
-					It("returns an error", func() {
-						err := command.Execute([]string{
-							"--iaas", "aws",
-							"--name", "some-other-name",
-						}, state)
-						Expect(err).To(MatchError(fmt.Sprintf("The director name cannot be changed for an existing environment. Current name is %s.", name)))
-					})
-				})
 			})
 		})
 

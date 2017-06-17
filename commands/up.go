@@ -53,13 +53,7 @@ func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter, boshManager boshManage
 	}
 }
 
-func (u Up) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (u Up) Execute(args []string, state storage.State) error {
-	var desiredIAAS string
-
+func (u Up) CheckFastFails(args []string, state storage.State) error {
 	config, err := u.parseArgs(args)
 	if err != nil {
 		return err
@@ -72,23 +66,33 @@ func (u Up) Execute(args []string, state storage.State) error {
 		}
 	}
 
-	switch {
-	case state.IAAS == "" && config.iaas == "":
+	if state.IAAS == "" && config.iaas == "" {
 		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
-	case state.IAAS == "" && config.iaas != "":
-		desiredIAAS = config.iaas
-	case state.IAAS != "" && config.iaas == "":
-		desiredIAAS = state.IAAS
-	case state.IAAS != "" && config.iaas != "":
-		if state.IAAS != config.iaas {
-			return fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
-		} else {
-			desiredIAAS = state.IAAS
-		}
+	}
+
+	if state.IAAS != "" && config.iaas != "" && state.IAAS != config.iaas {
+		return fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
 	}
 
 	if state.EnvID != "" && config.name != "" && config.name != state.EnvID {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
+	}
+
+	return nil
+}
+
+func (u Up) Execute(args []string, state storage.State) error {
+	var desiredIAAS string
+
+	config, err := u.parseArgs(args)
+	if err != nil {
+		return err
+	}
+
+	if state.IAAS != "" {
+		desiredIAAS = state.IAAS
+	} else {
+		desiredIAAS = config.iaas
 	}
 
 	switch desiredIAAS {
