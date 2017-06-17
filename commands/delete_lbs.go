@@ -35,16 +35,7 @@ func NewDeleteLBs(gcpDeleteLBs gcpDeleteLBs, awsDeleteLBs awsDeleteLBs,
 }
 
 func (d DeleteLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error {
-	config, err := d.parseFlags(subcommandFlags)
-	if err != nil {
-		return err
-	}
-
-	err = d.stateValidator.Validate()
+	err := d.stateValidator.Validate()
 	if err != nil {
 		return err
 	}
@@ -54,6 +45,15 @@ func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error {
+	config, err := d.parseFlags(subcommandFlags)
+	if err != nil {
+		return err
 	}
 
 	if config.skipIfMissing && !lbExists(state.Stack.LBType) && !lbExists(state.LB.Type) {

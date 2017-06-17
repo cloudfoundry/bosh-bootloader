@@ -35,17 +35,18 @@ var _ = Describe("DeleteLBs", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
+		It("returns an error when state validator fails", func() {
+			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
 			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
 
-	Describe("Execute", func() {
+			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+			Expect(err).To(MatchError("state validator failed"))
+		})
+
 		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := command.Execute([]string{}, storage.State{
+				err := command.CheckFastFails([]string{}, storage.State{
 					IAAS: "aws",
 					LB: storage.LB{
 						Type: "concourse",
@@ -58,7 +59,7 @@ var _ = Describe("DeleteLBs", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
 			It("does not fast fail", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := command.Execute([]string{}, storage.State{
+				err := command.CheckFastFails([]string{}, storage.State{
 					IAAS:       "gcp",
 					NoDirector: true,
 					LB: storage.LB{
@@ -69,6 +70,9 @@ var _ = Describe("DeleteLBs", func() {
 			})
 		})
 
+	})
+
+	Describe("Execute", func() {
 		Context("when iaas is gcp", func() {
 			It("calls gcp delete lbs", func() {
 				err := command.Execute([]string{}, storage.State{
@@ -174,14 +178,6 @@ var _ = Describe("DeleteLBs", func() {
 					IAAS: "some-unknown-iaas",
 				})
 				Expect(err).To(MatchError(`"some-unknown-iaas" is an invalid iaas type in state, supported iaas types are: [gcp, aws]`))
-			})
-
-			It("returns an error when state validator fails", func() {
-				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-				err := command.Execute([]string{}, storage.State{})
-
-				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-				Expect(err).To(MatchError("state validator failed"))
 			})
 		})
 	})

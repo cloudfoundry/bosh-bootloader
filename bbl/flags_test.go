@@ -76,20 +76,4 @@ var _ = Describe("flags test", func() {
 			})
 		})
 	})
-
-	Context("Delete-lbs", func() {
-		It("exits with non-zero status when aws creds are passed to it", func() {
-			args := []string{
-				"delete-lbs",
-				"--aws-access-key-id", "some-aws-access-key-id",
-				"--aws-secret-access-key", "aws-secret-access-key",
-				"--aws-region", "aws-region",
-			}
-			cmd := exec.Command(pathToBBL, args...)
-			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
-			Eventually(session).Should(gexec.Exit(1))
-			Eventually(session.Err).Should(gbytes.Say("flag provided but not defined: -aws-access-key-id"))
-		})
-	})
 })
