@@ -515,14 +515,14 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).To(MatchError("cannot validate version"))
 			})
 
-			It("returns an error when the service account key passed in is not an existent filename or valid json", func() {
+			It("returns an error when the service account key passed in is neither an existent filename or valid json", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKey: "/some/non/existent/file",
 					ProjectID:         "p",
 					Zone:              "z",
 					Region:            "us-west1",
 				}, storage.State{})
-				Expect(err).To(MatchError("error reading or parsing service account key (must be valid json or a file containing valid json): invalid character '/' looking for beginning of value"))
+				Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '/' looking for beginning of value"))
 			})
 
 			It("returns an error when the service account key file does not contain valid json", func() {
@@ -539,7 +539,7 @@ var _ = Describe("GCPUp", func() {
 					Zone:              "z",
 					Region:            "us-west1",
 				}, storage.State{})
-				Expect(err).To(MatchError("error reading or parsing service account key (must be valid json or a file containing valid json): invalid character '%' looking for beginning of value"))
+				Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '%' looking for beginning of value"))
 			})
 
 			It("returns an error when the ops file cannot be read", func() {

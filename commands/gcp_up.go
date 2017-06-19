@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	yaml "gopkg.in/yaml.v2"
@@ -104,37 +105,39 @@ func NewGCPUp(args NewGCPUpArgs) GCPUp {
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
+	state.IAAS = "gcp"
+	state.Jumpbox.Enabled = upConfig.Jumpbox
+
 	err := u.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
 	}
 
 	var opsFileContents []byte
-	if !upConfig.empty() {
-		var gcpDetails storage.GCP
-		var err error
-		gcpDetails, opsFileContents, err = parseUpConfig(upConfig)
+	if upConfig.OpsFilePath != "" {
+		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFilePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading ops-file contents: %v", err)
+		}
+	}
+
+	gcpDetails, err := parseUpConfig(upConfig, state.GCP)
+	if err != nil {
+		return err
+	}
+
+	if err := fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
+		return err
+	}
+
+	state.GCP = gcpDetails
+
+	if upConfig.NoDirector {
+		if !state.BOSH.IsEmpty() {
+			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
 		}
 
-		state.IAAS = "gcp"
-
-		if err := fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
-			return err
-		}
-
-		if upConfig.NoDirector {
-			if !state.BOSH.IsEmpty() {
-				return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
-			}
-
-			state.NoDirector = true
-		}
-
-		state.Jumpbox.Enabled = upConfig.Jumpbox
-
-		state.GCP = gcpDetails
+		state.NoDirector = true
 	}
 
 	if err := u.validateState(state); err != nil {
@@ -219,34 +222,31 @@ func (u GCPUp) validateState(state storage.State) error {
 	return nil
 }
 
-func parseUpConfig(upConfig GCPUpConfig) (storage.GCP, []byte, error) {
-	if upConfig.ServiceAccountKey == "" {
-		return storage.GCP{}, []byte{}, errors.New("GCP service account key must be provided")
-	}
-
-	serviceAccountKey, err := parseServiceAccountKey(upConfig.ServiceAccountKey)
-	if err != nil {
-		return storage.GCP{}, []byte{}, err
-	}
-
-	var opsFileContents []byte
-	if upConfig.OpsFilePath != "" {
-		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFilePath)
+func parseUpConfig(upConfig GCPUpConfig, store storage.GCP) (storage.GCP, error) {
+	var serviceAccountKey string
+	if upConfig.ServiceAccountKey != "" {
+		var err error
+		serviceAccountKey, err = parseServiceAccountKey(upConfig.ServiceAccountKey)
 		if err != nil {
-			return storage.GCP{}, []byte{}, fmt.Errorf("error reading ops-file contents: %v", err)
+			return storage.GCP{}, err
 		}
 	}
 
-	return storage.GCP{
-		ServiceAccountKey: serviceAccountKey,
-		ProjectID:         upConfig.ProjectID,
-		Zone:              upConfig.Zone,
-		Region:            upConfig.Region,
-	}, opsFileContents, nil
-}
+	gcpState := store
+	if serviceAccountKey != "" {
+		gcpState.ServiceAccountKey = serviceAccountKey
+	}
+	if upConfig.ProjectID != "" {
+		gcpState.ProjectID = upConfig.ProjectID
+	}
+	if upConfig.Zone != "" {
+		gcpState.Zone = upConfig.Zone
+	}
+	if upConfig.Region != "" {
+		gcpState.Region = upConfig.Region
+	}
 
-func (c GCPUpConfig) empty() bool {
-	return c.ServiceAccountKey == "" && c.ProjectID == "" && c.Region == "" && c.Zone == ""
+	return gcpState, nil
 }
 
 func fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
@@ -266,19 +266,24 @@ func fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) er
 }
 
 func parseServiceAccountKey(serviceAccountKey string) (string, error) {
-	var tmp interface{}
-	rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
-	if err != nil {
-		err = json.Unmarshal([]byte(serviceAccountKey), &tmp)
-		if err != nil {
-			return "", fmt.Errorf("error reading or parsing service account key (must be valid json or a file containing valid json): %v", err)
-		}
-		return serviceAccountKey, nil
+	var key string
+
+	if _, err := os.Stat(serviceAccountKey); err != nil {
+		key = serviceAccountKey
 	} else {
-		err = json.Unmarshal(rawServiceAccountKey, &tmp)
+		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
 		if err != nil {
-			return "", fmt.Errorf("error reading or parsing service account key (must be valid json or a file containing valid json): %v", err)
+			return "", fmt.Errorf("error reading service account key from file: %v", err)
 		}
-		return string(rawServiceAccountKey), nil
+
+		key = string(rawServiceAccountKey)
 	}
+
+	var tmp interface{}
+	err := json.Unmarshal([]byte(key), &tmp)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
+	}
+
+	return key, err
 }
