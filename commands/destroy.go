@@ -98,10 +98,6 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 }
 
 func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	if !state.NoDirector {
 		err := fastFailBOSHVersion(d.boshManager)
 		if err != nil {
@@ -150,20 +146,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	if !config.NoConfirm {
-		d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
-
-		var proceed string
-		fmt.Fscanln(d.stdin, &proceed)
-
-		proceed = strings.ToLower(proceed)
-		if proceed != "yes" && proceed != "y" {
-			d.logger.Step("exiting")
-			return nil
-		}
-	}
-
-	var stack cloudformation.Stack
 	if state.IAAS == "aws" {
 		if state.TFState != "" {
 			outputs, err := d.terraformManager.GetOutputs(state)
@@ -178,7 +160,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		} else {
 			stackExists := true
 			var err error
-			stack, err = d.stackManager.Describe(state.Stack.Name)
+			stack, err := d.stackManager.Describe(state.Stack.Name)
 			switch err {
 			case cloudformation.StackNotFound:
 				stackExists = false
@@ -195,6 +177,43 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
+	config, err := d.parseFlags(subcommandFlags)
+	if err != nil {
+		return err
+	}
+
+	if config.SkipIfMissing && state.EnvID == "" {
+		d.logger.Step("state file not found, and --skip-if-missing flag provided, exiting")
+		return nil
+	}
+
+	if !config.NoConfirm {
+		d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
+
+		var proceed string
+		fmt.Fscanln(d.stdin, &proceed)
+
+		proceed = strings.ToLower(proceed)
+		if proceed != "yes" && proceed != "y" {
+			d.logger.Step("exiting")
+			return nil
+		}
+	}
+
+	stack, err := d.stackManager.Describe(state.Stack.Name)
+	switch err {
+	case cloudformation.StackNotFound:
+		break
+	case nil:
+		break
+	default:
+		return err
 	}
 
 	state, err = d.deleteBOSH(state, stack)

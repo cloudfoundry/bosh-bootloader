@@ -66,17 +66,10 @@ var _ = Describe("Destroy", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns no error", func() {
-			err := destroy.CheckFastFails([]string{}, storage.State{})
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-
-	Describe("Execute", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{
+				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
@@ -86,7 +79,7 @@ var _ = Describe("Destroy", func() {
 		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
 			It("does not fast fail", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{
+				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{
 					IAAS:       "aws",
 					NoDirector: true,
 				})
@@ -94,8 +87,21 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
+		It("fast fails on gcp if the terraform installed is less than v0.8.5", func() {
+			terraformManager.ValidateVersionCall.Returns.Error = errors.New("failed to validate version")
+
+			err := destroy.CheckFastFails([]string{}, storage.State{IAAS: "gcp"})
+			Expect(err).To(MatchError("failed to validate version"))
+		})
+
+		It("does not fast fail on aws if the terraform installed is less than v0.8.5", func() {
+			err := destroy.CheckFastFails([]string{}, storage.State{IAAS: "aws"})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(0))
+		})
+
 		It("returns when there is no state and --skip-if-missing flag is provided", func() {
-			err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{})
+			err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.StepCall.Receives.Message).To(Equal("state file not found, and --skip-if-missing flag provided, exiting"))
@@ -103,7 +109,7 @@ var _ = Describe("Destroy", func() {
 
 		It("returns an error when state validator fails", func() {
 			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-			err := destroy.Execute([]string{}, storage.State{})
+			err := destroy.CheckFastFails([]string{}, storage.State{})
 
 			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 			Expect(err).To(MatchError("state validator failed"))
@@ -112,8 +118,217 @@ var _ = Describe("Destroy", func() {
 		It("returns an error when credential validator fails", func() {
 			credentialValidator.ValidateCall.Returns.Error = errors.New("credentials validator failed")
 
-			err := destroy.Execute([]string{}, storage.State{})
+			err := destroy.CheckFastFails([]string{}, storage.State{})
 			Expect(err).To(MatchError("credentials validator failed"))
+		})
+
+		Context("when iaas is gcp", func() {
+			var (
+				serviceAccountKeyPath string
+				serviceAccountKey     string
+				bblState              storage.State
+			)
+
+			BeforeEach(func() {
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip":        "some-external-ip",
+					"network_name":       "some-network-name",
+					"subnetwork_name":    "some-subnetwork-name",
+					"bosh_open_tag_name": "some-bosh-tag",
+					"internal_tag_name":  "some-internal-tag",
+					"director_address":   "some-director-address",
+				}
+
+				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
+				Expect(err).NotTo(HaveOccurred())
+				serviceAccountKeyPath = tempFile.Name()
+				serviceAccountKey = `{"real": "json"}`
+				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				bblState = storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+					TFState: "some-tf-state",
+					KeyPair: storage.KeyPair{
+						PublicKey: "some-public-key",
+					},
+				}
+				terraformManager.DestroyCall.Returns.BBLState = bblState
+			})
+
+			Context("when there is no network name in the state", func() {
+				It("does not attempt to validate if it is safe to delete the network", func() {
+					stdin.Write([]byte("yes\n"))
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{}
+
+					err := destroy.CheckFastFails([]string{}, storage.State{
+						IAAS: "gcp",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+				})
+			})
+
+			It("returns an error when instances exist in the gcp network", func() {
+				networkInstancesChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
+
+				projectID := "some-project-id"
+				zone := "some-zone"
+				tfState := "some-tf-state"
+				err := destroy.CheckFastFails([]string{}, storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						ServiceAccountKey: "some-service-account-key",
+						ProjectID:         projectID,
+						Zone:              zone,
+						Region:            "some-region",
+					},
+					TFState: tfState,
+				})
+
+				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
+				Expect(err).To(MatchError("validation failed"))
+			})
+
+			Context("when terraform output provider fails to get terraform outputs", func() {
+				It("does not fast fail", func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform output provider failed")
+
+					stdin.Write([]byte("yes\n"))
+					err := destroy.CheckFastFails([]string{}, storage.State{
+						IAAS: "gcp",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+				})
+			})
+		})
+
+		Context("when iaas is aws", func() {
+			var (
+				state storage.State
+			)
+
+			BeforeEach(func() {
+				stdin.Write([]byte("yes\n"))
+				state = storage.State{
+					IAAS: "aws",
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-aws-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name:       "some-ec2-key-pair-name",
+						PrivateKey: "some-private-key",
+						PublicKey:  "some-public-key",
+					},
+					BOSH: storage.BOSH{
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+						State: map[string]interface{}{
+							"key": "value",
+						},
+						Credentials: map[string]string{
+							"some-username": "some-password",
+						},
+						DirectorSSLCertificate: "some-certificate",
+						DirectorSSLPrivateKey:  "some-private-key",
+					},
+					EnvID: "bbl-lake-time:stamp",
+				}
+			})
+
+			Context("when cloudformation was used", func() {
+				BeforeEach(func() {
+					state.Stack = storage.Stack{
+						Name:            "some-stack-name",
+						LBType:          "some-lb-type",
+						CertificateName: "some-certificate-name",
+					}
+				})
+
+				It("fails fast if BOSH deployed VMs still exist in the VPC with cloudformation", func() {
+					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
+						Name:   "some-stack-name",
+						Status: "some-stack-status",
+						Outputs: map[string]string{
+							"VPCID": "some-vpc-id",
+						},
+					}
+					vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
+
+					err := destroy.CheckFastFails([]string{}, state)
+					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
+
+					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
+					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal(""))
+				})
+
+				Context("when the stack manager cannot describe the stack", func() {
+					It("returns an error", func() {
+						stackManager.DescribeCall.Returns.Error = errors.New("cannot describe stack")
+
+						err := destroy.CheckFastFails([]string{}, storage.State{
+							IAAS: "aws",
+						})
+						Expect(err).To(MatchError("cannot describe stack"))
+					})
+				})
+			})
+
+			Context("when terraform was used", func() {
+				BeforeEach(func() {
+					state.TFState = "some-tf-state"
+					state.EnvID = "some-env-id"
+				})
+
+				Context("when terraform manager fails to get outputs", func() {
+					It("does not fast fail", func() {
+						terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
+
+						err := destroy.CheckFastFails([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+					})
+				})
+
+				It("fails fast if BOSH deployed VMs still exist in the VPC", func() {
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"vpc_id": "some-vpc-id",
+					}
+
+					vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
+					Expect(state.Stack.Name).To(BeEmpty())
+
+					err := destroy.CheckFastFails([]string{}, state)
+					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
+
+					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
+					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal("some-env-id"))
+				})
+			})
+		})
+	})
+
+	Describe("Execute", func() {
+		It("returns when there is no state and --skip-if-missing flag is provided", func() {
+			err := destroy.Execute([]string{"--skip-if-missing"}, storage.State{})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logger.StepCall.Receives.Message).To(Equal("state file not found, and --skip-if-missing flag provided, exiting"))
 		})
 
 		DescribeTable("prompting the user for confirmation",
@@ -194,36 +409,9 @@ var _ = Describe("Destroy", func() {
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
 		})
 
-		Context("when there is no network name in the state", func() {
-			It("does not attempt to validate if it is safe to delete the network", func() {
-				stdin.Write([]byte("yes\n"))
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{}
-
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
-			})
-		})
-
 		Context("failure cases", func() {
 			BeforeEach(func() {
 				stdin.Write([]byte("yes\n"))
-			})
-
-			It("fast fails on gcp if the terraform installed is less than v0.8.5", func() {
-				terraformManager.ValidateVersionCall.Returns.Error = errors.New("failed to validate version")
-
-				err := destroy.Execute([]string{}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("failed to validate version"))
-			})
-
-			It("does not fast fail on aws if the terraform installed is less than v0.8.5", func() {
-				err := destroy.Execute([]string{}, storage.State{IAAS: "aws"})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(0))
 			})
 
 			Context("when an invalid command line flag is supplied", func() {
@@ -316,23 +504,6 @@ var _ = Describe("Destroy", func() {
 					}
 				})
 
-				It("fails fast if BOSH deployed VMs still exist in the VPC with cloudformation", func() {
-					stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-						Name:   "some-stack-name",
-						Status: "some-stack-status",
-						Outputs: map[string]string{
-							"VPCID": "some-vpc-id",
-						},
-					}
-					vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
-
-					err := destroy.Execute([]string{}, state)
-					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
-
-					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
-					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal(""))
-				})
-
 				Context("when infrastructure was created with cloudformation", func() {
 					It("deletes the stack", func() {
 						err := destroy.Execute([]string{}, state)
@@ -357,37 +528,6 @@ var _ = Describe("Destroy", func() {
 						expectedState := state
 						expectedState.BOSH = storage.BOSH{}
 						Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
-					})
-
-					Context("when terraform manager fails to get outputs", func() {
-						It("ignores the error and deletes the infrastructure", func() {
-							terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
-
-							err := destroy.Execute([]string{}, state)
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-							Expect(vpcStatusChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
-
-							expectedState := state
-							expectedState.BOSH = storage.BOSH{}
-							Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
-						})
-					})
-
-					It("fails fast if BOSH deployed VMs still exist in the VPC", func() {
-						terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-							"vpc_id": "some-vpc-id",
-						}
-
-						vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
-						Expect(state.Stack.Name).To(BeEmpty())
-
-						err := destroy.Execute([]string{}, state)
-						Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
-
-						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
-						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal("some-env-id"))
 					})
 
 					Context("when terraform destroy fails", func() {
@@ -772,6 +912,7 @@ var _ = Describe("Destroy", func() {
 			var serviceAccountKeyPath string
 			var serviceAccountKey string
 			var bblState storage.State
+
 			BeforeEach(func() {
 				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
 					"external_ip":        "some-external-ip",
@@ -813,21 +954,6 @@ var _ = Describe("Destroy", func() {
 
 				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
-			})
-
-			Context("when terraform output provider fails to get terraform outputs", func() {
-				It("ignores the error and continues to destroy terraform", func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform output provider failed")
-
-					stdin.Write([]byte("yes\n"))
-					err := destroy.Execute([]string{}, storage.State{
-						IAAS: "gcp",
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
-					Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
-				})
 			})
 
 			Context("when terraform destroy fails", func() {
@@ -884,28 +1010,6 @@ var _ = Describe("Destroy", func() {
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
 					})
 				})
-			})
-
-			It("returns an error when instances exist in the gcp network", func() {
-				networkInstancesChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
-
-				projectID := "some-project-id"
-				zone := "some-zone"
-				tfState := "some-tf-state"
-				err := destroy.Execute([]string{}, storage.State{
-					IAAS:  "gcp",
-					EnvID: "some-env-id",
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         projectID,
-						Zone:              zone,
-						Region:            "some-region",
-					},
-					TFState: tfState,
-				})
-
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
-				Expect(err).To(MatchError("validation failed"))
 			})
 
 			Context("deleting the keypair", func() {
