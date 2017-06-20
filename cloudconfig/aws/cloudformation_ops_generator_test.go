@@ -2,7 +2,6 @@ package aws_test
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -74,10 +73,10 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
 		})
 
-		DescribeTable("returns an ops file with additional vm extensions to support lb", func(lbType string, lbOutputs map[string]string) {
+		DescribeTable("returns an ops file with additional vm extensions to support lb", func(lbType string, opsFile string, lbOutputs map[string]string) {
 			incomingState.LB.Type = lbType
 
-			expectedLBOpsFile, err := ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("aws-%s-lb-ops.yml", lbType)))
+			expectedLBOpsFile, err := ioutil.ReadFile(filepath.Join("fixtures", opsFile))
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedOps := strings.Join([]string{string(expectedOpsYAML), string(expectedLBOpsFile)}, "\n")
@@ -90,13 +89,15 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOps))
 		},
-			Entry("cf load balancer exists", "cf", map[string]string{
-				"CFRouterLoadBalancer":            "some-cf-router-lb",
-				"CFRouterInternalSecurityGroup":   "some-cf-router-internal-security-group",
-				"CFSSHProxyLoadBalancer":          "some-cf-ssh-proxy-lb",
-				"CFSSHProxyInternalSecurityGroup": "some-cf-ssh-proxy-internal-security-group",
+			Entry("cf load balancer exists", "cf", "cloudformation-aws-cf-lb-ops.yml", map[string]string{
+				"CFRouterLoadBalancer":                "some-cf-router-lb",
+				"CFRouterInternalSecurityGroup":       "some-cf-router-internal-security-group",
+				"CFSSHProxyLoadBalancer":              "some-cf-ssh-proxy-lb",
+				"CFSSHProxyInternalSecurityGroup":     "some-cf-ssh-proxy-internal-security-group",
+				"CFnick-da-gawdLoadBalancer":          "some-cf-nick-da-gawd-lb",
+				"CFnick-da-gawdInternalSecurityGroup": "some-cf-nick-da-gawd-internal-security-group",
 			}),
-			Entry("concourse load balancer exists", "concourse", map[string]string{
+			Entry("concourse load balancer exists", "concourse", "aws-concourse-lb-ops.yml", map[string]string{
 				"ConcourseLoadBalancer":          "some-concourse-lb",
 				"ConcourseInternalSecurityGroup": "some-concourse-internal-security-group",
 			}),

@@ -76,6 +76,13 @@ var _ = Describe("load balancers", func() {
 
 	Describe("create-lbs", func() {
 		var createLBsTests = func(terraform bool) {
+			var cfFixtureLocation string
+			if terraform {
+				cfFixtureLocation = fmt.Sprintf("fixtures/%s-cloud-config-cf-elb.yml", "terraform")
+			} else {
+				cfFixtureLocation = fmt.Sprintf("fixtures/%s-cloud-config-cf-elb.yml", "cloudformation")
+			}
+
 			DescribeTable("creates lbs with the specified cert, key, and chain attached",
 				func(lbType, fixtureLocation string) {
 					contents, err := ioutil.ReadFile(fixtureLocation)
@@ -89,7 +96,8 @@ var _ = Describe("load balancers", func() {
 
 					Expect(fakeBOSH.GetCloudConfig()).To(MatchYAML(string(contents)))
 				},
-				Entry("attaches a cf lb type", "cf", "fixtures/cloud-config-cf-elb.yml"),
+
+				Entry("attaches a cf lb type", "cf", cfFixtureLocation),
 				Entry("attaches a concourse lb type", "concourse", "fixtures/cloud-config-concourse-elb.yml"),
 			)
 
@@ -258,7 +266,7 @@ var _ = Describe("load balancers", func() {
 
 				BeforeEach(func() {
 					var err error
-					expectedCloudConfig, err = ioutil.ReadFile("fixtures/cloud-config-cf-elb.yml")
+					expectedCloudConfig, err = ioutil.ReadFile("fixtures/terraform-cloud-config-cf-elb.yml")
 					Expect(err).NotTo(HaveOccurred())
 				})
 

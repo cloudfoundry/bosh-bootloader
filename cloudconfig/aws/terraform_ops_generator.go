@@ -172,47 +172,34 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 
 	switch state.LB.Type {
 	case "cf":
-		cfRouterLoadBalancer, ok := terraformOutputs["cf_router_load_balancer"].(string)
-		if !ok {
-			return []op{}, errors.New("missing cf_router_load_balancer terraform output")
+		tfOutputs := []map[string]string{
+			map[string]string{"name": "router-lb", "lb": "cf_router_load_balancer", "group": "cf_router_internal_security_group"},
+			map[string]string{"name": "ssh-proxy-lb", "lb": "cf_ssh_proxy_load_balancer", "group": "cf_ssh_proxy_internal_security_group"},
+			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_router_load_balancer", "group": "cf_tcp_router_internal_security_group"},
 		}
 
-		cfRouterInternalSecurityGroup, ok := terraformOutputs["cf_router_internal_security_group"].(string)
-		if !ok {
-			return []op{}, errors.New("missing cf_router_internal_security_group terraform output")
-		}
+		for _, details := range tfOutputs {
+			elb, ok := terraformOutputs[details["lb"]].(string)
+			if !ok {
+				return []op{}, fmt.Errorf("missing %s terraform output", details["lb"])
+			}
 
-		cfSSHProxyLoadBalancer, ok := terraformOutputs["cf_ssh_proxy_load_balancer"].(string)
-		if !ok {
-			return []op{}, errors.New("missing cf_ssh_proxy_load_balancer terraform output")
-		}
+			grp, ok := terraformOutputs[details["group"]].(string)
+			if !ok {
+				return []op{}, fmt.Errorf("missing %s terraform output", details["group"])
+			}
 
-		cfSSHProxyInternalSecurityGroup, ok := terraformOutputs["cf_ssh_proxy_internal_security_group"].(string)
-		if !ok {
-			return []op{}, errors.New("missing cf_ssh_proxy_internal_security_group terraform output")
-		}
-
-		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
-			Name: "router-lb",
-			CloudProperties: lbCloudProperties{
-				ELBs: []string{cfRouterLoadBalancer},
-				SecurityGroups: []string{
-					cfRouterInternalSecurityGroup,
-					internalSecurityGroup,
+			ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
+				Name: details["name"],
+				CloudProperties: lbCloudProperties{
+					ELBs: []string{elb},
+					SecurityGroups: []string{
+						grp,
+						internalSecurityGroup,
+					},
 				},
-			},
-		}))
-
-		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
-			Name: "ssh-proxy-lb",
-			CloudProperties: lbCloudProperties{
-				ELBs: []string{cfSSHProxyLoadBalancer},
-				SecurityGroups: []string{
-					cfSSHProxyInternalSecurityGroup,
-					internalSecurityGroup,
-				},
-			},
-		}))
+			}))
+		}
 	case "concourse":
 		concourseLoadBalancer, ok := terraformOutputs["concourse_load_balancer"].(string)
 		if !ok {

@@ -57,13 +57,15 @@ var _ = Describe("TerraformOpsGenerator", func() {
 					"some-internal-subnet-ids-2",
 					"some-internal-subnet-ids-3",
 				},
-				"internal_security_group":              "some-internal-security-group",
-				"cf_router_load_balancer":              "some-cf-router-lb",
-				"cf_router_internal_security_group":    "some-cf-router-internal-security-group",
-				"cf_ssh_proxy_load_balancer":           "some-cf-ssh-proxy-lb",
-				"cf_ssh_proxy_internal_security_group": "some-cf-ssh-proxy-internal-security-group",
-				"concourse_load_balancer":              "some-concourse-lb",
-				"concourse_internal_security_group":    "some-concourse-internal-security-group",
+				"internal_security_group":               "some-internal-security-group",
+				"cf_router_load_balancer":               "some-cf-router-lb",
+				"cf_router_internal_security_group":     "some-cf-router-internal-security-group",
+				"cf_ssh_proxy_load_balancer":            "some-cf-ssh-proxy-lb",
+				"cf_ssh_proxy_internal_security_group":  "some-cf-ssh-proxy-internal-security-group",
+				"cf_tcp_router_load_balancer":           "some-cf-tcp-router-lb",
+				"cf_tcp_router_internal_security_group": "some-cf-tcp-router-internal-security-group",
+				"concourse_load_balancer":               "some-concourse-lb",
+				"concourse_internal_security_group":     "some-concourse-internal-security-group",
 			}
 
 			opsGenerator = aws.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
@@ -92,7 +94,7 @@ var _ = Describe("TerraformOpsGenerator", func() {
 			BeforeEach(func() {
 				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
-				lbsOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-cf-lb-ops.yml"))
+				lbsOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "terraform-aws-cf-lb-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
 				expectedOpsYAML = strings.Join([]string{string(baseOpsYAMLContents), string(lbsOpsYAMLContents)}, "\n")
 			})
