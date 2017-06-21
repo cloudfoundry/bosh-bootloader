@@ -181,13 +181,13 @@ func (b *Backend) handleOutputJson(responseWriter http.ResponseWriter) {
 			"cf_ssh_lb_internal_security_group":  {
 				"value": "some-cf-ssh-proxy-internal-security-group"
 			},
-			"cf_tcp_router_lb_name":  {
+			"cf_tcp_lb_name":  {
 				"value": "some-cf-tcp-router-lb"
 			},
-			"cf_tcp_router_lb_url": {
+			"cf_tcp_lb_url": {
 				"value": "some-cf-tcp-router-lb-url"
 			},
-			"cf_tcp_router_lb_internal_security_group":  {
+			"cf_tcp_lb_internal_security_group":  {
 				"value": "some-cf-tcp-router-internal-security-group"
 			},
 			"concourse_lb_name":  {
