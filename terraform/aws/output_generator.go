@@ -48,9 +48,9 @@ func (o OutputGenerator) Generate(state storage.State) (map[string]interface{}, 
 		outputMapping["cf_ssh_lb_name"] = "cf_ssh_proxy_load_balancer"
 		outputMapping["cf_ssh_lb_url"] = "cf_ssh_proxy_load_balancer_url"
 		outputMapping["cf_ssh_lb_internal_security_group"] = "cf_ssh_proxy_internal_security_group"
-		outputMapping["cf_tcp_router_lb_name"] = "cf_tcp_router_load_balancer"
-		outputMapping["cf_tcp_router_lb_url"] = "cf_tcp_router_load_balancer_url"
-		outputMapping["cf_tcp_router_lb_internal_security_group"] = "cf_tcp_router_internal_security_group"
+		outputMapping["cf_tcp_lb_name"] = "cf_tcp_router_load_balancer"
+		outputMapping["cf_tcp_lb_url"] = "cf_tcp_router_load_balancer_url"
+		outputMapping["cf_tcp_lb_internal_security_group"] = "cf_tcp_router_internal_security_group"
 
 		if state.LB.Domain != "" {
 			systemDomainDNSServersRaw := tfOutputs["env_dns_zone_name_servers"]
