@@ -732,6 +732,13 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
     to_port     = 1123
   }
 
+  ingress {
+    security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+  }
+
   egress {
     from_port = 0
     to_port = 0
