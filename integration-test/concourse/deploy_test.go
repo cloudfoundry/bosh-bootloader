@@ -34,7 +34,6 @@ var _ = Describe("concourse deployment test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
 		state = integration.NewState(configuration.StateFileDir)
 
-		fmt.Printf("using state-dir: %s\n", configuration.StateFileDir)
 		bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID()})
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
