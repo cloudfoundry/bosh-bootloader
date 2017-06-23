@@ -2,6 +2,7 @@ package iam
 
 import (
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -25,8 +26,9 @@ func NewCertificateValidator() CertificateValidator {
 func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath string) error {
 	var err error
 	var certificateData []byte
-	var keyData []byte
 	var chainData []byte
+	var certificate *x509.Certificate
+	var privateKey *rsa.PrivateKey
 
 	validateErrors := multierror.NewMultiError(command)
 
@@ -34,7 +36,7 @@ func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath str
 		validateErrors.Add(err)
 	}
 
-	if keyData, err = c.validateFileAndFormat("key", "--key", keyPath); err != nil {
+	if _, err = c.validateFileAndFormat("key", "--key", keyPath); err != nil {
 		validateErrors.Add(err)
 	}
 
@@ -48,14 +50,18 @@ func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath str
 		return validateErrors
 	}
 
-	privateKey, err := c.parsePrivateKey(keyData)
+	tlsCertificateStruct, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		validateErrors.Add(err)
+	} else {
+		privateKey = tlsCertificateStruct.PrivateKey.(*rsa.PrivateKey)
 	}
-
-	certificate, err := c.parseCertificate(certificateData)
-	if err != nil {
-		validateErrors.Add(err)
+	if certificate == nil {
+		loadKeyPairError := err
+		certificate, err = c.parseCertificate(certificateData, loadKeyPairError)
+		if err != nil {
+			validateErrors.Add(err)
+		}
 	}
 
 	var certPool *x509.CertPool
@@ -150,10 +156,10 @@ func (CertificateValidator) parsePrivateKey(keyData []byte) (*rsa.PrivateKey, er
 	return privateKey, nil
 }
 
-func (CertificateValidator) parseCertificate(certificateData []byte) (*x509.Certificate, error) {
+func (CertificateValidator) parseCertificate(certificateData []byte, loadKeyPairError error) (*x509.Certificate, error) {
 	pemCertData, _ := pem.Decode(certificateData)
 	cert, err := x509.ParseCertificate(pemCertData.Bytes)
-	if err != nil {
+	if err != nil && err != loadKeyPairError {
 		return nil, fmt.Errorf("failed to parse certificate: %s", err)
 	}
 
