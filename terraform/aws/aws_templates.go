@@ -93,8 +93,7 @@ variable "nat_ami_map" {
 }
 
 resource "aws_security_group" "nat_security_group" {
-  name        = "nat_security_group"
-  description = "NAT"
+  description = "{{.NAT}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -175,8 +174,7 @@ provider "aws" {
 }
 
 resource "aws_security_group" "internal_security_group" {
-  name        = "internal_security_group"
-  description = "Internal"
+  description = "{{.Internal}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
@@ -229,8 +227,7 @@ variable "bosh_inbound_cidr" {
 }
 
 resource "aws_security_group" "bosh_security_group" {
-  name        = "bosh_security_group"
-  description = "Bosh"
+  description = "{{.BOSH}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
@@ -494,8 +491,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 `
 
 const ConcourseLBTemplate = `resource "aws_security_group" "concourse_lb_security_group" {
-  name = "concourse_lb_security_group"
-  description = "Concourse"
+  description = "{{.Concourse}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -532,8 +528,7 @@ const ConcourseLBTemplate = `resource "aws_security_group" "concourse_lb_securit
 }
 
 resource "aws_security_group" "concourse_lb_internal_security_group" {
-  name = "concourse_lb_internal_security_group"
-  description = "Concourse Internal"
+  description = "{{.ConcourseInternal}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -614,8 +609,7 @@ output "concourse_lb_url" {
 `
 
 const CFLBTemplate = `resource "aws_security_group" "cf_ssh_lb_security_group" {
-  name = "cf_ssh_lb_security_group"
-  description = "CF SSH"
+  description = "{{.SSHLB}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -642,8 +636,7 @@ output "cf_ssh_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
-  name = "cf_ssh_lb_internal_security_group"
-  description = "CF SSH Internal"
+  description = "{{.SSHLBInternal}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -701,8 +694,7 @@ output "cf_ssh_lb_url" {
 }
 
 resource "aws_security_group" "cf_router_lb_security_group" {
-  name = "cf_router_lb_security_group"
-  description = "CF Router"
+  description = "{{.Router}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -743,8 +735,7 @@ output "cf_router_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
-  name = "cf_router_lb_internal_security_group"
-  description = "CF Router Internal"
+  description = "{{.RouterInternal}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -818,8 +809,7 @@ output "cf_router_lb_url" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_security_group" {
-  name = "cf_tcp_lb_security_group"
-  description = "CF TCP"
+  description = "{{.TCPLB}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -846,8 +836,7 @@ output "cf_tcp_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
-  name = "cf_tcp_lb_internal_security_group"
-  description = "CF TCP Internal"
+  description = "{{.TCPLBInternal}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {

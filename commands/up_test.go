@@ -439,29 +439,6 @@ var _ = Describe("Up", func() {
 						BOSHAZ:          "some-bosh-az",
 					}))
 				})
-
-				Context("when the --terraform flag is specified", func() {
-					It("executes the AWS up with terraform", func() {
-						err := command.Execute([]string{
-							"--iaas", "aws",
-							"--aws-access-key-id", "some-access-key-id",
-							"--aws-secret-access-key", "some-secret-access-key",
-							"--aws-region", "some-region",
-							"--aws-bosh-az", "some-bosh-az",
-							"--terraform",
-						}, storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
-						Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-							AccessKeyID:     "some-access-key-id",
-							SecretAccessKey: "some-secret-access-key",
-							Region:          "some-region",
-							BOSHAZ:          "some-bosh-az",
-							Terraform:       true,
-						}))
-					})
-				})
 			})
 
 			Context("when an invalid iaas is provided", func() {

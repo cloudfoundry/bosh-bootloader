@@ -60,6 +60,7 @@ var _ = Describe("NATTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(nat.Resources).To(HaveKeyWithValue("NATInstance", templates.Resource{
@@ -87,13 +88,34 @@ var _ = Describe("NATTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
+
 			Expect(nat.Resources).To(HaveKeyWithValue("NATEIP", templates.Resource{
 				Type:      "AWS::EC2::EIP",
 				DependsOn: "VPCGatewayAttachment",
 				Properties: templates.EIP{
 					Domain:     "vpc",
 					InstanceId: templates.Ref{"NATInstance"},
+				},
+				DeletionPolicy: "Retain",
+			}))
+
+			Expect(nat.Outputs).To(HaveKeyWithValue("NATEIP", templates.Output{
+				Value: templates.Ref{
+					Ref: "NATEIP",
+				},
+			}))
+
+			Expect(nat.Outputs).To(HaveKeyWithValue("NATSecurityGroup", templates.Output{
+				Value: templates.Ref{
+					Ref: "NATSecurityGroup",
+				},
+			}))
+
+			Expect(nat.Outputs).To(HaveKeyWithValue("NATInstance", templates.Output{
+				Value: templates.Ref{
+					Ref: "NATInstance",
 				},
 			}))
 		})

@@ -9,11 +9,11 @@ import (
 )
 
 type GCPLBs struct {
-	terraformManager terraformManager
+	terraformManager terraformOutputter
 	logger           logger
 }
 
-func NewGCPLBs(terraformManager terraformManager, logger logger) GCPLBs {
+func NewGCPLBs(terraformManager terraformOutputter, logger logger) GCPLBs {
 	return GCPLBs{
 		terraformManager: terraformManager,
 		logger:           logger,

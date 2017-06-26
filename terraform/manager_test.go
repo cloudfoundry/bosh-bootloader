@@ -10,10 +10,11 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
+	"github.com/onsi/gomega/gstruct"
 )
 
 var _ = Describe("Manager", func() {
@@ -93,7 +94,7 @@ var _ = Describe("Manager", func() {
 			_, err := manager.Apply(storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				"generating terraform template", "applied terraform template",
 			}))
 		})
@@ -229,7 +230,7 @@ var _ = Describe("Manager", func() {
 				_, err := manager.Destroy(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 					"destroying infrastructure", "finished destroying infrastructure",
 				}))
 			})
@@ -325,20 +326,144 @@ var _ = Describe("Manager", func() {
 				})
 			})
 		})
-
 		Context("when the bbl state contains a non-empty TFState", func() {
 			var (
-				incomingState = storage.State{
-					EnvID: "some-env-id",
-				}
+				incomingState = storage.State{EnvID: "some-env-id"}
 			)
-
 			It("returns the bbl state and skips calling executor destroy", func() {
 				bblState, err := manager.Destroy(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(bblState).To(Equal(incomingState))
 				Expect(executor.DestroyCall.CallCount).To(Equal(0))
+			})
+		})
+	})
+
+	Describe("Import", func() {
+		var (
+			incomingState storage.State
+			outputs       map[string]string
+		)
+
+		BeforeEach(func() {
+			incomingState = storage.State{
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+			}
+			outputs = map[string]string{
+				"VPCID":                           "some-vpc",
+				"VPCInternetGatewayID":            "some-vpc-gateway-internet-gateway",
+				"NATEIP":                          "some-nat-eip",
+				"NATInstance":                     "some-nat-instance",
+				"NATSecurityGroup":                "some-nat-security-group",
+				"BOSHEIP":                         "some-bosh-eip",
+				"BOSHSecurityGroup":               "some-bosh-security-group",
+				"BOSHSubnet":                      "some-bosh-subnet",
+				"InternalSecurityGroup":           "some-internal-security-group",
+				"InternalSubnet1Name":             "some-internal-subnet-1",
+				"InternalSubnet2Name":             "some-internal-subnet-2",
+				"InternalSubnet3Name":             "some-internal-subnet-3",
+				"InternalSubnet4Name":             "some-internal-subnet-4",
+				"LoadBalancerSubnet1Name":         "some-lb-subnet-1",
+				"LoadBalancerSubnet2Name":         "some-lb-subnet-2",
+				"CFRouterInternalSecurityGroup":   "some-cf-router-internal-security-group",
+				"CFRouterSecurityGroup":           "some-cf-router-security-group",
+				"CFRouterLoadBalancer":            "some-cf-router-load-balancer",
+				"CFSSHProxyInternalSecurityGroup": "some-cf-ssh-proxy-internal-security-group",
+				"CFSSHProxySecurityGroup":         "some-cf-ssh-proxy-security-group",
+				"CFSSHProxyLoadBalancer":          "some-cf-ssh-proxy-load-balancer",
+				"ConcourseInternalSecurityGroup":  "some-concourse-internal-security-group",
+				"ConcourseSecurityGroup":          "some-concourse-security-group",
+				"ConcourseLoadBalancer":           "some-concourse-load-balancer",
+			}
+
+			executor.ImportCall.Returns.TFState = "some-tf-state"
+		})
+
+		It("imports all stack resources provided to the tf state", func() {
+			state, err := manager.Import(incomingState, outputs)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_vpc.vpc", ID: "some-vpc"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_internet_gateway.ig", ID: "some-vpc-gateway-internet-gateway"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_eip.nat_eip", ID: "some-nat-eip"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_instance.nat", ID: "some-nat-instance"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.nat_security_group", ID: "some-nat-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_eip.bosh_eip", ID: "some-bosh-eip"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.bosh_security_group", ID: "some-bosh-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_subnet.bosh_subnet", ID: "some-bosh-subnet"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.internal_security_group", ID: "some-internal-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(gstruct.MatchAllFields(
+				gstruct.Fields{
+					"Addr": MatchRegexp(`aws_subnet.internal_subnets\[\d\]`),
+					"ID":   Equal("some-internal-subnet-1"),
+				},
+			)))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(gstruct.MatchAllFields(
+				gstruct.Fields{
+					"Addr": MatchRegexp(`aws_subnet.internal_subnets\[\d\]`),
+					"ID":   Equal("some-internal-subnet-2"),
+				},
+			)))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(gstruct.MatchAllFields(
+				gstruct.Fields{
+					"Addr": MatchRegexp(`aws_subnet.internal_subnets\[\d\]`),
+					"ID":   Equal("some-internal-subnet-3"),
+				},
+			)))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(gstruct.MatchAllFields(
+				gstruct.Fields{
+					"Addr": MatchRegexp(`aws_subnet.internal_subnets\[\d\]`),
+					"ID":   Equal("some-internal-subnet-4"),
+				},
+			)))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.cf_router_lb_internal_security_group", ID: "some-cf-router-internal-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.cf_router_lb_security_group", ID: "some-cf-router-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_elb.cf_router_lb", ID: "some-cf-router-load-balancer"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.cf_ssh_lb_internal_security_group", ID: "some-cf-ssh-proxy-internal-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.cf_ssh_lb_security_group", ID: "some-cf-ssh-proxy-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_elb.cf_ssh_lb", ID: "some-cf-ssh-proxy-load-balancer"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.concourse_lb_internal_security_group", ID: "some-concourse-internal-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_security_group.concourse_lb_security_group", ID: "some-concourse-security-group"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(fakes.Import{Addr: "aws_elb.concourse_lb", ID: "some-concourse-load-balancer"}))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(gstruct.MatchAllFields(
+				gstruct.Fields{
+					"Addr": MatchRegexp(`aws_subnet.lb_subnets\[\d\]`),
+					"ID":   Equal("some-lb-subnet-1"),
+				},
+			)))
+			Expect(executor.ImportCall.Receives.Imports).To(ContainElement(gstruct.MatchAllFields(
+				gstruct.Fields{
+					"Addr": MatchRegexp(`aws_subnet.lb_subnets\[\d\]`),
+					"ID":   Equal("some-lb-subnet-2"),
+				},
+			)))
+
+			Expect(executor.ImportCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(executor.ImportCall.Receives.Creds).To(Equal(
+				storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+			))
+
+			Expect(state.TFState).To(Equal("some-tf-state"))
+		})
+
+		Context("failure cases", func() {
+			Context("when executor.Import fails", func() {
+				It("returns an error", func() {
+					executor.ImportCall.Returns.Error = errors.New("failed to import")
+					_, err := manager.Import(storage.State{}, map[string]string{
+						"VPCID": "some-vpc",
+					})
+					Expect(err).To(MatchError("failed to import"))
+				})
 			})
 		})
 	})

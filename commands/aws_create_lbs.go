@@ -19,7 +19,7 @@ type AWSCreateLBs struct {
 	guidGenerator             guidGenerator
 	stateStore                stateStore
 	stateValidator            stateValidator
-	terraformManager          terraformManager
+	terraformManager          terraformApplier
 	environmentValidator      environmentValidator
 }
 
@@ -53,7 +53,7 @@ type guidGenerator interface {
 func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator, certificateManager certificateManager,
 	infrastructureManager infrastructureManager, availabilityZoneRetriever availabilityZoneRetriever,
 	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
-	guidGenerator guidGenerator, stateStore stateStore, terraformManager terraformManager, environmentValidator environmentValidator) AWSCreateLBs {
+	guidGenerator guidGenerator, stateStore stateStore, terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:                    logger,
 		certificateManager:        certificateManager,

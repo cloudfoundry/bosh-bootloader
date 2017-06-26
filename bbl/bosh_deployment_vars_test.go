@@ -126,7 +126,7 @@ var _ = Describe("bosh-deployment-vars", func() {
 		})
 	})
 
-	Context("AWS", func() {
+	PContext("AWS", func() {
 		var (
 			fakeAWS       *awsbackend.Backend
 			fakeAWSServer *httptest.Server

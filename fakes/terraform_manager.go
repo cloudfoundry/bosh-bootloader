@@ -5,10 +5,31 @@ import (
 )
 
 type TerraformManager struct {
+	ApplyCall struct {
+		CallCount int
+		Receives  struct {
+			BBLState storage.State
+		}
+		Returns struct {
+			BBLState storage.State
+			Error    error
+		}
+	}
 	DestroyCall struct {
 		CallCount int
 		Receives  struct {
 			BBLState storage.State
+		}
+		Returns struct {
+			BBLState storage.State
+			Error    error
+		}
+	}
+	ImportCall struct {
+		CallCount int
+		Receives  struct {
+			BBLState storage.State
+			Outputs  map[string]string
 		}
 		Returns struct {
 			BBLState storage.State
@@ -32,16 +53,6 @@ type TerraformManager struct {
 			Error   error
 		}
 	}
-	ApplyCall struct {
-		CallCount int
-		Receives  struct {
-			BBLState storage.State
-		}
-		Returns struct {
-			BBLState storage.State
-			Error    error
-		}
-	}
 	ValidateVersionCall struct {
 		CallCount int
 		Returns   struct {
@@ -62,6 +73,14 @@ func (t *TerraformManager) Destroy(bblState storage.State) (storage.State, error
 	t.DestroyCall.Receives.BBLState = bblState
 
 	return t.DestroyCall.Returns.BBLState, t.DestroyCall.Returns.Error
+}
+
+func (t *TerraformManager) Import(bblState storage.State, outputs map[string]string) (storage.State, error) {
+	t.ImportCall.CallCount++
+	t.ImportCall.Receives.BBLState = bblState
+	t.ImportCall.Receives.Outputs = outputs
+
+	return t.ImportCall.Returns.BBLState, t.ImportCall.Returns.Error
 }
 
 func (t *TerraformManager) GetOutputs(bblState storage.State) (map[string]interface{}, error) {

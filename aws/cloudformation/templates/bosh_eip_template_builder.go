@@ -15,20 +15,11 @@ func (t BOSHEIPTemplateBuilder) BOSHEIP() Template {
 				Properties: EIP{
 					Domain: "vpc",
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 		Outputs: map[string]Output{
 			"BOSHEIP": {Value: Ref{"BOSHEIP"}},
-			"BOSHURL": {
-				Value: FnJoin{
-					Delimeter: "",
-					Values: []interface{}{
-						"https://",
-						Ref{"BOSHEIP"},
-						":25555",
-					},
-				},
-			},
 		},
 	}
 }

@@ -114,6 +114,7 @@ var _ = Describe("Store", func() {
 				"version": 3,
 				"iaas": "aws",
 				"noDirector": false,
+				"migratedFromCloudFormation": false,
 				"jumpbox": true,
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",

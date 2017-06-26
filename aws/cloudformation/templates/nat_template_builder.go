@@ -50,6 +50,7 @@ func (t NATTemplateBuilder) NAT() Template {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"NATInstance": Resource{
 				Type: "AWS::EC2::Instance",
@@ -76,6 +77,7 @@ func (t NATTemplateBuilder) NAT() Template {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"NATEIP": Resource{
 				DependsOn: "VPCGatewayAttachment",
@@ -84,7 +86,13 @@ func (t NATTemplateBuilder) NAT() Template {
 					Domain:     "vpc",
 					InstanceId: Ref{"NATInstance"},
 				},
+				DeletionPolicy: "Retain",
 			},
+		},
+		Outputs: map[string]Output{
+			"NATEIP":           {Ref{Ref: "NATEIP"}},
+			"NATSecurityGroup": {Ref{Ref: "NATSecurityGroup"}},
+			"NATInstance":      {Ref{Ref: "NATInstance"}},
 		},
 	}
 }

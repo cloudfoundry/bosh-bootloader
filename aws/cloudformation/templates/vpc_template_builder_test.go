@@ -45,10 +45,12 @@ var _ = Describe("VPCTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(vpc.Resources).To(HaveKeyWithValue("VPCGatewayInternetGateway", templates.Resource{
-				Type: "AWS::EC2::InternetGateway",
+				Type:           "AWS::EC2::InternetGateway",
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(vpc.Resources).To(HaveKeyWithValue("VPCGatewayAttachment", templates.Resource{
@@ -57,6 +59,7 @@ var _ = Describe("VPCTemplateBuilder", func() {
 					VpcId:             templates.Ref{"VPC"},
 					InternetGatewayId: templates.Ref{"VPCGatewayInternetGateway"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 		})
 
@@ -65,6 +68,10 @@ var _ = Describe("VPCTemplateBuilder", func() {
 
 			Expect(vpc.Outputs).To(HaveKeyWithValue("VPCID", templates.Output{
 				Value: templates.Ref{Ref: "VPC"},
+			}))
+
+			Expect(vpc.Outputs).To(HaveKeyWithValue("VPCInternetGatewayID", templates.Output{
+				Value: templates.Ref{Ref: "VPCGatewayInternetGateway"},
 			}))
 		})
 	})

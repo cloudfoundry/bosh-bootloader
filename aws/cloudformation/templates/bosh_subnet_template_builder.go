@@ -29,6 +29,7 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(availabilityZone string) Template {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"BOSHRouteTable": Resource{
 				Type: "AWS::EC2::RouteTable",
@@ -56,14 +57,6 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(availabilityZone string) Template {
 		Outputs: map[string]Output{
 			"BOSHSubnet": Output{
 				Value: Ref{"BOSHSubnet"},
-			},
-			"BOSHSubnetAZ": Output{
-				Value: FnGetAtt{
-					[]string{
-						"BOSHSubnet",
-						"AvailabilityZone",
-					},
-				},
 			},
 		},
 	}

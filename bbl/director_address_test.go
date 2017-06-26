@@ -17,7 +17,7 @@ import (
 	"github.com/rosenhouse/awsfaker"
 )
 
-var _ = Describe("director-address", func() {
+var _ = PDescribe("director-address", func() {
 	var (
 		tempDirectory string
 		args          []string
@@ -99,19 +99,7 @@ var _ = Describe("director-address", func() {
 				fakeAWS = awsbackend.New(fakeBOSHServer.URL)
 				fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
 
-				upArgs := []string{
-					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-					"--state-dir", tempDirectory,
-					"--debug",
-					"up",
-					"--no-director",
-					"--iaas", "aws",
-					"--aws-access-key-id", "some-access-key",
-					"--aws-secret-access-key", "some-access-secret",
-					"--aws-region", "some-region",
-				}
-
-				executeCommand(upArgs, 0)
+				upAWSCloudFormation(fakeAWSServer.URL, tempDirectory, 0)
 			})
 
 			AfterEach(func() {
@@ -128,7 +116,7 @@ var _ = Describe("director-address", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("https://127.0.0.1:25555"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("https://127.0.0.1:25555"))
 			})
 
 		})

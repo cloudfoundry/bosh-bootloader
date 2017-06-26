@@ -32,7 +32,7 @@ type Destroy struct {
 	certificateDeleter      certificateDeleter
 	stateStore              stateStore
 	stateValidator          stateValidator
-	terraformManager        terraformManager
+	terraformManager        terraformDestroyer
 	networkInstancesChecker networkInstancesChecker
 }
 
@@ -77,7 +77,7 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformManager terraformManager, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformManager terraformDestroyer, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
 		logger:                  logger,

@@ -9,11 +9,11 @@ import (
 type GCPDeleteLBs struct {
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
-	terraformManager   terraformManager
+	terraformManager   terraformApplier
 }
 
 func NewGCPDeleteLBs(stateStore stateStore,
-	terraformManager terraformManager, cloudConfigManager cloudConfigManager) GCPDeleteLBs {
+	terraformManager terraformApplier, cloudConfigManager cloudConfigManager) GCPDeleteLBs {
 	return GCPDeleteLBs{
 		stateStore:         stateStore,
 		terraformManager:   terraformManager,

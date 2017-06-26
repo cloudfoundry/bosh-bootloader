@@ -32,6 +32,13 @@ func (s SecurityGroupTemplateBuilder) LBSecurityGroup(securityGroupName, securit
 					SecurityGroupEgress:  []SecurityGroupEgress{},
 					SecurityGroupIngress: securityGroupIngress,
 				},
+				DeletionPolicy: "Retain",
+			},
+		},
+
+		Outputs: map[string]Output{
+			securityGroupName: Output{
+				Value: Ref{securityGroupName},
 			},
 		},
 	}
@@ -67,6 +74,7 @@ func (s SecurityGroupTemplateBuilder) LBInternalSecurityGroup(securityGroupName,
 					SecurityGroupEgress:  []SecurityGroupEgress{},
 					SecurityGroupIngress: securityGroupIngress,
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 		Outputs: map[string]Output{
@@ -93,6 +101,7 @@ func (s SecurityGroupTemplateBuilder) InternalSecurityGroup() Template {
 						s.securityGroupIngress("0.0.0.0/0", "icmp", "-1", "-1", nil),
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"InternalSecurityGroupIngressTCPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "tcp"),
 			"InternalSecurityGroupIngressUDPfromBOSH": s.internalSecurityGroupIngress("BOSHSecurityGroup", "udp"),
@@ -129,6 +138,7 @@ func (s SecurityGroupTemplateBuilder) BOSHSecurityGroup() Template {
 						s.securityGroupIngress(nil, "udp", "0", "65535", Ref{"InternalSecurityGroup"}),
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 		Outputs: map[string]Output{

@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 var tempDir func(dir, prefix string) (string, error) = ioutil.TempDir
@@ -104,6 +106,42 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 	}
 
 	return string(tfState), nil
+}
+
+func (e Executor) Import(addr, id, tfState string, creds storage.AWS) (string, error) {
+	tempDir, err := tempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	template := fmt.Sprintf(`
+provider "aws" {
+	region     = %q
+	access_key = %q
+	secret_key = %q
+}`, creds.Region, creds.AccessKeyID, creds.SecretAccessKey)
+
+	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	err = e.cmd.Run(os.Stdout, tempDir, []string{"import", addr, id}, e.debug)
+	if err != nil {
+		return "", fmt.Errorf("failed to import: %s", err)
+	}
+
+	tfStateContents, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+	if err != nil {
+		return "", err
+	}
+
+	return string(tfStateContents), nil
 }
 
 func (e Executor) Version() (string, error) {

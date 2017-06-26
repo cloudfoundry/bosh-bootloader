@@ -83,20 +83,6 @@ var _ = Describe("BOSHIAMTemplateBuilder", func() {
 					},
 					Type: "AWS::IAM::AccessKey",
 				}))
-
-				Expect(user.Outputs).To(HaveLen(2))
-				Expect(user.Outputs).To(HaveKeyWithValue("BOSHUserAccessKey", templates.Output{
-					Value: templates.Ref{"BOSHUserAccessKey"},
-				}))
-
-				Expect(user.Outputs).To(HaveKeyWithValue("BOSHUserSecretAccessKey", templates.Output{
-					Value: templates.FnGetAtt{
-						[]string{
-							"BOSHUserAccessKey",
-							"SecretAccessKey",
-						},
-					},
-				}))
 			})
 		})
 	})

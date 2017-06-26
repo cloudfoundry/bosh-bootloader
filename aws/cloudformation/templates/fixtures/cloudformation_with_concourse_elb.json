@@ -19,47 +19,23 @@
         "BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
         "BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}},
         "BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
-        "BOSHSubnetAZ": {
-            "Value": {"Fn::GetAtt": ["BOSHSubnet", "AvailabilityZone"]}
-        },
-        "BOSHURL": {
-            "Value": {
-                "Fn::Join": ["", ["https://", {"Ref": "BOSHEIP"}, ":25555"]]
-            }
-        },
-        "BOSHUserAccessKey": {"Value": {"Ref": "BOSHUserAccessKey"}},
-        "BOSHUserSecretAccessKey": {
-            "Value": {"Fn::GetAtt": ["BOSHUserAccessKey", "SecretAccessKey"]}
-        },
-        "ConcourseInternalSecurityGroup": {
-            "Value": {"Ref": "ConcourseInternalSecurityGroup"}
-        },
-        "ConcourseLoadBalancer": {"Value": {"Ref": "ConcourseLoadBalancer"}},
-        "ConcourseLoadBalancerURL": {
-            "Value": {"Fn::GetAtt": ["ConcourseLoadBalancer", "DNSName"]}
-        },
         "InternalSecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
-        "InternalSubnet1AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet1", "AvailabilityZone"]}
-        },
-        "InternalSubnet1CIDR": {"Value": {"Ref": "InternalSubnet1CIDR"}},
         "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
-        "InternalSubnet2AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet2", "AvailabilityZone"]}
-        },
-        "InternalSubnet2CIDR": {"Value": {"Ref": "InternalSubnet2CIDR"}},
         "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
-        "InternalSubnet3AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet3", "AvailabilityZone"]}
-        },
-        "InternalSubnet3CIDR": {"Value": {"Ref": "InternalSubnet3CIDR"}},
         "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
-        "InternalSubnet4AZ": {
-            "Value": {"Fn::GetAtt": ["InternalSubnet4", "AvailabilityZone"]}
-        },
-        "InternalSubnet4CIDR": {"Value": {"Ref": "InternalSubnet4CIDR"}},
         "InternalSubnet4Name": {"Value": {"Ref": "InternalSubnet4"}},
-        "VPCID": {"Value": {"Ref": "VPC"}}
+        "NATEIP": {"Value": {"Ref": "NATEIP"}},
+        "NATInstance": {"Value": {"Ref": "NATInstance"}},
+        "NATSecurityGroup": {"Value": {"Ref": "NATSecurityGroup"}},
+        "VPCID": {"Value": {"Ref": "VPC"}},
+        "VPCInternetGatewayID": {"Value": {"Ref": "VPCGatewayInternetGateway"}},
+        "LoadBalancerSubnet1Name": {"Value": {"Ref": "LoadBalancerSubnet1"}},
+        "LoadBalancerSubnet2Name": {"Value": {"Ref": "LoadBalancerSubnet2"}},
+        "LoadBalancerSubnet3Name": {"Value": {"Ref": "LoadBalancerSubnet3"}},
+        "LoadBalancerSubnet4Name": {"Value": {"Ref": "LoadBalancerSubnet4"}},
+        "ConcourseSecurityGroup": { "Value": {"Ref": "ConcourseSecurityGroup"}},
+        "ConcourseInternalSecurityGroup": { "Value": {"Ref": "ConcourseInternalSecurityGroup"}},
+        "ConcourseLoadBalancer": {"Value": {"Ref": "ConcourseLoadBalancer"}}
     },
     "Parameters": {
         "BOSHInboundCIDR": {
@@ -127,7 +103,8 @@
         "BOSHEIP": {
             "DependsOn": "VPCGatewayAttachment",
             "Properties": {"Domain": "vpc"},
-            "Type": "AWS::EC2::EIP"
+            "Type": "AWS::EC2::EIP",
+			"DeletionPolicy" : "Retain"
         },
         "BOSHRoute": {
             "DependsOn": "VPCGatewayAttachment",
@@ -180,7 +157,8 @@
                 ],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::SecurityGroup"
+            "Type": "AWS::EC2::SecurityGroup",
+			"DeletionPolicy" : "Retain"
         },
         "BOSHSubnet": {
             "Properties": {
@@ -189,7 +167,8 @@
                 "VpcId": {"Ref": "VPC"},
                 "AvailabilityZone": "us-east-1a"
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "BOSHSubnetRouteTableAssociation": {
             "Properties": {
@@ -273,7 +252,8 @@
                 ],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::SecurityGroup"
+            "Type": "AWS::EC2::SecurityGroup",
+			"DeletionPolicy" : "Retain"
         },
         "ConcourseLoadBalancer": {
             "DependsOn": "VPCGatewayAttachment",
@@ -314,7 +294,8 @@
                     {"Ref": "LoadBalancerSubnet4"}
                 ]
             },
-            "Type": "AWS::ElasticLoadBalancing::LoadBalancer"
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+			"DeletionPolicy" : "Retain"
         },
         "ConcourseSecurityGroup": {
             "Properties": {
@@ -342,7 +323,8 @@
                 ],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::SecurityGroup"
+            "Type": "AWS::EC2::SecurityGroup",
+			"DeletionPolicy" : "Retain"
         },
         "InternalRoute": {
             "DependsOn": "NATInstance",
@@ -373,7 +355,8 @@
                 ],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::SecurityGroup"
+            "Type": "AWS::EC2::SecurityGroup",
+			"DeletionPolicy" : "Retain"
         },
         "InternalSecurityGroupIngressTCPfromBOSH": {
             "Properties": {
@@ -422,7 +405,8 @@
                 "Tags": [{"Key": "Name", "Value": "Internal1"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "InternalSubnet1RouteTableAssociation": {
             "Properties": {
@@ -438,7 +422,8 @@
                 "Tags": [{"Key": "Name", "Value": "Internal2"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "InternalSubnet2RouteTableAssociation": {
             "Properties": {
@@ -454,7 +439,8 @@
                 "Tags": [{"Key": "Name", "Value": "Internal3"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "InternalSubnet3RouteTableAssociation": {
             "Properties": {
@@ -470,7 +456,8 @@
                 "Tags": [{"Key": "Name", "Value": "Internal4"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "InternalSubnet4RouteTableAssociation": {
             "Properties": {
@@ -499,7 +486,8 @@
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer1"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "LoadBalancerSubnet1RouteTableAssociation": {
             "Properties": {
@@ -515,7 +503,8 @@
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer2"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "LoadBalancerSubnet2RouteTableAssociation": {
             "Properties": {
@@ -531,7 +520,8 @@
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer3"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "LoadBalancerSubnet3RouteTableAssociation": {
             "Properties": {
@@ -547,7 +537,8 @@
                 "Tags": [{"Key": "Name", "Value": "LoadBalancer4"}],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::Subnet"
+            "Type": "AWS::EC2::Subnet",
+			"DeletionPolicy" : "Retain"
         },
         "LoadBalancerSubnet4RouteTableAssociation": {
             "Properties": {
@@ -559,7 +550,8 @@
         "NATEIP": {
             "DependsOn": "VPCGatewayAttachment",
             "Properties": {"Domain": "vpc", "InstanceId": {"Ref": "NATInstance"}},
-            "Type": "AWS::EC2::EIP"
+            "Type": "AWS::EC2::EIP",
+			"DeletionPolicy" : "Retain"
         },
         "NATInstance": {
             "Properties": {
@@ -574,7 +566,8 @@
                 "SubnetId": {"Ref": "BOSHSubnet"},
                 "Tags": [{"Key": "Name", "Value": "NAT"}]
             },
-            "Type": "AWS::EC2::Instance"
+            "Type": "AWS::EC2::Instance",
+			"DeletionPolicy" : "Retain"
         },
         "NATSecurityGroup": {
             "Properties": {
@@ -602,22 +595,28 @@
                 ],
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::SecurityGroup"
+            "Type": "AWS::EC2::SecurityGroup",
+			"DeletionPolicy" : "Retain"
         },
         "VPC": {
             "Properties": {
                 "CidrBlock": {"Ref": "VPCCIDR"},
                 "Tags": [{"Key": "Name", "Value": "vpc-bbl-env-id"}]
             },
-            "Type": "AWS::EC2::VPC"
+            "Type": "AWS::EC2::VPC",
+			"DeletionPolicy" : "Retain"
         },
         "VPCGatewayAttachment": {
             "Properties": {
                 "InternetGatewayId": {"Ref": "VPCGatewayInternetGateway"},
                 "VpcId": {"Ref": "VPC"}
             },
-            "Type": "AWS::EC2::VPCGatewayAttachment"
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+			"DeletionPolicy" : "Retain"
         },
-        "VPCGatewayInternetGateway": {"Type": "AWS::EC2::InternetGateway"}
+        "VPCGatewayInternetGateway": {
+			"Type": "AWS::EC2::InternetGateway",
+			"DeletionPolicy" : "Retain"
+		}
     }
 }

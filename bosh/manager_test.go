@@ -9,9 +9,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
+	"github.com/pivotal-cf-experimental/gomegamatchers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 const (
@@ -126,7 +127,7 @@ var _ = Describe("Manager", func() {
 			_, err := boshManager.Create(incomingGCPState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{"creating bosh director", "created bosh director"}))
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
 		})
 
 		Context("when iaas is gcp", func() {
@@ -314,7 +315,7 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(logger.StepCall.Messages).To(ContainSequence([]string{"creating jumpbox", "created jumpbox"}))
+					Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating jumpbox", "created jumpbox"}))
 				})
 
 				It("generates a jumpbox and bosh manifest", func() {
@@ -346,7 +347,7 @@ gcp_credentials_json: 'some-credential-json'`
 					Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
 					Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 
-					Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+					Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 						"creating jumpbox",
 						"created jumpbox",
 						"starting socks5 proxy to jumpbox",

@@ -11,7 +11,7 @@ import (
 )
 
 type GCPCreateLBs struct {
-	terraformManager     terraformManager
+	terraformManager     terraformApplier
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
 	logger               logger
@@ -26,7 +26,7 @@ type GCPCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
-func NewGCPCreateLBs(terraformManager terraformManager,
+func NewGCPCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, logger logger, environmentValidator environmentValidator) GCPCreateLBs {
 	return GCPCreateLBs{

@@ -20,17 +20,6 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock stri
 			fmt.Sprintf("%sName", subnetName): Output{
 				Value: Ref{subnetName},
 			},
-			fmt.Sprintf("%sAZ", subnetName): Output{
-				FnGetAtt{
-					[]string{
-						subnetName,
-						"AvailabilityZone",
-					},
-				},
-			},
-			subnetCIDRName: Output{
-				Value: Ref{subnetCIDRName},
-			},
 		},
 		Parameters: map[string]Parameter{
 			subnetCIDRName: Parameter{
@@ -53,6 +42,7 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock stri
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"InternalRouteTable": {
 				Type: "AWS::EC2::RouteTable",

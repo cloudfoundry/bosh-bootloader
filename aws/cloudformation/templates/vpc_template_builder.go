@@ -30,9 +30,11 @@ func (t VPCTemplateBuilder) VPC(envID string) Template {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"VPCGatewayInternetGateway": Resource{
-				Type: "AWS::EC2::InternetGateway",
+				Type:           "AWS::EC2::InternetGateway",
+				DeletionPolicy: "Retain",
 			},
 			"VPCGatewayAttachment": Resource{
 				Type: "AWS::EC2::VPCGatewayAttachment",
@@ -40,6 +42,7 @@ func (t VPCTemplateBuilder) VPC(envID string) Template {
 					VpcId:             Ref{"VPC"},
 					InternetGatewayId: Ref{"VPCGatewayInternetGateway"},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 
@@ -47,6 +50,11 @@ func (t VPCTemplateBuilder) VPC(envID string) Template {
 			"VPCID": Output{
 				Value: Ref{
 					Ref: "VPC",
+				},
+			},
+			"VPCInternetGatewayID": Output{
+				Value: Ref{
+					Ref: "VPCGatewayInternetGateway",
 				},
 			},
 		},

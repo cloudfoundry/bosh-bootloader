@@ -18,18 +18,9 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 		It("returns a template containing the cf load balancer", func() {
 			cfRouterLoadBalancerTemplate := builder.CFRouterLoadBalancer(2, "some-certificate-arn")
 
-			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveLen(2))
+			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveLen(1))
 			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFRouterLoadBalancer", templates.Output{
 				Value: templates.Ref{"CFRouterLoadBalancer"},
-			}))
-
-			Expect(cfRouterLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFRouterLoadBalancerURL", templates.Output{
-				Value: templates.FnGetAtt{
-					[]string{
-						"CFRouterLoadBalancer",
-						"DNSName",
-					},
-				},
 			}))
 
 			Expect(cfRouterLoadBalancerTemplate.Resources).To(HaveLen(1))
@@ -72,7 +63,9 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
+
 		})
 	})
 
@@ -80,18 +73,9 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 		It("returns a template containing the cf ssh proxy load balancer", func() {
 			cfSSHProxyLoadBalancerTemplate := builder.CFSSHProxyLoadBalancer(2)
 
-			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveLen(2))
+			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveLen(1))
 			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFSSHProxyLoadBalancer", templates.Output{
 				Value: templates.Ref{"CFSSHProxyLoadBalancer"},
-			}))
-
-			Expect(cfSSHProxyLoadBalancerTemplate.Outputs).To(HaveKeyWithValue("CFSSHProxyLoadBalancerURL", templates.Output{
-				Value: templates.FnGetAtt{
-					[]string{
-						"CFSSHProxyLoadBalancer",
-						"DNSName",
-					},
-				},
 			}))
 
 			Expect(cfSSHProxyLoadBalancerTemplate.Resources).To(HaveLen(1))
@@ -120,6 +104,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 		})
 	})
@@ -128,18 +113,9 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 		It("returns a template containing the concourse load balancer", func() {
 			concourseLoadBalancer := builder.ConcourseLoadBalancer(2, "some-certificate-arn")
 
-			Expect(concourseLoadBalancer.Outputs).To(HaveLen(2))
+			Expect(concourseLoadBalancer.Outputs).To(HaveLen(1))
 			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("ConcourseLoadBalancer", templates.Output{
 				Value: templates.Ref{"ConcourseLoadBalancer"},
-			}))
-
-			Expect(concourseLoadBalancer.Outputs).To(HaveKeyWithValue("ConcourseLoadBalancerURL", templates.Output{
-				Value: templates.FnGetAtt{
-					[]string{
-						"ConcourseLoadBalancer",
-						"DNSName",
-					},
-				},
 			}))
 
 			Expect(concourseLoadBalancer.Resources).To(HaveLen(1))
@@ -180,6 +156,7 @@ var _ = Describe("LoadBalancerTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 		})
 	})

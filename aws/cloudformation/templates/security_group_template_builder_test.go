@@ -1,9 +1,9 @@
 package templates_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 )
 
 var _ = Describe("SecurityGroupTemplateBuilder", func() {
@@ -43,6 +43,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(securityGroup.Resources).To(HaveKeyWithValue("InternalSecurityGroupIngressTCPfromBOSH", templates.Resource{
@@ -153,6 +154,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 		})
 	})
@@ -240,6 +242,13 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 							},
 						},
 					},
+					DeletionPolicy: "Retain",
+				}))
+
+				Expect(securityGroup.Outputs).To(HaveKeyWithValue("some-security-group", templates.Output{
+					Value: templates.Ref{
+						Ref: "some-security-group",
+					},
 				}))
 			})
 		})
@@ -271,6 +280,7 @@ var _ = Describe("SecurityGroupTemplateBuilder", func() {
 							},
 						},
 					},
+					DeletionPolicy: "Retain",
 				}))
 
 				Expect(securityGroup.Outputs).To(HaveLen(1))

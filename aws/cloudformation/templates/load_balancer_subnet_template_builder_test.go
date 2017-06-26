@@ -38,6 +38,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("LoadBalancerRouteTable", templates.Resource{
@@ -62,6 +63,12 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 				Properties: templates.SubnetRouteTableAssociation{
 					RouteTableId: templates.Ref{"LoadBalancerRouteTable"},
 					SubnetId:     templates.Ref{"LoadBalancerSubnet1"},
+				},
+			}))
+
+			Expect(subnet.Outputs).To(HaveKeyWithValue("LoadBalancerSubnet1Name", templates.Output{
+				Value: templates.Ref{
+					Ref: "LoadBalancerSubnet1",
 				},
 			}))
 		})
@@ -89,6 +96,7 @@ var _ = Describe("LoadBalancerSubnetTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 		})
 	})

@@ -24,14 +24,14 @@ const (
 type StateQuery struct {
 	logger                logger
 	stateValidator        stateValidator
-	terraformManager      terraformManager
+	terraformManager      terraformOutputter
 	infrastructureManager infrastructureManager
 	propertyName          string
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformManager, infrastructureManager infrastructureManager, propertyName string) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformOutputter, infrastructureManager infrastructureManager, propertyName string) StateQuery {
 	return StateQuery{
 		logger:                logger,
 		stateValidator:        stateValidator,

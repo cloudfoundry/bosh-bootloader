@@ -1,5 +1,12 @@
 package fakes
 
+import "github.com/cloudfoundry/bosh-bootloader/storage"
+
+type Import struct {
+	Addr string
+	ID   string
+}
+
 type TerraformExecutor struct {
 	ApplyCall struct {
 		CallCount int
@@ -19,6 +26,18 @@ type TerraformExecutor struct {
 			Inputs   map[string]string
 			Template string
 			TFState  string
+		}
+		Returns struct {
+			TFState string
+			Error   error
+		}
+	}
+	ImportCall struct {
+		CallCount int
+		Receives  struct {
+			TFState string
+			Imports []Import
+			Creds   storage.AWS
 		}
 		Returns struct {
 			TFState string
@@ -71,6 +90,18 @@ func (t *TerraformExecutor) Destroy(inputs map[string]string, template, tfState 
 	t.DestroyCall.Receives.Template = template
 	t.DestroyCall.Receives.TFState = tfState
 	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error
+}
+
+func (t *TerraformExecutor) Import(addr, id, tfstate string, creds storage.AWS) (string, error) {
+	t.ImportCall.CallCount++
+	t.ImportCall.Receives.Imports = append(t.ImportCall.Receives.Imports, Import{
+		Addr: addr,
+		ID:   id,
+	})
+	t.ImportCall.Receives.TFState = tfstate
+	t.ImportCall.Receives.Creds = creds
+
+	return t.ImportCall.Returns.TFState, t.ImportCall.Returns.Error
 }
 
 func (t *TerraformExecutor) Version() (string, error) {

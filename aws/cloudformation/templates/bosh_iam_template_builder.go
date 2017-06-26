@@ -72,18 +72,5 @@ func (t BOSHIAMTemplateBuilder) BOSHIAMUser(userName string) Template {
 				Type: "AWS::IAM::AccessKey",
 			},
 		},
-		Outputs: map[string]Output{
-			"BOSHUserAccessKey": Output{
-				Value: Ref{"BOSHUserAccessKey"},
-			},
-			"BOSHUserSecretAccessKey": Output{
-				Value: FnGetAtt{
-					[]string{
-						"BOSHUserAccessKey",
-						"SecretAccessKey",
-					},
-				},
-			},
-		},
 	}
 }

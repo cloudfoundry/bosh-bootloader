@@ -6,9 +6,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
+	"github.com/pivotal-cf-experimental/gomegamatchers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("KeyPairSynchronizer", func() {
@@ -61,7 +62,7 @@ var _ = Describe("KeyPairSynchronizer", func() {
 				}))
 
 				Expect(creator.CreateCall.Receives.KeyPairName).To(Equal("keypair-some-env-id"))
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 					`checking if keypair "keypair-some-env-id" exists`,
 					"creating keypair",
 				}))
@@ -159,7 +160,7 @@ var _ = Describe("KeyPairSynchronizer", func() {
 				_, err := manager.Sync(stateKeyPair)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 					`checking if keypair "my-keypair" exists`,
 					"using existing keypair",
 				}))

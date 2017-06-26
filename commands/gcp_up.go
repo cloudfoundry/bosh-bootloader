@@ -29,7 +29,7 @@ type GCPUp struct {
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	logger             logger
-	terraformManager   terraformManager
+	terraformManager   terraformApplier
 	envIDManager       envIDManager
 }
 
@@ -56,14 +56,6 @@ type gcpProvider interface {
 	SetConfig(string, string, string) error
 }
 
-type terraformManager interface {
-	Destroy(storage.State) (storage.State, error)
-	Apply(storage.State) (storage.State, error)
-	GetOutputs(storage.State) (map[string]interface{}, error)
-	Version() (string, error)
-	ValidateVersion() error
-}
-
 type terraformManagerError interface {
 	Error() string
 	BBLState() (storage.State, error)
@@ -84,7 +76,7 @@ type NewGCPUpArgs struct {
 	StateStore         stateStore
 	KeyPairManager     keyPairManager
 	GCPProvider        gcpProvider
-	TerraformManager   terraformManager
+	TerraformManager   terraformApplier
 	BoshManager        boshManager
 	Logger             logger
 	EnvIDManager       envIDManager

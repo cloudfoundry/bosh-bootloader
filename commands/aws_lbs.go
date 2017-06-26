@@ -11,11 +11,11 @@ import (
 type AWSLBs struct {
 	credentialValidator   credentialValidator
 	infrastructureManager infrastructureManager
-	terraformManager      terraformManager
+	terraformManager      terraformOutputter
 	logger                logger
 }
 
-func NewAWSLBs(credentialValidator credentialValidator, infrastructureManager infrastructureManager, terraformManager terraformManager, logger logger) AWSLBs {
+func NewAWSLBs(credentialValidator credentialValidator, infrastructureManager infrastructureManager, terraformManager terraformOutputter, logger logger) AWSLBs {
 	return AWSLBs{
 		credentialValidator:   credentialValidator,
 		infrastructureManager: infrastructureManager,

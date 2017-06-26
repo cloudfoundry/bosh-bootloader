@@ -52,3 +52,6 @@
 [submodule "vendor/github.com/armon/go-socks5"]
 	path = vendor/github.com/armon/go-socks5
 	url = https://github.com/armon/go-socks5
+[submodule "vendor/golang.org/x/text"]
+	path = vendor/golang.org/x/text
+	url = https://go.googlesource.com/text

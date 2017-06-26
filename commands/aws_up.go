@@ -2,9 +2,7 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -25,7 +23,6 @@ type keyPairManager interface {
 }
 
 type infrastructureManager interface {
-	Create(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
 	Update(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
@@ -79,7 +76,7 @@ type AWSUp struct {
 	stateStore                 stateStore
 	configProvider             configProvider
 	envIDManager               envIDManager
-	terraformManager           terraformManager
+	terraformManager           terraformApplier
 	brokenEnvironmentValidator brokenEnvironmentValidator
 }
 
@@ -100,7 +97,7 @@ func NewAWSUp(
 	availabilityZoneRetriever availabilityZoneRetriever,
 	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
-	terraformManager terraformManager, brokenEnvironmentValidator brokenEnvironmentValidator) AWSUp {
+	terraformManager terraformApplier, brokenEnvironmentValidator brokenEnvironmentValidator) AWSUp {
 
 	return AWSUp{
 		credentialValidator:        credentialValidator,
@@ -199,29 +196,45 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		certificateARN = certificate.ARN
 	}
 
-	if config.Terraform || state.TFState != "" {
-		state, err = u.terraformManager.Apply(state)
+	if state.Stack.Name != "" {
+		stack, err := u.infrastructureManager.Update(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
 		if err != nil {
-			return handleTerraformError(err, u.stateStore)
+			return err
 		}
+
+		state, err = u.terraformManager.Import(state, stack.Outputs)
+		if err != nil {
+			return err
+		}
+
+		state.MigratedFromCloudFormation = true
 
 		err = u.stateStore.Set(state)
 		if err != nil {
 			return err
 		}
-	} else {
-		if state.Stack.Name == "" {
-			state.Stack.Name = fmt.Sprintf("stack-%s", strings.Replace(state.EnvID, ":", "-", -1))
-			state.Stack.BOSHAZ = config.BOSHAZ
 
-			if err := u.stateStore.Set(state); err != nil {
-				return err
-			}
-		}
-		_, err = u.infrastructureManager.Create(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
+		err = u.infrastructureManager.Delete(stack.Name)
 		if err != nil {
 			return err
 		}
+
+		state.Stack.Name = ""
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
+	}
+
+	state.Stack.BOSHAZ = config.BOSHAZ
+	state, err = u.terraformManager.Apply(state)
+	if err != nil {
+		return handleTerraformError(err, u.stateStore)
+	}
+
+	err = u.stateStore.Set(state)
+	if err != nil {
+		return err
 	}
 
 	if !state.NoDirector {

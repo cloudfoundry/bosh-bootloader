@@ -88,7 +88,7 @@ var _ = Describe("bbl print-env", func() {
 			})
 		})
 
-		Context("aws", func() {
+		PContext("aws", func() {
 			var (
 				fakeAWS       *awsbackend.Backend
 				fakeAWSServer *httptest.Server

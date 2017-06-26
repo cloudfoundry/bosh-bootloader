@@ -10,6 +10,7 @@ func NewLoadBalancerSubnetTemplateBuilder() LoadBalancerSubnetTemplateBuilder {
 
 func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, cidrBlock string) Template {
 	subnetName := fmt.Sprintf("LoadBalancerSubnet%s", subnetSuffix)
+	subnetID := fmt.Sprintf("%sName", subnetName)
 	cidrName := fmt.Sprintf("%sCIDR", subnetName)
 	tag := fmt.Sprintf("LoadBalancer%s", subnetSuffix)
 	routeTableAssociationName := fmt.Sprintf("%sRouteTableAssociation", subnetName)
@@ -36,6 +37,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, ci
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"LoadBalancerRouteTable": Resource{
 				Type: "AWS::EC2::RouteTable",
@@ -57,6 +59,13 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, ci
 				Properties: SubnetRouteTableAssociation{
 					RouteTableId: Ref{"LoadBalancerRouteTable"},
 					SubnetId:     Ref{subnetName},
+				},
+			},
+		},
+		Outputs: map[string]Output{
+			subnetID: Output{
+				Value: Ref{
+					Ref: subnetName,
 				},
 			},
 		},

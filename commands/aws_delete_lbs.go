@@ -15,7 +15,7 @@ type AWSDeleteLBs struct {
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
 	environmentValidator      environmentValidator
-	terraformManager          terraformManager
+	terraformManager          terraformApplier
 }
 
 type deleteLBsConfig struct {
@@ -25,7 +25,7 @@ type deleteLBsConfig struct {
 func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
 	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
 	cloudConfigManager cloudConfigManager, stateStore stateStore,
-	environmentValidator environmentValidator, terraformManager terraformManager,
+	environmentValidator environmentValidator, terraformManager terraformApplier,
 ) AWSDeleteLBs {
 	return AWSDeleteLBs{
 		credentialValidator:       credentialValidator,

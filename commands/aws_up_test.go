@@ -47,9 +47,24 @@ var _ = Describe("AWSUp", func() {
 			}
 
 			terraformManager = &fakes.TerraformManager{}
+			terraformManager.ApplyCall.Returns.BBLState = storage.State{
+				IAAS: "aws",
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+				EnvID: "bbl-lake-time-stamp",
+				KeyPair: storage.KeyPair{
+					Name:       "keypair-bbl-lake-time-stamp",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
+				TFState: "some-tf-state",
+			}
 
 			infrastructureManager = &fakes.InfrastructureManager{}
-			infrastructureManager.CreateCall.Returns.Stack = cloudformation.Stack{
+			infrastructureManager.UpdateCall.Returns.Stack = cloudformation.Stack{
 				Name: "bbl-aws-some-random-string",
 				Outputs: map[string]string{
 					"BOSHSubnet":              "some-bosh-subnet",
@@ -189,7 +204,7 @@ var _ = Describe("AWSUp", func() {
 			}))
 		})
 
-		It("creates/updates the stack with the given name", func() {
+		It("creates infrastructure", func() {
 			incomingState := storage.State{
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
@@ -199,205 +214,292 @@ var _ = Describe("AWSUp", func() {
 				EnvID: "bbl-lake-time-stamp",
 			}
 
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"some-retrieved-az"}
-
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
-			Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
-			Expect(infrastructureManager.CreateCall.Receives.StackName).To(Equal("stack-bbl-lake-time-stamp"))
-			Expect(infrastructureManager.CreateCall.Receives.KeyPairName).To(Equal("keypair-bbl-lake-time-stamp"))
-			Expect(infrastructureManager.CreateCall.Receives.AZs).To(Equal([]string{"some-retrieved-az"}))
-			Expect(infrastructureManager.CreateCall.Receives.EnvID).To(Equal("bbl-lake-time-stamp"))
-			Expect(infrastructureManager.CreateCall.Returns.Error).To(BeNil())
+			Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
+			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
+				IAAS: "aws",
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+				EnvID: "bbl-lake-time-stamp",
+				KeyPair: storage.KeyPair{
+					Name:       "keypair-bbl-lake-time-stamp",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
+			}))
+
+			Expect(stateStore.SetCall.CallCount).To(Equal(4))
+			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
+				IAAS: "aws",
+				AWS: storage.AWS{
+					Region:          "some-aws-region",
+					SecretAccessKey: "some-secret-access-key",
+					AccessKeyID:     "some-access-key-id",
+				},
+				EnvID: "bbl-lake-time-stamp",
+				KeyPair: storage.KeyPair{
+					Name:       "keypair-bbl-lake-time-stamp",
+					PrivateKey: "some-private-key",
+					PublicKey:  "some-public-key",
+				},
+				TFState: "some-tf-state",
+			}))
 		})
 
-		Context("when the terraform flag is provided", func() {
+		Context("when infrastructure was previously created with cloudformation", func() {
+			var (
+				incomingState storage.State
+			)
+
 			BeforeEach(func() {
-				terraformManager.ApplyCall.Returns.BBLState = storage.State{
-					IAAS: "aws",
+				incomingState = storage.State{
 					AWS: storage.AWS{
 						Region:          "some-aws-region",
 						SecretAccessKey: "some-secret-access-key",
 						AccessKeyID:     "some-access-key-id",
 					},
 					EnvID: "bbl-lake-time-stamp",
-					KeyPair: storage.KeyPair{
-						Name:       "keypair-bbl-lake-time-stamp",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+				}
+
+				infrastructureManager.UpdateCall.Returns.Stack = cloudformation.Stack{
+					Name: "some-stack-name",
+					Outputs: map[string]string{
+						"some-key": "some-value",
+					},
+				}
+
+				terraformManager.ImportCall.Returns.BBLState = storage.State{
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					EnvID: "bbl-lake-time-stamp",
+					Stack: storage.Stack{
+						Name: "some-stack-name",
 					},
 					TFState: "some-tf-state",
 				}
 			})
 
-			It("creates infrastructure using terraform", func() {
-				incomingState := storage.State{
-					AWS: storage.AWS{
-						Region:          "some-aws-region",
-						SecretAccessKey: "some-secret-access-key",
-						AccessKeyID:     "some-access-key-id",
-					},
-					EnvID: "bbl-lake-time-stamp",
-				}
-
-				err := command.Execute(commands.AWSUpConfig{
-					Terraform: true,
-				}, incomingState)
+			It("migrates cloudformation to terraform", func() {
+				err := command.Execute(commands.AWSUpConfig{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
+				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ImportCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ImportCall.Receives.Outputs).To(Equal(map[string]string{
+					"some-key": "some-value",
+				}))
+				Expect(infrastructureManager.DeleteCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
-					IAAS: "aws",
+					MigratedFromCloudFormation: true,
 					AWS: storage.AWS{
 						Region:          "some-aws-region",
 						SecretAccessKey: "some-secret-access-key",
 						AccessKeyID:     "some-access-key-id",
 					},
-					EnvID: "bbl-lake-time-stamp",
-					KeyPair: storage.KeyPair{
-						Name:       "keypair-bbl-lake-time-stamp",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
-				}))
-
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
-				Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
-					IAAS: "aws",
-					AWS: storage.AWS{
-						Region:          "some-aws-region",
-						SecretAccessKey: "some-secret-access-key",
-						AccessKeyID:     "some-access-key-id",
-					},
-					EnvID: "bbl-lake-time-stamp",
-					KeyPair: storage.KeyPair{
-						Name:       "keypair-bbl-lake-time-stamp",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
+					EnvID:   "bbl-lake-time-stamp",
 					TFState: "some-tf-state",
 				}))
-			})
 
-			Context("when infrastructure was previously created with terraform", func() {
-				var (
-					incomingState storage.State
-				)
+				Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
+					MigratedFromCloudFormation: true,
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
+					EnvID:   "bbl-lake-time-stamp",
+					TFState: "some-tf-state",
+				}))
 
-				BeforeEach(func() {
-					incomingState = storage.State{
-						AWS: storage.AWS{
-							Region:          "some-aws-region",
-							SecretAccessKey: "some-secret-access-key",
-							AccessKeyID:     "some-access-key-id",
-						},
-						EnvID:   "bbl-lake-time-stamp",
-						TFState: "some-tf-state",
-					}
-				})
-
-				It("creates infrastructure with terraform again", func() {
-					err := command.Execute(commands.AWSUpConfig{}, incomingState)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
-					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				})
+				Expect(stateStore.SetCall.Receives[3].State.Stack.Name).To(BeEmpty())
 			})
 
 			Context("failure cases", func() {
-				Context("when the terraform manager fails with terraformManagerError", func() {
-					var (
-						managerError *fakes.TerraformManagerError
-					)
+				Context("when infrastructure cannot be created", func() {
+					It("returns an error", func() {
+						infrastructureManager.UpdateCall.Returns.Error = errors.New("infrastructure creation failed")
 
-					BeforeEach(func() {
-						managerError = &fakes.TerraformManagerError{}
-						managerError.BBLStateCall.Returns.BBLState = storage.State{
-							TFState: "some-partial-tf-state",
-						}
-						managerError.ErrorCall.Returns = "cannot apply"
-						terraformManager.ApplyCall.Returns.Error = managerError
-					})
-
-					It("saves the bbl state and returns the error", func() {
-						err := command.Execute(commands.AWSUpConfig{
-							Terraform: true,
-						}, storage.State{})
-						Expect(err).To(MatchError("cannot apply"))
-
-						Expect(stateStore.SetCall.CallCount).To(Equal(3))
-						Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
-							TFState: "some-partial-tf-state",
-						}))
-					})
-
-					Context("when the terraform manager error fails to return a bbl state", func() {
-						BeforeEach(func() {
-							managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
+							Stack: storage.Stack{
+								Name: "some-stack-name",
+							},
 						})
 
-						It("saves the bbl state and returns the error", func() {
-							err := command.Execute(commands.AWSUpConfig{
-								Terraform: true,
-							}, storage.State{})
-							Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
-						})
-					})
-
-					Context("when we fail to set the bbl state", func() {
-						BeforeEach(func() {
-							managerError.BBLStateCall.Returns.BBLState = storage.State{
-								TFState: "some-partial-tf-state",
-							}
-							stateStore.SetCall.Returns = []fakes.SetCallReturn{
-								{},
-								{},
-								{errors.New("failed to set bbl state")},
-							}
-						})
-
-						It("saves the bbl state and returns the error", func() {
-							err := command.Execute(commands.AWSUpConfig{
-								Terraform: true,
-							}, storage.State{})
-							Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to set bbl state"))
-						})
+						Expect(err).To(MatchError("infrastructure creation failed"))
 					})
 				})
 
-				Context("when the terraform manager fails with non terraformManagerError", func() {
-					It("returns the error", func() {
-						terraformManager.ApplyCall.Returns.Error = errors.New("cannot apply")
+				Context("when the stack cannot be imported", func() {
+					It("returns an error", func() {
+						terraformManager.ImportCall.Returns.Error = errors.New("shooting star")
 
-						err := command.Execute(commands.AWSUpConfig{
-							Terraform: true,
-						}, storage.State{})
-						Expect(err).To(MatchError("cannot apply"))
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
+							Stack: storage.Stack{
+								Name: "some-stack-name",
+							},
+						})
+
+						Expect(err).To(MatchError("shooting star"))
 					})
 				})
 
 				Context("when the state cannot be set", func() {
-					It("returns the error", func() {
+					It("returns an error", func() {
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("cannot set state")}}
+
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
+							Stack: storage.Stack{
+								Name: "some-stack-name",
+							},
+						})
+
+						Expect(err).To(MatchError("cannot set state"))
+					})
+				})
+
+				Context("when the infrastructure cannot be deleted", func() {
+					It("returns an error", func() {
+						infrastructureManager.DeleteCall.Returns.Error = errors.New("explosion on delete")
+
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{
+							Stack: storage.Stack{
+								Name: "some-stack-name",
+							},
+						})
+
+						Expect(err).To(MatchError("explosion on delete"))
+					})
+				})
+			})
+		})
+
+		Context("when infrastructure was previously created with terraform", func() {
+			var (
+				incomingState storage.State
+			)
+
+			BeforeEach(func() {
+				incomingState = storage.State{
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					EnvID:   "bbl-lake-time-stamp",
+					TFState: "some-tf-state",
+				}
+			})
+
+			It("creates infrastructure with terraform again", func() {
+				err := command.Execute(commands.AWSUpConfig{}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
+				Expect(terraformManager.ImportCall.CallCount).To(Equal(0))
+				Expect(infrastructureManager.DeleteCall.CallCount).To(Equal(0))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when the terraform manager fails with terraformManagerError", func() {
+				var (
+					managerError *fakes.TerraformManagerError
+				)
+
+				BeforeEach(func() {
+					managerError = &fakes.TerraformManagerError{}
+					managerError.BBLStateCall.Returns.BBLState = storage.State{
+						TFState: "some-partial-tf-state",
+					}
+					managerError.ErrorCall.Returns = "cannot apply"
+					terraformManager.ApplyCall.Returns.Error = managerError
+				})
+
+				It("saves the bbl state and returns the error", func() {
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					Expect(err).To(MatchError("cannot apply"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
+						TFState: "some-partial-tf-state",
+					}))
+				})
+
+				Context("when the terraform manager error fails to return a bbl state", func() {
+					BeforeEach(func() {
+						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
+					})
+
+					It("saves the bbl state and returns the error", func() {
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
+					})
+				})
+
+				Context("when we fail to set the bbl state", func() {
+					BeforeEach(func() {
+						managerError.BBLStateCall.Returns.BBLState = storage.State{
+							TFState: "some-partial-tf-state",
+						}
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{
 							{},
 							{},
-							{errors.New("failed to set the state")},
+							{errors.New("failed to set bbl state")},
 						}
-
-						err := command.Execute(commands.AWSUpConfig{
-							Terraform: true,
-						}, storage.State{})
-						Expect(err).To(MatchError("failed to set the state"))
 					})
+
+					It("saves the bbl state and returns the error", func() {
+						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to set bbl state"))
+					})
+				})
+			})
+
+			Context("when the terraform manager fails with non terraformManagerError", func() {
+				It("returns the error", func() {
+					terraformManager.ApplyCall.Returns.Error = errors.New("cannot apply")
+
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					Expect(err).To(MatchError("cannot apply"))
+				})
+			})
+
+			Context("when the state cannot be set", func() {
+				It("returns the error", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{
+						{},
+						{},
+						{errors.New("failed to set the state")},
+					}
+
+					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+					Expect(err).To(MatchError("failed to set the state"))
 				})
 			})
 		})
 
 		Context("when the no-director flag is provided", func() {
+			BeforeEach(func() {
+				terraformManager.ApplyCall.Returns.BBLState.NoDirector = true
+			})
+
 			It("does not create a bosh or cloud config", func() {
 				err := command.Execute(commands.AWSUpConfig{
 					AccessKeyID:     "new-aws-access-key-id",
@@ -409,9 +511,9 @@ var _ = Describe("AWSUp", func() {
 
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
-				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.Receives[1].State.NoDirector).To(BeTrue())
 			})
 
 			Context("when a bbl environment exists with no bosh director", func() {
@@ -420,14 +522,12 @@ var _ = Describe("AWSUp", func() {
 						AccessKeyID:     "new-aws-access-key-id",
 						SecretAccessKey: "new-aws-secret-access-key",
 						Region:          "new-aws-region",
-					}, storage.State{
-						NoDirector: true,
-					})
+					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
-					Expect(infrastructureManager.CreateCall.CallCount).To(Equal(1))
+					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 					Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 				})
@@ -455,17 +555,17 @@ var _ = Describe("AWSUp", func() {
 			incomingState := storage.State{
 				IAAS: "aws",
 				AWS: storage.AWS{
-					Region: "some-aws-region",
-				},
-				Stack: storage.Stack{
-					Name: "some-stack-name",
+					Region:          "some-aws-region",
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
 				},
 				KeyPair: storage.KeyPair{
 					Name:       "keypair-bbl-lake-time-stamp",
 					PrivateKey: "some-private-key",
 					PublicKey:  "some-public-key",
 				},
-				EnvID: "bbl-lake-time-stamp",
+				EnvID:   "bbl-lake-time-stamp",
+				TFState: "some-tf-state",
 			}
 
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
@@ -508,7 +608,7 @@ var _ = Describe("AWSUp", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(infrastructureManager.CreateCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
+				Expect(terraformManager.ApplyCall.Receives.BBLState.Stack.BOSHAZ).To(Equal("some-bosh-az"))
 			})
 
 			Context("when a stack exists and the aws-bosh-az is provided and different", func() {
@@ -547,7 +647,7 @@ var _ = Describe("AWSUp", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(infrastructureManager.CreateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
+				Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
 			})
 		})
 
@@ -577,9 +677,12 @@ var _ = Describe("AWSUp", func() {
 						},
 						Manifest: "some-bosh-manifest",
 					},
-					Stack: storage.Stack{
-						Name: "stack-bbl-lake-time-stamp",
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-aws-region",
 					},
+					TFState: "some-tf-state",
 				}))
 			})
 		})
@@ -629,32 +732,6 @@ var _ = Describe("AWSUp", func() {
 					Expect(stateStore.SetCall.Receives[1].State.KeyPair.PublicKey).To(Equal("some-public-key"))
 				})
 			})
-
-			Context("when the cloudformation fails", func() {
-				It("saves the stack name and bosh az and returns an error", func() {
-					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
-
-					err := command.Execute(commands.AWSUpConfig{
-						BOSHAZ: "some-bosh-az",
-					}, storage.State{
-						EnvID: "bbl-lake-time-stamp",
-					})
-					Expect(err).To(MatchError("infrastructure creation failed"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
-					Expect(stateStore.SetCall.Receives[2].State.Stack.BOSHAZ).To(Equal("some-bosh-az"))
-				})
-
-				It("saves the private/public key and returns an error", func() {
-					infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
-
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-					Expect(err).To(MatchError("infrastructure creation failed"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.KeyPair.PrivateKey).To(Equal("some-private-key"))
-					Expect(stateStore.SetCall.Receives[2].State.KeyPair.PublicKey).To(Equal("some-public-key"))
-				})
-			})
 		})
 
 		Describe("state manipulation", func() {
@@ -679,13 +756,14 @@ var _ = Describe("AWSUp", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(stateStore.SetCall.CallCount).To(Equal(5))
-						Expect(stateStore.SetCall.Receives[4].State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.Receives[1].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "some-aws-access-key-id",
 							SecretAccessKey: "some-aws-secret-access-key",
 							Region:          "some-aws-region",
 						}))
 					})
 				})
+
 				Context("when the credentials do exist", func() {
 					It("overrides the credentials when they're passed in", func() {
 						err := command.Execute(commands.AWSUpConfig{
@@ -701,8 +779,7 @@ var _ = Describe("AWSUp", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.CallCount).To(Equal(5))
-						Expect(stateStore.SetCall.Receives[4].State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.Receives[1].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "new-aws-access-key-id",
 							SecretAccessKey: "new-aws-secret-access-key",
 							Region:          "new-aws-region",
@@ -719,44 +796,11 @@ var _ = Describe("AWSUp", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.Receives[1].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "aws-access-key-id",
 							SecretAccessKey: "aws-secret-access-key",
 							Region:          "aws-region",
 						}))
-					})
-				})
-			})
-
-			Context("cloudformation", func() {
-				Context("when the stack name doesn't exist", func() {
-					It("populates a new stack name", func() {
-						incomingState := storage.State{
-							EnvID: "bbl-lake-time-stamp",
-						}
-						err := command.Execute(commands.AWSUpConfig{}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						state := stateStore.SetCall.Receives[3].State
-						Expect(state.Stack.Name).To(Equal("stack-bbl-lake-time-stamp"))
-					})
-				})
-
-				Context("when the stack name exists", func() {
-					It("does not modify the state", func() {
-						incomingState := storage.State{
-							Stack: storage.Stack{
-								Name: "some-other-stack-name",
-							},
-						}
-						err := command.Execute(commands.AWSUpConfig{}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(stateStore.SetCall.CallCount).To(Equal(3))
-						state := stateStore.SetCall.Receives[2].State
-						Expect(state.Stack.Name).To(Equal("some-other-stack-name"))
 					})
 				})
 			})
@@ -865,13 +909,6 @@ var _ = Describe("AWSUp", func() {
 				Expect(err).To(MatchError("failed to validate"))
 
 				Expect(infrastructureManager.CreateCall.CallCount).To(Equal(0))
-			})
-
-			It("returns an error when infrastructure cannot be created", func() {
-				infrastructureManager.CreateCall.Returns.Error = errors.New("infrastructure creation failed")
-
-				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-				Expect(err).To(MatchError("infrastructure creation failed"))
 			})
 
 			It("returns an error when the ops file cannot be read", func() {

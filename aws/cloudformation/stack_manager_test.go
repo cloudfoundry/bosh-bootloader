@@ -14,10 +14,11 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
+	"github.com/pivotal-cf-experimental/gomegamatchers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("StackManager", func() {
@@ -386,7 +387,7 @@ var _ = Describe("StackManager", func() {
 				},
 			}))
 
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				`checking if cloudformation stack "some-stack-name" exists`,
 				"creating cloudformation stack",
 			}))
@@ -397,7 +398,7 @@ var _ = Describe("StackManager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudFormationClient.UpdateStackCall.CallCount).To(Equal(1))
-			Expect(logger.StepCall.Messages).To(ContainSequence([]string{
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				`checking if cloudformation stack "some-stack-name" exists`,
 				"updating cloudformation stack",
 			}))

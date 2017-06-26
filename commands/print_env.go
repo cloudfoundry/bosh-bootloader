@@ -14,7 +14,7 @@ const (
 type PrintEnv struct {
 	stateValidator        stateValidator
 	logger                logger
-	terraformManager      terraformManager
+	terraformManager      terraformOutputter
 	infrastructureManager infrastructureManager
 }
 
@@ -22,7 +22,7 @@ type envSetter interface {
 	Set(key, value string) error
 }
 
-func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager terraformManager, infrastructureManager infrastructureManager) PrintEnv {
+func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager terraformOutputter, infrastructureManager infrastructureManager) PrintEnv {
 	return PrintEnv{
 		stateValidator:        stateValidator,
 		logger:                logger,

@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/ssl"
+	"github.com/onsi/gomega/gexec"
+	"github.com/square/certstrap/pkix"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
-	"github.com/square/certstrap/pkix"
 )
 
 var _ = Describe("bbl cloud-config", func() {

@@ -31,6 +31,7 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("BOSHRouteTable", templates.Resource{
@@ -65,17 +66,9 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 				Default:     "10.0.0.0/24",
 			}))
 
-			Expect(subnet.Outputs).To(HaveLen(2))
+			Expect(subnet.Outputs).To(HaveLen(1))
 			Expect(subnet.Outputs).To(HaveKeyWithValue("BOSHSubnet", templates.Output{
 				Value: templates.Ref{"BOSHSubnet"},
-			}))
-			Expect(subnet.Outputs).To(HaveKeyWithValue("BOSHSubnetAZ", templates.Output{
-				Value: templates.FnGetAtt{
-					[]string{
-						"BOSHSubnet",
-						"AvailabilityZone",
-					},
-				},
 			}))
 		})
 	})

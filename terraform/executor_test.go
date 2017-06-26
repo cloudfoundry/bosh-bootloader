@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
@@ -38,8 +39,8 @@ var _ = Describe("Executor", func() {
 			return tempDir, nil
 		})
 
-		terraform.SetReadFile(func(string) ([]byte, error) {
-			return []byte(""), nil
+		terraform.SetReadFile(func(filename string) ([]byte, error) {
+			return []byte{}, nil
 		})
 
 		input = map[string]string{
@@ -106,12 +107,33 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("when previous tf state is blank", func() {
+			var (
+				writeTFStateFileCallCount int
+			)
+
+			BeforeEach(func() {
+				cmd.RunCall.Stub = func(stdout io.Writer) {
+					err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tfstate"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+				}
+
+				terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
+					if file == "terraform.tfstate" {
+						writeTFStateFileCallCount++
+					}
+					return nil
+				})
+			})
+
+			AfterEach(func() {
+				terraform.ResetWriteFile()
+			})
+
 			It("does not write the previous tf state file", func() {
 				_, err := executor.Apply(input, "some-template", "")
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = os.Stat(filepath.Join(tempDir, "terraform.tfstate"))
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				Expect(writeTFStateFileCallCount).To(Equal(0))
 			})
 		})
 
@@ -328,6 +350,92 @@ var _ = Describe("Executor", func() {
 
 					tfState, err := tdErr.TFState()
 					Expect(tfState).To(Equal("some-tf-state"))
+				})
+			})
+		})
+	})
+
+	Describe("Import", func() {
+		var (
+			receivedTFState string
+		)
+
+		BeforeEach(func() {
+			cmd.RunCall.Stub = func(stdout io.Writer) {
+				fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
+				Expect(err).NotTo(HaveOccurred())
+				receivedTFState = string(fileContents)
+
+				err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-other-tfstate"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			terraform.ResetReadFile()
+		})
+
+		It("writes the tfState to a file", func() {
+			_, err := executor.Import("some-addr", "some-id", "some-tf-state", storage.AWS{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(receivedTFState).To(Equal("some-tf-state"))
+		})
+
+		It("shells out to terraform import and returns the tfState", func() {
+			tfState, err := executor.Import("some-addr", "some-id", "some-tf-state", storage.AWS{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"import", "some-addr", "some-id"}))
+			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+			Expect(tfState).To(Equal("some-other-tfstate"))
+		})
+
+		Context("failure cases", func() {
+			Context("when it fails to create a temp dir", func() {
+				It("returns an error", func() {
+					terraform.SetTempDir(func(dir, prefix string) (string, error) {
+						return "", errors.New("failed to make temp dir")
+					})
+					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					Expect(err).To(MatchError("failed to make temp dir"))
+				})
+			})
+
+			Context("when the file cannot be written", func() {
+				It("returns an error", func() {
+					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
+						if strings.Contains(file, "terraform.tfstate") {
+							return errors.New("failed to write tfstate")
+						}
+
+						return nil
+					})
+
+					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					Expect(err).To(MatchError("failed to write tfstate"))
+				})
+			})
+
+			Context("when the command fails to run", func() {
+				It("returns an error", func() {
+					cmd.RunCall.Returns.Error = errors.New("bad import")
+
+					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					Expect(err).To(MatchError("failed to import: bad import"))
+				})
+			})
+
+			Context("when the state cannot be read", func() {
+				It("returns an error", func() {
+					terraform.SetReadFile(func(filePath string) ([]byte, error) {
+						if strings.Contains(filePath, "terraform.tfstate") {
+							return []byte{}, errors.New("failed to read tf state file")
+						}
+
+						return []byte{}, nil
+					})
+
+					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					Expect(err).To(MatchError("failed to read tf state file"))
 				})
 			})
 		})

@@ -41,7 +41,6 @@ type upConfig struct {
 	opsFile              string
 	noDirector           bool
 	jumpbox              bool
-	terraform            bool
 }
 
 func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter, boshManager boshManager) Up {
@@ -105,7 +104,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 			OpsFilePath:     config.opsFile,
 			Name:            config.name,
 			NoDirector:      config.noDirector,
-			Terraform:       config.terraform,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
@@ -150,7 +148,6 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.opsFile, "ops-file", "")
 	upFlags.Bool(&config.noDirector, "", "no-director", false)
 	upFlags.Bool(&config.jumpbox, "", "jumpbox", false)
-	upFlags.Bool(&config.terraform, "", "terraform", false)
 
 	err := upFlags.Parse(args)
 	if err != nil {

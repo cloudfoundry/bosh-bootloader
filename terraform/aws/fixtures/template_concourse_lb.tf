@@ -91,7 +91,6 @@ variable "nat_ami_map" {
 }
 
 resource "aws_security_group" "nat_security_group" {
-  name        = "nat_security_group"
   description = "NAT"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -173,7 +172,6 @@ provider "aws" {
 }
 
 resource "aws_security_group" "internal_security_group" {
-  name        = "internal_security_group"
   description = "Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -227,7 +225,6 @@ variable "bosh_inbound_cidr" {
 }
 
 resource "aws_security_group" "bosh_security_group" {
-  name        = "bosh_security_group"
   description = "Bosh"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -489,7 +486,6 @@ resource "aws_iam_server_certificate" "lb_cert" {
 }
 
 resource "aws_security_group" "concourse_lb_security_group" {
-  name = "concourse_lb_security_group"
   description = "Concourse"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -527,7 +523,6 @@ resource "aws_security_group" "concourse_lb_security_group" {
 }
 
 resource "aws_security_group" "concourse_lb_internal_security_group" {
-  name = "concourse_lb_internal_security_group"
   description = "Concourse Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 

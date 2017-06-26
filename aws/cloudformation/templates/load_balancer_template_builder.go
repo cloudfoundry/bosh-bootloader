@@ -37,6 +37,7 @@ func (l LoadBalancerTemplateBuilder) CFSSHProxyLoadBalancer(numberOfAvailability
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 	}
@@ -85,6 +86,7 @@ func (l LoadBalancerTemplateBuilder) CFRouterLoadBalancer(numberOfAvailabilityZo
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 	}
@@ -131,6 +133,7 @@ func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZ
 						},
 					},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 	}
@@ -139,14 +142,6 @@ func (l LoadBalancerTemplateBuilder) ConcourseLoadBalancer(numberOfAvailabilityZ
 func (LoadBalancerTemplateBuilder) outputsFor(loadBalancerName string) map[string]Output {
 	return map[string]Output{
 		loadBalancerName: {Value: Ref{loadBalancerName}},
-		loadBalancerName + "URL": {
-			Value: FnGetAtt{
-				[]string{
-					loadBalancerName,
-					"DNSName",
-				},
-			},
-		},
 	}
 }
 
