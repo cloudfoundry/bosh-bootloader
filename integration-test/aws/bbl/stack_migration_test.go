@@ -49,6 +49,9 @@ var _ = Describe("Stack Migration", func() {
 		err = os.Chmod(f.Name(), 0700)
 		Expect(err).NotTo(HaveOccurred())
 
+		err = f.Close()
+		Expect(err).NotTo(HaveOccurred())
+
 		bblStack = actors.NewBBL(configuration.StateFileDir, f.Name(), configuration, "stack-migration-env")
 		bblTerraform = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "stack-migration-env")
 		aws = actors.NewAWS(configuration)
