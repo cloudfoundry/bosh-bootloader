@@ -21,19 +21,19 @@ var _ = Describe("idempotent test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "reentrant-env")
 	})
 
+	AfterEach(func() {
+		if !CurrentGinkgoTestDescription().Failed {
+			bbl.Destroy()
+		}
+	})
+
 	It("is able to bbl up idempotently with a director", func() {
 		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
-
 		bbl.Up(actors.AWSIAAS, []string{})
-
-		bbl.Destroy()
 	})
 
 	It("is able to bbl up idempotently with no director", func() {
 		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
-
 		bbl.Up(actors.AWSIAAS, []string{})
-
-		bbl.Destroy()
 	})
 })

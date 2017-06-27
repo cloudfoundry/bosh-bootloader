@@ -37,15 +37,21 @@ var _ = Describe("load balancer tests", func() {
 
 	})
 
+	AfterEach(func() {
+		if !CurrentGinkgoTestDescription().Failed {
+			bbl.DeleteLBs()
+			bbl.Destroy()
+		}
+	})
+
 	It("creates, updates and deletes an LB with the specified cert and key", func() {
 		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
 
-		stackName := state.StackName()
 		directorAddress := bbl.DirectorAddress()
 		caCertPath := bbl.SaveDirectorCA()
 
-		Expect(aws.StackExists(stackName)).To(BeTrue())
-		Expect(aws.LoadBalancers(stackName)).To(BeEmpty())
+		Expect(aws.LoadBalancers()).To(BeEmpty())
+
 		exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeTrue())
@@ -66,11 +72,12 @@ var _ = Describe("load balancer tests", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		natInstanceID := aws.GetPhysicalID(stackName, "NATInstance")
-		Expect(natInstanceID).NotTo(BeEmpty())
+		instances := aws.Instances(fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID()))
+		Expect(instances).To(HaveLen(2))
+		Expect(instances).To(ConsistOf([]string{"bosh/0", fmt.Sprintf("%s-nat", bbl.PredefinedEnvID())}))
 
-		tags := aws.GetEC2InstanceTags(natInstanceID)
-		Expect(tags["bbl-env-id"]).To(Equal(bbl.PredefinedEnvID()))
+		tags := aws.GetEC2InstanceTags(fmt.Sprintf("%s-nat", bbl.PredefinedEnvID()))
+		Expect(tags["EnvID"]).To(Equal(bbl.PredefinedEnvID()))
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
@@ -87,30 +94,27 @@ var _ = Describe("load balancer tests", func() {
 		otherKeyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
 
+		otherChainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
+		Expect(err).NotTo(HaveOccurred())
+
 		bbl.CreateLB("concourse", certPath, keyPath, chainPath)
 
-		Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
-		Expect(strings.TrimSpace(aws.DescribeCertificate(state.CertificateName()).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
+		Expect(aws.LoadBalancers()).To(HaveLen(1))
+		Expect(aws.LoadBalancers()).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
 
-		bbl.UpdateLB(otherCertPath, otherKeyPath)
-		Expect(aws.LoadBalancers(stackName)).To(HaveKey("ConcourseLoadBalancer"))
+		lbName := fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())
+		certificateName := aws.GetSSLCertificateNameByLoadBalancer(lbName)
+		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 
-		certificateName := state.CertificateName()
+		bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
+		Expect(aws.LoadBalancers()).To(HaveLen(1))
+		Expect(aws.LoadBalancers()).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
+
+		certificateName = aws.GetSSLCertificateNameByLoadBalancer(lbName)
 		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 
 		session := bbl.LBs()
-		stdout := session.Out.Contents()
-		Expect(stdout).To(ContainSubstring(fmt.Sprintf("Concourse LB: %s", aws.LoadBalancers(stackName)["ConcourseLoadBalancer"])))
-
-		bbl.DeleteLBs()
-		Expect(aws.LoadBalancers(stackName)).NotTo(HaveKey("ConcourseLoadBalancer"))
-		Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(BeEmpty())
-
-		bbl.Destroy()
-
-		exists, _ = boshcli.DirectorExists(directorAddress, caCertPath)
-		Expect(exists).To(BeFalse())
-
-		Expect(aws.StackExists(stackName)).To(BeFalse())
+		stdout := string(session.Out.Contents())
+		Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
 	})
 })

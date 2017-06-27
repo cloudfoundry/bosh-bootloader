@@ -139,7 +139,8 @@ resource "aws_instance" "nat" {
   vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
 
   tags {
-    Name = "${var.env_id}-nat"
+    Name = "${var.env_id}-nat",
+    EnvID = "${var.env_id}"
   }
 }
 

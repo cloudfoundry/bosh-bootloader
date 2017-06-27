@@ -190,12 +190,13 @@ func (b BBL) LBs() *gexec.Session {
 	return session
 }
 
-func (b BBL) UpdateLB(certPath, keyPath string) {
+func (b BBL) UpdateLB(certPath, keyPath, chainPath string) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"update-lbs",
 		"--cert", certPath,
 		"--key", keyPath,
+		"--chain", chainPath,
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)

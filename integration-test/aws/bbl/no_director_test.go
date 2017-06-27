@@ -1,6 +1,8 @@
 package integration_test
 
 import (
+	"fmt"
+
 	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
 
@@ -25,38 +27,29 @@ var _ = Describe("no director test", func() {
 		state = integration.NewState(configuration.StateFileDir)
 	})
 
-	It("successfully bbls up and destroys with no director", func() {
-		var (
-			stackName string
-		)
+	AfterEach(func() {
+		if !CurrentGinkgoTestDescription().Failed {
+			bbl.Destroy()
+		}
+	})
 
+	It("successfully standups up a no director infrastructure", func() {
 		By("calling bbl up with the no-director flag", func() {
 			bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 		})
 
-		By("checking that the stack exists", func() {
-			stackName = state.StackName()
+		By("checking that an instance exists", func() {
+			instances := aws.Instances(fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID()))
+			Expect(instances).To(HaveLen(1))
+			Expect(instances).To(Equal([]string{fmt.Sprintf("%s-nat", bbl.PredefinedEnvID())}))
 
-			Expect(aws.StackExists(stackName)).To(BeTrue())
-
-			natInstanceID := aws.GetPhysicalID(stackName, "NATInstance")
-			Expect(natInstanceID).NotTo(BeEmpty())
-
-			tags := aws.GetEC2InstanceTags(natInstanceID)
-			Expect(tags["bbl-env-id"]).To(Equal(bbl.PredefinedEnvID()))
+			tags := aws.GetEC2InstanceTags(fmt.Sprintf("%s-nat", bbl.PredefinedEnvID()))
+			Expect(tags["EnvID"]).To(Equal(bbl.PredefinedEnvID()))
 		})
 
-		By("checking that the bosh director does not exists", func() {
+		By("checking that director details are not printed", func() {
 			directorUsername := bbl.DirectorUsername()
 			Expect(directorUsername).To(Equal(""))
-		})
-
-		By("calling bbl destroy", func() {
-			bbl.Destroy()
-		})
-
-		By("checking that the stack no longer exists", func() {
-			Expect(aws.StackExists(stackName)).To(BeFalse())
 		})
 	})
 })
