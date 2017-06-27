@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,6 +15,8 @@ var (
 )
 
 const (
+	STATE_VERSION = 5
+
 	OS_READ_WRITE_MODE = os.FileMode(0644)
 	StateFileName      = "bbl-state.json"
 )
@@ -81,7 +84,7 @@ type Store struct {
 
 func NewStore(dir string) Store {
 	return Store{
-		version:   3,
+		version:   STATE_VERSION,
 		stateFile: filepath.Join(dir, StateFileName),
 	}
 }
@@ -145,12 +148,16 @@ func GetState(dir string) (State, error) {
 	emptyState := State{}
 	if reflect.DeepEqual(state, emptyState) {
 		state = State{
-			Version: 3,
+			Version: STATE_VERSION,
 		}
 	}
 
 	if state.Version < 3 {
 		return state, errors.New("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue.")
+	}
+
+	if state.Version > STATE_VERSION {
+		return state, fmt.Errorf("Existing bbl environment was created with a newer version of bbl. Please upgrade to a version of bbl compatible with schema version %d.\n", state.Version)
 	}
 
 	return state, nil

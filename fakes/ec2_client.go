@@ -63,6 +63,16 @@ type EC2Client struct {
 			Error  error
 		}
 	}
+
+	DescribeVpcsCall struct {
+		Receives struct {
+			Input *awsec2.DescribeVpcsInput
+		}
+		Returns struct {
+			Output *awsec2.DescribeVpcsOutput
+			Error  error
+		}
+	}
 }
 
 func (c *EC2Client) ImportKeyPair(input *awsec2.ImportKeyPairInput) (*awsec2.ImportKeyPairOutput, error) {
@@ -99,4 +109,10 @@ func (c *EC2Client) DescribeInstances(input *awsec2.DescribeInstancesInput) (*aw
 	c.DescribeInstancesCall.Receives.Input = input
 
 	return c.DescribeInstancesCall.Returns.Output, c.DescribeInstancesCall.Returns.Error
+}
+
+func (c *EC2Client) DescribeVpcs(input *awsec2.DescribeVpcsInput) (*awsec2.DescribeVpcsOutput, error) {
+	c.DescribeVpcsCall.Receives.Input = input
+
+	return c.DescribeVpcsCall.Returns.Output, c.DescribeVpcsCall.Returns.Error
 }
