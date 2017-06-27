@@ -898,3 +898,13 @@ var _ = Describe("load balancers", func() {
 		})
 	})
 })
+
+func lbs(endpointOverrideURL string, subcommandFlags []string, stateDir string, exitCode int) *gexec.Session {
+	args := []string{
+		fmt.Sprintf("--endpoint-override=%s", endpointOverrideURL),
+		"--state-dir", stateDir,
+		"lbs",
+	}
+
+	return executeCommand(append(args, subcommandFlags...), exitCode)
+}
