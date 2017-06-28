@@ -1,14 +1,10 @@
 package main_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
-
-	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
-	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -106,44 +102,6 @@ var _ = Describe("bosh-deployment-vars", func() {
 			Expect(vars.Tags).To(Equal([]string{"some-bosh-tag", "some-internal-tag"}))
 			Expect(vars.ProjectID).To(Equal("some-project-id"))
 			Expect(returnedAccountKey).To(Equal(realAccountKey))
-		})
-	})
-
-	Context("when the bosh cli version is <2.0", func() {
-		var (
-			fakeAWS       *awsbackend.Backend
-			fakeAWSServer *httptest.Server
-		)
-
-		BeforeEach(func() {
-			fakeAWS = awsbackend.New(fakeBOSHServer.URL)
-			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
-
-			args := []string{
-				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-				"--state-dir", tempDirectory,
-				"--debug",
-				"up",
-				"--name", "some-env-id",
-				"--iaas", "aws",
-				"--aws-access-key-id", "some-access-key",
-				"--aws-secret-access-key", "some-access-secret",
-				"--aws-region", "some-region",
-			}
-
-			executeCommand(args, 0)
-
-			fakeBOSHCLIBackendServer.SetVersion("1.9.0")
-		})
-
-		It("fast fails with a helpful error message", func() {
-			args := []string{
-				"--state-dir", tempDirectory,
-				"bosh-deployment-vars",
-			}
-			session := executeCommand(args, 1)
-
-			Expect(session.Err.Contents()).To(ContainSubstring("BOSH version must be at least v2.0.0"))
 		})
 	})
 })

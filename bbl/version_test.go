@@ -74,8 +74,6 @@ var _ = Describe("bbl", func() {
 					Expect(session.Out.Contents()).To(ContainSubstring(fmt.Sprintf("(%s/%s)", runtime.GOOS, runtime.GOARCH)))
 				})
 			})
-
 		})
-
 	})
 })
