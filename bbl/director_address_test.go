@@ -3,21 +3,19 @@ package main_test
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+
+	"github.com/onsi/gomega/gexec"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
-	"github.com/rosenhouse/awsfaker"
 )
 
-var _ = PDescribe("director-address", func() {
+var _ = Describe("director-address", func() {
 	var (
 		tempDirectory string
 		args          []string
@@ -77,48 +75,6 @@ var _ = PDescribe("director-address", func() {
 				Eventually(session).Should(gexec.Exit(0))
 				Expect(session.Out.Contents()).To(ContainSubstring("https://127.0.0.1:25555"))
 			})
-		})
-
-		Context("aws", func() {
-			var (
-				fakeAWS       *awsbackend.Backend
-				fakeAWSServer *httptest.Server
-
-				fakeBOSHServer *httptest.Server
-				fakeBOSH       *fakeBOSHDirector
-			)
-
-			BeforeEach(func() {
-				fakeBOSH = &fakeBOSHDirector{}
-				fakeBOSHServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					fakeBOSH.ServeHTTP(responseWriter, request)
-				}))
-
-				fakeTerraformBackendServer.SetFakeBOSHServer(fakeBOSHServer.URL)
-
-				fakeAWS = awsbackend.New(fakeBOSHServer.URL)
-				fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
-
-				upAWSCloudFormation(fakeAWSServer.URL, tempDirectory, 0)
-			})
-
-			AfterEach(func() {
-				fakeTerraformBackendServer.ResetAll()
-			})
-
-			It("returns the eip reserved for the director", func() {
-				args = []string{
-					fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-					"--state-dir", tempDirectory,
-					"director-address",
-				}
-				session, err := gexec.Start(exec.Command(pathToBBL, args...), GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Eventually(session).Should(gexec.Exit(0))
-				Expect(string(session.Out.Contents())).To(ContainSubstring("https://127.0.0.1:25555"))
-			})
-
 		})
 	})
 

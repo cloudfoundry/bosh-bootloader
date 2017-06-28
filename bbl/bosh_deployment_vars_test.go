@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bbl/awsbackend"
-	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/rosenhouse/awsfaker"
 
 	. "github.com/onsi/ginkgo"
