@@ -62,7 +62,6 @@ var _ = Describe("load balancer tests", func() {
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			bbl.DeleteLBs()
 			bbl.Destroy()
 		}
 	})

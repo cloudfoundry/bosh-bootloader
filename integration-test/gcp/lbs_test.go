@@ -28,14 +28,45 @@ var _ = Describe("lbs test", func() {
 		gcp = actors.NewGCP(configuration)
 		terraform = actors.NewTerraform(configuration)
 		boshcli = actors.NewBOSHCLI()
+
+		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 	})
 
-	It("successfully creates lbs", func() {
-		var urlToSSLCert string
+	AfterEach(func() {
+		if !CurrentGinkgoTestDescription().Failed {
+			bbl.Destroy()
+		}
+	})
 
-		By("calling bbl up", func() {
-			bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID()})
+	It("successfully creates a concourse lb", func() {
+		By("creating a load balancer", func() {
+			bbl.CreateLB("concourse", "", "", "")
 		})
+
+		By("confirming that target pools exist", func() {
+			targetPool, err := gcp.GetTargetPool(bbl.PredefinedEnvID() + "-concourse")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(targetPool.Name).NotTo(BeNil())
+		})
+
+		By("deleting lbs", func() {
+			bbl.DeleteLBs()
+		})
+
+		By("confirming that the target pools do not exist", func() {
+			_, err := gcp.GetTargetPool(bbl.PredefinedEnvID() + "-concourse")
+			Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + bbl.PredefinedEnvID() + "-concourse" + `' was not found`)))
+		})
+
+		By("verifying that the bbl lbs output contains the concourse lb", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
+		})
+	})
+
+	It("successfully creates cf lbs", func() {
+		var urlToSSLCert string
 
 		By("creating a load balancer", func() {
 			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
@@ -94,8 +125,13 @@ var _ = Describe("lbs test", func() {
 			}
 		})
 
-		By("calling bbl destroy", func() {
-			bbl.Destroy()
+		By("verifying that the bbl lbs output contains the cf lbs", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
 		})
 	})
 })
