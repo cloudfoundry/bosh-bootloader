@@ -6,15 +6,19 @@ import (
 	"io/ioutil"
 	"strings"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	"golang.org/x/oauth2/google"
+
+	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
 	compute "google.golang.org/api/compute/v1"
+
+	. "github.com/onsi/gomega"
 )
 
 type GCP struct {
 	service   *compute.Service
 	projectID string
 	region    string
+	zone      string
 }
 
 func NewGCP(config integration.Config) GCP {
@@ -37,6 +41,7 @@ func NewGCP(config integration.Config) GCP {
 		service:   service,
 		projectID: config.GCPProjectID,
 		region:    config.GCPRegion,
+		zone:      config.GCPZone,
 	}
 }
 
@@ -125,4 +130,14 @@ func (g GCP) GetTargetHTTPSProxy(name string) (*compute.TargetHttpsProxy, error)
 
 func (g GCP) GetHealthCheck(healthCheckName string) (*compute.HttpHealthCheck, error) {
 	return g.service.HttpHealthChecks.Get(g.projectID, healthCheckName).Do()
+}
+
+func (g GCP) NetworkHasBOSHDirector(envID string) bool {
+	list, err := g.service.Instances.List(g.projectID, g.zone).
+		Filter(fmt.Sprintf("network eq %s-network", envID)).
+		Filter("labels.director:bosh-init").
+		Do()
+	Expect(err).NotTo(HaveOccurred())
+
+	return len(list.Items) == 1
 }

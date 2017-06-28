@@ -1,6 +1,7 @@
 package actors
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -180,4 +181,16 @@ func (a AWS) DescribeKeyPairs(keypairName string) []*awsec2.KeyPairInfo {
 	Expect(err).NotTo(HaveOccurred())
 
 	return keypairOutput.KeyPairs
+}
+
+func (a AWS) NetworkHasBOSHDirector(envID string) bool {
+	instances := a.Instances(fmt.Sprintf("%s-vpc", envID))
+
+	for _, instance := range instances {
+		if instance == "bosh/0" {
+			return true
+		}
+	}
+
+	return false
 }

@@ -10,12 +10,13 @@ import (
 
 var _ = Describe("idempotent test", func() {
 	var (
-		bbl actors.BBL
+		bbl           actors.BBL
+		configuration integration.Config
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err = integration.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "reentrant-env")

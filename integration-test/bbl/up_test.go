@@ -41,13 +41,14 @@ var _ = Describe("up test", func() {
 	})
 
 	It("bbl's up a new bosh director", func() {
-		By("checking if the bosh director exists", func() {
-			Expect(cloud.NetworkHasBOSHDirector()).To(BeTrue())
-		})
+		var (
+			directorAddress string
+			caCertPath      string
+		)
 
 		By("checking if the bosh director exists", func() {
-			directorAddress := bbl.DirectorAddress()
-			caCertPath := bbl.SaveDirectorCA()
+			directorAddress = bbl.DirectorAddress()
+			caCertPath = bbl.SaveDirectorCA()
 
 			exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
 			Expect(err).NotTo(HaveOccurred())
