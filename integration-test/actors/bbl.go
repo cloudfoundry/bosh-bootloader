@@ -179,6 +179,10 @@ func (b BBL) BOSHDeploymentVars() string {
 	return b.fetchValue("bosh-deployment-vars")
 }
 
+func (b BBL) PrintEnv() string {
+	return b.fetchValue("print-env")
+}
+
 func (b BBL) UpWithInvalidAWSCredentials() {
 	args := []string{
 		"--state-dir", b.stateDirectory,

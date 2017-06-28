@@ -78,5 +78,14 @@ var _ = Describe("up test", func() {
 			tags := aws.GetEC2InstanceTags(fmt.Sprintf("%s-nat", bbl.PredefinedEnvID()))
 			Expect(tags["EnvID"]).To(Equal(bbl.PredefinedEnvID()))
 		})
+
+		By("checking if bbl print-env prints the bosh environment variables", func() {
+			stdout := bbl.PrintEnv()
+
+			Expect(stdout).To(ContainSubstring("export BOSH_ENVIRONMENT="))
+			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT="))
+			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT_SECRET="))
+			Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT="))
+		})
 	})
 })
