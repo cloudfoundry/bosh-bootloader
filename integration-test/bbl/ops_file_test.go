@@ -3,6 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"net/url"
+	"path/filepath"
 
 	"golang.org/x/crypto/ssh"
 
@@ -13,10 +14,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("up test", func() {
+var _ = Describe("ops file test", func() {
 	var (
 		bbl     actors.BBL
-		aws     actors.AWS
 		bosh    actors.BOSH
 		boshcli actors.BOSHCLI
 		state   integration.State
@@ -28,12 +28,14 @@ var _ = Describe("up test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
-		aws = actors.NewAWS(configuration)
 		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
 		state = integration.NewState(configuration.StateFileDir)
 
-		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
+		bbl.Up(actors.GetIAAS(configuration), []string{
+			"--name", bbl.PredefinedEnvID(),
+			"--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"),
+		})
 	})
 
 	AfterEach(func() {
@@ -61,31 +63,13 @@ var _ = Describe("up test", func() {
 
 			address := fmt.Sprintf("%s:22", directorAddressURL.Hostname())
 			_, err = ssh.Dial("tcp", address, &ssh.ClientConfig{
-				User: "jumpbox",
+				User: "jumpbox_other",
 				Auth: []ssh.AuthMethod{
 					ssh.PublicKeys(privateKey),
 				},
 				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			})
 			Expect(err).NotTo(HaveOccurred())
-		})
-
-		By("checking if the instances exist", func() {
-			instances := aws.Instances(fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID()))
-			Expect(instances).To(HaveLen(2))
-			Expect(instances).To(ConsistOf([]string{"bosh/0", fmt.Sprintf("%s-nat", bbl.PredefinedEnvID())}))
-
-			tags := aws.GetEC2InstanceTags(fmt.Sprintf("%s-nat", bbl.PredefinedEnvID()))
-			Expect(tags["EnvID"]).To(Equal(bbl.PredefinedEnvID()))
-		})
-
-		By("checking if bbl print-env prints the bosh environment variables", func() {
-			stdout := bbl.PrintEnv()
-
-			Expect(stdout).To(ContainSubstring("export BOSH_ENVIRONMENT="))
-			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT="))
-			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT_SECRET="))
-			Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT="))
 		})
 	})
 })
