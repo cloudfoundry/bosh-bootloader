@@ -28,7 +28,6 @@ var _ = Describe("Run", func() {
 		cmd terraform.Cmd
 
 		fakeTerraformBackendServer *httptest.Server
-		pathToFakeTerraform        string
 		pathToTerraform            string
 		fastFailTerraform          bool
 		fastFailTerraformMutex     sync.Mutex
@@ -77,12 +76,8 @@ var _ = Describe("Run", func() {
 		}))
 
 		var err error
-		pathToFakeTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/faketerraform",
+		pathToTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/fakes/terraform",
 			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToTerraform = filepath.Join(filepath.Dir(pathToFakeTerraform), "terraform")
-		err = os.Rename(pathToFakeTerraform, pathToTerraform)
 		Expect(err).NotTo(HaveOccurred())
 
 		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))

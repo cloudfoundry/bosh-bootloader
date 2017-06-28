@@ -26,7 +26,6 @@ var _ = Describe("Cmd", func() {
 		cmd bosh.Cmd
 
 		fakeBOSHBackendServer *httptest.Server
-		pathToFakeBOSH        string
 		pathToBOSH            string
 
 		fastFailBOSH      bool
@@ -77,12 +76,8 @@ var _ = Describe("Cmd", func() {
 		}))
 
 		var err error
-		pathToFakeBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/bbl/fakebosh",
+		pathToBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/fakes/bosh",
 			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		pathToBOSH = filepath.Join(filepath.Dir(pathToFakeBOSH), "bosh")
-		err = os.Rename(pathToFakeBOSH, pathToBOSH)
 		Expect(err).NotTo(HaveOccurred())
 
 		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
