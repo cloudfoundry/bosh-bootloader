@@ -23,9 +23,10 @@ Scale instance types, disks and instance count based on your needs. Other sizes 
 2. Replace all ```vm_type: REPLACE_ME``` with ```vm_type: n1-standard-1```.
 3. Add the vm_extension ```lb``` to the instance_group "web"
 4. Add ```tls_bind_port: 443``` as a property of the job named "atc"
-5. Add the vm_extension ```50GB_ephemeral_disk``` to the instance_group "worker"
-6. Replace all ```persistent_disk_type: REPLACE_ME``` with ```persistent_disk_type: 5GB```
-7. Fill out the remaining REPLACE_ME in the sample manifest with your own data, such as auth groups, SSL certs, and external URL
+5. Add ```bind_port: 80``` as a property of the job named "atc". This ensures that ```http``` traffic is redirected to ```https```.
+6. Add the vm_extension ```50GB_ephemeral_disk``` to the instance_group "worker"
+7. Replace all ```persistent_disk_type: REPLACE_ME``` with ```persistent_disk_type: 5GB```
+8. Fill out the remaining REPLACE_ME in the sample manifest with your own data, such as auth groups, SSL certs, and external URL
 
 
 ## Set the bosh environment
