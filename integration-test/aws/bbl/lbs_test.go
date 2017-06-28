@@ -124,7 +124,7 @@ var _ = Describe("load balancer tests", func() {
 		By("updating the certs of the cf router lb", func() {
 			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
 			Expect(aws.LoadBalancers()).To(HaveLen(3))
-			Expect(aws.LoadBalancers()).To(Equal([]string{
+			Expect(aws.LoadBalancers()).To(ConsistOf([]string{
 				fmt.Sprintf("%s-cf-router-lb", bbl.PredefinedEnvID()),
 				fmt.Sprintf("%s-cf-ssh-lb", bbl.PredefinedEnvID()),
 				fmt.Sprintf("%s-cf-tcp-lb", bbl.PredefinedEnvID()),
