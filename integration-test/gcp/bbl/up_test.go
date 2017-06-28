@@ -126,7 +126,7 @@ var _ = Describe("up test", func() {
 			otherKeyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 			Expect(err).NotTo(HaveOccurred())
 
-			bbl.UpdateLB(otherCertPath, otherKeyPath)
+			bbl.UpdateLB(otherCertPath, otherKeyPath, "")
 		})
 
 		By("confirming that the cert gets updated", func() {

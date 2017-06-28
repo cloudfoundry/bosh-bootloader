@@ -196,7 +196,10 @@ func (b BBL) UpdateLB(certPath, keyPath, chainPath string) {
 		"update-lbs",
 		"--cert", certPath,
 		"--key", keyPath,
-		"--chain", chainPath,
+	}
+
+	if chainPath != "" {
+		args = append(args, "--chain", chainPath)
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)
