@@ -1,8 +1,9 @@
-package main_test
+package integration_test
 
 import (
 	"fmt"
 	"os/exec"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -124,3 +125,12 @@ var _ = Describe("bbl", func() {
 		)
 	})
 })
+
+func executeCommand(args []string, exitCode int) *gexec.Session {
+	cmd := exec.Command(pathToBBL, args...)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
+
+	return session
+}
