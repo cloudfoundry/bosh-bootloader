@@ -85,19 +85,6 @@ func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 }
 
-func (b BBL) UpWithInvalidAWSCredentials() {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"up",
-		"--iaas", "aws",
-		"--aws-access-key-id", "some-bad-access-key-id",
-		"--aws-secret-access-key", "some-bad-secret-access-key",
-		"--aws-region", b.configuration.AWSRegion,
-	}
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Second).Should(gexec.Exit(1))
-}
-
 func (b BBL) Destroy() {
 	session := b.execute([]string{
 		"--state-dir", b.stateDirectory,
@@ -107,21 +94,61 @@ func (b BBL) Destroy() {
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
-func (b BBL) SaveDirectorCA() string {
-	stdout := bytes.NewBuffer([]byte{})
-	session := b.execute([]string{
+func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) {
+	args := []string{
 		"--state-dir", b.stateDirectory,
-		"director-ca-cert",
-	}, stdout, os.Stderr)
+		"create-lbs",
+		"--type", loadBalancerType,
+	}
+
+	if loadBalancerType == "cf" || GetIAAS(b.configuration) == AWSIAAS {
+		args = append(args,
+			"--cert", cert,
+			"--key", key,
+			"--chain", chain,
+		)
+	}
+
+	session := b.execute(args, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+}
+
+func (b BBL) UpdateLB(certPath, keyPath, chainPath string) {
+	args := []string{
+		"--state-dir", b.stateDirectory,
+		"update-lbs",
+		"--cert", certPath,
+		"--key", keyPath,
+	}
+
+	if chainPath != "" {
+		args = append(args, "--chain", chainPath)
+	}
+
+	session := b.execute(args, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+}
+
+func (b BBL) LBs() *gexec.Session {
+	args := []string{
+		"--state-dir", b.stateDirectory,
+		"lbs",
+	}
+
+	session := b.execute(args, os.Stdout, os.Stderr)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
-	file, err := ioutil.TempFile("", "")
-	defer file.Close()
-	Expect(err).NotTo(HaveOccurred())
+	return session
+}
 
-	file.Write(stdout.Bytes())
+func (b BBL) DeleteLBs() {
+	args := []string{
+		"--state-dir", b.stateDirectory,
+		"delete-lbs",
+	}
 
-	return file.Name()
+	session := b.execute(args, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
 func (b BBL) DirectorUsername() string {
@@ -148,23 +175,38 @@ func (b BBL) EnvID() string {
 	return b.fetchValue("env-id")
 }
 
-func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) {
+func (b BBL) BOSHDeploymentVars() string {
+	return b.fetchValue("bosh-deployment-vars")
+}
+
+func (b BBL) UpWithInvalidAWSCredentials() {
 	args := []string{
 		"--state-dir", b.stateDirectory,
-		"create-lbs",
-		"--type", loadBalancerType,
+		"up",
+		"--iaas", "aws",
+		"--aws-access-key-id", "some-bad-access-key-id",
+		"--aws-secret-access-key", "some-bad-secret-access-key",
+		"--aws-region", b.configuration.AWSRegion,
 	}
-
-	if loadBalancerType == "cf" || GetIAAS(b.configuration) == AWSIAAS {
-		args = append(args,
-			"--cert", cert,
-			"--key", key,
-			"--chain", chain,
-		)
-	}
-
 	session := b.execute(args, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+}
+
+func (b BBL) SaveDirectorCA() string {
+	stdout := bytes.NewBuffer([]byte{})
+	session := b.execute([]string{
+		"--state-dir", b.stateDirectory,
+		"director-ca-cert",
+	}, stdout, os.Stderr)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
+	file, err := ioutil.TempFile("", "")
+	defer file.Close()
+	Expect(err).NotTo(HaveOccurred())
+
+	file.Write(stdout.Bytes())
+
+	return file.Name()
 }
 
 func (b BBL) CreateGCPLB(loadBalancerType string) {
@@ -172,44 +214,6 @@ func (b BBL) CreateGCPLB(loadBalancerType string) {
 		"--state-dir", b.stateDirectory,
 		"create-lbs",
 		"--type", loadBalancerType,
-	}
-
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-}
-
-func (b BBL) LBs() *gexec.Session {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"lbs",
-	}
-
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-
-	return session
-}
-
-func (b BBL) UpdateLB(certPath, keyPath, chainPath string) {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"update-lbs",
-		"--cert", certPath,
-		"--key", keyPath,
-	}
-
-	if chainPath != "" {
-		args = append(args, "--chain", chainPath)
-	}
-
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-}
-
-func (b BBL) DeleteLBs() {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"delete-lbs",
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)

@@ -31,22 +31,6 @@ type gcpBOSHDeploymentVars struct {
 	GCPCredentialsJSON string   `yaml:"gcp_credentials_json"`
 }
 
-type awsBOSHDeploymentVars struct {
-	InternalCIDR          string   `yaml:"internal_cidr"`
-	InternalGateway       string   `yaml:"internal_gw"`
-	InternalIP            string   `yaml:"internal_ip"`
-	DirectorName          string   `yaml:"director_name"`
-	ExternalIP            string   `yaml:"external_ip"`
-	AZ                    string   `yaml:"az"`
-	SubnetID              string   `yaml:"subnet_id"`
-	AccessKeyID           string   `yaml:"access_key_id"`
-	SecretAccessKey       string   `yaml:"secret_access_key"`
-	DefaultKeyName        string   `yaml:"default_key_name"`
-	DefaultSecurityGroups []string `yaml:"default_security_groups"`
-	Region                string   `yaml:"region"`
-	PrivateKey            string   `yaml:"private_key"`
-}
-
 var _ = Describe("bosh-deployment-vars", func() {
 	var (
 		tempDirectory         string
@@ -123,57 +107,6 @@ var _ = Describe("bosh-deployment-vars", func() {
 			Expect(vars.Tags).To(Equal([]string{"some-bosh-tag", "some-internal-tag"}))
 			Expect(vars.ProjectID).To(Equal("some-project-id"))
 			Expect(returnedAccountKey).To(Equal(realAccountKey))
-		})
-	})
-
-	PContext("AWS", func() {
-		var (
-			fakeAWS       *awsbackend.Backend
-			fakeAWSServer *httptest.Server
-		)
-
-		BeforeEach(func() {
-			fakeAWS = awsbackend.New(fakeBOSHServer.URL)
-			fakeAWSServer = httptest.NewServer(awsfaker.New(fakeAWS))
-
-			args := []string{
-				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-				"--state-dir", tempDirectory,
-				"--debug",
-				"up",
-				"--name", "some-env-id",
-				"--iaas", "aws",
-				"--aws-access-key-id", "some-access-key",
-				"--aws-secret-access-key", "some-access-secret",
-				"--aws-region", "some-region",
-			}
-
-			executeCommand(args, 0)
-		})
-
-		It("prints a bosh create-env compatible vars-file", func() {
-			args := []string{
-				fmt.Sprintf("--endpoint-override=%s", fakeAWSServer.URL),
-				"--state-dir", tempDirectory,
-				"bosh-deployment-vars",
-			}
-			session := executeCommand(args, 0)
-
-			var vars awsBOSHDeploymentVars
-			yaml.Unmarshal(session.Out.Contents(), &vars)
-			Expect(vars.InternalCIDR).To(Equal("10.0.0.0/24"))
-			Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
-			Expect(vars.InternalIP).To(Equal("10.0.0.6"))
-			Expect(vars.DirectorName).To(Equal("bosh-some-env-id"))
-			Expect(vars.ExternalIP).To(Equal("127.0.0.1"))
-			Expect(vars.AZ).To(Equal("some-az"))
-			Expect(vars.SubnetID).To(Equal("some-subnet-id"))
-			Expect(vars.AccessKeyID).To(Equal("some-user-access-key"))
-			Expect(vars.SecretAccessKey).To(Equal("some-user-secret-access-key"))
-			Expect(vars.DefaultKeyName).To(Equal("keypair-some-env-id"))
-			Expect(vars.DefaultSecurityGroups).To(Equal([]string{"some-default-security-group"}))
-			Expect(vars.Region).To(Equal("some-region"))
-			Expect(vars.PrivateKey).To(Equal(testhelpers.PRIVATE_KEY))
 		})
 	})
 
