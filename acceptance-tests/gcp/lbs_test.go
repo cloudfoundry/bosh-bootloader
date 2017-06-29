@@ -49,6 +49,12 @@ var _ = Describe("lbs test", func() {
 			Expect(targetPool.Name).NotTo(BeNil())
 		})
 
+		By("verifying that the bbl lbs output contains the concourse lb", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
+		})
+
 		By("deleting lbs", func() {
 			bbl.DeleteLBs()
 		})
@@ -56,12 +62,6 @@ var _ = Describe("lbs test", func() {
 		By("confirming that the target pools do not exist", func() {
 			_, err := gcp.GetTargetPool(bbl.PredefinedEnvID() + "-concourse")
 			Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + bbl.PredefinedEnvID() + "-concourse" + `' was not found`)))
-		})
-
-		By("verifying that the bbl lbs output contains the concourse lb", func() {
-			session := bbl.LBs()
-			stdout := string(session.Out.Contents())
-			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
 		})
 	})
 
