@@ -94,6 +94,15 @@ var _ = Describe("lbs test", func() {
 			urlToSSLCert = targetHTTPSProxy.SslCertificates[0]
 		})
 
+		By("verifying that the bbl lbs output contains the cf lbs", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
+		})
+
 		By("updating the load balancer", func() {
 			otherCertPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
 			Expect(err).NotTo(HaveOccurred())
@@ -123,15 +132,6 @@ var _ = Describe("lbs test", func() {
 				_, err := gcp.GetTargetPool(p)
 				Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + p + `' was not found`)))
 			}
-		})
-
-		By("verifying that the bbl lbs output contains the cf lbs", func() {
-			session := bbl.LBs()
-			stdout := string(session.Out.Contents())
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
 		})
 	})
 })
