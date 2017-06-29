@@ -1,0 +1,9 @@
+[submodule "bosh/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
+	path = bosh/vendor/github.com/pivotal-cf-experimental/gomegamatchers
+	url = https://github.com/pivotal-cf-experimental/gomegamatchers.git
+[submodule "bosh/vendor/gopkg.in/yaml.v2"]
+	path = bosh/vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
+[submodule "bosh/vendor/github.com/blang/semver"]
+	path = bosh/vendor/github.com/blang/semver
+	url = https://github.com/blang/semver
