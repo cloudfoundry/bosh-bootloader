@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
