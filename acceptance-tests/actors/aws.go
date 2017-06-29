@@ -160,6 +160,7 @@ func (a AWS) GetSSLCertificateNameByLoadBalancer(lbName string) string {
 		if int(*ld.Listener.LoadBalancerPort) == 443 {
 			certificateArn := ld.Listener.SSLCertificateId
 			certificateArnParts := strings.Split(awslib.StringValue(certificateArn), "/")
+			Expect(certificateArnParts).To(HaveLen(2))
 			certificateName = certificateArnParts[1]
 			Expect(certificateName).NotTo(BeEmpty())
 
