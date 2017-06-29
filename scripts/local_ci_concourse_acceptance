@@ -40,8 +40,8 @@ function main {
       -v ${binary_dir}/garden-release:/garden-release \
       -v ${binary_dir}/stemcell:/stemcell \
       -v ${CONCOURSE_DEPLOYMENT_PATH:-${GOPATH}/src/github.com/evanfarrar/concourse-deployment}:/concourse-deployment \
-      -v ${STATE_DIR:-${PWD}}:/bbl-integration-s3 \
-      cfinfrastructure/deployment ${TEST_TASK:-"/ci/scripts/bosh-bootloader/concourse-integration/task"}
+      -v ${STATE_DIR:-${PWD}}:/bbl-acceptance-s3 \
+      cfinfrastructure/deployment ${TEST_TASK:-"/ci/scripts/bosh-bootloader/concourse-acceptance/task"}
   popd > /dev/null
 }
 
