@@ -146,16 +146,6 @@ func (CertificateValidator) validateCertAndChain(certificate *x509.Certificate, 
 	return nil
 }
 
-func (CertificateValidator) parsePrivateKey(keyData []byte) (*rsa.PrivateKey, error) {
-	pemKeyData, _ := pem.Decode(keyData)
-	privateKey, err := x509.ParsePKCS1PrivateKey(pemKeyData.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %s", err)
-	}
-
-	return privateKey, nil
-}
-
 func (CertificateValidator) parseCertificate(certificateData []byte, loadKeyPairError error) (*x509.Certificate, error) {
 	pemCertData, _ := pem.Decode(certificateData)
 	cert, err := x509.ParseCertificate(pemCertData.Bytes)
