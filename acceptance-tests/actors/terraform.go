@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	. "github.com/onsi/ginkgo"
 )
 
@@ -46,7 +46,7 @@ type Terraform struct {
 	serviceAccountKeyPath string
 }
 
-func NewTerraform(config integration.Config) Terraform {
+func NewTerraform(config acceptance.Config) Terraform {
 	return Terraform{
 		projectID: config.GCPProjectID,
 		region:    config.GCPRegion,
@@ -55,7 +55,7 @@ func NewTerraform(config integration.Config) Terraform {
 	}
 }
 
-func (t Terraform) Destroy(state integration.State) error {
+func (t Terraform) Destroy(state acceptance.State) error {
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err

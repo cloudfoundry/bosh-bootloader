@@ -1,8 +1,8 @@
-package integration_test
+package acceptance_test
 
 import (
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,12 +11,12 @@ import (
 var _ = Describe("idempotent test", func() {
 	var (
 		bbl           actors.BBL
-		configuration integration.Config
+		configuration acceptance.Config
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err = integration.LoadConfig()
+		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "reentrant-env")

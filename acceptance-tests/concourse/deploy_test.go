@@ -1,4 +1,4 @@
-package integration_test
+package acceptance_test
 
 import (
 	"crypto/tls"
@@ -8,8 +8,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
@@ -21,18 +20,18 @@ import (
 var _ = Describe("concourse deployment test", func() {
 	var (
 		bbl           actors.BBL
-		state         integration.State
+		state         acceptance.State
 		lbURL         string
-		configuration integration.Config
+		configuration acceptance.Config
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err = integration.LoadConfig()
+		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
-		state = integration.NewState(configuration.StateFileDir)
+		state = acceptance.NewState(configuration.StateFileDir)
 
 		bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID()})
 

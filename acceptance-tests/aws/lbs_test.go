@@ -1,11 +1,11 @@
-package integration_test
+package acceptance_test
 
 import (
 	"fmt"
 	"strings"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
@@ -18,7 +18,7 @@ var _ = Describe("load balancer tests", func() {
 		aws     actors.AWS
 		bosh    actors.BOSH
 		boshcli actors.BOSHCLI
-		state   integration.State
+		state   acceptance.State
 
 		certPath       string
 		chainPath      string
@@ -30,14 +30,14 @@ var _ = Describe("load balancer tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		aws = actors.NewAWS(configuration)
 		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
-		state = integration.NewState(configuration.StateFileDir)
+		state = acceptance.NewState(configuration.StateFileDir)
 
 		certPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())

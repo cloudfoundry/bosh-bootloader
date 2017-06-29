@@ -1,4 +1,4 @@
-package integration_test
+package acceptance_test
 
 import (
 	"io"
@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
@@ -21,14 +21,14 @@ var _ = Describe("Stack Migration", func() {
 		bblTerraform actors.BBL
 		aws          actors.AWS
 		boshcli      actors.BOSHCLI
-		state        integration.State
+		state        acceptance.State
 
 		f *os.File
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		var bblBinaryLocation string
@@ -57,7 +57,7 @@ var _ = Describe("Stack Migration", func() {
 		bblTerraform = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "stack-migration-env")
 		aws = actors.NewAWS(configuration)
 		boshcli = actors.NewBOSHCLI()
-		state = integration.NewState(configuration.StateFileDir)
+		state = acceptance.NewState(configuration.StateFileDir)
 	})
 
 	AfterEach(func() {

@@ -11,7 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test"
+	"github.com/cloudfoundry/bosh-cli/acceptance"
 
 	. "github.com/onsi/gomega"
 
@@ -29,7 +29,7 @@ type AWS struct {
 	elbClient            *elb.ELB
 }
 
-func NewAWS(configuration integration.Config) AWS {
+func NewAWS(configuration acceptance.Config) AWS {
 	awsConfig := aws.Config{
 		AccessKeyID:     configuration.AWSAccessKeyID,
 		SecretAccessKey: configuration.AWSSecretAccessKey,

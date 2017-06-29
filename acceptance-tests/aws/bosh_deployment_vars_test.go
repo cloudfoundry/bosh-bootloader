@@ -1,12 +1,12 @@
-package integration_test
+package acceptance_test
 
 import (
 	"fmt"
 
 	yaml "gopkg.in/yaml.v2"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,17 +17,17 @@ const ipRegex = `[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}`
 var _ = Describe("bosh deployment vars", func() {
 	var (
 		bbl           actors.BBL
-		state         integration.State
-		configuration integration.Config
+		state         acceptance.State
+		configuration acceptance.Config
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err = integration.LoadConfig()
+		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "no-director-env")
-		state = integration.NewState(configuration.StateFileDir)
+		state = acceptance.NewState(configuration.StateFileDir)
 
 		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 	})

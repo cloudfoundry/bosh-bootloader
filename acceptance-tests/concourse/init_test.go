@@ -1,4 +1,4 @@
-package integration_test
+package acceptance_test
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-func TestIntegration(t *testing.T) {
+func TestAcceptance(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "concourse")
 }

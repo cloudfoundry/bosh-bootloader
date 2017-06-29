@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/bosh-bootloader/integration-test"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -24,13 +23,13 @@ const (
 type BBL struct {
 	stateDirectory string
 	pathToBBL      string
-	configuration  integration.Config
+	configuration  acceptance.Config
 	envID          string
 }
 
 type IAAS int
 
-func NewBBL(stateDirectory string, pathToBBL string, configuration integration.Config, envIDSuffix string) BBL {
+func NewBBL(stateDirectory string, pathToBBL string, configuration acceptance.Config, envIDSuffix string) BBL {
 	envIDPrefix := os.Getenv("BBL_TEST_ENV_ID_PREFIX")
 	if envIDPrefix == "" {
 		envIDPrefix = "bbl-test"
@@ -245,7 +244,7 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 	return session
 }
 
-func LBURL(config integration.Config, bbl BBL, state integration.State) (string, error) {
+func LBURL(config acceptance.Config, bbl BBL, state acceptance.State) (string, error) {
 	lbs := bbl.fetchValue("lbs")
 	var url string
 	if IAASString(config) == "aws" {
@@ -258,7 +257,7 @@ func LBURL(config integration.Config, bbl BBL, state integration.State) (string,
 	return fmt.Sprintf("https://%s", url), nil
 }
 
-func IAASString(config integration.Config) string {
+func IAASString(config acceptance.Config) string {
 	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
 		return "aws"
 	}
@@ -269,7 +268,7 @@ func IAASString(config integration.Config) string {
 	return ""
 }
 
-func GetIAAS(config integration.Config) IAAS {
+func GetIAAS(config acceptance.Config) IAAS {
 	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
 		return AWSIAAS
 	}

@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/oauth2/google"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	compute "google.golang.org/api/compute/v1"
 
 	. "github.com/onsi/gomega"
@@ -21,7 +21,7 @@ type GCP struct {
 	zone      string
 }
 
-func NewGCP(config integration.Config) GCP {
+func NewGCP(config acceptance.Config) GCP {
 	rawServiceAccountKey, err := ioutil.ReadFile(config.GCPServiceAccountKeyPath)
 	if err != nil {
 		rawServiceAccountKey = []byte(config.GCPServiceAccountKeyPath)

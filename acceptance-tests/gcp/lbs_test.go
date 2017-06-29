@@ -1,8 +1,8 @@
-package integration_test
+package acceptance_test
 
 import (
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
@@ -15,15 +15,15 @@ var _ = Describe("lbs test", func() {
 		gcp       actors.GCP
 		terraform actors.Terraform
 		boshcli   actors.BOSHCLI
-		state     integration.State
+		state     acceptance.State
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		state = integration.NewState(configuration.StateFileDir)
+		state = acceptance.NewState(configuration.StateFileDir)
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		gcp = actors.NewGCP(configuration)
 		terraform = actors.NewTerraform(configuration)

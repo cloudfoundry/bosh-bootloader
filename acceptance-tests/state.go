@@ -1,4 +1,4 @@
-package integration
+package acceptance
 
 import (
 	"crypto/md5"

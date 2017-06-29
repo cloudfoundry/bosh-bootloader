@@ -1,4 +1,4 @@
-package integration_test
+package acceptance_test
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	integration "github.com/cloudfoundry/bosh-bootloader/integration-test"
-	"github.com/cloudfoundry/bosh-bootloader/integration-test/actors"
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,18 +19,18 @@ var _ = Describe("ops file test", func() {
 		bbl     actors.BBL
 		bosh    actors.BOSH
 		boshcli actors.BOSHCLI
-		state   integration.State
+		state   acceptance.State
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := integration.LoadConfig()
+		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
 		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
-		state = integration.NewState(configuration.StateFileDir)
+		state = acceptance.NewState(configuration.StateFileDir)
 
 		bbl.Up(actors.GetIAAS(configuration), []string{
 			"--name", bbl.PredefinedEnvID(),
