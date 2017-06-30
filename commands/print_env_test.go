@@ -75,7 +75,6 @@ var _ = Describe("PrintEnv", func() {
 			It("returns an error when the terraform outputter fails", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 				err := printEnv.Execute([]string{}, storage.State{
-					IAAS:       "gcp",
 					NoDirector: true,
 				})
 				Expect(err).To(MatchError("failed to get terraform output"))
