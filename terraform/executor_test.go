@@ -374,14 +374,24 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("writes the tfState to a file", func() {
-			_, err := executor.Import("some-addr", "some-id", "some-tf-state", storage.AWS{})
+			_, err := executor.Import(terraform.ImportInput{
+				TerraformAddr: "some-addr",
+				AWSResourceID: "some-id",
+				TFState:       "some-tf-state",
+				Creds:         storage.AWS{},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(receivedTFState).To(Equal("some-tf-state"))
 		})
 
 		It("shells out to terraform import and returns the tfState", func() {
-			tfState, err := executor.Import("some-addr", "some-id", "some-tf-state", storage.AWS{})
+			tfState, err := executor.Import(terraform.ImportInput{
+				TerraformAddr: "some-addr",
+				AWSResourceID: "some-id",
+				TFState:       "some-tf-state",
+				Creds:         storage.AWS{},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"import", "some-addr", "some-id"}))
@@ -395,7 +405,12 @@ var _ = Describe("Executor", func() {
 					terraform.SetTempDir(func(dir, prefix string) (string, error) {
 						return "", errors.New("failed to make temp dir")
 					})
-					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					_, err := executor.Import(terraform.ImportInput{
+						TerraformAddr: "some-addr",
+						AWSResourceID: "some-id",
+						TFState:       "some-tf-state",
+						Creds:         storage.AWS{},
+					})
 					Expect(err).To(MatchError("failed to make temp dir"))
 				})
 			})
@@ -410,7 +425,12 @@ var _ = Describe("Executor", func() {
 						return nil
 					})
 
-					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					_, err := executor.Import(terraform.ImportInput{
+						TerraformAddr: "some-addr",
+						AWSResourceID: "some-id",
+						TFState:       "some-tf-state",
+						Creds:         storage.AWS{},
+					})
 					Expect(err).To(MatchError("failed to write tfstate"))
 				})
 			})
@@ -419,7 +439,12 @@ var _ = Describe("Executor", func() {
 				It("returns an error", func() {
 					cmd.RunCall.Returns.Error = errors.New("bad import")
 
-					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					_, err := executor.Import(terraform.ImportInput{
+						TerraformAddr: "some-addr",
+						AWSResourceID: "some-id",
+						TFState:       "some-tf-state",
+						Creds:         storage.AWS{},
+					})
 					Expect(err).To(MatchError("failed to import: bad import"))
 				})
 			})
@@ -434,7 +459,12 @@ var _ = Describe("Executor", func() {
 						return []byte{}, nil
 					})
 
-					_, err := executor.Import("addr", "id", "some-tf-state", storage.AWS{})
+					_, err := executor.Import(terraform.ImportInput{
+						TerraformAddr: "some-addr",
+						AWSResourceID: "some-id",
+						TFState:       "some-tf-state",
+						Creds:         storage.AWS{},
+					})
 					Expect(err).To(MatchError("failed to read tf state file"))
 				})
 			})

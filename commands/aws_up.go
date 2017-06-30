@@ -6,7 +6,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/keypair"
@@ -29,10 +28,6 @@ type infrastructureManager interface {
 	Describe(stackName string) (cloudformation.Stack, error)
 }
 
-type availabilityZoneRetriever interface {
-	Retrieve(region string) ([]string, error)
-}
-
 type credentialValidator interface {
 	Validate() error
 }
@@ -46,10 +41,6 @@ type logger interface {
 
 type stateStore interface {
 	Set(state storage.State) error
-}
-
-type certificateDescriber interface {
-	Describe(certificateName string) (iam.Certificate, error)
 }
 
 type configProvider interface {
@@ -67,11 +58,8 @@ type brokenEnvironmentValidator interface {
 
 type AWSUp struct {
 	credentialValidator        credentialValidator
-	infrastructureManager      infrastructureManager
 	keyPairManager             keyPairManager
 	boshManager                boshManager
-	availabilityZoneRetriever  availabilityZoneRetriever
-	certificateDescriber       certificateDescriber
 	cloudConfigManager         cloudConfigManager
 	stateStore                 stateStore
 	configProvider             configProvider
@@ -92,20 +80,16 @@ type AWSUpConfig struct {
 }
 
 func NewAWSUp(
-	credentialValidator credentialValidator, infrastructureManager infrastructureManager,
-	keyPairManager keyPairManager, boshManager boshManager,
-	availabilityZoneRetriever availabilityZoneRetriever,
-	certificateDescriber certificateDescriber, cloudConfigManager cloudConfigManager,
+	credentialValidator credentialValidator, keyPairManager keyPairManager,
+	boshManager boshManager,
+	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
 	terraformManager terraformApplier, brokenEnvironmentValidator brokenEnvironmentValidator) AWSUp {
 
 	return AWSUp{
 		credentialValidator:        credentialValidator,
-		infrastructureManager:      infrastructureManager,
 		keyPairManager:             keyPairManager,
 		boshManager:                boshManager,
-		availabilityZoneRetriever:  availabilityZoneRetriever,
-		certificateDescriber:       certificateDescriber,
 		cloudConfigManager:         cloudConfigManager,
 		stateStore:                 stateStore,
 		configProvider:             configProvider,
@@ -180,50 +164,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err
-	}
-
-	availabilityZones, err := u.availabilityZoneRetriever.Retrieve(state.AWS.Region)
-	if err != nil {
-		return err
-	}
-
-	var certificateARN string
-	if lbExists(state.Stack.LBType) {
-		certificate, err := u.certificateDescriber.Describe(state.Stack.CertificateName)
-		if err != nil {
-			return err
-		}
-		certificateARN = certificate.ARN
-	}
-
-	if state.Stack.Name != "" {
-		stack, err := u.infrastructureManager.Update(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
-		if err != nil {
-			return err
-		}
-
-		state, err = u.terraformManager.Import(state, stack.Outputs)
-		if err != nil {
-			return err
-		}
-
-		state.MigratedFromCloudFormation = true
-
-		err = u.stateStore.Set(state)
-		if err != nil {
-			return err
-		}
-
-		err = u.infrastructureManager.Delete(stack.Name)
-		if err != nil {
-			return err
-		}
-
-		state.Stack.Name = ""
-		err = u.stateStore.Set(state)
-		if err != nil {
-			return err
-		}
 	}
 
 	state.Stack.BOSHAZ = config.BOSHAZ

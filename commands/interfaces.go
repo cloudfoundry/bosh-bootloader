@@ -4,7 +4,6 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type terraformApplier interface {
 	ValidateVersion() error
-	Import(initialState storage.State, stackOutputs map[string]string) (storage.State, error)
 	Apply(storage.State) (storage.State, error)
 }
 

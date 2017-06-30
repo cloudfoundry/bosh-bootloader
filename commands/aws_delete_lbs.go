@@ -7,36 +7,30 @@ const (
 )
 
 type AWSDeleteLBs struct {
-	credentialValidator       credentialValidator
-	availabilityZoneRetriever availabilityZoneRetriever
-	certificateManager        certificateManager
-	infrastructureManager     infrastructureManager
-	logger                    logger
-	cloudConfigManager        cloudConfigManager
-	stateStore                stateStore
-	environmentValidator      environmentValidator
-	terraformManager          terraformApplier
+	credentialValidator  credentialValidator
+	logger               logger
+	cloudConfigManager   cloudConfigManager
+	stateStore           stateStore
+	environmentValidator environmentValidator
+	terraformManager     terraformApplier
 }
 
 type deleteLBsConfig struct {
 	skipIfMissing bool
 }
 
-func NewAWSDeleteLBs(credentialValidator credentialValidator, availabilityZoneRetriever availabilityZoneRetriever,
-	certificateManager certificateManager, infrastructureManager infrastructureManager, logger logger,
+func NewAWSDeleteLBs(credentialValidator credentialValidator,
+	logger logger,
 	cloudConfigManager cloudConfigManager, stateStore stateStore,
 	environmentValidator environmentValidator, terraformManager terraformApplier,
 ) AWSDeleteLBs {
 	return AWSDeleteLBs{
-		credentialValidator:       credentialValidator,
-		availabilityZoneRetriever: availabilityZoneRetriever,
-		certificateManager:        certificateManager,
-		infrastructureManager:     infrastructureManager,
-		logger:                    logger,
-		cloudConfigManager:        cloudConfigManager,
-		stateStore:                stateStore,
-		environmentValidator:      environmentValidator,
-		terraformManager:          terraformManager,
+		credentialValidator:  credentialValidator,
+		logger:               logger,
+		cloudConfigManager:   cloudConfigManager,
+		stateStore:           stateStore,
+		environmentValidator: environmentValidator,
+		terraformManager:     terraformManager,
 	}
 }
 
@@ -51,26 +45,13 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	if state.TFState != "" {
-		if !lbExists(state.LB.Type) {
-			return LBNotFound
-		}
-
-		state.LB.Type = ""
-		state.LB.Cert = ""
-		state.LB.Key = ""
-	} else {
-		if !lbExists(state.Stack.LBType) {
-			return LBNotFound
-		}
-
-		_, err = c.infrastructureManager.Describe(state.Stack.Name)
-		if err != nil {
-			return err
-		}
-
-		state.Stack.LBType = "none"
+	if !lbExists(state.LB.Type) {
+		return LBNotFound
 	}
+
+	state.LB.Type = ""
+	state.LB.Cert = ""
+	state.LB.Key = ""
 
 	if !state.NoDirector {
 		err = c.cloudConfigManager.Update(state)
@@ -79,34 +60,9 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		}
 	}
 
-	if state.TFState != "" {
-		state, err = c.terraformManager.Apply(state)
-		if err != nil {
-			return handleTerraformError(err, c.stateStore)
-		}
-	} else {
-		azs, err := c.availabilityZoneRetriever.Retrieve(state.AWS.Region)
-		if err != nil {
-			return err
-		}
-
-		_, err = c.infrastructureManager.Update(state.KeyPair.Name, azs, state.Stack.Name, state.Stack.BOSHAZ, "", "", state.EnvID)
-		if err != nil {
-			return err
-		}
-
-		err = c.stateStore.Set(state)
-		if err != nil {
-			return err
-		}
-
-		c.logger.Step("deleting certificate")
-		err = c.certificateManager.Delete(state.Stack.CertificateName)
-		if err != nil {
-			return err
-		}
-
-		state.Stack.CertificateName = ""
+	state, err = c.terraformManager.Apply(state)
+	if err != nil {
+		return handleTerraformError(err, c.stateStore)
 	}
 
 	err = c.stateStore.Set(state)

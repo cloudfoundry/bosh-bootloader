@@ -24,6 +24,13 @@ type Executor struct {
 	debug bool
 }
 
+type ImportInput struct {
+	TerraformAddr string
+	AWSResourceID string
+	TFState       string
+	Creds         storage.AWS
+}
+
 type tfOutput struct {
 	Sensitive bool
 	Type      string
@@ -108,7 +115,7 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 	return string(tfState), nil
 }
 
-func (e Executor) Import(addr, id, tfState string, creds storage.AWS) (string, error) {
+func (e Executor) Import(input ImportInput) (string, error) {
 	tempDir, err := tempDir("", "")
 	if err != nil {
 		return "", err
@@ -119,19 +126,19 @@ provider "aws" {
 	region     = %q
 	access_key = %q
 	secret_key = %q
-}`, creds.Region, creds.AccessKeyID, creds.SecretAccessKey)
+}`, input.Creds.Region, input.Creds.AccessKeyID, input.Creds.SecretAccessKey)
 
 	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(input.TFState), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	err = e.cmd.Run(os.Stdout, tempDir, []string{"import", addr, id}, e.debug)
+	err = e.cmd.Run(os.Stdout, tempDir, []string{"import", input.TerraformAddr, input.AWSResourceID}, e.debug)
 	if err != nil {
 		return "", fmt.Errorf("failed to import: %s", err)
 	}

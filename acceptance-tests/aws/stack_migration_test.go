@@ -111,8 +111,8 @@ var _ = Describe("Stack Migration", func() {
 		})
 	})
 
-	PDescribe("Create LBs", func() {
-		It("is able to bbl create-lbs", func() {
+	Describe("Create LBs", func() {
+		FIt("is able to bbl create-lbs", func() {
 			var (
 				stackName string
 				lbNames   []string

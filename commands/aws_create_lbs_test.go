@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -19,43 +18,31 @@ import (
 var _ = Describe("AWS Create LBs", func() {
 	Describe("Execute", func() {
 		var (
-			command                   commands.AWSCreateLBs
-			certificateManager        *fakes.CertificateManager
-			infrastructureManager     *fakes.InfrastructureManager
-			terraformManager          *fakes.TerraformManager
-			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-			credentialValidator       *fakes.CredentialValidator
-			logger                    *fakes.Logger
-			cloudConfigManager        *fakes.CloudConfigManager
-			certificateValidator      *fakes.CertificateValidator
-			guidGenerator             *fakes.GuidGenerator
-			stateStore                *fakes.StateStore
-			environmentValidator      *fakes.EnvironmentValidator
-			incomingState             storage.State
+			command              commands.AWSCreateLBs
+			terraformManager     *fakes.TerraformManager
+			credentialValidator  *fakes.CredentialValidator
+			logger               *fakes.Logger
+			cloudConfigManager   *fakes.CloudConfigManager
+			certificateValidator *fakes.CertificateValidator
+			stateStore           *fakes.StateStore
+			environmentValidator *fakes.EnvironmentValidator
+			incomingState        storage.State
+
+			certPath  string
+			keyPath   string
+			chainPath string
 		)
 
 		BeforeEach(func() {
-			certificateManager = &fakes.CertificateManager{}
-			infrastructureManager = &fakes.InfrastructureManager{}
 			terraformManager = &fakes.TerraformManager{}
-			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 			credentialValidator = &fakes.CredentialValidator{}
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			certificateValidator = &fakes.CertificateValidator{}
-			guidGenerator = &fakes.GuidGenerator{}
 			stateStore = &fakes.StateStore{}
 			environmentValidator = &fakes.EnvironmentValidator{}
 
-			infrastructureManager.ExistsCall.Returns.Exists = true
-
-			guidGenerator.GenerateCall.Returns.Output = "abcd"
-
 			incomingState = storage.State{
-				Stack: storage.Stack{
-					Name:   "some-stack",
-					BOSHAZ: "some-bosh-az",
-				},
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
@@ -64,6 +51,7 @@ var _ = Describe("AWS Create LBs", func() {
 				KeyPair: storage.KeyPair{
 					Name: "some-key-pair",
 				},
+				TFState: "some-tf-state",
 				BOSH: storage.BOSH{
 					DirectorAddress:  "some-director-address",
 					DirectorUsername: "some-director-username",
@@ -72,8 +60,40 @@ var _ = Describe("AWS Create LBs", func() {
 				EnvID: "some-env-id-timestamp",
 			}
 
-			command = commands.NewAWSCreateLBs(logger, credentialValidator, certificateManager, infrastructureManager,
-				availabilityZoneRetriever, cloudConfigManager, certificateValidator, guidGenerator,
+			tempCertFile, err := ioutil.TempFile("", "cert")
+			Expect(err).NotTo(HaveOccurred())
+
+			certificate := "some-cert"
+			certPath = tempCertFile.Name()
+			err = ioutil.WriteFile(certPath, []byte(certificate), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+<<<<<<< HEAD
+			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
+			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
+			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
+			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
+		})
+=======
+			tempKeyFile, err := ioutil.TempFile("", "key")
+			Expect(err).NotTo(HaveOccurred())
+
+			key := "some-key"
+			keyPath = tempKeyFile.Name()
+			err = ioutil.WriteFile(keyPath, []byte(key), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+>>>>>>> Stack Migration happens on Terraform Apply
+
+			tempChainFile, err := ioutil.TempFile("", "chain")
+			Expect(err).NotTo(HaveOccurred())
+
+			chain := "some-chain"
+			chainPath = tempChainFile.Name()
+			err = ioutil.WriteFile(chainPath, []byte(chain), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			command = commands.NewAWSCreateLBs(logger, credentialValidator,
+				cloudConfigManager, certificateValidator,
 				stateStore, terraformManager, environmentValidator)
 		})
 
@@ -83,132 +103,40 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
-		It("uploads a cert and key", func() {
-			err := command.Execute(commands.AWSCreateLBsConfig{
-				LBType:   "concourse",
-				CertPath: "temp/some-cert.crt",
-				KeyPath:  "temp/some-key.key",
-			}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
-			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
-			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
-			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
-		})
-
-		It("uploads a cert and key with chain", func() {
-			err := command.Execute(commands.AWSCreateLBsConfig{
-				LBType:    "concourse",
-				CertPath:  "temp/some-cert.crt",
-				KeyPath:   "temp/some-key.key",
-				ChainPath: "temp/some-chain.crt",
-			}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(certificateManager.CreateCall.Receives.Chain).To(Equal("temp/some-chain.crt"))
-
-			Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
-			Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("temp/some-cert.crt"))
-			Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("temp/some-key.key"))
-			Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("temp/some-chain.crt"))
-		})
-
-		Context("when cloudformation was used to create infrastructure", func() {
-			It("creates a load balancer in cloudformation with certificate", func() {
-				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-				certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
-					ARN: "some-certificate-arn",
-				}
-
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
-				}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
-
-				Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
-
-				Expect(infrastructureManager.UpdateCall.Receives.KeyPairName).To(Equal("some-key-pair"))
-				Expect(infrastructureManager.UpdateCall.Receives.AZs).To(Equal([]string{"a", "b", "c"}))
-				Expect(infrastructureManager.UpdateCall.Receives.StackName).To(Equal("some-stack"))
-				Expect(infrastructureManager.UpdateCall.Receives.LBType).To(Equal("concourse"))
-				Expect(infrastructureManager.UpdateCall.Receives.LBCertificateARN).To(Equal("some-certificate-arn"))
-				Expect(infrastructureManager.UpdateCall.Receives.EnvID).To(Equal("some-env-id-timestamp"))
-				Expect(infrastructureManager.UpdateCall.Receives.BOSHAZ).To(Equal("some-bosh-az"))
-			})
-		})
-
-		Context("when terraform was used to create infrastructure", func() {
+		Context("when lb type desired is cf", func() {
 			var (
 				statePassedToTerraform     storage.State
 				stateReturnedFromTerraform storage.State
-
-				certPath  string
-				keyPath   string
-				chainPath string
 			)
-
 			BeforeEach(func() {
-				incomingState = storage.State{
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-key-pair",
-					},
-					TFState: "some-tf-state",
-					BOSH: storage.BOSH{
-						DirectorAddress:  "some-director-address",
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-					},
-					EnvID: "some-env-id-timestamp",
+				statePassedToTerraform = incomingState
+				statePassedToTerraform.LB = storage.LB{
+					Type: "cf",
+					Cert: "some-cert",
+					Key:  "some-key",
 				}
 
-				availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-				certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
-					ARN: "some-certificate-arn",
-				}
-
-				tempCertFile, err := ioutil.TempFile("", "cert")
-				Expect(err).NotTo(HaveOccurred())
-
-				certificate := "some-cert"
-				certPath = tempCertFile.Name()
-				err = ioutil.WriteFile(certPath, []byte(certificate), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				tempKeyFile, err := ioutil.TempFile("", "key")
-				Expect(err).NotTo(HaveOccurred())
-
-				key := "some-key"
-				keyPath = tempKeyFile.Name()
-				err = ioutil.WriteFile(keyPath, []byte(key), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				tempChainFile, err := ioutil.TempFile("", "chain")
-				Expect(err).NotTo(HaveOccurred())
-
-				chain := "some-chain"
-				chainPath = tempChainFile.Name()
-				err = ioutil.WriteFile(chainPath, []byte(chain), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
+				stateReturnedFromTerraform = statePassedToTerraform
+				stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+				terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 			})
 
-			Context("when lb type desired is cf", func() {
+			It("creates a load balancer with certificate using terraform", func() {
+				err := command.Execute(commands.AWSCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(certificateValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
+			})
+
+			Context("when the optional chain is provided", func() {
 				BeforeEach(func() {
-					statePassedToTerraform = incomingState
-					statePassedToTerraform.LB = storage.LB{
-						Type: "cf",
-						Cert: "some-cert",
-						Key:  "some-key",
-					}
+					statePassedToTerraform.LB.Chain = "some-chain"
 
 					stateReturnedFromTerraform = statePassedToTerraform
 					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
@@ -217,96 +145,71 @@ var _ = Describe("AWS Create LBs", func() {
 
 				It("creates a load balancer with certificate using terraform", func() {
 					err := command.Execute(commands.AWSCreateLBsConfig{
+						LBType:    "cf",
+						CertPath:  certPath,
+						KeyPath:   keyPath,
+						ChainPath: chainPath,
+					}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
+				})
+			})
+
+			Context("when a domain is provided", func() {
+				BeforeEach(func() {
+					statePassedToTerraform.LB = storage.LB{
+						Type:   "cf",
+						Cert:   "some-cert",
+						Key:    "some-key",
+						Domain: "some-domain",
+					}
+
+					stateReturnedFromTerraform = statePassedToTerraform
+					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+					terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
+				})
+
+				It("creates dns records for provided domain", func() {
+					err := command.Execute(commands.AWSCreateLBsConfig{
+						LBType:   "cf",
+						CertPath: certPath,
+						KeyPath:  keyPath,
+						Domain:   "some-domain",
+					}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
+				})
+			})
+
+			Context("when a domain exists", func() {
+				BeforeEach(func() {
+					incomingState.LB = storage.LB{
+						Type:   "cf",
+						Cert:   "some-cert",
+						Key:    "some-key",
+						Domain: "some-domain",
+					}
+					statePassedToTerraform = incomingState
+
+					stateReturnedFromTerraform = statePassedToTerraform
+					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
+					terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
+				})
+
+				It("does not change domain", func() {
+					err := command.Execute(commands.AWSCreateLBsConfig{
 						LBType:   "cf",
 						CertPath: certPath,
 						KeyPath:  keyPath,
 					}, incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateValidator.ValidateCall.CallCount).To(Equal(0))
-					Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
-					Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
-					Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
-				})
-
-				Context("when the optional chain is provided", func() {
-					BeforeEach(func() {
-						statePassedToTerraform.LB.Chain = "some-chain"
-
-						stateReturnedFromTerraform = statePassedToTerraform
-						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
-						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
-					})
-
-					It("creates a load balancer with certificate using terraform", func() {
-						err := command.Execute(commands.AWSCreateLBsConfig{
-							LBType:    "cf",
-							CertPath:  certPath,
-							KeyPath:   keyPath,
-							ChainPath: chainPath,
-						}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
-						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
-					})
-				})
-
-				Context("when a domain is provided", func() {
-					BeforeEach(func() {
-						statePassedToTerraform.LB = storage.LB{
-							Type:   "cf",
-							Cert:   "some-cert",
-							Key:    "some-key",
-							Domain: "some-domain",
-						}
-
-						stateReturnedFromTerraform = statePassedToTerraform
-						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
-						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
-					})
-
-					It("creates dns records for provided domain", func() {
-						err := command.Execute(commands.AWSCreateLBsConfig{
-							LBType:   "cf",
-							CertPath: certPath,
-							KeyPath:  keyPath,
-							Domain:   "some-domain",
-						}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
-						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
-					})
-				})
-
-				Context("when a domain exists", func() {
-					BeforeEach(func() {
-						incomingState.LB = storage.LB{
-							Type:   "cf",
-							Cert:   "some-cert",
-							Key:    "some-key",
-							Domain: "some-domain",
-						}
-						statePassedToTerraform = incomingState
-
-						stateReturnedFromTerraform = statePassedToTerraform
-						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
-						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
-					})
-
-					It("does not change domain", func() {
-						err := command.Execute(commands.AWSCreateLBsConfig{
-							LBType:   "cf",
-							CertPath: certPath,
-							KeyPath:  keyPath,
-						}, incomingState)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
-						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
-					})
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				})
 			})
 
@@ -332,11 +235,9 @@ var _ = Describe("AWS Create LBs", func() {
 					}, incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateValidator.ValidateCall.CallCount).To(Equal(0))
-					Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
-					Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+					Expect(certificateValidator.ValidateCall.CallCount).To(Equal(1))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
-					Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				})
 
 				Context("when optional chain is provided", func() {
@@ -358,12 +259,13 @@ var _ = Describe("AWS Create LBs", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
-						Expect(stateStore.SetCall.Receives[0].State).To(Equal(stateReturnedFromTerraform))
+						Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 					})
 				})
 			})
 		})
 
+<<<<<<< HEAD
 		It("names the loadbalancer without EnvID when EnvID is not set", func() {
 			incomingState.EnvID = ""
 
@@ -382,16 +284,20 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd"))
 		})
 
+=======
+>>>>>>> Stack Migration happens on Terraform Apply
 		Context("when the bbl environment has a BOSH director", func() {
 			It("updates the cloud config with a state that has lb type", func() {
+				terraformManager.ApplyCall.Returns.BBLState.LB.Type = "concourse"
+
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "concourse",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cloudConfigManager.UpdateCall.Receives.State.Stack.LBType).To(Equal("concourse"))
+				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Type).To(Equal("concourse"))
 			})
 		})
 
@@ -413,13 +319,45 @@ var _ = Describe("AWS Create LBs", func() {
 					},
 					EnvID: "some-env-id-timestamp",
 				}
+<<<<<<< HEAD
 			})
 
 			It("does not call cloudConfigManager", func() {
+=======
+
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "concourse",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
+					CertPath: certPath,
+					KeyPath:  keyPath,
+				}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("does not call cloudConfigManager", func() {
+				incomingState = storage.State{
+					NoDirector: true,
+					Stack: storage.Stack{
+						Name:   "some-stack",
+						BOSHAZ: "some-bosh-az",
+					},
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-key-pair",
+					},
+					EnvID: "some-env-id-timestamp",
+				}
+
+				terraformManager.ApplyCall.Returns.BBLState = incomingState
+
+>>>>>>> Stack Migration happens on Terraform Apply
+				err := command.Execute(commands.AWSCreateLBsConfig{
+					LBType:   "concourse",
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -432,14 +370,13 @@ var _ = Describe("AWS Create LBs", func() {
 				incomingState.Stack.LBType = "cf"
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:       "concourse",
-					CertPath:     "temp/some-cert.crt",
-					KeyPath:      "temp/some-key.key",
+					CertPath:     certPath,
+					KeyPath:      keyPath,
 					SkipIfExists: true,
 				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(0))
-				Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
 
 				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`lb type "cf" exists, skipping...`))
 			})
@@ -449,14 +386,13 @@ var _ = Describe("AWS Create LBs", func() {
 					incomingState.Stack.LBType = currentLBType
 					err := command.Execute(commands.AWSCreateLBsConfig{
 						LBType:       "concourse",
-						CertPath:     "temp/some-cert.crt",
-						KeyPath:      "temp/some-key.key",
+						CertPath:     certPath,
+						KeyPath:      keyPath,
 						SkipIfExists: true,
 					}, incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(infrastructureManager.UpdateCall.CallCount).To(Equal(1))
-					Expect(certificateManager.CreateCall.CallCount).To(Equal(1))
+					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				},
 				Entry("when the current lb-type is 'none'", "none"),
 				Entry("when the current lb-type is ''", ""),
@@ -467,8 +403,8 @@ var _ = Describe("AWS Create LBs", func() {
 			It("returns an error", func() {
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "some-invalid-lb",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, incomingState)
 				Expect(err).To(MatchError("\"some-invalid-lb\" is not a valid lb type, valid lb types are: concourse and cf"))
 			})
@@ -476,8 +412,8 @@ var _ = Describe("AWS Create LBs", func() {
 			It("returns a helpful error when no lb type is provided", func() {
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, incomingState)
 				Expect(err).To(MatchError("--type is a required flag"))
 			})
@@ -488,8 +424,8 @@ var _ = Describe("AWS Create LBs", func() {
 
 			err := command.Execute(commands.AWSCreateLBsConfig{
 				LBType:   "concourse",
-				CertPath: "temp/some-cert.crt",
-				KeyPath:  "temp/some-key.key",
+				CertPath: certPath,
+				KeyPath:  keyPath,
 			}, incomingState)
 
 			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
@@ -501,33 +437,14 @@ var _ = Describe("AWS Create LBs", func() {
 				It("saves state with new certificate name and lb type", func() {
 					err := command.Execute(commands.AWSCreateLBsConfig{
 						LBType:   "concourse",
-						CertPath: "temp/some-cert.crt",
-						KeyPath:  "temp/some-key.key",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					state := stateStore.SetCall.Receives[0].State
-					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd"))
-					Expect(state.Stack.LBType).To(Equal("concourse"))
-				})
-			})
-
-			Context("when the env id exists", func() {
-				It("saves state with new certificate name and lb type", func() {
-					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType:   "concourse",
-						CertPath: "temp/some-cert.crt",
-						KeyPath:  "temp/some-key.key",
-					}, storage.State{
-						EnvID: "some-env-id-timestamp",
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					state := stateStore.SetCall.Receives[0].State
-					Expect(state.Stack.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
-					Expect(state.Stack.LBType).To(Equal("concourse"))
+					Expect(state.LB.Type).To(Equal("concourse"))
 				})
 			})
 		})
@@ -537,17 +454,15 @@ var _ = Describe("AWS Create LBs", func() {
 				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "concourse",
-					CertPath: "/path/to/cert",
-					KeyPath:  "/path/to/key",
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, storage.State{})
 
 				Expect(err).To(MatchError("failed to validate"))
 				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
-				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
-				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
+				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal(certPath))
+				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal(keyPath))
 				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal(""))
-
-				Expect(certificateManager.CreateCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -556,8 +471,8 @@ var _ = Describe("AWS Create LBs", func() {
 				func(newLbType, oldLbType string) {
 					err := command.Execute(commands.AWSCreateLBsConfig{
 						LBType:   "concourse",
-						CertPath: "/path/to/cert",
-						KeyPath:  "/path/to/key",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					}, storage.State{
 						Stack: storage.Stack{
 							LBType: oldLbType,
@@ -569,38 +484,12 @@ var _ = Describe("AWS Create LBs", func() {
 				Entry("when the previous lb type is cf", "cf", "concourse"),
 			)
 
-			Context("when availability zone retriever fails", func() {
-				It("returns an error", func() {
-					availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve azs")
-
-					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType:   "concourse",
-						CertPath: "/path/to/cert",
-						KeyPath:  "/path/to/key",
-					}, storage.State{})
-					Expect(err).To(MatchError("failed to retrieve azs"))
-				})
-			})
-
-			Context("when update infrastructure manager fails", func() {
-				It("returns an error", func() {
-					infrastructureManager.UpdateCall.Returns.Error = errors.New("failed to update infrastructure")
-
-					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType:   "concourse",
-						CertPath: "/path/to/cert",
-						KeyPath:  "/path/to/key",
-					}, storage.State{})
-					Expect(err).To(MatchError("failed to update infrastructure"))
-				})
-			})
-
 			Context("when lb is cf and cert path is invalid", func() {
 				It("returns an error", func() {
 					err := command.Execute(commands.AWSCreateLBsConfig{
 						LBType:   "cf",
 						CertPath: "/fake/cert/path",
-						KeyPath:  "/some/key/path",
+						KeyPath:  keyPath,
 					}, storage.State{
 						TFState: "some-tf-state",
 					})
@@ -723,8 +612,8 @@ var _ = Describe("AWS Create LBs", func() {
 					})
 					Expect(err).To(MatchError("cannot apply"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
 						TFState: "some-partial-tf-state",
 					}))
 				})
@@ -751,12 +640,14 @@ var _ = Describe("AWS Create LBs", func() {
 						managerError.BBLStateCall.Returns.BBLState = storage.State{
 							TFState: "some-partial-tf-state",
 						}
+
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{
+							{},
 							{errors.New("failed to set bbl state")},
 						}
 					})
 
-					It("saves the bbl state and returns the error", func() {
+					It("attempts to save the bbl state and returns the error", func() {
 						err := command.Execute(commands.AWSCreateLBsConfig{
 							LBType:   "concourse",
 							CertPath: certPath,
@@ -764,21 +655,9 @@ var _ = Describe("AWS Create LBs", func() {
 						}, storage.State{
 							TFState: "some-tf-state",
 						})
+
 						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to set bbl state"))
 					})
-				})
-			})
-
-			Context("when certificate manager fails to create a certificate", func() {
-				It("returns an error", func() {
-					certificateManager.CreateCall.Returns.Error = errors.New("failed to create cert")
-
-					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType:   "concourse",
-						CertPath: "/path/to/cert",
-						KeyPath:  "/path/to/key",
-					}, storage.State{})
-					Expect(err).To(MatchError("failed to create cert"))
 				})
 			})
 
@@ -788,29 +667,19 @@ var _ = Describe("AWS Create LBs", func() {
 
 					err := command.Execute(commands.AWSCreateLBsConfig{
 						LBType:   "concourse",
-						CertPath: "/path/to/cert",
-						KeyPath:  "/path/to/key",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					}, storage.State{})
 					Expect(err).To(MatchError("failed to update cloud config"))
 				})
-			})
-
-			It("returns an error when a GUID cannot be generated", func() {
-				guidGenerator.GenerateCall.Returns.Error = errors.New("Out of entropy in the universe")
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: "/path/to/cert",
-					KeyPath:  "/path/to/key",
-				}, storage.State{})
-				Expect(err).To(MatchError("Out of entropy in the universe"))
 			})
 
 			It("returns an error when the state fails to save", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "concourse",
-					CertPath: "/path/to/cert",
-					KeyPath:  "/path/to/key",
+					CertPath: certPath,
+					KeyPath:  keyPath,
 				}, storage.State{})
 				Expect(err).To(MatchError("failed to save state"))
 			})

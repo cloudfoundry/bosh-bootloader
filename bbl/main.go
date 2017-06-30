@@ -25,6 +25,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/proxy"
+	"github.com/cloudfoundry/bosh-bootloader/stack"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
@@ -69,7 +70,6 @@ func main() {
 	}
 
 	// Utilities
-	uuidGenerator := helpers.NewUUIDGenerator(rand.Reader)
 	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	envGetter := helpers.NewEnvGetter()
@@ -111,10 +111,8 @@ func main() {
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(clientProvider, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	certificateUploader := iam.NewCertificateUploader(clientProvider)
 	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
 	certificateDeleter := iam.NewCertificateDeleter(clientProvider)
-	certificateManager := iam.NewCertificateManager(certificateUploader, certificateDescriber, certificateDeleter)
 	certificateValidator := iam.NewCertificateValidator()
 
 	// GCP
@@ -146,6 +144,7 @@ func main() {
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
 	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator, awsOutputGenerator)
+	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, availabilityZoneRetriever)
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,
@@ -153,6 +152,7 @@ func main() {
 		OutputGenerator:       outputGenerator,
 		TerraformOutputBuffer: terraformOutputBuffer,
 		Logger:                logger,
+		StackMigrator:         stackMigrator,
 	})
 
 	// BOSH
@@ -179,24 +179,20 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		awsCredentialValidator, infrastructureManager, keyPairManager, boshManager,
-		availabilityZoneRetriever, certificateDescriber,
+		awsCredentialValidator, keyPairManager, boshManager,
 		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
-		logger, awsCredentialValidator, certificateManager, infrastructureManager,
-		availabilityZoneRetriever, cloudConfigManager, certificateValidator,
-		uuidGenerator, stateStore, terraformManager, awsEnvironmentValidator,
+		logger, awsCredentialValidator, cloudConfigManager, certificateValidator,
+		stateStore, terraformManager, awsEnvironmentValidator,
 	)
 
 	awsLBs := commands.NewAWSLBs(terraformManager, logger)
 
-	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs, awsCredentialValidator, certificateManager, availabilityZoneRetriever, infrastructureManager,
-		logger, uuidGenerator, stateStore, awsEnvironmentValidator)
+	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs, awsCredentialValidator, awsEnvironmentValidator)
 
 	awsDeleteLBs := commands.NewAWSDeleteLBs(
-		awsCredentialValidator, availabilityZoneRetriever, certificateManager,
-		infrastructureManager, logger, cloudConfigManager, stateStore, awsEnvironmentValidator,
+		awsCredentialValidator, logger, cloudConfigManager, stateStore, awsEnvironmentValidator,
 		terraformManager,
 	)
 
