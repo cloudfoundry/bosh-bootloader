@@ -67,15 +67,17 @@ var _ = Describe("lbs test", func() {
 	})
 
 	It("creates, updates and deletes a concourse LB with the specified cert and key", func() {
-		lbName := fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())
+		By("verifying there are no load balancers", func() {
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(BeEmpty())
+		})
 
 		By("creating a concourse lb", func() {
 			bbl.CreateLB("concourse", certPath, keyPath, chainPath)
 
-			Expect(aws.LoadBalancers()).To(HaveLen(1))
-			Expect(aws.LoadBalancers()).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(HaveLen(1))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
 
-			certificateName := aws.GetSSLCertificateNameByLoadBalancer(lbName)
+			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 		})
 
@@ -87,10 +89,10 @@ var _ = Describe("lbs test", func() {
 
 		By("updating the certs of the lb", func() {
 			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
-			Expect(aws.LoadBalancers()).To(HaveLen(1))
-			Expect(aws.LoadBalancers()).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(HaveLen(1))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
 
-			certificateName := aws.GetSSLCertificateNameByLoadBalancer(lbName)
+			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 		})
 
@@ -104,19 +106,21 @@ var _ = Describe("lbs test", func() {
 	})
 
 	It("creates, updates and deletes cf LBs with the specified cert and key", func() {
-		routerLBName := fmt.Sprintf("%s-cf-router-lb", bbl.PredefinedEnvID())
+		By("verifying there are no load balancers", func() {
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(BeEmpty())
+		})
 
 		By("creating cf lbs", func() {
 			bbl.CreateLB("cf", certPath, keyPath, chainPath)
 
-			Expect(aws.LoadBalancers()).To(HaveLen(3))
-			Expect(aws.LoadBalancers()).To(ConsistOf([]string{
-				fmt.Sprintf("%s-cf-router-lb", bbl.PredefinedEnvID()),
-				fmt.Sprintf("%s-cf-ssh-lb", bbl.PredefinedEnvID()),
-				fmt.Sprintf("%s-cf-tcp-lb", bbl.PredefinedEnvID()),
-			}))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(HaveLen(3))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(ConsistOf(
+				MatchRegexp(".*-cf-router-lb"),
+				MatchRegexp(".*-cf-ssh-lb"),
+				MatchRegexp(".*-cf-tcp-lb"),
+			))
 
-			certificateName := aws.GetSSLCertificateNameByLoadBalancer(routerLBName)
+			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 		})
 
@@ -130,23 +134,23 @@ var _ = Describe("lbs test", func() {
 
 		By("updating the certs of the cf router lb", func() {
 			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
-			Expect(aws.LoadBalancers()).To(HaveLen(3))
-			Expect(aws.LoadBalancers()).To(ConsistOf([]string{
-				fmt.Sprintf("%s-cf-router-lb", bbl.PredefinedEnvID()),
-				fmt.Sprintf("%s-cf-ssh-lb", bbl.PredefinedEnvID()),
-				fmt.Sprintf("%s-cf-tcp-lb", bbl.PredefinedEnvID()),
-			}))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(HaveLen(3))
+			Expect(aws.LoadBalancers(bbl.PredefinedEnvID())).To(ConsistOf(
+				MatchRegexp(".*-cf-router-lb"),
+				MatchRegexp(".*-cf-ssh-lb"),
+				MatchRegexp(".*-cf-tcp-lb"),
+			))
 
-			certificateName := aws.GetSSLCertificateNameByLoadBalancer(routerLBName)
+			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 		})
 
-		By("deleting lbs", func() {
-			bbl.DeleteLBs()
-		})
-
-		By("confirming that the cf lbs do not exist", func() {
-			Expect(aws.LoadBalancers()).To(BeEmpty())
+		By("verifying that the bbl lbs output contains the cf lbs", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
 		})
 	})
 })

@@ -9,23 +9,19 @@ import (
 )
 
 type AWSLBs struct {
-	credentialValidator   credentialValidator
-	infrastructureManager infrastructureManager
-	terraformManager      terraformOutputter
-	logger                logger
+	terraformManager terraformOutputter
+	logger           logger
 }
 
-func NewAWSLBs(credentialValidator credentialValidator, infrastructureManager infrastructureManager, terraformManager terraformOutputter, logger logger) AWSLBs {
+func NewAWSLBs(terraformManager terraformOutputter, logger logger) AWSLBs {
 	return AWSLBs{
-		credentialValidator:   credentialValidator,
-		infrastructureManager: infrastructureManager,
-		terraformManager:      terraformManager,
-		logger:                logger,
+		terraformManager: terraformManager,
+		logger:           logger,
 	}
 }
 
 func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
-	err := l.credentialValidator.Validate()
+	terraformOutputs, err := l.terraformManager.GetOutputs(state)
 	if err != nil {
 		return err
 	}
@@ -76,22 +72,7 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 		default:
 			return errors.New("no lbs found")
 		}
-
-	} else {
-		stack, err := l.infrastructureManager.Describe(state.Stack.Name)
-		if err != nil {
-			return err
-		}
-
-		switch state.Stack.LBType {
-		case "cf":
-			l.logger.Printf("CF Router LB: %s [%s]\n", stack.Outputs["CFRouterLoadBalancer"], stack.Outputs["CFRouterLoadBalancerURL"])
-			l.logger.Printf("CF SSH Proxy LB: %s [%s]\n", stack.Outputs["CFSSHProxyLoadBalancer"], stack.Outputs["CFSSHProxyLoadBalancerURL"])
-		case "concourse":
-			l.logger.Printf("Concourse LB: %s [%s]\n", stack.Outputs["ConcourseLoadBalancer"], stack.Outputs["ConcourseLoadBalancerURL"])
-		default:
-			return errors.New("no lbs found")
-		}
 	}
+
 	return nil
 }

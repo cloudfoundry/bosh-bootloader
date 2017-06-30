@@ -63,28 +63,17 @@ func (a AWS) StackExists(stackName string) bool {
 	return true
 }
 
-func (a AWS) Instances(vpcName string) []string {
+func (a AWS) Instances(envID string) []string {
 	var instances []string
 
-	vpcs, err := a.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
-		Filters: []*awsec2.Filter{
-			{
-				Name: awslib.String("tag:Name"),
-				Values: []*string{
-					awslib.String(vpcName),
-				},
-			},
-		},
-	})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(vpcs.Vpcs).To(HaveLen(1))
+	vpcID := a.GetVPC(envID)
 
 	output, err := a.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
 		Filters: []*awsec2.Filter{
 			{
 				Name: awslib.String("vpc-id"),
 				Values: []*string{
-					vpcs.Vpcs[0].VpcId,
+					vpcID,
 				},
 			},
 		},
@@ -104,14 +93,18 @@ func (a AWS) Instances(vpcName string) []string {
 	return instances
 }
 
-func (a AWS) LoadBalancers() []string {
+func (a AWS) LoadBalancers(envID string) []string {
 	var loadBalancerNames []string
+
+	vpcID := a.GetVPC(envID)
 
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, lbDescription := range loadBalancerOutput.LoadBalancerDescriptions {
-		loadBalancerNames = append(loadBalancerNames, *lbDescription.LoadBalancerName)
+		if *lbDescription.VPCId == *vpcID {
+			loadBalancerNames = append(loadBalancerNames, *lbDescription.LoadBalancerName)
+		}
 	}
 
 	return loadBalancerNames
@@ -146,29 +139,46 @@ func (a AWS) GetEC2InstanceTags(instanceName string) map[string]string {
 	return map[string]string{}
 }
 
-func (a AWS) GetSSLCertificateNameByLoadBalancer(lbName string) string {
-	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{
-		LoadBalancerNames: []*string{
-			awslib.String(lbName),
-		},
-	})
+func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
+	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
-	Expect(loadBalancerOutput.LoadBalancerDescriptions).To(HaveLen(1))
+
+	vpcID := a.GetVPC(envID)
 
 	var certificateName string
-	for _, ld := range loadBalancerOutput.LoadBalancerDescriptions[0].ListenerDescriptions {
-		if int(*ld.Listener.LoadBalancerPort) == 443 {
-			certificateArn := ld.Listener.SSLCertificateId
-			certificateArnParts := strings.Split(awslib.StringValue(certificateArn), "/")
-			Expect(certificateArnParts).To(HaveLen(2))
-			certificateName = certificateArnParts[1]
-			Expect(certificateName).NotTo(BeEmpty())
+	for _, lbDescription := range loadBalancerOutput.LoadBalancerDescriptions {
+		if *lbDescription.VPCId == *vpcID {
+			for _, ld := range lbDescription.ListenerDescriptions {
+				if int(*ld.Listener.LoadBalancerPort) == 443 {
+					certificateArn := ld.Listener.SSLCertificateId
+					certificateArnParts := strings.Split(awslib.StringValue(certificateArn), "/")
+					certificateName = certificateArnParts[1]
+					Expect(certificateName).NotTo(BeEmpty())
 
-			return certificateName
+					return certificateName
+				}
+			}
 		}
 	}
 
 	return ""
+}
+
+func (a AWS) GetVPC(envID string) *string {
+	vpcs, err := a.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
+		Filters: []*awsec2.Filter{
+			{
+				Name: awslib.String("tag:Name"),
+				Values: []*string{
+					awslib.String(fmt.Sprintf("%s-vpc", envID)),
+				},
+			},
+		},
+	})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(vpcs.Vpcs).To(HaveLen(1))
+
+	return vpcs.Vpcs[0].VpcId
 }
 
 func (a AWS) DescribeKeyPairs(keypairName string) []*awsec2.KeyPairInfo {
@@ -186,7 +196,7 @@ func (a AWS) DescribeKeyPairs(keypairName string) []*awsec2.KeyPairInfo {
 }
 
 func (a AWS) NetworkHasBOSHDirector(envID string) bool {
-	instances := a.Instances(fmt.Sprintf("%s-vpc", envID))
+	instances := a.Instances(envID)
 
 	for _, instance := range instances {
 		if instance == "bosh/0" {

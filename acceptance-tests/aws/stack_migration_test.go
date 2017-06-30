@@ -128,7 +128,7 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("verifying there are no LBs", func() {
-				lbNames = aws.LoadBalancers()
+				lbNames = aws.LoadBalancers(bblStack.PredefinedEnvID())
 				Expect(lbNames).To(BeEmpty())
 			})
 
@@ -150,8 +150,8 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("checking that the LB was created", func() {
-				Expect(aws.LoadBalancers()).To(HaveLen(1))
-				Expect(aws.LoadBalancers()).To(Equal([]string{"ConcourseLoadBalancer"}))
+				Expect(aws.LoadBalancers(bblTerraform.PredefinedEnvID())).To(HaveLen(1))
+				Expect(aws.LoadBalancers(bblTerraform.PredefinedEnvID())).To(Equal([]string{"ConcourseLoadBalancer"}))
 			})
 		})
 	})
