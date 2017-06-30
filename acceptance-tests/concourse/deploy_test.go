@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
