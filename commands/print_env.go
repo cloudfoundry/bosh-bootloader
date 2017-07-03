@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -58,21 +57,10 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 }
 
 func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
-	switch state.IAAS {
-	case "aws":
-		stack, err := p.infrastructureManager.Describe(state.Stack.Name)
-		if err != nil {
-			return "", err
-		}
-		return stack.Outputs["BOSHEIP"], nil
-	case "gcp":
-		terraformOutputs, err := p.terraformManager.GetOutputs(state)
-		if err != nil {
-			return "", err
-		}
-
-		return terraformOutputs["external_ip"].(string), nil
+	terraformOutputs, err := p.terraformManager.GetOutputs(state)
+	if err != nil {
+		return "", err
 	}
 
-	return "", errors.New("Could not find external IP for given IAAS")
+	return terraformOutputs["external_ip"].(string), nil
 }

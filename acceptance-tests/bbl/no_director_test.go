@@ -49,12 +49,12 @@ var _ = Describe("no director test", func() {
 		})
 
 		By("checking if bbl print-env prints the external ip", func() {
-			//stdout := bbl.PrintEnv()
+			stdout := bbl.PrintEnv()
 
-			//Expect(stdout).To(ContainSubstring("export BOSH_ENVIRONMENT="))
-			//Expect(stdout).NotTo(ContainSubstring("export BOSH_CLIENT="))
-			//Expect(stdout).NotTo(ContainSubstring("export BOSH_CLIENT_SECRET="))
-			//Expect(stdout).NotTo(ContainSubstring("export BOSH_CA_CERT="))
+			Expect(stdout).To(ContainSubstring("export BOSH_ENVIRONMENT="))
+			Expect(stdout).NotTo(ContainSubstring("export BOSH_CLIENT="))
+			Expect(stdout).NotTo(ContainSubstring("export BOSH_CLIENT_SECRET="))
+			Expect(stdout).NotTo(ContainSubstring("export BOSH_CA_CERT="))
 		})
 	})
 })
