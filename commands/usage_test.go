@@ -61,7 +61,7 @@ Commands:
   help                   Prints usage
   lbs                    Prints attached load balancer(s)
   ssh-key                Prints SSH private key
-  up                     Deploys BOSH director on AWS
+  up                     Deploys BOSH director on an IAAS
   update-lbs             Updates load balancer(s)
   version                Prints version
 
