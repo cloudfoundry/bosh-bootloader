@@ -31,7 +31,6 @@ function main {
       -e BBL_GCP_REGION="${BBL_GCP_REGION:-""}" \
       -e BBL_GCP_SERVICE_ACCOUNT_KEY="${BBL_GCP_SERVICE_ACCOUNT_KEY:-""}" \
       -e BBL_GCP_ZONE="${BBL_GCP_ZONE:-""}" \
-      -e ENABLE_TERRAFORM_FLAG="${ENABLE_TERRAFORM_FLAG-""}" \
       -e CONCOURSE_DEPLOYMENT_PATH="/concourse-deployment" \
       -e STATE_DIR="/tmp/state" \
       -v ${PWD}:/bosh-bootloader \
