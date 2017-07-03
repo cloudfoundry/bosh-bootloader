@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("load balancer tests", func() {
+var _ = Describe("lbs test", func() {
 	var (
 		bbl     actors.BBL
 		aws     actors.AWS
@@ -69,10 +69,6 @@ var _ = Describe("load balancer tests", func() {
 	It("creates, updates and deletes a concourse LB with the specified cert and key", func() {
 		lbName := fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())
 
-		By("verifying there are no load balancers", func() {
-			Expect(aws.LoadBalancers()).To(BeEmpty())
-		})
-
 		By("creating a concourse lb", func() {
 			bbl.CreateLB("concourse", certPath, keyPath, chainPath)
 
@@ -97,14 +93,18 @@ var _ = Describe("load balancer tests", func() {
 			stdout := string(session.Out.Contents())
 			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
 		})
+
+		By("deleting lbs", func() {
+			bbl.DeleteLBs()
+		})
+
+		By("verifying that there are no lbs", func() {
+			Expect(aws.LoadBalancers()).To(BeEmpty())
+		})
 	})
 
 	It("creates, updates and deletes cf LBs with the specified cert and key", func() {
 		routerLBName := fmt.Sprintf("%s-cf-router-lb", bbl.PredefinedEnvID())
-
-		By("verifying there are no load balancers", func() {
-			Expect(aws.LoadBalancers()).To(BeEmpty())
-		})
 
 		By("creating cf lbs", func() {
 			bbl.CreateLB("cf", certPath, keyPath, chainPath)
@@ -139,6 +139,14 @@ var _ = Describe("load balancer tests", func() {
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
 			//Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
+		})
+
+		By("deleting lbs", func() {
+			bbl.DeleteLBs()
+		})
+
+		By("verifying that there are no lbs", func() {
+			Expect(aws.LoadBalancers()).To(BeEmpty())
 		})
 	})
 })
