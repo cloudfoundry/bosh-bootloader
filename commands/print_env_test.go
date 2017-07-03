@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -13,19 +12,17 @@ import (
 
 var _ = Describe("PrintEnv", func() {
 	var (
-		logger                *fakes.Logger
-		stateValidator        *fakes.StateValidator
-		terraformManager      *fakes.TerraformManager
-		infrastructureManager *fakes.InfrastructureManager
-		printEnv              commands.PrintEnv
-		state                 storage.State
+		logger           *fakes.Logger
+		stateValidator   *fakes.StateValidator
+		terraformManager *fakes.TerraformManager
+		printEnv         commands.PrintEnv
+		state            storage.State
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
-		infrastructureManager = &fakes.InfrastructureManager{}
 
 		state = storage.State{
 			BOSH: storage.BOSH{
@@ -36,7 +33,7 @@ var _ = Describe("PrintEnv", func() {
 			},
 		}
 
-		printEnv = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
+		printEnv = commands.NewPrintEnv(logger, stateValidator, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -58,41 +55,19 @@ var _ = Describe("PrintEnv", func() {
 		})
 
 		Context("when print-env is called on a bbl env with no director", func() {
-			Context("aws", func() {
-				It("prints only the BOSH_ENVIRONMENT", func() {
-					infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
-						Outputs: map[string]string{
-							"BOSHEIP": "some-external-ip",
-						},
-					}
+			It("prints only the BOSH_ENVIRONMENT", func() {
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip": "some-external-ip",
+				}
 
-					err := printEnv.Execute([]string{}, storage.State{
-						IAAS:       "aws",
-						NoDirector: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
-					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
-					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
-					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
+				err := printEnv.Execute([]string{}, storage.State{
+					NoDirector: true,
 				})
-			})
-			Context("gcp", func() {
-				It("prints only the BOSH_ENVIRONMENT", func() {
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-						"external_ip": "some-external-ip",
-					}
-
-					err := printEnv.Execute([]string{}, storage.State{
-						IAAS:       "gcp",
-						NoDirector: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
-					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
-					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
-					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
-				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
+				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
+				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
+				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
 			})
 		})
 
@@ -104,23 +79,6 @@ var _ = Describe("PrintEnv", func() {
 					NoDirector: true,
 				})
 				Expect(err).To(MatchError("failed to get terraform output"))
-			})
-
-			It("returns an error when the infrastructure manager fails to describe stack", func() {
-				infrastructureManager.DescribeCall.Returns.Error = errors.New("failed to describe stack")
-				err := printEnv.Execute([]string{}, storage.State{
-					IAAS:       "aws",
-					NoDirector: true,
-				})
-				Expect(err).To(MatchError("failed to describe stack"))
-			})
-
-			It("returns an error when the external ip cannot be found for a given IAAS", func() {
-				err := printEnv.Execute([]string{}, storage.State{
-					IAAS:       "lol",
-					NoDirector: true,
-				})
-				Expect(err).To(MatchError("Could not find external IP for given IAAS"))
 			})
 		})
 	})

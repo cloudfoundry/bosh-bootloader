@@ -240,7 +240,7 @@ func main() {
 	commandSet[commands.SSHKeyCommand] = commands.NewSSHKey(logger, stateValidator, sshKeyGetter)
 	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
 	commandSet[commands.LatestErrorCommand] = commands.NewLatestError(logger, stateValidator)
-	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager, infrastructureManager)
+	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator)
 	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, boshManager, stateValidator)
