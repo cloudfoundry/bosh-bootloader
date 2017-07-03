@@ -44,12 +44,16 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 					RouterLBURL            string   `json:"cf_router_lb_url,omitempty"`
 					SSHProxyLBName         string   `json:"cf_ssh_proxy_lb,omitempty"`
 					SSHProxyLBURL          string   `json:"cf_ssh_proxy_lb_url,omitempty"`
+					TCPRouterLBName        string   `json:"cf_tcp_lb,omitempty"`
+					TCPRouterLBURL         string   `json:"cf_tcp_lb_url,omitempty"`
 					SystemDomainDNSServers []string `json:"env_dns_zone_name_servers,omitempty"`
 				}{
 					RouterLBName:           terraformOutputs["cf_router_load_balancer"].(string),
 					RouterLBURL:            terraformOutputs["cf_router_load_balancer_url"].(string),
 					SSHProxyLBName:         terraformOutputs["cf_ssh_proxy_load_balancer"].(string),
 					SSHProxyLBURL:          terraformOutputs["cf_ssh_proxy_load_balancer_url"].(string),
+					TCPRouterLBName:        terraformOutputs["cf_tcp_router_load_balancer"].(string),
+					TCPRouterLBURL:         terraformOutputs["cf_tcp_router_load_balancer_url"].(string),
 					SystemDomainDNSServers: terraformOutputs["cf_system_domain_dns_servers"].([]string),
 				})
 				if err != nil {
@@ -61,6 +65,7 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 			} else {
 				l.logger.Printf("CF Router LB: %s [%s]\n", terraformOutputs["cf_router_load_balancer"], terraformOutputs["cf_router_load_balancer_url"])
 				l.logger.Printf("CF SSH Proxy LB: %s [%s]\n", terraformOutputs["cf_ssh_proxy_load_balancer"], terraformOutputs["cf_ssh_proxy_load_balancer_url"])
+				l.logger.Printf("CF TCP Router LB: %s [%s]\n", terraformOutputs["cf_tcp_router_load_balancer"], terraformOutputs["cf_tcp_router_load_balancer_url"])
 
 				if dnsServers, ok := terraformOutputs["cf_system_domain_dns_servers"]; ok {
 					l.logger.Printf("CF System Domain DNS servers: %s\n", strings.Join(dnsServers.([]string), " "))

@@ -125,6 +125,7 @@ var _ = Describe("lbs test", func() {
 			stdout := string(session.Out.Contents())
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
 		})
 
 		By("updating the certs of the cf router lb", func() {

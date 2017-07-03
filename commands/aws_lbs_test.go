@@ -132,10 +132,12 @@ var _ = Describe("AWSLBs", func() {
 						},
 					}
 					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-						"cf_router_load_balancer":        "some-router-lb-name",
-						"cf_router_load_balancer_url":    "some-router-lb-url",
-						"cf_ssh_proxy_load_balancer":     "some-ssh-proxy-lb-name",
-						"cf_ssh_proxy_load_balancer_url": "some-ssh-proxy-lb-url",
+						"cf_router_load_balancer":         "some-router-lb-name",
+						"cf_router_load_balancer_url":     "some-router-lb-url",
+						"cf_ssh_proxy_load_balancer":      "some-ssh-proxy-lb-name",
+						"cf_ssh_proxy_load_balancer_url":  "some-ssh-proxy-lb-url",
+						"cf_tcp_router_load_balancer":     "some-tcp-router-lb-name",
+						"cf_tcp_router_load_balancer_url": "some-tcp-router-lb-url",
 					}
 				})
 
@@ -148,6 +150,7 @@ var _ = Describe("AWSLBs", func() {
 					Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 						"CF Router LB: some-router-lb-name [some-router-lb-url]\n",
 						"CF SSH Proxy LB: some-ssh-proxy-lb-name [some-ssh-proxy-lb-url]\n",
+						"CF TCP Router LB: some-tcp-router-lb-name [some-tcp-router-lb-url]\n",
 					}))
 				})
 
@@ -156,11 +159,13 @@ var _ = Describe("AWSLBs", func() {
 						incomingState.LB.Domain = "some-domain"
 
 						terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-							"cf_router_load_balancer":        "some-router-lb-name",
-							"cf_router_load_balancer_url":    "some-router-lb-url",
-							"cf_ssh_proxy_load_balancer":     "some-ssh-proxy-lb-name",
-							"cf_ssh_proxy_load_balancer_url": "some-ssh-proxy-lb-url",
-							"cf_system_domain_dns_servers":   []string{"name-server-1.", "name-server-2."},
+							"cf_router_load_balancer":         "some-router-lb-name",
+							"cf_router_load_balancer_url":     "some-router-lb-url",
+							"cf_ssh_proxy_load_balancer":      "some-ssh-proxy-lb-name",
+							"cf_ssh_proxy_load_balancer_url":  "some-ssh-proxy-lb-url",
+							"cf_tcp_router_load_balancer":     "some-tcp-router-lb-name",
+							"cf_tcp_router_load_balancer_url": "some-tcp-router-lb-url",
+							"cf_system_domain_dns_servers":    []string{"name-server-1.", "name-server-2."},
 						}
 					})
 
@@ -172,6 +177,7 @@ var _ = Describe("AWSLBs", func() {
 						Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 							"CF Router LB: some-router-lb-name [some-router-lb-url]\n",
 							"CF SSH Proxy LB: some-ssh-proxy-lb-name [some-ssh-proxy-lb-url]\n",
+							"CF TCP Router LB: some-tcp-router-lb-name [some-tcp-router-lb-url]\n",
 							"CF System Domain DNS servers: name-server-1. name-server-2.\n",
 						}))
 					})
@@ -190,6 +196,8 @@ var _ = Describe("AWSLBs", func() {
 								"cf_router_lb_url": "some-router-lb-url",
 								"cf_ssh_proxy_lb": "some-ssh-proxy-lb-name",
 								"cf_ssh_proxy_lb_url": "some-ssh-proxy-lb-url",
+								"cf_tcp_lb": "some-tcp-router-lb-name",
+								"cf_tcp_lb_url":  "some-tcp-router-lb-url",
 								"env_dns_zone_name_servers": [
 									"name-server-1.",
 									"name-server-2."
