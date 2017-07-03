@@ -57,7 +57,7 @@ var _ = Describe("lbs test", func() {
 		otherChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID()})
+		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 	})
 
 	AfterEach(func() {
@@ -79,6 +79,12 @@ var _ = Describe("lbs test", func() {
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 		})
 
+		By("verifying that the bbl lbs output contains the concourse lb", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
+		})
+
 		By("updating the certs of the lb", func() {
 			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
 			Expect(aws.LoadBalancers()).To(HaveLen(1))
@@ -88,17 +94,11 @@ var _ = Describe("lbs test", func() {
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 		})
 
-		By("verifying that the bbl lbs output contains the concourse lb", func() {
-			session := bbl.LBs()
-			stdout := string(session.Out.Contents())
-			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
-		})
-
 		By("deleting lbs", func() {
 			bbl.DeleteLBs()
 		})
 
-		By("verifying that there are no lbs", func() {
+		By("confirming that the concourse lb does not exist", func() {
 			Expect(aws.LoadBalancers()).To(BeEmpty())
 		})
 	})
@@ -120,6 +120,13 @@ var _ = Describe("lbs test", func() {
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 		})
 
+		By("verifying that the bbl lbs output contains the cf lbs", func() {
+			session := bbl.LBs()
+			stdout := string(session.Out.Contents())
+			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
+		})
+
 		By("updating the certs of the cf router lb", func() {
 			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
 			Expect(aws.LoadBalancers()).To(HaveLen(3))
@@ -133,19 +140,11 @@ var _ = Describe("lbs test", func() {
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 		})
 
-		By("verifying that the bbl lbs output contains the cf lbs", func() {
-			session := bbl.LBs()
-			stdout := string(session.Out.Contents())
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
-			//Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
-		})
-
 		By("deleting lbs", func() {
 			bbl.DeleteLBs()
 		})
 
-		By("verifying that there are no lbs", func() {
+		By("confirming that the cf lbs do not exist", func() {
 			Expect(aws.LoadBalancers()).To(BeEmpty())
 		})
 	})
