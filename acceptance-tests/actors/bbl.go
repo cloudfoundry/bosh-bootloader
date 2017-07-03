@@ -73,7 +73,7 @@ func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 	case GCPIAAS:
 		args = append(args, []string{
 			"--iaas", "gcp",
-			"--gcp-service-account-key", b.configuration.GCPServiceAccountKeyPath,
+			"--gcp-service-account-key", b.configuration.GCPServiceAccountKey,
 			"--gcp-project-id", b.configuration.GCPProjectID,
 			"--gcp-region", b.configuration.GCPRegion,
 			"--gcp-zone", b.configuration.GCPZone,
@@ -263,7 +263,7 @@ func IAASString(config acceptance.Config) string {
 	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
 		return "aws"
 	}
-	if config.GCPServiceAccountKeyPath != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
+	if config.GCPServiceAccountKey != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
 		return "gcp"
 	}
 
@@ -274,7 +274,7 @@ func GetIAAS(config acceptance.Config) IAAS {
 	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
 		return AWSIAAS
 	}
-	if config.GCPServiceAccountKeyPath != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
+	if config.GCPServiceAccountKey != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
 		return GCPIAAS
 	}
 

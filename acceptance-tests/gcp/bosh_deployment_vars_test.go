@@ -34,8 +34,10 @@ var _ = Describe("bosh deployment vars", func() {
 
 		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 
-		gcpServiceAccountKeyContents, err := ioutil.ReadFile(configuration.GCPServiceAccountKeyPath)
-		Expect(err).NotTo(HaveOccurred())
+		gcpServiceAccountKeyContents, err := ioutil.ReadFile(configuration.GCPServiceAccountKey)
+		if err != nil {
+			gcpServiceAccountKeyContents = []byte(configuration.GCPServiceAccountKey)
+		}
 
 		err = json.Unmarshal(gcpServiceAccountKeyContents, &gcpServiceAccountKey)
 		Expect(err).NotTo(HaveOccurred())

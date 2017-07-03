@@ -8,7 +8,8 @@ function main() {
 	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
   if [ -z ${iaas} ]; then
-    echo "Specify iaas: aws, gcp"
+    echo "Usage: ./scripts/acceptance_tests IAAS
+IAAS: \"aws\" or \"gcp\""
     return
   fi
 

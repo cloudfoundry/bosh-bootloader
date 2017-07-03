@@ -22,9 +22,9 @@ type GCP struct {
 }
 
 func NewGCP(config acceptance.Config) GCP {
-	rawServiceAccountKey, err := ioutil.ReadFile(config.GCPServiceAccountKeyPath)
+	rawServiceAccountKey, err := ioutil.ReadFile(config.GCPServiceAccountKey)
 	if err != nil {
-		rawServiceAccountKey = []byte(config.GCPServiceAccountKeyPath)
+		rawServiceAccountKey = []byte(config.GCPServiceAccountKey)
 	}
 
 	googleConfig, err := google.JWTConfigFromJSON(rawServiceAccountKey, "https://www.googleapis.com/auth/compute")

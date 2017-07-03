@@ -8,34 +8,42 @@ import (
 )
 
 type Config struct {
-	AWSAccessKeyID           string
-	AWSSecretAccessKey       string
-	AWSRegion                string
-	GCPServiceAccountKeyPath string
-	GCPProjectID             string
-	GCPRegion                string
-	GCPZone                  string
-	GCPEnvPrefix             string
-	StateFileDir             string
-	StemcellPath             string
-	GardenReleasePath        string
-	ConcourseReleasePath     string
-	ConcourseDeploymentPath  string
-	EnableTerraformFlag      bool
+	IAAS                    string
+	AWSAccessKeyID          string
+	AWSSecretAccessKey      string
+	AWSRegion               string
+	GCPServiceAccountKey    string
+	GCPProjectID            string
+	GCPRegion               string
+	GCPZone                 string
+	GCPEnvPrefix            string
+	StateFileDir            string
+	StemcellPath            string
+	GardenReleasePath       string
+	ConcourseReleasePath    string
+	ConcourseDeploymentPath string
+	EnableTerraformFlag     bool
 }
 
 func LoadConfig() (Config, error) {
 	config := loadConfigFromEnvVars()
 
-	awsCredsValidationError := validateAWSCreds(config)
-	gcpCredsValidationError := validateGCPCreds(config)
-
-	if awsCredsValidationError == nil && gcpCredsValidationError == nil {
-		return Config{}, errors.New("Multiple IAAS Credentials provided:\n Provide a set of credentials for a single IAAS.")
+	err := validateIAAS(config)
+	if err != nil {
+		return Config{}, fmt.Errorf("Error found: %s\n", err)
 	}
 
-	if awsCredsValidationError != nil && gcpCredsValidationError != nil {
-		return Config{}, fmt.Errorf("Multiple Credential Errors Found: %s\nProvide a full set of credentials for a single IAAS.", gcpCredsValidationError)
+	switch config.IAAS {
+	case "aws":
+		err = validateAWSCreds(config)
+		if err != nil {
+			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
+		}
+	case "gcp":
+		err = validateGCPCreds(config)
+		if err != nil {
+			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
+		}
 	}
 
 	if config.StateFileDir == "" {
@@ -48,6 +56,14 @@ func LoadConfig() (Config, error) {
 	fmt.Printf("using state-dir: %s\n", config.StateFileDir)
 
 	return config, nil
+}
+
+func validateIAAS(config Config) error {
+	if config.IAAS == "" {
+		return errors.New("iaas is missing")
+	}
+
+	return nil
 }
 
 func validateAWSCreds(config Config) error {
@@ -67,8 +83,8 @@ func validateAWSCreds(config Config) error {
 }
 
 func validateGCPCreds(config Config) error {
-	if config.GCPServiceAccountKeyPath == "" {
-		return errors.New("gcp service account key path is missing")
+	if config.GCPServiceAccountKey == "" {
+		return errors.New("gcp service account key is missing")
 	}
 
 	if config.GCPProjectID == "" {
@@ -88,19 +104,20 @@ func validateGCPCreds(config Config) error {
 
 func loadConfigFromEnvVars() Config {
 	return Config{
-		AWSAccessKeyID:           os.Getenv("BBL_AWS_ACCESS_KEY_ID"),
-		AWSSecretAccessKey:       os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"),
-		AWSRegion:                os.Getenv("BBL_AWS_REGION"),
-		GCPServiceAccountKeyPath: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
-		GCPProjectID:             os.Getenv("BBL_GCP_PROJECT_ID"),
-		GCPRegion:                os.Getenv("BBL_GCP_REGION"),
-		GCPZone:                  os.Getenv("BBL_GCP_ZONE"),
-		GCPEnvPrefix:             os.Getenv("BBL_GCP_ENV_PREFIX"),
-		StateFileDir:             os.Getenv("BBL_STATE_DIR"),
-		StemcellPath:             os.Getenv("STEMCELL_PATH"),
-		GardenReleasePath:        os.Getenv("GARDEN_RELEASE_PATH"),
-		ConcourseReleasePath:     os.Getenv("CONCOURSE_RELEASE_PATH"),
-		ConcourseDeploymentPath:  os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
-		EnableTerraformFlag:      os.Getenv("ENABLE_TERRAFORM_FLAG") == "true",
+		IAAS:                    os.Getenv("BBL_IAAS"),
+		AWSAccessKeyID:          os.Getenv("BBL_AWS_ACCESS_KEY_ID"),
+		AWSSecretAccessKey:      os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"),
+		AWSRegion:               os.Getenv("BBL_AWS_REGION"),
+		GCPServiceAccountKey:    os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
+		GCPProjectID:            os.Getenv("BBL_GCP_PROJECT_ID"),
+		GCPRegion:               os.Getenv("BBL_GCP_REGION"),
+		GCPZone:                 os.Getenv("BBL_GCP_ZONE"),
+		GCPEnvPrefix:            os.Getenv("BBL_GCP_ENV_PREFIX"),
+		StateFileDir:            os.Getenv("BBL_STATE_DIR"),
+		StemcellPath:            os.Getenv("STEMCELL_PATH"),
+		GardenReleasePath:       os.Getenv("GARDEN_RELEASE_PATH"),
+		ConcourseReleasePath:    os.Getenv("CONCOURSE_RELEASE_PATH"),
+		ConcourseDeploymentPath: os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
+		EnableTerraformFlag:     os.Getenv("ENABLE_TERRAFORM_FLAG") == "true",
 	}
 }

@@ -40,18 +40,18 @@ provider "google" {
 )
 
 type Terraform struct {
-	projectID             string
-	region                string
-	zone                  string
-	serviceAccountKeyPath string
+	projectID         string
+	region            string
+	zone              string
+	serviceAccountKey string
 }
 
 func NewTerraform(config acceptance.Config) Terraform {
 	return Terraform{
-		projectID: config.GCPProjectID,
-		region:    config.GCPRegion,
-		zone:      config.GCPZone,
-		serviceAccountKeyPath: config.GCPServiceAccountKeyPath,
+		projectID:         config.GCPProjectID,
+		region:            config.GCPRegion,
+		zone:              config.GCPZone,
+		serviceAccountKey: config.GCPServiceAccountKey,
 	}
 }
 
@@ -76,7 +76,7 @@ func (t Terraform) Destroy(state acceptance.State) error {
 	args = append(args, makeVar("env_id", state.EnvID())...)
 	args = append(args, makeVar("region", t.region)...)
 	args = append(args, makeVar("zone", t.zone)...)
-	args = append(args, makeVar("credentials", t.serviceAccountKeyPath)...)
+	args = append(args, makeVar("credentials", t.serviceAccountKey)...)
 	runCommand := exec.Command("terraform", args...)
 	runCommand.Dir = tempDir
 	runCommand.Stdout = GinkgoWriter
