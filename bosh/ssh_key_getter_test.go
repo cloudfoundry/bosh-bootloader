@@ -12,12 +12,12 @@ var _ = Describe("SSHKeyGetter", func() {
 	Describe("Get", func() {
 		var (
 			sshKeyGetter bosh.SSHKeyGetter
-
-			state storage.State
+			state        storage.State
 		)
 
 		BeforeEach(func() {
 			sshKeyGetter = bosh.NewSSHKeyGetter()
+			state = storage.State{}
 		})
 
 		Context("when there is a jumpbox", func() {
@@ -80,7 +80,7 @@ var _ = Describe("SSHKeyGetter", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the jumpbox variables yaml cannot be unmarshaled", func() {
+			It("returns an error when the BOSH variables yaml cannot be unmarshaled", func() {
 				state.BOSH.Variables = "invalid yaml"
 				_, err := sshKeyGetter.Get(state)
 				Expect(err).To(MatchError(ContainSubstring("line 1: cannot unmarshal !!str `invalid...`")))
