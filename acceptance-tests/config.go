@@ -22,7 +22,6 @@ type Config struct {
 	GardenReleasePath       string
 	ConcourseReleasePath    string
 	ConcourseDeploymentPath string
-	EnableTerraformFlag     bool
 }
 
 func LoadConfig() (Config, error) {
@@ -118,6 +117,5 @@ func loadConfigFromEnvVars() Config {
 		GardenReleasePath:       os.Getenv("GARDEN_RELEASE_PATH"),
 		ConcourseReleasePath:    os.Getenv("CONCOURSE_RELEASE_PATH"),
 		ConcourseDeploymentPath: os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
-		EnableTerraformFlag:     os.Getenv("ENABLE_TERRAFORM_FLAG") == "true",
 	}
 }

@@ -66,10 +66,6 @@ func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 			"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 			"--aws-region", b.configuration.AWSRegion,
 		}...)
-
-		if b.configuration.EnableTerraformFlag {
-			args = append(args, "--terraform")
-		}
 	case GCPIAAS:
 		args = append(args, []string{
 			"--iaas", "gcp",
