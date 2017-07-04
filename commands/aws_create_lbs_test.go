@@ -95,7 +95,6 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
 			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
 			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
-
 		})
 
 		It("uploads a cert and key with chain", func() {
@@ -381,7 +380,6 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd"))
-
 		})
 
 		Context("when the bbl environment has a BOSH director", func() {
@@ -398,7 +396,7 @@ var _ = Describe("AWS Create LBs", func() {
 		})
 
 		Context("when the bbl environment does not have a BOSH director", func() {
-			It("does not create a BOSH client", func() {
+			BeforeEach(func() {
 				incomingState = storage.State{
 					NoDirector: true,
 					Stack: storage.Stack{
@@ -415,31 +413,9 @@ var _ = Describe("AWS Create LBs", func() {
 					},
 					EnvID: "some-env-id-timestamp",
 				}
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: "temp/some-cert.crt",
-					KeyPath:  "temp/some-key.key",
-				}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("does not call cloudConfigManager", func() {
-				incomingState = storage.State{
-					NoDirector: true,
-					Stack: storage.Stack{
-						Name:   "some-stack",
-						BOSHAZ: "some-bosh-az",
-					},
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-key-pair",
-					},
-					EnvID: "some-env-id-timestamp",
-				}
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "concourse",
 					CertPath: "temp/some-cert.crt",
