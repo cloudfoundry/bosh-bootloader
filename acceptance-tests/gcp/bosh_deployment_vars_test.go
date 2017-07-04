@@ -29,7 +29,7 @@ var _ = Describe("bosh deployment vars", func() {
 		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "no-director-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
 		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
