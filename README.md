@@ -29,6 +29,7 @@ $ brew install cloudfoundry/tap/bbl
 The following should be installed on your local machine
 - BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html)
 - terraform >= 0.9.7 ([download here](https://www.terraform.io/downloads.html))
+- ruby
 
 ### Install bosh-bootloader
 
