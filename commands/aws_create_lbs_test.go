@@ -68,13 +68,6 @@ var _ = Describe("AWS Create LBs", func() {
 			err = ioutil.WriteFile(certPath, []byte(certificate), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-<<<<<<< HEAD
-			Expect(certificateManager.CreateCall.Receives.Certificate).To(Equal("temp/some-cert.crt"))
-			Expect(certificateManager.CreateCall.Receives.PrivateKey).To(Equal("temp/some-key.key"))
-			Expect(certificateManager.CreateCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd-some-env-id-timestamp"))
-			Expect(logger.StepCall.Messages).To(ContainElement("uploading certificate"))
-		})
-=======
 			tempKeyFile, err := ioutil.TempFile("", "key")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -82,7 +75,6 @@ var _ = Describe("AWS Create LBs", func() {
 			keyPath = tempKeyFile.Name()
 			err = ioutil.WriteFile(keyPath, []byte(key), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
->>>>>>> Stack Migration happens on Terraform Apply
 
 			tempChainFile, err := ioutil.TempFile("", "chain")
 			Expect(err).NotTo(HaveOccurred())
@@ -265,27 +257,6 @@ var _ = Describe("AWS Create LBs", func() {
 			})
 		})
 
-<<<<<<< HEAD
-		It("names the loadbalancer without EnvID when EnvID is not set", func() {
-			incomingState.EnvID = ""
-
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"a", "b", "c"}
-			certificateManager.DescribeCall.Returns.Certificate = iam.Certificate{
-				ARN: "some-certificate-arn",
-			}
-
-			err := command.Execute(commands.AWSCreateLBsConfig{
-				LBType:   "concourse",
-				CertPath: "temp/some-cert.crt",
-				KeyPath:  "temp/some-key.key",
-			}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(certificateManager.DescribeCall.Receives.CertificateName).To(Equal("concourse-elb-cert-abcd"))
-		})
-
-=======
->>>>>>> Stack Migration happens on Terraform Apply
 		Context("when the bbl environment has a BOSH director", func() {
 			It("updates the cloud config with a state that has lb type", func() {
 				terraformManager.ApplyCall.Returns.BBLState.LB.Type = "concourse"
@@ -319,41 +290,11 @@ var _ = Describe("AWS Create LBs", func() {
 					},
 					EnvID: "some-env-id-timestamp",
 				}
-<<<<<<< HEAD
 			})
 
 			It("does not call cloudConfigManager", func() {
-=======
-
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("does not call cloudConfigManager", func() {
-				incomingState = storage.State{
-					NoDirector: true,
-					Stack: storage.Stack{
-						Name:   "some-stack",
-						BOSHAZ: "some-bosh-az",
-					},
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-key-pair",
-					},
-					EnvID: "some-env-id-timestamp",
-				}
-
 				terraformManager.ApplyCall.Returns.BBLState = incomingState
 
->>>>>>> Stack Migration happens on Terraform Apply
 				err := command.Execute(commands.AWSCreateLBsConfig{
 					LBType:   "concourse",
 					CertPath: certPath,

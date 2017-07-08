@@ -21,11 +21,6 @@ func NewAWSLBs(terraformManager terraformOutputter, logger logger) AWSLBs {
 }
 
 func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
-	terraformOutputs, err := l.terraformManager.GetOutputs(state)
-	if err != nil {
-		return err
-	}
-
 	if state.TFState != "" {
 		terraformOutputs, err := l.terraformManager.GetOutputs(state)
 		if err != nil {

@@ -709,7 +709,13 @@ private_key: |-
 		})
 
 		It("calls delete env", func() {
+			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+				Manifest:  "some-manifest",
+				Variables: variablesYAML,
+			}
+
 			err := boshManager.Delete(storage.State{
+				IAAS: "aws",
 				BOSH: storage.BOSH{
 					Manifest: "some-manifest",
 					State: map[string]interface{}{
@@ -771,7 +777,9 @@ private_key: |-
 
 			It("returns an error when the delete env fails", func() {
 				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
-				err := boshManager.Delete(storage.State{})
+				err := boshManager.Delete(storage.State{
+					IAAS: "aws",
+				})
 				Expect(err).To(MatchError("failed to delete"))
 			})
 		})

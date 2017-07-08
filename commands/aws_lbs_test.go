@@ -104,8 +104,6 @@ var _ = Describe("AWSLBs", func() {
 								"cf_ssh_proxy_lb_url": "some-ssh-proxy-lb-url",
 								"cf_tcp_lb": "some-tcp-router-lb-name",
 								"cf_tcp_lb_url":  "some-tcp-router-lb-url",
-								"cf_tcp_router_load_balancer":     "some-tcp-lb-name",
-								"cf_tcp_router_load_balancer_url": "some-tcp-lb-url",
 								"env_dns_zone_name_servers": [
 									"name-server-1.",
 									"name-server-2."
