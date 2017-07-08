@@ -110,7 +110,11 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 
 	m.logger.Step("validating whether stack needs to be migrated")
 	bblState, err = m.stackMigrator.Migrate(bblState)
-	if err != nil {
+
+	switch err.(type) {
+	case executorError:
+		return storage.State{}, NewManagerError(bblState, err.(executorError))
+	case error:
 		return storage.State{}, err
 	}
 
@@ -136,6 +140,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	case error:
 		return storage.State{}, err
 	}
+
 	m.logger.Step("applied terraform template")
 
 	bblState.TFState = tfState

@@ -238,10 +238,28 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 }
 
 func (m Manager) Delete(state storage.State) error {
-	err := m.executor.DeleteEnv(DeleteEnvInput{
-		Manifest:  state.BOSH.Manifest,
+	iaasInputs, err := m.generateIAASInputs(state)
+	if err != nil {
+		return err
+	}
+
+	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
+	if err != nil {
+		//not tested
+		return err
+	}
+
+	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
+
+	interpolateOutputs, err := m.executor.Interpolate(iaasInputs.InterpolateInput)
+	if err != nil {
+		return err
+	}
+
+	err = m.executor.DeleteEnv(DeleteEnvInput{
+		Manifest:  interpolateOutputs.Manifest,
 		State:     state.BOSH.State,
-		Variables: state.BOSH.Variables,
+		Variables: interpolateOutputs.Variables,
 	})
 	switch err.(type) {
 	case DeleteEnvError:

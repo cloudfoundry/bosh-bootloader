@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -112,7 +113,7 @@ var _ = Describe("Stack Migration", func() {
 	})
 
 	Describe("Create LBs", func() {
-		FIt("is able to bbl create-lbs", func() {
+		It("is able to bbl create-lbs", func() {
 			var (
 				stackName string
 				lbNames   []string
@@ -128,7 +129,7 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("verifying there are no LBs", func() {
-				lbNames = aws.LoadBalancers(bblStack.PredefinedEnvID())
+				lbNames = aws.LoadBalancers(fmt.Sprintf("vpc-%s", bblStack.PredefinedEnvID()))
 				Expect(lbNames).To(BeEmpty())
 			})
 
@@ -150,8 +151,11 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("checking that the LB was created", func() {
-				Expect(aws.LoadBalancers(bblTerraform.PredefinedEnvID())).To(HaveLen(1))
-				Expect(aws.LoadBalancers(bblTerraform.PredefinedEnvID())).To(Equal([]string{"ConcourseLoadBalancer"}))
+				vpcName := fmt.Sprintf("%s-vpc", bblStack.PredefinedEnvID())
+				Expect(aws.LoadBalancers(vpcName)).To(HaveLen(1))
+				Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
+					MatchRegexp(".*-concourse-lb"),
+				))
 			})
 		})
 	})

@@ -20,6 +20,7 @@ var _ = Describe("Migrate", func() {
 		tf             *fakes.TF
 		infrastructure *fakes.Infrastructure
 		certificate    *fakes.Certificate
+		userPolicy     *fakes.UserPolicy
 		zone           *fakes.Zone
 
 		migrator stack.Migrator
@@ -31,9 +32,10 @@ var _ = Describe("Migrate", func() {
 		tf = &fakes.TF{}
 		infrastructure = &fakes.Infrastructure{}
 		certificate = &fakes.Certificate{}
+		userPolicy = &fakes.UserPolicy{}
 		zone = &fakes.Zone{}
 
-		migrator = stack.NewMigrator(tf, infrastructure, certificate, zone)
+		migrator = stack.NewMigrator(tf, infrastructure, certificate, userPolicy, zone)
 
 		zone.RetrieveReturns([]string{"some-az"}, nil)
 
@@ -103,6 +105,11 @@ var _ = Describe("Migrate", func() {
 		Expect(lbType).To(Equal(""))
 		Expect(certificateARN).To(Equal(""))
 		Expect(envID).To(Equal("some-env-id"))
+
+		Expect(userPolicy.DeleteCallCount()).To(Equal(1))
+		username, policyName := userPolicy.DeleteArgsForCall(0)
+		Expect(username).To(Equal("bosh-iam-user-some-env-id"))
+		Expect(policyName).To(Equal("aws-cpi"))
 
 		Expect(infrastructure.DeleteCallCount()).To(Equal(1))
 		Expect(infrastructure.DeleteArgsForCall(0)).To(Equal("some-stack"))
@@ -287,6 +294,15 @@ var _ = Describe("Migrate", func() {
 
 				_, err := migrator.Migrate(incomingState)
 				Expect(err).To(MatchError("no import"))
+			})
+		})
+
+		Context("when the user policy cannot be deleted", func() {
+			It("returns an error", func() {
+				userPolicy.DeleteReturns(errors.New("no"))
+
+				_, err := migrator.Migrate(incomingState)
+				Expect(err).To(MatchError("no"))
 			})
 		})
 

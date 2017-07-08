@@ -66,7 +66,7 @@ func (a AWS) StackExists(stackName string) bool {
 func (a AWS) Instances(envID string) []string {
 	var instances []string
 
-	vpcID := a.GetVPC(envID)
+	vpcID := a.GetVPC(fmt.Sprintf("%s-vpc", envID))
 
 	output, err := a.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
 		Filters: []*awsec2.Filter{
@@ -93,10 +93,10 @@ func (a AWS) Instances(envID string) []string {
 	return instances
 }
 
-func (a AWS) LoadBalancers(envID string) []string {
+func (a AWS) LoadBalancers(vpcName string) []string {
 	var loadBalancerNames []string
 
-	vpcID := a.GetVPC(envID)
+	vpcID := a.GetVPC(vpcName)
 
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
@@ -143,7 +143,7 @@ func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
 
-	vpcID := a.GetVPC(envID)
+	vpcID := a.GetVPC(fmt.Sprintf("%s-vpc", envID))
 
 	var certificateName string
 	for _, lbDescription := range loadBalancerOutput.LoadBalancerDescriptions {
@@ -164,17 +164,18 @@ func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
 	return ""
 }
 
-func (a AWS) GetVPC(envID string) *string {
+func (a AWS) GetVPC(vpcName string) *string {
 	vpcs, err := a.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
 		Filters: []*awsec2.Filter{
 			{
 				Name: awslib.String("tag:Name"),
 				Values: []*string{
-					awslib.String(fmt.Sprintf("%s-vpc", envID)),
+					awslib.String(vpcName),
 				},
 			},
 		},
 	})
+
 	Expect(err).NotTo(HaveOccurred())
 	Expect(vpcs.Vpcs).To(HaveLen(1))
 

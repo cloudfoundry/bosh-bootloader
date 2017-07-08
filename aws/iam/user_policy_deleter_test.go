@@ -13,11 +13,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("CertificateDeleter", func() {
+var _ = Describe("UserPolicyDeleter", func() {
 	var (
 		iamClient         *fakes.Client
 		awsClientProvider *awsClientFake.AWSClientProvider
-		deleter           iam.CertificateDeleter
+		deleter           iam.UserPolicyDeleter
 	)
 
 	BeforeEach(func() {
@@ -25,25 +25,28 @@ var _ = Describe("CertificateDeleter", func() {
 		awsClientProvider = &awsClientFake.AWSClientProvider{}
 		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
 
-		deleter = iam.NewCertificateDeleter(awsClientProvider)
+		deleter = iam.NewUserPolicyDeleter(awsClientProvider)
 	})
 
 	Describe("Delete", func() {
-		It("deletes the certificates with the given name", func() {
-			iamClient.DeleteServerCertificateReturns(&awsiam.DeleteServerCertificateOutput{}, nil)
+		It("deletes the user policy with the given username and policy name", func() {
+			iamClient.DeleteUserPolicyReturns(&awsiam.DeleteUserPolicyOutput{}, nil)
 
-			err := deleter.Delete("some-certificate")
+			err := deleter.Delete("some-username", "some-policy-name")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(iamClient.DeleteServerCertificateArgsForCall(0).ServerCertificateName).To(Equal(aws.String("some-certificate")))
+			input := iamClient.DeleteUserPolicyArgsForCall(0)
+
+			Expect(input.UserName).To(Equal(aws.String("some-username")))
+			Expect(input.PolicyName).To(Equal(aws.String("some-policy-name")))
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when it fails to delete", func() {
-				iamClient.DeleteServerCertificateReturns(nil, errors.New("failed to delete certificate"))
+				iamClient.DeleteUserPolicyReturns(nil, errors.New("failed to delete user policy"))
 
-				err := deleter.Delete("some-certificate")
-				Expect(err).To(MatchError("failed to delete certificate"))
+				err := deleter.Delete("some-username", "some-policy-name")
+				Expect(err).To(MatchError("failed to delete user policy"))
 			})
 		})
 	})

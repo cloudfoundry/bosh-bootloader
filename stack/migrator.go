@@ -54,18 +54,25 @@ type certificate interface {
 	Describe(certificateName string) (iam.Certificate, error)
 }
 
+//go:generate counterfeiter -o ./fakes/user_policy.go --fake-name UserPolicy . userPolicy
+type userPolicy interface {
+	Delete(username, policyname string) error
+}
+
 type Migrator struct {
 	terraform      tf
 	infrastructure infrastructure
 	certificate    certificate
+	userPolicy     userPolicy
 	zone           zone
 }
 
-func NewMigrator(terraform tf, infrastructure infrastructure, certificate certificate, zone zone) Migrator {
+func NewMigrator(terraform tf, infrastructure infrastructure, certificate certificate, userPolicy userPolicy, zone zone) Migrator {
 	return Migrator{
 		terraform:      terraform,
 		infrastructure: infrastructure,
 		certificate:    certificate,
+		userPolicy:     userPolicy,
 		zone:           zone,
 	}
 }
@@ -124,6 +131,11 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 	}
 
 	state.MigratedFromCloudFormation = true
+
+	err = m.userPolicy.Delete(fmt.Sprintf("bosh-iam-user-%s", state.EnvID), "aws-cpi")
+	if err != nil {
+		return storage.State{}, err
+	}
 
 	err = m.infrastructure.Delete(state.Stack.Name)
 	if err != nil {

@@ -114,6 +114,7 @@ func main() {
 	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
 	certificateDeleter := iam.NewCertificateDeleter(clientProvider)
 	certificateValidator := iam.NewCertificateValidator()
+	userPolicyDeleter := iam.NewUserPolicyDeleter(clientProvider)
 
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
@@ -144,7 +145,7 @@ func main() {
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
 	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator, awsOutputGenerator)
-	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, availabilityZoneRetriever)
+	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, availabilityZoneRetriever)
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,

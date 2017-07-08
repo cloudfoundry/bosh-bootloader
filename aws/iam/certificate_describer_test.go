@@ -6,7 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
-	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/aws/iam/fakes"
+	awsClientFake "github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 
@@ -16,21 +17,22 @@ import (
 
 var _ = Describe("CertificateDescriber", func() {
 	var (
-		iamClient         *fakes.IAMClient
+		iamClient         *fakes.Client
+		awsClientProvider *awsClientFake.AWSClientProvider
 		describer         iam.CertificateDescriber
-		awsClientProvider *fakes.AWSClientProvider
 	)
 
 	BeforeEach(func() {
-		iamClient = &fakes.IAMClient{}
-		awsClientProvider = &fakes.AWSClientProvider{}
+		iamClient = &fakes.Client{}
+		awsClientProvider = &awsClientFake.AWSClientProvider{}
 		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
+
 		describer = iam.NewCertificateDescriber(awsClientProvider)
 	})
 
 	Describe("Describe", func() {
 		It("describes the certificate with the given name", func() {
-			iamClient.GetServerCertificateCall.Returns.Output = &awsiam.GetServerCertificateOutput{
+			iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
 				ServerCertificate: &awsiam.ServerCertificate{
 					CertificateBody:  aws.String("some-certificate-body"),
 					CertificateChain: aws.String("some-chain-body"),
@@ -41,14 +43,15 @@ var _ = Describe("CertificateDescriber", func() {
 						ServerCertificateName: aws.String("some-certificate"),
 					},
 				},
-			}
+			}, nil)
 
 			certificate, err := describer.Describe("some-certificate")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(awsClientProvider.GetIAMClientCall.CallCount).To(Equal(1))
 
-			Expect(iamClient.GetServerCertificateCall.Receives.Input.ServerCertificateName).To(Equal(aws.String("some-certificate")))
+			Expect(iamClient.GetServerCertificateArgsForCall(0).ServerCertificateName).To(Equal(aws.String("some-certificate")))
+
 			Expect(certificate.Name).To(Equal("some-certificate"))
 			Expect(certificate.Body).To(Equal("some-certificate-body"))
 			Expect(certificate.Chain).To(Equal("some-chain-body"))
@@ -57,44 +60,44 @@ var _ = Describe("CertificateDescriber", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the ServerCertificate is nil", func() {
-				iamClient.GetServerCertificateCall.Returns.Output = &awsiam.GetServerCertificateOutput{
+				iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
 					ServerCertificate: nil,
-				}
+				}, nil)
 
 				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
 			})
 
 			It("returns an error when the ServerCertificateMetadata is nil", func() {
-				iamClient.GetServerCertificateCall.Returns.Output = &awsiam.GetServerCertificateOutput{
+				iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
 					ServerCertificate: &awsiam.ServerCertificate{
 						ServerCertificateMetadata: nil,
 					},
-				}
+				}, nil)
 
 				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
 			})
 
 			It("returns an error when the certificate cannot be described", func() {
-				iamClient.GetServerCertificateCall.Returns.Error = awserr.NewRequestFailure(
+				iamClient.GetServerCertificateReturns(nil, awserr.NewRequestFailure(
 					awserr.New("boom",
 						"something bad happened",
 						errors.New(""),
 					), 404, "0",
-				)
+				))
 
 				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(ContainSubstring("something bad happened")))
 			})
 
 			It("returns a CertificateNotFound error when the certificate does not exist", func() {
-				iamClient.GetServerCertificateCall.Returns.Error = awserr.NewRequestFailure(
+				iamClient.GetServerCertificateReturns(nil, awserr.NewRequestFailure(
 					awserr.New("NoSuchEntity",
 						"The Server Certificate with name some-certificate cannot be found.",
 						errors.New(""),
 					), 404, "0",
-				)
+				))
 
 				_, err := describer.Describe("some-certificate")
 				Expect(err).To(MatchError(iam.CertificateNotFound))

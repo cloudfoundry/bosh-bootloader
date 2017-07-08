@@ -132,7 +132,7 @@ var _ = Describe("Manager", func() {
 			Expect(state).To(Equal(expectedState))
 		})
 
-		Context("failure cases", func() {
+		Context("when an error occurs", func() {
 			Context("when the stack cannot be migrated", func() {
 				It("returns an error", func() {
 					migrator.MigrateReturns(storage.State{}, errors.New("failed to migrate"))
@@ -153,22 +153,9 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			Context("when Executor.Apply returns a ExecutorError", func() {
-				var (
-					tempDir       string
-					executorError *fakes.TerraformExecutorError
-				)
-
+			Context("when the applying causes an executor error", func() {
 				BeforeEach(func() {
-					var err error
-					tempDir, err = ioutil.TempDir("", "")
-					Expect(err).NotTo(HaveOccurred())
-
-					err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("updated-tf-state"), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-
-					executorError = &fakes.TerraformExecutorError{}
-					executor.ApplyCall.Returns.Error = executorError
+					executor.ApplyCall.Returns.Error = &fakes.TerraformExecutorError{}
 
 					terraformOutputBuffer.Write([]byte(expectedTFOutput))
 				})
@@ -180,10 +167,19 @@ var _ = Describe("Manager", func() {
 				It("returns the bblState with latest terraform output and a ManagerError", func() {
 					_, err := manager.Apply(incomingState)
 
-					expectedState := incomingState
-					expectedState.LatestTFOutput = expectedTFOutput
-					expectedError := terraform.NewManagerError(expectedState, executorError)
-					Expect(err).To(MatchError(expectedError))
+					Expect(err).To(BeAssignableToTypeOf(terraform.ManagerError{}))
+				})
+			})
+
+			Context("when migrating causes an executor error", func() {
+				BeforeEach(func() {
+					migrator.MigrateReturns(storage.State{}, &fakes.TerraformExecutorError{})
+				})
+
+				It("returns the bblState with latest terraform output and a ManagerError", func() {
+					_, err := manager.Apply(incomingState)
+
+					Expect(err).To(BeAssignableToTypeOf(terraform.ManagerError{}))
 				})
 			})
 
