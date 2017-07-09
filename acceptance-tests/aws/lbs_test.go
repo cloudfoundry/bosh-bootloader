@@ -104,7 +104,7 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("confirming that the concourse lb does not exist", func() {
-			Expect(aws.LoadBalancers()).To(BeEmpty())
+			Expect(aws.LoadBalancers(vpcName)).To(BeEmpty())
 		})
 	})
 
