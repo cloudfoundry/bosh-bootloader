@@ -1,4 +1,4 @@
-package iam
+package certs
 
 import (
 	"crypto/rsa"
@@ -17,13 +17,13 @@ import (
 var readAll func(r io.Reader) ([]byte, error) = ioutil.ReadAll
 var stat func(name string) (os.FileInfo, error) = os.Stat
 
-type CertificateValidator struct{}
+type Validator struct{}
 
-func NewCertificateValidator() CertificateValidator {
-	return CertificateValidator{}
+func NewValidator() Validator {
+	return Validator{}
 }
 
-func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath string) error {
+func (v Validator) Validate(command, certPath, keyPath, chainPath string) error {
 	var err error
 	var certificateData []byte
 	var chainData []byte
@@ -32,16 +32,16 @@ func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath str
 
 	validateErrors := multierror.NewMultiError(command)
 
-	if certificateData, err = c.validateFileAndFormat("certificate", "--cert", certPath); err != nil {
+	if certificateData, err = validateFileAndFormat("certificate", "--cert", certPath); err != nil {
 		validateErrors.Add(err)
 	}
 
-	if _, err = c.validateFileAndFormat("key", "--key", keyPath); err != nil {
+	if _, err = validateFileAndFormat("key", "--key", keyPath); err != nil {
 		validateErrors.Add(err)
 	}
 
 	if chainPath != "" {
-		if chainData, err = c.validateFileAndFormat("chain", "--chain", chainPath); err != nil {
+		if chainData, err = validateFileAndFormat("chain", "--chain", chainPath); err != nil {
 			validateErrors.Add(err)
 		}
 	}
@@ -58,7 +58,7 @@ func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath str
 	}
 	if certificate == nil {
 		loadKeyPairError := err
-		certificate, err = c.parseCertificate(certificateData, loadKeyPairError)
+		certificate, err = parseCertificate(certificateData, loadKeyPairError)
 		if err != nil {
 			validateErrors.Add(err)
 		}
@@ -66,20 +66,20 @@ func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath str
 
 	var certPool *x509.CertPool
 	if chainPath != "" {
-		certPool, err = c.parseChain(chainData)
+		certPool, err = parseChain(chainData)
 		if err != nil {
 			validateErrors.Add(err)
 		}
 	}
 
 	if privateKey != nil && certificate != nil {
-		if err := c.validateCertAndKey(certificate, privateKey); err != nil {
+		if err := validateCertAndKey(certificate, privateKey); err != nil {
 			validateErrors.Add(err)
 		}
 	}
 
 	if certPool != nil && certificate != nil {
-		if err := c.validateCertAndChain(certificate, certPool); err != nil {
+		if err := validateCertAndChain(certificate, certPool); err != nil {
 			validateErrors.Add(err)
 		}
 	}
@@ -91,7 +91,7 @@ func (c CertificateValidator) Validate(command, certPath, keyPath, chainPath str
 	return nil
 }
 
-func (CertificateValidator) validateFileAndFormat(propertyName string, flagName string, filePath string) ([]byte, error) {
+func validateFileAndFormat(propertyName string, flagName string, filePath string) ([]byte, error) {
 	if filePath == "" {
 		return []byte{}, fmt.Errorf("%s is required", flagName)
 	}
@@ -125,7 +125,7 @@ func (CertificateValidator) validateFileAndFormat(propertyName string, flagName 
 	return fileData, nil
 }
 
-func (c CertificateValidator) validateCertAndKey(certificate *x509.Certificate, privateKey *rsa.PrivateKey) error {
+func validateCertAndKey(certificate *x509.Certificate, privateKey *rsa.PrivateKey) error {
 	publicKey := certificate.PublicKey.(*rsa.PublicKey)
 	if privateKey.PublicKey.N.Cmp(publicKey.N) != 0 || privateKey.PublicKey.E != publicKey.E {
 		return errors.New("certificate and key mismatch")
@@ -134,7 +134,7 @@ func (c CertificateValidator) validateCertAndKey(certificate *x509.Certificate, 
 	return nil
 }
 
-func (CertificateValidator) validateCertAndChain(certificate *x509.Certificate, certPool *x509.CertPool) error {
+func validateCertAndChain(certificate *x509.Certificate, certPool *x509.CertPool) error {
 	opts := x509.VerifyOptions{
 		Roots: certPool,
 	}
@@ -146,7 +146,7 @@ func (CertificateValidator) validateCertAndChain(certificate *x509.Certificate, 
 	return nil
 }
 
-func (CertificateValidator) parseCertificate(certificateData []byte, loadKeyPairError error) (*x509.Certificate, error) {
+func parseCertificate(certificateData []byte, loadKeyPairError error) (*x509.Certificate, error) {
 	pemCertData, _ := pem.Decode(certificateData)
 	cert, err := x509.ParseCertificate(pemCertData.Bytes)
 	if err != nil && err != loadKeyPairError {
@@ -156,7 +156,7 @@ func (CertificateValidator) parseCertificate(certificateData []byte, loadKeyPair
 	return cert, nil
 }
 
-func (CertificateValidator) parseChain(chainData []byte) (*x509.CertPool, error) {
+func parseChain(chainData []byte) (*x509.CertPool, error) {
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(chainData)
 	if !ok {

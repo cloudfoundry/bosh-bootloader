@@ -19,6 +19,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
@@ -113,7 +114,7 @@ func main() {
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
 	certificateDeleter := iam.NewCertificateDeleter(clientProvider)
-	certificateValidator := iam.NewCertificateValidator()
+	certificateValidator := certs.NewValidator()
 	userPolicyDeleter := iam.NewUserPolicyDeleter(clientProvider)
 
 	// GCP
@@ -184,7 +185,7 @@ func main() {
 		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
-		logger, awsCredentialValidator, cloudConfigManager, certificateValidator,
+		logger, awsCredentialValidator, cloudConfigManager,
 		stateStore, terraformManager, awsEnvironmentValidator,
 	)
 
@@ -226,7 +227,7 @@ func main() {
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
 	commandSet[commands.DownCommand] = commandSet[commands.DestroyCommand]
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
+	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, certificateValidator, boshManager)
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
 	commandSet[commands.LBsCommand] = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)

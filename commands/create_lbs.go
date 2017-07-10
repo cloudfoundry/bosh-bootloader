@@ -8,10 +8,11 @@ import (
 const CreateLBsCommand = "create-lbs"
 
 type CreateLBs struct {
-	awsCreateLBs   awsCreateLBs
-	gcpCreateLBs   gcpCreateLBs
-	stateValidator stateValidator
-	boshManager    boshManager
+	awsCreateLBs         awsCreateLBs
+	gcpCreateLBs         gcpCreateLBs
+	stateValidator       stateValidator
+	certificateValidator certificateValidator
+	boshManager          boshManager
 }
 
 type lbConfig struct {
@@ -31,17 +32,32 @@ type awsCreateLBs interface {
 	Execute(AWSCreateLBsConfig, storage.State) error
 }
 
-func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateValidator stateValidator, boshManager boshManager) CreateLBs {
+type certificateValidator interface {
+	Validate(command, certPath, keyPath, chainPath string) error
+}
+
+func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
 	return CreateLBs{
-		awsCreateLBs:   awsCreateLBs,
-		gcpCreateLBs:   gcpCreateLBs,
-		stateValidator: stateValidator,
-		boshManager:    boshManager,
+		awsCreateLBs:         awsCreateLBs,
+		gcpCreateLBs:         gcpCreateLBs,
+		stateValidator:       stateValidator,
+		certificateValidator: certificateValidator,
+		boshManager:          boshManager,
 	}
 }
 
 func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
+	config, err := parseFlags(subcommandFlags)
+	if err != nil {
+		return err
+	}
+
 	if err := c.stateValidator.Validate(); err != nil {
+		return err
+	}
+
+	err = c.certificateValidator.Validate(CreateLBsCommand, config.certPath, config.keyPath, config.chainPath)
+	if err != nil {
 		return err
 	}
 
@@ -56,7 +72,7 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 }
 
 func (c CreateLBs) Execute(args []string, state storage.State) error {
-	config, err := c.parseFlags(args)
+	config, err := parseFlags(args)
 	if err != nil {
 		return err
 	}
@@ -88,7 +104,7 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 	return nil
 }
 
-func (CreateLBs) parseFlags(subcommandFlags []string) (lbConfig, error) {
+func parseFlags(subcommandFlags []string) (lbConfig, error) {
 	lbFlags := flags.New("create-lbs")
 
 	config := lbConfig{}

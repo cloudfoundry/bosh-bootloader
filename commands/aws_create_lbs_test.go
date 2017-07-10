@@ -23,7 +23,6 @@ var _ = Describe("AWS Create LBs", func() {
 			credentialValidator  *fakes.CredentialValidator
 			logger               *fakes.Logger
 			cloudConfigManager   *fakes.CloudConfigManager
-			certificateValidator *fakes.CertificateValidator
 			stateStore           *fakes.StateStore
 			environmentValidator *fakes.EnvironmentValidator
 			incomingState        storage.State
@@ -38,7 +37,6 @@ var _ = Describe("AWS Create LBs", func() {
 			credentialValidator = &fakes.CredentialValidator{}
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
-			certificateValidator = &fakes.CertificateValidator{}
 			stateStore = &fakes.StateStore{}
 			environmentValidator = &fakes.EnvironmentValidator{}
 
@@ -85,7 +83,7 @@ var _ = Describe("AWS Create LBs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			command = commands.NewAWSCreateLBs(logger, credentialValidator,
-				cloudConfigManager, certificateValidator,
+				cloudConfigManager,
 				stateStore, terraformManager, environmentValidator)
 		})
 
@@ -121,7 +119,6 @@ var _ = Describe("AWS Create LBs", func() {
 				}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(certificateValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 			})
@@ -227,7 +224,6 @@ var _ = Describe("AWS Create LBs", func() {
 					}, incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateValidator.ValidateCall.CallCount).To(Equal(1))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				})
@@ -387,23 +383,6 @@ var _ = Describe("AWS Create LBs", func() {
 					state := stateStore.SetCall.Receives[0].State
 					Expect(state.LB.Type).To(Equal("concourse"))
 				})
-			})
-		})
-
-		Context("required args", func() {
-			It("returns an error when certificate validator fails for cert and key", func() {
-				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "concourse",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, storage.State{})
-
-				Expect(err).To(MatchError("failed to validate"))
-				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
-				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal(certPath))
-				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal(keyPath))
-				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal(""))
 			})
 		})
 

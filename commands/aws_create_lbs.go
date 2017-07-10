@@ -11,7 +11,6 @@ type AWSCreateLBs struct {
 	logger               logger
 	credentialValidator  credentialValidator
 	cloudConfigManager   cloudConfigManager
-	certificateValidator certificateValidator
 	stateStore           stateStore
 	stateValidator       stateValidator
 	terraformManager     terraformApplier
@@ -27,22 +26,17 @@ type AWSCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
-type certificateValidator interface {
-	Validate(command, certPath, keyPath, chainPath string) error
-}
-
 type environmentValidator interface {
 	Validate(state storage.State) error
 }
 
 func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator,
-	cloudConfigManager cloudConfigManager, certificateValidator certificateValidator,
-	stateStore stateStore, terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
+	cloudConfigManager cloudConfigManager, stateStore stateStore,
+	terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:               logger,
 		credentialValidator:  credentialValidator,
 		cloudConfigManager:   cloudConfigManager,
-		certificateValidator: certificateValidator,
 		stateStore:           stateStore,
 		terraformManager:     terraformManager,
 		environmentValidator: environmentValidator,
@@ -65,11 +59,6 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	}
 
 	if err := c.environmentValidator.Validate(state); err != nil {
-		return err
-	}
-
-	err = c.certificateValidator.Validate(CreateLBsCommand, config.CertPath, config.KeyPath, config.ChainPath)
-	if err != nil {
 		return err
 	}
 

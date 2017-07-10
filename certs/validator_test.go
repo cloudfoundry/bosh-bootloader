@@ -1,4 +1,4 @@
-package iam_test
+package certs_test
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	"github.com/cloudfoundry/multierror"
 
@@ -18,7 +18,7 @@ import (
 var _ = Describe("CertificateValidator", func() {
 	Describe("Validate", func() {
 		var (
-			certificateValidator iam.CertificateValidator
+			certificateValidator certs.Validator
 			certFilePath         string
 			keyFilePath          string
 			chainFilePath        string
@@ -32,7 +32,7 @@ var _ = Describe("CertificateValidator", func() {
 
 		BeforeEach(func() {
 			var err error
-			certificateValidator = iam.NewCertificateValidator()
+			certificateValidator = certs.NewValidator()
 			chainFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -60,8 +60,8 @@ var _ = Describe("CertificateValidator", func() {
 			chainNonPEMFilePath, err = testhelpers.WriteContentsToTempFile("")
 			Expect(err).NotTo(HaveOccurred())
 
-			iam.ResetStat()
-			iam.ResetReadAll()
+			certs.ResetStat()
+			certs.ResetReadAll()
 		})
 
 		Context("when using a PKCS#1 key", func() {
@@ -195,7 +195,7 @@ var _ = Describe("CertificateValidator", func() {
 				})
 
 				It("returns an error when file info cannot be retrieved", func() {
-					iam.SetStat(func(string) (os.FileInfo, error) {
+					certs.SetStat(func(string) (os.FileInfo, error) {
 						return nil, errors.New("failed to retrieve file info")
 					})
 
@@ -210,7 +210,7 @@ var _ = Describe("CertificateValidator", func() {
 				})
 
 				It("returns an error when the file cannot be read", func() {
-					iam.SetReadAll(func(io.Reader) ([]byte, error) {
+					certs.SetReadAll(func(io.Reader) ([]byte, error) {
 						return []byte{}, errors.New("bad read")
 					})
 

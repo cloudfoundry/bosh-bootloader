@@ -13,21 +13,23 @@ import (
 
 var _ = Describe("create-lbs", func() {
 	var (
-		command        commands.CreateLBs
-		awsCreateLBs   *fakes.AWSCreateLBs
-		gcpCreateLBs   *fakes.GCPCreateLBs
-		stateValidator *fakes.StateValidator
-		boshManager    *fakes.BOSHManager
+		command              commands.CreateLBs
+		awsCreateLBs         *fakes.AWSCreateLBs
+		gcpCreateLBs         *fakes.GCPCreateLBs
+		stateValidator       *fakes.StateValidator
+		certificateValidator *fakes.CertificateValidator
+		boshManager          *fakes.BOSHManager
 	)
 
 	BeforeEach(func() {
 		awsCreateLBs = &fakes.AWSCreateLBs{}
 		gcpCreateLBs = &fakes.GCPCreateLBs{}
 		stateValidator = &fakes.StateValidator{}
+		certificateValidator = &fakes.CertificateValidator{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.0"
 
-		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, boshManager)
+		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, certificateValidator, boshManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -65,6 +67,22 @@ var _ = Describe("create-lbs", func() {
 			})
 		})
 
+		Context("when certificate validator fails for cert and key", func() {
+			It("returns an error", func() {
+				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
+				err := command.CheckFastFails([]string{
+					"--cert", "/path/to/cert",
+					"--key", "/path/to/key",
+					"--chain", "/path/to/chain",
+				}, storage.State{})
+
+				Expect(err).To(MatchError("failed to validate"))
+				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
+				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
+				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
+				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))
+			})
+		})
 	})
 
 	Describe("Execute", func() {
