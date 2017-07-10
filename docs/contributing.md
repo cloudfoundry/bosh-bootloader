@@ -3,10 +3,21 @@
 We're glad you are here - if you are reading this you are one step closer to submitting a PR to bbl (bosh-bootloader).
 There are just a few things to keep in mind before you send over a PR.
 
-## Add some tests
+## Run low-level tests
 
-Adding a top-level acceptance test to try out your feature would be great. Any form of unit tests would
-also be really nice
+```
+  ~/bosh-bootloader/scripts/test
+```
+
+## Run acceptance tests
+
+```
+  ~/bosh-bootloader/scripts/acceptance-tests IAAS
+```
+
+## Add tests
+
+Add unit tests (and acceptance test) to try out your feature.
 
 ## Vendor a dependency
 
@@ -17,7 +28,7 @@ If you need to add a dependency to the vendor directory ie you imported some new
   dep ensure github.com/some-user/your-repo
 ```
 
-## Asking for help
+## Need help?
 
 Your friendly everyday bbl'ers are available to help you on [slack](https://cloudfoundry.slack.com) in
-the #bbl-users channel if you ever have a question about a contribution.
+the #bbl-users channel.
