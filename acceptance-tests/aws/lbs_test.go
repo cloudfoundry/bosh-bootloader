@@ -78,7 +78,7 @@ var _ = Describe("lbs test", func() {
 			bbl.CreateLB("concourse", certPath, keyPath, chainPath)
 
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(1))
-			Expect(aws.LoadBalancers(vpcName)).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
+			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(MatchRegexp(".*-concourse-lb")))
 
 			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
@@ -93,7 +93,7 @@ var _ = Describe("lbs test", func() {
 		By("updating the certs of the lb", func() {
 			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(1))
-			Expect(aws.LoadBalancers(vpcName)).To(Equal([]string{fmt.Sprintf("%s-concourse-lb", bbl.PredefinedEnvID())}))
+			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(MatchRegexp(".*-concourse-lb")))
 
 			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
