@@ -148,12 +148,12 @@ var _ = Describe("lbs test", func() {
 			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 		})
 
-		By("verifying that the bbl lbs output contains the cf lbs", func() {
-			session := bbl.LBs()
-			stdout := string(session.Out.Contents())
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
+		By("deleting lbs", func() {
+			bbl.DeleteLBs()
+		})
+
+		By("confirming that the cf lbs do not exist", func() {
+			Expect(aws.LoadBalancers(vpcName)).To(BeEmpty())
 		})
 	})
 })
