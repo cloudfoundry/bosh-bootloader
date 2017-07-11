@@ -114,7 +114,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 	}
 
 	if state.Jumpbox.Enabled {
-		state, err = m.createJumpbox(state, &iaasInputs)
+		state, err = m.createJumpbox(state, &iaasInputs, terraformOutputs)
 		if err != nil {
 			return storage.State{}, err
 		}
@@ -123,7 +123,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 	}
 
 	m.logger.Step("creating bosh director")
-	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
+	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err //not tested
 	}
@@ -182,7 +182,12 @@ func (m Manager) Delete(state storage.State) error {
 		return err
 	}
 
-	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
+	terraformOutputs, err := m.terraformManager.GetOutputs(state)
+	if err != nil {
+		return err
+	}
+
+	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return err //not tested
 	}
@@ -211,12 +216,7 @@ func (m Manager) Delete(state storage.State) error {
 	return nil
 }
 
-func (m Manager) GetJumpboxDeploymentVars(state storage.State) (string, error) {
-	terraformOutputs, err := m.terraformManager.GetOutputs(state)
-	if err != nil {
-		return "", err // not tested
-	}
-
+func (m Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
 	vars := strings.Join([]string{
 		"internal_cidr: 10.0.0.0/24",
 		"internal_gw: 10.0.0.1",
@@ -234,16 +234,11 @@ func (m Manager) GetJumpboxDeploymentVars(state storage.State) (string, error) {
 	return strings.TrimSuffix(vars, "\n"), nil
 }
 
-func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
+func (m Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
 	var vars string
 
 	switch state.IAAS {
 	case "gcp":
-		terraformOutputs, err := m.terraformManager.GetOutputs(state)
-		if err != nil {
-			return "", err
-		}
-
 		if state.Jumpbox.Enabled {
 			vars = strings.Join([]string{
 				"internal_cidr: 10.0.0.0/24",
@@ -273,10 +268,6 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			}, "\n")
 		}
 	case "aws":
-		terraformOutputs, err := m.terraformManager.GetOutputs(state)
-		if err != nil {
-			return "", err
-		}
 		vars = strings.Join([]string{
 			"internal_cidr: 10.0.0.0/24",
 			"internal_gw: 10.0.0.1",
@@ -351,10 +342,10 @@ func getDirectorOutputs(v string) (directorOutputs, error) {
 	}, nil
 }
 
-func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs) (storage.State, error) {
+func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
 	m.logger.Step("creating jumpbox")
-	iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state)
+	iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err //not tested
 	}
@@ -394,6 +385,7 @@ func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs) (sto
 		Variables: interpolateOutputs.Variables,
 		State:     createEnvOutputs.State,
 		Manifest:  interpolateOutputs.Manifest,
+		URL:       terraformOutputs["jumpbox_url"].(string),
 	}
 
 	m.logger.Step("created jumpbox")
@@ -404,12 +396,6 @@ func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs) (sto
 		return storage.State{}, err
 	}
 
-	terraformOutputs, err := m.terraformManager.GetOutputs(state)
-	if err != nil {
-		return storage.State{}, err // not tested
-	}
-
-	state.Jumpbox.URL = terraformOutputs["jumpbox_url"].(string)
 	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
 	if err != nil {
 		return storage.State{}, err

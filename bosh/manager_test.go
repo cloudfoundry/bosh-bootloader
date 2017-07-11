@@ -305,9 +305,7 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
-					expectedState := incomingGCPState
-					expectedState.Jumpbox.URL = "some-jumpbox-url"
-					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(expectedState))
+					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
 				})
 
 				It("logs jumpbox status messages", func() {
@@ -457,7 +455,7 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingAWSState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(2))
+					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingAWSState))
 
 					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
@@ -751,19 +749,17 @@ private_key: |-
 						Type: "cf",
 					},
 				}
+			})
 
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+			It("returns a correct yaml string of bosh deployment variables", func() {
+				vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
 					"network_name":       "some-network",
 					"subnetwork_name":    "some-subnetwork",
 					"bosh_open_tag_name": "some-bosh-tag",
 					"internal_tag_name":  "some-internal-tag",
 					"external_ip":        "some-external-ip",
 					"director_address":   "some-director-address",
-				}
-			})
-
-			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars, err := boshManager.GetDeploymentVars(incomingState)
+				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -809,7 +805,10 @@ gcp_credentials_json: 'some-credential-json'`))
 			Context("when terraform was used to standup infrastructure", func() {
 				BeforeEach(func() {
 					incomingState.TFState = "some-tf-state"
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				})
+
+				It("returns a correct yaml string of bosh deployment variables", func() {
+					vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
 						"az":                      "some-bosh-subnet-az",
 						"access_key_id":           "some-bosh-user-access-key",
 						"secret_access_key":       "some-bosh-user-secret-access-key",
@@ -817,11 +816,7 @@ gcp_credentials_json: 'some-credential-json'`))
 						"subnet_id":               "some-bosh-subnet",
 						"external_ip":             "some-bosh-elastic-ip",
 						"director_address":        "some-bosh-url",
-					}
-				})
-
-				It("returns a correct yaml string of bosh deployment variables", func() {
-					vars, err := boshManager.GetDeploymentVars(incomingState)
+					})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -840,16 +835,6 @@ private_key: |-
 				})
 			})
 
-		})
-
-		Context("failure cases", func() {
-			It("returns an error when the terraform output provider fails", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
-				_, err := boshManager.GetDeploymentVars(storage.State{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to output"))
-			})
 		})
 	})
 
