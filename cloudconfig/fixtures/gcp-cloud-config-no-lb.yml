@@ -8,7 +8,7 @@ azs:
     zone: us-west1-b
 - name: z3
   cloud_properties:
-    zone: us-west1-a
+    zone: us-west1-c
 
 compilation:
   az: z1
