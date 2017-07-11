@@ -53,6 +53,7 @@ func main() {
 		commands.UpCommand:                 nil,
 		commands.DestroyCommand:            nil,
 		commands.DownCommand:               nil,
+		commands.JumpboxAddressCommand:     nil,
 		commands.DirectorAddressCommand:    nil,
 		commands.DirectorUsernameCommand:   nil,
 		commands.DirectorPasswordCommand:   nil,
@@ -231,6 +232,7 @@ func main() {
 	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
 	commandSet[commands.LBsCommand] = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)
+	commandSet[commands.JumpboxAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.JumpboxAddressPropertyName)
 	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
 	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
 	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)

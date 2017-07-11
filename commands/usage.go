@@ -33,6 +33,7 @@ Commands:
   create-lbs             Attaches load balancer(s)
   delete-lbs             Deletes attached load balancer(s)
   destroy                Tears down BOSH director infrastructure
+  jumpbox-address        Prints BOSH jumpbox address
   director-address       Prints BOSH director address
   director-username      Prints BOSH director username
   director-password      Prints BOSH director password

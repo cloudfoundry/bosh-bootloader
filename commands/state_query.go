@@ -9,6 +9,7 @@ import (
 
 const (
 	EnvIDCommand            = "env-id"
+	JumpboxAddressCommand   = "jumpbox-address"
 	DirectorUsernameCommand = "director-username"
 	DirectorPasswordCommand = "director-password"
 	DirectorAddressCommand  = "director-address"
