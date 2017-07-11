@@ -56,7 +56,6 @@ type deploymentVariables struct {
 
 type iaasInputs struct {
 	InterpolateInput InterpolateInput
-	DirectorAddress  string
 }
 
 type executor interface {
@@ -100,6 +99,15 @@ func (m Manager) Version() (string, error) {
 }
 
 func (m Manager) Create(state storage.State) (storage.State, error) {
+	var directorAddress string
+
+	terraformOutputs, err := m.terraformManager.GetOutputs(state)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	directorAddress = terraformOutputs["director_address"].(string)
+
 	iaasInputs, err := m.generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
@@ -110,6 +118,8 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 		if err != nil {
 			return storage.State{}, err
 		}
+
+		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
 	}
 
 	m.logger.Step("creating bosh director")
@@ -150,7 +160,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
-		DirectorAddress:        iaasInputs.DirectorAddress,
+		DirectorAddress:        directorAddress,
 		DirectorUsername:       DIRECTOR_USERNAME,
 		DirectorPassword:       directorOutputs.directorPassword,
 		DirectorSSLCA:          directorOutputs.directorSSLCA,
@@ -290,17 +300,12 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	switch state.IAAS {
 	case "gcp", "aws":
-		terraformOutputs, err := m.terraformManager.GetOutputs(state)
-		if err != nil {
-			return iaasInputs{}, err
-		}
 		return iaasInputs{
 			InterpolateInput: InterpolateInput{
 				IAAS:      state.IAAS,
 				BOSHState: state.BOSH.State,
 				Variables: state.BOSH.Variables,
 			},
-			DirectorAddress: terraformOutputs["director_address"].(string),
 		}, nil
 	default:
 		return iaasInputs{}, errors.New("A valid IAAS was not provided")
@@ -411,8 +416,6 @@ func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs) (sto
 	}
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
-
-	iaasInputs.DirectorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
 
 	return state, nil
 }
