@@ -60,6 +60,7 @@ var _ = Describe("Store", func() {
 				},
 				Jumpbox: storage.Jumpbox{
 					Enabled:   true,
+					URL:       "some-jumpbox-url",
 					Manifest:  "name: jumpbox",
 					Variables: "some-jumpbox-vars",
 					State: map[string]interface{}{
@@ -141,6 +142,7 @@ var _ = Describe("Store", func() {
 				},
 				"jumpbox":{
 					"enabled": true,
+					"url": "some-jumpbox-url",
 					"variables": "some-jumpbox-vars",
 					"manifest": "name: jumpbox",
 					"state": {

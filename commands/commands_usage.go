@@ -66,6 +66,8 @@ const (
 
 	RotateCommandUsage = "Rotates the keypair for BOSH"
 
+	JumpboxAddressCommandUsage = "Prints BOSH jumpbox address"
+
 	DirectorUsernameCommandUsage = "Prints BOSH director username"
 
 	DirectorPasswordCommandUsage = "Prints BOSH director password"
@@ -115,6 +117,8 @@ func (s StateQuery) Usage() string {
 	switch s.propertyName {
 	case EnvIDPropertyName:
 		return EnvIdCommandUsage
+	case JumpboxAddressPropertyName:
+		return JumpboxAddressCommandUsage
 	case DirectorUsernamePropertyName:
 		return DirectorUsernameCommandUsage
 	case DirectorPasswordPropertyName:

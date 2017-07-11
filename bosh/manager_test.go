@@ -308,7 +308,9 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingGCPState)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
+					expectedState := incomingGCPState
+					expectedState.Jumpbox.URL = "some-jumpbox-url"
+					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(expectedState))
 				})
 
 				It("logs jumpbox status messages", func() {
@@ -379,6 +381,7 @@ gcp_credentials_json: 'some-credential-json'`
 						},
 						Jumpbox: storage.Jumpbox{
 							Enabled:   true,
+							URL:       "some-jumpbox-url",
 							Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 							Manifest:  "name: jumpbox",
 							State: map[string]interface{}{

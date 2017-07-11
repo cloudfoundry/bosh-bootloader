@@ -15,6 +15,7 @@ const (
 	DirectorCACertCommand   = "director-ca-cert"
 
 	EnvIDPropertyName            = "environment id"
+	JumpboxAddressPropertyName   = "jumpbox address"
 	DirectorUsernamePropertyName = "director username"
 	DirectorPasswordPropertyName = "director password"
 	DirectorAddressPropertyName  = "director address"
@@ -57,6 +58,10 @@ func (s StateQuery) CheckFastFails(subcommandFlags []string, state storage.State
 func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error {
 	var propertyValue string
 	switch s.propertyName {
+	case JumpboxAddressPropertyName:
+		if state.Jumpbox.Enabled {
+			propertyValue = state.Jumpbox.URL
+		}
 	case DirectorAddressPropertyName:
 		if !state.NoDirector {
 			propertyValue = state.BOSH.DirectorAddress

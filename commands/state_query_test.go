@@ -65,7 +65,29 @@ var _ = Describe("StateQuery", func() {
 	})
 
 	Describe("Execute", func() {
-		Context("bbl does manage the bosh director", func() {
+		Context("bbl manages the jumpbox", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					Jumpbox: storage.Jumpbox{
+						Enabled: true,
+						URL:     "some-jumpbox-url",
+					},
+				}
+			})
+
+			It("prints out the jumpbox information", func() {
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "jumpbox address")
+
+				err := command.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-jumpbox-url"))
+			})
+		})
+
+		Context("bbl manages the bosh director", func() {
 			var state storage.State
 
 			BeforeEach(func() {

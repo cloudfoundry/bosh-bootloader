@@ -104,6 +104,8 @@ var _ = Describe("bbl", func() {
 			Entry("Delete LBs", "delete-lbs", "Deletes load balancer(s)", []string{"delete-lbs", "--help"}),
 			Entry("Version", "version", "Prints version", []string{"help", "version"}),
 			Entry("Version", "version", "Prints version", []string{"version", "--help"}),
+			Entry("Jumpbox Address", "jumpbox-address", "Prints BOSH jumpbox address", []string{"help", "jumpbox-address"}),
+			Entry("Jumpbox Address", "jumpbox-address", "Prints BOSH jumpbox address", []string{"jumpbox-address", "--help"}),
 			Entry("Director Address", "director-address", "Prints BOSH director address", []string{"help", "director-address"}),
 			Entry("Director Address", "director-address", "Prints BOSH director address", []string{"director-address", "--help"}),
 			Entry("Director Username", "director-username", "Prints BOSH director username", []string{"help", "director-username"}),

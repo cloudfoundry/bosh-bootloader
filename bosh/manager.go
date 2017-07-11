@@ -161,7 +161,7 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 
 		m.logger.Step("starting socks5 proxy to jumpbox")
 
-		jumpboxPrivateKey, err := getJumpboxOutputs(interpolateOutputs.Variables)
+		jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
 		if err != nil {
 			return storage.State{}, err
 		}
@@ -172,7 +172,8 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 			return storage.State{}, err
 		}
 
-		err = m.socks5Proxy.Start(jumpboxPrivateKey, terraformOutputs["jumpbox_url"].(string))
+		state.Jumpbox.URL = terraformOutputs["jumpbox_url"].(string)
+		err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
 		if err != nil {
 			return storage.State{}, err
 		}
@@ -430,7 +431,7 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	}
 }
 
-func getJumpboxOutputs(v string) (string, error) {
+func getJumpboxPrivateKey(v string) (string, error) {
 	variables := map[string]interface{}{}
 
 	err := yaml.Unmarshal([]byte(v), &variables)
