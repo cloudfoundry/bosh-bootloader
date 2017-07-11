@@ -13,9 +13,10 @@ import (
 var _ = Describe("BOSHDeploymentVars", func() {
 
 	var (
-		logger         *fakes.Logger
-		boshManager    *fakes.BOSHManager
-		stateValidator *fakes.StateValidator
+		logger           *fakes.Logger
+		boshManager      *fakes.BOSHManager
+		stateValidator   *fakes.StateValidator
+		terraformManager *fakes.TerraformManager
 
 		boshDeploymentVars commands.BOSHDeploymentVars
 	)
@@ -24,10 +25,13 @@ var _ = Describe("BOSHDeploymentVars", func() {
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
 		stateValidator = &fakes.StateValidator{}
+		terraformManager = &fakes.TerraformManager{}
 
 		boshManager.VersionCall.Returns.Version = "2.0.0"
 
-		boshDeploymentVars = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator)
+		terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{"some-name": "some-output"}
+
+		boshDeploymentVars = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -61,9 +65,12 @@ var _ = Describe("BOSHDeploymentVars", func() {
 	Describe("Execute", func() {
 		It("calls out to bosh manager and prints the resulting information", func() {
 			boshManager.GetDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
+
 			err := boshDeploymentVars.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(boshManager.GetDeploymentVarsCall.CallCount).To(Equal(1))
+			Expect(boshManager.GetDeploymentVarsCall.Receives.TerraformOutputs).To(HaveKeyWithValue("some-name", "some-output"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
 		})
 

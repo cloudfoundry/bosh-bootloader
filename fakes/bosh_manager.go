@@ -32,7 +32,8 @@ type BOSHManager struct {
 	GetDeploymentVarsCall struct {
 		CallCount int
 		Receives  struct {
-			State storage.State
+			State            storage.State
+			TerraformOutputs map[string]interface{}
 		}
 		Returns struct {
 			Vars  string
@@ -54,9 +55,10 @@ func (b *BOSHManager) Delete(state storage.State) error {
 	return b.DeleteCall.Returns.Error
 }
 
-func (b *BOSHManager) GetDeploymentVars(state storage.State) (string, error) {
+func (b *BOSHManager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
 	b.GetDeploymentVarsCall.CallCount++
 	b.GetDeploymentVarsCall.Receives.State = state
+	b.GetDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
 	return b.GetDeploymentVarsCall.Returns.Vars, b.GetDeploymentVarsCall.Returns.Error
 }
 

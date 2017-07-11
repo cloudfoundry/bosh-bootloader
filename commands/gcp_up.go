@@ -64,7 +64,7 @@ type terraformManagerError interface {
 type boshManager interface {
 	Create(storage.State) (storage.State, error)
 	Delete(storage.State) error
-	GetDeploymentVars(storage.State) (string, error)
+	GetDeploymentVars(storage.State, map[string]interface{}) (string, error)
 	Version() (string, error)
 }
 

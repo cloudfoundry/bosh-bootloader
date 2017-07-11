@@ -10,13 +10,15 @@ type BOSHDeploymentVars struct {
 	logger         logger
 	boshManager    boshManager
 	stateValidator stateValidator
+	terraform      terraformOutputter
 }
 
-func NewBOSHDeploymentVars(logger logger, boshManager boshManager, stateValidator stateValidator) BOSHDeploymentVars {
+func NewBOSHDeploymentVars(logger logger, boshManager boshManager, stateValidator stateValidator, terraform terraformOutputter) BOSHDeploymentVars {
 	return BOSHDeploymentVars{
 		logger:         logger,
 		boshManager:    boshManager,
 		stateValidator: stateValidator,
+		terraform:      terraform,
 	}
 }
 
@@ -37,7 +39,12 @@ func (b BOSHDeploymentVars) CheckFastFails(subcommandFlags []string, state stora
 }
 
 func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
-	vars, err := b.boshManager.GetDeploymentVars(state)
+	terraformOutputs, err := b.terraform.GetOutputs(state)
+	if err != nil {
+		return err
+	}
+
+	vars, err := b.boshManager.GetDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return err
 	}
