@@ -56,9 +56,11 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 		return err
 	}
 
-	err = c.certificateValidator.Validate(CreateLBsCommand, config.certPath, config.keyPath, config.chainPath)
-	if err != nil {
-		return err
+	if !(state.IAAS == "gcp" && config.lbType == "concourse") {
+		err = c.certificateValidator.Validate(CreateLBsCommand, config.certPath, config.keyPath, config.chainPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !state.NoDirector {

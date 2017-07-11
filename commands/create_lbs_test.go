@@ -83,6 +83,20 @@ var _ = Describe("create-lbs", func() {
 				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))
 			})
 		})
+
+		Context("when iaas is gcp and lb type is concourse", func() {
+			It("does not call certificateValidator", func() {
+				_ = command.CheckFastFails(
+					[]string{
+						"--type", "concourse",
+					},
+					storage.State{
+						IAAS: "gcp",
+					})
+
+				Expect(certificateValidator.ValidateCall.CallCount).To(Equal(0))
+			})
+		})
 	})
 
 	Describe("Execute", func() {
