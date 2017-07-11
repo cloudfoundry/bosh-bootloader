@@ -113,81 +113,16 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 	}
 
 	if state.Jumpbox.Enabled {
-		m.logger.Step("creating jumpbox")
-
-		iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state)
-		if err != nil {
-			//not tested
-			return storage.State{}, err
-		}
-
-		interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs.InterpolateInput)
+		state, err = m.createJumpbox(state, &iaasInputs)
 		if err != nil {
 			return storage.State{}, err
 		}
-
-		variables, err := yaml.Marshal(interpolateOutputs.Variables)
-		if err != nil {
-			return storage.State{}, err
-		}
-
-		osUnsetenv("BOSH_ALL_PROXY")
-		createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
-			Manifest:  interpolateOutputs.Manifest,
-			State:     state.Jumpbox.State,
-			Variables: string(variables),
-		})
-		switch err.(type) {
-		case CreateEnvError:
-			ceErr := err.(CreateEnvError)
-			state.Jumpbox = storage.Jumpbox{
-				Enabled:   true,
-				Variables: interpolateOutputs.Variables,
-				State:     ceErr.BOSHState(),
-				Manifest:  interpolateOutputs.Manifest,
-			}
-			return storage.State{}, NewManagerCreateError(state, err)
-		case error:
-			return storage.State{}, err
-		}
-
-		state.Jumpbox = storage.Jumpbox{
-			Enabled:   true,
-			Variables: interpolateOutputs.Variables,
-			State:     createEnvOutputs.State,
-			Manifest:  interpolateOutputs.Manifest,
-		}
-		m.logger.Step("created jumpbox")
-
-		m.logger.Step("starting socks5 proxy to jumpbox")
-
-		jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
-		if err != nil {
-			return storage.State{}, err
-		}
-
-		terraformOutputs, err := m.terraformManager.GetOutputs(state)
-		if err != nil {
-			// not tested
-			return storage.State{}, err
-		}
-
-		state.Jumpbox.URL = terraformOutputs["jumpbox_url"].(string)
-		err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
-		if err != nil {
-			return storage.State{}, err
-		}
-
-		osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
-
-		iaasInputs.DirectorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
 	}
 
 	m.logger.Step("creating bosh director")
 	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
 	if err != nil {
-		//not tested
-		return storage.State{}, err
+		return storage.State{}, err //not tested
 	}
 
 	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
@@ -246,8 +181,7 @@ func (m Manager) Delete(state storage.State) error {
 
 	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state)
 	if err != nil {
-		//not tested
-		return err
+		return err //not tested
 	}
 
 	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
@@ -277,8 +211,7 @@ func (m Manager) Delete(state storage.State) error {
 func (m Manager) GetJumpboxDeploymentVars(state storage.State) (string, error) {
 	terraformOutputs, err := m.terraformManager.GetOutputs(state)
 	if err != nil {
-		// not tested
-		return "", err
+		return "", err // not tested
 	}
 
 	vars := strings.Join([]string{
@@ -468,4 +401,75 @@ func getDirectorOutputs(v string) (directorOutputs, error) {
 		directorSSLCertificate: directorSSL["certificate"],
 		directorSSLPrivateKey:  directorSSL["private_key"],
 	}, nil
+}
+
+func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs) (storage.State, error) {
+	var err error
+	m.logger.Step("creating jumpbox")
+	iaasInputs.InterpolateInput.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state)
+	if err != nil {
+		return storage.State{}, err //not tested
+	}
+
+	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs.InterpolateInput)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	variables, err := yaml.Marshal(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	osUnsetenv("BOSH_ALL_PROXY")
+	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
+		Manifest:  interpolateOutputs.Manifest,
+		State:     state.Jumpbox.State,
+		Variables: string(variables),
+	})
+	switch err.(type) {
+	case CreateEnvError:
+		ceErr := err.(CreateEnvError)
+		state.Jumpbox = storage.Jumpbox{
+			Enabled:   true,
+			Variables: interpolateOutputs.Variables,
+			State:     ceErr.BOSHState(),
+			Manifest:  interpolateOutputs.Manifest,
+		}
+		return storage.State{}, NewManagerCreateError(state, err)
+	case error:
+		return storage.State{}, err
+	}
+
+	state.Jumpbox = storage.Jumpbox{
+		Enabled:   true,
+		Variables: interpolateOutputs.Variables,
+		State:     createEnvOutputs.State,
+		Manifest:  interpolateOutputs.Manifest,
+	}
+
+	m.logger.Step("created jumpbox")
+
+	m.logger.Step("starting socks5 proxy to jumpbox")
+	jumpboxPrivateKey, err := getJumpboxOutputs(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	terraformOutputs, err := m.terraformManager.GetOutputs(state)
+	if err != nil {
+		return storage.State{}, err // not tested
+	}
+
+	state.Jumpbox.URL = terraformOutputs["jumpbox_url"].(string)
+	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+
+	iaasInputs.DirectorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
+
+	return state, nil
 }
