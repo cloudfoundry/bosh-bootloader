@@ -164,7 +164,7 @@ func main() {
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile)
-	boshManager := bosh.NewManager(boshExecutor, terraformManager, stackManager, logger, socks5Proxy)
+	boshManager := bosh.NewManager(boshExecutor, terraformManager, logger, socks5Proxy)
 	boshClientProvider := bosh.NewClientProvider()
 
 	// Environment Validators

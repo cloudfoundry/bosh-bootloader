@@ -8,7 +8,6 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -25,7 +24,6 @@ const (
 type Manager struct {
 	executor         executor
 	terraformManager terraformManager
-	stackManager     stackManager
 	logger           logger
 	socks5Proxy      socks5Proxy
 }
@@ -73,10 +71,6 @@ type terraformManager interface {
 	GetOutputs(storage.State) (map[string]interface{}, error)
 }
 
-type stackManager interface {
-	Describe(stackName string) (cloudformation.Stack, error)
-}
-
 type logger interface {
 	Step(string, ...interface{})
 	Println(string)
@@ -87,11 +81,10 @@ type socks5Proxy interface {
 	Addr() string
 }
 
-func NewManager(executor executor, terraformManager terraformManager, stackManager stackManager, logger logger, socks5Proxy socks5Proxy) Manager {
+func NewManager(executor executor, terraformManager terraformManager, logger logger, socks5Proxy socks5Proxy) Manager {
 	return Manager{
 		executor:         executor,
 		terraformManager: terraformManager,
-		stackManager:     stackManager,
 		logger:           logger,
 		socks5Proxy:      socks5Proxy,
 	}
@@ -270,47 +263,25 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 			}, "\n")
 		}
 	case "aws":
-		if state.TFState != "" {
-			terraformOutputs, err := m.terraformManager.GetOutputs(state)
-			if err != nil {
-				return "", err
-			}
-			vars = strings.Join([]string{
-				"internal_cidr: 10.0.0.0/24",
-				"internal_gw: 10.0.0.1",
-				fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
-				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
-				fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
-				fmt.Sprintf("az: %s", terraformOutputs["az"]),
-				fmt.Sprintf("subnet_id: %s", terraformOutputs["subnet_id"]),
-				fmt.Sprintf("access_key_id: %s", terraformOutputs["access_key_id"]),
-				fmt.Sprintf("secret_access_key: %s", terraformOutputs["secret_access_key"]),
-				fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
-				fmt.Sprintf("default_security_groups: [%s]", terraformOutputs["default_security_groups"]),
-				fmt.Sprintf("region: %s", state.AWS.Region),
-				fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
-			}, "\n")
-		} else {
-			stack, err := m.stackManager.Describe(state.Stack.Name)
-			if err != nil {
-				return "", err
-			}
-			vars = strings.Join([]string{
-				"internal_cidr: 10.0.0.0/24",
-				"internal_gw: 10.0.0.1",
-				fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
-				fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
-				fmt.Sprintf("external_ip: %s", stack.Outputs["BOSHEIP"]),
-				fmt.Sprintf("az: %s", stack.Outputs["BOSHSubnetAZ"]),
-				fmt.Sprintf("subnet_id: %s", stack.Outputs["BOSHSubnet"]),
-				fmt.Sprintf("access_key_id: %s", stack.Outputs["BOSHUserAccessKey"]),
-				fmt.Sprintf("secret_access_key: %s", stack.Outputs["BOSHUserSecretAccessKey"]),
-				fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
-				fmt.Sprintf("default_security_groups: [%s]", stack.Outputs["BOSHSecurityGroup"]),
-				fmt.Sprintf("region: %s", state.AWS.Region),
-				fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
-			}, "\n")
+		terraformOutputs, err := m.terraformManager.GetOutputs(state)
+		if err != nil {
+			return "", err
 		}
+		vars = strings.Join([]string{
+			"internal_cidr: 10.0.0.0/24",
+			"internal_gw: 10.0.0.1",
+			fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
+			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
+			fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
+			fmt.Sprintf("az: %s", terraformOutputs["az"]),
+			fmt.Sprintf("subnet_id: %s", terraformOutputs["subnet_id"]),
+			fmt.Sprintf("access_key_id: %s", terraformOutputs["access_key_id"]),
+			fmt.Sprintf("secret_access_key: %s", terraformOutputs["secret_access_key"]),
+			fmt.Sprintf("default_key_name: %s", state.KeyPair.Name),
+			fmt.Sprintf("default_security_groups: [%s]", terraformOutputs["default_security_groups"]),
+			fmt.Sprintf("region: %s", state.AWS.Region),
+			fmt.Sprintf("private_key: |-\n  %s", strings.Replace(state.KeyPair.PrivateKey, "\n", "\n  ", -1)),
+		}, "\n")
 	}
 
 	return strings.TrimSuffix(vars, "\n"), nil
@@ -318,7 +289,7 @@ func (m Manager) GetDeploymentVars(state storage.State) (string, error) {
 
 func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 	switch state.IAAS {
-	case "gcp":
+	case "gcp", "aws":
 		terraformOutputs, err := m.terraformManager.GetOutputs(state)
 		if err != nil {
 			return iaasInputs{}, err
@@ -331,34 +302,6 @@ func (m Manager) generateIAASInputs(state storage.State) (iaasInputs, error) {
 			},
 			DirectorAddress: terraformOutputs["director_address"].(string),
 		}, nil
-	case "aws":
-		if state.TFState != "" {
-			terraformOutputs, err := m.terraformManager.GetOutputs(state)
-			if err != nil {
-				return iaasInputs{}, err
-			}
-			return iaasInputs{
-				InterpolateInput: InterpolateInput{
-					IAAS:      state.IAAS,
-					BOSHState: state.BOSH.State,
-					Variables: state.BOSH.Variables,
-				},
-				DirectorAddress: terraformOutputs["director_address"].(string),
-			}, nil
-		} else {
-			stack, err := m.stackManager.Describe(state.Stack.Name)
-			if err != nil {
-				return iaasInputs{}, err
-			}
-			return iaasInputs{
-				InterpolateInput: InterpolateInput{
-					IAAS:      state.IAAS,
-					BOSHState: state.BOSH.State,
-					Variables: state.BOSH.Variables,
-				},
-				DirectorAddress: stack.Outputs["BOSHURL"],
-			}, nil
-		}
 	default:
 		return iaasInputs{}, errors.New("A valid IAAS was not provided")
 	}
