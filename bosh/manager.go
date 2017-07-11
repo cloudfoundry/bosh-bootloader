@@ -451,7 +451,7 @@ func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs) (sto
 	m.logger.Step("created jumpbox")
 
 	m.logger.Step("starting socks5 proxy to jumpbox")
-	jumpboxPrivateKey, err := getJumpboxOutputs(interpolateOutputs.Variables)
+	jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
 	if err != nil {
 		return storage.State{}, err
 	}
