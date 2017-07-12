@@ -359,12 +359,7 @@ var _ = Describe("Manager", func() {
 	Describe("GetOutputs", func() {
 		BeforeEach(func() {
 			outputGenerator.GenerateCall.Returns.Outputs = map[string]interface{}{
-				"external_ip":        "some-external-ip",
-				"network_name":       "some-network-name",
-				"subnetwork_name":    "some-subnetwork-name",
-				"bosh_open_tag_name": "some-bosh-open-tag-name",
-				"internal_tag_name":  "some-internal-tag-name",
-				"director_address":   "some-director-address",
+				"external_ip": "some-external-ip",
 			}
 		})
 
@@ -378,26 +373,18 @@ var _ = Describe("Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(outputGenerator.GenerateCall.Receives.TFState).To(Equal("some-tf-state"))
-
 			Expect(terraformOutputs).To(Equal(map[string]interface{}{
-				"external_ip":        "some-external-ip",
-				"network_name":       "some-network-name",
-				"subnetwork_name":    "some-subnetwork-name",
-				"bosh_open_tag_name": "some-bosh-open-tag-name",
-				"internal_tag_name":  "some-internal-tag-name",
-				"director_address":   "some-director-address",
+				"external_ip": "some-external-ip",
 			}))
 		})
 
-		Context("failure cases", func() {
-			Context("when the output generator fails", func() {
-				It("returns the error to the caller", func() {
-					outputGenerator.GenerateCall.Returns.Error = errors.New("fail")
-					_, err := manager.GetOutputs(storage.State{
-						IAAS: "gcp",
-					})
-					Expect(err).To(MatchError("fail"))
+		Context("when the output generator fails", func() {
+			It("returns the error to the caller", func() {
+				outputGenerator.GenerateCall.Returns.Error = errors.New("fail")
+				_, err := manager.GetOutputs(storage.State{
+					IAAS: "gcp",
 				})
+				Expect(err).To(MatchError("fail"))
 			})
 		})
 	})
@@ -415,16 +402,14 @@ var _ = Describe("Manager", func() {
 			Expect(version).To(Equal("some-version"))
 		})
 
-		Context("failure cases", func() {
-			Context("when version returns an error", func() {
-				BeforeEach(func() {
-					executor.VersionCall.Returns.Error = errors.New("failed to get version")
-				})
+		Context("when executor version returns an error", func() {
+			BeforeEach(func() {
+				executor.VersionCall.Returns.Error = errors.New("failed to get version")
+			})
 
-				It("returns the error", func() {
-					_, err := manager.Version()
-					Expect(err).To(MatchError("failed to get version"))
-				})
+			It("returns the error", func() {
+				_, err := manager.Version()
+				Expect(err).To(MatchError("failed to get version"))
 			})
 		})
 	})

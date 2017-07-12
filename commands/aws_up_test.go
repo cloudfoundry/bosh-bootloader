@@ -382,6 +382,7 @@ var _ = Describe("AWSUp", func() {
 			err := command.Execute(commands.AWSUpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 			Expect(boshManager.CreateCall.Receives.State).To(Equal(incomingState))
 		})
 
@@ -645,6 +646,13 @@ var _ = Describe("AWSUp", func() {
 				Expect(err).To(MatchError("failed to validate"))
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
+			})
+
+			It("returns an error when the terraform manager cannot get terraform outputs", func() {
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("cannot parse terraform output")
+
+				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
+				Expect(err).To(MatchError("cannot parse terraform output"))
 			})
 
 			It("returns an error when the ops file cannot be read", func() {
