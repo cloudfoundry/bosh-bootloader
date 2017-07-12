@@ -13,11 +13,11 @@ import (
 
 var _ = Describe("Rotate", func() {
 	var (
-		stateStore     *fakes.StateStore
-		keyPairManager *fakes.KeyPairManager
-		terraform      *fakes.TerraformManager
-		boshManager    *fakes.BOSHManager
-		stateValidator *fakes.StateValidator
+		stateStore       *fakes.StateStore
+		keyPairManager   *fakes.KeyPairManager
+		terraformManager *fakes.TerraformManager
+		boshManager      *fakes.BOSHManager
+		stateValidator   *fakes.StateValidator
 
 		command commands.Rotate
 
@@ -27,11 +27,11 @@ var _ = Describe("Rotate", func() {
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
 		keyPairManager = &fakes.KeyPairManager{}
-		terraform = &fakes.TerraformManager{}
+		terraformManager = &fakes.TerraformManager{}
 		boshManager = &fakes.BOSHManager{}
 		stateValidator = &fakes.StateValidator{}
 
-		command = commands.NewRotate(stateStore, keyPairManager, terraform, boshManager, stateValidator)
+		command = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -80,6 +80,14 @@ var _ = Describe("Rotate", func() {
 			Expect(keyPairManager.RotateCall.Receives.State).To(Equal(incomingState))
 			Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 1))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+				KeyPair: storage.KeyPair{
+					Name:       "some-new-name",
+					PrivateKey: "some-new-private-key",
+					PublicKey:  "some-new-public-key",
+				},
+			}))
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(storage.State{
 				KeyPair: storage.KeyPair{
 					Name:       "some-new-name",
 					PrivateKey: "some-new-private-key",
@@ -139,6 +147,12 @@ var _ = Describe("Rotate", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set")}}
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to set"))
+			})
+
+			It("returns an error when terraformManager getOutputs fails", func() {
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to get outputs"))
 			})
 
 			It("returns an error when boshManager create fails", func() {

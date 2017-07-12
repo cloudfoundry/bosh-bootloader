@@ -46,7 +46,7 @@ func (r Rotate) Execute(args []string, state storage.State) error {
 
 	terraformOutputs, err := r.terraform.GetOutputs(state)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if !state.NoDirector {
