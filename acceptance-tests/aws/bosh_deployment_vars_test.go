@@ -33,9 +33,7 @@ var _ = Describe("bosh deployment vars", func() {
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			bbl.Destroy()
-		}
+		bbl.Destroy()
 	})
 
 	It("prints the bosh deployment vars for bosh create-env", func() {

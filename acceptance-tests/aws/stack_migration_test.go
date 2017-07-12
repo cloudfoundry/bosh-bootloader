@@ -62,9 +62,7 @@ var _ = Describe("Stack Migration", func() {
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			bblTerraform.Destroy()
-		}
+		bblTerraform.Destroy()
 
 		err := os.Remove(f.Name())
 		Expect(err).NotTo(HaveOccurred())

@@ -33,9 +33,7 @@ var _ = Describe("lbs test", func() {
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			bbl.Destroy()
-		}
+		bbl.Destroy()
 	})
 
 	It("successfully creates a concourse lb", func() {
