@@ -170,7 +170,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 
 	terraformOutputs, err := u.terraformManager.GetOutputs(state)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if !state.NoDirector {
