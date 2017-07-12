@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 
 	. "github.com/onsi/ginkgo"
@@ -35,7 +34,7 @@ var _ = Describe("OutputGenerator", func() {
 			"lb_subnet_cidrs":                      "some-lb-subnet-cidrs",
 			"concourse_lb_name":                    "some-concourse-lb-name",
 			"concourse_lb_url":                     "some-concourse-lb-url",
-			"concourse_lb_internal_security_group": "some-concourse-internal-security-group",
+			"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
 			"cf_ssh_lb_security_group":             "some-cf-ssh-lb-security_group",
 			"cf_ssh_lb_internal_security_group":    "some-cf-ssh-proxy-internal-security-group",
 			"cf_router_lb_security_group":          "some-cf-router-lb-security_group",
@@ -56,120 +55,46 @@ var _ = Describe("OutputGenerator", func() {
 		outputGenerator = aws.NewOutputGenerator(executor)
 	})
 
-	Context("when no lb exists", func() {
-		It("returns all terraform outputs except lb related outputs", func() {
-			outputs, err := outputGenerator.Generate(storage.State{
-				IAAS:    "aws",
-				EnvID:   "some-env-id",
-				TFState: "some-tf-state",
-				LB: storage.LB{
-					Type:   "",
-					Domain: "",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+	It("returns all terraform outputs", func() {
+		outputs, err := outputGenerator.Generate("some-tf-state")
+		Expect(err).NotTo(HaveOccurred())
 
-			Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-tf-state"))
+		Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-tf-state"))
 
-			Expect(outputs).To(Equal(map[string]interface{}{
-				"az":                      "some-bosh-subnet-availability-zone",
-				"external_ip":             "some-bosh-eip",
-				"director_address":        "some-bosh-url",
-				"access_key_id":           "some-bosh-user-access-key",
-				"secret_access_key":       "some-bosh-user-secret-access-key",
-				"subnet_id":               "some-bosh-subnet-id",
-				"default_security_groups": "some-bosh-security-group",
-				"internal_security_group": "some-internal-security-group",
-				"internal_subnet_ids":     "some-internal-subnet-ids",
-				"internal_subnet_cidrs":   "some-internal-subnet-cidrs",
-				"vpc_id":                  "some-vpc-id",
-			}))
-		})
+		Expect(outputs).To(Equal(map[string]interface{}{
+			"az":                                    "some-bosh-subnet-availability-zone",
+			"external_ip":                           "some-bosh-eip",
+			"director_address":                      "some-bosh-url",
+			"access_key_id":                         "some-bosh-user-access-key",
+			"secret_access_key":                     "some-bosh-user-secret-access-key",
+			"subnet_id":                             "some-bosh-subnet-id",
+			"default_security_groups":               "some-bosh-security-group",
+			"internal_security_group":               "some-internal-security-group",
+			"internal_subnet_ids":                   "some-internal-subnet-ids",
+			"internal_subnet_cidrs":                 "some-internal-subnet-cidrs",
+			"cf_router_load_balancer":               "some-cf-router-lb",
+			"cf_router_load_balancer_url":           "some-cf-router-lb-url",
+			"cf_router_internal_security_group":     "some-cf-router-internal-security-group",
+			"cf_ssh_proxy_load_balancer":            "some-cf-ssh-proxy-lb",
+			"cf_ssh_proxy_load_balancer_url":        "some-cf-ssh-proxy-lb-url",
+			"cf_ssh_proxy_internal_security_group":  "some-cf-ssh-proxy-internal-security-group",
+			"cf_tcp_router_load_balancer":           "some-cf-tcp-lb",
+			"cf_tcp_router_load_balancer_url":       "some-cf-tcp-lb-url",
+			"cf_tcp_router_internal_security_group": "some-cf-tcp-lb-internal-security-group",
+			"concourse_load_balancer":               "some-concourse-lb-name",
+			"concourse_load_balancer_url":           "some-concourse-lb-url",
+			"concourse_internal_security_group":     "some-concourse-lb-internal-security-group",
+			"cf_system_domain_dns_servers":          []string{"some-name-server-1", "some-name-server-2"},
+			"vpc_id":                                "some-vpc-id",
+		}))
 	})
 
-	Context("when cf lbs exist", func() {
-		It("returns all terraform outputs including cf lb related outputs", func() {
-			outputs, err := outputGenerator.Generate(storage.State{
-				IAAS:    "aws",
-				EnvID:   "some-env-id",
-				TFState: "some-tf-state",
-				LB: storage.LB{
-					Type:   "cf",
-					Domain: "some-domain",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+	Context("when the executor fails to retrieve the outputs", func() {
+		It("returns an error", func() {
+			executor.OutputsCall.Returns.Error = errors.New("no can do")
 
-			Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-tf-state"))
-
-			Expect(outputs).To(Equal(map[string]interface{}{
-				"az":                                    "some-bosh-subnet-availability-zone",
-				"external_ip":                           "some-bosh-eip",
-				"director_address":                      "some-bosh-url",
-				"access_key_id":                         "some-bosh-user-access-key",
-				"secret_access_key":                     "some-bosh-user-secret-access-key",
-				"subnet_id":                             "some-bosh-subnet-id",
-				"default_security_groups":               "some-bosh-security-group",
-				"internal_security_group":               "some-internal-security-group",
-				"internal_subnet_ids":                   "some-internal-subnet-ids",
-				"internal_subnet_cidrs":                 "some-internal-subnet-cidrs",
-				"cf_router_load_balancer":               "some-cf-router-lb",
-				"cf_router_load_balancer_url":           "some-cf-router-lb-url",
-				"cf_router_internal_security_group":     "some-cf-router-internal-security-group",
-				"cf_ssh_proxy_load_balancer":            "some-cf-ssh-proxy-lb",
-				"cf_ssh_proxy_load_balancer_url":        "some-cf-ssh-proxy-lb-url",
-				"cf_ssh_proxy_internal_security_group":  "some-cf-ssh-proxy-internal-security-group",
-				"cf_tcp_router_load_balancer":           "some-cf-tcp-lb",
-				"cf_tcp_router_load_balancer_url":       "some-cf-tcp-lb-url",
-				"cf_tcp_router_internal_security_group": "some-cf-tcp-lb-internal-security-group",
-				"cf_system_domain_dns_servers":          []string{"some-name-server-1", "some-name-server-2"},
-				"vpc_id":                                "some-vpc-id",
-			}))
-		})
-	})
-
-	Context("when the concourse lb exists", func() {
-		It("returns all terraform outputs including concourse lb related outputs", func() {
-			outputs, err := outputGenerator.Generate(storage.State{
-				IAAS:    "aws",
-				EnvID:   "some-env-id",
-				TFState: "some-tf-state",
-				LB: storage.LB{
-					Type:   "concourse",
-					Domain: "",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-tf-state"))
-
-			Expect(outputs).To(Equal(map[string]interface{}{
-				"az":                                "some-bosh-subnet-availability-zone",
-				"external_ip":                       "some-bosh-eip",
-				"director_address":                  "some-bosh-url",
-				"access_key_id":                     "some-bosh-user-access-key",
-				"secret_access_key":                 "some-bosh-user-secret-access-key",
-				"subnet_id":                         "some-bosh-subnet-id",
-				"default_security_groups":           "some-bosh-security-group",
-				"internal_security_group":           "some-internal-security-group",
-				"internal_subnet_ids":               "some-internal-subnet-ids",
-				"internal_subnet_cidrs":             "some-internal-subnet-cidrs",
-				"concourse_load_balancer":           "some-concourse-lb-name",
-				"concourse_load_balancer_url":       "some-concourse-lb-url",
-				"concourse_internal_security_group": "some-concourse-internal-security-group",
-				"vpc_id": "some-vpc-id",
-			}))
-		})
-	})
-
-	Context("failure cases", func() {
-		Context("when the executor fails to retrieve the outputs", func() {
-			It("returns an error", func() {
-				executor.OutputsCall.Returns.Error = errors.New("no can do")
-
-				_, err := outputGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("no can do"))
-			})
+			_, err := outputGenerator.Generate("")
+			Expect(err).To(MatchError("no can do"))
 		})
 	})
 })

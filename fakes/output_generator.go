@@ -1,12 +1,10 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
-
 type OutputGenerator struct {
 	GenerateCall struct {
 		CallCount int
 		Receives  struct {
-			State storage.State
+			TFState string
 		}
 		Returns struct {
 			Outputs map[string]interface{}
@@ -15,8 +13,8 @@ type OutputGenerator struct {
 	}
 }
 
-func (o *OutputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
+func (o *OutputGenerator) Generate(tfState string) (map[string]interface{}, error) {
 	o.GenerateCall.CallCount++
-	o.GenerateCall.Receives.State = state
+	o.GenerateCall.Receives.TFState = tfState
 	return o.GenerateCall.Returns.Outputs, o.GenerateCall.Returns.Error
 }

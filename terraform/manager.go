@@ -3,6 +3,7 @@ package terraform
 import (
 	"bytes"
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/coreos/go-semver/semver"
@@ -12,7 +13,8 @@ type Manager struct {
 	executor              executor
 	templateGenerator     templateGenerator
 	inputGenerator        inputGenerator
-	outputGenerator       outputGenerator
+	gcpOutputGenerator    outputGenerator
+	awsOutputGenerator    outputGenerator
 	terraformOutputBuffer *bytes.Buffer
 	logger                logger
 	stackMigrator         stackMigrator
@@ -38,7 +40,7 @@ type inputGenerator interface {
 }
 
 type outputGenerator interface {
-	Generate(storage.State) (map[string]interface{}, error)
+	Generate(tfState string) (map[string]interface{}, error)
 }
 
 type logger interface {
@@ -49,7 +51,8 @@ type NewManagerArgs struct {
 	Executor              executor
 	TemplateGenerator     templateGenerator
 	InputGenerator        inputGenerator
-	OutputGenerator       outputGenerator
+	AWSOutputGenerator    outputGenerator
+	GCPOutputGenerator    outputGenerator
 	TerraformOutputBuffer *bytes.Buffer
 	Logger                logger
 	StackMigrator         stackMigrator
@@ -60,7 +63,8 @@ func NewManager(args NewManagerArgs) Manager {
 		executor:              args.Executor,
 		templateGenerator:     args.TemplateGenerator,
 		inputGenerator:        args.InputGenerator,
-		outputGenerator:       args.OutputGenerator,
+		awsOutputGenerator:    args.AWSOutputGenerator,
+		gcpOutputGenerator:    args.GCPOutputGenerator,
 		terraformOutputBuffer: args.TerraformOutputBuffer,
 		logger:                args.Logger,
 		stackMigrator:         args.StackMigrator,
@@ -179,13 +183,15 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	return bblState, nil
 }
 
-func (m Manager) GetOutputs(bblState storage.State) (map[string]interface{}, error) {
-	outputs, err := m.outputGenerator.Generate(bblState)
-	if err != nil {
-		return map[string]interface{}{}, err
+func (m Manager) GetOutputs(state storage.State) (map[string]interface{}, error) {
+	switch state.IAAS {
+	case "gcp":
+		return m.gcpOutputGenerator.Generate(state.TFState)
+	case "aws":
+		return m.awsOutputGenerator.Generate(state.TFState)
+	default:
+		return map[string]interface{}{}, fmt.Errorf("invalid iaas: %q", state.IAAS)
 	}
-
-	return outputs, nil
 }
 
 func readAndReset(buf *bytes.Buffer) string {

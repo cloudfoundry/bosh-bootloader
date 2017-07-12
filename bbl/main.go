@@ -146,13 +146,13 @@ func main() {
 	awsOutputGenerator := awsterraform.NewOutputGenerator(terraformExecutor)
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
-	outputGenerator := terraform.NewOutputGenerator(gcpOutputGenerator, awsOutputGenerator)
 	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, availabilityZoneRetriever)
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,
 		InputGenerator:        inputGenerator,
-		OutputGenerator:       outputGenerator,
+		AWSOutputGenerator:    awsOutputGenerator,
+		GCPOutputGenerator:    gcpOutputGenerator,
 		TerraformOutputBuffer: terraformOutputBuffer,
 		Logger:                logger,
 		StackMigrator:         stackMigrator,
@@ -164,7 +164,7 @@ func main() {
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile)
-	boshManager := bosh.NewManager(boshExecutor, terraformManager, logger, socks5Proxy)
+	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy)
 	boshClientProvider := bosh.NewClientProvider()
 
 	// Environment Validators
@@ -243,7 +243,7 @@ func main() {
 	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
 	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
-	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, boshManager, stateValidator)
+	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
 
 	app := application.New(commandSet, configuration, stateStore, usage)
 

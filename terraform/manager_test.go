@@ -46,7 +46,8 @@ var _ = Describe("Manager", func() {
 			Executor:              executor,
 			TemplateGenerator:     templateGenerator,
 			InputGenerator:        inputGenerator,
-			OutputGenerator:       outputGenerator,
+			AWSOutputGenerator:    outputGenerator,
+			GCPOutputGenerator:    outputGenerator,
 			TerraformOutputBuffer: &terraformOutputBuffer,
 			Logger:                logger,
 			StackMigrator:         migrator,
@@ -369,24 +370,14 @@ var _ = Describe("Manager", func() {
 
 		It("returns all terraform outputs except lb related outputs", func() {
 			incomingState := storage.State{
-				EnvID: "some-env-id",
-				GCP: storage.GCP{
-					ServiceAccountKey: "some-service-account-key",
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				},
-				LB: storage.LB{
-					Type:   "some-lb-type",
-					Domain: "some-domain",
-				},
+				IAAS:    "gcp",
 				TFState: "some-tf-state",
 			}
 
 			terraformOutputs, err := manager.GetOutputs(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(outputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+			Expect(outputGenerator.GenerateCall.Receives.TFState).To(Equal("some-tf-state"))
 
 			Expect(terraformOutputs).To(Equal(map[string]interface{}{
 				"external_ip":        "some-external-ip",
@@ -402,7 +393,9 @@ var _ = Describe("Manager", func() {
 			Context("when the output generator fails", func() {
 				It("returns the error to the caller", func() {
 					outputGenerator.GenerateCall.Returns.Error = errors.New("fail")
-					_, err := manager.GetOutputs(storage.State{})
+					_, err := manager.GetOutputs(storage.State{
+						IAAS: "gcp",
+					})
 					Expect(err).To(MatchError("fail"))
 				})
 			})
