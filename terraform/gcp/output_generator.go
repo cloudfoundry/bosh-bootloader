@@ -1,7 +1,5 @@
 package gcp
 
-import "strings"
-
 type executor interface {
 	Outputs(string) (map[string]interface{}, error)
 }
@@ -17,14 +15,18 @@ func NewOutputGenerator(executor executor) OutputGenerator {
 }
 
 func (g OutputGenerator) Generate(tfState string) (map[string]interface{}, error) {
-	outputs, err := g.executor.Outputs(tfState)
+	tfOutputs, err := g.executor.Outputs(tfState)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
 
-	if val, ok := outputs["system_domain_dns_servers"]; ok {
-		outputs["system_domain_dns_servers"] = strings.Split(val.(string), ",\n")
+	if val, ok := tfOutputs["system_domain_dns_servers"]; ok {
+		servers := []string{}
+		for _, server := range val.([]interface{}) {
+			servers = append(servers, server.(string))
+		}
+		tfOutputs["system_domain_dns_servers"] = servers
 	}
 
-	return outputs, nil
+	return tfOutputs, nil
 }

@@ -21,7 +21,9 @@ var _ = Describe("OutputGenerator", func() {
 			executor = &fakes.TerraformExecutor{}
 			outputGenerator = gcp.NewOutputGenerator(executor)
 
-			executor.OutputsCall.Returns.Outputs = map[string]interface{}{"some-key": "some-value"}
+			executor.OutputsCall.Returns.Outputs = map[string]interface{}{
+				"some-key": "some-value",
+			}
 		})
 
 		It("returns the outputs from the terraform state", func() {
@@ -42,7 +44,9 @@ var _ = Describe("OutputGenerator", func() {
 
 		Context("when a domain is provided", func() {
 			It("formats the raw terraform output", func() {
-				executor.OutputsCall.Returns.Outputs = map[string]interface{}{"system_domain_dns_servers": "domain-1,\ndomain-2,\ndomain-3"}
+				executor.OutputsCall.Returns.Outputs = map[string]interface{}{
+					"system_domain_dns_servers": []interface{}{"domain-1", "domain-2", "domain-3"},
+				}
 
 				outputs, err := outputGenerator.Generate("")
 				Expect(err).NotTo(HaveOccurred())
