@@ -22,10 +22,9 @@ const (
 )
 
 type Manager struct {
-	executor         executor
-	terraformManager terraformManager
-	logger           logger
-	socks5Proxy      socks5Proxy
+	executor    executor
+	logger      logger
+	socks5Proxy socks5Proxy
 }
 
 type directorOutputs struct {
@@ -66,10 +65,6 @@ type executor interface {
 	Version() (string, error)
 }
 
-type terraformManager interface {
-	GetOutputs(storage.State) (map[string]interface{}, error)
-}
-
 type logger interface {
 	Step(string, ...interface{})
 	Println(string)
@@ -80,12 +75,11 @@ type socks5Proxy interface {
 	Addr() string
 }
 
-func NewManager(executor executor, terraformManager terraformManager, logger logger, socks5Proxy socks5Proxy) Manager {
+func NewManager(executor executor, logger logger, socks5Proxy socks5Proxy) Manager {
 	return Manager{
-		executor:         executor,
-		terraformManager: terraformManager,
-		logger:           logger,
-		socks5Proxy:      socks5Proxy,
+		executor:    executor,
+		logger:      logger,
+		socks5Proxy: socks5Proxy,
 	}
 }
 
@@ -98,13 +92,8 @@ func (m Manager) Version() (string, error) {
 	return version, err
 }
 
-func (m Manager) Create(state storage.State) (storage.State, error) {
+func (m Manager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var directorAddress string
-
-	terraformOutputs, err := m.terraformManager.GetOutputs(state)
-	if err != nil {
-		return storage.State{}, err
-	}
 
 	directorAddress = terraformOutputs["director_address"].(string)
 
@@ -176,13 +165,8 @@ func (m Manager) Create(state storage.State) (storage.State, error) {
 	return state, nil
 }
 
-func (m Manager) Delete(state storage.State) error {
+func (m Manager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
 	iaasInputs, err := m.generateIAASInputs(state)
-	if err != nil {
-		return err
-	}
-
-	terraformOutputs, err := m.terraformManager.GetOutputs(state)
 	if err != nil {
 		return err
 	}

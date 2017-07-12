@@ -15,6 +15,7 @@ var _ = Describe("Rotate", func() {
 	var (
 		stateStore     *fakes.StateStore
 		keyPairManager *fakes.KeyPairManager
+		terraform      *fakes.TerraformManager
 		boshManager    *fakes.BOSHManager
 		stateValidator *fakes.StateValidator
 
@@ -26,10 +27,11 @@ var _ = Describe("Rotate", func() {
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
 		keyPairManager = &fakes.KeyPairManager{}
+		terraform = &fakes.TerraformManager{}
 		boshManager = &fakes.BOSHManager{}
 		stateValidator = &fakes.StateValidator{}
 
-		command = commands.NewRotate(stateStore, keyPairManager, boshManager, stateValidator)
+		command = commands.NewRotate(stateStore, keyPairManager, terraform, boshManager, stateValidator)
 	})
 
 	Describe("CheckFastFails", func() {

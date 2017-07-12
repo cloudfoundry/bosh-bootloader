@@ -6,7 +6,8 @@ type BOSHManager struct {
 	CreateCall struct {
 		CallCount int
 		Receives  struct {
-			State storage.State
+			State            storage.State
+			TerraformOutputs map[string]interface{}
 		}
 		Returns struct {
 			State storage.State
@@ -23,7 +24,8 @@ type BOSHManager struct {
 	DeleteCall struct {
 		CallCount int
 		Receives  struct {
-			State storage.State
+			State            storage.State
+			TerraformOutputs map[string]interface{}
 		}
 		Returns struct {
 			Error error
@@ -42,16 +44,18 @@ type BOSHManager struct {
 	}
 }
 
-func (b *BOSHManager) Create(state storage.State) (storage.State, error) {
+func (b *BOSHManager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	b.CreateCall.CallCount++
 	b.CreateCall.Receives.State = state
+	b.GetDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
 	state.BOSH = b.CreateCall.Returns.State.BOSH
 	return state, b.CreateCall.Returns.Error
 }
 
-func (b *BOSHManager) Delete(state storage.State) error {
+func (b *BOSHManager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
 	b.DeleteCall.CallCount++
 	b.DeleteCall.Receives.State = state
+	b.GetDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
 	return b.DeleteCall.Returns.Error
 }
 

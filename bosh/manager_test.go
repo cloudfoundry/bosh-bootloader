@@ -27,12 +27,12 @@ var _ = Describe("Manager", func() {
 	Describe("Create", func() {
 		var (
 			boshExecutor     *fakes.BOSHExecutor
-			terraformManager *fakes.TerraformManager
 			logger           *fakes.Logger
 			socks5Proxy      *fakes.Socks5Proxy
 			boshManager      bosh.Manager
 			incomingGCPState storage.State
 			incomingAWSState storage.State
+			terraformOutputs map[string]interface{}
 
 			osUnsetenvKey string
 			osSetenvKey   string
@@ -40,11 +40,10 @@ var _ = Describe("Manager", func() {
 		)
 
 		BeforeEach(func() {
-			terraformManager = &fakes.TerraformManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
 			socks5Proxy = &fakes.Socks5Proxy{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, logger, socks5Proxy)
+			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
 
 			bosh.SetOSSetenv(func(key, value string) error {
 				osSetenvKey = key
@@ -57,7 +56,7 @@ var _ = Describe("Manager", func() {
 				return nil
 			})
 
-			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+			terraformOutputs = map[string]interface{}{
 				"network_name":       "some-network",
 				"subnetwork_name":    "some-subnetwork",
 				"bosh_open_tag_name": "some-bosh-tag",
@@ -121,25 +120,13 @@ var _ = Describe("Manager", func() {
 				Variables: variablesYAML,
 			}
 
-			_, err := boshManager.Create(incomingGCPState)
+			_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
 		})
 
 		Context("when iaas is gcp", func() {
-			It("queries values from terraform manager", func() {
-				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
-					Manifest:  "some-manifest",
-					Variables: variablesYAML,
-				}
-
-				_, err := boshManager.Create(incomingGCPState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
-			})
-
 			It("generates a bosh manifest", func() {
 				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
 					Manifest:  "some-manifest",
@@ -153,7 +140,7 @@ var _ = Describe("Manager", func() {
 				}
 
 				incomingGCPState.BOSH.UserOpsFile = "some-ops-file"
-				_, err := boshManager.Create(incomingGCPState)
+				_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
@@ -193,7 +180,7 @@ gcp_credentials_json: 'some-credential-json'`,
 					},
 				}
 
-				state, err := boshManager.Create(incomingGCPState)
+				state, err := boshManager.Create(incomingGCPState, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
@@ -296,27 +283,15 @@ gcp_credentials_json: 'some-credential-json'`
 					}
 				})
 
-				It("queries values from terraform manager", func() {
-					boshExecutor.CreateEnvCall.Returns.Output = bosh.CreateEnvOutput{
-						State: map[string]interface{}{
-							"some-key": "some-value",
-						},
-					}
-					_, err := boshManager.Create(incomingGCPState)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingGCPState))
-				})
-
 				It("logs jumpbox status messages", func() {
-					_, err := boshManager.Create(incomingGCPState)
+					_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating jumpbox", "created jumpbox"}))
 				})
 
 				It("generates a jumpbox and bosh manifest", func() {
-					_, err := boshManager.Create(incomingGCPState)
+					_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
@@ -334,7 +309,7 @@ gcp_credentials_json: 'some-credential-json'`
 					socks5ProxyAddr := "localhost:1234"
 					socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
 
-					_, err := boshManager.Create(incomingGCPState)
+					_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(osUnsetenvKey).To(Equal("BOSH_ALL_PROXY"))
@@ -360,7 +335,7 @@ gcp_credentials_json: 'some-credential-json'`
 						},
 					}
 
-					state, err := boshManager.Create(incomingGCPState)
+					state, err := boshManager.Create(incomingGCPState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state).To(Equal(storage.State{
@@ -411,14 +386,15 @@ gcp_credentials_json: 'some-credential-json'`
 						})
 
 						It("returns an error", func() {
-							_, err := boshManager.Create(incomingGCPState)
+							_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 							Expect(err).To(MatchError("yaml: could not find expected directive name"))
 						})
 					})
 
 					It("returns an error when the socks5Proxy fails to start", func() {
 						socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
-						_, err := boshManager.Create(incomingGCPState)
+
+						_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 						Expect(err).To(MatchError("failed to start socks5Proxy"))
 					})
 				})
@@ -428,7 +404,7 @@ gcp_credentials_json: 'some-credential-json'`
 		Context("when iaas is aws", func() {
 			Context("when terraform was used to create infrastructure", func() {
 				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					terraformOutputs = map[string]interface{}{
 						"az":                      "some-bosh-subnet-az",
 						"access_key_id":           "some-bosh-user-access-key",
 						"secret_access_key":       "some-bosh-user-secret-access-key",
@@ -452,11 +428,8 @@ gcp_credentials_json: 'some-credential-json'`
 
 				It("generates a bosh manifest", func() {
 					incomingAWSState.BOSH.UserOpsFile = "some-ops-file"
-					_, err := boshManager.Create(incomingAWSState)
+					_, err := boshManager.Create(incomingAWSState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
-
-					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-					Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingAWSState))
 
 					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
 						IAAS: "aws",
@@ -483,7 +456,7 @@ private_key: |-
 				})
 
 				It("returns a state with a proper bosh state", func() {
-					state, err := boshManager.Create(incomingAWSState)
+					state, err := boshManager.Create(incomingAWSState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state).To(Equal(storage.State{
@@ -525,7 +498,7 @@ private_key: |-
 				Variables: variablesYAML,
 			}
 
-			_, err := boshManager.Create(incomingGCPState)
+			_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
@@ -538,26 +511,22 @@ private_key: |-
 		})
 
 		Context("when an error occurs", func() {
-			It("returns an error when terraform output provider fails", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
-				_, err := boshManager.Create(incomingGCPState)
-				Expect(err).To(MatchError("failed to output"))
-			})
-
 			It("returns an error when an invalid iaas is provided", func() {
-				_, err := boshManager.Create(storage.State{})
+				_, err := boshManager.Create(storage.State{IAAS: "WUT"}, terraformOutputs)
 				Expect(err).To(MatchError("A valid IAAS was not provided"))
 			})
 
 			It("returns an error when the executor's interpolate call fails", func() {
 				boshExecutor.InterpolateCall.Returns.Error = errors.New("failed to interpolate")
-				_, err := boshManager.Create(incomingGCPState)
+
+				_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 				Expect(err).To(MatchError("failed to interpolate"))
 			})
 
 			It("returns an error when the executor's create env call fails with non create env error", func() {
 				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
-				_, err := boshManager.Create(incomingGCPState)
+
+				_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 				Expect(err).To(MatchError("failed to create"))
 			})
 
@@ -568,7 +537,7 @@ private_key: |-
 						Variables: "%%%",
 					}
 
-					_, err := boshManager.Create(incomingAWSState)
+					_, err := boshManager.Create(storage.State{IAAS: "aws"}, terraformOutputs)
 					Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
 				})
 			})
@@ -602,7 +571,7 @@ private_key: |-
 				})
 
 				It("returns a bosh manager create error with a valid state", func() {
-					_, err := boshManager.Create(incomingAWSState)
+					_, err := boshManager.Create(incomingAWSState, terraformOutputs)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
@@ -611,21 +580,17 @@ private_key: |-
 
 	Describe("Delete", func() {
 		var (
-			boshExecutor     *fakes.BOSHExecutor
-			terraformManager *fakes.TerraformManager
-			logger           *fakes.Logger
-			socks5Proxy      *fakes.Socks5Proxy
-			boshManager      bosh.Manager
+			boshExecutor *fakes.BOSHExecutor
+			logger       *fakes.Logger
+			socks5Proxy  *fakes.Socks5Proxy
+			boshManager  bosh.Manager
 		)
 
 		BeforeEach(func() {
-			terraformManager = &fakes.TerraformManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
 			socks5Proxy = &fakes.Socks5Proxy{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, logger, socks5Proxy)
-
-			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{"director_address": "nick-da-quick"}
+			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
 		})
 
 		It("calls delete env", func() {
@@ -643,7 +608,7 @@ private_key: |-
 					},
 					Variables: variablesYAML,
 				},
-			})
+			}, map[string]interface{}{"director_address": "nick-da-quick"})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
 				Manifest: "some-manifest",
@@ -690,16 +655,17 @@ private_key: |-
 				})
 
 				It("returns a bosh manager delete error with a valid state", func() {
-					err := boshManager.Delete(incomingState)
+					err := boshManager.Delete(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
 
 			It("returns an error when the delete env fails", func() {
 				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+
 				err := boshManager.Delete(storage.State{
 					IAAS: "aws",
-				})
+				}, map[string]interface{}{"director_address": "nick-da-quick"})
 				Expect(err).To(MatchError("failed to delete"))
 			})
 		})
@@ -707,19 +673,17 @@ private_key: |-
 
 	Describe("GetDeploymentVars", func() {
 		var (
-			boshExecutor     *fakes.BOSHExecutor
-			terraformManager *fakes.TerraformManager
-			logger           *fakes.Logger
-			socks5Proxy      *fakes.Socks5Proxy
-			boshManager      bosh.Manager
+			boshExecutor *fakes.BOSHExecutor
+			logger       *fakes.Logger
+			socks5Proxy  *fakes.Socks5Proxy
+			boshManager  bosh.Manager
 		)
 
 		BeforeEach(func() {
-			terraformManager = &fakes.TerraformManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
 			socks5Proxy = &fakes.Socks5Proxy{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, logger, socks5Proxy)
+			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
 		})
 
 		Context("gcp", func() {
@@ -840,19 +804,17 @@ private_key: |-
 
 	Describe("Version", func() {
 		var (
-			boshExecutor     *fakes.BOSHExecutor
-			terraformManager *fakes.TerraformManager
-			logger           *fakes.Logger
-			socks5Proxy      *fakes.Socks5Proxy
-			boshManager      bosh.Manager
+			boshExecutor *fakes.BOSHExecutor
+			logger       *fakes.Logger
+			socks5Proxy  *fakes.Socks5Proxy
+			boshManager  bosh.Manager
 		)
 
 		BeforeEach(func() {
-			terraformManager = &fakes.TerraformManager{}
 			boshExecutor = &fakes.BOSHExecutor{}
 			logger = &fakes.Logger{}
 			socks5Proxy = &fakes.Socks5Proxy{}
-			boshManager = bosh.NewManager(boshExecutor, terraformManager, logger, socks5Proxy)
+			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
 
 			boshExecutor.VersionCall.Returns.Version = "2.0.0"
 		})

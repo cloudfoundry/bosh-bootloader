@@ -216,7 +216,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	state, err = d.deleteBOSH(state, stack)
+	terraformOutputs, err := d.terraformManager.GetOutputs(state)
+	if err != nil {
+		panic(err)
+	}
+
+	state, err = d.deleteBOSH(state, stack, terraformOutputs)
 	switch err.(type) {
 	case bosh.ManagerDeleteError:
 		mdErr := err.(bosh.ManagerDeleteError)
@@ -314,7 +319,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, terraformOutputs map[string]interface{}) (storage.State, error) {
 	emptyBOSH := storage.BOSH{}
 	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
 		d.logger.Println("no BOSH director, skipping...")
@@ -323,7 +328,7 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack) (st
 
 	d.logger.Step("destroying bosh director")
 
-	err := d.boshManager.Delete(state)
+	err := d.boshManager.Delete(state, terraformOutputs)
 	if err != nil {
 		return state, err
 	}

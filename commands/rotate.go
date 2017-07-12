@@ -9,14 +9,16 @@ const (
 type Rotate struct {
 	stateStore     stateStore
 	keyPairManager keyPairManager
+	terraform      terraformOutputter
 	boshManager    boshManager
 	stateValidator stateValidator
 }
 
-func NewRotate(stateStore stateStore, keyPairManager keyPairManager, boshManager boshManager, stateValidator stateValidator) Rotate {
+func NewRotate(stateStore stateStore, keyPairManager keyPairManager, terraform terraformOutputter, boshManager boshManager, stateValidator stateValidator) Rotate {
 	return Rotate{
 		stateStore:     stateStore,
 		keyPairManager: keyPairManager,
+		terraform:      terraform,
 		boshManager:    boshManager,
 		stateValidator: stateValidator,
 	}
@@ -42,8 +44,13 @@ func (r Rotate) Execute(args []string, state storage.State) error {
 		return err
 	}
 
+	terraformOutputs, err := r.terraform.GetOutputs(state)
+	if err != nil {
+		panic(err)
+	}
+
 	if !state.NoDirector {
-		state, err = r.boshManager.Create(state)
+		state, err = r.boshManager.Create(state, terraformOutputs)
 		if err != nil {
 			return err
 		}

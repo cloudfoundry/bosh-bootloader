@@ -177,6 +177,11 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
+	terraformOutputs, err := u.terraformManager.GetOutputs(state)
+	if err != nil {
+		panic(err)
+	}
+
 	if !state.NoDirector {
 		opsFile := []byte{}
 		if config.OpsFilePath != "" {
@@ -187,7 +192,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		}
 		state.BOSH.UserOpsFile = string(opsFile)
 
-		state, err = u.boshManager.Create(state)
+		state, err = u.boshManager.Create(state, terraformOutputs)
 		switch err.(type) {
 		case bosh.ManagerCreateError:
 			bcErr := err.(bosh.ManagerCreateError)

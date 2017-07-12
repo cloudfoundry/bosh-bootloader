@@ -62,9 +62,9 @@ type terraformManagerError interface {
 }
 
 type boshManager interface {
-	Create(storage.State) (storage.State, error)
-	Delete(storage.State) error
-	GetDeploymentVars(storage.State, map[string]interface{}) (string, error)
+	Create(bblState storage.State, terraformOutputs map[string]interface{}) (storage.State, error)
+	Delete(bblState storage.State, terraformOutputs map[string]interface{}) error
+	GetDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) (string, error)
 	Version() (string, error)
 }
 
@@ -168,9 +168,14 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
+	terraformOutputs, err := u.terraformManager.GetOutputs(state)
+	if err != nil {
+		panic(err)
+	}
+
 	if !state.NoDirector {
 		state.BOSH.UserOpsFile = string(opsFileContents)
-		state, err = u.boshManager.Create(state)
+		state, err = u.boshManager.Create(state, terraformOutputs)
 		switch err.(type) {
 		case bosh.ManagerCreateError:
 			bcErr := err.(bosh.ManagerCreateError)
