@@ -16,6 +16,9 @@ output "bosh_url" {
 resource "aws_iam_role" "bosh" {
   name = "${var.env_id}_bosh_role"
   path = "/"
+  lifecycle {
+    create_before_destroy = true
+  }
 
   assume_role_policy = <<EOF
 {
