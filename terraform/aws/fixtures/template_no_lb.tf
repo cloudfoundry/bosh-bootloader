@@ -11,14 +11,30 @@ output "bosh_url" {
   value = "https://${aws_eip.bosh_eip.public_ip}:25555"
 }
 
-resource "aws_iam_user" "bosh" {
-  name = "${var.env_id}_bosh_user"
+resource "aws_iam_role" "bosh" {
+  name = "${var.env_id}_bosh_role"
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
 }
 
-resource "aws_iam_user_policy" "bosh" {
-  name  = "${var.env_id}_bosh_user_policy"
-  user = "${aws_iam_user.bosh.name}"
-
+resource "aws_iam_policy" "bosh" {
+  name   = "${var.env_id}_bosh_policy"
+  path   = "/"
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -45,32 +61,28 @@ resource "aws_iam_user_policy" "bosh" {
         "ec2:TerminateInstances",
         "ec2:RegisterImage",
         "ec2:DeregisterImage"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
+	  ],
+	  "Effect": "Allow",
+	  "Resource": "*"
     },
-    {
-      "Action": [
-        "elasticloadbalancing:*"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-    }
+	{
+	  "Action": [
+	    "elasticloadbalancing:*"
+	  ],
+	  "Effect": "Allow",
+	  "Resource": "*"
+	}
   ]
 }
 EOF
 }
 
-resource "aws_iam_access_key" "bosh" {
-  user = "${aws_iam_user.bosh.name}"
-}
-
-output "bosh_user_access_key" {
-  value = "${aws_iam_access_key.bosh.id}"
-}
-
-output "bosh_user_secret_access_key" {
-  value = "${aws_iam_access_key.bosh.secret}"
+resource "aws_iam_policy_attachment" "bosh" {
+  name = "${var.env_id}_bosh_policy_attachment"
+  roles = [
+    "${var.env_id}_bosh_role"
+  ]
+  policy_arn = "${aws_iam_policy.bosh.arn}"
 }
 
 variable "nat_ami_map" {
