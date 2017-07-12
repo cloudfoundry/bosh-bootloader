@@ -24,8 +24,6 @@ func (g OutputGenerator) Generate(tfState string) (map[string]interface{}, error
 	outputMapping := map[string]string{
 		"bosh_eip":                      "external_ip",
 		"bosh_url":                      "director_address",
-		"bosh_user_access_key":          "access_key_id",
-		"bosh_user_secret_access_key":   "secret_access_key",
 		"bosh_subnet_id":                "subnet_id",
 		"bosh_subnet_availability_zone": "az",
 		"bosh_security_group":           "default_security_groups",
