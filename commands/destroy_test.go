@@ -422,6 +422,15 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
+			Context("when the terraform manager fails to get outputs", func() {
+				It("returns an error", func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("nope")
+
+					err := destroy.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("nope"))
+				})
+			})
+
 			Context("when bosh delete fails", func() {
 				It("returns an error", func() {
 					boshManager.DeleteCall.Returns.Error = errors.New("bosh delete-env failed")
@@ -525,6 +534,7 @@ var _ = Describe("Destroy", func() {
 						err := destroy.Execute([]string{}, state)
 						Expect(err).NotTo(HaveOccurred())
 
+						Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
 						expectedState := state
 						expectedState.BOSH = storage.BOSH{}
 						Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
@@ -599,12 +609,14 @@ var _ = Describe("Destroy", func() {
 					Expect(logger.StepCall.Messages).To(ContainElement("deleting certificate"))
 				})
 
-				It("doesn't call delete certificate if there is no certificate to delete", func() {
-					state.Stack.CertificateName = ""
-					err := destroy.Execute([]string{}, state)
-					Expect(err).NotTo(HaveOccurred())
+				Context("when there is no certficate to delete", func() {
+					It("doesn't call delete certificate", func() {
+						state.Stack.CertificateName = ""
+						err := destroy.Execute([]string{}, state)
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(certificateDeleter.DeleteCall.CallCount).To(Equal(0))
+						Expect(certificateDeleter.DeleteCall.CallCount).To(Equal(0))
+					})
 				})
 
 				It("deletes the keypair", func() {
@@ -952,6 +964,8 @@ var _ = Describe("Destroy", func() {
 				err := destroy.Execute([]string{}, bblState)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(bblState))
 				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 			})

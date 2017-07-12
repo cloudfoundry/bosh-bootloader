@@ -218,7 +218,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 	terraformOutputs, err := d.terraformManager.GetOutputs(state)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	state, err = d.deleteBOSH(state, stack, terraformOutputs)
