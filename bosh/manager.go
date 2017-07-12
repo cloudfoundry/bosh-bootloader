@@ -27,7 +27,7 @@ type Manager struct {
 	socks5Proxy socks5Proxy
 }
 
-type directorOutputs struct {
+type directorVars struct {
 	directorPassword       string
 	directorSSLCA          string
 	directorSSLCertificate string
@@ -58,7 +58,7 @@ type iaasInputs struct {
 }
 
 type executor interface {
-	Interpolate(InterpolateInput) (InterpolateOutput, error)
+	DirectorInterpolate(InterpolateInput) (InterpolateOutput, error)
 	JumpboxInterpolate(InterpolateInput) (JumpboxInterpolateOutput, error)
 	CreateEnv(CreateEnvInput) (CreateEnvOutput, error)
 	DeleteEnv(DeleteEnvInput) error
@@ -119,7 +119,7 @@ func (m Manager) Create(state storage.State, terraformOutputs map[string]interfa
 
 	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
 
-	interpolateOutputs, err := m.executor.Interpolate(iaasInputs.InterpolateInput)
+	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs.InterpolateInput)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -142,7 +142,7 @@ func (m Manager) Create(state storage.State, terraformOutputs map[string]interfa
 		return storage.State{}, err
 	}
 
-	directorOutputs, err := getDirectorOutputs(interpolateOutputs.Variables)
+	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
 	}
@@ -151,10 +151,10 @@ func (m Manager) Create(state storage.State, terraformOutputs map[string]interfa
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
 		DirectorAddress:        directorAddress,
 		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorOutputs.directorPassword,
-		DirectorSSLCA:          directorOutputs.directorSSLCA,
-		DirectorSSLCertificate: directorOutputs.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorOutputs.directorSSLPrivateKey,
+		DirectorPassword:       directorVars.directorPassword,
+		DirectorSSLCA:          directorVars.directorSSLCA,
+		DirectorSSLCertificate: directorVars.directorSSLCertificate,
+		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
 		Variables:              interpolateOutputs.Variables,
 		State:                  createEnvOutputs.State,
 		Manifest:               interpolateOutputs.Manifest,
@@ -178,7 +178,7 @@ func (m Manager) Delete(state storage.State, terraformOutputs map[string]interfa
 
 	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
 
-	interpolateOutputs, err := m.executor.Interpolate(iaasInputs.InterpolateInput)
+	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs.InterpolateInput)
 	if err != nil {
 		return err
 	}
@@ -304,12 +304,12 @@ func getJumpboxPrivateKey(v string) (string, error) {
 	return jumpboxSSH["private_key"], nil
 }
 
-func getDirectorOutputs(v string) (directorOutputs, error) {
+func getDirectorVars(v string) (directorVars, error) {
 	variables := map[string]interface{}{}
 
 	err := yaml.Unmarshal([]byte(v), &variables)
 	if err != nil {
-		return directorOutputs{}, err
+		return directorVars{}, err
 	}
 
 	directorSSLInterfaceMap := variables["director_ssl"].(map[interface{}]interface{})
@@ -318,7 +318,7 @@ func getDirectorOutputs(v string) (directorOutputs, error) {
 		directorSSL[k.(string)] = v.(string)
 	}
 
-	return directorOutputs{
+	return directorVars{
 		directorPassword:       variables["admin_password"].(string),
 		directorSSLCA:          directorSSL["ca"],
 		directorSSLCertificate: directorSSL["certificate"],

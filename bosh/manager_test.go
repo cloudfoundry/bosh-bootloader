@@ -115,7 +115,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		It("logs bosh director status messages", func() {
-			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+			boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
 				Variables: variablesYAML,
 			}
@@ -128,7 +128,7 @@ var _ = Describe("Manager", func() {
 
 		Context("when iaas is gcp", func() {
 			It("generates a bosh manifest", func() {
-				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+				boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 					Manifest:  "some-manifest",
 					Variables: variablesYAML,
 				}
@@ -144,7 +144,7 @@ var _ = Describe("Manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
-				Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+				Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
 					IAAS: "gcp",
 					DeploymentVars: `internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -169,7 +169,7 @@ gcp_credentials_json: 'some-credential-json'`,
 			})
 
 			It("returns a state with a proper bosh state", func() {
-				boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+				boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 					Manifest:  "some-manifest",
 					Variables: variablesYAML,
 				}
@@ -277,7 +277,7 @@ gcp_credentials_json: 'some-credential-json'`
 						Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 					}
 
-					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
 						Variables: variablesYAML,
 					}
@@ -294,7 +294,7 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+					Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
 						IAAS: "gcp",
 						JumpboxDeploymentVars: jumpboxDeploymentVars,
 						DeploymentVars:        deploymentVars,
@@ -414,7 +414,7 @@ gcp_credentials_json: 'some-credential-json'`
 						"director_address":        "some-bosh-url",
 					}
 
-					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
 						Variables: variablesYAML,
 					}
@@ -431,7 +431,7 @@ gcp_credentials_json: 'some-credential-json'`
 					_, err := boshManager.Create(incomingAWSState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(boshExecutor.InterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+					Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
 						IAAS: "aws",
 						DeploymentVars: `internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -493,7 +493,7 @@ private_key: |-
 		})
 
 		It("creates a bosh environment", func() {
-			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+			boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
 				Variables: variablesYAML,
 			}
@@ -517,7 +517,7 @@ private_key: |-
 			})
 
 			It("returns an error when the executor's interpolate call fails", func() {
-				boshExecutor.InterpolateCall.Returns.Error = errors.New("failed to interpolate")
+				boshExecutor.DirectorInterpolateCall.Returns.Error = errors.New("failed to interpolate")
 
 				_, err := boshManager.Create(incomingGCPState, terraformOutputs)
 				Expect(err).To(MatchError("failed to interpolate"))
@@ -532,7 +532,7 @@ private_key: |-
 
 			Context("when interpolate outputs invalid yaml", func() {
 				It("returns an error", func() {
-					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
 						Variables: "%%%",
 					}
@@ -553,7 +553,7 @@ private_key: |-
 						"partial": "bosh-state",
 					}
 
-					boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 						Manifest:  "some-manifest",
 						Variables: variablesYAML,
 					}
@@ -594,7 +594,7 @@ private_key: |-
 		})
 
 		It("calls delete env", func() {
-			boshExecutor.InterpolateCall.Returns.Output = bosh.InterpolateOutput{
+			boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
 				Variables: variablesYAML,
 			}

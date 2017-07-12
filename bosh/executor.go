@@ -143,7 +143,7 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 	}, nil
 }
 
-func (e Executor) Interpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
+func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
 		return InterpolateOutput{}, err

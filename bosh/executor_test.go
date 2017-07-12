@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("Executor", func() {
-	Describe("Interpolate", func() {
+	Describe("DirectorInterpolate", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -106,7 +106,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				return nil
 			}
 
-			interpolateOutput, err := executor.Interpolate(interpolateInputFunc())
+			interpolateOutput, err := executor.DirectorInterpolate(interpolateInputFunc())
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCallCount()).To(Equal(2))
@@ -201,7 +201,7 @@ gcp_credentials_json: 'some-credential-json'`,
 				Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
 				Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
 
-				interpolateOutput, err := executor.Interpolate(interpolateInput)
+				interpolateOutput, err := executor.DirectorInterpolate(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(2))
@@ -291,7 +291,7 @@ networks
 					return nil
 				}
 
-				interpolateOutput, err := executor.Interpolate(interpolateInput)
+				interpolateOutput, err := executor.DirectorInterpolate(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(2))
@@ -332,7 +332,7 @@ networks
 
 		It("does not pass in false to run command on interpolate", func() {
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-			_, err := executor.Interpolate(awsInterpolateInput)
+			_, err := executor.DirectorInterpolate(awsInterpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -343,7 +343,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.Interpolate(gcpInterpolateInput)
+				_, err := executor.DirectorInterpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to create temp dir"))
 			})
 
@@ -356,7 +356,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(gcpInterpolateInput)
+				_, err := executor.DirectorInterpolate(gcpInterpolateInput)
 				Expect(err).To(MatchError("failed to write variables"))
 			})
 
@@ -369,7 +369,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(bosh.InterpolateInput{})
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{})
 				Expect(err).To(MatchError("failed to write user ops file"))
 			})
 
@@ -382,7 +382,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(bosh.InterpolateInput{})
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{})
 				Expect(err).To(MatchError("failed to write bosh manifest"))
 			})
 
@@ -395,7 +395,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write CPI Ops file"))
@@ -410,7 +410,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write Jumpbox User Ops file"))
@@ -425,7 +425,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS: "gcp",
 				})
 				Expect(err).To(MatchError("failed to write external ip not recommended Ops file"))
@@ -440,7 +440,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("failed to write deployment vars"))
@@ -450,7 +450,7 @@ networks
 				cmd.RunReturnsOnCall(0, errors.New("failed to run command"))
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("failed to run command"))
@@ -460,7 +460,7 @@ networks
 				cmd.RunReturnsOnCall(1, errors.New("failed to run command"))
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS:    "aws",
 					OpsFile: "some-ops-file",
 				})
@@ -473,7 +473,7 @@ networks
 				}
 
 				executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.Interpolate(bosh.InterpolateInput{
+				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("failed to read variables file"))

@@ -35,7 +35,7 @@ type BOSHExecutor struct {
 		}
 	}
 
-	InterpolateCall struct {
+	DirectorInterpolateCall struct {
 		CallCount int
 		Receives  struct {
 			InterpolateInput bosh.InterpolateInput
@@ -76,11 +76,11 @@ func (e *BOSHExecutor) JumpboxInterpolate(input bosh.InterpolateInput) (bosh.Jum
 	return e.JumpboxInterpolateCall.Returns.Output, e.JumpboxInterpolateCall.Returns.Error
 }
 
-func (e *BOSHExecutor) Interpolate(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
-	e.InterpolateCall.CallCount++
-	e.InterpolateCall.Receives.InterpolateInput = input
+func (e *BOSHExecutor) DirectorInterpolate(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
+	e.DirectorInterpolateCall.CallCount++
+	e.DirectorInterpolateCall.Receives.InterpolateInput = input
 
-	return e.InterpolateCall.Returns.Output, e.InterpolateCall.Returns.Error
+	return e.DirectorInterpolateCall.Returns.Output, e.DirectorInterpolateCall.Returns.Error
 }
 
 func (e *BOSHExecutor) Version() (string, error) {
