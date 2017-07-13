@@ -63,7 +63,7 @@ var _ = Describe("lbs test", func() {
 		})
 	})
 
-	It("successfully creates cf lbs", func() {
+	It("successfully creates, updates, and deletes cf lbs", func() {
 		var urlToSSLCert string
 
 		By("creating a load balancer", func() {

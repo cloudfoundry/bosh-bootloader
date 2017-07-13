@@ -27,7 +27,7 @@ var _ = Describe("ops file test", func() {
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "ops-file-env")
 		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
