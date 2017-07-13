@@ -21,6 +21,8 @@ var _ = Describe("OutputGenerator", func() {
 		executor.OutputsCall.Returns.Outputs = map[string]interface{}{
 			"bosh_eip":                             "some-bosh-eip",
 			"bosh_url":                             "some-bosh-url",
+			"bosh_user_access_key":                 "some-bosh-user-access-key",
+			"bosh_user_secret_access_key":          "some-bosh-user-secret-access-key",
 			"bosh_subnet_id":                       "some-bosh-subnet-id",
 			"bosh_subnet_availability_zone":        "some-bosh-subnet-availability-zone",
 			"bosh_security_group":                  "some-bosh-security-group",
@@ -63,6 +65,8 @@ var _ = Describe("OutputGenerator", func() {
 			"az":                                    "some-bosh-subnet-availability-zone",
 			"external_ip":                           "some-bosh-eip",
 			"director_address":                      "some-bosh-url",
+			"access_key_id":                         "some-bosh-user-access-key",
+			"secret_access_key":                     "some-bosh-user-secret-access-key",
 			"subnet_id":                             "some-bosh-subnet-id",
 			"default_security_groups":               "some-bosh-security-group",
 			"internal_security_group":               "some-internal-security-group",

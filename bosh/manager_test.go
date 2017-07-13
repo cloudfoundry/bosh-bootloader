@@ -96,9 +96,7 @@ var _ = Describe("Manager", func() {
 					PrivateKey: "some-private-key",
 				},
 				AWS: storage.AWS{
-					AccessKeyID:     "some-bosh-user-access-key",
-					SecretAccessKey: "some-bosh-user-secret-access-key",
-					Region:          "some-region",
+					Region: "some-region",
 				},
 				BOSH: storage.BOSH{
 					State: map[string]interface{}{
@@ -469,9 +467,7 @@ private_key: |-
 							PrivateKey: "some-private-key",
 						},
 						AWS: storage.AWS{
-							AccessKeyID:     "some-bosh-user-access-key",
-							SecretAccessKey: "some-bosh-user-secret-access-key",
-							Region:          "some-region",
+							Region: "some-region",
 						},
 						BOSH: storage.BOSH{
 							State: map[string]interface{}{
@@ -757,9 +753,7 @@ gcp_credentials_json: 'some-credential-json'`))
 						PrivateKey: "some-private-key",
 					},
 					AWS: storage.AWS{
-						AccessKeyID:     "some-bosh-user-access-key",
-						SecretAccessKey: "some-bosh-user-secret-access-key",
-						Region:          "some-region",
+						Region: "some-region",
 					},
 					BOSH: storage.BOSH{
 						State: map[string]interface{}{
@@ -779,7 +773,9 @@ gcp_credentials_json: 'some-credential-json'`))
 
 				It("returns a correct yaml string of bosh deployment variables", func() {
 					vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
-						"az": "some-bosh-subnet-az",
+						"az":                      "some-bosh-subnet-az",
+						"access_key_id":           "some-bosh-user-access-key",
+						"secret_access_key":       "some-bosh-user-secret-access-key",
 						"default_security_groups": "some-bosh-security-group",
 						"subnet_id":               "some-bosh-subnet",
 						"external_ip":             "some-bosh-elastic-ip",
