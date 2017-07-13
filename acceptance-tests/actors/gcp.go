@@ -134,10 +134,17 @@ func (g GCP) GetHealthCheck(healthCheckName string) (*compute.HttpHealthCheck, e
 
 func (g GCP) NetworkHasBOSHDirector(envID string) bool {
 	list, err := g.service.Instances.List(g.projectID, g.zone).
-		Filter(fmt.Sprintf("network eq %s-network", envID)).
 		Filter("labels.director:bosh-init").
 		Do()
 	Expect(err).NotTo(HaveOccurred())
 
-	return len(list.Items) == 1
+	for _, item := range list.Items {
+		for _, networkInterface := range item.NetworkInterfaces {
+			if strings.Contains(networkInterface.Network, envID) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
