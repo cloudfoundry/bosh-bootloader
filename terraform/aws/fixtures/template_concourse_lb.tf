@@ -80,11 +80,8 @@ resource "aws_iam_policy" "bosh" {
 EOF
 }
 
-resource "aws_iam_policy_attachment" "bosh" {
-  name = "${var.env_id}_bosh_policy_attachment"
-  roles = [
-    "${var.env_id}_bosh_role"
-  ]
+resource "aws_iam_role_policy_attachment" "bosh" {
+  role = "${var.env_id}_bosh_role"
   policy_arn = "${aws_iam_policy.bosh.arn}"
 }
 
