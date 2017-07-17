@@ -247,7 +247,7 @@ gcp_credentials_json: 'some-credential-json'`,
 
 				It("generates a bosh manifest", func() {
 					incomingAWSState.BOSH.UserOpsFile = "some-ops-file"
-					_, err := boshManager.Create(incomingAWSState, terraformOutputs)
+					_, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
@@ -275,7 +275,7 @@ private_key: |-
 				})
 
 				It("returns a state with a proper bosh state", func() {
-					state, err := boshManager.Create(incomingAWSState, terraformOutputs)
+					state, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(state).To(Equal(storage.State{
@@ -317,7 +317,7 @@ private_key: |-
 				Variables: variablesYAML,
 			}
 
-			_, err := boshManager.Create(incomingGCPState, terraformOutputs)
+			_, err := boshManager.CreateDirector(incomingGCPState, terraformOutputs)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.CreateEnvCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
@@ -331,21 +331,21 @@ private_key: |-
 
 		Context("when an error occurs", func() {
 			It("returns an error when an invalid iaas is provided", func() {
-				_, err := boshManager.Create(storage.State{IAAS: "WUT"}, terraformOutputs)
+				_, err := boshManager.CreateDirector(storage.State{IAAS: "WUT"}, terraformOutputs)
 				Expect(err).To(MatchError("A valid IAAS was not provided"))
 			})
 
 			It("returns an error when the executor's interpolate call fails", func() {
 				boshExecutor.DirectorInterpolateCall.Returns.Error = errors.New("failed to interpolate")
 
-				_, err := boshManager.Create(incomingGCPState, terraformOutputs)
+				_, err := boshManager.CreateDirector(incomingGCPState, terraformOutputs)
 				Expect(err).To(MatchError("failed to interpolate"))
 			})
 
 			It("returns an error when the executor's create env call fails with non create env error", func() {
 				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
 
-				_, err := boshManager.Create(incomingGCPState, terraformOutputs)
+				_, err := boshManager.CreateDirector(incomingGCPState, terraformOutputs)
 				Expect(err).To(MatchError("failed to create"))
 			})
 
@@ -356,7 +356,7 @@ private_key: |-
 						Variables: "%%%",
 					}
 
-					_, err := boshManager.Create(storage.State{IAAS: "aws"}, terraformOutputs)
+					_, err := boshManager.CreateDirector(storage.State{IAAS: "aws"}, terraformOutputs)
 					Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
 				})
 			})
@@ -390,7 +390,7 @@ private_key: |-
 				})
 
 				It("returns a bosh manager create error with a valid state", func() {
-					_, err := boshManager.Create(incomingAWSState, terraformOutputs)
+					_, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
 					Expect(err).To(MatchError(expectedError))
 				})
 			})

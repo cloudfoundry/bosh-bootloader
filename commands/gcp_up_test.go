@@ -118,7 +118,8 @@ var _ = Describe("GCPUp", func() {
 		}
 		keyPairManager.SyncCall.Returns.State = expectedKeyPairState
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
-		boshManager.CreateCall.Returns.State = expectedBOSHState
+		boshManager.CreateDirectorCall.Returns.State = expectedBOSHState
+		boshManager.CreateJumpboxCall.Returns.State = expectedBOSHState
 
 		gcpUp = commands.NewGCPUp(commands.NewGCPUpArgs{
 			StateStore:         stateStore,
@@ -221,7 +222,7 @@ var _ = Describe("GCPUp", func() {
 
 			By("creating a bosh", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshManager.CreateCall.Receives.State).To(Equal(expectedTerraformState))
+				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(expectedTerraformState))
 			})
 
 			By("saving the bosh state to the state", func() {
@@ -287,7 +288,7 @@ var _ = Describe("GCPUp", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshManager.CreateCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
+				Expect(boshManager.CreateDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
 			})
 		})
 
@@ -307,7 +308,8 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(Equal(true))
@@ -326,7 +328,8 @@ var _ = Describe("GCPUp", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+					Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(0))
+					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(Equal(true))
@@ -351,7 +354,8 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(boshManager.CreateCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.CallCount).To(Equal(4))
 				Expect(stateStore.SetCall.Receives[0].State.Jumpbox.Enabled).To(Equal(true))
@@ -550,7 +554,7 @@ var _ = Describe("GCPUp", func() {
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(0))
 					Expect(keyPairManager.SyncCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
-					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				})
 			})
 
@@ -786,7 +790,7 @@ var _ = Describe("GCPUp", func() {
 						newState.BOSH.State = expectedBOSHState
 
 						expectedError := bosh.NewManagerCreateError(newState, errors.New("failed to create"))
-						boshManager.CreateCall.Returns.Error = expectedError
+						boshManager.CreateDirectorCall.Returns.Error = expectedError
 					})
 
 					It("returns the error and saves the state", func() {
@@ -812,7 +816,7 @@ var _ = Describe("GCPUp", func() {
 				})
 
 				It("returns an error when bosh manager fails to create a bosh with a non bosh manager create error", func() {
-					boshManager.CreateCall.Returns.Error = errors.New("failed to create")
+					boshManager.CreateDirectorCall.Returns.Error = errors.New("failed to create")
 
 					err := gcpUp.Execute(commands.GCPUpConfig{
 						ServiceAccountKey: serviceAccountKeyPath,

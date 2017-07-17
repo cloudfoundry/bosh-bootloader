@@ -3,7 +3,18 @@ package fakes
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type BOSHManager struct {
-	CreateCall struct {
+	CreateJumpboxCall struct {
+		CallCount int
+		Receives  struct {
+			State            storage.State
+			TerraformOutputs map[string]interface{}
+		}
+		Returns struct {
+			State storage.State
+			Error error
+		}
+	}
+	CreateDirectorCall struct {
 		CallCount int
 		Receives  struct {
 			State            storage.State
@@ -44,12 +55,20 @@ type BOSHManager struct {
 	}
 }
 
-func (b *BOSHManager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	b.CreateCall.CallCount++
-	b.CreateCall.Receives.State = state
+func (b *BOSHManager) CreateJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+	b.CreateJumpboxCall.CallCount++
+	b.CreateJumpboxCall.Receives.State = state
 	b.GetDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
-	state.BOSH = b.CreateCall.Returns.State.BOSH
-	return state, b.CreateCall.Returns.Error
+	state.BOSH = b.CreateJumpboxCall.Returns.State.BOSH
+	return state, b.CreateJumpboxCall.Returns.Error
+}
+
+func (b *BOSHManager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+	b.CreateDirectorCall.CallCount++
+	b.CreateDirectorCall.Receives.State = state
+	b.GetDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
+	state.BOSH = b.CreateDirectorCall.Returns.State.BOSH
+	return state, b.CreateDirectorCall.Returns.Error
 }
 
 func (b *BOSHManager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {

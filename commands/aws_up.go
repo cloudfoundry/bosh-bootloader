@@ -192,7 +192,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		}
 		state.BOSH.UserOpsFile = string(opsFile)
 
-		state, err = u.boshManager.Create(state, terraformOutputs)
+		state, err = u.boshManager.CreateDirector(state, terraformOutputs)
 		switch err.(type) {
 		case bosh.ManagerCreateError:
 			bcErr := err.(bosh.ManagerCreateError)

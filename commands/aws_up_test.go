@@ -59,7 +59,7 @@ var _ = Describe("AWSUp", func() {
 			}
 
 			boshManager = &fakes.BOSHManager{}
-			boshManager.CreateCall.Returns.State = storage.State{
+			boshManager.CreateDirectorCall.Returns.State = storage.State{
 				BOSH: storage.BOSH{
 					DirectorName:           "bosh-bbl-lake-time:stamp",
 					DirectorUsername:       "admin",
@@ -321,7 +321,7 @@ var _ = Describe("AWSUp", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.Receives[1].State.NoDirector).To(BeTrue())
@@ -337,7 +337,7 @@ var _ = Describe("AWSUp", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-					Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 					Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
@@ -383,7 +383,7 @@ var _ = Describe("AWSUp", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
-			Expect(boshManager.CreateCall.Receives.State).To(Equal(incomingState))
+			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(incomingState))
 		})
 
 		Context("when ops file are passed in via --ops-file flag", func() {
@@ -406,7 +406,7 @@ var _ = Describe("AWSUp", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshManager.CreateCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
+				Expect(boshManager.CreateDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
 			})
 		})
 
@@ -663,7 +663,7 @@ var _ = Describe("AWSUp", func() {
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
-				boshManager.CreateCall.Returns.Error = errors.New("cannot deploy bosh")
+				boshManager.CreateDirectorCall.Returns.Error = errors.New("cannot deploy bosh")
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
@@ -718,7 +718,7 @@ var _ = Describe("AWSUp", func() {
 					newState := incomingState
 					newState.BOSH.State = expectedBOSHState
 					expectedError := bosh.NewManagerCreateError(newState, errors.New("failed to create"))
-					boshManager.CreateCall.Returns.Error = expectedError
+					boshManager.CreateDirectorCall.Returns.Error = expectedError
 				})
 
 				It("returns the error and saves the state", func() {

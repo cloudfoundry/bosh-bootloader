@@ -50,7 +50,7 @@ func (r Rotate) Execute(args []string, state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		state, err = r.boshManager.Create(state, terraformOutputs)
+		state, err = r.boshManager.CreateDirector(state, terraformOutputs)
 		if err != nil {
 			return err
 		}

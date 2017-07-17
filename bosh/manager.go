@@ -89,21 +89,140 @@ func (m Manager) Version() (string, error) {
 	return version, err
 }
 
-func (m Manager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
+	m.logger.Step("creating jumpbox")
+
+	m.iaasInputs, err = m.generateIAASInputs(state)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	m.iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+	if err != nil {
+		return storage.State{}, err //not tested
+	}
+	interpolateOutputs, err := m.executor.JumpboxInterpolate(m.iaasInputs)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	variables, err := yaml.Marshal(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	osUnsetenv("BOSH_ALL_PROXY")
+	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
+		Manifest:  interpolateOutputs.Manifest,
+		State:     state.Jumpbox.State,
+		Variables: string(variables),
+	})
+	switch err.(type) {
+	case CreateEnvError:
+		ceErr := err.(CreateEnvError)
+		state.Jumpbox = storage.Jumpbox{
+			Enabled:   true,
+			Variables: interpolateOutputs.Variables,
+			State:     ceErr.BOSHState(),
+			Manifest:  interpolateOutputs.Manifest,
+		}
+		return storage.State{}, NewManagerCreateError(state, err)
+	case error:
+		return storage.State{}, err
+	}
+
+	state.Jumpbox = storage.Jumpbox{
+		Enabled:   true,
+		Variables: interpolateOutputs.Variables,
+		State:     createEnvOutputs.State,
+		Manifest:  interpolateOutputs.Manifest,
+		URL:       terraformOutputs["jumpbox_url"].(string),
+	}
+
+	m.logger.Step("created jumpbox")
+
+	m.logger.Step("starting socks5 proxy to jumpbox")
+	jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+
+	return state, nil
+}
+
+func (m Manager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+	var err error
+	var directorAddress string
+
+	directorAddress = terraformOutputs["director_address"].(string)
 
 	if state.Jumpbox.Enabled {
-		state, err = m.CreateJumpbox(state, terraformOutputs)
+		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
+	} else {
+		m.iaasInputs, err = m.generateIAASInputs(state)
 		if err != nil {
 			return storage.State{}, err
 		}
 	}
 
-	state, err = m.CreateDirector(state, terraformOutputs)
+	m.logger.Step("creating bosh director")
+	m.iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
+	if err != nil {
+		return storage.State{}, err //not tested
+	}
+
+	m.iaasInputs.OpsFile = state.BOSH.UserOpsFile
+
+	interpolateOutputs, err := m.executor.DirectorInterpolate(m.iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
 
+	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
+		Manifest:  interpolateOutputs.Manifest,
+		State:     state.BOSH.State,
+		Variables: interpolateOutputs.Variables,
+	})
+	switch err.(type) {
+	case CreateEnvError:
+		ceErr := err.(CreateEnvError)
+		state.BOSH = storage.BOSH{
+			Variables: interpolateOutputs.Variables,
+			State:     ceErr.BOSHState(),
+			Manifest:  interpolateOutputs.Manifest,
+		}
+		return storage.State{}, NewManagerCreateError(state, err)
+	case error:
+		return storage.State{}, err
+	}
+
+	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
+	}
+
+	state.BOSH = storage.BOSH{
+		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
+		DirectorAddress:        directorAddress,
+		DirectorUsername:       DIRECTOR_USERNAME,
+		DirectorPassword:       directorVars.directorPassword,
+		DirectorSSLCA:          directorVars.directorSSLCA,
+		DirectorSSLCertificate: directorVars.directorSSLCertificate,
+		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
+		Variables:              interpolateOutputs.Variables,
+		State:                  createEnvOutputs.State,
+		Manifest:               interpolateOutputs.Manifest,
+	}
+
+	m.logger.Step("created bosh director")
 	return state, nil
 }
 
@@ -264,141 +383,4 @@ func getDirectorVars(v string) (directorVars, error) {
 		directorSSLCertificate: directorSSL["certificate"],
 		directorSSLPrivateKey:  directorSSL["private_key"],
 	}, nil
-}
-
-func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	var err error
-	m.logger.Step("creating jumpbox")
-
-	m.iaasInputs, err = m.generateIAASInputs(state)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	m.iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return storage.State{}, err //not tested
-	}
-	interpolateOutputs, err := m.executor.JumpboxInterpolate(m.iaasInputs)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	variables, err := yaml.Marshal(interpolateOutputs.Variables)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	osUnsetenv("BOSH_ALL_PROXY")
-	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
-		Manifest:  interpolateOutputs.Manifest,
-		State:     state.Jumpbox.State,
-		Variables: string(variables),
-	})
-	switch err.(type) {
-	case CreateEnvError:
-		ceErr := err.(CreateEnvError)
-		state.Jumpbox = storage.Jumpbox{
-			Enabled:   true,
-			Variables: interpolateOutputs.Variables,
-			State:     ceErr.BOSHState(),
-			Manifest:  interpolateOutputs.Manifest,
-		}
-		return storage.State{}, NewManagerCreateError(state, err)
-	case error:
-		return storage.State{}, err
-	}
-
-	state.Jumpbox = storage.Jumpbox{
-		Enabled:   true,
-		Variables: interpolateOutputs.Variables,
-		State:     createEnvOutputs.State,
-		Manifest:  interpolateOutputs.Manifest,
-		URL:       terraformOutputs["jumpbox_url"].(string),
-	}
-
-	m.logger.Step("created jumpbox")
-
-	m.logger.Step("starting socks5 proxy to jumpbox")
-	jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
-
-	return state, nil
-}
-
-func (m Manager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	var err error
-	var directorAddress string
-
-	directorAddress = terraformOutputs["director_address"].(string)
-
-	if state.Jumpbox.Enabled {
-		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
-	} else {
-		m.iaasInputs, err = m.generateIAASInputs(state)
-		if err != nil {
-			return storage.State{}, err
-		}
-	}
-
-	m.logger.Step("creating bosh director")
-	m.iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return storage.State{}, err //not tested
-	}
-
-	m.iaasInputs.OpsFile = state.BOSH.UserOpsFile
-
-	interpolateOutputs, err := m.executor.DirectorInterpolate(m.iaasInputs)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
-		Manifest:  interpolateOutputs.Manifest,
-		State:     state.BOSH.State,
-		Variables: interpolateOutputs.Variables,
-	})
-	switch err.(type) {
-	case CreateEnvError:
-		ceErr := err.(CreateEnvError)
-		state.BOSH = storage.BOSH{
-			Variables: interpolateOutputs.Variables,
-			State:     ceErr.BOSHState(),
-			Manifest:  interpolateOutputs.Manifest,
-		}
-		return storage.State{}, NewManagerCreateError(state, err)
-	case error:
-		return storage.State{}, err
-	}
-
-	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
-	}
-
-	state.BOSH = storage.BOSH{
-		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
-		DirectorAddress:        directorAddress,
-		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorVars.directorPassword,
-		DirectorSSLCA:          directorVars.directorSSLCA,
-		DirectorSSLCertificate: directorVars.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
-		Variables:              interpolateOutputs.Variables,
-		State:                  createEnvOutputs.State,
-		Manifest:               interpolateOutputs.Manifest,
-	}
-
-	m.logger.Step("created bosh director")
-	return state, nil
 }

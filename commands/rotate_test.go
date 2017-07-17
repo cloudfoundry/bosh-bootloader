@@ -60,7 +60,7 @@ var _ = Describe("Rotate", func() {
 				},
 			}
 
-			boshManager.CreateCall.Returns.State = storage.State{
+			boshManager.CreateDirectorCall.Returns.State = storage.State{
 				KeyPair: storage.KeyPair{
 					Name:       "some-new-name",
 					PrivateKey: "some-new-private-key",
@@ -100,8 +100,8 @@ var _ = Describe("Rotate", func() {
 			err := command.Execute([]string{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshManager.CreateCall.CallCount).To(Equal(1))
-			Expect(boshManager.CreateCall.Receives.State).To(Equal(storage.State{
+			Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
+			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(storage.State{
 				KeyPair: storage.KeyPair{
 					Name:       "some-new-name",
 					PrivateKey: "some-new-private-key",
@@ -131,7 +131,7 @@ var _ = Describe("Rotate", func() {
 				err := command.Execute([]string{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshManager.CreateCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
 			})
 		})
@@ -156,7 +156,7 @@ var _ = Describe("Rotate", func() {
 			})
 
 			It("returns an error when boshManager create fails", func() {
-				boshManager.CreateCall.Returns.Error = errors.New("failed to create")
+				boshManager.CreateDirectorCall.Returns.Error = errors.New("failed to create")
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("failed to create"))
 			})
