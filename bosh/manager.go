@@ -93,13 +93,13 @@ func (m Manager) Create(state storage.State, terraformOutputs map[string]interfa
 	var err error
 
 	if state.Jumpbox.Enabled {
-		state, err = m.createJumpbox(state, terraformOutputs)
+		state, err = m.CreateJumpbox(state, terraformOutputs)
 		if err != nil {
 			return storage.State{}, err
 		}
 	}
 
-	state, err = m.createDirector(state, terraformOutputs)
+	state, err = m.CreateDirector(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -266,7 +266,7 @@ func getDirectorVars(v string) (directorVars, error) {
 	}, nil
 }
 
-func (m *Manager) createJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
 	m.logger.Step("creating jumpbox")
 
@@ -335,7 +335,7 @@ func (m *Manager) createJumpbox(state storage.State, terraformOutputs map[string
 	return state, nil
 }
 
-func (m Manager) createDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (m Manager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
 	var directorAddress string
 
