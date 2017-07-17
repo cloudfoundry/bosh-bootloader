@@ -91,10 +91,6 @@ func (m Manager) Version() (string, error) {
 
 func (m Manager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
-	m.iaasInputs, err = m.generateIAASInputs(state)
-	if err != nil {
-		return storage.State{}, err
-	}
 
 	if state.Jumpbox.Enabled {
 		state, err = m.createJumpbox(state, terraformOutputs)
@@ -274,6 +270,11 @@ func (m *Manager) createJumpbox(state storage.State, terraformOutputs map[string
 	var err error
 	m.logger.Step("creating jumpbox")
 
+	m.iaasInputs, err = m.generateIAASInputs(state)
+	if err != nil {
+		return storage.State{}, err
+	}
+
 	m.iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err //not tested
@@ -342,6 +343,11 @@ func (m Manager) createDirector(state storage.State, terraformOutputs map[string
 
 	if state.Jumpbox.Enabled {
 		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
+	} else {
+		m.iaasInputs, err = m.generateIAASInputs(state)
+		if err != nil {
+			return storage.State{}, err
+		}
 	}
 
 	m.logger.Step("creating bosh director")
