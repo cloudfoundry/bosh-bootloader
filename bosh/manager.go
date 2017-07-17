@@ -93,10 +93,6 @@ func (m Manager) Version() (string, error) {
 }
 
 func (m Manager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	var directorAddress string
-
-	directorAddress = terraformOutputs["director_address"].(string)
-
 	iaasInputs, err := m.generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
@@ -107,60 +103,12 @@ func (m Manager) Create(state storage.State, terraformOutputs map[string]interfa
 		if err != nil {
 			return storage.State{}, err
 		}
-
-		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
 	}
 
-	m.logger.Step("creating bosh director")
-	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return storage.State{}, err //not tested
-	}
-
-	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
-
-	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs.InterpolateInput)
+	state, err = m.createDirector(state, &iaasInputs, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err
 	}
-
-	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
-		Manifest:  interpolateOutputs.Manifest,
-		State:     state.BOSH.State,
-		Variables: interpolateOutputs.Variables,
-	})
-	switch err.(type) {
-	case CreateEnvError:
-		ceErr := err.(CreateEnvError)
-		state.BOSH = storage.BOSH{
-			Variables: interpolateOutputs.Variables,
-			State:     ceErr.BOSHState(),
-			Manifest:  interpolateOutputs.Manifest,
-		}
-		return storage.State{}, NewManagerCreateError(state, err)
-	case error:
-		return storage.State{}, err
-	}
-
-	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
-	}
-
-	state.BOSH = storage.BOSH{
-		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
-		DirectorAddress:        directorAddress,
-		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorVars.directorPassword,
-		DirectorSSLCA:          directorVars.directorSSLCA,
-		DirectorSSLCertificate: directorVars.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
-		Variables:              interpolateOutputs.Variables,
-		State:                  createEnvOutputs.State,
-		Manifest:               interpolateOutputs.Manifest,
-	}
-
-	m.logger.Step("created bosh director")
 
 	return state, nil
 }
@@ -387,5 +335,68 @@ func (m Manager) createJumpbox(state storage.State, iaasInputs *iaasInputs, terr
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
 
+	return state, nil
+}
+
+func (m Manager) createDirector(state storage.State, iaasInputs *iaasInputs, terraformOutputs map[string]interface{}) (storage.State, error) {
+	var err error
+	var directorAddress string
+
+	directorAddress = terraformOutputs["director_address"].(string)
+
+	if state.Jumpbox.Enabled {
+		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
+	}
+
+	m.logger.Step("creating bosh director")
+	iaasInputs.InterpolateInput.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
+	if err != nil {
+		return storage.State{}, err //not tested
+	}
+
+	iaasInputs.InterpolateInput.OpsFile = state.BOSH.UserOpsFile
+
+	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs.InterpolateInput)
+	if err != nil {
+		return storage.State{}, err
+	}
+
+	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
+		Manifest:  interpolateOutputs.Manifest,
+		State:     state.BOSH.State,
+		Variables: interpolateOutputs.Variables,
+	})
+	switch err.(type) {
+	case CreateEnvError:
+		ceErr := err.(CreateEnvError)
+		state.BOSH = storage.BOSH{
+			Variables: interpolateOutputs.Variables,
+			State:     ceErr.BOSHState(),
+			Manifest:  interpolateOutputs.Manifest,
+		}
+		return storage.State{}, NewManagerCreateError(state, err)
+	case error:
+		return storage.State{}, err
+	}
+
+	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
+	}
+
+	state.BOSH = storage.BOSH{
+		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
+		DirectorAddress:        directorAddress,
+		DirectorUsername:       DIRECTOR_USERNAME,
+		DirectorPassword:       directorVars.directorPassword,
+		DirectorSSLCA:          directorVars.directorSSLCA,
+		DirectorSSLCertificate: directorVars.directorSSLCertificate,
+		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
+		Variables:              interpolateOutputs.Variables,
+		State:                  createEnvOutputs.State,
+		Manifest:               interpolateOutputs.Manifest,
+	}
+
+	m.logger.Step("created bosh director")
 	return state, nil
 }
