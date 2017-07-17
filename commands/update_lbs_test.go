@@ -39,7 +39,7 @@ var _ = Describe("Update LBs", func() {
 		)
 
 		BeforeEach(func() {
-			boshManager.VersionCall.Returns.Version = "2.0.0"
+			boshManager.VersionCall.Returns.Version = "2.0.24"
 
 			incomingState = storage.State{
 				IAAS: "aws",
@@ -100,15 +100,15 @@ var _ = Describe("Update LBs", func() {
 			})
 		})
 
-		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
 				err := command.CheckFastFails([]string{}, incomingState)
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
 			})
 		})
 
-		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+		Context("when the BOSH version is less than 2.0.24 and there is no director", func() {
 			It("returns no error", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
 				err := command.CheckFastFails([]string{}, storage.State{

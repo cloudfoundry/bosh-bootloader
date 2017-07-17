@@ -865,14 +865,14 @@ private_key: |-
 			socks5Proxy = &fakes.Socks5Proxy{}
 			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
 
-			boshExecutor.VersionCall.Returns.Version = "2.0.0"
+			boshExecutor.VersionCall.Returns.Version = "2.0.24"
 		})
 
 		It("calls out to bosh executor version", func() {
 			version, err := boshManager.Version()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshExecutor.VersionCall.CallCount).To(Equal(1))
-			Expect(version).To(Equal("2.0.0"))
+			Expect(version).To(Equal("2.0.24"))
 		})
 
 		Context("when executor returns a bosh version error", func() {

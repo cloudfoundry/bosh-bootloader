@@ -30,7 +30,7 @@ var _ = Describe("Up", func() {
 		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
 		fakeEnvGetter = &fakes.EnvGetter{}
 		fakeBOSHManager = &fakes.BOSHManager{}
-		fakeBOSHManager.VersionCall.Returns.Version = "2.0.0"
+		fakeBOSHManager.VersionCall.Returns.Version = "2.0.24"
 
 		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter, fakeBOSHManager)
 	})
@@ -48,14 +48,14 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the version of BOSH is lower than 2.0.0", func() {
+		Context("when the version of BOSH is lower than 2.0.24", func() {
 			It("returns a helpful error message when bbling up with a director", func() {
 				fakeBOSHManager.VersionCall.Returns.Version = "1.9.1"
 				err := command.CheckFastFails([]string{
 					"--iaas", "aws",
 				}, storage.State{Version: 999})
 
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
 			})
 
 			Context("when the no-director flag is specified", func() {

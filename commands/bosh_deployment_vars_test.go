@@ -27,7 +27,7 @@ var _ = Describe("BOSHDeploymentVars", func() {
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
 
-		boshManager.VersionCall.Returns.Version = "2.0.0"
+		boshManager.VersionCall.Returns.Version = "2.0.24"
 
 		terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{"some-name": "some-output"}
 
@@ -41,14 +41,14 @@ var _ = Describe("BOSHDeploymentVars", func() {
 			Expect(err).To(MatchError("failed to validate state"))
 		})
 
-		Context("when the bosh installed has a version less than v2.0.0", func() {
+		Context("when the bosh installed has a version less than v2.0.24", func() {
 			BeforeEach(func() {
-				boshManager.VersionCall.Returns.Version = "1.9.9"
+				boshManager.VersionCall.Returns.Version = "1.9.0"
 			})
 
 			It("returns an error", func() {
 				err := boshDeploymentVars.CheckFastFails([]string{}, storage.State{})
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
 			})
 
 			Context("when the state has no director", func() {

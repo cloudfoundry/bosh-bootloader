@@ -29,7 +29,7 @@ var _ = Describe("DeleteLBs", func() {
 		stateValidator = &fakes.StateValidator{}
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
-		boshManager.VersionCall.Returns.Version = "2.0.0"
+		boshManager.VersionCall.Returns.Version = "2.0.24"
 
 		command = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
 	})
@@ -43,7 +43,7 @@ var _ = Describe("DeleteLBs", func() {
 			Expect(err).To(MatchError("state validator failed"))
 		})
 
-		Context("when the BOSH version is less than 2.0.0 and there is a director", func() {
+		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
 				err := command.CheckFastFails([]string{}, storage.State{
@@ -52,11 +52,11 @@ var _ = Describe("DeleteLBs", func() {
 						Type: "concourse",
 					},
 				})
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.0"))
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
 			})
 		})
 
-		Context("when the BOSH version is less than 2.0.0 and there is no director", func() {
+		Context("when the BOSH version is less than 2.0.24 and there is no director", func() {
 			It("does not fast fail", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
 				err := command.CheckFastFails([]string{}, storage.State{
