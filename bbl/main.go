@@ -72,7 +72,6 @@ func main() {
 	}
 
 	// Utilities
-	stringGenerator := helpers.NewStringGenerator(rand.Reader)
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	envGetter := helpers.NewEnvGetter()
 	logger := application.NewLogger(os.Stdout)
@@ -224,7 +223,7 @@ func main() {
 	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
 	commandSet[commands.DestroyCommand] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
-		stringGenerator, infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
+		infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
 	commandSet[commands.DownCommand] = commandSet[commands.DestroyCommand]

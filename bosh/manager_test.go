@@ -29,7 +29,7 @@ var _ = Describe("Manager", func() {
 			boshExecutor     *fakes.BOSHExecutor
 			logger           *fakes.Logger
 			socks5Proxy      *fakes.Socks5Proxy
-			boshManager      bosh.Manager
+			boshManager      *bosh.Manager
 			incomingGCPState storage.State
 			incomingAWSState storage.State
 			terraformOutputs map[string]interface{}
@@ -402,7 +402,7 @@ private_key: |-
 			boshExecutor     *fakes.BOSHExecutor
 			logger           *fakes.Logger
 			socks5Proxy      *fakes.Socks5Proxy
-			boshManager      bosh.Manager
+			boshManager      *bosh.Manager
 			incomingGCPState storage.State
 			terraformOutputs map[string]interface{}
 
@@ -636,7 +636,7 @@ gcp_credentials_json: 'some-credential-json'`
 			boshExecutor *fakes.BOSHExecutor
 			logger       *fakes.Logger
 			socks5Proxy  *fakes.Socks5Proxy
-			boshManager  bosh.Manager
+			boshManager  *bosh.Manager
 		)
 
 		BeforeEach(func() {
@@ -729,7 +729,7 @@ gcp_credentials_json: 'some-credential-json'`
 			boshExecutor *fakes.BOSHExecutor
 			logger       *fakes.Logger
 			socks5Proxy  *fakes.Socks5Proxy
-			boshManager  bosh.Manager
+			boshManager  *bosh.Manager
 		)
 
 		BeforeEach(func() {
@@ -860,7 +860,7 @@ private_key: |-
 			boshExecutor *fakes.BOSHExecutor
 			logger       *fakes.Logger
 			socks5Proxy  *fakes.Socks5Proxy
-			boshManager  bosh.Manager
+			boshManager  *bosh.Manager
 		)
 
 		BeforeEach(func() {

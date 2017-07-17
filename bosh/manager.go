@@ -72,15 +72,15 @@ type socks5Proxy interface {
 	Addr() string
 }
 
-func NewManager(executor executor, logger logger, socks5Proxy socks5Proxy) Manager {
-	return Manager{
+func NewManager(executor executor, logger logger, socks5Proxy socks5Proxy) *Manager {
+	return &Manager{
 		executor:    executor,
 		logger:      logger,
 		socks5Proxy: socks5Proxy,
 	}
 }
 
-func (m Manager) Version() (string, error) {
+func (m *Manager) Version() (string, error) {
 	version, err := m.executor.Version()
 	switch err.(type) {
 	case BOSHVersionError:
@@ -93,7 +93,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	var err error
 	m.logger.Step("creating jumpbox")
 
-	m.iaasInputs, err = m.generateIAASInputs(state)
+	m.iaasInputs, err = generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -158,7 +158,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	return state, nil
 }
 
-func (m Manager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
 	var directorAddress string
 
@@ -167,7 +167,7 @@ func (m Manager) CreateDirector(state storage.State, terraformOutputs map[string
 	if state.Jumpbox.Enabled {
 		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
 	} else {
-		m.iaasInputs, err = m.generateIAASInputs(state)
+		m.iaasInputs, err = generateIAASInputs(state)
 		if err != nil {
 			return storage.State{}, err
 		}
@@ -226,8 +226,8 @@ func (m Manager) CreateDirector(state storage.State, terraformOutputs map[string
 	return state, nil
 }
 
-func (m Manager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
-	iaasInputs, err := m.generateIAASInputs(state)
+func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
+	iaasInputs, err := generateIAASInputs(state)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (m Manager) Delete(state storage.State, terraformOutputs map[string]interfa
 	return nil
 }
 
-func (m Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
+func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
 	vars := strings.Join([]string{
 		"internal_cidr: 10.0.0.0/24",
 		"internal_gw: 10.0.0.1",
@@ -279,7 +279,7 @@ func (m Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs 
 	return strings.TrimSuffix(vars, "\n"), nil
 }
 
-func (m Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
+func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
 	var vars string
 
 	switch state.IAAS {
@@ -333,7 +333,7 @@ func (m Manager) GetDeploymentVars(state storage.State, terraformOutputs map[str
 	return strings.TrimSuffix(vars, "\n"), nil
 }
 
-func (m Manager) generateIAASInputs(state storage.State) (InterpolateInput, error) {
+func generateIAASInputs(state storage.State) (InterpolateInput, error) {
 	switch state.IAAS {
 	case "gcp", "aws":
 		return InterpolateInput{
