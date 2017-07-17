@@ -25,6 +25,7 @@ type Manager struct {
 	executor    executor
 	logger      logger
 	socks5Proxy socks5Proxy
+	iaasInputs  InterpolateInput
 }
 
 type directorVars struct {
@@ -89,19 +90,20 @@ func (m Manager) Version() (string, error) {
 }
 
 func (m Manager) Create(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	iaasInputs, err := m.generateIAASInputs(state)
+	var err error
+	m.iaasInputs, err = m.generateIAASInputs(state)
 	if err != nil {
 		return storage.State{}, err
 	}
 
 	if state.Jumpbox.Enabled {
-		state, err = m.createJumpbox(state, &iaasInputs, terraformOutputs)
+		state, err = m.createJumpbox(state, terraformOutputs)
 		if err != nil {
 			return storage.State{}, err
 		}
 	}
 
-	state, err = m.createDirector(state, &iaasInputs, terraformOutputs)
+	state, err = m.createDirector(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -268,15 +270,15 @@ func getDirectorVars(v string) (directorVars, error) {
 	}, nil
 }
 
-func (m Manager) createJumpbox(state storage.State, iaasInputs *InterpolateInput, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (m *Manager) createJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
 	m.logger.Step("creating jumpbox")
-	iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+
+	m.iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err //not tested
 	}
-
-	interpolateOutputs, err := m.executor.JumpboxInterpolate(*iaasInputs)
+	interpolateOutputs, err := m.executor.JumpboxInterpolate(m.iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -332,7 +334,7 @@ func (m Manager) createJumpbox(state storage.State, iaasInputs *InterpolateInput
 	return state, nil
 }
 
-func (m Manager) createDirector(state storage.State, iaasInputs *InterpolateInput, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (m Manager) createDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	var err error
 	var directorAddress string
 
@@ -343,14 +345,14 @@ func (m Manager) createDirector(state storage.State, iaasInputs *InterpolateInpu
 	}
 
 	m.logger.Step("creating bosh director")
-	iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
+	m.iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return storage.State{}, err //not tested
 	}
 
-	iaasInputs.OpsFile = state.BOSH.UserOpsFile
+	m.iaasInputs.OpsFile = state.BOSH.UserOpsFile
 
-	interpolateOutputs, err := m.executor.DirectorInterpolate(*iaasInputs)
+	interpolateOutputs, err := m.executor.DirectorInterpolate(m.iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
