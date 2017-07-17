@@ -25,7 +25,6 @@ type Destroy struct {
 	boshManager             boshManager
 	vpcStatusChecker        vpcStatusChecker
 	stackManager            stackManager
-	stringGenerator         stringGenerator
 	infrastructureManager   infrastructureManager
 	awsKeyPairDeleter       awsKeyPairDeleter
 	gcpKeyPairDeleter       gcpKeyPairDeleter
@@ -57,10 +56,6 @@ type stackManager interface {
 	Describe(string) (cloudformation.Stack, error)
 }
 
-type stringGenerator interface {
-	Generate(prefix string, length int) (string, error)
-}
-
 type certificateDeleter interface {
 	Delete(certificateName string) error
 }
@@ -75,7 +70,7 @@ type networkInstancesChecker interface {
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
-	stringGenerator stringGenerator, infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
+	infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
 	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
 	terraformManager terraformDestroyer, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
@@ -85,7 +80,6 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		boshManager:             boshManager,
 		vpcStatusChecker:        vpcStatusChecker,
 		stackManager:            stackManager,
-		stringGenerator:         stringGenerator,
 		infrastructureManager:   infrastructureManager,
 		awsKeyPairDeleter:       awsKeyPairDeleter,
 		gcpKeyPairDeleter:       gcpKeyPairDeleter,

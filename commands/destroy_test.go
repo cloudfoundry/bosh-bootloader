@@ -25,7 +25,6 @@ var _ = Describe("Destroy", func() {
 		stackManager            *fakes.StackManager
 		infrastructureManager   *fakes.InfrastructureManager
 		vpcStatusChecker        *fakes.VPCStatusChecker
-		stringGenerator         *fakes.StringGenerator
 		logger                  *fakes.Logger
 		awsKeyPairDeleter       *fakes.AWSKeyPairDeleter
 		gcpKeyPairDeleter       *fakes.GCPKeyPairDeleter
@@ -51,7 +50,6 @@ var _ = Describe("Destroy", func() {
 		awsKeyPairDeleter = &fakes.AWSKeyPairDeleter{}
 		gcpKeyPairDeleter = &fakes.GCPKeyPairDeleter{}
 		certificateDeleter = &fakes.CertificateDeleter{}
-		stringGenerator = &fakes.StringGenerator{}
 		credentialValidator = &fakes.CredentialValidator{}
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
@@ -60,7 +58,7 @@ var _ = Describe("Destroy", func() {
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
-			vpcStatusChecker, stackManager, stringGenerator, infrastructureManager,
+			vpcStatusChecker, stackManager, infrastructureManager,
 			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
 			stateValidator, terraformManager, networkInstancesChecker)
 	})
