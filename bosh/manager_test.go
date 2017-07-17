@@ -214,10 +214,6 @@ gcp_credentials_json: 'some-credential-json'`,
 					},
 				}))
 			})
-
-			Context("when jumpbox enabled is true", func() {
-
-			})
 		})
 
 		Context("when iaas is aws", func() {
