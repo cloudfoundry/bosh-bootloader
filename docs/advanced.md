@@ -92,7 +92,12 @@ $ bosh deployments
 The ``--no-director`` flag can also be used to create the necessary IaaS configuration for [concourse-deployment](https://github.com/concourse/concourse-deployment), a minimal version of concourse deployed with `bosh create-env`.
 ```
 mkdir -p ~/environments/concourse/
-bbl up --state-dir ~/my-bbl-states/concourse/ --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-project-14478532 --iaas gcp --no-director
+bbl up --state-dir ~/my-bbl-states/concourse/ \
+       --gcp-zone us-west1-a --gcp-region us-west1 \
+       --gcp-service-account-key service-account.key.json
+       --gcp-project-id my-project-14478532 \
+       --iaas gcp \
+       --no-director
 ```
 
 Next we follow the deployment instructions in [concourse-deployment](https://github.com/concourse/concourse-deployment), however, many of the network related variables are supplied by `bosh-deployment-vars`
