@@ -96,7 +96,7 @@ bbl up --state-dir ~/my-bbl-states/concourse/ \
        --gcp-zone us-west1-a --gcp-region us-west1 \
        --gcp-service-account-key service-account.key.json
        --gcp-project-id my-project-14478532 \
-       --iaas gcp \
+       --iaas gcp --name concourse \
        --no-director
 ```
 
@@ -110,4 +110,4 @@ bosh create-env concourse-deployment/concourse.yml  \
   -l <(bbl --state-dir ~/environments/concourse bosh-deployment-vars | sed 's/external_ip/public_ip/')
 ```
 
-Now you should be able to see your new concourse at `https://<bbl director-address>`.
+Last, open port 4443 on the firewall rule concourse-bosh-open. Now you should be able to see your new concourse at `https://<bbl director-address>:4443`.
