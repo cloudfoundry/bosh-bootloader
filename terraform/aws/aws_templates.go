@@ -93,7 +93,7 @@ variable "nat_ami_map" {
 }
 
 resource "aws_security_group" "nat_security_group" {
-  description = "{{.NAT}}"
+  description = "{{.NATDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -175,7 +175,7 @@ provider "aws" {
 }
 
 resource "aws_security_group" "internal_security_group" {
-  description = "{{.Internal}}"
+  description = "{{.InternalDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
@@ -228,7 +228,7 @@ variable "bosh_inbound_cidr" {
 }
 
 resource "aws_security_group" "bosh_security_group" {
-  description = "{{.BOSH}}"
+  description = "{{.BOSHDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
@@ -324,7 +324,6 @@ variable "bosh_availability_zone" {
 resource "aws_subnet" "bosh_subnet" {
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${var.bosh_subnet_cidr}"
-  availability_zone = "${var.bosh_availability_zone}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"
@@ -333,11 +332,12 @@ resource "aws_subnet" "bosh_subnet" {
 
 resource "aws_route_table" "bosh_route_table" {
   vpc_id = "${aws_vpc.vpc.id}"
+}
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.ig.id}"
-  }
+resource "aws_route" "bosh_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = "${aws_internet_gateway.ig.id}"
+  route_table_id = "${aws_route_table.bosh_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_bosh_subnets" {
@@ -361,20 +361,24 @@ resource "aws_subnet" "internal_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.0.0/16", 4, count.index+1)}"
-  availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
     Name = "${var.env_id}-internal-subnet${count.index}"
+  }
+
+  lifecycle {
+    ignore_changes = ["cidr_block"]
   }
 }
 
 resource "aws_route_table" "internal_route_table" {
   vpc_id = "${aws_vpc.vpc.id}"
+}
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    instance_id = "${aws_instance.nat.id}"
-  }
+resource "aws_route" "internal_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  instance_id = "${aws_instance.nat.id}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_internal_subnets" {
@@ -431,20 +435,24 @@ const LBSubnetTemplate = `resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.0.0/20", 4, count.index+2)}"
-  availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
     Name = "${var.env_id}-lb-subnet${count.index}"
+  }
+
+  lifecycle {
+    ignore_changes = ["cidr_block"]
   }
 }
 
 resource "aws_route_table" "lb_route_table" {
   vpc_id = "${aws_vpc.vpc.id}"
+}
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.ig.id}"
-  }
+resource "aws_route" "lb_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = "${aws_internet_gateway.ig.id}"
+  route_table_id = "${aws_route_table.lb_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_lb_subnets" {
@@ -492,7 +500,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 `
 
 const ConcourseLBTemplate = `resource "aws_security_group" "concourse_lb_security_group" {
-  description = "{{.Concourse}}"
+  description = "{{.ConcourseDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -529,7 +537,7 @@ const ConcourseLBTemplate = `resource "aws_security_group" "concourse_lb_securit
 }
 
 resource "aws_security_group" "concourse_lb_internal_security_group" {
-  description = "{{.ConcourseInternal}}"
+  description = "{{.ConcourseInternalDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -593,7 +601,7 @@ resource "aws_elb" "concourse_lb" {
     instance_protocol  = "tcp"
     lb_port            = 443
     lb_protocol        = "ssl"
-    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+    ssl_certificate_id = "{{.SSLCertificateID}}"
   }
 
   security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
@@ -610,7 +618,7 @@ output "concourse_lb_url" {
 `
 
 const CFLBTemplate = `resource "aws_security_group" "cf_ssh_lb_security_group" {
-  description = "{{.SSHLB}}"
+  description = "{{.SSHLBDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -637,7 +645,7 @@ output "cf_ssh_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
-  description = "{{.SSHLBInternal}}"
+  description = "{{.SSHLBInternalDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -695,7 +703,7 @@ output "cf_ssh_lb_url" {
 }
 
 resource "aws_security_group" "cf_router_lb_security_group" {
-  description = "{{.Router}}"
+  description = "{{.RouterDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -736,7 +744,7 @@ output "cf_router_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
-  description = "{{.RouterInternal}}"
+  description = "{{.RouterInternalDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -786,7 +794,7 @@ resource "aws_elb" "cf_router_lb" {
     instance_protocol  = "http"
     lb_port            = 443
     lb_protocol        = "https"
-    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+    ssl_certificate_id = "{{.SSLCertificateID}}"
   }
 
   listener {
@@ -794,7 +802,7 @@ resource "aws_elb" "cf_router_lb" {
     instance_protocol  = "tcp"
     lb_port            = 4443
     lb_protocol        = "ssl"
-    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+    ssl_certificate_id = "{{.SSLCertificateID}}"
   }
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
@@ -810,7 +818,7 @@ output "cf_router_lb_url" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_security_group" {
-  description = "{{.TCPLB}}"
+  description = "{{.TCPLBDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -837,7 +845,7 @@ output "cf_tcp_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
-  description = "{{.TCPLBInternal}}"
+  description = "{{.TCPLBInternalDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {

@@ -49,7 +49,9 @@ var _ = Describe("Migrate", func() {
 				"BOSHEIP":                         "some-bosh-eip",
 				"BOSHSecurityGroup":               "some-bosh-security-group",
 				"BOSHSubnet":                      "some-bosh-subnet",
+				"BOSHRouteTable":                  "some-bosh-route-table",
 				"InternalSecurityGroup":           "some-internal-security-group",
+				"InternalRouteTable":              "some-internal-route-table",
 				"InternalSubnet1Name":             "some-internal-subnet-1",
 				"InternalSubnet2Name":             "some-internal-subnet-2",
 				"InternalSubnet3Name":             "some-internal-subnet-3",
@@ -65,6 +67,7 @@ var _ = Describe("Migrate", func() {
 				"ConcourseInternalSecurityGroup":  "some-concourse-internal-security-group",
 				"ConcourseSecurityGroup":          "some-concourse-security-group",
 				"ConcourseLoadBalancer":           "some-concourse-load-balancer",
+				"LoadBalancerRouteTable":          "some-lb-route-table",
 			},
 		}, nil)
 
@@ -118,10 +121,6 @@ var _ = Describe("Migrate", func() {
 			KeyPair: storage.KeyPair{
 				Name: "some-keypair",
 			},
-			Stack: storage.Stack{
-				Name:   "",
-				BOSHAZ: "some-bosh-az",
-			},
 			AWS: storage.AWS{
 				Region: "some-region",
 			},
@@ -157,7 +156,7 @@ var _ = Describe("Migrate", func() {
 			importInputs = append(importInputs, importCall[0].(terraform.ImportInput))
 		}
 
-		Expect(tf.ImportCallCount()).To(Equal(24))
+		Expect(tf.ImportCallCount()).To(Equal(27))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_vpc.vpc", AWSResourceID: "some-vpc"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_internet_gateway.ig", AWSResourceID: "some-vpc-gateway-internet-gateway"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_eip.nat_eip", AWSResourceID: "some-nat-eip"}))
@@ -166,7 +165,9 @@ var _ = Describe("Migrate", func() {
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_eip.bosh_eip", AWSResourceID: "some-bosh-eip"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_security_group.bosh_security_group", AWSResourceID: "some-bosh-security-group"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_subnet.bosh_subnet", AWSResourceID: "some-bosh-subnet"}))
+		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_route_table.bosh_route_table", AWSResourceID: "some-bosh-route-table"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_security_group.internal_security_group", AWSResourceID: "some-internal-security-group"}))
+		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_route_table.internal_route_table", AWSResourceID: "some-internal-route-table"}))
 		Expect(importInputs).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras,
 			gstruct.Fields{
 				"TerraformAddr": MatchRegexp(`aws_subnet.internal_subnets\[\d\]`),
@@ -200,6 +201,7 @@ var _ = Describe("Migrate", func() {
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_security_group.concourse_lb_internal_security_group", AWSResourceID: "some-concourse-internal-security-group"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_security_group.concourse_lb_security_group", AWSResourceID: "some-concourse-security-group"}))
 		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_elb.concourse_lb", AWSResourceID: "some-concourse-load-balancer"}))
+		Expect(importInputs).To(ContainElement(terraform.ImportInput{TerraformAddr: "aws_route_table.lb_route_table", AWSResourceID: "some-lb-route-table"}))
 		Expect(importInputs).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras,
 			gstruct.Fields{
 				"TerraformAddr": MatchRegexp(`aws_subnet.lb_subnets\[\d\]`),
@@ -247,7 +249,7 @@ var _ = Describe("Migrate", func() {
 		})
 
 		It("migrates infrastructure created by cloudformation to terraform", func() {
-			_, err := migrator.Migrate(incomingState)
+			returnedState, err := migrator.Migrate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificate.DescribeCallCount()).To(Equal(1))
@@ -256,6 +258,8 @@ var _ = Describe("Migrate", func() {
 			_, _, _, _, lbType, certificateARN, _ := infrastructure.UpdateArgsForCall(0)
 			Expect(lbType).To(Equal("cf"))
 			Expect(certificateARN).To(Equal("some-dumb-arn"))
+			Expect(returnedState.AWS.CertificateARN).To(Equal(certificateARN))
+			Expect(returnedState.LB.Type).To(Equal(lbType))
 		})
 	})
 

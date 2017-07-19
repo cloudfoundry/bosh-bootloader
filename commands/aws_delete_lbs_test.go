@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
+	commandsFakes "github.com/cloudfoundry/bosh-bootloader/commands/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
@@ -18,7 +19,7 @@ var _ = Describe("Delete LBs", func() {
 		environmentValidator *fakes.EnvironmentValidator
 		logger               *fakes.Logger
 		cloudConfigManager   *fakes.CloudConfigManager
-		terraformManager     *fakes.TerraformManager
+		terraformManager     *commandsFakes.TerraformApplier
 		stateStore           *fakes.StateStore
 
 		incomingState storage.State
@@ -28,13 +29,19 @@ var _ = Describe("Delete LBs", func() {
 		credentialValidator = &fakes.CredentialValidator{}
 		environmentValidator = &fakes.EnvironmentValidator{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		terraformManager = &fakes.TerraformManager{}
+		terraformManager = &commandsFakes.TerraformApplier{}
 		stateStore = &fakes.StateStore{}
 
 		logger = &fakes.Logger{}
 
 		incomingState = storage.State{
-			TFState: "some-tf-state",
+			AWS: storage.AWS{
+				Region: "some-region",
+			},
+			KeyPair: storage.KeyPair{
+				Name: "some-keypair",
+			},
+			EnvID: "some-env-id",
 			LB: storage.LB{
 				Type: "concourse",
 				Cert: "some-cert",
@@ -45,13 +52,7 @@ var _ = Describe("Delete LBs", func() {
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
 			},
-			AWS: storage.AWS{
-				Region: "some-region",
-			},
-			KeyPair: storage.KeyPair{
-				Name: "some-keypair",
-			},
-			EnvID: "some-env-id",
+			TFState: "some-tf-state",
 		}
 
 		command = commands.NewAWSDeleteLBs(credentialValidator,
@@ -60,40 +61,84 @@ var _ = Describe("Delete LBs", func() {
 	})
 
 	Describe("Execute", func() {
-		Context("when the bbl env has a bosh director", func() {
-			It("updates cloud config", func() {
-				err := command.Execute(incomingState)
-				Expect(err).NotTo(HaveOccurred())
+		It("deletes the load balancers", func() {
+			err := command.Execute(incomingState)
+			Expect(err).NotTo(HaveOccurred())
 
+			By("updating cloud config", func() {
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Type).To(BeEmpty())
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Cert).To(BeEmpty())
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Key).To(BeEmpty())
 			})
 
-			It("runs terraform apply to delete lbs and certificate", func() {
-				err := command.Execute(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
+			By("running terraform apply to delete lbs and certificate", func() {
 				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCallCount()).To(Equal(1))
 
 				expectedTerraformState := incomingState
 				expectedTerraformState.LB = storage.LB{}
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedTerraformState))
+
+				Expect(terraformManager.ApplyArgsForCall(0)).To(Equal(expectedTerraformState))
+			})
+
+			By("saving state with no lb type", func() {
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+					LB: storage.LB{},
+				}))
+			})
+		})
+
+		Context("when migrating a stack", func() {
+			var state storage.State
+			BeforeEach(func() {
+				state = storage.State{
+					AWS: storage.AWS{
+						Region: "some-region",
+					},
+					KeyPair: storage.KeyPair{
+						Name: "some-keypair",
+					},
+					EnvID: "some-env-id",
+					Stack: storage.Stack{
+						LBType:          "concourse",
+						CertificateName: "some-certificate",
+						Name:            "some-stack-name",
+						BOSHAZ:          "some-bosh-az",
+					},
+				}
+
+				stateWithLB := state
+				state.LB.Type = "concourse"
+				terraformManager.ApplyReturnsOnCall(0, stateWithLB, nil)
+			})
+
+			It("terraform applies twice", func() {
+				err := command.Execute(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCallCount()).To(Equal(2))
+				Expect(terraformManager.ApplyArgsForCall(0)).To(Equal(state))
+
+				expectedTerraformState := state
+				expectedTerraformState.LB = storage.LB{}
+				Expect(terraformManager.ApplyArgsForCall(1)).To(Equal(expectedTerraformState))
+			})
+
+			Context("when terraform manager fails to apply the first time with terraformManagerError", func() {
+				It("return an error", func() {
+					terraformManager.ApplyReturnsOnCall(0, storage.State{}, errors.New("apply failed"))
+
+					err := command.Execute(state)
+					Expect(err).To(MatchError("apply failed"))
+				})
 			})
 		})
 
 		Context("when the bbl env was created without a bosh director", func() {
 			It("does not try to update the cloud config", func() {
 				state := storage.State{
-					Stack: storage.Stack{
-						CertificateName: "some-certificate",
-						Name:            "some-stack-name",
-						BOSHAZ:          "some-bosh-az",
-					},
-					LB: storage.LB{
-						Type: "concourse",
-					},
 					NoDirector: true,
 					AWS: storage.AWS{
 						Region: "some-region",
@@ -102,9 +147,17 @@ var _ = Describe("Delete LBs", func() {
 						Name: "some-keypair",
 					},
 					EnvID: "some-env-id",
+					Stack: storage.Stack{
+						CertificateName: "some-certificate",
+						Name:            "some-stack-name",
+						BOSHAZ:          "some-bosh-az",
+					},
+					LB: storage.LB{
+						Type: "concourse",
+					},
 				}
 
-				terraformManager.ApplyCall.Returns.BBLState = state
+				terraformManager.ApplyReturns(state, nil)
 
 				err := command.Execute(state)
 				Expect(err).NotTo(HaveOccurred())
@@ -113,39 +166,26 @@ var _ = Describe("Delete LBs", func() {
 			})
 		})
 
-		It("returns an error if there is no lb", func() {
-			err := command.Execute(storage.State{
-				TFState: "some-tf-state",
-			})
-			Expect(err).To(MatchError(commands.LBNotFound))
-		})
-
-		Context("state management", func() {
-			It("saves state with no lb type", func() {
+		Context("when there is no lb", func() {
+			It("returns an error", func() {
 				err := command.Execute(storage.State{
-					LB: storage.LB{
-						Type: "cf",
-					},
+					TFState: "some-tf-state",
 				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-					LB: storage.LB{},
-				}))
+				Expect(err).To(MatchError(commands.LBNotFound))
 			})
 		})
 
-		Context("failure cases", func() {
+		Context("when an error occurs", func() {
 			It("returns an error when aws credential validator fails to validate", func() {
 				credentialValidator.ValidateCall.Returns.Error = errors.New("validate failed")
 				err := command.Execute(incomingState)
 				Expect(err).To(MatchError("validate failed"))
 			})
 
-			Context("when terraform manager fails to apply with terraformManagerError", func() {
+			Context("when terraform manager fails to apply the second time with terraformManagerError", func() {
 				It("return an error", func() {
-					terraformManager.ApplyCall.Returns.Error = errors.New("apply failed")
+					terraformManager.ApplyReturns(storage.State{}, errors.New("apply failed"))
+
 					err := command.Execute(incomingState)
 					Expect(err).To(MatchError("apply failed"))
 				})
@@ -162,7 +202,8 @@ var _ = Describe("Delete LBs", func() {
 						TFState: "some-partial-tf-state",
 					}
 					managerError.ErrorCall.Returns = "cannot apply"
-					terraformManager.ApplyCall.Returns.Error = managerError
+
+					terraformManager.ApplyReturns(storage.State{}, managerError)
 				})
 
 				It("return an error", func() {

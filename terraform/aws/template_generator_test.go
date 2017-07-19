@@ -32,6 +32,7 @@ var _ = Describe("TemplateGenerator", func() {
 						Domain: domain,
 					},
 				})
+
 				Expect(template).To(Equal(string(expectedTemplate)))
 			},
 			Entry("when no lb type is provided", "fixtures/template_no_lb.tf", "", ""),

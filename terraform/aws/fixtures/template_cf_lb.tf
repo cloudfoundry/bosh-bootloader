@@ -322,7 +322,6 @@ variable "bosh_availability_zone" {
 resource "aws_subnet" "bosh_subnet" {
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${var.bosh_subnet_cidr}"
-  availability_zone = "${var.bosh_availability_zone}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"
@@ -331,11 +330,12 @@ resource "aws_subnet" "bosh_subnet" {
 
 resource "aws_route_table" "bosh_route_table" {
   vpc_id = "${aws_vpc.vpc.id}"
+}
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.ig.id}"
-  }
+resource "aws_route" "bosh_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = "${aws_internet_gateway.ig.id}"
+  route_table_id = "${aws_route_table.bosh_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_bosh_subnets" {
@@ -359,20 +359,24 @@ resource "aws_subnet" "internal_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.0.0/16", 4, count.index+1)}"
-  availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
     Name = "${var.env_id}-internal-subnet${count.index}"
+  }
+
+  lifecycle {
+    ignore_changes = ["cidr_block"]
   }
 }
 
 resource "aws_route_table" "internal_route_table" {
   vpc_id = "${aws_vpc.vpc.id}"
+}
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    instance_id = "${aws_instance.nat.id}"
-  }
+resource "aws_route" "internal_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  instance_id = "${aws_instance.nat.id}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_internal_subnets" {
@@ -428,20 +432,24 @@ resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.0.0/20", 4, count.index+2)}"
-  availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
     Name = "${var.env_id}-lb-subnet${count.index}"
+  }
+
+  lifecycle {
+    ignore_changes = ["cidr_block"]
   }
 }
 
 resource "aws_route_table" "lb_route_table" {
   vpc_id = "${aws_vpc.vpc.id}"
+}
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.ig.id}"
-  }
+resource "aws_route" "lb_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = "${aws_internet_gateway.ig.id}"
+  route_table_id = "${aws_route_table.lb_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_lb_subnets" {
@@ -460,30 +468,6 @@ output "lb_subnet_availability_zones" {
 
 output "lb_subnet_cidrs" {
   value = ["${aws_subnet.lb_subnets.*.cidr_block}"]
-}
-
-variable "ssl_certificate" {
-  type = "string"
-}
-
-variable "ssl_certificate_chain" {
-  type = "string"
-}
-
-variable "ssl_certificate_private_key" {
-  type = "string"
-}
-
-resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${var.short_env_id}-"
-
-  certificate_body  = "${var.ssl_certificate}"
-  certificate_chain = "${var.ssl_certificate_chain}"
-  private_key       = "${var.ssl_certificate_private_key}"
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_security_group" "cf_ssh_lb_security_group" {
@@ -1469,4 +1453,28 @@ output "cf_tcp_lb_name" {
 
 output "cf_tcp_lb_url" {
   value = "${aws_elb.cf_tcp_lb.dns_name}"
+}
+
+variable "ssl_certificate" {
+  type = "string"
+}
+
+variable "ssl_certificate_chain" {
+  type = "string"
+}
+
+variable "ssl_certificate_private_key" {
+  type = "string"
+}
+
+resource "aws_iam_server_certificate" "lb_cert" {
+  name_prefix       = "${var.short_env_id}-"
+
+  certificate_body  = "${var.ssl_certificate}"
+  certificate_chain = "${var.ssl_certificate_chain}"
+  private_key       = "${var.ssl_certificate_private_key}"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

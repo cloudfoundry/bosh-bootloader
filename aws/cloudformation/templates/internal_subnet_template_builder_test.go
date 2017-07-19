@@ -50,6 +50,7 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 				Properties: templates.RouteTable{
 					VpcId: templates.Ref{"VPC"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("InternalRoute", templates.Resource{
@@ -60,6 +61,7 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 					RouteTableId:         templates.Ref{"InternalRouteTable"},
 					InstanceId:           templates.Ref{"NATInstance"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("InternalSubnet1RouteTableAssociation", templates.Resource{
@@ -68,15 +70,19 @@ var _ = Describe("InternalSubnetTemplateBuilder", func() {
 					RouteTableId: templates.Ref{"InternalRouteTable"},
 					SubnetId:     templates.Ref{"InternalSubnet1"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 		})
 
 		It("returns a template with outputs for the internal subnet", func() {
 			subnet := builder.InternalSubnet("some-zone-1", "1", "10.0.16.0/20")
 
-			Expect(subnet.Outputs).To(HaveLen(1))
+			Expect(subnet.Outputs).To(HaveLen(2))
 			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalSubnet1Name", templates.Output{
 				Value: templates.Ref{"InternalSubnet1"},
+			}))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("InternalRouteTable", templates.Output{
+				Value: templates.Ref{"InternalRouteTable"},
 			}))
 		})
 	})

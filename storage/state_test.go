@@ -39,6 +39,7 @@ var _ = Describe("Store", func() {
 					AccessKeyID:     "some-aws-access-key-id",
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-region",
+					CertificateARN:  "some-certificate-arn",
 				},
 				GCP: storage.GCP{
 					ServiceAccountKey: "some-service-account-key",
@@ -120,7 +121,8 @@ var _ = Describe("Store", func() {
 				"aws": {
 					"accessKeyId": "some-aws-access-key-id",
 					"secretAccessKey": "some-aws-secret-access-key",
-					"region": "some-region"
+					"region": "some-region",
+					"certificateARN": "some-certificate-arn"
 				},
 				"gcp": {
 					"serviceAccountKey": "some-service-account-key",

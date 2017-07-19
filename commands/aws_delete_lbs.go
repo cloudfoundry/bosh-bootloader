@@ -45,13 +45,22 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	if !lbExists(state.LB.Type) {
-		return LBNotFound
+	if state.Stack.LBType != "" {
+		state.LB.Type = state.Stack.LBType
+
+		state, err = c.terraformManager.Apply(state)
+		if err != nil {
+			return handleTerraformError(err, c.stateStore)
+		}
 	}
 
-	state.LB.Type = ""
-	state.LB.Cert = ""
-	state.LB.Key = ""
+	if !lbExists(state.LB.Type) {
+		if !lbExists(state.Stack.LBType) {
+			return LBNotFound
+		}
+	}
+
+	state.LB = storage.LB{}
 
 	if !state.NoDirector {
 		err = c.cloudConfigManager.Update(state)

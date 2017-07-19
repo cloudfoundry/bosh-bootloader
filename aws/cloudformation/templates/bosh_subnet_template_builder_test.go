@@ -39,6 +39,7 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 				Properties: templates.RouteTable{
 					VpcId: templates.Ref{"VPC"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("BOSHRoute", templates.Resource{
@@ -49,6 +50,7 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 					GatewayId:            templates.Ref{"VPCGatewayInternetGateway"},
 					RouteTableId:         templates.Ref{"BOSHRouteTable"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Resources).To(HaveKeyWithValue("BOSHSubnetRouteTableAssociation", templates.Resource{
@@ -57,6 +59,7 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 					RouteTableId: templates.Ref{"BOSHRouteTable"},
 					SubnetId:     templates.Ref{"BOSHSubnet"},
 				},
+				DeletionPolicy: "Retain",
 			}))
 
 			Expect(subnet.Parameters).To(HaveLen(1))
@@ -66,9 +69,12 @@ var _ = Describe("BOSHSubnetTemplateBuilder", func() {
 				Default:     "10.0.0.0/24",
 			}))
 
-			Expect(subnet.Outputs).To(HaveLen(1))
+			Expect(subnet.Outputs).To(HaveLen(2))
 			Expect(subnet.Outputs).To(HaveKeyWithValue("BOSHSubnet", templates.Output{
 				Value: templates.Ref{"BOSHSubnet"},
+			}))
+			Expect(subnet.Outputs).To(HaveKeyWithValue("BOSHRouteTable", templates.Output{
+				Value: templates.Ref{"BOSHRouteTable"},
 			}))
 		})
 	})

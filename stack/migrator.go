@@ -20,7 +20,9 @@ var (
 		"BOSHEIP":                         "aws_eip.bosh_eip",
 		"BOSHSecurityGroup":               "aws_security_group.bosh_security_group",
 		"BOSHSubnet":                      "aws_subnet.bosh_subnet",
+		"BOSHRouteTable":                  "aws_route_table.bosh_route_table",
 		"InternalSecurityGroup":           "aws_security_group.internal_security_group",
+		"InternalRouteTable":              "aws_route_table.internal_route_table",
 		"CFRouterInternalSecurityGroup":   "aws_security_group.cf_router_lb_internal_security_group",
 		"CFRouterSecurityGroup":           "aws_security_group.cf_router_lb_security_group",
 		"CFRouterLoadBalancer":            "aws_elb.cf_router_lb",
@@ -30,6 +32,7 @@ var (
 		"ConcourseInternalSecurityGroup":  "aws_security_group.concourse_lb_internal_security_group",
 		"ConcourseSecurityGroup":          "aws_security_group.concourse_lb_security_group",
 		"ConcourseLoadBalancer":           "aws_elb.concourse_lb",
+		"LoadBalancerRouteTable":          "aws_route_table.lb_route_table",
 	}
 )
 
@@ -93,7 +96,11 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 		if err != nil {
 			return storage.State{}, err
 		}
+
 		certificateARN = certificate.ARN
+		state.AWS.CertificateARN = certificateARN
+
+		state.LB.Type = state.Stack.LBType
 	}
 
 	stack, err := m.infrastructure.Update(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
@@ -142,7 +149,7 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	state.Stack.Name = ""
+	state.Stack = storage.Stack{}
 
 	return state, nil
 }

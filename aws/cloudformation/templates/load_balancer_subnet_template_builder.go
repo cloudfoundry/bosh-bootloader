@@ -44,6 +44,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, ci
 				Properties: RouteTable{
 					VpcId: Ref{"VPC"},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"LoadBalancerRoute": Resource{
 				Type:      "AWS::EC2::Route",
@@ -53,6 +54,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, ci
 					GatewayId:            Ref{"VPCGatewayInternetGateway"},
 					RouteTableId:         Ref{"LoadBalancerRouteTable"},
 				},
+				DeletionPolicy: "Retain",
 			},
 			routeTableAssociationName: {
 				Type: "AWS::EC2::SubnetRouteTableAssociation",
@@ -60,6 +62,7 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, ci
 					RouteTableId: Ref{"LoadBalancerRouteTable"},
 					SubnetId:     Ref{subnetName},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 		Outputs: map[string]Output{
@@ -67,6 +70,9 @@ func (LoadBalancerSubnetTemplateBuilder) LoadBalancerSubnet(az, subnetSuffix, ci
 				Value: Ref{
 					Ref: subnetName,
 				},
+			},
+			"LoadBalancerRouteTable": Output{
+				Value: Ref{"LoadBalancerRouteTable"},
 			},
 		},
 	}

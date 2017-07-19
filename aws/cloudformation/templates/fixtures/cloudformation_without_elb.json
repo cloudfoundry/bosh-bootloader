@@ -19,11 +19,13 @@
         "BOSHEIP": {"Value": {"Ref": "BOSHEIP"}},
         "BOSHSecurityGroup": {"Value": {"Ref": "BOSHSecurityGroup"}},
         "BOSHSubnet": {"Value": {"Ref": "BOSHSubnet"}},
+        "BOSHRouteTable": {"Value": {"Ref": "BOSHRouteTable"}},
         "InternalSecurityGroup": {"Value": {"Ref": "InternalSecurityGroup"}},
         "InternalSubnet1Name": {"Value": {"Ref": "InternalSubnet1"}},
         "InternalSubnet2Name": {"Value": {"Ref": "InternalSubnet2"}},
         "InternalSubnet3Name": {"Value": {"Ref": "InternalSubnet3"}},
         "InternalSubnet4Name": {"Value": {"Ref": "InternalSubnet4"}},
+        "InternalRouteTable": {"Value": {"Ref": "InternalRouteTable"}},
         "NATEIP": {"Value": {"Ref": "NATEIP"}},
         "NATInstance": {"Value": {"Ref": "NATInstance"}},
         "NATSecurityGroup": {"Value": {"Ref": "NATSecurityGroup"}},
@@ -77,7 +79,7 @@
             "DependsOn": "VPCGatewayAttachment",
             "Properties": {"Domain": "vpc"},
             "Type": "AWS::EC2::EIP",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "BOSHRoute": {
             "DependsOn": "VPCGatewayAttachment",
@@ -86,11 +88,13 @@
                 "GatewayId": {"Ref": "VPCGatewayInternetGateway"},
                 "RouteTableId": {"Ref": "BOSHRouteTable"}
             },
-            "Type": "AWS::EC2::Route"
+            "Type": "AWS::EC2::Route",
+            "DeletionPolicy" : "Retain"
         },
         "BOSHRouteTable": {
             "Properties": {"VpcId": {"Ref": "VPC"}},
-            "Type": "AWS::EC2::RouteTable"
+            "Type": "AWS::EC2::RouteTable",
+            "DeletionPolicy" : "Retain"
         },
         "BOSHSecurityGroup": {
             "Properties": {
@@ -131,7 +135,7 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::SecurityGroup",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "BOSHSubnet": {
             "Properties": {
@@ -141,14 +145,15 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::Subnet",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "BOSHSubnetRouteTableAssociation": {
             "Properties": {
                 "RouteTableId": {"Ref": "BOSHRouteTable"},
                 "SubnetId": {"Ref": "BOSHSubnet"}
             },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DeletionPolicy" : "Retain"
         },
         "BOSHUser": {
             "Properties": {
@@ -208,11 +213,13 @@
                 "InstanceId": {"Ref": "NATInstance"},
                 "RouteTableId": {"Ref": "InternalRouteTable"}
             },
-            "Type": "AWS::EC2::Route"
+            "Type": "AWS::EC2::Route",
+            "DeletionPolicy" : "Retain"
         },
         "InternalRouteTable": {
             "Properties": {"VpcId": {"Ref": "VPC"}},
-            "Type": "AWS::EC2::RouteTable"
+            "Type": "AWS::EC2::RouteTable",
+            "DeletionPolicy" : "Retain"
         },
         "InternalSecurityGroup": {
             "Properties": {
@@ -231,7 +238,7 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::SecurityGroup",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "InternalSecurityGroupIngressTCPfromBOSH": {
             "Properties": {
@@ -281,14 +288,15 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::Subnet",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet1RouteTableAssociation": {
             "Properties": {
                 "RouteTableId": {"Ref": "InternalRouteTable"},
                 "SubnetId": {"Ref": "InternalSubnet1"}
             },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet2": {
             "Properties": {
@@ -298,14 +306,15 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::Subnet",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet2RouteTableAssociation": {
             "Properties": {
                 "RouteTableId": {"Ref": "InternalRouteTable"},
                 "SubnetId": {"Ref": "InternalSubnet2"}
             },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet3": {
             "Properties": {
@@ -315,14 +324,15 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::Subnet",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet3RouteTableAssociation": {
             "Properties": {
                 "RouteTableId": {"Ref": "InternalRouteTable"},
                 "SubnetId": {"Ref": "InternalSubnet3"}
             },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet4": {
             "Properties": {
@@ -332,20 +342,21 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::Subnet",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "InternalSubnet4RouteTableAssociation": {
             "Properties": {
                 "RouteTableId": {"Ref": "InternalRouteTable"},
                 "SubnetId": {"Ref": "InternalSubnet4"}
             },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DeletionPolicy" : "Retain"
         },
         "NATEIP": {
             "DependsOn": "VPCGatewayAttachment",
             "Properties": {"Domain": "vpc", "InstanceId": {"Ref": "NATInstance"}},
             "Type": "AWS::EC2::EIP",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "NATInstance": {
             "Properties": {
@@ -361,7 +372,7 @@
                 "Tags": [{"Key": "Name", "Value": "NAT"}]
             },
             "Type": "AWS::EC2::Instance",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "NATSecurityGroup": {
             "Properties": {
@@ -390,7 +401,7 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::SecurityGroup",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "VPC": {
             "Properties": {
@@ -398,7 +409,7 @@
                 "Tags": [{"Key": "Name", "Value": "vpc-bbl-env-id"}]
             },
             "Type": "AWS::EC2::VPC",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "VPCGatewayAttachment": {
             "Properties": {
@@ -406,11 +417,11 @@
                 "VpcId": {"Ref": "VPC"}
             },
             "Type": "AWS::EC2::VPCGatewayAttachment",
-			"DeletionPolicy" : "Retain"
+            "DeletionPolicy" : "Retain"
         },
         "VPCGatewayInternetGateway": {
-			"Type": "AWS::EC2::InternetGateway",
-			"DeletionPolicy" : "Retain"
-		}
+            "Type": "AWS::EC2::InternetGateway",
+            "DeletionPolicy" : "Retain"
+        }
     }
 }

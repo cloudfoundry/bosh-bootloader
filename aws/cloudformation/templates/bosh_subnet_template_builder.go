@@ -36,6 +36,7 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(availabilityZone string) Template {
 				Properties: RouteTable{
 					VpcId: Ref{"VPC"},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"BOSHRoute": Resource{
 				DependsOn: "VPCGatewayAttachment",
@@ -45,6 +46,7 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(availabilityZone string) Template {
 					GatewayId:            Ref{"VPCGatewayInternetGateway"},
 					RouteTableId:         Ref{"BOSHRouteTable"},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"BOSHSubnetRouteTableAssociation": Resource{
 				Type: "AWS::EC2::SubnetRouteTableAssociation",
@@ -52,11 +54,15 @@ func (BOSHSubnetTemplateBuilder) BOSHSubnet(availabilityZone string) Template {
 					RouteTableId: Ref{"BOSHRouteTable"},
 					SubnetId:     Ref{"BOSHSubnet"},
 				},
+				DeletionPolicy: "Retain",
 			},
 		},
 		Outputs: map[string]Output{
 			"BOSHSubnet": Output{
 				Value: Ref{"BOSHSubnet"},
+			},
+			"BOSHRouteTable": Output{
+				Value: Ref{"BOSHRouteTable"},
 			},
 		},
 	}

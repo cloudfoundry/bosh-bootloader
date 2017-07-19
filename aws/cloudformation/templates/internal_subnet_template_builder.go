@@ -16,11 +16,6 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock stri
 	subnetRouteTableAssociationName := fmt.Sprintf("%sRouteTableAssociation", subnetName)
 
 	return Template{
-		Outputs: map[string]Output{
-			fmt.Sprintf("%sName", subnetName): Output{
-				Value: Ref{subnetName},
-			},
-		},
 		Parameters: map[string]Parameter{
 			subnetCIDRName: Parameter{
 				Description: cidrDescription,
@@ -49,6 +44,7 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock stri
 				Properties: RouteTable{
 					VpcId: Ref{"VPC"},
 				},
+				DeletionPolicy: "Retain",
 			},
 			"InternalRoute": {
 				Type:      "AWS::EC2::Route",
@@ -58,6 +54,7 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock stri
 					RouteTableId:         Ref{"InternalRouteTable"},
 					InstanceId:           Ref{"NATInstance"},
 				},
+				DeletionPolicy: "Retain",
 			},
 			subnetRouteTableAssociationName: Resource{
 				Type: "AWS::EC2::SubnetRouteTableAssociation",
@@ -65,6 +62,15 @@ func (s InternalSubnetTemplateBuilder) InternalSubnet(az, suffix, cidrBlock stri
 					RouteTableId: Ref{"InternalRouteTable"},
 					SubnetId:     Ref{subnetName},
 				},
+				DeletionPolicy: "Retain",
+			},
+		},
+		Outputs: map[string]Output{
+			fmt.Sprintf("%sName", subnetName): Output{
+				Value: Ref{subnetName},
+			},
+			"InternalRouteTable": Output{
+				Value: Ref{"InternalRouteTable"},
 			},
 		},
 	}
