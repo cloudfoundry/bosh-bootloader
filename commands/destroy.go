@@ -329,6 +329,13 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 
 	state.BOSH = storage.BOSH{}
 
+	err = d.boshManager.DeleteJumpbox(state, terraformOutputs)
+	if err != nil {
+		return state, err
+	}
+
+	state.Jumpbox = storage.Jumpbox{}
+
 	return state, nil
 }
 

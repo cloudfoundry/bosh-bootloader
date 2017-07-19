@@ -42,7 +42,28 @@ type BOSHManager struct {
 			Error error
 		}
 	}
+	DeleteJumpboxCall struct {
+		CallCount int
+		Receives  struct {
+			State            storage.State
+			TerraformOutputs map[string]interface{}
+		}
+		Returns struct {
+			Error error
+		}
+	}
 	GetDeploymentVarsCall struct {
+		CallCount int
+		Receives  struct {
+			State            storage.State
+			TerraformOutputs map[string]interface{}
+		}
+		Returns struct {
+			Vars  string
+			Error error
+		}
+	}
+	GetJumpboxDeploymentVarsCall struct {
 		CallCount int
 		Receives  struct {
 			State            storage.State
@@ -78,11 +99,25 @@ func (b *BOSHManager) Delete(state storage.State, terraformOutputs map[string]in
 	return b.DeleteCall.Returns.Error
 }
 
+func (b *BOSHManager) DeleteJumpbox(state storage.State, terraformOutputs map[string]interface{}) error {
+	b.DeleteJumpboxCall.CallCount++
+	b.DeleteJumpboxCall.Receives.State = state
+	b.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
+	return b.DeleteJumpboxCall.Returns.Error
+}
+
 func (b *BOSHManager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
 	b.GetDeploymentVarsCall.CallCount++
 	b.GetDeploymentVarsCall.Receives.State = state
 	b.GetDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
 	return b.GetDeploymentVarsCall.Returns.Vars, b.GetDeploymentVarsCall.Returns.Error
+}
+
+func (b *BOSHManager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
+	b.GetJumpboxDeploymentVarsCall.CallCount++
+	b.GetJumpboxDeploymentVarsCall.Receives.State = state
+	b.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
+	return b.GetJumpboxDeploymentVarsCall.Returns.Vars, b.GetJumpboxDeploymentVarsCall.Returns.Error
 }
 
 func (b *BOSHManager) Version() (string, error) {

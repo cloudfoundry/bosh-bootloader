@@ -232,6 +232,25 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 		return err
 	}
 
+	if state.Jumpbox.Enabled {
+		jumpboxPrivateKey, err := getJumpboxPrivateKey(state.Jumpbox.Variables)
+		if err != nil {
+			return err
+		}
+
+		err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
+		if err != nil {
+			return err
+		}
+
+		osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+
+		iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+		if err != nil {
+			return err //not tested
+		}
+	}
+
 	iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
 	if err != nil {
 		return err //not tested
@@ -253,6 +272,44 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 	case DeleteEnvError:
 		deErr := err.(DeleteEnvError)
 		state.BOSH.State = deErr.BOSHState()
+		return NewManagerDeleteError(state, err)
+	case error:
+		return err
+	}
+
+	return nil
+}
+
+func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string]interface{}) error {
+	if !state.Jumpbox.Enabled {
+		return nil
+	}
+
+	m.logger.Step("destroying jumpbox")
+	iaasInputs, err := generateIAASInputs(state)
+	if err != nil {
+		return err
+	}
+
+	iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+	if err != nil {
+		return err //not tested
+	}
+
+	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
+	if err != nil {
+		return err
+	}
+
+	err = m.executor.DeleteEnv(DeleteEnvInput{
+		Manifest:  interpolateOutputs.Manifest,
+		State:     state.Jumpbox.State,
+		Variables: interpolateOutputs.Variables,
+	})
+	switch err.(type) {
+	case DeleteEnvError:
+		deErr := err.(DeleteEnvError)
+		state.Jumpbox.State = deErr.BOSHState()
 		return NewManagerDeleteError(state, err)
 	case error:
 		return err

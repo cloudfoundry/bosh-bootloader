@@ -407,6 +407,48 @@ var _ = Describe("Destroy", func() {
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
 		})
 
+		Context("when jumpbox is enabled", func() {
+			It("invokes bosh delete jumpbox as well", func() {
+				stdin.Write([]byte("yes\n"))
+				state := storage.State{
+					BOSH: storage.BOSH{
+						DirectorName: "some-director",
+					},
+					Jumpbox: storage.Jumpbox{
+						Enabled:  true,
+						Manifest: "some-manifest",
+					},
+				}
+				stateWithoutDirector := storage.State{
+					BOSH: storage.BOSH{},
+					Jumpbox: storage.Jumpbox{
+						Enabled:  true,
+						Manifest: "some-manifest",
+					},
+				}
+
+				err := destroy.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
+				Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
+				Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(1))
+				Expect(boshManager.DeleteJumpboxCall.Receives.State).To(Equal(stateWithoutDirector))
+			})
+
+			It("clears the state", func() {
+				stdin.Write([]byte("yes\n"))
+				err := destroy.Execute([]string{}, storage.State{
+					BOSH:    storage.BOSH{},
+					Jumpbox: storage.Jumpbox{},
+				})
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stateStore.SetCall.CallCount).To(Equal(3))
+				Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
+			})
+		})
+
 		Context("failure cases", func() {
 			BeforeEach(func() {
 				stdin.Write([]byte("yes\n"))

@@ -627,12 +627,14 @@ gcp_credentials_json: 'some-credential-json'`
 		})
 	})
 
-	Describe("Delete", func() {
+	Describe("DeleteJumpbox", func() {
 		var (
 			boshExecutor *fakes.BOSHExecutor
 			logger       *fakes.Logger
 			socks5Proxy  *fakes.Socks5Proxy
 			boshManager  *bosh.Manager
+
+			vars string
 		)
 
 		BeforeEach(func() {
@@ -640,6 +642,117 @@ gcp_credentials_json: 'some-credential-json'`
 			logger = &fakes.Logger{}
 			socks5Proxy = &fakes.Socks5Proxy{}
 			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
+
+			vars = `jumpbox_ssh:
+  private_key: some-private-key
+  public_key: some-private-key
+`
+
+		})
+
+		It("calls delete env", func() {
+			boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
+				Manifest:  "some-manifest",
+				Variables: vars,
+			}
+
+			err := boshManager.DeleteJumpbox(storage.State{
+				IAAS: "gcp",
+				Jumpbox: storage.Jumpbox{
+					Enabled:  true,
+					Manifest: "some-manifest",
+					State: map[string]interface{}{
+						"key": "value",
+					},
+					Variables: vars,
+				},
+			}, map[string]interface{}{"jumpbox_ssh": "nick-da-quick"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
+				Manifest: "some-manifest",
+				State: map[string]interface{}{
+					"key": "value",
+				},
+				Variables: vars,
+			}))
+		})
+
+		Context("when an error occurs", func() {
+			Context("when the executor's delete env call fails with delete env error", func() {
+				var (
+					incomingState storage.State
+					expectedError bosh.ManagerDeleteError
+					expectedState storage.State
+				)
+
+				BeforeEach(func() {
+					incomingState = storage.State{
+						IAAS: "gcp",
+						Jumpbox: storage.Jumpbox{
+							Enabled:  true,
+							Manifest: "some-manifest",
+							State: map[string]interface{}{
+								"key": "value",
+							},
+							Variables: vars,
+						},
+					}
+
+					jumpboxState := map[string]interface{}{
+						"partial": "jumpbox-state",
+					}
+					deleteEnvError := bosh.NewDeleteEnvError(jumpboxState, errors.New("failed to delete env"))
+					boshExecutor.DeleteEnvCall.Returns.Error = deleteEnvError
+
+					expectedState = incomingState
+					expectedState.Jumpbox.State = jumpboxState
+					expectedError = bosh.NewManagerDeleteError(expectedState, deleteEnvError)
+				})
+
+				It("returns a bosh manager delete error with a valid state", func() {
+					err := boshManager.DeleteJumpbox(incomingState, map[string]interface{}{
+						"director_address": "nick-da-quick",
+					})
+					Expect(err).To(MatchError(expectedError))
+				})
+			})
+
+			It("returns an error when the delete env fails", func() {
+				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+
+				err := boshManager.DeleteJumpbox(storage.State{
+					IAAS: "gcp",
+					Jumpbox: storage.Jumpbox{
+						Enabled: true,
+					},
+				}, map[string]interface{}{"director_address": "nick-da-quick"})
+				Expect(err).To(MatchError("failed to delete"))
+			})
+		})
+	})
+
+	Describe("Delete", func() {
+		var (
+			boshExecutor *fakes.BOSHExecutor
+			logger       *fakes.Logger
+			socks5Proxy  *fakes.Socks5Proxy
+			boshManager  *bosh.Manager
+
+			osSetenvKey   string
+			osSetenvValue string
+		)
+
+		BeforeEach(func() {
+			boshExecutor = &fakes.BOSHExecutor{}
+			logger = &fakes.Logger{}
+			socks5Proxy = &fakes.Socks5Proxy{}
+			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
+
+			bosh.SetOSSetenv(func(key, value string) error {
+				osSetenvKey = key
+				osSetenvValue = value
+				return nil
+			})
 		})
 
 		It("calls delete env", func() {
@@ -666,6 +779,53 @@ gcp_credentials_json: 'some-credential-json'`
 				},
 				Variables: variablesYAML,
 			}))
+		})
+
+		Context("when a jumbox deployment exists", func() {
+			It("starts a socks5 proxy and gets the jumpbox deployment vars", func() {
+				socks5ProxyAddr := "localhost:1234"
+				socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
+
+				boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
+					Manifest:  "some-manifest",
+					Variables: variablesYAML,
+				}
+
+				err := boshManager.Delete(storage.State{
+					IAAS: "gcp",
+					Jumpbox: storage.Jumpbox{
+						Enabled:   true,
+						Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
+						Manifest:  "name: jumpbox",
+						State: map[string]interface{}{
+							"some-key": "some-value",
+						},
+						URL: "some-jumpbox-url",
+					},
+					BOSH: storage.BOSH{
+						Manifest: "some-manifest",
+						State: map[string]interface{}{
+							"key": "value",
+						},
+						Variables: variablesYAML,
+					},
+				}, map[string]interface{}{"director_address": "nick-da-quick"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
+				Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
+				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-jumpbox-url"))
+				Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
+				Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
+
+				Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
+					Manifest: "some-manifest",
+					State: map[string]interface{}{
+						"key": "value",
+					},
+					Variables: variablesYAML,
+				}))
+			})
 		})
 
 		Context("when an error occurs", func() {
@@ -716,6 +876,21 @@ gcp_credentials_json: 'some-credential-json'`
 					IAAS: "aws",
 				}, map[string]interface{}{"director_address": "nick-da-quick"})
 				Expect(err).To(MatchError("failed to delete"))
+			})
+
+			Context("when a jumpbox deployment exists", func() {
+				It("returns an error when the socks5Proxy fails to start", func() {
+					socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
+
+					err := boshManager.Delete(storage.State{
+						IAAS: "gcp",
+						Jumpbox: storage.Jumpbox{
+							Enabled:   true,
+							Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
+						},
+					}, map[string]interface{}{"director_address": "nick-da-quick"})
+					Expect(err).To(MatchError("failed to start socks5Proxy"))
+				})
 			})
 		})
 	})
