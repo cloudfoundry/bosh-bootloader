@@ -87,3 +87,22 @@ $ export BOSH_CLIENT=admin
 $ bosh deployments
 ```
 
+## Deploying concourse-deployment
+
+The ``--no-director`` flag can also be used to create the necessary IaaS configuration for [concourse-deployment](https://github.com/concourse/concourse-deployment), a minimal version of concourse deployed with `bosh create-env`.
+```
+mkdir -p ~/environments/concourse/
+bbl up --state-dir ~/my-bbl-states/concourse/ --gcp-zone us-west1-a --gcp-region us-west1 --gcp-service-account-key service-account.key.json --gcp-project-id my-project-14478532 --iaas gcp --no-director
+```
+
+Next we follow the deployment instructions in [concourse-deployment](https://github.com/concourse/concourse-deployment), however, many of the network related variables are supplied by `bosh-deployment-vars`
+```
+git clone https://github.com/concourse/concourse-deployment.git 
+bosh create-env concourse-deployment/concourse.yml  \
+  --state ~/environments/concourse/state.json  \
+  -o concourse-deployment/infrastructures/gcp.yml  \
+  --vars-store ~/environments/concourse/creds.yml  \
+  -l <(bbl --state-dir ~/environments/concourse bosh-deployment-vars | sed 's/external_ip/public_ip/')
+```
+
+Now you should be able to see your new concourse at `https://<bbl director-address>`.
