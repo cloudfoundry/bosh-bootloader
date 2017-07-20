@@ -132,16 +132,7 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("creating a concourse load balancer", func() {
-				certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
-				Expect(err).NotTo(HaveOccurred())
-
-				chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
-				Expect(err).NotTo(HaveOccurred())
-
-				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
-				Expect(err).NotTo(HaveOccurred())
-
-				bblTerraform.CreateLB("concourse", certPath, keyPath, chainPath)
+				bblTerraform.CreateLB("concourse", "", "", "")
 			})
 
 			By("verifying that no stack exists", func() {
@@ -154,6 +145,62 @@ var _ = Describe("Stack Migration", func() {
 				Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
 					MatchRegexp(".*-concourse-lb"),
 				))
+			})
+		})
+
+		It("deletes lbs from older bbl", func() {
+			var (
+				stackName string
+				lbNames   []string
+			)
+
+			By("bbl'ing up with cloudformation", func() {
+				bblStack.Up(actors.AWSIAAS, []string{"--name", bblStack.PredefinedEnvID()})
+			})
+
+			By("verifying the stack exists", func() {
+				stackName = state.StackName()
+				Expect(aws.StackExists(stackName)).To(BeTrue())
+			})
+
+			By("verifying there are no LBs", func() {
+				lbNames = aws.LoadBalancers(fmt.Sprintf("vpc-%s", bblStack.PredefinedEnvID()))
+				Expect(lbNames).To(BeEmpty())
+			})
+
+			By("creating cf lbs", func() {
+				certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+				Expect(err).NotTo(HaveOccurred())
+
+				chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+				Expect(err).NotTo(HaveOccurred())
+
+				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+				Expect(err).NotTo(HaveOccurred())
+
+				bblStack.CreateLB("cf", certPath, keyPath, chainPath)
+			})
+
+			By("checking that the LB was created", func() {
+				vpcName := fmt.Sprintf("vpc-%s", bblStack.PredefinedEnvID())
+				Expect(aws.LoadBalancers(vpcName)).To(HaveLen(2))
+				Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
+					MatchRegexp("stack-bbl-CFSSHPro-.*"),
+					MatchRegexp("stack-bbl-CFRouter-.*"),
+				))
+			})
+
+			By("deleting the LBs", func() {
+				bblTerraform.DeleteLBs()
+			})
+
+			By("verifying that no stack exists", func() {
+				Expect(aws.StackExists(stackName)).To(BeFalse())
+			})
+
+			By("confirming that the cf lbs do not exist", func() {
+				vpcName := fmt.Sprintf("%s-vpc", bblStack.PredefinedEnvID())
+				Expect(aws.LoadBalancers(vpcName)).To(BeEmpty())
 			})
 		})
 	})
