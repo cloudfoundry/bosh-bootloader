@@ -359,13 +359,14 @@ resource "aws_subnet" "internal_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.0.0/16", 4, count.index+1)}"
+  availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
     Name = "${var.env_id}-internal-subnet${count.index}"
   }
 
   lifecycle {
-    ignore_changes = ["cidr_block"]
+    ignore_changes = ["cidr_block", "availability_zone"]
   }
 }
 
