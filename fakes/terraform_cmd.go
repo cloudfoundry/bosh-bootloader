@@ -1,15 +1,19 @@
 package fakes
 
-import "io"
+import (
+	"errors"
+	"io"
+)
 
 type TerraformCmd struct {
 	RunCall struct {
 		CallCount int
 		Stub      func(stdout io.Writer)
 		Returns   struct {
-			Error error
+			Errors []error
 		}
-		Receives struct {
+		Initialized bool
+		Receives    struct {
 			Stdout           io.Writer
 			WorkingDirectory string
 			Args             []string
@@ -25,9 +29,25 @@ func (t *TerraformCmd) Run(stdout io.Writer, workingDirectory string, args []str
 	t.RunCall.Receives.Args = args
 	t.RunCall.Receives.Debug = debug
 
-	if t.RunCall.Stub != nil {
-		t.RunCall.Stub(stdout)
+	switch args[0] {
+	case "version":
+		if t.RunCall.Stub != nil {
+			t.RunCall.Stub(stdout)
+		}
+	case "init":
+		t.RunCall.Initialized = true
+	default:
+		if !t.RunCall.Initialized {
+			return errors.New("must initialize terraform v0.10.* before running any other commands")
+		}
+		if t.RunCall.Stub != nil {
+			t.RunCall.Stub(stdout)
+		}
 	}
 
-	return t.RunCall.Returns.Error
+	if len(t.RunCall.Returns.Errors) >= t.RunCall.CallCount {
+		return t.RunCall.Returns.Errors[t.RunCall.CallCount-1]
+	}
+
+	return nil
 }
