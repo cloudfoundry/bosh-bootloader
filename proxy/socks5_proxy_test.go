@@ -49,6 +49,10 @@ var _ = Describe("Socks5Proxy", func() {
 			socks5Proxy = proxy.NewSocks5Proxy(logger, hostKeyGetter, 0)
 		})
 
+		AfterEach(func() {
+			proxy.ResetNetListen()
+		})
+
 		It("starts a proxy to the jumpbox", func() {
 			err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
 			Expect(err).NotTo(HaveOccurred())
@@ -150,7 +154,8 @@ var _ = Describe("Socks5Proxy", func() {
 					return nil, errors.New("failed to listen")
 				})
 
-				socks5Proxy.Start(sshPrivateKey, sshServerURL)
+				err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
+				Expect(err).To(MatchError("failed to listen"))
 			})
 		})
 	})
