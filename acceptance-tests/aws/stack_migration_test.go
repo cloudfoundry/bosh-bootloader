@@ -132,7 +132,16 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("creating a concourse load balancer", func() {
-				bblTerraform.CreateLB("concourse", "", "", "")
+				certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+				Expect(err).NotTo(HaveOccurred())
+
+				chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+				Expect(err).NotTo(HaveOccurred())
+
+				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+				Expect(err).NotTo(HaveOccurred())
+
+				bblTerraform.CreateLB("concourse", certPath, keyPath, chainPath)
 			})
 
 			By("verifying that no stack exists", func() {
