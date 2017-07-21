@@ -21,6 +21,7 @@ var _ = Describe("NATTemplateBuilder", func() {
 			Expect(nat.Mappings).To(HaveLen(1))
 			Expect(nat.Mappings).To(HaveKeyWithValue("AWSNATAMI", map[string]templates.AMI{
 				"us-east-1":      {"ami-68115b02"},
+				"us-east-2":      {"ami-6893b20d"},
 				"us-west-1":      {"ami-ef1a718f"},
 				"us-west-2":      {"ami-77a4b816"},
 				"eu-west-1":      {"ami-c0993ab3"},
