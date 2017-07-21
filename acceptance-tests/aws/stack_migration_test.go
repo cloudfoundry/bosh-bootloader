@@ -195,7 +195,7 @@ var _ = Describe("Stack Migration", func() {
 				Expect(aws.LoadBalancers(vpcName)).To(HaveLen(2))
 				Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
 					MatchRegexp("stack-.*-CFSSHPro-.*"),
-					MatchRegexp("stack-.*-bbl-CFRouter-.*"),
+					MatchRegexp("stack-.*-CFRouter-.*"),
 				))
 			})
 
