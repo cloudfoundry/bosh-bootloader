@@ -194,8 +194,8 @@ var _ = Describe("Stack Migration", func() {
 				vpcName := fmt.Sprintf("vpc-%s", bblStack.PredefinedEnvID())
 				Expect(aws.LoadBalancers(vpcName)).To(HaveLen(2))
 				Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
-					MatchRegexp("stack-bbl-CFSSHPro-.*"),
-					MatchRegexp("stack-bbl-CFRouter-.*"),
+					MatchRegexp("stack-.*-CFSSHPro-.*"),
+					MatchRegexp("stack-.*-bbl-CFRouter-.*"),
 				))
 			})
 
