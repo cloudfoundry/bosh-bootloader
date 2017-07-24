@@ -5,7 +5,7 @@ const BaseTemplate = `resource "aws_eip" "bosh_eip" {
   vpc      = true
 }
 
-output "bosh_eip" {
+output "external_ip" {
   value = "${aws_eip.bosh_eip.public_ip}"
 }
 

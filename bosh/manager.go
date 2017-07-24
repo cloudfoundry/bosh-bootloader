@@ -375,7 +375,7 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 			"internal_gw: 10.0.0.1",
 			fmt.Sprintf("internal_ip: %s", DIRECTOR_INTERNAL_IP),
 			fmt.Sprintf("director_name: %s", fmt.Sprintf("bosh-%s", state.EnvID)),
-			fmt.Sprintf("external_ip: %s", terraformOutputs["bosh_eip"]),
+			fmt.Sprintf("external_ip: %s", terraformOutputs["external_ip"]),
 			fmt.Sprintf("az: %s", terraformOutputs["bosh_subnet_availability_zone"]),
 			fmt.Sprintf("subnet_id: %s", terraformOutputs["bosh_subnet_id"]),
 			fmt.Sprintf("access_key_id: %s", terraformOutputs["bosh_user_access_key"]),

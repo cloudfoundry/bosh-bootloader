@@ -225,7 +225,7 @@ gcp_credentials_json: 'some-credential-json'`,
 						"bosh_user_secret_access_key":   "some-bosh-user-secret-access-key",
 						"bosh_security_group":           "some-bosh-security-group",
 						"bosh_subnet_id":                "some-bosh-subnet",
-						"bosh_eip":                      "some-bosh-elastic-ip",
+						"external_ip":                   "some-bosh-external-ip",
 						"director_address":              "some-director-address",
 					}
 
@@ -252,7 +252,7 @@ gcp_credentials_json: 'some-credential-json'`,
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
-external_ip: some-bosh-elastic-ip
+external_ip: some-bosh-external-ip
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
 access_key_id: some-bosh-user-access-key
@@ -1002,7 +1002,7 @@ gcp_credentials_json: 'some-credential-json'`))
 						"bosh_user_secret_access_key":   "some-bosh-user-secret-access-key",
 						"bosh_security_group":           "some-bosh-security-group",
 						"bosh_subnet_id":                "some-bosh-subnet",
-						"bosh_eip":                      "some-bosh-elastic-ip",
+						"external_ip":                   "some-bosh-external-ip",
 						"director_address":              "some-director-address",
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -1010,7 +1010,7 @@ gcp_credentials_json: 'some-credential-json'`))
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
-external_ip: some-bosh-elastic-ip
+external_ip: some-bosh-external-ip
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
 access_key_id: some-bosh-user-access-key
