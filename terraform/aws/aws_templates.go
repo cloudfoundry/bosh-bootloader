@@ -506,7 +506,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-	ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
+	{{.IgnoreSSLCertificateProperties}}
   }
 }
 `

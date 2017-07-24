@@ -11,18 +11,19 @@ import (
 type TemplateGenerator struct{}
 
 type TemplateData struct {
-	NATDescription               string
-	InternalDescription          string
-	BOSHDescription              string
-	ConcourseDescription         string
-	ConcourseInternalDescription string
-	SSHLBDescription             string
-	SSHLBInternalDescription     string
-	RouterDescription            string
-	RouterInternalDescription    string
-	TCPLBDescription             string
-	TCPLBInternalDescription     string
-	SSLCertificateNameProperty   string
+	NATDescription                 string
+	InternalDescription            string
+	BOSHDescription                string
+	ConcourseDescription           string
+	ConcourseInternalDescription   string
+	SSHLBDescription               string
+	SSHLBInternalDescription       string
+	RouterDescription              string
+	RouterInternalDescription      string
+	TCPLBDescription               string
+	TCPLBInternalDescription       string
+	SSLCertificateNameProperty     string
+	IgnoreSSLCertificateProperties string
 }
 
 func NewTemplateGenerator() TemplateGenerator {
@@ -74,6 +75,10 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 			TCPLBInternalDescription:     "CF TCP Internal",
 			SSLCertificateNameProperty:   `name_prefix       = "${var.ssl_certificate_name_prefix}"`,
 		}
+	}
+
+	if state.LB.Cert == "" || state.LB.Key == "" {
+		templateData.IgnoreSSLCertificateProperties = `ignore_changes = ["certificate_body", "certificate_chain", "private_key"]`
 	}
 
 	tmpl := template.New("descriptions")
