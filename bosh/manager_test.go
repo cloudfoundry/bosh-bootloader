@@ -220,13 +220,13 @@ gcp_credentials_json: 'some-credential-json'`,
 			Context("when terraform was used to create infrastructure", func() {
 				BeforeEach(func() {
 					terraformOutputs = map[string]interface{}{
-						"az":                      "some-bosh-subnet-az",
-						"access_key_id":           "some-bosh-user-access-key",
-						"secret_access_key":       "some-bosh-user-secret-access-key",
-						"default_security_groups": "some-bosh-security-group",
-						"subnet_id":               "some-bosh-subnet",
-						"external_ip":             "some-bosh-elastic-ip",
-						"director_address":        "some-bosh-url",
+						"az": "some-bosh-subnet-az",
+						"bosh_user_access_key":        "some-bosh-user-access-key",
+						"bosh_user_secret_access_key": "some-bosh-user-secret-access-key",
+						"default_security_groups":     "some-bosh-security-group",
+						"subnet_id":                   "some-bosh-subnet",
+						"external_ip":                 "some-bosh-elastic-ip",
+						"director_address":            "some-bosh-url",
 					}
 
 					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
@@ -997,13 +997,13 @@ gcp_credentials_json: 'some-credential-json'`))
 
 				It("returns a correct yaml string of bosh deployment variables", func() {
 					vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
-						"az":                      "some-bosh-subnet-az",
-						"access_key_id":           "some-bosh-user-access-key",
-						"secret_access_key":       "some-bosh-user-secret-access-key",
-						"default_security_groups": "some-bosh-security-group",
-						"subnet_id":               "some-bosh-subnet",
-						"external_ip":             "some-bosh-elastic-ip",
-						"director_address":        "some-bosh-url",
+						"az": "some-bosh-subnet-az",
+						"bosh_user_access_key":        "some-bosh-user-access-key",
+						"bosh_user_secret_access_key": "some-bosh-user-secret-access-key",
+						"default_security_groups":     "some-bosh-security-group",
+						"subnet_id":                   "some-bosh-subnet",
+						"external_ip":                 "some-bosh-elastic-ip",
+						"director_address":            "some-bosh-url",
 					})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
