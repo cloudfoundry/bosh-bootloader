@@ -226,7 +226,7 @@ gcp_credentials_json: 'some-credential-json'`,
 						"default_security_groups":     "some-bosh-security-group",
 						"subnet_id":                   "some-bosh-subnet",
 						"external_ip":                 "some-bosh-elastic-ip",
-						"director_address":            "some-bosh-url",
+						"director_address":            "some-director-address",
 					}
 
 					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
@@ -291,7 +291,7 @@ private_key: |-
 							Variables:              variablesYAML,
 							Manifest:               "some-manifest",
 							DirectorName:           "bosh-some-env-id",
-							DirectorAddress:        "some-bosh-url",
+							DirectorAddress:        "some-director-address",
 							DirectorUsername:       "admin",
 							DirectorPassword:       "some-admin-password",
 							DirectorSSLCA:          "some-ca",
@@ -1003,7 +1003,7 @@ gcp_credentials_json: 'some-credential-json'`))
 						"default_security_groups":     "some-bosh-security-group",
 						"subnet_id":                   "some-bosh-subnet",
 						"external_ip":                 "some-bosh-elastic-ip",
-						"director_address":            "some-bosh-url",
+						"director_address":            "some-director-address",
 					})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24

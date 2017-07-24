@@ -7,7 +7,7 @@ output "bosh_eip" {
   value = "${aws_eip.bosh_eip.public_ip}"
 }
 
-output "bosh_url" {
+output "director_address" {
   value = "https://${aws_eip.bosh_eip.public_ip}:25555"
 }
 

@@ -112,7 +112,7 @@ var _ = Describe("Store", func() {
 			data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(MatchJSON(`{
-				"version": 5,
+				"version": 6,
 				"iaas": "aws",
 				"noDirector": false,
 				"migratedFromCloudFormation": false,
@@ -296,7 +296,7 @@ var _ = Describe("Store", func() {
 				state, err := storage.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{
-					Version: 5,
+					Version: 6,
 				}))
 			})
 		})
@@ -315,10 +315,10 @@ var _ = Describe("Store", func() {
 			})
 		})
 
-		Context("when there is a v5 state file", func() {
+		Context("when there is a v6 state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 5,
+					"version": 6,
 					"iaas": "aws",
 					"aws": {
 						"accessKeyId": "some-aws-access-key-id",
@@ -351,7 +351,7 @@ var _ = Describe("Store", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version: 5,
+					Version: 6,
 					IAAS:    "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",

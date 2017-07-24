@@ -20,7 +20,7 @@ var _ = Describe("OutputGenerator", func() {
 		executor = &fakes.TerraformExecutor{}
 		executor.OutputsCall.Returns.Outputs = map[string]interface{}{
 			"bosh_eip":                             "some-bosh-eip",
-			"bosh_url":                             "some-bosh-url",
+			"director_address":                     "some-director-address",
 			"bosh_user_access_key":                 "some-bosh-user-access-key",
 			"bosh_user_secret_access_key":          "some-bosh-user-secret-access-key",
 			"bosh_subnet_id":                       "some-bosh-subnet-id",
@@ -64,7 +64,7 @@ var _ = Describe("OutputGenerator", func() {
 		Expect(outputs).To(Equal(map[string]interface{}{
 			"az":                                    "some-bosh-subnet-availability-zone",
 			"external_ip":                           "some-bosh-eip",
-			"director_address":                      "some-bosh-url",
+			"director_address":                      "some-director-address",
 			"bosh_user_access_key":                  "some-bosh-user-access-key",
 			"bosh_user_secret_access_key":           "some-bosh-user-secret-access-key",
 			"subnet_id":                             "some-bosh-subnet-id",
