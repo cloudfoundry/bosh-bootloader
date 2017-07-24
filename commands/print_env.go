@@ -60,5 +60,8 @@ func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
 		return "", err
 	}
 
-	return terraformOutputs["external_ip"].(string), nil
+	if state.IAAS == "gcp" {
+		return terraformOutputs["external_ip"].(string), nil
+	}
+	return terraformOutputs["bosh_eip"].(string), nil
 }

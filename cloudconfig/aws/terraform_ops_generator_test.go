@@ -57,15 +57,15 @@ var _ = Describe("TerraformOpsGenerator", func() {
 					"some-internal-subnet-ids-2",
 					"some-internal-subnet-ids-3",
 				},
-				"internal_security_group":               "some-internal-security-group",
-				"cf_router_load_balancer":               "some-cf-router-lb",
-				"cf_router_internal_security_group":     "some-cf-router-internal-security-group",
-				"cf_ssh_proxy_load_balancer":            "some-cf-ssh-proxy-lb",
-				"cf_ssh_proxy_internal_security_group":  "some-cf-ssh-proxy-internal-security-group",
-				"cf_tcp_router_load_balancer":           "some-cf-tcp-router-lb",
-				"cf_tcp_router_internal_security_group": "some-cf-tcp-router-internal-security-group",
-				"concourse_load_balancer":               "some-concourse-lb",
-				"concourse_internal_security_group":     "some-concourse-internal-security-group",
+				"internal_security_group":              "some-internal-security-group",
+				"cf_router_lb_name":                    "some-cf-router-lb-name",
+				"cf_router_lb_internal_security_group": "some-cf-router-lb-internal-security-group",
+				"cf_ssh_lb_name":                       "some-cf-ssh-lb-name",
+				"cf_ssh_lb_internal_security_group":    "some-cf-ssh-lb-internal-security-group",
+				"cf_tcp_lb_name":                       "some-cf-tcp-lb-name",
+				"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security-group",
+				"concourse_lb_name":                    "some-concourse-lb-name",
+				"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
 			}
 
 			opsGenerator = aws.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
@@ -175,13 +175,15 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				Entry("when internal_subnet_ids is missing", "internal_subnet_ids", ""),
 				Entry("when internal_security_group is missing", "internal_security_group", ""),
 
-				Entry("when cf_router_load_balancer is missing", "cf_router_load_balancer", "cf"),
-				Entry("when cf_router_internal_security_group is missing", "cf_router_internal_security_group", "cf"),
-				Entry("when cf_ssh_proxy_load_balancer is missing", "cf_ssh_proxy_load_balancer", "cf"),
-				Entry("when cf_ssh_proxy_internal_security_group is missing", "cf_ssh_proxy_internal_security_group", "cf"),
+				Entry("when cf_router_lb_name is missing", "cf_router_lb_name", "cf"),
+				Entry("when cf_router_lb_internal_security_group is missing", "cf_router_lb_internal_security_group", "cf"),
+				Entry("when cf_ssh_lb_name is missing", "cf_ssh_lb_name", "cf"),
+				Entry("when cf_ssh_lb_internal_security_group is missing", "cf_ssh_lb_internal_security_group", "cf"),
+				Entry("when cf_tcp_lb_name", "cf_tcp_lb_name", "cf"),
+				Entry("when cf_tcp_lb_internal_security_group is missing", "cf_tcp_lb_internal_security_group", "cf"),
 
-				Entry("when concourse_load_balancer is missing", "concourse_load_balancer", "concourse"),
-				Entry("when concourse_internal_security_group is missing", "concourse_internal_security_group", "concourse"),
+				Entry("when concourse_lb_name is missing", "concourse_lb_name", "concourse"),
+				Entry("when concourse_lb_internal_security_group is missing", "concourse_lb_internal_security_group", "concourse"),
 			)
 		})
 	})

@@ -3,9 +3,9 @@
   value:
     name: router-lb
     cloud_properties:
-      elbs: [some-cf-router-lb]
+      elbs: [some-cf-router-lb-name]
       security_groups:
-      - some-cf-router-internal-security-group
+      - some-cf-router-lb-internal-security-group
       - some-internal-security-group
 
 - type: replace
@@ -13,9 +13,9 @@
   value:
     name: ssh-proxy-lb
     cloud_properties:
-      elbs: [some-cf-ssh-proxy-lb]
+      elbs: [some-cf-ssh-lb-name]
       security_groups:
-      - some-cf-ssh-proxy-internal-security-group
+      - some-cf-ssh-lb-internal-security-group
       - some-internal-security-group
 
 - type: replace
@@ -23,7 +23,7 @@
   value:
     name: cf-tcp-router-network-properties
     cloud_properties:
-      elbs: [some-cf-tcp-router-lb]
+      elbs: [some-cf-tcp-lb-name]
       security_groups:
-      - some-cf-tcp-router-internal-security-group
+      - some-cf-tcp-lb-internal-security-group
       - some-internal-security-group

@@ -98,8 +98,8 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 				"CFnick-da-gawdInternalSecurityGroup": "some-cf-nick-da-gawd-internal-security-group",
 			}),
 			Entry("concourse load balancer exists", "concourse", "aws-concourse-lb-ops.yml", map[string]string{
-				"ConcourseLoadBalancer":          "some-concourse-lb",
-				"ConcourseInternalSecurityGroup": "some-concourse-internal-security-group",
+				"ConcourseLoadBalancer":          "some-concourse-lb-name",
+				"ConcourseInternalSecurityGroup": "some-concourse-lb-internal-security-group",
 			}),
 		)
 

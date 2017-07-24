@@ -3,7 +3,7 @@
   value:
     name: lb
     cloud_properties:
-      elbs: [some-concourse-lb]
+      elbs: [some-concourse-lb-name]
       security_groups:
-      - some-concourse-internal-security-group
+      - some-concourse-lb-internal-security-group
       - some-internal-security-group

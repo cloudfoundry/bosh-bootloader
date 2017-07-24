@@ -173,9 +173,9 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 	switch state.LB.Type {
 	case "cf":
 		tfOutputs := []map[string]string{
-			map[string]string{"name": "router-lb", "lb": "cf_router_load_balancer", "group": "cf_router_internal_security_group"},
-			map[string]string{"name": "ssh-proxy-lb", "lb": "cf_ssh_proxy_load_balancer", "group": "cf_ssh_proxy_internal_security_group"},
-			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_router_load_balancer", "group": "cf_tcp_router_internal_security_group"},
+			map[string]string{"name": "router-lb", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
+			map[string]string{"name": "ssh-proxy-lb", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
+			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_lb_name", "group": "cf_tcp_lb_internal_security_group"},
 		}
 
 		for _, details := range tfOutputs {
@@ -201,14 +201,14 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 			}))
 		}
 	case "concourse":
-		concourseLoadBalancer, ok := terraformOutputs["concourse_load_balancer"].(string)
+		concourseLoadBalancer, ok := terraformOutputs["concourse_lb_name"].(string)
 		if !ok {
-			return []op{}, errors.New("missing concourse_load_balancer terraform output")
+			return []op{}, errors.New("missing concourse_lb_name terraform output")
 		}
 
-		concourseInternalSecurityGroup, ok := terraformOutputs["concourse_internal_security_group"].(string)
+		concourseInternalSecurityGroup, ok := terraformOutputs["concourse_lb_internal_security_group"].(string)
 		if !ok {
-			return []op{}, errors.New("missing concourse_internal_security_group terraform output")
+			return []op{}, errors.New("missing concourse_lb_internal_security_group terraform output")
 		}
 
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{

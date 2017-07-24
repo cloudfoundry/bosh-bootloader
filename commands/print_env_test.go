@@ -55,19 +55,40 @@ var _ = Describe("PrintEnv", func() {
 		})
 
 		Context("when print-env is called on a bbl env with no director", func() {
-			It("prints only the BOSH_ENVIRONMENT", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"external_ip": "some-external-ip",
-				}
+			Context("on gcp", func() {
+				It("prints only the BOSH_ENVIRONMENT", func() {
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"external_ip": "some-external-ip",
+					}
 
-				err := printEnv.Execute([]string{}, storage.State{
-					NoDirector: true,
+					err := printEnv.Execute([]string{}, storage.State{
+						IAAS:       "gcp",
+						NoDirector: true,
+					})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
+					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
+					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
+					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
 				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
-				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
-				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
-				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
+			})
+
+			Context("on aws", func() {
+				It("prints only the BOSH_ENVIRONMENT", func() {
+					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+						"bosh_eip": "some-external-ip",
+					}
+
+					err := printEnv.Execute([]string{}, storage.State{
+						IAAS:       "aws",
+						NoDirector: true,
+					})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
+					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
+					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
+					Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
+				})
 			})
 		})
 
