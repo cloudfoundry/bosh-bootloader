@@ -22,7 +22,7 @@ type TemplateData struct {
 	RouterInternalDescription    string
 	TCPLBDescription             string
 	TCPLBInternalDescription     string
-	SSLCertificateID             string
+	SSLCertificateNameProperty   string
 }
 
 func NewTemplateGenerator() TemplateGenerator {
@@ -34,9 +34,9 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 
 	switch state.LB.Type {
 	case "concourse":
-		t = strings.Join([]string{t, LBSubnetTemplate, ConcourseLBTemplate}, "\n")
+		t = strings.Join([]string{t, LBSubnetTemplate, ConcourseLBTemplate, SSLCertificateTemplate}, "\n")
 	case "cf":
-		t = strings.Join([]string{t, LBSubnetTemplate, CFLBTemplate}, "\n")
+		t = strings.Join([]string{t, LBSubnetTemplate, CFLBTemplate, SSLCertificateTemplate}, "\n")
 
 		if state.LB.Domain != "" {
 			t = strings.Join([]string{t, CFDNSTemplate}, "\n")
@@ -57,6 +57,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 			RouterInternalDescription:    "CFRouterInternal",
 			TCPLBDescription:             "CF TCP",
 			TCPLBInternalDescription:     "CF TCP Internal",
+			SSLCertificateNameProperty:   `name              = "${var.ssl_certificate_name}"`,
 		}
 	} else {
 		templateData = TemplateData{
@@ -71,15 +72,8 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 			RouterInternalDescription:    "CF Router Internal",
 			TCPLBDescription:             "CF TCP",
 			TCPLBInternalDescription:     "CF TCP Internal",
+			SSLCertificateNameProperty:   `name_prefix       = "${var.ssl_certificate_name_prefix}"`,
 		}
-	}
-
-	if state.AWS.CertificateARN == "" && state.LB.Type != "" {
-		t = strings.Join([]string{t, SSLCertificateTemplate}, "\n")
-
-		templateData.SSLCertificateID = "${aws_iam_server_certificate.lb_cert.arn}"
-	} else {
-		templateData.SSLCertificateID = state.AWS.CertificateARN
 	}
 
 	tmpl := template.New("descriptions")

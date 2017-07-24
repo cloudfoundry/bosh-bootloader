@@ -178,13 +178,13 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("creating cf lbs", func() {
-				certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+				certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
 				Expect(err).NotTo(HaveOccurred())
 
-				chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+				chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 				Expect(err).NotTo(HaveOccurred())
 
-				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 				Expect(err).NotTo(HaveOccurred())
 
 				bblStack.CreateLB("cf", certPath, keyPath, chainPath)

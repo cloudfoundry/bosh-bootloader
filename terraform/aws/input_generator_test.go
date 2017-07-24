@@ -114,7 +114,8 @@ var _ = Describe("InputGenerator", func() {
 					Name: "some-key-pair-name",
 				},
 				Stack: storage.Stack{
-					BOSHAZ: "some-zone",
+					BOSHAZ:          "some-zone",
+					CertificateName: "some-certificate-name",
 				},
 				LB: storage.LB{
 					Type:  "cf",
@@ -140,9 +141,8 @@ var _ = Describe("InputGenerator", func() {
 				"region":                      "some-region",
 				"bosh_availability_zone":      "some-zone",
 				"availability_zones":          `["z1","z2","z3"]`,
-				"ssl_certificate":             "some-cert",
-				"ssl_certificate_chain":       "some-chain",
-				"ssl_certificate_private_key": "some-key",
+				"ssl_certificate_name_prefix": "",
+				"ssl_certificate_name":        "some-certificate-name",
 			}))
 		})
 
@@ -166,9 +166,8 @@ var _ = Describe("InputGenerator", func() {
 					"region":                      "some-region",
 					"bosh_availability_zone":      "some-zone",
 					"availability_zones":          `["z1","z2","z3"]`,
-					"ssl_certificate":             "some-cert",
-					"ssl_certificate_chain":       "some-chain",
-					"ssl_certificate_private_key": "some-key",
+					"ssl_certificate_name":        "some-certificate-name",
+					"ssl_certificate_name_prefix": "",
 					"system_domain":               "some-domain",
 				}))
 			})
@@ -223,6 +222,8 @@ var _ = Describe("InputGenerator", func() {
 				"ssl_certificate":             "some-cert",
 				"ssl_certificate_chain":       "some-chain",
 				"ssl_certificate_private_key": "some-key",
+				"ssl_certificate_name":        "",
+				"ssl_certificate_name_prefix": "some-env-id",
 			}))
 		})
 	})

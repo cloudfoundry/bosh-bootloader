@@ -245,12 +245,20 @@ var _ = Describe("Migrate", func() {
 				LBType:          "cf",
 			}
 
-			certificate.DescribeReturns(iam.Certificate{ARN: "some-dumb-arn"}, nil)
+			certificate.DescribeReturns(iam.Certificate{
+				ARN:  "some-dumb-arn",
+				Name: "some-certificate-name",
+			}, nil)
 		})
 
 		It("migrates infrastructure created by cloudformation to terraform", func() {
 			returnedState, err := migrator.Migrate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
+
+			importInputs := []terraform.ImportInput{}
+			for _, importCall := range tf.Invocations()["Import"] {
+				importInputs = append(importInputs, importCall[0].(terraform.ImportInput))
+			}
 
 			Expect(certificate.DescribeCallCount()).To(Equal(1))
 			Expect(certificate.DescribeArgsForCall(0)).To(Equal("some-certificate-name"))
@@ -258,8 +266,12 @@ var _ = Describe("Migrate", func() {
 			_, _, _, _, lbType, certificateARN, _ := infrastructure.UpdateArgsForCall(0)
 			Expect(lbType).To(Equal("cf"))
 			Expect(certificateARN).To(Equal("some-dumb-arn"))
-			Expect(returnedState.AWS.CertificateARN).To(Equal(certificateARN))
 			Expect(returnedState.LB.Type).To(Equal(lbType))
+
+			Expect(importInputs).To(ContainElement(terraform.ImportInput{
+				TerraformAddr: "aws_iam_server_certificate.lb_cert",
+				AWSResourceID: "some-certificate-name",
+			}))
 		})
 	})
 

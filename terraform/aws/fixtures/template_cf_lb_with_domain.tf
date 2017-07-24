@@ -1458,6 +1458,39 @@ output "cf_tcp_lb_url" {
   value = "${aws_elb.cf_tcp_lb.dns_name}"
 }
 
+variable "ssl_certificate" {
+  type = "string"
+}
+
+variable "ssl_certificate_chain" {
+  type = "string"
+}
+
+variable "ssl_certificate_private_key" {
+  type = "string"
+}
+
+variable "ssl_certificate_name" {
+  type = "string"
+}
+
+variable "ssl_certificate_name_prefix" {
+  type = "string"
+}
+
+resource "aws_iam_server_certificate" "lb_cert" {
+  name_prefix       = "${var.ssl_certificate_name_prefix}"
+
+  certificate_body  = "${var.ssl_certificate}"
+  certificate_chain = "${var.ssl_certificate_chain}"
+  private_key       = "${var.ssl_certificate_private_key}"
+
+  lifecycle {
+    create_before_destroy = true
+	ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
+  }
+}
+
 variable "system_domain" {
   type = "string"
 }
@@ -1508,28 +1541,4 @@ resource "aws_route53_record" "tcp" {
   ttl     = 300
 
   records = ["${aws_elb.cf_tcp_lb.dns_name}"]
-}
-
-variable "ssl_certificate" {
-  type = "string"
-}
-
-variable "ssl_certificate_chain" {
-  type = "string"
-}
-
-variable "ssl_certificate_private_key" {
-  type = "string"
-}
-
-resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${var.short_env_id}-"
-
-  certificate_body  = "${var.ssl_certificate}"
-  certificate_chain = "${var.ssl_certificate_chain}"
-  private_key       = "${var.ssl_certificate_private_key}"
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }

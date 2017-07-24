@@ -55,9 +55,14 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 	}
 
 	if state.LB.Type == "cf" || state.LB.Type == "concourse" {
-		inputs["ssl_certificate"] = state.LB.Cert
-		inputs["ssl_certificate_private_key"] = state.LB.Key
-		inputs["ssl_certificate_chain"] = state.LB.Chain
+		inputs["ssl_certificate_name_prefix"] = ""
+		inputs["ssl_certificate_name"] = state.Stack.CertificateName
+		if state.Stack.CertificateName == "" {
+			inputs["ssl_certificate_name_prefix"] = shortEnvID
+			inputs["ssl_certificate"] = state.LB.Cert
+			inputs["ssl_certificate_private_key"] = state.LB.Key
+			inputs["ssl_certificate_chain"] = state.LB.Chain
+		}
 
 		if state.LB.Domain != "" {
 			inputs["system_domain"] = state.LB.Domain

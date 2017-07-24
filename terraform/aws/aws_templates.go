@@ -489,8 +489,16 @@ variable "ssl_certificate_private_key" {
   type = "string"
 }
 
+variable "ssl_certificate_name" {
+  type = "string"
+}
+
+variable "ssl_certificate_name_prefix" {
+  type = "string"
+}
+
 resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${var.short_env_id}-"
+  {{.SSLCertificateNameProperty}}
 
   certificate_body  = "${var.ssl_certificate}"
   certificate_chain = "${var.ssl_certificate_chain}"
@@ -498,6 +506,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
+	ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
   }
 }
 `
@@ -604,7 +613,7 @@ resource "aws_elb" "concourse_lb" {
     instance_protocol  = "tcp"
     lb_port            = 443
     lb_protocol        = "ssl"
-    ssl_certificate_id = "{{.SSLCertificateID}}"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
   }
 
   security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
@@ -797,7 +806,7 @@ resource "aws_elb" "cf_router_lb" {
     instance_protocol  = "http"
     lb_port            = 443
     lb_protocol        = "https"
-    ssl_certificate_id = "{{.SSLCertificateID}}"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
   }
 
   listener {
@@ -805,7 +814,7 @@ resource "aws_elb" "cf_router_lb" {
     instance_protocol  = "tcp"
     lb_port            = 4443
     lb_protocol        = "ssl"
-    ssl_certificate_id = "{{.SSLCertificateID}}"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
   }
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]

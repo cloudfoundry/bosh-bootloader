@@ -29,7 +29,6 @@ type AWS struct {
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 	Region          string `json:"region"`
-	CertificateARN  string `json:"certificateARN"`
 }
 
 type GCP struct {

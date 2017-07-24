@@ -33,6 +33,7 @@ var (
 		"ConcourseSecurityGroup":          "aws_security_group.concourse_lb_security_group",
 		"ConcourseLoadBalancer":           "aws_elb.concourse_lb",
 		"LoadBalancerRouteTable":          "aws_route_table.lb_route_table",
+		"LoadBalancerCert":                "aws_iam_server_certificate.lb_cert",
 	}
 )
 
@@ -90,7 +91,10 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	var certificateARN string
+	var (
+		certificateARN  string
+		certificateName string
+	)
 	if state.Stack.LBType == "concourse" || state.Stack.LBType == "cf" {
 		certificate, err := m.certificate.Describe(state.Stack.CertificateName)
 		if err != nil {
@@ -98,14 +102,17 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 		}
 
 		certificateARN = certificate.ARN
-		state.AWS.CertificateARN = certificateARN
-
+		certificateName = certificate.Name
 		state.LB.Type = state.Stack.LBType
 	}
 
 	stack, err := m.infrastructure.Update(state.KeyPair.Name, availabilityZones, state.Stack.Name, state.Stack.BOSHAZ, state.Stack.LBType, certificateARN, state.EnvID)
 	if err != nil {
 		return storage.State{}, err
+	}
+
+	if certificateARN != "" {
+		stack.Outputs["LoadBalancerCert"] = certificateName
 	}
 
 	var (
