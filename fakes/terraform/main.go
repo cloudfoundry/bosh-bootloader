@@ -30,42 +30,7 @@ func main() {
 		log.Fatal("failed to terraform")
 	}
 
-	if os.Args[1] == "version" {
-		resp, err := http.Get(fmt.Sprintf("%s/version", backendURL))
-		if err != nil {
-			panic(err)
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Printf("some-text v%s some-more-text", string(body))
-	}
-
-	if os.Args[1] == "output" {
-		resp, err := http.Get(fmt.Sprintf("%s/output/%s", backendURL, os.Args[2]))
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-
-		switch resp.StatusCode {
-		case http.StatusOK:
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Print(string(body))
-		case http.StatusInternalServerError:
-			fmt.Fprintf(os.Stderr, "Returning error in fake terraform.")
-			os.Exit(1)
-		}
-	}
-
-	if os.Args[1] == "apply" || os.Args[1] == "destroy" {
+	if os.Args[1] == "apply" {
 		postArgs, err := json.Marshal(os.Args[1:])
 		if err != nil {
 			panic(err)
