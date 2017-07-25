@@ -12,6 +12,26 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
+const iamProfileOps = `
+- type: remove
+  path: /resource_pools/name=vms/cloud_properties/access_key_id?
+- type: remove
+  path: /resource_pools/name=vms/cloud_properties/secret_access_key?
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties/iam_instance_profile?
+  value: ((iam_instance_profile))
+- type: remove
+  path: /instance_groups/name=bosh/properties/aws/access_key_id
+- type: remove
+  path: /instance_groups/name=bosh/properties/aws/secret_access_key
+- type: replace
+  path: /instance_groups/name=bosh/properties/aws/credentials_source?
+  value: env_or_profile
+- type: replace
+  path: /instance_groups/name=bosh/properties/aws/default_iam_instance_profile?
+  value: ((iam_instance_profile))
+  `
+
 type Executor struct {
 	command       command
 	tempDir       func(string, string) (string, error)
@@ -121,9 +141,9 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 	args := []string{
 		"interpolate", manifestPath,
 		"--var-errs",
-		"-o", cpiOpsFilePath,
 		"--vars-store", variablesPath,
 		"--vars-file", deploymentVarsPath,
+		"-o", cpiOpsFilePath,
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -154,6 +174,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
+	iamProfileFilepath := filepath.Join(tempDir, "iam-instance-profile.yml")
 
 	if interpolateInput.Variables != "" {
 		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
@@ -199,9 +220,9 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			"interpolate", boshManifestPath,
 			"--var-errs",
 			"--var-errs-unused",
-			"-o", cpiOpsFilePath,
 			"--vars-store", variablesPath,
 			"--vars-file", deploymentVarsPath,
+			"-o", cpiOpsFilePath,
 		}
 	} else {
 		jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
@@ -230,7 +251,13 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 				//not tested
 				return InterpolateOutput{}, err
 			}
+
+			err = e.writeFile(iamProfileFilepath, []byte(iamProfileOps), os.ModePerm)
+			if err != nil {
+				return InterpolateOutput{}, err
+			}
 		}
+
 		err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
 		if err != nil {
 			return InterpolateOutput{}, err
@@ -240,11 +267,15 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			"interpolate", boshManifestPath,
 			"--var-errs",
 			"--var-errs-unused",
+			"--vars-store", variablesPath,
+			"--vars-file", deploymentVarsPath,
 			"-o", cpiOpsFilePath,
 			"-o", jumpboxUserOpsFilePath,
 			"-o", externalIPNotRecommendedOpsFilePath,
-			"--vars-store", variablesPath,
-			"--vars-file", deploymentVarsPath,
+		}
+
+		if interpolateInput.IAAS == "aws" {
+			args = append(args, "-o", iamProfileFilepath)
 		}
 	}
 
@@ -264,9 +295,9 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		args = []string{
 			"interpolate", boshManifestPath,
 			"--var-errs",
-			"-o", userOpsFilePath,
 			"--vars-store", variablesPath,
 			"--vars-file", deploymentVarsPath,
+			"-o", userOpsFilePath,
 		}
 
 		buffer = bytes.NewBuffer([]byte{})

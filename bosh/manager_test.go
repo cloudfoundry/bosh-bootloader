@@ -31,7 +31,6 @@ var _ = Describe("Manager", func() {
 			socks5Proxy      *fakes.Socks5Proxy
 			boshManager      *bosh.Manager
 			incomingGCPState storage.State
-			incomingAWSState storage.State
 			terraformOutputs map[string]interface{}
 
 			osUnsetenvKey string
@@ -88,26 +87,6 @@ var _ = Describe("Manager", func() {
 				},
 			}
 
-			incomingAWSState = storage.State{
-				IAAS:  "aws",
-				EnvID: "some-env-id",
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-				},
-				AWS: storage.AWS{
-					Region: "some-region",
-				},
-				BOSH: storage.BOSH{
-					State: map[string]interface{}{
-						"some-key": "some-value",
-					},
-				},
-				TFState: "some-tf-state",
-				LB: storage.LB{
-					Type: "cf",
-				},
-			}
 		})
 
 		AfterEach(func() {
@@ -217,12 +196,33 @@ gcp_credentials_json: 'some-credential-json'`,
 		})
 
 		Context("when iaas is aws", func() {
+			incomingAWSState := storage.State{
+				IAAS:  "aws",
+				EnvID: "some-env-id",
+				KeyPair: storage.KeyPair{
+					Name:       "some-keypair-name",
+					PrivateKey: "some-private-key",
+				},
+				AWS: storage.AWS{
+					AccessKeyID:     "some-access-key-id",
+					SecretAccessKey: "some-secret-access-key",
+					Region:          "some-region",
+				},
+				BOSH: storage.BOSH{
+					State: map[string]interface{}{
+						"some-key": "some-value",
+					},
+				},
+				TFState: "some-tf-state",
+				LB: storage.LB{
+					Type: "cf",
+				},
+			}
 			Context("when terraform was used to create infrastructure", func() {
 				BeforeEach(func() {
 					terraformOutputs = map[string]interface{}{
+						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
-						"bosh_user_access_key":          "some-bosh-user-access-key",
-						"bosh_user_secret_access_key":   "some-bosh-user-secret-access-key",
 						"bosh_security_group":           "some-bosh-security-group",
 						"bosh_subnet_id":                "some-bosh-subnet",
 						"external_ip":                   "some-bosh-external-ip",
@@ -255,8 +255,9 @@ director_name: bosh-some-env-id
 external_ip: some-bosh-external-ip
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
-access_key_id: some-bosh-user-access-key
-secret_access_key: some-bosh-user-secret-access-key
+access_key_id: some-access-key-id
+secret_access_key: some-secret-access-key
+iam_instance_profile: some-bosh-iam-instance-profile
 default_key_name: some-keypair-name
 default_security_groups: [some-bosh-security-group]
 region: some-region
@@ -282,7 +283,9 @@ private_key: |-
 							PrivateKey: "some-private-key",
 						},
 						AWS: storage.AWS{
-							Region: "some-region",
+							AccessKeyID:     "some-access-key-id",
+							SecretAccessKey: "some-secret-access-key",
+							Region:          "some-region",
 						},
 						BOSH: storage.BOSH{
 							State: map[string]interface{}{
@@ -303,6 +306,40 @@ private_key: |-
 							Type: "cf",
 						},
 					}))
+				})
+			})
+
+			Context("when the executor's create env call fails with create env error", func() {
+				var (
+					expectedError bosh.ManagerCreateError
+					expectedState storage.State
+				)
+
+				BeforeEach(func() {
+					boshState := map[string]interface{}{
+						"partial": "bosh-state",
+					}
+
+					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
+						Manifest:  "some-manifest",
+						Variables: variablesYAML,
+					}
+
+					createEnvError := bosh.NewCreateEnvError(boshState, errors.New("failed to create env"))
+					boshExecutor.CreateEnvCall.Returns.Error = createEnvError
+
+					expectedState = incomingAWSState
+					expectedState.BOSH = storage.BOSH{
+						Manifest:  "some-manifest",
+						State:     boshState,
+						Variables: variablesYAML,
+					}
+					expectedError = bosh.NewManagerCreateError(expectedState, createEnvError)
+				})
+
+				It("returns a bosh manager create error with a valid state", func() {
+					_, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
+					Expect(err).To(MatchError(expectedError))
 				})
 			})
 		})
@@ -354,40 +391,6 @@ private_key: |-
 
 					_, err := boshManager.CreateDirector(storage.State{IAAS: "aws"}, terraformOutputs)
 					Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
-				})
-			})
-
-			Context("when the executor's create env call fails with create env error", func() {
-				var (
-					expectedError bosh.ManagerCreateError
-					expectedState storage.State
-				)
-
-				BeforeEach(func() {
-					boshState := map[string]interface{}{
-						"partial": "bosh-state",
-					}
-
-					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
-						Manifest:  "some-manifest",
-						Variables: variablesYAML,
-					}
-
-					createEnvError := bosh.NewCreateEnvError(boshState, errors.New("failed to create env"))
-					boshExecutor.CreateEnvCall.Returns.Error = createEnvError
-
-					expectedState = incomingAWSState
-					expectedState.BOSH = storage.BOSH{
-						Manifest:  "some-manifest",
-						State:     boshState,
-						Variables: variablesYAML,
-					}
-					expectedError = bosh.NewManagerCreateError(expectedState, createEnvError)
-				})
-
-				It("returns a bosh manager create error with a valid state", func() {
-					_, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
-					Expect(err).To(MatchError(expectedError))
 				})
 			})
 		})
@@ -977,7 +980,9 @@ gcp_credentials_json: 'some-credential-json'`))
 						PrivateKey: "some-private-key",
 					},
 					AWS: storage.AWS{
-						Region: "some-region",
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
 					},
 					BOSH: storage.BOSH{
 						State: map[string]interface{}{
@@ -997,9 +1002,8 @@ gcp_credentials_json: 'some-credential-json'`))
 
 				It("returns a correct yaml string of bosh deployment variables", func() {
 					vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
-						"bosh_user_access_key":          "some-bosh-user-access-key",
-						"bosh_user_secret_access_key":   "some-bosh-user-secret-access-key",
 						"bosh_security_group":           "some-bosh-security-group",
 						"bosh_subnet_id":                "some-bosh-subnet",
 						"external_ip":                   "some-bosh-external-ip",
@@ -1013,8 +1017,9 @@ director_name: bosh-some-env-id
 external_ip: some-bosh-external-ip
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
-access_key_id: some-bosh-user-access-key
-secret_access_key: some-bosh-user-secret-access-key
+access_key_id: some-access-key-id
+secret_access_key: some-secret-access-key
+iam_instance_profile: some-bosh-iam-instance-profile
 default_key_name: some-keypair-name
 default_security_groups: [some-bosh-security-group]
 region: some-region
