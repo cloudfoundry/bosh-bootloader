@@ -27,9 +27,7 @@ var _ = Describe("no director test", func() {
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			bbl.Destroy()
-		}
+		bbl.Destroy()
 	})
 
 	It("successfully standups up a no director infrastructure", func() {

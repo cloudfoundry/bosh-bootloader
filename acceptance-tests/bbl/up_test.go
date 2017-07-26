@@ -35,9 +35,7 @@ var _ = Describe("up test", func() {
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			bbl.Destroy()
-		}
+		bbl.Destroy()
 	})
 
 	It("bbl's up a new bosh director", func() {

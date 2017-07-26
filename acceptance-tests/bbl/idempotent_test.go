@@ -23,9 +23,7 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			bbl.Destroy()
-		}
+		bbl.Destroy()
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
