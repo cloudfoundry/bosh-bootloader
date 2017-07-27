@@ -20,16 +20,14 @@ import (
 var _ = Describe("TerraformOpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-			terraformManager          *fakes.TerraformManager
-			opsGenerator              aws.TerraformOpsGenerator
+			terraformManager *fakes.TerraformManager
+			opsGenerator     aws.TerraformOpsGenerator
 
 			incomingState   storage.State
 			expectedOpsYAML string
 		)
 
 		BeforeEach(func() {
-			availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
 			terraformManager = &fakes.TerraformManager{}
 
 			incomingState = storage.State{
@@ -40,23 +38,7 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				TFState: "some-tf-state",
 			}
 
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{
-				"us-east-1a",
-				"us-east-1b",
-				"us-east-1c",
-			}
-
 			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-				"internal_subnet_cidrs": []interface{}{
-					"10.0.16.0/20",
-					"10.0.32.0/20",
-					"10.0.48.0/20",
-				},
-				"internal_subnet_ids": []interface{}{
-					"some-internal-subnet-ids-1",
-					"some-internal-subnet-ids-2",
-					"some-internal-subnet-ids-3",
-				},
 				"internal_security_group":              "some-internal-security-group",
 				"cf_router_lb_name":                    "some-cf-router-lb-name",
 				"cf_router_lb_internal_security_group": "some-cf-router-lb-internal-security-group",
@@ -66,9 +48,19 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security-group",
 				"concourse_lb_name":                    "some-concourse-lb-name",
 				"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
+				"internal_az_subnet_id_mapping": map[string]interface{}{
+					"us-east-1c": "some-internal-subnet-ids-3",
+					"us-east-1a": "some-internal-subnet-ids-1",
+					"us-east-1b": "some-internal-subnet-ids-2",
+				},
+				"internal_az_subnet_cidr_mapping": map[string]interface{}{
+					"us-east-1a": "10.0.16.0/20",
+					"us-east-1c": "10.0.48.0/20",
+					"us-east-1b": "10.0.32.0/20",
+				},
 			}
 
-			opsGenerator = aws.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
+			opsGenerator = aws.NewTerraformOpsGenerator(terraformManager)
 		})
 
 		Context("when there are no lbs", func() {
@@ -83,7 +75,6 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
 				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
@@ -104,7 +95,6 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
 				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
@@ -125,41 +115,40 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
 				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
 			})
 		})
 
-		Context("failure cases", func() {
-			It("returns an error when az retriever fails to retrieve", func() {
-				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve")
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to retrieve"))
-			})
-
-			It("returns an error when the infrastructure manager fails to describe stack", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to get outputs"))
-			})
-
-			It("returns an error when it fails to parse a cidr block", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs["internal_subnet_cidrs"] = []interface{}{
-					"****",
-				}
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError(`"****" cannot parse CIDR block`))
-			})
-
-			It("returns an error when ops fails to marshal", func() {
-				aws.SetMarshal(func(interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal")
+		Context("when an error occurs", func() {
+			Context("when terraform fails to get outputs", func() {
+				It("returns an error", func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get outputs")
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to get outputs"))
 				})
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to marshal"))
-				aws.ResetMarshal()
+			})
+
+			Context("when cidr block parsing fails", func() {
+				It("returns an error", func() {
+					terraformManager.GetOutputsCall.Returns.Outputs["internal_az_subnet_cidr_mapping"] = map[string]interface{}{
+						"us-east-1a": "****",
+					}
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError(`"****" cannot parse CIDR block`))
+				})
+			})
+
+			Context("when ops fails to marshal", func() {
+				It("returns an error", func() {
+					aws.SetMarshal(func(interface{}) ([]byte, error) {
+						return []byte{}, errors.New("failed to marshal")
+					})
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to marshal"))
+					aws.ResetMarshal()
+				})
 			})
 
 			DescribeTable("when an terraform output is missing", func(outputKey, lbType string) {
@@ -171,10 +160,10 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				})
 				Expect(err).To(MatchError(fmt.Sprintf("missing %s terraform output", outputKey)))
 			},
-				Entry("when internal_subnet_cidrs is missing", "internal_subnet_cidrs", ""),
-				Entry("when internal_subnet_ids is missing", "internal_subnet_ids", ""),
 				Entry("when internal_security_group is missing", "internal_security_group", ""),
 
+				Entry("when internal_az_subnet_id_mapping is missing", "internal_az_subnet_id_mapping", "cf"),
+				Entry("when internal_az_subnet_cidr_mapping is missing", "internal_az_subnet_cidr_mapping", "cf"),
 				Entry("when cf_router_lb_name is missing", "cf_router_lb_name", "cf"),
 				Entry("when cf_router_lb_internal_security_group is missing", "cf_router_lb_internal_security_group", "cf"),
 				Entry("when cf_ssh_lb_name is missing", "cf_ssh_lb_name", "cf"),

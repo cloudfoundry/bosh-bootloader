@@ -428,6 +428,18 @@ output "internal_subnet_cidrs" {
   value = ["${aws_subnet.internal_subnets.*.cidr_block}"]
 }
 
+output "internal_az_subnet_id_mapping" {
+	value = "${
+	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
+	}"
+}
+
+output "internal_az_subnet_cidr_mapping" {
+	value = "${
+	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
+	}"
+}
+
 variable "env_id" {
   type = "string"
 }

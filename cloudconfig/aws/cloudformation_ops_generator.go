@@ -8,6 +8,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
+type availabilityZoneRetriever interface {
+	Retrieve(string) ([]string, error)
+}
+
 type CloudFormationOpsGenerator struct {
 	availabilityZoneRetriever availabilityZoneRetriever
 	infrastructureManager     infrastructureManager

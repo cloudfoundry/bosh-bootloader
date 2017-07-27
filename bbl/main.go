@@ -174,7 +174,7 @@ func main() {
 	// Cloud Config
 	sshKeyGetter := bosh.NewSSHKeyGetter()
 	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
-	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(availabilityZoneRetriever, terraformManager)
+	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(terraformManager)
 	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformManager, zones)
 	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)

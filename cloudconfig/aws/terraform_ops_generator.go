@@ -3,6 +3,7 @@ package aws
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -12,12 +13,7 @@ import (
 )
 
 type TerraformOpsGenerator struct {
-	availabilityZoneRetriever availabilityZoneRetriever
-	terraformManager          terraformManager
-}
-
-type availabilityZoneRetriever interface {
-	Retrieve(string) ([]string, error)
+	terraformManager terraformManager
 }
 
 type terraformManager interface {
@@ -71,10 +67,9 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-func NewTerraformOpsGenerator(availabilityZoneRetriever availabilityZoneRetriever, terraformManager terraformManager) TerraformOpsGenerator {
+func NewTerraformOpsGenerator(terraformManager terraformManager) TerraformOpsGenerator {
 	return TerraformOpsGenerator{
-		availabilityZoneRetriever: availabilityZoneRetriever,
-		terraformManager:          terraformManager,
+		terraformManager: terraformManager,
 	}
 }
 
@@ -107,35 +102,22 @@ func createOp(opType, opPath string, value interface{}) op {
 }
 
 func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]op, error) {
-	azs, err := a.availabilityZoneRetriever.Retrieve(state.AWS.Region)
-	if err != nil {
-		return []op{}, err
-	}
-
 	ops := []op{}
-	for i, awsAZ := range azs {
-		op := createOp("replace", "/azs/-", az{
-			Name: fmt.Sprintf("z%d", i+1),
-			CloudProperties: azCloudProperties{
-				AvailabilityZone: awsAZ,
-			},
-		})
-		ops = append(ops, op)
-	}
+	subnets := []networkSubnet{}
 
 	terraformOutputs, err := a.terraformManager.GetOutputs(state)
 	if err != nil {
 		return []op{}, err
 	}
 
-	subnetCIDRs, ok := terraformOutputs["internal_subnet_cidrs"].([]interface{})
+	internalAZSubnetIDMap, ok := terraformOutputs["internal_az_subnet_id_mapping"].(map[string]interface{})
 	if !ok {
-		return []op{}, errors.New("missing internal_subnet_cidrs terraform output")
+		return []op{}, errors.New("missing internal_az_subnet_id_mapping terraform output")
 	}
 
-	subnetNames, ok := terraformOutputs["internal_subnet_ids"].([]interface{})
+	internalAZSubnetCIDRMap, ok := terraformOutputs["internal_az_subnet_cidr_mapping"].(map[string]interface{})
 	if !ok {
-		return []op{}, errors.New("missing internal_subnet_ids terraform output")
+		return []op{}, errors.New("missing internal_az_subnet_cidr_mapping terraform output")
 	}
 
 	internalSecurityGroup, ok := terraformOutputs["internal_security_group"].(string)
@@ -143,12 +125,25 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 		return []op{}, errors.New("missing internal_security_group terraform output")
 	}
 
-	subnets := []networkSubnet{}
-	for i := range azs {
+	var azs []string
+	for myAZ, _ := range internalAZSubnetIDMap {
+		azs = append(azs, myAZ)
+	}
+	sort.Strings(azs)
+
+	for i, myAZ := range azs {
+		azOp := createOp("replace", "/azs/-", az{
+			Name: fmt.Sprintf("z%d", i+1),
+			CloudProperties: azCloudProperties{
+				AvailabilityZone: myAZ,
+			},
+		})
+		ops = append(ops, azOp)
+
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
-			subnetCIDRs[i].(string),
-			subnetNames[i].(string),
+			internalAZSubnetCIDRMap[myAZ].(string),
+			internalAZSubnetIDMap[myAZ].(string),
 			internalSecurityGroup,
 		)
 		if err != nil {
