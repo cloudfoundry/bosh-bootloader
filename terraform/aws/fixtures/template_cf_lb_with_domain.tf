@@ -414,18 +414,6 @@ resource "aws_route_table_association" "route_internal_subnets" {
   route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
-output "internal_subnet_ids" {
-  value = ["${aws_subnet.internal_subnets.*.id}"]
-}
-
-output "internal_subnet_availability_zones" {
-  value = ["${aws_subnet.internal_subnets.*.availability_zone}"]
-}
-
-output "internal_subnet_cidrs" {
-  value = ["${aws_subnet.internal_subnets.*.cidr_block}"]
-}
-
 output "internal_az_subnet_id_mapping" {
 	value = "${
 	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
