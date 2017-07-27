@@ -32,6 +32,12 @@ const iamProfileOps = `
   value: ((iam_instance_profile))
   `
 
+const boshDirectorEphemeralIPOps = `
+- type: replace
+  path: /networks/name=default/subnets/0/cloud_properties/ephemeral_external_ip?
+  value: true
+`
+
 type Executor struct {
 	command       command
 	tempDir       func(string, string) (string, error)
@@ -166,6 +172,7 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
+		//not tested
 		return InterpolateOutput{}, err
 	}
 
@@ -175,21 +182,25 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
 	iamProfileFilepath := filepath.Join(tempDir, "iam-instance-profile.yml")
+	boshDirectorEphemeralIPOpsFilepath := filepath.Join(tempDir, "bosh-director-ephemeral-ip-ops.yml")
 
 	if interpolateInput.Variables != "" {
 		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
 		if err != nil {
+			//not tested
 			return InterpolateOutput{}, err
 		}
 	}
 
 	err = e.writeFile(deploymentVarsPath, []byte(interpolateInput.DeploymentVars), os.ModePerm)
 	if err != nil {
+		//not tested
 		return InterpolateOutput{}, err
 	}
 
 	err = e.writeFile(userOpsFilePath, []byte(interpolateInput.OpsFile), os.ModePerm)
 	if err != nil {
+		//not tested
 		return InterpolateOutput{}, err
 	}
 
@@ -200,6 +211,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	}
 	err = e.writeFile(boshManifestPath, boshManifestContents, os.ModePerm)
 	if err != nil {
+		//not tested
 		return InterpolateOutput{}, err
 	}
 
@@ -210,6 +222,13 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	}
 	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
 	if err != nil {
+		//not tested
+		return InterpolateOutput{}, err
+	}
+
+	err = e.writeFile(boshDirectorEphemeralIPOpsFilepath, []byte(boshDirectorEphemeralIPOps), os.ModePerm)
+	if err != nil {
+		//not tested
 		return InterpolateOutput{}, err
 	}
 
@@ -223,6 +242,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			"--vars-store", variablesPath,
 			"--vars-file", deploymentVarsPath,
 			"-o", cpiOpsFilePath,
+			"-o", boshDirectorEphemeralIPOpsFilepath,
 		}
 	} else {
 		jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
@@ -233,6 +253,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		}
 		err = e.writeFile(jumpboxUserOpsFilePath, jumpboxUserOpsFileContents, os.ModePerm)
 		if err != nil {
+			//not tested
 			return InterpolateOutput{}, err
 		}
 
@@ -254,12 +275,14 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 
 			err = e.writeFile(iamProfileFilepath, []byte(iamProfileOps), os.ModePerm)
 			if err != nil {
+				//not tested
 				return InterpolateOutput{}, err
 			}
 		}
 
 		err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
 		if err != nil {
+			//not tested
 			return InterpolateOutput{}, err
 		}
 

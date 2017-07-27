@@ -171,7 +171,8 @@ var _ = Describe("Executor", func() {
 						"--var-errs",
 						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 						"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", tempDir)})
+						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+					})
 
 					_, _, args := cmd.RunArgsForCall(0)
 					Expect(args).To(Equal(expectedArgs))
@@ -191,7 +192,9 @@ var _ = Describe("Executor", func() {
 						"--var-errs-unused",
 						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 						"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", tempDir)})
+						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+						"-o", fmt.Sprintf("%s/bosh-director-ephemeral-ip-ops.yml", tempDir),
+					})
 
 					_, _, args = cmd.RunArgsForCall(1)
 					Expect(args).To(Equal(expectedArgs))
@@ -307,115 +310,6 @@ networks
 		})
 
 		Describe("failure cases", func() {
-			It("fails when the temporary directory cannot be created", func() {
-				tempDirFunc = func(prefix, dir string) (string, error) {
-					return "", errors.New("failed to create temp dir")
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.DirectorInterpolate(gcpInterpolateInput)
-				Expect(err).To(MatchError("failed to create temp dir"))
-			})
-
-			It("fails when the passed in variables cannot be written", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/variables.yml", tempDir) {
-						return errors.New("failed to write variables")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(gcpInterpolateInput)
-				Expect(err).To(MatchError("failed to write variables"))
-			})
-
-			It("fails when trying to write the user ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/user-ops-file.yml", tempDir) {
-						return errors.New("failed to write user ops file")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{})
-				Expect(err).To(MatchError("failed to write user ops file"))
-			})
-
-			It("fails when trying to write the bosh manifest file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/bosh.yml", tempDir) {
-						return errors.New("failed to write bosh manifest")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{})
-				Expect(err).To(MatchError("failed to write bosh manifest"))
-			})
-
-			It("fails when trying to write the CPI Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/cpi.yml", tempDir) {
-						return errors.New("failed to write CPI Ops file")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write CPI Ops file"))
-			})
-
-			It("fails when trying to write the Jumpbox User Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/jumpbox-user.yml", tempDir) {
-						return errors.New("failed to write Jumpbox User Ops file")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write Jumpbox User Ops file"))
-			})
-
-			It("fails when trying to write the external ip not recommended Ops file", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir) {
-						return errors.New("failed to write external ip not recommended Ops file")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS: "gcp",
-				})
-				Expect(err).To(MatchError("failed to write external ip not recommended Ops file"))
-			})
-
-			It("fails when trying to write the deployment vars", func() {
-				writeFileFunc := func(path string, contents []byte, fileMode os.FileMode) error {
-					if path == fmt.Sprintf("%s/deployment-vars.yml", tempDir) {
-						return errors.New("failed to write deployment vars")
-					}
-					return nil
-				}
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFileFunc)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS: "aws",
-				})
-				Expect(err).To(MatchError("failed to write deployment vars"))
-			})
-
 			It("fails when trying to run command", func() {
 				cmd.RunReturnsOnCall(0, errors.New("failed to run command"))
 
