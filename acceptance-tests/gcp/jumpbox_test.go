@@ -2,13 +2,13 @@ package acceptance_test
 
 import (
 	"fmt"
-	"os"
-
-	"golang.org/x/crypto/ssh"
+	"io/ioutil"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
-	"github.com/cloudfoundry/bosh-bootloader/proxy"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,49 +40,39 @@ var _ = Describe("jumpbox test", func() {
 	})
 
 	It("bbl's up a new jumpbox and a new bosh director", func() {
-		var jumpboxAddress string
+		By("parsing the output of print-env", func() {
+			stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
 
-		By("checking if the bosh jumpbox exists", func() {
-			jumpboxAddress = bbl.JumpboxAddress()
+			stdout = strings.Replace(stdout, "ssh -f -N", "ssh -oStrictHostKeyChecking=no", 1)
 
-			hostKeyGetter := proxy.NewHostKeyGetter()
-			socks5Proxy := proxy.NewSocks5Proxy(nil, hostKeyGetter, 0)
-			err := socks5Proxy.Start(bbl.SSHKey(), jumpboxAddress)
+			dir, err := ioutil.TempDir("", "bosh-print-env-command")
 			Expect(err).NotTo(HaveOccurred())
 
-			os.Setenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", socks5Proxy.Addr()))
-		})
+			printEnvCommandPath := filepath.Join(dir, "eval-print-env")
 
-		By("checking that the director is running", func() {
-			directorAddress := bbl.DirectorAddress()
-			caCertPath := bbl.SaveDirectorCA()
-
-			env, err := boshcli.Env(directorAddress, caCertPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(env).To(ContainSubstring(bbl.PredefinedEnvID()))
-		})
-
-		By("checking if ssh'ing works", func() {
-			privateKey, err := ssh.ParsePrivateKey([]byte(bbl.SSHKey()))
+			err = ioutil.WriteFile(printEnvCommandPath, []byte(stdout), 0700)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = ssh.Dial("tcp", jumpboxAddress, &ssh.ClientConfig{
-				User: "jumpbox",
-				Auth: []ssh.AuthMethod{
-					ssh.PublicKeys(privateKey),
-				},
-				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-			})
-			Expect(err).NotTo(HaveOccurred())
-		})
+			cmd := exec.Command(printEnvCommandPath)
+			cmdIn, err := cmd.StdinPipe()
 
-		By("checking if bbl print-env prints the bosh environment variables", func() {
-			stdout := bbl.PrintEnv()
+			go func() {
+				defer GinkgoRecover()
+				cmdOut, err := cmd.Output()
+				if err != nil {
+					switch err.(type) {
+					case *exec.ExitError:
+						exitErr := err.(*exec.ExitError)
+						fmt.Println(string(exitErr.Stderr))
+					}
+				}
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(stdout).To(ContainSubstring("export BOSH_ENVIRONMENT="))
-			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT="))
-			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT_SECRET="))
-			Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT="))
+				output := string(cmdOut)
+				Expect(output).To(ContainSubstring("Welcome to Ubuntu 14.04.5 LTS (GNU/Linux 4.4.0-78-generic x86_64)"))
+			}()
+
+			cmdIn.Close()
 		})
 	})
 })
