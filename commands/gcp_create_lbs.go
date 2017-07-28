@@ -11,11 +11,12 @@ import (
 )
 
 type GCPCreateLBs struct {
-	terraformManager     terraformApplier
-	cloudConfigManager   cloudConfigManager
-	stateStore           stateStore
-	logger               logger
-	environmentValidator environmentValidator
+	terraformManager          terraformApplier
+	cloudConfigManager        cloudConfigManager
+	stateStore                stateStore
+	logger                    logger
+	environmentValidator      environmentValidator
+	availabilityZoneRetriever availabilityZoneRetriever
 }
 
 type GCPCreateLBsConfig struct {
@@ -26,15 +27,23 @@ type GCPCreateLBsConfig struct {
 	SkipIfExists bool
 }
 
+type availabilityZoneRetriever interface {
+	Get(region string) ([]string, error)
+}
+
 func NewGCPCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
-	stateStore stateStore, logger logger, environmentValidator environmentValidator) GCPCreateLBs {
+	stateStore stateStore, logger logger,
+	environmentValidator environmentValidator,
+	availabilityZoneRetriever availabilityZoneRetriever,
+) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformManager:     terraformManager,
-		cloudConfigManager:   cloudConfigManager,
-		stateStore:           stateStore,
-		logger:               logger,
-		environmentValidator: environmentValidator,
+		terraformManager:          terraformManager,
+		cloudConfigManager:        cloudConfigManager,
+		stateStore:                stateStore,
+		logger:                    logger,
+		environmentValidator:      environmentValidator,
+		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
 
@@ -50,6 +59,11 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 
 	err = c.environmentValidator.Validate(state)
+	if err != nil {
+		return err
+	}
+
+	state.GCP.Zones, err = c.availabilityZoneRetriever.Get(state.GCP.Region)
 	if err != nil {
 		return err
 	}

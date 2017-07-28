@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"golang.org/x/crypto/ssh"
@@ -108,7 +108,7 @@ func main() {
 	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(awsKeyPairCreator, keyPairChecker, logger)
 	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer, awsKeyPairDeleter, clientProvider)
-	availabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
+	awsAvailabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(clientProvider, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
@@ -124,7 +124,7 @@ func main() {
 	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
 	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater, gcpKeyPairDeleter, gcpClientProvider)
-	zones := gcp.NewZones()
+	gcpAvailabilityZoneRetriever := gcp.NewZones(gcpClientProvider)
 
 	// EnvID
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
@@ -137,15 +137,15 @@ func main() {
 
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
-	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator(zones)
+	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator()
 	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
 	awsTemplateGenerator := awsterraform.NewTemplateGenerator()
-	awsInputGenerator := awsterraform.NewInputGenerator(availabilityZoneRetriever)
+	awsInputGenerator := awsterraform.NewInputGenerator(awsAvailabilityZoneRetriever)
 	awsOutputGenerator := awsterraform.NewOutputGenerator(terraformExecutor)
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
-	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, availabilityZoneRetriever)
+	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, awsAvailabilityZoneRetriever)
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,
@@ -173,9 +173,9 @@ func main() {
 
 	// Cloud Config
 	sshKeyGetter := bosh.NewSSHKeyGetter()
-	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
+	awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(awsAvailabilityZoneRetriever, infrastructureManager)
 	awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(terraformManager)
-	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformManager, zones)
+	gcpOpsGenerator := gcpcloudconfig.NewOpsGenerator(terraformManager)
 	cloudConfigOpsGenerator := cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 
@@ -211,7 +211,7 @@ func main() {
 		CloudConfigManager: cloudConfigManager,
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator, gcpAvailabilityZoneRetriever)
 
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
 
@@ -248,13 +248,8 @@ func main() {
 
 	err := app.Run()
 	if err != nil {
-		fail(err)
+		log.Fatalf("\n\n%s\n", err)
 	}
-}
-
-func fail(err error) {
-	fmt.Fprintf(os.Stderr, "\n\n%s\n", err)
-	os.Exit(1)
 }
 
 func getConfiguration(printUsage func(), commandSet application.CommandSet, envGetter helpers.EnvGetter) application.Configuration {
@@ -262,7 +257,7 @@ func getConfiguration(printUsage func(), commandSet application.CommandSet, envG
 	configurationParser := application.NewConfigurationParser(commandLineParser)
 	configuration, err := configurationParser.Parse(os.Args[1:])
 	if err != nil {
-		fail(err)
+		log.Fatalf("\n\n%s\n", err)
 	}
 
 	return configuration

@@ -45,6 +45,7 @@ var _ = Describe("Store", func() {
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
 					Region:            "some-region",
+					Zones:             []string{"some-zone", "some-other-zone"},
 				},
 				KeyPair: storage.KeyPair{
 					Name:       "some-name",
@@ -126,7 +127,8 @@ var _ = Describe("Store", func() {
 					"serviceAccountKey": "some-service-account-key",
 					"projectID": "some-project-id",
 					"zone": "some-zone",
-					"region": "some-region"
+					"region": "some-region",
+					"zones": ["some-zone", "some-other-zone"]
 				},
 				"keyPair": {
 					"name": "some-name",

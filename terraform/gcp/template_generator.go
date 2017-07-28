@@ -7,13 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type TemplateGenerator struct {
-	zones zones
-}
-
-type zones interface {
-	Get(region string) []string
-}
+type TemplateGenerator struct{}
 
 const backendBase = `resource "google_compute_backend_service" "router-lb-backend-service" {
   name        = "${var.env_id}-router-lb"
@@ -26,10 +20,8 @@ const backendBase = `resource "google_compute_backend_service" "router-lb-backen
 }
 `
 
-func NewTemplateGenerator(zones zones) TemplateGenerator {
-	return TemplateGenerator{
-		zones: zones,
-	}
+func NewTemplateGenerator() TemplateGenerator {
+	return TemplateGenerator{}
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
@@ -39,8 +31,8 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	case "concourse":
 		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")
 	case "cf":
-		instanceGroups := t.GenerateInstanceGroups(state.GCP.Region)
-		backendService := t.GenerateBackendService(state.GCP.Region)
+		instanceGroups := t.GenerateInstanceGroups(state.GCP.Zones)
+		backendService := t.GenerateBackendService(state.GCP.Zones)
 
 		template = strings.Join([]string{template, CFLBTemplate, instanceGroups, backendService}, "\n")
 
@@ -51,10 +43,9 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	return template
 }
 
-func (t TemplateGenerator) GenerateBackendService(region string) string {
-	zones := t.zones.Get(region)
+func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
 	var backends string
-	for i := 0; i < len(zones); i++ {
+	for i := 0; i < len(zoneList); i++ {
 		backends = fmt.Sprintf(`%s
   backend {
     group = "${google_compute_instance_group.router-lb-%d.self_link}"
@@ -65,10 +56,9 @@ func (t TemplateGenerator) GenerateBackendService(region string) string {
 	return fmt.Sprintf(backendBase, backends)
 }
 
-func (t TemplateGenerator) GenerateInstanceGroups(region string) string {
-	zones := t.zones.Get(region)
+func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 	var groups []string
-	for i, zone := range zones {
+	for i, zone := range zoneList {
 		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
   name        = "${var.env_id}-router-lb-%[1]d-%[2]s"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"

@@ -12,15 +12,10 @@ import (
 
 type OpsGenerator struct {
 	terraformManager terraformManager
-	zones            zones
 }
 
 type terraformManager interface {
 	GetOutputs(storage.State) (map[string]interface{}, error)
-}
-
-type zones interface {
-	Get(string) []string
 }
 
 type op struct {
@@ -35,7 +30,7 @@ type az struct {
 }
 
 type azCloudProperties struct {
-	Zone string `yaml:"zone"`
+	AvailabilityZone string `yaml:"zone"`
 }
 
 type network struct {
@@ -73,10 +68,9 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-func NewOpsGenerator(terraformManager terraformManager, zones zones) OpsGenerator {
+func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 	return OpsGenerator{
 		terraformManager: terraformManager,
-		zones:            zones,
 	}
 }
 
@@ -109,33 +103,31 @@ func createOp(opType, opPath string, value interface{}) op {
 }
 
 func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
-	var ops []op
-
-	zones := o.zones.Get(state.GCP.Region)
-	for i, zone := range zones {
-		ops = append(ops, createOp("replace", "/azs/-", az{
-			Name: fmt.Sprintf("z%d", i+1),
-			CloudProperties: azCloudProperties{
-				Zone: zone,
-			},
-		}))
-	}
-
-	outputs, err := o.terraformManager.GetOutputs(state)
+	terraformOutputs, err := o.terraformManager.GetOutputs(state)
 	if err != nil {
 		return []op{}, err
 	}
 
+	var ops []op
+	for i, zone := range state.GCP.Zones {
+		ops = append(ops, createOp("replace", "/azs/-", az{
+			Name: fmt.Sprintf("z%d", i+1),
+			CloudProperties: azCloudProperties{
+				AvailabilityZone: zone,
+			},
+		}))
+	}
+
 	var subnets []networkSubnet
-	for i, _ := range zones {
+	for i, _ := range state.GCP.Zones {
 		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
 			cidr,
-			outputs["network_name"].(string),
-			outputs["subnetwork_name"].(string),
-			outputs["bosh_open_tag_name"].(string),
-			outputs["internal_tag_name"].(string),
+			terraformOutputs["network_name"].(string),
+			terraformOutputs["subnetwork_name"].(string),
+			terraformOutputs["bosh_open_tag_name"].(string),
+			terraformOutputs["internal_tag_name"].(string),
 		)
 		if err != nil {
 			return []op{}, err
@@ -160,7 +152,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "lb",
 			CloudProperties: lbCloudProperties{
-				TargetPool: outputs["concourse_target_pool"].(string),
+				TargetPool: terraformOutputs["concourse_target_pool"].(string),
 			},
 		}))
 	}
@@ -169,11 +161,11 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-router-network-properties",
 			CloudProperties: lbCloudProperties{
-				BackendService: outputs["router_backend_service"].(string),
-				TargetPool:     outputs["ws_target_pool"].(string),
+				BackendService: terraformOutputs["router_backend_service"].(string),
+				TargetPool:     terraformOutputs["ws_target_pool"].(string),
 				Tags: []string{
-					outputs["router_backend_service"].(string),
-					outputs["ws_target_pool"].(string),
+					terraformOutputs["router_backend_service"].(string),
+					terraformOutputs["ws_target_pool"].(string),
 				},
 			},
 		}))
@@ -181,9 +173,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "diego-ssh-proxy-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: outputs["ssh_proxy_target_pool"].(string),
+				TargetPool: terraformOutputs["ssh_proxy_target_pool"].(string),
 				Tags: []string{
-					outputs["ssh_proxy_target_pool"].(string),
+					terraformOutputs["ssh_proxy_target_pool"].(string),
 				},
 			},
 		}))
@@ -191,9 +183,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-tcp-router-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: outputs["tcp_router_target_pool"].(string),
+				TargetPool: terraformOutputs["tcp_router_target_pool"].(string),
 				Tags: []string{
-					outputs["tcp_router_target_pool"].(string),
+					terraformOutputs["tcp_router_target_pool"].(string),
 				},
 			},
 		}))

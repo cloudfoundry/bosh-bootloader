@@ -3,7 +3,6 @@ package gcp_test
 import (
 	"io/ioutil"
 
-	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 
@@ -13,19 +12,15 @@ import (
 )
 
 var _ = Describe("TemplateGenerator", func() {
-
 	var (
-		zones             *fakes.Zones
 		templateGenerator gcp.TemplateGenerator
-
-		expectedTemplate []byte
+		expectedTemplate  []byte
+		zones             []string
 	)
 
 	BeforeEach(func() {
-		zones = &fakes.Zones{}
-		templateGenerator = gcp.NewTemplateGenerator(zones)
-
-		zones.GetCall.Returns.Zones = []string{"z1", "z2", "z3"}
+		templateGenerator = gcp.NewTemplateGenerator()
+		zones = []string{"z1", "z2", "z3"}
 	})
 
 	Describe("Generate", func() {
@@ -36,6 +31,7 @@ var _ = Describe("TemplateGenerator", func() {
 			template := templateGenerator.Generate(storage.State{
 				GCP: storage.GCP{
 					Region: region,
+					Zones:  zones,
 				},
 				LB: storage.LB{
 					Type:   lbType,
@@ -59,9 +55,8 @@ var _ = Describe("TemplateGenerator", func() {
 		})
 
 		It("returns a backend service terraform template", func() {
-			template := templateGenerator.GenerateBackendService("some-region")
+			template := templateGenerator.GenerateBackendService(zones)
 
-			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
 			Expect(template).To(Equal(string(expectedTemplate)))
 		})
 	})
@@ -74,9 +69,8 @@ var _ = Describe("TemplateGenerator", func() {
 		})
 
 		It("returns a backend service terraform template", func() {
-			template := templateGenerator.GenerateInstanceGroups("some-region")
+			template := templateGenerator.GenerateInstanceGroups(zones)
 
-			Expect(zones.GetCall.Receives.Region).To(Equal("some-region"))
 			Expect(template).To(Equal(string(expectedTemplate)))
 		})
 	})

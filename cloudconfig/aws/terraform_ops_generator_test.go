@@ -151,7 +151,7 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				})
 			})
 
-			DescribeTable("when an terraform output is missing", func(outputKey, lbType string) {
+			DescribeTable("when a terraform output is missing", func(outputKey, lbType string) {
 				delete(terraformManager.GetOutputsCall.Returns.Outputs, outputKey)
 				_, err := opsGenerator.Generate(storage.State{
 					LB: storage.LB{

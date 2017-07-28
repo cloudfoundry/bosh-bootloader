@@ -32,10 +32,11 @@ type AWS struct {
 }
 
 type GCP struct {
-	ServiceAccountKey string `json:"serviceAccountKey"`
-	ProjectID         string `json:"projectID"`
-	Zone              string `json:"zone"`
-	Region            string `json:"region"`
+	ServiceAccountKey string   `json:"serviceAccountKey"`
+	ProjectID         string   `json:"projectID"`
+	Zone              string   `json:"zone"`
+	Region            string   `json:"region"`
+	Zones             []string `json:"zones"`
 }
 
 type Stack struct {

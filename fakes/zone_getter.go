@@ -8,12 +8,13 @@ type Zones struct {
 		}
 		Returns struct {
 			Zones []string
+			Error error
 		}
 	}
 }
 
-func (z *Zones) Get(region string) []string {
+func (z *Zones) Get(region string) ([]string, error) {
 	z.GetCall.CallCount++
 	z.GetCall.Receives.Region = region
-	return z.GetCall.Returns.Zones
+	return z.GetCall.Returns.Zones, z.GetCall.Returns.Error
 }

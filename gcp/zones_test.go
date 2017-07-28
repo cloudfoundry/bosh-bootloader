@@ -1,31 +1,55 @@
 package gcp_test
 
 import (
+	"errors"
+
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
+	compute "google.golang.org/api/compute/v1"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("zones", func() {
-	var zones gcp.Zones
+	var (
+		client            *fakes.GCPClient
+		gcpClientProvider *fakes.GCPClientProvider
+		zones             gcp.Zones
+	)
 
 	BeforeEach(func() {
-		zones = gcp.NewZones()
+		gcpClientProvider = &fakes.GCPClientProvider{}
+		client = &fakes.GCPClient{}
+		gcpClientProvider.ClientCall.Returns.Client = client
+
+		client.GetZonesCall.Returns.ZoneList = &compute.ZoneList{
+			Items: []*compute.Zone{
+				{
+					Name: "zone-a",
+				},
+				{
+					Name: "zone-b",
+				},
+			},
+		}
+
+		zones = gcp.NewZones(gcpClientProvider)
 	})
 
 	Describe("get", func() {
-		DescribeTable("returns a list of zones for a given region", func(region string, expectedZones []string) {
-			actualZones := zones.Get(region)
-			Expect(actualZones).To(Equal(expectedZones))
-		},
-			Entry("for us-west", "us-west1", []string{"us-west1-a", "us-west1-b", "us-west1-c"}),
-			Entry("for us-central1", "us-central1", []string{"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}),
-			Entry("for us-east1", "us-east1", []string{"us-east1-b", "us-east1-c", "us-east1-d"}),
-			Entry("for europe-west1", "europe-west1", []string{"europe-west1-b", "europe-west1-c", "europe-west1-d"}),
-			Entry("for asia-east1", "asia-east1", []string{"asia-east1-a", "asia-east1-b", "asia-east1-c"}),
-			Entry("for asia-northeast1", "asia-northeast1", []string{"asia-northeast1-a", "asia-northeast1-b", "asia-northeast1-c"}),
-		)
+		It("returns a list of zones for a given region", func() {
+			actualZones, err := zones.Get("region-1")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualZones).To(Equal([]string{"zone-a", "zone-b"}))
+		})
+
+		Context("when gcp client get zones fails", func() {
+			It("returns the error", func() {
+				client.GetZonesCall.Returns.Error = errors.New("failed to get zones")
+				_, err := zones.Get("some-region")
+				Expect(err).To(MatchError("failed to get zones"))
+			})
+		})
 	})
 })

@@ -17,12 +17,13 @@ import (
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (
-		terraformManager       *fakes.TerraformManager
-		cloudConfigManager     *fakes.CloudConfigManager
-		stateStore             *fakes.StateStore
-		logger                 *fakes.Logger
-		terraformExecutorError *fakes.TerraformExecutorError
-		environmentValidator   *fakes.EnvironmentValidator
+		terraformManager          *fakes.TerraformManager
+		cloudConfigManager        *fakes.CloudConfigManager
+		stateStore                *fakes.StateStore
+		logger                    *fakes.Logger
+		terraformExecutorError    *fakes.TerraformExecutorError
+		environmentValidator      *fakes.EnvironmentValidator
+		availabilityZoneRetriever *fakes.Zones
 
 		command     commands.GCPCreateLBs
 		certPath    string
@@ -38,8 +39,9 @@ var _ = Describe("GCPCreateLBs", func() {
 		logger = &fakes.Logger{}
 		terraformExecutorError = &fakes.TerraformExecutorError{}
 		environmentValidator = &fakes.EnvironmentValidator{}
+		availabilityZoneRetriever = &fakes.Zones{}
 
-		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, environmentValidator)
+		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, environmentValidator, availabilityZoneRetriever)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
@@ -64,6 +66,9 @@ var _ = Describe("GCPCreateLBs", func() {
 
 	Describe("Execute", func() {
 		Context("when lb type is cf", func() {
+			BeforeEach(func() {
+				availabilityZoneRetriever.GetCall.Returns.Zones = []string{"z1", "z2", "z3"}
+			})
 			It("calls terraform manager apply", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType:   "cf",
@@ -72,11 +77,22 @@ var _ = Describe("GCPCreateLBs", func() {
 					Domain:   "some-domain",
 				}, storage.State{
 					IAAS: "gcp",
+					GCP: storage.GCP{
+						Region: "some-region",
+					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 
+				By("getting the AZs", func() {
+					Expect(availabilityZoneRetriever.GetCall.Receives.Region).To(Equal("some-region"))
+				})
+
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
 					IAAS: "gcp",
+					GCP: storage.GCP{
+						Zones:  []string{"z1", "z2", "z3"},
+						Region: "some-region",
+					},
 					LB: storage.LB{
 						Type:   "cf",
 						Cert:   certificate,
@@ -325,6 +341,14 @@ var _ = Describe("GCPCreateLBs", func() {
 					IAAS: "aws",
 				})
 				Expect(err).To(MatchError("iaas type must be gcp"))
+			})
+
+			It("returns an error when the availability zone retriever fails to get zones", func() {
+				availabilityZoneRetriever.GetCall.Returns.Error = errors.New("failed to get zones")
+				err := command.Execute(commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("failed to get zones"))
 			})
 
 			It("returns an error if the command fails to read the certificate", func() {

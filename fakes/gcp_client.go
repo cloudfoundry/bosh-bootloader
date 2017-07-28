@@ -33,6 +33,16 @@ type GCPClient struct {
 			Error        error
 		}
 	}
+	GetZonesCall struct {
+		CallCount int
+		Receives  struct {
+			Region string
+		}
+		Returns struct {
+			ZoneList *compute.ZoneList
+			Error    error
+		}
+	}
 	GetZoneCall struct {
 		CallCount int
 		Receives  struct {
@@ -84,6 +94,12 @@ func (g *GCPClient) SetCommonInstanceMetadata(metadata *compute.Metadata) (*comp
 func (g *GCPClient) ListInstances() (*compute.InstanceList, error) {
 	g.ListInstancesCall.CallCount++
 	return g.ListInstancesCall.Returns.InstanceList, g.ListInstancesCall.Returns.Error
+}
+
+func (g *GCPClient) GetZones(region string) (*compute.ZoneList, error) {
+	g.GetZonesCall.CallCount++
+	g.GetZonesCall.Receives.Region = region
+	return g.GetZonesCall.Returns.ZoneList, g.GetZonesCall.Returns.Error
 }
 
 func (g *GCPClient) GetZone(zone string) (*compute.Zone, error) {

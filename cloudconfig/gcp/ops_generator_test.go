@@ -20,7 +20,6 @@ import (
 var _ = Describe("GCPOpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			zones            *fakes.Zones
 			terraformManager *fakes.TerraformManager
 			opsGenerator     gcp.OpsGenerator
 
@@ -30,17 +29,16 @@ var _ = Describe("GCPOpsGenerator", func() {
 
 		BeforeEach(func() {
 			terraformManager = &fakes.TerraformManager{}
-			zones = &fakes.Zones{}
 
 			incomingState = storage.State{
 				IAAS:    "gcp",
 				TFState: "some-tf-state",
 				GCP: storage.GCP{
 					Region: "us-east1",
+					Zones:  []string{"us-east1-b", "us-east1-c", "us-east1-d"},
 				},
 			}
 
-			zones.GetCall.Returns.Zones = []string{"us-east1-b", "us-east1-c", "us-east1-d"}
 			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
 				"network_name":       "some-network-name",
 				"subnetwork_name":    "some-subnetwork-name",
@@ -52,14 +50,13 @@ var _ = Describe("GCPOpsGenerator", func() {
 			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "gcp-ops.yml"))
 			Expect(err).NotTo(HaveOccurred())
 
-			opsGenerator = gcp.NewOpsGenerator(terraformManager, zones)
+			opsGenerator = gcp.NewOpsGenerator(terraformManager)
 		})
 
 		It("returns an ops file to transform base cloud config into gcp specific cloud config", func() {
 			opsYAML, err := opsGenerator.Generate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(zones.GetCall.Receives.Region).To(Equal("us-east1"))
 			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
 
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsFile))
@@ -109,12 +106,6 @@ var _ = Describe("GCPOpsGenerator", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
 				_, err := opsGenerator.Generate(storage.State{})
 				Expect(err).To(MatchError("failed to output"))
-			})
-
-			It("returns an error when it fails to parse a cidr block", func() {
-				zones.GetCall.Returns.Zones = []string{"z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z", "z"}
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError(`invalid ip, 10.0.256.0 has values out of range`))
 			})
 
 			It("returns an error when ops fail to marshal", func() {
