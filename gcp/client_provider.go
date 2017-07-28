@@ -31,15 +31,14 @@ func NewClientProvider(gcpBasePath string) *ClientProvider {
 	}
 }
 
-func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, zone string) error {
-	authURL := GoogleComputeAuth
-	if p.basePath != "" {
-		authURL = p.basePath
-	}
-
-	config, err := google.JWTConfigFromJSON([]byte(serviceAccountKey), authURL)
+func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone string) error {
+	config, err := google.JWTConfigFromJSON([]byte(serviceAccountKey), compute.ComputeScope)
 	if err != nil {
 		return err
+	}
+
+	if p.basePath != "" {
+		config.TokenURL = p.basePath
 	}
 
 	service, err := compute.New(gcpHTTPClient(config))
@@ -55,6 +54,16 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, zone string) er
 		service:   service,
 		projectID: projectID,
 		zone:      zone,
+	}
+
+	_, err = p.client.GetRegion(region)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.client.GetZone(zone)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -12,7 +12,7 @@ type TemplateGenerator struct {
 }
 
 type zones interface {
-	Get(region string) []string
+	Get(region string) ([]string, error)
 }
 
 const backendBase = `resource "google_compute_backend_service" "router-lb-backend-service" {

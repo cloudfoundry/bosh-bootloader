@@ -53,7 +53,7 @@ type keyPairUpdater interface {
 }
 
 type gcpProvider interface {
-	SetConfig(string, string, string) error
+	SetConfig(serviceAccountKey, projectID, region, zone string) error
 }
 
 type terraformManagerError interface {
@@ -138,7 +138,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone); err != nil {
+	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Region, state.GCP.Zone); err != nil {
 		return err
 	}
 

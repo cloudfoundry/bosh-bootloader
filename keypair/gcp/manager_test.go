@@ -110,6 +110,7 @@ var _ = Describe("Manager", func() {
 						ServiceAccountKey: "some-service-account-key",
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
+						Region:            "some-region",
 					},
 					KeyPair: storage.KeyPair{
 						PrivateKey: "some-existing-private-key",
@@ -121,6 +122,7 @@ var _ = Describe("Manager", func() {
 				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
 				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal("some-service-account-key"))
 				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
+				Expect(gcpClientProvider.SetConfigCall.Receives.Region).To(Equal("some-region"))
 				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
 				Expect(keyPairDeleter.DeleteCall.CallCount).To(Equal(1))
 				Expect(keyPairDeleter.DeleteCall.Receives.PublicKey).To(Equal("some-existing-public-key"))
@@ -131,6 +133,7 @@ var _ = Describe("Manager", func() {
 						ServiceAccountKey: "some-service-account-key",
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
+						Region:            "some-region",
 					},
 					KeyPair: storage.KeyPair{
 						PrivateKey: "some-new-private-key",

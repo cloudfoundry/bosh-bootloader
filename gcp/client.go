@@ -11,6 +11,8 @@ type Client interface {
 	GetProject() (*compute.Project, error)
 	SetCommonInstanceMetadata(metadata *compute.Metadata) (*compute.Operation, error)
 	ListInstances() (*compute.InstanceList, error)
+	GetZone(zone string) (*compute.Zone, error)
+	GetRegion(region string) (*compute.Region, error)
 	GetNetworks(name string) (*compute.NetworkList, error)
 }
 
@@ -34,6 +36,15 @@ func (c GCPClient) SetCommonInstanceMetadata(metadata *compute.Metadata) (*compu
 
 func (c GCPClient) ListInstances() (*compute.InstanceList, error) {
 	return c.service.Instances.List(c.projectID, c.zone).Do()
+}
+
+
+func (c GCPClient) GetZone(zone string) (*compute.Zone, error) {
+	return c.service.Zones.Get(c.projectID, zone).Do()
+}
+
+func (c GCPClient) GetRegion(region string) (*compute.Region, error) {
+	return c.service.Regions.Get(c.projectID, region).Do()
 }
 
 func (c GCPClient) GetNetworks(name string) (*compute.NetworkList, error) {

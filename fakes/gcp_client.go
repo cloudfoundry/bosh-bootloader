@@ -33,6 +33,26 @@ type GCPClient struct {
 			Error        error
 		}
 	}
+	GetZoneCall struct {
+		CallCount int
+		Receives  struct {
+			Zone string
+		}
+		Returns struct {
+			Zone  *compute.Zone
+			Error error
+		}
+	}
+	GetRegionCall struct {
+		CallCount int
+		Receives  struct {
+			Region string
+		}
+		Returns struct {
+			Region *compute.Region
+			Error  error
+		}
+	}
 	GetNetworksCall struct {
 		CallCount int
 		Receives  struct {
@@ -64,6 +84,18 @@ func (g *GCPClient) SetCommonInstanceMetadata(metadata *compute.Metadata) (*comp
 func (g *GCPClient) ListInstances() (*compute.InstanceList, error) {
 	g.ListInstancesCall.CallCount++
 	return g.ListInstancesCall.Returns.InstanceList, g.ListInstancesCall.Returns.Error
+}
+
+func (g *GCPClient) GetZone(zone string) (*compute.Zone, error) {
+	g.GetZoneCall.CallCount++
+	g.GetZoneCall.Receives.Zone = zone
+	return g.GetZoneCall.Returns.Zone, g.GetZoneCall.Returns.Error
+}
+
+func (g *GCPClient) GetRegion(region string) (*compute.Region, error) {
+	g.GetRegionCall.CallCount++
+	g.GetRegionCall.Receives.Region = region
+	return g.GetRegionCall.Returns.Region, g.GetRegionCall.Returns.Error
 }
 
 func (g *GCPClient) GetNetworks(name string) (*compute.NetworkList, error) {

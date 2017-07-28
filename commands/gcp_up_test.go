@@ -80,7 +80,7 @@ var _ = Describe("GCPUp", func() {
 				ServiceAccountKey: serviceAccountKey,
 				ProjectID:         "some-project-id",
 				Zone:              "some-zone",
-				Region:            "us-west1",
+				Region:            "some-region",
 			},
 		}
 
@@ -148,7 +148,7 @@ var _ = Describe("GCPUp", func() {
 				ServiceAccountKey: serviceAccountKeyPath,
 				ProjectID:         "some-project-id",
 				Zone:              "some-zone",
-				Region:            "us-west1",
+				Region:            "some-region",
 			}, storage.State{
 				IAAS:  "gcp",
 				EnvID: "some-env-id",
@@ -156,7 +156,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: `{"real": "json"}`,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -165,13 +165,7 @@ var _ = Describe("GCPUp", func() {
 				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
 				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(serviceAccountKey))
 				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
-			})
-
-			By("setting the serviceAccountKey from the path", func() {
-				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(serviceAccountKey))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
+				Expect(gcpClientProvider.SetConfigCall.Receives.Region).To(Equal("some-region"))
 				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
 			})
 
@@ -195,7 +189,7 @@ var _ = Describe("GCPUp", func() {
 						ServiceAccountKey: `{"real": "json"}`,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
-						Region:            "us-west1",
+						Region:            "some-region",
 					},
 				}))
 			})
@@ -242,13 +236,14 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: serviceAccountKey,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
 				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(serviceAccountKey))
 				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
+				Expect(gcpClientProvider.SetConfigCall.Receives.Region).To(Equal("some-region"))
 				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
 			})
 		})
@@ -259,7 +254,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: serviceAccountKeyPath,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 					Name:              "some-other-env-id",
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
@@ -283,7 +278,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: serviceAccountKeyPath,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 					OpsFilePath:       opsFilePath,
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
@@ -302,7 +297,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: serviceAccountKeyPath,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 					NoDirector:        true,
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
@@ -407,7 +402,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: serviceAccountKeyPath,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 				}, storage.State{})
 				Expect(err).To(MatchError("terraform manager failed"))
 
@@ -423,7 +418,7 @@ var _ = Describe("GCPUp", func() {
 						ServiceAccountKey: serviceAccountKey,
 						ProjectID:         "some-project-id",
 						Zone:              "some-zone",
-						Region:            "us-west1",
+						Region:            "some-region",
 					},
 					TFState: "existing-tf-state",
 				})
@@ -442,7 +437,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: serviceAccountKeyPath,
 					ProjectID:         "some-project-id",
 					Zone:              "some-zone",
-					Region:            "us-west1",
+					Region:            "some-region",
 				}, storage.State{})
 
 				Expect(err).To(MatchError("cannot validate version"))
@@ -453,7 +448,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: "/some/non/existent/file",
 					ProjectID:         "p",
 					Zone:              "z",
-					Region:            "us-west1",
+					Region:            "r",
 				}, storage.State{})
 				Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '/' looking for beginning of value"))
 			})
@@ -470,7 +465,7 @@ var _ = Describe("GCPUp", func() {
 					ServiceAccountKey: invalidServiceAccountKeyPath,
 					ProjectID:         "p",
 					Zone:              "z",
-					Region:            "us-west1",
+					Region:            "r",
 				}, storage.State{})
 				Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '%' looking for beginning of value"))
 			})

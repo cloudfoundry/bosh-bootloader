@@ -14,6 +14,7 @@ type GCPClientProvider struct {
 		Receives  struct {
 			ServiceAccountKey string
 			ProjectID         string
+			Region            string
 			Zone              string
 		}
 		Returns struct {
@@ -28,10 +29,11 @@ func (g *GCPClientProvider) Client() gcp.Client {
 	return g.ClientCall.Returns.Client
 }
 
-func (g *GCPClientProvider) SetConfig(serviceAccountKey, projectID, zone string) error {
+func (g *GCPClientProvider) SetConfig(serviceAccountKey, projectID, region, zone string) error {
 	g.SetConfigCall.CallCount++
 	g.SetConfigCall.Receives.ServiceAccountKey = serviceAccountKey
 	g.SetConfigCall.Receives.ProjectID = projectID
+	g.SetConfigCall.Receives.Region = region
 	g.SetConfigCall.Receives.Zone = zone
 
 	return g.SetConfigCall.Returns.Error

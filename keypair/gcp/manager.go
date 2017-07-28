@@ -21,7 +21,7 @@ type keyPairDeleter interface {
 }
 
 type gcpClientProvider interface {
-	SetConfig(serviceAccountKey, projectID, zone string) error
+	SetConfig(serviceAccountKey, projectID, region, zone string) error
 }
 
 func NewManager(keyPairUpdater keyPairUpdater, keyPairDeleter keyPairDeleter, gcpClientProvider gcpClientProvider) Manager {
@@ -49,7 +49,7 @@ func (m Manager) Rotate(state storage.State) (storage.State, error) {
 		return storage.State{}, errors.New("no key found to rotate")
 	}
 
-	err := m.gcpClientProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Zone)
+	err := m.gcpClientProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Region, state.GCP.Zone)
 	if err != nil {
 		return storage.State{}, err
 	}
