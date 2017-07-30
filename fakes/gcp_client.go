@@ -39,8 +39,8 @@ type GCPClient struct {
 			Region string
 		}
 		Returns struct {
-			ZoneList *compute.ZoneList
-			Error    error
+			Zones []string
+			Error error
 		}
 	}
 	GetZoneCall struct {
@@ -96,10 +96,10 @@ func (g *GCPClient) ListInstances() (*compute.InstanceList, error) {
 	return g.ListInstancesCall.Returns.InstanceList, g.ListInstancesCall.Returns.Error
 }
 
-func (g *GCPClient) GetZones(region string) (*compute.ZoneList, error) {
+func (g *GCPClient) GetZones(region string) ([]string, error) {
 	g.GetZonesCall.CallCount++
 	g.GetZonesCall.Receives.Region = region
-	return g.GetZonesCall.Returns.ZoneList, g.GetZonesCall.Returns.Error
+	return g.GetZonesCall.Returns.Zones, g.GetZonesCall.Returns.Error
 }
 
 func (g *GCPClient) GetZone(zone string) (*compute.Zone, error) {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
-	compute "google.golang.org/api/compute/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,16 +22,7 @@ var _ = Describe("zones", func() {
 		client = &fakes.GCPClient{}
 		gcpClientProvider.ClientCall.Returns.Client = client
 
-		client.GetZonesCall.Returns.ZoneList = &compute.ZoneList{
-			Items: []*compute.Zone{
-				{
-					Name: "zone-a",
-				},
-				{
-					Name: "zone-b",
-				},
-			},
-		}
+		client.GetZonesCall.Returns.Zones = []string{"zone-a", "zone-b"}
 
 		zones = gcp.NewZones(gcpClientProvider)
 	})

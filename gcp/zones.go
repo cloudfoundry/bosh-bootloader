@@ -17,10 +17,5 @@ func (z Zones) Get(region string) ([]string, error) {
 		return []string{}, err
 	}
 
-	zones := []string{}
-	for _, zone := range zoneList.Items {
-		zones = append(zones, zone.Name)
-	}
-
-	return zones, nil
+	return zoneList, nil
 }
