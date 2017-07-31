@@ -1,10 +1,8 @@
 package application
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 )
@@ -77,7 +75,7 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 		return CommandLineConfiguration{}, commandNotFoundError
 	}
 
-	commandLineConfiguration, err = p.setDefaultStateDirectory(commandLineConfiguration)
+	commandLineConfiguration, err = setDefaultStateDirectory(commandLineConfiguration)
 	if err != nil {
 		return CommandLineConfiguration{}, err
 	}
@@ -86,10 +84,6 @@ func (p CommandLineParser) Parse(arguments []string) (CommandLineConfiguration, 
 }
 
 func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLineConfiguration, arguments []string) (CommandLineConfiguration, []string, error) {
-	if err := c.validateGlobalFlags(arguments); err != nil {
-		return commandLineConfiguration, []string{}, err
-	}
-
 	debugEnv := c.envGetter.Get("BBL_DEBUG")
 
 	globalFlags := flags.New("global")
@@ -108,35 +102,7 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 	return commandLineConfiguration, globalFlags.Args(), nil
 }
 
-func (c CommandLineParser) validateGlobalFlags(arguments []string) error {
-	hasStateDir := false
-	for _, argument := range arguments {
-		name := strings.Split(argument, "=")[0]
-		if name == "--state-dir" || name == "-state-dir" {
-			if hasStateDir {
-				return errors.New("Invalid usage: cannot specify global 'state-dir' flag more than once.")
-			}
-
-			hasStateDir = true
-		}
-	}
-
-	return nil
-}
-
-func (c CommandLineParser) parseCommandAndSubcommandFlags(commandLineConfiguration CommandLineConfiguration, remainingArguments []string) (CommandLineConfiguration, error) {
-	if len(remainingArguments) == 0 {
-		c.usage()
-		return CommandLineConfiguration{}, errors.New("unknown command: [EMPTY]")
-	}
-
-	commandLineConfiguration.Command = remainingArguments[0]
-	commandLineConfiguration.SubcommandFlags = remainingArguments[1:]
-
-	return commandLineConfiguration, nil
-}
-
-func (CommandLineParser) setDefaultStateDirectory(commandLineConfiguration CommandLineConfiguration) (CommandLineConfiguration, error) {
+func setDefaultStateDirectory(commandLineConfiguration CommandLineConfiguration) (CommandLineConfiguration, error) {
 	if commandLineConfiguration.StateDir == "" {
 		wd, err := getwd()
 		if err != nil {
