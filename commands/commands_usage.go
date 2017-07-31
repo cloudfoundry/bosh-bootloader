@@ -3,20 +3,20 @@ package commands
 const (
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
-  --iaas                     IAAS to deploy your BOSH Director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
-  [--name]                   Name to assign to your BOSH Director (optional, will be randomly generated)
+  --iaas                     IAAS to deploy your BOSH director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
+  [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
   [--ops-file]               Path to BOSH ops file (optional)
-  [--jumpbox]                Deploy your BOSH Director behind a jumpbox (supported when iaas="gcp")
+  [--jumpbox]                Deploy your BOSH director behind a jumpbox (supported when iaas="gcp")
   [--no-director]            Skips creating BOSH environment
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-  --aws-region               AWS region to use (Defaults to environment variable BBL_AWS_REGION)
-  [--aws-bosh-az]            AWS availability zone to use for BOSH director (Defaults to environment variable BBL_AWS_BOSH_AZ)
+  --aws-region               AWS Region to use (Defaults to environment variable BBL_AWS_REGION)
+  [--aws-bosh-az]            AWS Availability Zone to use for BOSH director (Defaults to environment variable BBL_AWS_BOSH_AZ)
 
   --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
   --gcp-project-id           GCP Project ID to use (Defaults to environment variable BBL_GCP_PROJECT_ID)
-  --gcp-zone                 GCP Zone to use (Defaults to environment variable BBL_GCP_ZONE)
+  --gcp-zone                 GCP Zone to use for BOSH director (Defaults to environment variable BBL_GCP_ZONE)
   --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)`
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
