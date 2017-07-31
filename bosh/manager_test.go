@@ -56,13 +56,14 @@ var _ = Describe("Manager", func() {
 			})
 
 			terraformOutputs = map[string]interface{}{
-				"network_name":       "some-network",
-				"subnetwork_name":    "some-subnetwork",
-				"bosh_open_tag_name": "some-bosh-tag",
-				"internal_tag_name":  "some-internal-tag",
-				"external_ip":        "some-external-ip",
-				"director_address":   "some-director-address",
-				"jumpbox_url":        "some-jumpbox-url",
+				"network_name":           "some-network",
+				"subnetwork_name":        "some-subnetwork",
+				"bosh_open_tag_name":     "some-jumpbox-tag",
+				"bosh_director_tag_name": "some-director-tag",
+				"internal_tag_name":      "some-internal-tag",
+				"external_ip":            "some-external-ip",
+				"director_address":       "some-director-address",
+				"jumpbox_url":            "some-jumpbox-url",
 			}
 
 			incomingGCPState = storage.State{
@@ -133,7 +134,7 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-bosh-tag, some-internal-tag]
+tags: [some-jumpbox-tag, some-director-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`,
 					BOSHState: map[string]interface{}{
@@ -431,13 +432,14 @@ private_key: |-
 			})
 
 			terraformOutputs = map[string]interface{}{
-				"network_name":       "some-network",
-				"subnetwork_name":    "some-subnetwork",
-				"bosh_open_tag_name": "some-bosh-tag",
-				"internal_tag_name":  "some-internal-tag",
-				"external_ip":        "some-external-ip",
-				"director_address":   "some-director-address",
-				"jumpbox_url":        "some-jumpbox-url",
+				"network_name":           "some-network",
+				"subnetwork_name":        "some-subnetwork",
+				"bosh_open_tag_name":     "some-jumpbox-tag",
+				"bosh_director_tag_name": "some-director-tag",
+				"internal_tag_name":      "some-internal-tag",
+				"external_ip":            "some-external-ip",
+				"director_address":       "some-director-address",
+				"jumpbox_url":            "some-jumpbox-url",
 			}
 
 			incomingGCPState = storage.State{
@@ -478,7 +480,7 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-bosh-tag, some-internal-tag]
+tags: [some-jumpbox-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`
 
@@ -489,7 +491,7 @@ director_name: bosh-some-env-id
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-internal-tag]
+tags: [some-director-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`
 
@@ -944,12 +946,13 @@ gcp_credentials_json: 'some-credential-json'`
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
-					"network_name":       "some-network",
-					"subnetwork_name":    "some-subnetwork",
-					"bosh_open_tag_name": "some-bosh-tag",
-					"internal_tag_name":  "some-internal-tag",
-					"external_ip":        "some-external-ip",
-					"director_address":   "some-director-address",
+					"network_name":           "some-network",
+					"subnetwork_name":        "some-subnetwork",
+					"bosh_open_tag_name":     "some-jumpbox-tag",
+					"bosh_director_tag_name": "some-director-tag",
+					"internal_tag_name":      "some-internal-tag",
+					"external_ip":            "some-external-ip",
+					"director_address":       "some-director-address",
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
@@ -960,7 +963,7 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-bosh-tag, some-internal-tag]
+tags: [some-jumpbox-tag, some-director-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`))
 			})

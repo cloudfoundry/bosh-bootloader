@@ -43,6 +43,10 @@ output "bosh_open_tag_name" {
     value = "${google_compute_firewall.bosh-open.name}"
 }
 
+output "bosh_director_tag_name" {
+	value = "${google_compute_firewall.bosh-director.name}"
+}
+
 output "internal_tag_name" {
     value = "${google_compute_firewall.internal.name}"
 }
@@ -65,27 +69,51 @@ resource "google_compute_address" "bosh-external-ip" {
   name = "${var.env_id}-bosh-external-ip"
 }
 
-resource "google_compute_firewall" "bosh-open" {
-  name    = "${var.env_id}-bosh-open"
+resource "google_compute_firewall" "external" {
+  name    = "${var.env_id}-external"
   network = "${google_compute_network.bbl-network.name}"
 
   source_ranges = ["0.0.0.0/0"]
 
   allow {
-    protocol = "icmp"
-  }
-
-  allow {
-    ports = ["22", "6868", "25555"]
+    ports = ["22", "6868"]
     protocol = "tcp"
   }
 
   target_tags = ["${var.env_id}-bosh-open"]
 }
 
+resource "google_compute_firewall" "bosh-open" {
+  name    = "${var.env_id}-bosh-open"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_tags = ["${var.env_id}-bosh-open"]
+
+  allow {
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-bosh-director"]
+}
+
+resource "google_compute_firewall" "bosh-director" {
+  name    = "${var.env_id}-bosh-director"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_tags = ["${var.env_id}-bosh-director"]
+
+  allow {
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-internal"]
+}
+
 resource "google_compute_firewall" "internal" {
   name    = "${var.env_id}-internal"
   network = "${google_compute_network.bbl-network.name}"
+
+  source_tags = ["${var.env_id}-internal"]
 
   allow {
     protocol = "icmp"
@@ -99,7 +127,7 @@ resource "google_compute_firewall" "internal" {
     protocol = "udp"
   }
 
-  source_tags = ["${var.env_id}-bosh-open","${var.env_id}-internal"]
+  target_tags = ["${var.env_id}-internal"]
 }
 
 output "jumpbox_url" {

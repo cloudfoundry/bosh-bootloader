@@ -328,7 +328,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		fmt.Sprintf("zone: %s", state.GCP.Zone),
 		fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
 		fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
-		fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["internal_tag_name"]),
+		fmt.Sprintf("tags: [%s]", terraformOutputs["bosh_open_tag_name"]),
 		fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
 		fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
 	}, "\n")
@@ -350,7 +350,7 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 				fmt.Sprintf("zone: %s", state.GCP.Zone),
 				fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
 				fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
-				fmt.Sprintf("tags: [%s]", terraformOutputs["internal_tag_name"]),
+				fmt.Sprintf("tags: [%s]", terraformOutputs["bosh_director_tag_name"]),
 				fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
 				fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
 			}, "\n")
@@ -364,7 +364,7 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 				fmt.Sprintf("zone: %s", state.GCP.Zone),
 				fmt.Sprintf("network: %s", terraformOutputs["network_name"]),
 				fmt.Sprintf("subnetwork: %s", terraformOutputs["subnetwork_name"]),
-				fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["internal_tag_name"]),
+				fmt.Sprintf("tags: [%s, %s]", terraformOutputs["bosh_open_tag_name"], terraformOutputs["bosh_director_tag_name"]),
 				fmt.Sprintf("project_id: %s", state.GCP.ProjectID),
 				fmt.Sprintf("gcp_credentials_json: '%s'", state.GCP.ServiceAccountKey),
 			}, "\n")
