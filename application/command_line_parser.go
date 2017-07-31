@@ -12,11 +12,10 @@ import (
 var getwd func() (string, error) = os.Getwd
 
 type CommandLineConfiguration struct {
-	Command          string
-	SubcommandFlags  []string
-	EndpointOverride string
-	StateDir         string
-	Debug            bool
+	Command         string
+	SubcommandFlags []string
+	StateDir        string
+	Debug           bool
 
 	help    bool
 	version bool
@@ -95,7 +94,6 @@ func (c CommandLineParser) parseGlobalFlags(commandLineConfiguration CommandLine
 
 	globalFlags := flags.New("global")
 
-	globalFlags.String(&commandLineConfiguration.EndpointOverride, "endpoint-override", "")
 	globalFlags.String(&commandLineConfiguration.StateDir, "state-dir", "")
 	globalFlags.Bool(&commandLineConfiguration.Debug, "d", "debug", (debugEnv == "true"))
 

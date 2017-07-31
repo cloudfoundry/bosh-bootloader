@@ -81,8 +81,7 @@ var _ = Describe("App", func() {
 						"--second-subcommand-flag", "second-value",
 					},
 					Global: application.GlobalConfiguration{
-						StateDir:         "some/state/dir",
-						EndpointOverride: "some-endpoint-override",
+						StateDir: "some/state/dir",
 					},
 					State: storage.State{
 						AWS: storage.AWS{

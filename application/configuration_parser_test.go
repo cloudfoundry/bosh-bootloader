@@ -32,11 +32,10 @@ var _ = Describe("ConfigurationParser", func() {
 	Describe("Parse", func() {
 		It("returns a configuration based on arguments provided", func() {
 			commandLineParser.ParseCall.Returns.CommandLineConfiguration = application.CommandLineConfiguration{
-				Command:          "up",
-				SubcommandFlags:  []string{"--some-flag", "some-value"},
-				StateDir:         "some/state/dir",
-				EndpointOverride: "some-endpoint-override",
-				Debug:            true,
+				Command:         "up",
+				SubcommandFlags: []string{"--some-flag", "some-value"},
+				StateDir:        "some/state/dir",
+				Debug:           true,
 			}
 			configuration, err := configurationParser.Parse([]string{"up"})
 			Expect(err).NotTo(HaveOccurred())
@@ -44,9 +43,8 @@ var _ = Describe("ConfigurationParser", func() {
 			Expect(configuration.Command).To(Equal("up"))
 			Expect(configuration.SubcommandFlags).To(Equal(application.StringSlice{"--some-flag", "some-value"}))
 			Expect(configuration.Global).To(Equal(application.GlobalConfiguration{
-				EndpointOverride: "some-endpoint-override",
-				StateDir:         "some/state/dir",
-				Debug:            true,
+				StateDir: "some/state/dir",
+				Debug:    true,
 			}))
 
 			Expect(commandLineParser.ParseCall.Receives.Arguments).To(Equal([]string{"up"}))

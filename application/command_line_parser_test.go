@@ -37,7 +37,6 @@ var _ = Describe("CommandLineParser", func() {
 	Describe("Parse", func() {
 		It("returns a command line configuration with correct global flags based on arguments passed in", func() {
 			args := []string{
-				"--endpoint-override=some-endpoint-override",
 				"--state-dir", "some/state/dir",
 				"--debug",
 				"up",
@@ -46,7 +45,6 @@ var _ = Describe("CommandLineParser", func() {
 			commandLineConfiguration, err := commandLineParser.Parse(args)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(commandLineConfiguration.EndpointOverride).To(Equal("some-endpoint-override"))
 			Expect(commandLineConfiguration.StateDir).To(Equal("some/state/dir"))
 			Expect(commandLineConfiguration.Debug).To(BeTrue())
 		})
@@ -86,7 +84,6 @@ var _ = Describe("CommandLineParser", func() {
 
 			It("returns a command line configuration with the debug configuration set to true", func() {
 				args := []string{
-					"--endpoint-override=some-endpoint-override",
 					"--state-dir", "some/state/dir",
 					"up",
 					"--subcommand-flag", "some-value",
@@ -94,7 +91,6 @@ var _ = Describe("CommandLineParser", func() {
 				commandLineConfiguration, err := commandLineParser.Parse(args)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(commandLineConfiguration.EndpointOverride).To(Equal("some-endpoint-override"))
 				Expect(commandLineConfiguration.StateDir).To(Equal("some/state/dir"))
 				Expect(commandLineConfiguration.Debug).To(BeTrue())
 			})

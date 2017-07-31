@@ -16,10 +16,9 @@ var _ = Describe("Client", func() {
 	Describe("NewClient", func() {
 		It("returns a Client with the provided configuration", func() {
 			client := ec2.NewClient(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint-override",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				Region:          "some-region",
 			})
 
 			_, ok := client.(ec2.Client)
@@ -30,7 +29,6 @@ var _ = Describe("Client", func() {
 
 			Expect(ec2Client.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
 			Expect(ec2Client.Config.Region).To(Equal(goaws.String("some-region")))
-			Expect(ec2Client.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
 	})
 })

@@ -13,16 +13,14 @@ var _ = Describe("Config", func() {
 	Describe("ClientConfig", func() {
 		It("returns an AWS config which is consumable by AWS client functions", func() {
 			config := aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  " some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint-override",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: " some-secret-access-key",
+				Region:          "some-region",
 			}
 
 			awsConfig := &goaws.Config{
 				Credentials: credentials.NewStaticCredentials(config.AccessKeyID, config.SecretAccessKey, ""),
 				Region:      goaws.String(config.Region),
-				Endpoint:    goaws.String(config.EndpointOverride),
 			}
 
 			Expect(config.ClientConfig()).To(Equal(awsConfig))

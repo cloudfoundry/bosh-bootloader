@@ -16,10 +16,9 @@ var _ = Describe("Client", func() {
 	Describe("NewClient", func() {
 		It("returns a Client with the provided configuration", func() {
 			client := cloudformation.NewClient(aws.Config{
-				AccessKeyID:      "some-access-key-id",
-				SecretAccessKey:  "some-secret-access-key",
-				Region:           "some-region",
-				EndpointOverride: "some-endpoint-override",
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				Region:          "some-region",
 			})
 
 			_, ok := client.(cloudformation.Client)
@@ -30,7 +29,6 @@ var _ = Describe("Client", func() {
 
 			Expect(cloudformationClient.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
 			Expect(cloudformationClient.Config.Region).To(Equal(goaws.String("some-region")))
-			Expect(cloudformationClient.Config.Endpoint).To(Equal(goaws.String("some-endpoint-override")))
 		})
 	})
 })

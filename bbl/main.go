@@ -93,13 +93,12 @@ func main() {
 
 	// Amazon
 	awsConfiguration := aws.Config{
-		AccessKeyID:      configuration.State.AWS.AccessKeyID,
-		SecretAccessKey:  configuration.State.AWS.SecretAccessKey,
-		Region:           configuration.State.AWS.Region,
-		EndpointOverride: configuration.Global.EndpointOverride,
+		AccessKeyID:     configuration.State.AWS.AccessKeyID,
+		SecretAccessKey: configuration.State.AWS.SecretAccessKey,
+		Region:          configuration.State.AWS.Region,
 	}
 
-	clientProvider := &clientmanager.ClientProvider{EndpointOverride: configuration.Global.EndpointOverride}
+	clientProvider := &clientmanager.ClientProvider{}
 	clientProvider.SetConfig(awsConfiguration)
 
 	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
