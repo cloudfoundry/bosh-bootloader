@@ -23,5 +23,6 @@ _testmain.go
 *.test
 *.prof
 
+bbl-state.json
 state.json*
 integration_config.json
