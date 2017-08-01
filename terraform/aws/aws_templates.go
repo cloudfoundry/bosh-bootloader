@@ -202,6 +202,10 @@ provider "aws" {
   region     = "${var.region}"
 }
 
+resource "aws_default_security_group" "default_security_group" {
+	vpc_id = "${aws_vpc.vpc.id}"
+}
+
 resource "aws_security_group" "internal_security_group" {
   description = "{{.InternalDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
