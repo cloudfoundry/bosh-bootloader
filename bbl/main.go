@@ -200,14 +200,15 @@ func main() {
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
-		StateStore:         stateStore,
-		KeyPairManager:     keyPairManager,
-		GCPProvider:        gcpClientProvider,
-		TerraformManager:   terraformManager,
-		BoshManager:        boshManager,
-		Logger:             logger,
-		EnvIDManager:       envIDManager,
-		CloudConfigManager: cloudConfigManager,
+		StateStore:                   stateStore,
+		KeyPairManager:               keyPairManager,
+		GCPProvider:                  gcpClientProvider,
+		TerraformManager:             terraformManager,
+		BoshManager:                  boshManager,
+		Logger:                       logger,
+		EnvIDManager:                 envIDManager,
+		CloudConfigManager:           cloudConfigManager,
+		GCPAvailabilityZoneRetriever: gcpAvailabilityZoneRetriever,
 	})
 
 	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator, gcpAvailabilityZoneRetriever)

@@ -23,14 +23,15 @@ const (
 )
 
 type GCPUp struct {
-	stateStore         stateStore
-	keyPairManager     keyPairManager
-	gcpProvider        gcpProvider
-	boshManager        boshManager
-	cloudConfigManager cloudConfigManager
-	logger             logger
-	terraformManager   terraformApplier
-	envIDManager       envIDManager
+	stateStore                   stateStore
+	keyPairManager               keyPairManager
+	gcpProvider                  gcpProvider
+	boshManager                  boshManager
+	cloudConfigManager           cloudConfigManager
+	logger                       logger
+	terraformManager             terraformApplier
+	envIDManager                 envIDManager
+	gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever
 }
 
 type GCPUpConfig struct {
@@ -74,27 +75,33 @@ type envIDManager interface {
 	Sync(storage.State, string) (storage.State, error)
 }
 
+type gcpAvailabilityZoneRetriever interface {
+	Get(string) ([]string, error)
+}
+
 type NewGCPUpArgs struct {
-	StateStore         stateStore
-	KeyPairManager     keyPairManager
-	GCPProvider        gcpProvider
-	TerraformManager   terraformApplier
-	BoshManager        boshManager
-	Logger             logger
-	EnvIDManager       envIDManager
-	CloudConfigManager cloudConfigManager
+	StateStore                   stateStore
+	KeyPairManager               keyPairManager
+	GCPProvider                  gcpProvider
+	TerraformManager             terraformApplier
+	BoshManager                  boshManager
+	Logger                       logger
+	EnvIDManager                 envIDManager
+	CloudConfigManager           cloudConfigManager
+	GCPAvailabilityZoneRetriever gcpAvailabilityZoneRetriever
 }
 
 func NewGCPUp(args NewGCPUpArgs) GCPUp {
 	return GCPUp{
-		stateStore:         args.StateStore,
-		keyPairManager:     args.KeyPairManager,
-		gcpProvider:        args.GCPProvider,
-		terraformManager:   args.TerraformManager,
-		boshManager:        args.BoshManager,
-		cloudConfigManager: args.CloudConfigManager,
-		logger:             args.Logger,
-		envIDManager:       args.EnvIDManager,
+		stateStore:                   args.StateStore,
+		keyPairManager:               args.KeyPairManager,
+		gcpProvider:                  args.GCPProvider,
+		terraformManager:             args.TerraformManager,
+		boshManager:                  args.BoshManager,
+		cloudConfigManager:           args.CloudConfigManager,
+		logger:                       args.Logger,
+		envIDManager:                 args.EnvIDManager,
+		gcpAvailabilityZoneRetriever: args.GCPAvailabilityZoneRetriever,
 	}
 }
 
@@ -157,6 +164,11 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	if err := u.stateStore.Set(state); err != nil {
+		return err
+	}
+
+	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.Get(state.GCP.Region)
+	if err != nil {
 		return err
 	}
 

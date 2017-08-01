@@ -39,6 +39,7 @@ var _ = Describe("GCPUp", func() {
 		envIDManager          *fakes.EnvIDManager
 		logger                *fakes.Logger
 		terraformManagerError *fakes.TerraformManagerError
+		gcpZones              *fakes.Zones
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
@@ -46,10 +47,13 @@ var _ = Describe("GCPUp", func() {
 		expectedIAASState      storage.State
 		expectedEnvIDState     storage.State
 		expectedKeyPairState   storage.State
+		expectedZonesState     storage.State
 		expectedTerraformState storage.State
 		expectedBOSHState      storage.State
 
 		expectedTerraformTemplate string
+
+		expectedAvailabilityZones []string
 	)
 
 	BeforeEach(func() {
@@ -65,6 +69,7 @@ var _ = Describe("GCPUp", func() {
 		envIDManager = &fakes.EnvIDManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		terraformManagerError = &fakes.TerraformManagerError{}
+		gcpZones = &fakes.Zones{}
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -93,7 +98,10 @@ var _ = Describe("GCPUp", func() {
 			PublicKey:  "some-public-key",
 		}
 
-		expectedTerraformState = expectedKeyPairState
+		expectedZonesState = expectedKeyPairState
+		expectedZonesState.GCP.Zones = []string{"some-zone", "some-other-zone"}
+
+		expectedTerraformState = expectedZonesState
 		expectedTerraformState.TFState = "some-tf-state"
 
 		expectedBOSHState = expectedTerraformState
@@ -112,6 +120,8 @@ var _ = Describe("GCPUp", func() {
 			Manifest:  "some-bosh-manifest",
 		}
 
+		expectedAvailabilityZones = []string{"some-zone", "some-other-zone"}
+
 		terraformManager.VersionCall.Returns.Version = "0.8.7"
 		envIDManager.SyncCall.Returns.State = storage.State{
 			EnvID: "some-env-id",
@@ -120,16 +130,18 @@ var _ = Describe("GCPUp", func() {
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateDirectorCall.Returns.State = expectedBOSHState
 		boshManager.CreateJumpboxCall.Returns.State = expectedBOSHState
+		gcpZones.GetCall.Returns.Zones = expectedAvailabilityZones
 
 		gcpUp = commands.NewGCPUp(commands.NewGCPUpArgs{
-			StateStore:         stateStore,
-			KeyPairManager:     keyPairManager,
-			GCPProvider:        gcpClientProvider,
-			TerraformManager:   terraformManager,
-			BoshManager:        boshManager,
-			Logger:             logger,
-			EnvIDManager:       envIDManager,
-			CloudConfigManager: cloudConfigManager,
+			StateStore:                   stateStore,
+			KeyPairManager:               keyPairManager,
+			GCPProvider:                  gcpClientProvider,
+			TerraformManager:             terraformManager,
+			BoshManager:                  boshManager,
+			Logger:                       logger,
+			EnvIDManager:                 envIDManager,
+			CloudConfigManager:           cloudConfigManager,
+			GCPAvailabilityZoneRetriever: gcpZones,
 		})
 
 		body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
@@ -199,9 +211,14 @@ var _ = Describe("GCPUp", func() {
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(expectedKeyPairState))
 			})
 
+			By("getting gcp availability zones", func() {
+				Expect(gcpZones.GetCall.CallCount).To(Equal(1))
+				Expect(gcpZones.GetCall.Receives.Region).To(Equal("some-region"))
+			})
+
 			By("creating gcp resources via terraform", func() {
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedKeyPairState))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedZonesState))
 			})
 
 			By("saving the terraform state to the state", func() {
@@ -411,7 +428,7 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			It("calls terraform manager with previous state", func() {
-				expectedKeyPairState.TFState = "existing-tf-state"
+				expectedZonesState.TFState = "existing-tf-state"
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
@@ -425,7 +442,7 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedKeyPairState))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedZonesState))
 			})
 		})
 
@@ -648,6 +665,18 @@ var _ = Describe("GCPUp", func() {
 					Region:            "us-west1",
 				}, storage.State{})
 				Expect(err).To(MatchError("state failed to be set"))
+			})
+
+			It("returns an error when GCP AZs cannot be retrieved", func() {
+				gcpZones.GetCall.Returns.Error = errors.New("can't get gcp availability zones")
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKey: serviceAccountKeyPath,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+				}, storage.State{})
+				Expect(err).To(MatchError("can't get gcp availability zones"))
 			})
 
 			Context("terraform manager error handling", func() {
