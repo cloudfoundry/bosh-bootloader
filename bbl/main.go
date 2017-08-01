@@ -168,7 +168,7 @@ func main() {
 	// Environment Validators
 	awsBrokenEnvironmentValidator := awsapplication.NewBrokenEnvironmentValidator(infrastructureManager)
 	awsEnvironmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
-	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
+	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator()
 
 	// Cloud Config
 	sshKeyGetter := bosh.NewSSHKeyGetter()
