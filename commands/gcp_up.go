@@ -172,6 +172,11 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
+	err = u.stateStore.Set(state)
+	if err != nil {
+		return err
+	}
+
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {
 		return handleTerraformError(err, u.stateStore)

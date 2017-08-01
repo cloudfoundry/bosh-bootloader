@@ -216,14 +216,19 @@ var _ = Describe("GCPUp", func() {
 				Expect(gcpZones.GetCall.Receives.Region).To(Equal("some-region"))
 			})
 
+			By("saving gcp zones to the state", func() {
+				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 3))
+				Expect(stateStore.SetCall.Receives[2].State).To(Equal(expectedZonesState))
+			})
+
 			By("creating gcp resources via terraform", func() {
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedZonesState))
 			})
 
 			By("saving the terraform state to the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 3))
-				Expect(stateStore.SetCall.Receives[2].State).To(Equal(expectedTerraformState))
+				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 4))
+				Expect(stateStore.SetCall.Receives[3].State).To(Equal(expectedTerraformState))
 			})
 
 			By("getting the terraform outputs", func() {
@@ -237,8 +242,8 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			By("saving the bosh state to the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 4))
-				Expect(stateStore.SetCall.Receives[3].State).To(Equal(expectedBOSHState))
+				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 5))
+				Expect(stateStore.SetCall.Receives[4].State).To(Equal(expectedBOSHState))
 			})
 
 			By("updating the cloud config", func() {
@@ -323,8 +328,8 @@ var _ = Describe("GCPUp", func() {
 				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-				Expect(stateStore.SetCall.CallCount).To(Equal(3))
-				Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(Equal(true))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.Receives[3].State.NoDirector).To(Equal(true))
 			})
 
 			Context("when re-bbling up an environment with no director", func() {
@@ -343,8 +348,8 @@ var _ = Describe("GCPUp", func() {
 					Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(Equal(true))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State.NoDirector).To(Equal(true))
 				})
 			})
 		})
@@ -369,7 +374,7 @@ var _ = Describe("GCPUp", func() {
 				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.CallCount).To(Equal(5))
 				Expect(stateStore.SetCall.Receives[0].State.Jumpbox.Enabled).To(Equal(true))
 			})
 		})
@@ -423,8 +428,8 @@ var _ = Describe("GCPUp", func() {
 				}, storage.State{})
 				Expect(err).To(MatchError("terraform manager failed"))
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				Expect(stateStore.SetCall.Receives[1].State).To(Equal(expectedKeyPairState))
+				Expect(stateStore.SetCall.CallCount).To(Equal(3))
+				Expect(stateStore.SetCall.Receives[2].State).To(Equal(expectedZonesState))
 			})
 
 			It("calls terraform manager with previous state", func() {
@@ -679,6 +684,18 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).To(MatchError("can't get gcp availability zones"))
 			})
 
+			It("returns an error when the state fails to be set after retrieving GCP zones", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
+
+				err := gcpUp.Execute(commands.GCPUpConfig{
+					ServiceAccountKey: serviceAccountKeyPath,
+					ProjectID:         "some-project-id",
+					Zone:              "some-zone",
+					Region:            "us-west1",
+				}, storage.State{})
+				Expect(err).To(MatchError("state failed to be set"))
+			})
+
 			Context("terraform manager error handling", func() {
 				BeforeEach(func() {
 					terraformManagerError.ErrorCall.Returns = "failed to apply"
@@ -702,8 +719,8 @@ var _ = Describe("GCPUp", func() {
 					})
 
 					Expect(err).To(MatchError("failed to apply"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.TFState).To(Equal("some-updated-tf-state"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State.TFState).To(Equal("some-updated-tf-state"))
 				})
 
 				It("returns an error when the applier fails and we cannot retrieve the updated bbl state", func() {
@@ -722,7 +739,7 @@ var _ = Describe("GCPUp", func() {
 					})
 
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nsome-bbl-state-error"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				})
 
 				It("returns an error if applier fails with non terraform manager apply error", func() {
@@ -754,17 +771,17 @@ var _ = Describe("GCPUp", func() {
 
 					terraformManager.ApplyCall.Returns.Error = terraformManagerError
 
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
 					err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)
 
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.TFState).To(Equal("some-updated-tf-state"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State.TFState).To(Equal("some-updated-tf-state"))
 				})
 			})
 
 			It("returns an error when the state fails to be set after applying terraform", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
 
 				err := gcpUp.Execute(commands.GCPUpConfig{
 					ServiceAccountKey: serviceAccountKeyPath,
@@ -820,12 +837,12 @@ var _ = Describe("GCPUp", func() {
 					It("returns the error and saves the state", func() {
 						err := gcpUp.Execute(commands.GCPUpConfig{}, incomingState)
 						Expect(err).To(MatchError("failed to create"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State.BOSH.State).To(Equal(expectedBOSHState))
 					})
 
 					It("returns a compound error when it fails to save the state", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("state failed to be set")}}
 
 						err := gcpUp.Execute(commands.GCPUpConfig{
 							ServiceAccountKey: serviceAccountKeyPath,
@@ -834,8 +851,8 @@ var _ = Describe("GCPUp", func() {
 							Region:            "us-west1",
 						}, storage.State{})
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State.BOSH.State).To(Equal(expectedBOSHState))
 					})
 				})
 
