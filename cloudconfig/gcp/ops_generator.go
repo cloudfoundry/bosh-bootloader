@@ -126,7 +126,6 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 			cidr,
 			terraformOutputs["network_name"].(string),
 			terraformOutputs["subnetwork_name"].(string),
-			terraformOutputs["bosh_open_tag_name"].(string),
 			terraformOutputs["internal_tag_name"].(string),
 		)
 		if err != nil {
@@ -194,7 +193,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 	return ops, nil
 }
 
-func generateNetworkSubnet(az, cidr, networkName, subnetworkName, boshTag, internalTag string) (networkSubnet, error) {
+func generateNetworkSubnet(az, cidr, networkName, subnetworkName, internalTag string) (networkSubnet, error) {
 	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
 	if err != nil {
 		return networkSubnet{}, err
@@ -222,7 +221,7 @@ func generateNetworkSubnet(az, cidr, networkName, subnetworkName, boshTag, inter
 			EphemeralExternalIP: true,
 			NetworkName:         networkName,
 			SubnetworkName:      subnetworkName,
-			Tags:                []string{boshTag, internalTag},
+			Tags:                []string{internalTag},
 		},
 	}, nil
 }

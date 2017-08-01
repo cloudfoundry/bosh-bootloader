@@ -428,7 +428,6 @@
         network_name: some-network-name
         subnetwork_name: some-subnetwork-name
         tags:
-          - some-bosh-tag
           - some-internal-tag
     - az: z2
       gateway: 10.0.32.1
@@ -443,7 +442,6 @@
         network_name: some-network-name
         subnetwork_name: some-subnetwork-name
         tags:
-          - some-bosh-tag
           - some-internal-tag
     - az: z3
       gateway: 10.0.48.1
@@ -458,7 +456,6 @@
         network_name: some-network-name
         subnetwork_name: some-subnetwork-name
         tags:
-          - some-bosh-tag
           - some-internal-tag
     type: manual
 
@@ -480,7 +477,6 @@
         network_name: some-network-name
         subnetwork_name: some-subnetwork-name
         tags:
-          - some-bosh-tag
           - some-internal-tag
     - az: z2
       gateway: 10.0.32.1
@@ -495,7 +491,6 @@
         network_name: some-network-name
         subnetwork_name: some-subnetwork-name
         tags:
-          - some-bosh-tag
           - some-internal-tag
     - az: z3
       gateway: 10.0.48.1
@@ -510,7 +505,6 @@
         network_name: some-network-name
         subnetwork_name: some-subnetwork-name
         tags:
-          - some-bosh-tag
           - some-internal-tag
     type: manual
 

@@ -90,6 +90,7 @@ resource "google_compute_firewall" "bosh-open" {
   source_tags = ["${var.env_id}-bosh-open"]
 
   allow {
+    ports = ["22", "6868", "8443", "25555"]
     protocol = "tcp"
   }
 
@@ -107,6 +108,20 @@ resource "google_compute_firewall" "bosh-director" {
   }
 
   target_tags = ["${var.env_id}-internal"]
+}
+
+resource "google_compute_firewall" "internal-to-director" {
+  name    = "${var.env_id}-internal-to-director"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_tags = ["${var.env_id}-internal"]
+
+  allow {
+    ports = ["4222", "25250", "25777"]
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-bosh-director"]
 }
 
 resource "google_compute_firewall" "internal" {
