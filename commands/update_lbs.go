@@ -5,8 +5,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const UpdateLBsCommand = "update-lbs"
-
 type updateLBConfig struct {
 	certPath      string
 	keyPath       string
@@ -108,7 +106,7 @@ func (u UpdateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 		return LBNotFound
 	}
 
-	err = u.certificateValidator.Validate(UpdateLBsCommand, config.certPath, config.keyPath, config.chainPath)
+	err = u.certificateValidator.Validate("update-lbs", config.certPath, config.keyPath, config.chainPath)
 	if err != nil {
 		return err
 	}

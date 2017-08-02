@@ -2,34 +2,38 @@ package gcp
 
 import (
 	"errors"
-
-	"github.com/cloudfoundry/bosh-bootloader/application"
 )
 
 type CredentialValidator struct {
-	configuration application.Configuration
+	projectID         string
+	serviceAccountKey string
+	region            string
+	zone              string
 }
 
-func NewCredentialValidator(configuration application.Configuration) CredentialValidator {
+func NewCredentialValidator(projectID, serviceAccountKey, region, zone string) CredentialValidator {
 	return CredentialValidator{
-		configuration: configuration,
+		projectID:         projectID,
+		serviceAccountKey: serviceAccountKey,
+		region:            region,
+		zone:              zone,
 	}
 }
 
 func (c CredentialValidator) Validate() error {
-	if c.configuration.State.GCP.ProjectID == "" {
+	if c.projectID == "" {
 		return errors.New("GCP project ID must be provided")
 	}
 
-	if c.configuration.State.GCP.ServiceAccountKey == "" {
+	if c.serviceAccountKey == "" {
 		return errors.New("GCP service account key must be provided")
 	}
 
-	if c.configuration.State.GCP.Region == "" {
+	if c.region == "" {
 		return errors.New("GCP region must be provided")
 	}
 
-	if c.configuration.State.GCP.Zone == "" {
+	if c.zone == "" {
 		return errors.New("GCP zone must be provided")
 	}
 

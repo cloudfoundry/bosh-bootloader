@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	HelpCommand = "help"
-
 	UsageHeader = `
 Usage:
   bbl [GLOBAL OPTIONS] %s [OPTIONS]

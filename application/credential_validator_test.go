@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,13 +29,7 @@ var _ = Describe("CredentialValidator", func() {
 
 		Context("when iaas is gcp", func() {
 			BeforeEach(func() {
-				configuration := application.Configuration{
-					State: storage.State{
-						IAAS: "gcp",
-					},
-				}
-
-				credentialValidator = application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
+				credentialValidator = application.NewCredentialValidator("gcp", gcpCredentialValidator, awsCredentialValidator)
 			})
 
 			It("validates using the gcp credential validator", func() {
@@ -49,14 +42,9 @@ var _ = Describe("CredentialValidator", func() {
 
 		Context("when iaas is aws", func() {
 			BeforeEach(func() {
-				configuration := application.Configuration{
-					State: storage.State{
-						IAAS: "aws",
-					},
-				}
-
-				credentialValidator = application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
+				credentialValidator = application.NewCredentialValidator("aws", gcpCredentialValidator, awsCredentialValidator)
 			})
+
 			It("validates using the aws credential validator", func() {
 				err := credentialValidator.Validate()
 
@@ -67,13 +55,7 @@ var _ = Describe("CredentialValidator", func() {
 
 		Context("when iaas is invalid", func() {
 			BeforeEach(func() {
-				configuration := application.Configuration{
-					State: storage.State{
-						IAAS: "invalid",
-					},
-				}
-
-				credentialValidator = application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
+				credentialValidator = application.NewCredentialValidator("invalid", gcpCredentialValidator, awsCredentialValidator)
 			})
 
 			It("returns a helpful error message", func() {

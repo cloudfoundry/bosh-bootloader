@@ -13,33 +13,31 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
+	"golang.org/x/crypto/ssh"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/crypto/ssh"
 )
 
 var _ = Describe("KeyPairUpdater", func() {
 	var (
-		keyPairUpdater    gcp.KeyPairUpdater
-		gcpClientProvider *fakes.GCPClientProvider
-		gcpClient         *fakes.GCPClient
-		logger            *fakes.Logger
+		keyPairUpdater gcp.KeyPairUpdater
+		gcpClient      *fakes.GCPClient
+		logger         *fakes.Logger
 	)
 
 	BeforeEach(func() {
-		gcpClientProvider = &fakes.GCPClientProvider{}
 		gcpClient = &fakes.GCPClient{}
 		logger = &fakes.Logger{}
-
-		gcpClientProvider.ClientCall.Returns.Client = gcpClient
 
 		gcpClient.GetProjectCall.Returns.Project = &compute.Project{
 			CommonInstanceMetadata: &compute.Metadata{
 				Items: []*compute.MetadataItems{},
 			},
+			Name: "some-project-id",
 		}
-		gcpClient.ProjectIDCall.Returns.ProjectID = "some-project-id"
-		keyPairUpdater = gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
+
+		keyPairUpdater = gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClient, logger)
 	})
 
 	It("generates a keypair", func() {
@@ -67,19 +65,11 @@ var _ = Describe("KeyPairUpdater", func() {
 		Expect(rawPublicKey).To(Equal(keyPair.PublicKey))
 	})
 
-	It("retrieves the project for the given project id", func() {
-		_, err := keyPairUpdater.Update()
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
-
-		Expect(gcpClient.GetProjectCall.CallCount).To(Equal(1))
-	})
-
 	It("updates common metadata for given project id", func() {
 		_, err := keyPairUpdater.Update()
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(gcpClient.GetProjectCall.CallCount).To(Equal(1))
 		Expect(gcpClient.SetCommonInstanceMetadataCall.CallCount).To(Equal(1))
 
 		Expect(gcpClient.SetCommonInstanceMetadataCall.Receives.Metadata.Items).To(HaveLen(1))
@@ -124,7 +114,7 @@ var _ = Describe("KeyPairUpdater", func() {
 				func(_ io.Reader, _ int) (*rsa.PrivateKey, error) {
 					return nil, errors.New("rsa key generator failed")
 				},
-				ssh.NewPublicKey, gcpClientProvider, logger)
+				ssh.NewPublicKey, gcpClient, logger)
 
 			_, err := keyPairUpdater.Update()
 			Expect(err).To(MatchError("rsa key generator failed"))
@@ -134,7 +124,7 @@ var _ = Describe("KeyPairUpdater", func() {
 			keyPairUpdater = gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey,
 				func(_ interface{}) (ssh.PublicKey, error) {
 					return nil, errors.New("ssh public key gen failed")
-				}, gcpClientProvider, logger)
+				}, gcpClient, logger)
 
 			_, err := keyPairUpdater.Update()
 			Expect(err).To(MatchError("ssh public key gen failed"))

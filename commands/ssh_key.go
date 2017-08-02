@@ -7,10 +7,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-const (
-	SSHKeyCommand = "ssh-key"
-)
-
 type SSHKey struct {
 	logger         logger
 	stateValidator stateValidator

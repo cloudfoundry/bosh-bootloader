@@ -22,7 +22,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		stateStore                *fakes.StateStore
 		logger                    *fakes.Logger
 		terraformExecutorError    *fakes.TerraformExecutorError
-		availabilityZoneRetriever *fakes.Zones
+		availabilityZoneRetriever *fakes.GCPClient
 
 		bblState    storage.State
 		command     commands.GCPCreateLBs
@@ -38,7 +38,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		stateStore = &fakes.StateStore{}
 		logger = &fakes.Logger{}
 		terraformExecutorError = &fakes.TerraformExecutorError{}
-		availabilityZoneRetriever = &fakes.Zones{}
+		availabilityZoneRetriever = &fakes.GCPClient{}
 
 		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, availabilityZoneRetriever)
 
@@ -79,7 +79,7 @@ var _ = Describe("GCPCreateLBs", func() {
 	Describe("Execute", func() {
 		Context("when lb type is cf", func() {
 			BeforeEach(func() {
-				availabilityZoneRetriever.GetCall.Returns.Zones = []string{"z1", "z2", "z3"}
+				availabilityZoneRetriever.GetZonesCall.Returns.Zones = []string{"z1", "z2", "z3"}
 			})
 			It("calls terraform manager apply", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -91,7 +91,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("getting the AZs", func() {
-					Expect(availabilityZoneRetriever.GetCall.Receives.Region).To(Equal("some-region"))
+					Expect(availabilityZoneRetriever.GetZonesCall.Receives.Region).To(Equal("some-region"))
 				})
 
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
@@ -326,7 +326,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			})
 
 			It("returns an error when the availability zone retriever fails to get zones", func() {
-				availabilityZoneRetriever.GetCall.Returns.Error = errors.New("failed to get zones")
+				availabilityZoneRetriever.GetZonesCall.Returns.Error = errors.New("failed to get zones")
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
 				}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})

@@ -7,9 +7,8 @@ import (
 )
 
 type Manager struct {
-	keyPairUpdater    keyPairUpdater
-	keyPairDeleter    keyPairDeleter
-	gcpClientProvider gcpClientProvider
+	keyPairUpdater keyPairUpdater
+	keyPairDeleter keyPairDeleter
 }
 
 type keyPairUpdater interface {
@@ -20,15 +19,10 @@ type keyPairDeleter interface {
 	Delete(publicKey string) error
 }
 
-type gcpClientProvider interface {
-	SetConfig(serviceAccountKey, projectID, region, zone string) error
-}
-
-func NewManager(keyPairUpdater keyPairUpdater, keyPairDeleter keyPairDeleter, gcpClientProvider gcpClientProvider) Manager {
+func NewManager(keyPairUpdater keyPairUpdater, keyPairDeleter keyPairDeleter) Manager {
 	return Manager{
-		keyPairUpdater:    keyPairUpdater,
-		keyPairDeleter:    keyPairDeleter,
-		gcpClientProvider: gcpClientProvider,
+		keyPairUpdater: keyPairUpdater,
+		keyPairDeleter: keyPairDeleter,
 	}
 }
 
@@ -49,12 +43,7 @@ func (m Manager) Rotate(state storage.State) (storage.State, error) {
 		return storage.State{}, errors.New("no key found to rotate")
 	}
 
-	err := m.gcpClientProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Region, state.GCP.Zone)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	err = m.keyPairDeleter.Delete(state.KeyPair.PublicKey)
+	err := m.keyPairDeleter.Delete(state.KeyPair.PublicKey)
 	if err != nil {
 		return storage.State{}, err
 	}

@@ -2,8 +2,6 @@ package commands
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-const LatestErrorCommand = "latest-error"
-
 type LatestError struct {
 	logger         logger
 	stateValidator stateValidator

@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	compute "google.golang.org/api/compute/v1"
-
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -31,15 +29,13 @@ var _ = Describe("GCPUp", func() {
 		gcpUp                 commands.GCPUp
 		stateStore            *fakes.StateStore
 		keyPairManager        *fakes.KeyPairManager
-		gcpClientProvider     *fakes.GCPClientProvider
-		gcpClient             *fakes.GCPClient
 		terraformManager      *fakes.TerraformManager
 		boshManager           *fakes.BOSHManager
 		cloudConfigManager    *fakes.CloudConfigManager
 		envIDManager          *fakes.EnvIDManager
 		logger                *fakes.Logger
 		terraformManagerError *fakes.TerraformManagerError
-		gcpZones              *fakes.Zones
+		gcpZones              *fakes.GCPClient
 
 		serviceAccountKeyPath string
 		serviceAccountKey     string
@@ -59,17 +55,13 @@ var _ = Describe("GCPUp", func() {
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
 		keyPairManager = &fakes.KeyPairManager{}
-		gcpClientProvider = &fakes.GCPClientProvider{}
-		gcpClient = &fakes.GCPClient{}
-		gcpClientProvider.ClientCall.Returns.Client = gcpClient
-		gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{}
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
 		terraformManager = &fakes.TerraformManager{}
 		envIDManager = &fakes.EnvIDManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		terraformManagerError = &fakes.TerraformManagerError{}
-		gcpZones = &fakes.Zones{}
+		gcpZones = &fakes.GCPClient{}
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())
@@ -130,12 +122,11 @@ var _ = Describe("GCPUp", func() {
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateDirectorCall.Returns.State = expectedBOSHState
 		boshManager.CreateJumpboxCall.Returns.State = expectedBOSHState
-		gcpZones.GetCall.Returns.Zones = expectedAvailabilityZones
+		gcpZones.GetZonesCall.Returns.Zones = expectedAvailabilityZones
 
 		gcpUp = commands.NewGCPUp(commands.NewGCPUpArgs{
 			StateStore:                   stateStore,
 			KeyPairManager:               keyPairManager,
-			GCPProvider:                  gcpClientProvider,
 			TerraformManager:             terraformManager,
 			BoshManager:                  boshManager,
 			Logger:                       logger,
@@ -156,12 +147,7 @@ var _ = Describe("GCPUp", func() {
 
 	Describe("Execute", func() {
 		It("creates the environment", func() {
-			err := gcpUp.Execute(commands.GCPUpConfig{
-				ServiceAccountKey: serviceAccountKeyPath,
-				ProjectID:         "some-project-id",
-				Zone:              "some-zone",
-				Region:            "some-region",
-			}, storage.State{
+			err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 				IAAS:  "gcp",
 				EnvID: "some-env-id",
 				GCP: storage.GCP{
@@ -172,14 +158,6 @@ var _ = Describe("GCPUp", func() {
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
-
-			By("setting the GCP configuration", func() {
-				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(serviceAccountKey))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Region).To(Equal("some-region"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
-			})
 
 			By("retrieves the env ID", func() {
 				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
@@ -212,8 +190,8 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			By("getting gcp availability zones", func() {
-				Expect(gcpZones.GetCall.CallCount).To(Equal(1))
-				Expect(gcpZones.GetCall.Receives.Region).To(Equal("some-region"))
+				Expect(gcpZones.GetZonesCall.CallCount).To(Equal(1))
+				Expect(gcpZones.GetZonesCall.Receives.Region).To(Equal("some-region"))
 			})
 
 			By("saving gcp zones to the state", func() {
@@ -252,33 +230,18 @@ var _ = Describe("GCPUp", func() {
 			})
 		})
 
-		Context("when the serviceAccountKey is passed as a JSON string", func() {
-			It("sets the serviceAccountKey", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKey,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal(serviceAccountKey))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Region).To(Equal("some-region"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
-			})
-		})
-
 		Context("when a name is passed in for env-id", func() {
 			It("passes that name in for the env id manager to use", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-					Name:              "some-other-env-id",
-				}, storage.State{})
+					Name: "some-other-env-id",
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
@@ -297,12 +260,15 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				err = gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-					OpsFilePath:       opsFilePath,
-				}, storage.State{})
+					OpsFilePath: opsFilePath,
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshManager.CreateDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
@@ -316,12 +282,15 @@ var _ = Describe("GCPUp", func() {
 
 			It("does not create a bosh or update cloud config", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-					NoDirector:        true,
-				}, storage.State{})
+					NoDirector: true,
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
@@ -334,13 +303,14 @@ var _ = Describe("GCPUp", func() {
 
 			Context("when re-bbling up an environment with no director", func() {
 				It("does not create a bosh director", func() {
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					}, storage.State{
+					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
 						NoDirector: true,
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "us-west1",
+						},
 					})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -361,13 +331,16 @@ var _ = Describe("GCPUp", func() {
 
 			It("creates a jumpbox", func() {
 				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-					NoDirector:        false,
-					Jumpbox:           true,
-				}, storage.State{})
+					NoDirector: false,
+					Jumpbox:    true,
+				}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
@@ -410,9 +383,11 @@ var _ = Describe("GCPUp", func() {
 
 			It("should not store the state if the provided flags are not valid", func() {
 				err := gcpUp.Execute(
-					commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-					}, storage.State{})
+					commands.GCPUpConfig{}, storage.State{
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+						},
+					})
 				Expect(err).To(MatchError("GCP project ID must be provided"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
@@ -420,12 +395,15 @@ var _ = Describe("GCPUp", func() {
 			It("saves the keypair when the terraform fails", func() {
 				terraformManager.ApplyCall.Returns.Error = errors.New("terraform manager failed")
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						ServiceAccountKey: `{"real": "json"}`,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
 				Expect(err).To(MatchError("terraform manager failed"))
 
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
@@ -455,41 +433,16 @@ var _ = Describe("GCPUp", func() {
 			It("returns an error if terraform manager version validator fails", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "some-region",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "some-region",
+					},
+				})
 
 				Expect(err).To(MatchError("cannot validate version"))
-			})
-
-			It("returns an error when the service account key passed in is neither an existent filename or valid json", func() {
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: "/some/non/existent/file",
-					ProjectID:         "p",
-					Zone:              "z",
-					Region:            "r",
-				}, storage.State{})
-				Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '/' looking for beginning of value"))
-			})
-
-			It("returns an error when the service account key file does not contain valid json", func() {
-				tempFile, err := ioutil.TempFile("", "")
-				Expect(err).NotTo(HaveOccurred())
-
-				invalidServiceAccountKeyPath := tempFile.Name()
-				err = ioutil.WriteFile(invalidServiceAccountKeyPath, []byte(`%%%not-valid-json%%%`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: invalidServiceAccountKeyPath,
-					ProjectID:         "p",
-					Zone:              "z",
-					Region:            "r",
-				}, storage.State{})
-				Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '%' looking for beginning of value"))
 			})
 
 			It("returns an error when the ops file cannot be read", func() {
@@ -500,70 +453,19 @@ var _ = Describe("GCPUp", func() {
 				Expect(err).To(MatchError("error reading ops-file contents: open some/fake/path: no such file or directory"))
 			})
 
-			Context("when calling up with different gcp flags then the state", func() {
-				It("returns an error when the --gcp-region is different", func() {
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-other-region",
-					}, storage.State{
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKey,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "us-west1",
-						},
-					})
-					Expect(err).To(MatchError("The region cannot be changed for an existing environment. The current region is us-west1."))
-				})
-
-				It("returns an error when the --gcp-zone is different", func() {
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-other-zone",
-						Region:            "us-west1",
-					}, storage.State{
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKey,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "us-west1",
-						},
-					})
-					Expect(err).To(MatchError("The zone cannot be changed for an existing environment. The current zone is some-zone."))
-				})
-
-				It("returns an error when the --gcp-project-id is different", func() {
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-other-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					}, storage.State{
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKey,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "us-west1",
-						},
-					})
-					Expect(err).To(MatchError("The project id cannot be changed for an existing environment. The current project id is some-project-id."))
-				})
-			})
-
 			Context("when a bbl environment exists with a bosh director", func() {
 				It("fast fails before creating any infrastructure", func() {
 					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-						NoDirector:        true,
+						NoDirector: true,
 					}, storage.State{
 						BOSH: storage.BOSH{
 							DirectorName: "some-director",
+						},
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "us-west1",
 						},
 					})
 					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
@@ -575,124 +477,133 @@ var _ = Describe("GCPUp", func() {
 				})
 			})
 
-			DescribeTable("up config validation", func(upConfig func() commands.GCPUpConfig, expectedErr string) {
-				err := gcpUp.Execute(upConfig(), storage.State{})
+			// Nick
+			DescribeTable("state validation", func(state func() storage.State, expectedErr string) {
+				err := gcpUp.Execute(commands.GCPUpConfig{}, state())
 				Expect(err).To(MatchError(expectedErr))
 			},
-				Entry("returns an error when no flags are passed in", func() commands.GCPUpConfig {
-					return commands.GCPUpConfig{}
+				Entry("returns an error when the state is empty", func() storage.State {
+					return storage.State{}
 				},
 					"GCP service account key must be provided"),
-				Entry("returns an error when service account key is missing", func() commands.GCPUpConfig {
-					return commands.GCPUpConfig{
-						ProjectID: "p",
-						Zone:      "z",
-						Region:    "us-west1",
+				Entry("returns an error when service account key is missing", func() storage.State {
+					return storage.State{
+						GCP: storage.GCP{
+							ProjectID: "p",
+							Zone:      "z",
+							Region:    "us-west1",
+						},
 					}
 				}, "GCP service account key must be provided"),
-				Entry("returns an error when project ID is missing", func() commands.GCPUpConfig {
-					return commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						Zone:              "z",
-						Region:            "us-west1",
+				Entry("returns an error when project ID is missing", func() storage.State {
+					return storage.State{
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							Zone:              "z",
+							Region:            "us-west1",
+						},
 					}
 				}, "GCP project ID must be provided"),
-				Entry("returns an error when zone is missing", func() commands.GCPUpConfig {
-					return commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "p",
-						Region:            "us-west1",
+				Entry("returns an error when zone is missing", func() storage.State {
+					return storage.State{
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							ProjectID:         "p",
+							Region:            "us-west1",
+						},
 					}
 				}, "GCP zone must be provided"),
-				Entry("returns an error when region is missing", func() commands.GCPUpConfig {
-					return commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "p",
-						Zone:              "z",
+				Entry("returns an error when region is missing", func() storage.State {
+					return storage.State{
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							ProjectID:         "p",
+							Zone:              "z",
+						},
 					}
 				}, "GCP region must be provided"),
 			)
 
-			It("returns an error when setting config fails", func() {
-				gcpClientProvider.SetConfigCall.Returns.Error = errors.New("setting config failed")
-
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
-				Expect(err).To(MatchError("setting config failed"))
-			})
-
 			It("fast fails if a gcp environment with the same name already exists", func() {
 				envIDManager.SyncCall.Returns.Error = errors.New("environment already exists")
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 
 				Expect(err).To(MatchError("environment already exists"))
 			})
 
 			It("returns an error when state store fails to set after syncing env id", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("set call failed")}}
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "p",
-					Zone:              "z",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "p",
+						Zone:              "z",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("set call failed"))
 			})
 
 			It("returns an error when the keypair could not be updated", func() {
 				keyPairManager.SyncCall.Returns.Error = errors.New("keypair sync failed")
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("keypair sync failed"))
 			})
 
 			It("returns an error when the state fails to be set after updating keypair", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("state failed to be set"))
 			})
 
 			It("returns an error when GCP AZs cannot be retrieved", func() {
-				gcpZones.GetCall.Returns.Error = errors.New("can't get gcp availability zones")
+				gcpZones.GetZonesCall.Returns.Error = errors.New("can't get gcp availability zones")
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("can't get gcp availability zones"))
 			})
 
 			It("returns an error when the state fails to be set after retrieving GCP zones", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("state failed to be set"))
 			})
 
@@ -744,12 +655,14 @@ var _ = Describe("GCPUp", func() {
 
 				It("returns an error if applier fails with non terraform manager apply error", func() {
 					terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					}, storage.State{})
+					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "us-west1",
+						},
+					})
 					Expect(err).To(MatchError("failed to apply"))
 				})
 
@@ -783,24 +696,28 @@ var _ = Describe("GCPUp", func() {
 			It("returns an error when the state fails to be set after applying terraform", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("state failed to be set"))
 			})
 
 			It("returns an error when ther terraform manager fails to get outputs", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("nope")
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("nope"))
 
 			})
@@ -844,12 +761,14 @@ var _ = Describe("GCPUp", func() {
 					It("returns a compound error when it fails to save the state", func() {
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("state failed to be set")}}
 
-						err := gcpUp.Execute(commands.GCPUpConfig{
-							ServiceAccountKey: serviceAccountKeyPath,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "us-west1",
-						}, storage.State{})
+						err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+							GCP: storage.GCP{
+								ServiceAccountKey: serviceAccountKeyPath,
+								ProjectID:         "some-project-id",
+								Zone:              "some-zone",
+								Region:            "us-west1",
+							},
+						})
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
 						Expect(stateStore.SetCall.CallCount).To(Equal(5))
 						Expect(stateStore.SetCall.Receives[4].State.BOSH.State).To(Equal(expectedBOSHState))
@@ -859,12 +778,14 @@ var _ = Describe("GCPUp", func() {
 				It("returns an error when bosh manager fails to create a bosh with a non bosh manager create error", func() {
 					boshManager.CreateDirectorCall.Returns.Error = errors.New("failed to create")
 
-					err := gcpUp.Execute(commands.GCPUpConfig{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					}, storage.State{})
+					err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKeyPath,
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "us-west1",
+						},
+					})
 					Expect(err).To(MatchError("failed to create"))
 				})
 			})
@@ -872,23 +793,27 @@ var _ = Describe("GCPUp", func() {
 			It("returns an error when the state fails to be set after deploying bosh", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
 
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("state failed to be set"))
 			})
 
 			It("returns an error when the cloud config manager fails to update", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
-				err := gcpUp.Execute(commands.GCPUpConfig{
-					ServiceAccountKey: serviceAccountKeyPath,
-					ProjectID:         "some-project-id",
-					Zone:              "some-zone",
-					Region:            "us-west1",
-				}, storage.State{})
+				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
+					GCP: storage.GCP{
+						ServiceAccountKey: serviceAccountKeyPath,
+						ProjectID:         "some-project-id",
+						Zone:              "some-zone",
+						Region:            "us-west1",
+					},
+				})
 				Expect(err).To(MatchError("failed to update"))
 			})
 		})

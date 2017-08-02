@@ -1,11 +1,9 @@
 package commands
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	yaml "gopkg.in/yaml.v2"
@@ -25,7 +23,6 @@ const (
 type GCPUp struct {
 	stateStore                   stateStore
 	keyPairManager               keyPairManager
-	gcpProvider                  gcpProvider
 	boshManager                  boshManager
 	cloudConfigManager           cloudConfigManager
 	logger                       logger
@@ -53,10 +50,6 @@ type keyPairUpdater interface {
 	Update() (storage.KeyPair, error)
 }
 
-type gcpProvider interface {
-	SetConfig(serviceAccountKey, projectID, region, zone string) error
-}
-
 type terraformManagerError interface {
 	Error() string
 	BBLState() (storage.State, error)
@@ -76,13 +69,12 @@ type envIDManager interface {
 }
 
 type gcpAvailabilityZoneRetriever interface {
-	Get(string) ([]string, error)
+	GetZones(string) ([]string, error)
 }
 
 type NewGCPUpArgs struct {
 	StateStore                   stateStore
 	KeyPairManager               keyPairManager
-	GCPProvider                  gcpProvider
 	TerraformManager             terraformApplier
 	BoshManager                  boshManager
 	Logger                       logger
@@ -95,7 +87,6 @@ func NewGCPUp(args NewGCPUpArgs) GCPUp {
 	return GCPUp{
 		stateStore:                   args.StateStore,
 		keyPairManager:               args.KeyPairManager,
-		gcpProvider:                  args.GCPProvider,
 		terraformManager:             args.TerraformManager,
 		boshManager:                  args.BoshManager,
 		cloudConfigManager:           args.CloudConfigManager,
@@ -106,7 +97,6 @@ func NewGCPUp(args NewGCPUpArgs) GCPUp {
 }
 
 func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
-	state.IAAS = "gcp"
 	state.Jumpbox.Enabled = upConfig.Jumpbox
 
 	err := u.terraformManager.ValidateVersion()
@@ -122,17 +112,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		}
 	}
 
-	gcpDetails, err := parseUpConfig(upConfig, state.GCP)
-	if err != nil {
-		return err
-	}
-
-	if err := fastFailConflictingGCPState(gcpDetails, state.GCP); err != nil {
-		return err
-	}
-
-	state.GCP = gcpDetails
-
 	if upConfig.NoDirector {
 		if !state.BOSH.IsEmpty() {
 			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
@@ -142,10 +121,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	if err := u.validateState(state); err != nil {
-		return err
-	}
-
-	if err := u.gcpProvider.SetConfig(state.GCP.ServiceAccountKey, state.GCP.ProjectID, state.GCP.Region, state.GCP.Zone); err != nil {
 		return err
 	}
 
@@ -167,7 +142,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.Get(state.GCP.Region)
+	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
 	if err != nil {
 		return err
 	}
@@ -246,33 +221,6 @@ func (u GCPUp) validateState(state storage.State) error {
 	return nil
 }
 
-func parseUpConfig(upConfig GCPUpConfig, store storage.GCP) (storage.GCP, error) {
-	var serviceAccountKey string
-	if upConfig.ServiceAccountKey != "" {
-		var err error
-		serviceAccountKey, err = parseServiceAccountKey(upConfig.ServiceAccountKey)
-		if err != nil {
-			return storage.GCP{}, err
-		}
-	}
-
-	gcpState := store
-	if serviceAccountKey != "" {
-		gcpState.ServiceAccountKey = serviceAccountKey
-	}
-	if upConfig.ProjectID != "" {
-		gcpState.ProjectID = upConfig.ProjectID
-	}
-	if upConfig.Zone != "" {
-		gcpState.Zone = upConfig.Zone
-	}
-	if upConfig.Region != "" {
-		gcpState.Region = upConfig.Region
-	}
-
-	return gcpState, nil
-}
-
 func fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
 	if stateGCP.Region != "" && stateGCP.Region != configGCP.Region {
 		return errors.New(fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", stateGCP.Region))
@@ -287,27 +235,4 @@ func fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) er
 	}
 
 	return nil
-}
-
-func parseServiceAccountKey(serviceAccountKey string) (string, error) {
-	var key string
-
-	if _, err := os.Stat(serviceAccountKey); err != nil {
-		key = serviceAccountKey
-	} else {
-		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
-		if err != nil {
-			return "", fmt.Errorf("error reading service account key from file: %v", err)
-		}
-
-		key = string(rawServiceAccountKey)
-	}
-
-	var tmp interface{}
-	err := json.Unmarshal([]byte(key), &tmp)
-	if err != nil {
-		return "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
-	}
-
-	return key, err
 }

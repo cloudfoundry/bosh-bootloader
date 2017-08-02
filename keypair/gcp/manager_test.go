@@ -14,10 +14,9 @@ import (
 var _ = Describe("Manager", func() {
 	Describe("Sync", func() {
 		var (
-			keyPairUpdater    *fakes.GCPKeyPairUpdater
-			keyPairDeleter    *fakes.GCPKeyPairDeleter
-			keyPairManager    gcp.Manager
-			gcpClientProvider *fakes.GCPClientProvider
+			keyPairUpdater *fakes.GCPKeyPairUpdater
+			keyPairDeleter *fakes.GCPKeyPairDeleter
+			keyPairManager gcp.Manager
 		)
 
 		BeforeEach(func() {
@@ -28,9 +27,7 @@ var _ = Describe("Manager", func() {
 			}
 			keyPairDeleter = &fakes.GCPKeyPairDeleter{}
 
-			gcpClientProvider = &fakes.GCPClientProvider{}
-
-			keyPairManager = gcp.NewManager(keyPairUpdater, keyPairDeleter, gcpClientProvider)
+			keyPairManager = gcp.NewManager(keyPairUpdater, keyPairDeleter)
 		})
 
 		Context("when keypair is empty", func() {
@@ -79,21 +76,19 @@ var _ = Describe("Manager", func() {
 
 	Describe("Rotate", func() {
 		var (
-			gcpClientProvider *fakes.GCPClientProvider
-			keyPairUpdater    *fakes.GCPKeyPairUpdater
-			keyPairDeleter    *fakes.GCPKeyPairDeleter
-			keyPairManager    gcp.Manager
+			keyPairUpdater *fakes.GCPKeyPairUpdater
+			keyPairDeleter *fakes.GCPKeyPairDeleter
+			keyPairManager gcp.Manager
 		)
 
 		BeforeEach(func() {
-			gcpClientProvider = &fakes.GCPClientProvider{}
 			keyPairUpdater = &fakes.GCPKeyPairUpdater{}
 			keyPairUpdater.UpdateCall.Returns.KeyPair = storage.KeyPair{
 				PrivateKey: "some-new-private-key",
 				PublicKey:  "some-new-public-key",
 			}
 			keyPairDeleter = &fakes.GCPKeyPairDeleter{}
-			keyPairManager = gcp.NewManager(keyPairUpdater, keyPairDeleter, gcpClientProvider)
+			keyPairManager = gcp.NewManager(keyPairUpdater, keyPairDeleter)
 		})
 
 		Context("when keypair is empty", func() {
@@ -119,11 +114,6 @@ var _ = Describe("Manager", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(gcpClientProvider.SetConfigCall.CallCount).To(Equal(1))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ServiceAccountKey).To(Equal("some-service-account-key"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.ProjectID).To(Equal("some-project-id"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Region).To(Equal("some-region"))
-				Expect(gcpClientProvider.SetConfigCall.Receives.Zone).To(Equal("some-zone"))
 				Expect(keyPairDeleter.DeleteCall.CallCount).To(Equal(1))
 				Expect(keyPairDeleter.DeleteCall.Receives.PublicKey).To(Equal("some-existing-public-key"))
 				Expect(keyPairUpdater.UpdateCall.CallCount).To(Equal(1))
@@ -144,17 +134,6 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when set config fails", func() {
-				gcpClientProvider.SetConfigCall.Returns.Error = errors.New("failed to set config")
-				_, err := keyPairManager.Rotate(storage.State{
-					KeyPair: storage.KeyPair{
-						PrivateKey: "some-existing-private-key",
-						PublicKey:  "some-existing-public-key",
-					},
-				})
-				Expect(err).To(MatchError("failed to set config"))
-			})
-
 			It("returns an error when key pair deleter delete fails", func() {
 				keyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete")
 				_, err := keyPairManager.Rotate(storage.State{

@@ -19,27 +19,19 @@ type KeyPairUpdater struct {
 	random                io.Reader
 	rsaKeyGenerator       rsaKeyGenerator
 	sshPublicKeyGenerator sshPublicKeyGenerator
-	clientProvider        clientProvider
+	client                metadataSetter
 	logger                logger
 }
 
 type rsaKeyGenerator func(io.Reader, int) (*rsa.PrivateKey, error)
 type sshPublicKeyGenerator func(interface{}) (ssh.PublicKey, error)
 
-type clientProvider interface {
-	Client() Client
-}
-
-type logger interface {
-	Step(string, ...interface{})
-}
-
-func NewKeyPairUpdater(random io.Reader, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator, clientProvider clientProvider, logger logger) KeyPairUpdater {
+func NewKeyPairUpdater(random io.Reader, generateRSAKey rsaKeyGenerator, generateSSHPublicKey sshPublicKeyGenerator, client metadataSetter, logger logger) KeyPairUpdater {
 	return KeyPairUpdater{
 		random:                random,
 		rsaKeyGenerator:       generateRSAKey,
 		sshPublicKeyGenerator: generateSSHPublicKey,
-		clientProvider:        clientProvider,
+		client:                client,
 		logger:                logger,
 	}
 }
@@ -50,8 +42,7 @@ func (k KeyPairUpdater) Update() (storage.KeyPair, error) {
 		return storage.KeyPair{}, err
 	}
 
-	client := k.clientProvider.Client()
-	project, err := client.GetProject()
+	project, err := k.client.GetProject()
 	if err != nil {
 		return storage.KeyPair{}, err
 	}
@@ -67,13 +58,13 @@ func (k KeyPairUpdater) Update() (storage.KeyPair, error) {
 			newValue := strings.Join(sshKeys, "\n")
 			project.CommonInstanceMetadata.Items[i].Value = &newValue
 			updated = true
-			k.logger.Step("appending new ssh-keys for the project %q", client.ProjectID())
+			k.logger.Step("appending new ssh-keys for the project %q", project.Name)
 			break
 		}
 	}
 
 	if !updated {
-		k.logger.Step("Creating new ssh-keys for the project %q", client.ProjectID())
+		k.logger.Step("Creating new ssh-keys for the project %q", project.Name)
 		sshKeyItem := &compute.MetadataItems{
 			Key:   "sshKeys",
 			Value: &sshKeyItemValue,
@@ -82,7 +73,7 @@ func (k KeyPairUpdater) Update() (storage.KeyPair, error) {
 		project.CommonInstanceMetadata.Items = append(project.CommonInstanceMetadata.Items, sshKeyItem)
 	}
 
-	_, err = client.SetCommonInstanceMetadata(project.CommonInstanceMetadata)
+	_, err = k.client.SetCommonInstanceMetadata(project.CommonInstanceMetadata)
 	if err != nil {
 		return storage.KeyPair{}, err
 	}

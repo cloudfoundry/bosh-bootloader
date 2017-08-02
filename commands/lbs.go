@@ -4,10 +4,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const (
-	LBsCommand = "lbs"
-)
-
 type LBs struct {
 	gcpLBs         gcpLBs
 	awsLBs         awsLBs

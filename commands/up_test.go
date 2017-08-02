@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -22,7 +21,6 @@ var _ = Describe("Up", func() {
 		fakeGCPUp       *fakes.GCPUp
 		fakeEnvGetter   *fakes.EnvGetter
 		fakeBOSHManager *fakes.BOSHManager
-		state           storage.State
 	)
 
 	BeforeEach(func() {
@@ -144,73 +142,8 @@ var _ = Describe("Up", func() {
 	})
 
 	Describe("Execute", func() {
-		Context("when aws args are provided through environment variables", func() {
-			BeforeEach(func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_AWS_ACCESS_KEY_ID":     "access-key-id-from-env",
-					"BBL_AWS_SECRET_ACCESS_KEY": "secret-access-key-from-env",
-					"BBL_AWS_REGION":            "region-from-env",
-				}
-			})
-
-			It("uses the aws args provided by environment variables", func() {
-				err := command.Execute([]string{
-					"--iaas", "aws",
-				}, storage.State{Version: 999})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-					AccessKeyID:     "access-key-id-from-env",
-					SecretAccessKey: "secret-access-key-from-env",
-					Region:          "region-from-env",
-				}))
-				Expect(fakeAWSUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-					Version: 999,
-				}))
-			})
-
-			DescribeTable("gives precedence to arguments passed as command line args", func(args []string, expectedConfig commands.AWSUpConfig) {
-				args = append(args, "--iaas", "aws")
-				err := command.Execute(args, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(expectedConfig))
-			},
-				Entry("precedence to aws access key id",
-					[]string{"--aws-access-key-id", "access-key-id-from-args"},
-					commands.AWSUpConfig{
-						AccessKeyID:     "access-key-id-from-args",
-						SecretAccessKey: "secret-access-key-from-env",
-						Region:          "region-from-env",
-					},
-				),
-				Entry("precedence to aws secret access key",
-					[]string{"--aws-secret-access-key", "secret-access-key-from-args"},
-					commands.AWSUpConfig{
-						AccessKeyID:     "access-key-id-from-env",
-						SecretAccessKey: "secret-access-key-from-args",
-						Region:          "region-from-env",
-					},
-				),
-				Entry("precedence to aws region",
-					[]string{"--aws-region", "region-from-args"},
-					commands.AWSUpConfig{
-						AccessKeyID:     "access-key-id-from-env",
-						SecretAccessKey: "secret-access-key-from-env",
-						Region:          "region-from-args",
-					},
-				),
-			)
-		})
-
 		Context("when an ops-file is provided via command line flag", func() {
 			It("populates the aws config with the correct ops-file path", func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_AWS_ACCESS_KEY_ID":     "access-key-id-from-env",
-					"BBL_AWS_SECRET_ACCESS_KEY": "secret-access-key-from-env",
-					"BBL_AWS_REGION":            "region-from-env",
-				}
-
 				err := command.Execute([]string{
 					"--iaas", "aws",
 					"--ops-file", "some-ops-file-path",
@@ -218,21 +151,11 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-					AccessKeyID:     "access-key-id-from-env",
-					SecretAccessKey: "secret-access-key-from-env",
-					Region:          "region-from-env",
-					OpsFilePath:     "some-ops-file-path",
+					OpsFilePath: "some-ops-file-path",
 				}))
 			})
 
 			It("populates the gcp config with the correct ops-file path", func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_GCP_SERVICE_ACCOUNT_KEY": "some-service-account-key-env",
-					"BBL_GCP_PROJECT_ID":          "some-project-id-env",
-					"BBL_GCP_ZONE":                "some-zone-env",
-					"BBL_GCP_REGION":              "some-region-env",
-				}
-
 				err := command.Execute([]string{
 					"--iaas", "gcp",
 					"--ops-file", "some-ops-file-path",
@@ -240,87 +163,9 @@ var _ = Describe("Up", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-					ServiceAccountKey: "some-service-account-key-env",
-					ProjectID:         "some-project-id-env",
-					Zone:              "some-zone-env",
-					Region:            "some-region-env",
-					OpsFilePath:       "some-ops-file-path",
+					OpsFilePath: "some-ops-file-path",
 				}))
 			})
-		})
-
-		Context("when gcp args are provided through environment variables", func() {
-			BeforeEach(func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_GCP_SERVICE_ACCOUNT_KEY": "some-service-account-key-env",
-					"BBL_GCP_PROJECT_ID":          "some-project-id-env",
-					"BBL_GCP_ZONE":                "some-zone-env",
-					"BBL_GCP_REGION":              "some-region-env",
-				}
-			})
-
-			It("uses the gcp args provided by environment variables", func() {
-				err := command.Execute([]string{
-					"--iaas", "gcp",
-				}, storage.State{Version: 999})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-					ServiceAccountKey: "some-service-account-key-env",
-					ProjectID:         "some-project-id-env",
-					Zone:              "some-zone-env",
-					Region:            "some-region-env",
-				}))
-				Expect(fakeGCPUp.ExecuteCall.Receives.State).To(Equal(storage.State{
-					Version: 999,
-				}))
-			})
-
-			DescribeTable("gives precedence to arguments passed as command line args", func(args []string, expectedConfig commands.GCPUpConfig) {
-				args = append(args, "--iaas", "gcp")
-
-				err := command.Execute(args, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(expectedConfig))
-			},
-				Entry("precedence to service account key",
-					[]string{"--gcp-service-account-key", "some-service-account-key-from-args"},
-					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-from-args",
-						ProjectID:         "some-project-id-env",
-						Zone:              "some-zone-env",
-						Region:            "some-region-env",
-					},
-				),
-				Entry("precedence to project id",
-					[]string{"--gcp-project-id", "some-project-id-from-args"},
-					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-env",
-						ProjectID:         "some-project-id-from-args",
-						Zone:              "some-zone-env",
-						Region:            "some-region-env",
-					},
-				),
-				Entry("precedence to zone",
-					[]string{"--gcp-zone", "some-zone-from-args"},
-					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-env",
-						ProjectID:         "some-project-id-env",
-						Zone:              "some-zone-from-args",
-						Region:            "some-region-env",
-					},
-				),
-				Entry("precedence to region",
-					[]string{"--gcp-region", "some-region-from-args"},
-					commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key-env",
-						ProjectID:         "some-project-id-env",
-						Zone:              "some-zone-env",
-						Region:            "some-region-from-args",
-					},
-				),
-			)
 		})
 
 		Context("when state does not contain an iaas", func() {
@@ -328,12 +173,7 @@ var _ = Describe("Up", func() {
 				fakeEnvGetter.Values = map[string]string{
 					"BBL_IAAS": "gcp",
 				}
-				err := command.Execute([]string{
-					"--gcp-service-account-key", "some-service-account-key",
-					"--gcp-project-id", "some-project-id",
-					"--gcp-zone", "some-zone",
-					"--gcp-region", "some-region",
-				}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
 				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(0))
@@ -345,10 +185,6 @@ var _ = Describe("Up", func() {
 				}
 				err := command.Execute([]string{
 					"--iaas", "gcp",
-					"--gcp-service-account-key", "some-service-account-key",
-					"--gcp-project-id", "some-project-id",
-					"--gcp-zone", "some-zone",
-					"--gcp-region", "some-region",
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
@@ -359,41 +195,10 @@ var _ = Describe("Up", func() {
 				It("executes the GCP up with gcp details from args", func() {
 					err := command.Execute([]string{
 						"--iaas", "gcp",
-						"--gcp-service-account-key", "some-service-account-key",
-						"--gcp-project-id", "some-project-id",
-						"--gcp-zone", "some-zone",
-						"--gcp-region", "some-region",
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					}))
-				})
-
-				It("executes the GCP up with gcp details from env vars", func() {
-					fakeEnvGetter.Values = map[string]string{
-						"BBL_GCP_SERVICE_ACCOUNT_KEY": "some-service-account-key",
-						"BBL_GCP_PROJECT_ID":          "some-project-id",
-						"BBL_GCP_ZONE":                "some-zone",
-						"BBL_GCP_REGION":              "some-region",
-					}
-					err := command.Execute([]string{
-						"--iaas", "gcp",
-					}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					}))
 				})
 
 				Context("when the --jumpbox flag is specified", func() {
@@ -401,20 +206,12 @@ var _ = Describe("Up", func() {
 						err := command.Execute([]string{
 							"--iaas", "gcp",
 							"--jumpbox",
-							"--gcp-service-account-key", "some-service-account-key",
-							"--gcp-project-id", "some-project-id",
-							"--gcp-zone", "some-zone",
-							"--gcp-region", "some-region",
 						}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
 						Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-							ServiceAccountKey: "some-service-account-key",
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "some-region",
-							Jumpbox:           true,
+							Jumpbox: true,
 						}))
 					})
 				})
@@ -424,20 +221,10 @@ var _ = Describe("Up", func() {
 				It("executes the AWS up", func() {
 					err := command.Execute([]string{
 						"--iaas", "aws",
-						"--aws-access-key-id", "some-access-key-id",
-						"--aws-secret-access-key", "some-secret-access-key",
-						"--aws-region", "some-region",
-						"--aws-bosh-az", "some-bosh-az",
 					}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
-					Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-						BOSHAZ:          "some-bosh-az",
-					}))
 				})
 			})
 
@@ -492,7 +279,6 @@ var _ = Describe("Up", func() {
 						},
 					}))
 				})
-
 			})
 
 			Context("when iaas is GCP", func() {

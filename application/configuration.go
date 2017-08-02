@@ -25,4 +25,5 @@ type Configuration struct {
 	Command         string
 	SubcommandFlags StringSlice
 	State           storage.State
+	ShowCommandHelp bool
 }

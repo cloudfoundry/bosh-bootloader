@@ -8,18 +8,17 @@ import (
 )
 
 type NetworkInstancesChecker struct {
-	clientProvider clientProvider
+	client instanceLister
 }
 
-func NewNetworkInstancesChecker(clientProvider clientProvider) NetworkInstancesChecker {
+func NewNetworkInstancesChecker(client instanceLister) NetworkInstancesChecker {
 	return NetworkInstancesChecker{
-		clientProvider: clientProvider,
+		client: client,
 	}
 }
 
 func (n NetworkInstancesChecker) ValidateSafeToDelete(networkName string) error {
-	client := n.clientProvider.Client()
-	instanceList, err := client.ListInstances()
+	instanceList, err := n.client.ListInstances()
 	if err != nil {
 		return err
 	}

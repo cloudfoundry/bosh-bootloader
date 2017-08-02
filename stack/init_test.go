@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestMigrator(t *testing.T) {
+func TestStack(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "migrator")
+	RunSpecs(t, "stack")
 }

@@ -12,10 +12,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const (
-	UpCommand = "up"
-)
-
 type keyPairManager interface {
 	Sync(storage.State) (storage.State, error)
 	Rotate(storage.State) (storage.State, error)

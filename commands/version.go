@@ -7,10 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const (
-	VersionCommand = "version"
-	BBLDevVersion  = "dev"
-)
+const BBLDevVersion = "dev"
 
 type Version struct {
 	logger  logger

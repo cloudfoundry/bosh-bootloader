@@ -13,11 +13,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const (
-	DestroyCommand = "destroy"
-	DownCommand    = "down"
-)
-
 type Destroy struct {
 	credentialValidator     credentialValidator
 	logger                  logger

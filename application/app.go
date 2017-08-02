@@ -19,16 +19,13 @@ type usage interface {
 type App struct {
 	commands      CommandSet
 	configuration Configuration
-	stateStore    stateStore
 	usage         usage
 }
 
-func New(commands CommandSet, configuration Configuration, stateStore stateStore,
-	usage usage) App {
+func New(commands CommandSet, configuration Configuration, usage usage) App {
 	return App{
 		commands:      commands,
 		configuration: configuration,
-		stateStore:    stateStore,
 		usage:         usage,
 	}
 }
@@ -57,7 +54,7 @@ func (a App) execute() error {
 		return err
 	}
 
-	if a.configuration.SubcommandFlags.ContainsAny("--help", "-h") {
+	if a.configuration.ShowCommandHelp {
 		a.usage.PrintCommandUsage(a.configuration.Command, command.Usage())
 		return nil
 	}
@@ -73,7 +70,7 @@ func (a App) execute() error {
 	}
 
 	if a.configuration.Command == "--version" || a.configuration.Command == "-v" || a.configuration.SubcommandFlags.ContainsAny("--version", "-v") {
-		versionCommand, err := a.getCommand(commands.VersionCommand)
+		versionCommand, err := a.getCommand("version")
 		if err != nil {
 			return err
 		}

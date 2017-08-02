@@ -2,10 +2,6 @@ package commands
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-const (
-	DeleteLBsCommand = "delete-lbs"
-)
-
 type AWSDeleteLBs struct {
 	credentialValidator  credentialValidator
 	logger               logger
