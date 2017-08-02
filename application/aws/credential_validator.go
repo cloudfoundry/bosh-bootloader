@@ -2,30 +2,32 @@ package aws
 
 import (
 	"errors"
-
-	"github.com/cloudfoundry/bosh-bootloader/application"
 )
 
 type CredentialValidator struct {
-	configuration application.Configuration
+	accessKeyID     string
+	secretAccessKey string
+	region          string
 }
 
-func NewCredentialValidator(configuration application.Configuration) CredentialValidator {
+func NewCredentialValidator(accessKeyID, secretAccessKey, region string) CredentialValidator {
 	return CredentialValidator{
-		configuration: configuration,
+		accessKeyID:     accessKeyID,
+		secretAccessKey: secretAccessKey,
+		region:          region,
 	}
 }
 
 func (c CredentialValidator) Validate() error {
-	if c.configuration.State.AWS.AccessKeyID == "" {
+	if c.accessKeyID == "" {
 		return errors.New("AWS access key ID must be provided")
 	}
 
-	if c.configuration.State.AWS.SecretAccessKey == "" {
+	if c.secretAccessKey == "" {
 		return errors.New("AWS secret access key must be provided")
 	}
 
-	if c.configuration.State.AWS.Region == "" {
+	if c.region == "" {
 		return errors.New("AWS region must be provided")
 	}
 

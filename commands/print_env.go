@@ -12,10 +12,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const (
-	PrintEnvCommand = "print-env"
-)
-
 type PrintEnv struct {
 	stateValidator   stateValidator
 	logger           logger

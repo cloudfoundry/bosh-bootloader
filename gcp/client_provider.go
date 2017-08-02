@@ -22,7 +22,7 @@ var gcpHTTPClient = gcpHTTPClientFunc
 
 type ClientProvider struct {
 	basePath string
-	client   Client
+	client   GCPClient
 }
 
 func NewClientProvider(gcpBasePath string) *ClientProvider {
@@ -69,6 +69,6 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone st
 	return nil
 }
 
-func (p *ClientProvider) Client() Client {
+func (p *ClientProvider) Client() GCPClient {
 	return p.client
 }

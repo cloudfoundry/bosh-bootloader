@@ -2,10 +2,6 @@ package commands
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-const (
-	BOSHDeploymentVarsCommand = "bosh-deployment-vars"
-)
-
 type BOSHDeploymentVars struct {
 	logger         logger
 	boshManager    boshManager

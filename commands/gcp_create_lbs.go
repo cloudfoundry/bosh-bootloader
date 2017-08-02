@@ -27,7 +27,7 @@ type GCPCreateLBsConfig struct {
 }
 
 type availabilityZoneRetriever interface {
-	Get(region string) ([]string, error)
+	GetZones(region string) ([]string, error)
 }
 
 func NewGCPCreateLBs(terraformManager terraformApplier,
@@ -55,7 +55,7 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	state.GCP.Zones, err = c.availabilityZoneRetriever.Get(state.GCP.Region)
+	state.GCP.Zones, err = c.availabilityZoneRetriever.GetZones(state.GCP.Region)
 	if err != nil {
 		return err
 	}

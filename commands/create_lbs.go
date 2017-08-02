@@ -5,8 +5,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const CreateLBsCommand = "create-lbs"
-
 type CreateLBs struct {
 	awsCreateLBs         awsCreateLBs
 	gcpCreateLBs         gcpCreateLBs
@@ -57,7 +55,7 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 	}
 
 	if !(state.IAAS == "gcp" && config.lbType == "concourse") {
-		err = c.certificateValidator.Validate(CreateLBsCommand, config.certPath, config.keyPath, config.chainPath)
+		err = c.certificateValidator.Validate("create-lbs", config.certPath, config.keyPath, config.chainPath)
 		if err != nil {
 			return err
 		}

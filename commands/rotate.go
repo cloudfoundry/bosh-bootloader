@@ -2,10 +2,6 @@ package commands
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-const (
-	RotateCommand = "rotate"
-)
-
 type Rotate struct {
 	stateStore     stateStore
 	keyPairManager keyPairManager

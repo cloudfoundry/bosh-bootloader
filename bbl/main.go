@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 
 	"golang.org/x/crypto/ssh"
 
@@ -29,6 +31,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/stack"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	flags "github.com/jessevdk/go-flags"
 
 	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
 	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
@@ -46,29 +49,55 @@ var (
 )
 
 func main() {
-	// Command Set
-	commandSet := application.CommandSet{
-		commands.HelpCommand:               nil,
-		commands.VersionCommand:            nil,
-		commands.UpCommand:                 nil,
-		commands.DestroyCommand:            nil,
-		commands.DownCommand:               nil,
-		commands.JumpboxAddressCommand:     nil,
-		commands.DirectorAddressCommand:    nil,
-		commands.DirectorUsernameCommand:   nil,
-		commands.DirectorPasswordCommand:   nil,
-		commands.DirectorCACertCommand:     nil,
-		commands.SSHKeyCommand:             nil,
-		commands.CreateLBsCommand:          nil,
-		commands.UpdateLBsCommand:          nil,
-		commands.DeleteLBsCommand:          nil,
-		commands.LBsCommand:                nil,
-		commands.EnvIDCommand:              nil,
-		commands.LatestErrorCommand:        nil,
-		commands.PrintEnvCommand:           nil,
-		commands.CloudConfigCommand:        nil,
-		commands.BOSHDeploymentVarsCommand: nil,
-		commands.RotateCommand:             nil,
+	var global struct {
+		Help                 bool   `short:"h"   long:"help"`
+		Debug                bool   `short:"d"   long:"debug"`
+		Version              bool   `short:"v"   long:"version"`
+		StateDir             string `short:"s"   long:"state-dir"`
+		IAAS                 string `long:"iaas"                    env:"BBL_IAAS"`
+		AWSAccessKeyID       string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
+		AWSSecretAccessKey   string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
+		AWSRegion            string `long:"aws-region"              env:"BBL_AWS_REGION"`
+		GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
+		GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
+		GCPZone              string `long:"gcp-zone"                env:"BBL_GCP_ZONE"`
+		GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
+	}
+
+	parser := flags.NewParser(&global, flags.IgnoreUnknown)
+
+	remainingArgs, err := parser.ParseArgs(os.Args[1:])
+	if err != nil {
+		panic(err)
+	}
+
+	if global.StateDir == "" {
+		var err error
+		global.StateDir, err = os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	global.GCPServiceAccountKey, err = parseServiceAccountKey(global.GCPServiceAccountKey)
+	if err != nil {
+		panic(err)
+	}
+
+	loadedState, err := storage.GetState(global.StateDir)
+	if err != nil {
+		panic(err)
+	}
+
+	if !reflect.DeepEqual(loadedState, storage.State{}) {
+		global.IAAS = loadedState.IAAS
+		global.AWSRegion = loadedState.AWS.Region
+		global.AWSSecretAccessKey = loadedState.AWS.SecretAccessKey
+		global.AWSAccessKeyID = loadedState.AWS.AccessKeyID
+		global.GCPServiceAccountKey = loadedState.GCP.ServiceAccountKey
+		global.GCPProjectID = loadedState.GCP.ProjectID
+		global.GCPRegion = loadedState.GCP.Region
+		global.GCPZone = loadedState.GCP.Zone
 	}
 
 	// Utilities
@@ -80,22 +109,20 @@ func main() {
 	// Usage Command
 	usage := commands.NewUsage(logger)
 
-	configuration := getConfiguration(usage.Print, commandSet, envGetter)
-
 	storage.GetStateLogger = stderrLogger
 
-	stateStore := storage.NewStore(configuration.Global.StateDir)
-	stateValidator := application.NewStateValidator(configuration.Global.StateDir)
+	stateStore := storage.NewStore(global.StateDir)
+	stateValidator := application.NewStateValidator(global.StateDir)
 
-	awsCredentialValidator := awsapplication.NewCredentialValidator(configuration)
-	gcpCredentialValidator := gcpapplication.NewCredentialValidator(configuration)
-	credentialValidator := application.NewCredentialValidator(configuration, gcpCredentialValidator, awsCredentialValidator)
+	awsCredentialValidator := awsapplication.NewCredentialValidator(global.AWSAccessKeyID, global.AWSSecretAccessKey, global.AWSRegion)
+	gcpCredentialValidator := gcpapplication.NewCredentialValidator(global.GCPProjectID, global.GCPServiceAccountKey, global.GCPRegion, global.GCPZone)
+	credentialValidator := application.NewCredentialValidator(global.IAAS, gcpCredentialValidator, awsCredentialValidator)
 
 	// Amazon
 	awsConfiguration := aws.Config{
-		AccessKeyID:     configuration.State.AWS.AccessKeyID,
-		SecretAccessKey: configuration.State.AWS.SecretAccessKey,
-		Region:          configuration.State.AWS.Region,
+		AccessKeyID:     global.AWSAccessKeyID,
+		SecretAccessKey: global.AWSSecretAccessKey,
+		Region:          global.AWSRegion,
 	}
 
 	clientProvider := &clientmanager.ClientProvider{}
@@ -118,15 +145,19 @@ func main() {
 
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
-	gcpClientProvider.SetConfig(configuration.State.GCP.ServiceAccountKey, configuration.State.GCP.ProjectID, configuration.State.GCP.Region, configuration.State.GCP.Zone)
-	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider, logger)
-	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider, logger)
-	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider)
-	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater, gcpKeyPairDeleter, gcpClientProvider)
-	gcpAvailabilityZoneRetriever := gcp.NewZones(gcpClientProvider)
+	if global.IAAS == "gcp" {
+		err = gcpClientProvider.SetConfig(global.GCPServiceAccountKey, global.GCPProjectID, global.GCPRegion, global.GCPZone)
+		if err != nil {
+			panic(err)
+		}
+	}
+	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider.Client(), logger)
+	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider.Client(), logger)
+	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider.Client())
+	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater, gcpKeyPairDeleter)
 
 	// EnvID
-	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
+	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider.Client(), infrastructureManager)
 
 	// Keypair Manager
 	keyPairManager := keypair.NewManager(awsKeyPairManager, gcpKeyPairManager)
@@ -135,7 +166,7 @@ func main() {
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
 
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
-	terraformExecutor := terraform.NewExecutor(terraformCmd, configuration.Global.Debug)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, global.Debug)
 	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator()
 	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
@@ -201,63 +232,120 @@ func main() {
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
 		StateStore:                   stateStore,
 		KeyPairManager:               keyPairManager,
-		GCPProvider:                  gcpClientProvider,
 		TerraformManager:             terraformManager,
 		BoshManager:                  boshManager,
 		Logger:                       logger,
 		EnvIDManager:                 envIDManager,
 		CloudConfigManager:           cloudConfigManager,
-		GCPAvailabilityZoneRetriever: gcpAvailabilityZoneRetriever,
+		GCPAvailabilityZoneRetriever: gcpCientProvider.Client(),
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpAvailabilityZoneRetriever)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator, gcpClientProvider.Client())
 
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
 
 	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
 
 	// Commands
-	commandSet[commands.HelpCommand] = usage
-	commandSet[commands.VersionCommand] = commands.NewVersion(Version, logger)
-	commandSet[commands.UpCommand] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
-	commandSet[commands.DestroyCommand] = commands.NewDestroy(
+	commandSet := application.CommandSet{}
+	commandSet["help"] = usage
+	commandSet["version"] = commands.NewVersion(Version, logger)
+	commandSet["up"] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
+	commandSet["destroy"] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
-	commandSet[commands.DownCommand] = commandSet[commands.DestroyCommand]
-	commandSet[commands.CreateLBsCommand] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, certificateValidator, boshManager)
-	commandSet[commands.UpdateLBsCommand] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
-	commandSet[commands.DeleteLBsCommand] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
-	commandSet[commands.LBsCommand] = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)
-	commandSet[commands.JumpboxAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.JumpboxAddressPropertyName)
-	commandSet[commands.DirectorAddressCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
-	commandSet[commands.DirectorUsernameCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
-	commandSet[commands.DirectorPasswordCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)
-	commandSet[commands.DirectorCACertCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorCACertPropertyName)
-	commandSet[commands.SSHKeyCommand] = commands.NewSSHKey(logger, stateValidator, sshKeyGetter)
-	commandSet[commands.EnvIDCommand] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
-	commandSet[commands.LatestErrorCommand] = commands.NewLatestError(logger, stateValidator)
-	commandSet[commands.PrintEnvCommand] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
-	commandSet[commands.CloudConfigCommand] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
-	commandSet[commands.BOSHDeploymentVarsCommand] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
-	commandSet[commands.RotateCommand] = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
+	commandSet["down"] = commandSet["destroy"]
+	commandSet["create-lbs"] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, certificateValidator, boshManager)
+	commandSet["update-lbs"] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
+	commandSet["delete-lbs"] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+	commandSet["lbs"] = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)
+	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.JumpboxAddressPropertyName)
+	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
+	commandSet["director-username"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
+	commandSet["director-password"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)
+	commandSet["director-ca-cert"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorCACertPropertyName)
+	commandSet["ssh-key"] = commands.NewSSHKey(logger, stateValidator, sshKeyGetter)
+	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
+	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
+	commandSet["print-env"] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
+	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
+	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
+	commandSet["rotate"] = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
 
-	app := application.New(commandSet, configuration, stateStore, usage)
+	loadedState.IAAS = global.IAAS
+	if global.IAAS == "gcp" {
+		loadedState.GCP = storage.GCP{
+			ServiceAccountKey: global.GCPServiceAccountKey,
+			ProjectID:         global.GCPProjectID,
+			Zone:              global.GCPZone,
+			Region:            global.GCPRegion,
+		}
+	} else {
+		loadedState.AWS = storage.AWS{
+			AccessKeyID:     global.AWSAccessKeyID,
+			SecretAccessKey: global.AWSSecretAccessKey,
+			Region:          global.AWSRegion,
+		}
+	}
 
-	err := app.Run()
+	configuration := &application.Configuration{
+		Global: application.GlobalConfiguration{
+			StateDir: global.StateDir,
+			Debug:    global.Debug,
+		},
+		State:           loadedState,
+		ShowCommandHelp: global.Help,
+	}
+
+	if len(remainingArgs) > 0 {
+		configuration.Command = remainingArgs[0]
+		configuration.SubcommandFlags = remainingArgs[1:]
+	} else {
+		configuration.ShowCommandHelp = false
+		if global.Help {
+			configuration.Command = "help"
+		}
+		if global.Version {
+			configuration.Command = "version"
+		}
+	}
+
+	if len(os.Args) == 1 {
+		configuration.Command = "help"
+	}
+
+	app := application.New(commandSet, *configuration, usage)
+
+	err = app.Run()
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
 }
 
-func getConfiguration(printUsage func(), commandSet application.CommandSet, envGetter helpers.EnvGetter) application.Configuration {
-	commandLineParser := application.NewCommandLineParser(printUsage, commandSet, envGetter)
-	configurationParser := application.NewConfigurationParser(commandLineParser)
-	configuration, err := configurationParser.Parse(os.Args[1:])
-	if err != nil {
-		log.Fatalf("\n\n%s\n", err)
+func parseServiceAccountKey(serviceAccountKey string) (string, error) {
+	var key string
+	if serviceAccountKey == "" {
+		return "", nil
 	}
 
-	return configuration
+	if _, err := os.Stat(serviceAccountKey); err != nil {
+		key = serviceAccountKey
+	} else {
+		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
+		if err != nil {
+			return "", fmt.Errorf("error reading service account key from file: %v", err)
+		}
+
+		key = string(rawServiceAccountKey)
+	}
+
+	var tmp interface{}
+	err := json.Unmarshal([]byte(key), &tmp)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
+	}
+
+	return key, err
 }

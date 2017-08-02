@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/cloudfoundry/bosh-bootloader/gcp"
+	compute "google.golang.org/api/compute/v1"
+
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -13,7 +14,7 @@ var matchString = regexp.MatchString
 
 type EnvIDManager struct {
 	envIDGenerator        envIDGenerator
-	gcpClientProvider     gcpClientProvider
+	gcpClient             gcpClient
 	infrastructureManager infrastructureManager
 }
 
@@ -25,15 +26,14 @@ type infrastructureManager interface {
 	Exists(stackName string) (bool, error)
 }
 
-type gcpClientProvider interface {
-	Client() gcp.Client
+type gcpClient interface {
+	GetNetworks(name string) (*compute.NetworkList, error)
 }
 
-func NewEnvIDManager(envIDGenerator envIDGenerator, gcpClientProvider gcpClientProvider,
-	infrastructureManager infrastructureManager) EnvIDManager {
+func NewEnvIDManager(envIDGenerator envIDGenerator, gcpClient gcpClient, infrastructureManager infrastructureManager) EnvIDManager {
 	return EnvIDManager{
 		envIDGenerator:        envIDGenerator,
-		gcpClientProvider:     gcpClientProvider,
+		gcpClient:             gcpClient,
 		infrastructureManager: infrastructureManager,
 	}
 }
@@ -68,9 +68,8 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 	switch iaas {
 	case "gcp":
-		gcpClient := e.gcpClientProvider.Client()
 		networkName := envID + "-network"
-		networkList, err := gcpClient.GetNetworks(networkName)
+		networkList, err := e.gcpClient.GetNetworks(networkName)
 		if err != nil {
 			return err
 		}

@@ -6,22 +6,21 @@ import (
 )
 
 type KeyPairDeleter struct {
-	clientProvider clientProvider
-	logger         logger
+	client metadataSetter
+	logger logger
 }
 
-func NewKeyPairDeleter(clientProvider clientProvider, logger logger) KeyPairDeleter {
+func NewKeyPairDeleter(client metadataSetter, logger logger) KeyPairDeleter {
 	return KeyPairDeleter{
-		clientProvider: clientProvider,
-		logger:         logger,
+		client: client,
+		logger: logger,
 	}
 }
 
 func (k KeyPairDeleter) Delete(publicKey string) error {
 	k.logger.Step("deleting keypair")
 
-	client := k.clientProvider.Client()
-	project, err := client.GetProject()
+	project, err := k.client.GetProject()
 	if err != nil {
 		return err
 	}
@@ -52,7 +51,7 @@ func (k KeyPairDeleter) Delete(publicKey string) error {
 		return nil
 	}
 
-	_, err = client.SetCommonInstanceMetadata(project.CommonInstanceMetadata)
+	_, err = k.client.SetCommonInstanceMetadata(project.CommonInstanceMetadata)
 	if err != nil {
 		return err
 	}

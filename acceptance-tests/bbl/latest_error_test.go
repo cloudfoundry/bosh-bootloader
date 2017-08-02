@@ -22,8 +22,7 @@ var _ = Describe("bbl latest-error", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		state := []byte(`{
-			"version":3,
-			"iaas": "gcp",
+			"version": 8,
 			"noDirector": true,
 			"tfState": "some-tf-state",
 			"latestTFOutput": "some terraform output"

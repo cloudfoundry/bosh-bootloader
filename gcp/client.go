@@ -6,17 +6,6 @@ import (
 	compute "google.golang.org/api/compute/v1"
 )
 
-type Client interface {
-	ProjectID() string
-	GetProject() (*compute.Project, error)
-	SetCommonInstanceMetadata(metadata *compute.Metadata) (*compute.Operation, error)
-	ListInstances() (*compute.InstanceList, error)
-	GetZones(region string) ([]string, error)
-	GetZone(zone string) (*compute.Zone, error)
-	GetRegion(region string) (*compute.Region, error)
-	GetNetworks(name string) (*compute.NetworkList, error)
-}
-
 type GCPClient struct {
 	service   *compute.Service
 	projectID string

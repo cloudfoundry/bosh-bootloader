@@ -39,7 +39,6 @@ var _ = Describe("App", func() {
 		someCmd    *fakes.Command
 		errorCmd   *fakes.Command
 		usage      *fakes.Usage
-		stateStore *fakes.StateStore
 	)
 
 	var NewAppWithConfiguration = func(configuration application.Configuration) application.App {
@@ -52,7 +51,6 @@ var _ = Describe("App", func() {
 			"set-new-keypair-name": setNewKeyPairName{},
 		},
 			configuration,
-			stateStore,
 			usage,
 		)
 	}
@@ -66,7 +64,6 @@ var _ = Describe("App", func() {
 		someCmd.ExecuteCall.PassState = true
 
 		usage = &fakes.Usage{}
-		stateStore = &fakes.StateStore{}
 
 		app = NewAppWithConfiguration(application.Configuration{})
 	})
@@ -109,6 +106,7 @@ var _ = Describe("App", func() {
 				app = NewAppWithConfiguration(application.Configuration{
 					Command:         "some",
 					SubcommandFlags: []string{helpFlag},
+					ShowCommandHelp: true,
 				})
 
 				Expect(app.Run()).To(Succeed())
@@ -196,7 +194,7 @@ var _ = Describe("App", func() {
 					}, application.Configuration{
 						Command:         "some",
 						SubcommandFlags: []string{"-v"},
-					}, storage.Store{}, usage)
+					}, usage)
 
 					err := app.Run()
 					Expect(err).To(MatchError("unknown command: version"))

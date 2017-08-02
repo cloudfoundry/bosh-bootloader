@@ -133,17 +133,6 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags := flags.New("up")
 
 	upFlags.String(&config.iaas, "iaas", u.envGetter.Get("BBL_IAAS"))
-
-	upFlags.String(&config.awsAccessKeyID, "aws-access-key-id", u.envGetter.Get("BBL_AWS_ACCESS_KEY_ID"))
-	upFlags.String(&config.awsSecretAccessKey, "aws-secret-access-key", u.envGetter.Get("BBL_AWS_SECRET_ACCESS_KEY"))
-	upFlags.String(&config.awsRegion, "aws-region", u.envGetter.Get("BBL_AWS_REGION"))
-	upFlags.String(&config.awsBOSHAZ, "aws-bosh-az", u.envGetter.Get("BBL_AWS_BOSH_AZ"))
-
-	upFlags.String(&config.gcpServiceAccountKey, "gcp-service-account-key", u.envGetter.Get("BBL_GCP_SERVICE_ACCOUNT_KEY"))
-	upFlags.String(&config.gcpProjectID, "gcp-project-id", u.envGetter.Get("BBL_GCP_PROJECT_ID"))
-	upFlags.String(&config.gcpZone, "gcp-zone", u.envGetter.Get("BBL_GCP_ZONE"))
-	upFlags.String(&config.gcpRegion, "gcp-region", u.envGetter.Get("BBL_GCP_REGION"))
-
 	upFlags.String(&config.name, "name", "")
 	upFlags.String(&config.opsFile, "ops-file", "")
 	upFlags.Bool(&config.noDirector, "", "no-director", false)

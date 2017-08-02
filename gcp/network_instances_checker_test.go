@@ -15,16 +15,13 @@ import (
 var _ = Describe("network instances checker", func() {
 	var (
 		client                  *fakes.GCPClient
-		gcpClientProvider       *fakes.GCPClientProvider
 		networkInstancesChecker gcp.NetworkInstancesChecker
 	)
 
 	Describe("ValidateSafeToDelete", func() {
 		BeforeEach(func() {
-			gcpClientProvider = &fakes.GCPClientProvider{}
 			client = &fakes.GCPClient{}
-			gcpClientProvider.ClientCall.Returns.Client = client
-			networkInstancesChecker = gcp.NewNetworkInstancesChecker(gcpClientProvider)
+			networkInstancesChecker = gcp.NewNetworkInstancesChecker(client)
 		})
 
 		It("does not return an error when the bosh director is the only vm on the network", func() {
@@ -74,8 +71,6 @@ var _ = Describe("network instances checker", func() {
 			}
 
 			err := networkInstancesChecker.ValidateSafeToDelete(networkName)
-
-			Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -167,8 +162,6 @@ var _ = Describe("network instances checker", func() {
 			}
 
 			err := networkInstancesChecker.ValidateSafeToDelete(networkName)
-
-			Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
 
 			Expect(err).To(MatchError(fmt.Sprintf(`bbl environment is not safe to delete; vms still exist in network:
 %s (deployment: %s)

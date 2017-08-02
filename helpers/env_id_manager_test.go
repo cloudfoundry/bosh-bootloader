@@ -14,7 +14,6 @@ import (
 var _ = Describe("EnvIDManager", func() {
 	var (
 		envIDGenerator        *fakes.EnvIDGenerator
-		gcpClientProvider     *fakes.GCPClientProvider
 		gcpClient             *fakes.GCPClient
 		infrastructureManager *fakes.InfrastructureManager
 		envIDManager          helpers.EnvIDManager
@@ -24,13 +23,11 @@ var _ = Describe("EnvIDManager", func() {
 		envIDGenerator = &fakes.EnvIDGenerator{}
 		envIDGenerator.GenerateCall.Returns.EnvID = "some-env-id"
 
-		gcpClientProvider = &fakes.GCPClientProvider{}
 		gcpClient = &fakes.GCPClient{}
-		gcpClientProvider.ClientCall.Returns.Client = gcpClient
 
 		infrastructureManager = &fakes.InfrastructureManager{}
 
-		envIDManager = helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider, infrastructureManager)
+		envIDManager = helpers.NewEnvIDManager(envIDGenerator, gcpClient, infrastructureManager)
 	})
 
 	Describe("Sync", func() {

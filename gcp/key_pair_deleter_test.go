@@ -15,18 +15,15 @@ import (
 
 var _ = Describe("KeyPairDeleter", func() {
 	var (
-		deleter           gcp.KeyPairDeleter
-		client            *fakes.GCPClient
-		gcpClientProvider *fakes.GCPClientProvider
-		logger            *fakes.Logger
+		deleter gcp.KeyPairDeleter
+		client  *fakes.GCPClient
+		logger  *fakes.Logger
 	)
 
 	BeforeEach(func() {
-		gcpClientProvider = &fakes.GCPClientProvider{}
 		client = &fakes.GCPClient{}
 		logger = &fakes.Logger{}
-		gcpClientProvider.ClientCall.Returns.Client = client
-		deleter = gcp.NewKeyPairDeleter(gcpClientProvider, logger)
+		deleter = gcp.NewKeyPairDeleter(client, logger)
 	})
 
 	It("deletes the gcp keypair", func() {
@@ -44,8 +41,6 @@ var _ = Describe("KeyPairDeleter", func() {
 		}
 		err := deleter.Delete(publicKey)
 		Expect(err).NotTo(HaveOccurred())
-
-		Expect(gcpClientProvider.ClientCall.CallCount).To(Equal(1))
 
 		Expect(client.GetProjectCall.CallCount).To(Equal(1))
 		Expect(client.SetCommonInstanceMetadataCall.CallCount).To(Equal(1))
