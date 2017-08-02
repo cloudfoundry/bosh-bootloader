@@ -15,7 +15,6 @@ type GCPCreateLBs struct {
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
 	logger                    logger
-	environmentValidator      environmentValidator
 	availabilityZoneRetriever availabilityZoneRetriever
 }
 
@@ -34,15 +33,13 @@ type availabilityZoneRetriever interface {
 func NewGCPCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, logger logger,
-	environmentValidator environmentValidator,
 	availabilityZoneRetriever availabilityZoneRetriever,
 ) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformManager:          terraformManager,
-		cloudConfigManager:        cloudConfigManager,
-		stateStore:                stateStore,
-		logger:                    logger,
-		environmentValidator:      environmentValidator,
+		terraformManager:   terraformManager,
+		cloudConfigManager: cloudConfigManager,
+		stateStore:         stateStore,
+		logger:             logger,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
@@ -54,11 +51,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 
 	err = c.checkFastFails(config, state)
-	if err != nil {
-		return err
-	}
-
-	err = c.environmentValidator.Validate(state)
 	if err != nil {
 		return err
 	}
@@ -156,6 +148,10 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 
 	if state.IAAS != "gcp" {
 		return fmt.Errorf("iaas type must be gcp")
+	}
+
+	if state.TFState == "" {
+		return BBLNotFound
 	}
 
 	return nil

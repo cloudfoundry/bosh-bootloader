@@ -168,7 +168,6 @@ func main() {
 	// Environment Validators
 	awsBrokenEnvironmentValidator := awsapplication.NewBrokenEnvironmentValidator(infrastructureManager)
 	awsEnvironmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
-	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator()
 
 	// Cloud Config
 	sshKeyGetter := bosh.NewSSHKeyGetter()
@@ -211,7 +210,7 @@ func main() {
 		GCPAvailabilityZoneRetriever: gcpAvailabilityZoneRetriever,
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator, gcpAvailabilityZoneRetriever)
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpAvailabilityZoneRetriever)
 
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
 
