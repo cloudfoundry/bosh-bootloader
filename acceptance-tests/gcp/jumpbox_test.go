@@ -32,7 +32,7 @@ var _ = Describe("jumpbox test", func() {
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--jumpbox"})
+		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--jumpbox"})
 	})
 
 	AfterEach(func() {

@@ -17,11 +17,6 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-const (
-	AWSIAAS = iota
-	GCPIAAS
-)
-
 type BBL struct {
 	stateDirectory string
 	pathToBBL      string
@@ -49,7 +44,7 @@ func (b BBL) PredefinedEnvID() string {
 	return b.envID
 }
 
-func (b BBL) Up(iaas IAAS, additionalArgs []string) {
+func (b BBL) Up(iaas string, additionalArgs []string) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"--debug",
@@ -59,14 +54,14 @@ func (b BBL) Up(iaas IAAS, additionalArgs []string) {
 	args = append(args, additionalArgs...)
 
 	switch iaas {
-	case AWSIAAS:
+	case "aws":
 		args = append(args, []string{
 			"--iaas", "aws",
 			"--aws-access-key-id", b.configuration.AWSAccessKeyID,
 			"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
 			"--aws-region", b.configuration.AWSRegion,
 		}...)
-	case GCPIAAS:
+	case "gcp":
 		args = append(args, []string{
 			"--iaas", "gcp",
 			"--gcp-service-account-key", b.configuration.GCPServiceAccountKey,
@@ -98,7 +93,7 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 		"--type", loadBalancerType,
 	}
 
-	if loadBalancerType == "cf" || GetIAAS(b.configuration) == AWSIAAS {
+	if loadBalancerType == "cf" || b.configuration.IAAS == "aws" {
 		args = append(args,
 			"--cert", cert,
 			"--key", key,
@@ -225,7 +220,7 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 func LBURL(config acceptance.Config, bbl BBL, state acceptance.State) (string, error) {
 	lbs := bbl.fetchValue("lbs")
 	var url string
-	if IAASString(config) == "aws" {
+	if config.IAAS == "aws" {
 		cutLBsPrefix := strings.Split(lbs, "[")[1]
 		url = strings.Split(cutLBsPrefix, "]")[0]
 	} else {
@@ -233,26 +228,4 @@ func LBURL(config acceptance.Config, bbl BBL, state acceptance.State) (string, e
 	}
 
 	return fmt.Sprintf("https://%s", url), nil
-}
-
-func IAASString(config acceptance.Config) string {
-	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
-		return "aws"
-	}
-	if config.GCPServiceAccountKey != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
-		return "gcp"
-	}
-
-	return ""
-}
-
-func GetIAAS(config acceptance.Config) IAAS {
-	if config.AWSAccessKeyID != "" && config.AWSSecretAccessKey != "" && config.AWSRegion != "" {
-		return AWSIAAS
-	}
-	if config.GCPServiceAccountKey != "" && config.GCPProjectID != "" && config.GCPRegion != "" && config.GCPZone != "" {
-		return GCPIAAS
-	}
-
-	return -1
 }

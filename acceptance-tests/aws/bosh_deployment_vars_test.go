@@ -29,7 +29,7 @@ var _ = Describe("bosh deployment vars", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 	})
 
 	AfterEach(func() {

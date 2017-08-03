@@ -32,7 +32,7 @@ var _ = Describe("no director test", func() {
 
 	It("successfully standups up a no director infrastructure", func() {
 		By("calling bbl up with the no-director flag", func() {
-			bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+			bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 		})
 
 		By("checking that no bosh director exists", func() {

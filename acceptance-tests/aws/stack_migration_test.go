@@ -77,7 +77,7 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				bblStack.Up(actors.AWSIAAS, []string{"--name", bblStack.PredefinedEnvID()})
+				bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
 			})
 
 			By("verifying the stack exists", func() {
@@ -95,7 +95,7 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("migrating to terraform with latest bbl", func() {
-				bblTerraform.Up(actors.AWSIAAS, []string{})
+				bblTerraform.Up("aws", []string{})
 			})
 
 			By("verifying the stack doesn't exists", func() {
@@ -118,7 +118,7 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				bblStack.Up(actors.AWSIAAS, []string{"--name", bblStack.PredefinedEnvID()})
+				bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
 			})
 
 			By("verifying the stack exists", func() {
@@ -164,7 +164,7 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				bblStack.Up(actors.AWSIAAS, []string{"--name", bblStack.PredefinedEnvID()})
+				bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
 			})
 
 			By("verifying the stack exists", func() {

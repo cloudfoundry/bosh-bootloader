@@ -7,10 +7,10 @@ type BOSHDirectorChecker interface {
 }
 
 func NewBOSHDirectorChecker(config acceptance.Config) BOSHDirectorChecker {
-	switch GetIAAS(config) {
-	case GCPIAAS:
+	switch config.IAAS {
+	case "gcp":
 		return NewGCP(config)
-	case AWSIAAS:
+	case "aws":
 		return NewAWS(config)
 	}
 	return nil

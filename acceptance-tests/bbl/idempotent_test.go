@@ -27,12 +27,12 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
-		bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID()})
-		bbl.Up(actors.GetIAAS(configuration), []string{})
+		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		bbl.Up(configuration.IAAS, []string{})
 	})
 
 	It("is able to bbl up idempotently with no director", func() {
-		bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
-		bbl.Up(actors.GetIAAS(configuration), []string{})
+		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		bbl.Up(configuration.IAAS, []string{})
 	})
 })

@@ -32,7 +32,7 @@ var _ = Describe("ops file test", func() {
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(actors.GetIAAS(configuration), []string{
+		bbl.Up(configuration.IAAS, []string{
 			"--name", bbl.PredefinedEnvID(),
 			"--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"),
 		})

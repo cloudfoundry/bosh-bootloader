@@ -58,7 +58,7 @@ var _ = Describe("lbs test", func() {
 		otherChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl.Up(actors.AWSIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 
 		vpcName = fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID())
 	})

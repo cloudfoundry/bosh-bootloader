@@ -32,7 +32,7 @@ var _ = Describe("bosh deployment vars", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 
 		gcpServiceAccountKeyContents, err := ioutil.ReadFile(configuration.GCPServiceAccountKey)
 		if err != nil {

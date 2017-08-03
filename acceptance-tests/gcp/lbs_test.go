@@ -29,7 +29,7 @@ var _ = Describe("lbs test", func() {
 		terraform = actors.NewTerraform(configuration)
 		boshcli = actors.NewBOSHCLI()
 
-		bbl.Up(actors.GCPIAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 	})
 
 	AfterEach(func() {

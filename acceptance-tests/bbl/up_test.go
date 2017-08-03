@@ -31,7 +31,7 @@ var _ = Describe("up test", func() {
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(actors.GetIAAS(configuration), []string{"--name", bbl.PredefinedEnvID()})
+		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
 	})
 
 	AfterEach(func() {
