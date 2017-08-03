@@ -119,26 +119,6 @@ func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
 	return certificate
 }
 
-func (a AWS) GetEC2InstanceTags(instanceName string) map[string]string {
-	output, err := a.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{})
-	Expect(err).NotTo(HaveOccurred())
-
-	for _, reservation := range output.Reservations {
-		for _, instance := range reservation.Instances {
-			for _, tag := range instance.Tags {
-				if awslib.StringValue(tag.Key) == "Name" && awslib.StringValue(tag.Value) == instanceName {
-					tags := make(map[string]string)
-					for _, tag := range instance.Tags {
-						tags[awslib.StringValue(tag.Key)] = awslib.StringValue(tag.Value)
-					}
-					return tags
-				}
-			}
-		}
-	}
-	return map[string]string{}
-}
-
 func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
