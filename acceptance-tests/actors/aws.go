@@ -183,20 +183,6 @@ func (a AWS) GetVPC(vpcName string) *string {
 	return vpcs.Vpcs[0].VpcId
 }
 
-func (a AWS) DescribeKeyPairs(keypairName string) []*awsec2.KeyPairInfo {
-	params := &awsec2.DescribeKeyPairsInput{
-		Filters: []*awsec2.Filter{{}},
-		KeyNames: []*string{
-			awslib.String(keypairName),
-		},
-	}
-
-	keypairOutput, err := a.ec2Client.DescribeKeyPairs(params)
-	Expect(err).NotTo(HaveOccurred())
-
-	return keypairOutput.KeyPairs
-}
-
 func (a AWS) NetworkHasBOSHDirector(envID string) bool {
 	instances := a.Instances(envID)
 
