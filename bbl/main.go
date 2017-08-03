@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"reflect"
 
 	"golang.org/x/crypto/ssh"
 
@@ -89,15 +88,31 @@ func main() {
 		panic(err)
 	}
 
-	if !reflect.DeepEqual(loadedState, storage.State{}) {
-		global.IAAS = loadedState.IAAS
-		global.AWSRegion = loadedState.AWS.Region
-		global.AWSSecretAccessKey = loadedState.AWS.SecretAccessKey
-		global.AWSAccessKeyID = loadedState.AWS.AccessKeyID
-		global.GCPServiceAccountKey = loadedState.GCP.ServiceAccountKey
-		global.GCPProjectID = loadedState.GCP.ProjectID
-		global.GCPRegion = loadedState.GCP.Region
-		global.GCPZone = loadedState.GCP.Zone
+	if global.IAAS != "" {
+		loadedState.IAAS = global.IAAS
+	}
+
+	if global.AWSRegion != "" {
+		loadedState.AWS.Region = global.AWSRegion
+	}
+	if global.AWSSecretAccessKey != "" {
+		loadedState.AWS.SecretAccessKey = global.AWSSecretAccessKey
+	}
+	if global.AWSAccessKeyID != "" {
+		loadedState.AWS.AccessKeyID = global.AWSAccessKeyID
+	}
+
+	if global.GCPServiceAccountKey != "" {
+		loadedState.GCP.ServiceAccountKey = global.GCPServiceAccountKey
+	}
+	if global.GCPProjectID != "" {
+		loadedState.GCP.ProjectID = global.GCPProjectID
+	}
+	if global.GCPRegion != "" {
+		loadedState.GCP.Region = global.GCPRegion
+	}
+	if global.GCPZone != "" {
+		loadedState.GCP.Zone = global.GCPZone
 	}
 
 	// Utilities
@@ -114,15 +129,15 @@ func main() {
 	stateStore := storage.NewStore(global.StateDir)
 	stateValidator := application.NewStateValidator(global.StateDir)
 
-	awsCredentialValidator := awsapplication.NewCredentialValidator(global.AWSAccessKeyID, global.AWSSecretAccessKey, global.AWSRegion)
-	gcpCredentialValidator := gcpapplication.NewCredentialValidator(global.GCPProjectID, global.GCPServiceAccountKey, global.GCPRegion, global.GCPZone)
-	credentialValidator := application.NewCredentialValidator(global.IAAS, gcpCredentialValidator, awsCredentialValidator)
+	awsCredentialValidator := awsapplication.NewCredentialValidator(loadedState.AWS.AccessKeyID, loadedState.AWS.SecretAccessKey, loadedState.AWS.Region)
+	gcpCredentialValidator := gcpapplication.NewCredentialValidator(loadedState.GCP.ProjectID, loadedState.GCP.ServiceAccountKey, loadedState.GCP.Region, loadedState.GCP.Zone)
+	credentialValidator := application.NewCredentialValidator(loadedState.IAAS, gcpCredentialValidator, awsCredentialValidator)
 
 	// Amazon
 	awsConfiguration := aws.Config{
-		AccessKeyID:     global.AWSAccessKeyID,
-		SecretAccessKey: global.AWSSecretAccessKey,
-		Region:          global.AWSRegion,
+		AccessKeyID:     loadedState.AWS.AccessKeyID,
+		SecretAccessKey: loadedState.AWS.SecretAccessKey,
+		Region:          loadedState.AWS.Region,
 	}
 
 	clientProvider := &clientmanager.ClientProvider{}
@@ -145,8 +160,8 @@ func main() {
 
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
-	if global.IAAS == "gcp" {
-		err = gcpClientProvider.SetConfig(global.GCPServiceAccountKey, global.GCPProjectID, global.GCPRegion, global.GCPZone)
+	if loadedState.IAAS == "gcp" {
+		err = gcpClientProvider.SetConfig(loadedState.GCP.ServiceAccountKey, loadedState.GCP.ProjectID, loadedState.GCP.Region, loadedState.GCP.Zone)
 		if err != nil {
 			panic(err)
 		}
@@ -273,22 +288,6 @@ func main() {
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 	commandSet["rotate"] = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
-
-	loadedState.IAAS = global.IAAS
-	if global.IAAS == "gcp" {
-		loadedState.GCP = storage.GCP{
-			ServiceAccountKey: global.GCPServiceAccountKey,
-			ProjectID:         global.GCPProjectID,
-			Zone:              global.GCPZone,
-			Region:            global.GCPRegion,
-		}
-	} else {
-		loadedState.AWS = storage.AWS{
-			AccessKeyID:     global.AWSAccessKeyID,
-			SecretAccessKey: global.AWSSecretAccessKey,
-			Region:          global.AWSRegion,
-		}
-	}
 
 	configuration := &application.Configuration{
 		Global: application.GlobalConfiguration{
