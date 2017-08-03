@@ -184,19 +184,6 @@ func (b BBL) PrintEnv() string {
 	return b.fetchValue("print-env")
 }
 
-func (b BBL) UpWithInvalidAWSCredentials() {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"up",
-		"--iaas", "aws",
-		"--aws-access-key-id", "some-bad-access-key-id",
-		"--aws-secret-access-key", "some-bad-secret-access-key",
-		"--aws-region", b.configuration.AWSRegion,
-	}
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Second).Should(gexec.Exit(1))
-}
-
 func (b BBL) SaveDirectorCA() string {
 	stdout := bytes.NewBuffer([]byte{})
 	session := b.execute([]string{
@@ -212,17 +199,6 @@ func (b BBL) SaveDirectorCA() string {
 	file.Write(stdout.Bytes())
 
 	return file.Name()
-}
-
-func (b BBL) CreateGCPLB(loadBalancerType string) {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"create-lbs",
-		"--type", loadBalancerType,
-	}
-
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
 func (b BBL) fetchValue(value string) string {
