@@ -113,6 +113,7 @@ variable "nat_ami_map" {
     sa-east-1 = "ami-8631b5ea"
     us-east-1 = "ami-68115b02"
     us-east-2 = "ami-6893b20d"
+    us-gov-west-1 = "ami-c39610a2"
     us-west-1 = "ami-ef1a718f"
     us-west-2 = "ami-77a4b816"
   }
