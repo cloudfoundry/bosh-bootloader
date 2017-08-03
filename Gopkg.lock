@@ -50,6 +50,12 @@
   revision = "6a1fa9404c0aebf36c879bc50152edcc953910d2"
 
 [[projects]]
+  name = "github.com/jessevdk/go-flags"
+  packages = ["."]
+  revision = "96dc06278ce32a0e9d957d590bb987c81ee66407"
+  version = "v1.3.0"
+
+[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
@@ -130,6 +136,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dcf8ef63b6ef9256503e911763e54ec22d9c7142ab29af86eb6abeff6435378c"
+  inputs-digest = "8eb7c6984db67c1241817f898bd8404c9c35390fd3824180f0e2f033fb30c489"
   solver-name = "gps-cdcl"
   solver-version = 1
