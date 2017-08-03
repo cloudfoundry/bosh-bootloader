@@ -2,11 +2,26 @@ package aws
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"text/template"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
+
+var AMIs = `{
+	"us-east-1":      "ami-68115b02",
+	"us-east-2":      "ami-6893b20d",
+	"us-west-1":      "ami-ef1a718f",
+	"us-west-2":      "ami-77a4b816",
+	"eu-west-1":      "ami-c0993ab3",
+	"eu-central-1":   "ami-0b322e67",
+	"ap-southeast-1": "ami-e2fc3f81",
+	"ap-southeast-2": "ami-e3217a80",
+	"ap-northeast-1": "ami-f885ae96",
+	"ap-northeast-2": "ami-4118d72f",
+	"sa-east-1":      "ami-8631b5ea"
+}`
 
 type TemplateGenerator struct{}
 
@@ -24,6 +39,7 @@ type TemplateData struct {
 	TCPLBInternalDescription       string
 	SSLCertificateNameProperty     string
 	IgnoreSSLCertificateProperties string
+	AWSNATAMIs                     map[string]string
 }
 
 func NewTemplateGenerator() TemplateGenerator {
@@ -44,6 +60,13 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		}
 	}
 
+	var ami map[string]string
+
+	err := json.Unmarshal([]byte(AMIs), &ami)
+	if err != nil {
+		panic(err)
+	}
+
 	var templateData TemplateData
 	if state.MigratedFromCloudFormation {
 		templateData = TemplateData{
@@ -59,6 +82,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 			TCPLBDescription:             "CF TCP",
 			TCPLBInternalDescription:     "CF TCP Internal",
 			SSLCertificateNameProperty:   `name              = "${var.ssl_certificate_name}"`,
+			AWSNATAMIs:                   ami,
 		}
 	} else {
 		templateData = TemplateData{
@@ -74,6 +98,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 			TCPLBDescription:             "CF TCP",
 			TCPLBInternalDescription:     "CF TCP Internal",
 			SSLCertificateNameProperty:   `name_prefix       = "${var.ssl_certificate_name_prefix}"`,
+			AWSNATAMIs:                   ami,
 		}
 	}
 
@@ -82,7 +107,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 	}
 
 	tmpl := template.New("descriptions")
-	tmpl, err := tmpl.Parse(t)
+	tmpl, err = tmpl.Parse(t)
 	if err != nil {
 		panic(err)
 	}
