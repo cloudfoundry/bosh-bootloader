@@ -237,10 +237,10 @@ func main() {
 		Logger:                       logger,
 		EnvIDManager:                 envIDManager,
 		CloudConfigManager:           cloudConfigManager,
-		GCPAvailabilityZoneRetriever: gcpCientProvider.Client(),
+		GCPAvailabilityZoneRetriever: gcpClientProvider.Client(),
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpEnvironmentValidator, gcpClientProvider.Client())
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpClientProvider.Client())
 
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
 
