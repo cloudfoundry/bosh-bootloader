@@ -77,7 +77,7 @@ var _ = Describe("concourse deployment test", func() {
 				"-d", "concourse",
 				"deploy",
 				fmt.Sprintf("%s/concourse-deployment.yml", configuration.ConcourseDeploymentPath),
-				"-o", fmt.Sprintf("%s/operations/%s.yml", configuration.ConcourseDeploymentPath, actors.IAASString(configuration)),
+				"-o", fmt.Sprintf("%s/operations/%s.yml", configuration.ConcourseDeploymentPath, configuration.IAAS),
 				"--vars-store", "concourse-vars.yml",
 				"-v", fmt.Sprintf("domain=%s", lbURL),
 				"-n",
