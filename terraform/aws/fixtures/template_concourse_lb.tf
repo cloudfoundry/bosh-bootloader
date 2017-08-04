@@ -470,7 +470,7 @@ resource "aws_flow_log" "bbl" {
 }
 
 resource "aws_cloudwatch_log_group" "bbl" {
-  name = "${var.env_id}-log-group"
+  name_prefix = "${var.short_env_id}-log-group"
 }
 
 resource "aws_iam_role" "flow_logs" {
