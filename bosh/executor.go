@@ -27,9 +27,6 @@ const iamProfileOps = `
 - type: replace
   path: /instance_groups/name=bosh/properties/aws/credentials_source?
   value: env_or_profile
-- type: replace
-  path: /instance_groups/name=bosh/properties/aws/default_iam_instance_profile?
-  value: ((iam_instance_profile))
   `
 
 const boshDirectorEphemeralIPOps = `
