@@ -69,7 +69,7 @@ var _ = Describe("jumpbox test", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				output := string(cmdOut)
-				Expect(output).To(ContainSubstring("Welcome to Ubuntu 14.04.5 LTS (GNU/Linux 4.4.0-78-generic x86_64)"))
+				Expect(output).To(ContainSubstring("Welcome to Ubuntu"))
 			}()
 
 			cmdIn.Close()
