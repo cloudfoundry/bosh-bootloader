@@ -140,7 +140,7 @@ func (b BBL) DeleteLBs() {
 	}
 
 	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 }
 
 func (b BBL) DirectorUsername() string {
