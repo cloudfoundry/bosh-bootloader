@@ -43,7 +43,7 @@ var _ = Describe("jumpbox test", func() {
 		By("parsing the output of print-env", func() {
 			stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
 
-			stdout = strings.Replace(stdout, "ssh -f -N", "ssh -oStrictHostKeyChecking=no", 1)
+			stdout = strings.Replace(stdout, "-f -N", "", 1)
 
 			dir, err := ioutil.TempDir("", "bosh-print-env-command")
 			Expect(err).NotTo(HaveOccurred())

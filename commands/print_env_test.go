@@ -84,7 +84,7 @@ jumpbox_ssh:
 
 				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=socks5://localhost:\d+`)))
 				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_GW_PRIVATE_KEY=.*\/bosh_jumpbox_private.key`)))
-				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -D \d+ jumpbox@some-magical-jumpbox-url -i \$BOSH_GW_PRIVATE_KEY`)))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -D \d+ jumpbox@some-magical-jumpbox-url -i \$BOSH_GW_PRIVATE_KEY`)))
 			})
 
 			It("writes private key to file in temp dir", func() {
