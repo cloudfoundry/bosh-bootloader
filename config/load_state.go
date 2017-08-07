@@ -11,7 +11,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 )
 
-type GlobalFlags struct {
+type globalFlags struct {
 	Help                 bool   `short:"h" long:"help"`
 	Debug                bool   `short:"d" long:"debug"         env:"BBL_DEBUG"`
 	Version              bool   `short:"v" long:"version"`
@@ -46,7 +46,7 @@ type Config struct {
 }
 
 func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
-	var globalFlags GlobalFlags
+	var globalFlags globalFlags
 
 	parser := flags.NewParser(&globalFlags, flags.IgnoreUnknown)
 
