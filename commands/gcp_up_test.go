@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -476,53 +475,6 @@ var _ = Describe("GCPUp", func() {
 					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				})
 			})
-
-			// Nick
-			DescribeTable("state validation", func(state func() storage.State, expectedErr string) {
-				err := gcpUp.Execute(commands.GCPUpConfig{}, state())
-				Expect(err).To(MatchError(expectedErr))
-			},
-				Entry("returns an error when the state is empty", func() storage.State {
-					return storage.State{}
-				},
-					"GCP service account key must be provided"),
-				Entry("returns an error when service account key is missing", func() storage.State {
-					return storage.State{
-						GCP: storage.GCP{
-							ProjectID: "p",
-							Zone:      "z",
-							Region:    "us-west1",
-						},
-					}
-				}, "GCP service account key must be provided"),
-				Entry("returns an error when project ID is missing", func() storage.State {
-					return storage.State{
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKeyPath,
-							Zone:              "z",
-							Region:            "us-west1",
-						},
-					}
-				}, "GCP project ID must be provided"),
-				Entry("returns an error when zone is missing", func() storage.State {
-					return storage.State{
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKeyPath,
-							ProjectID:         "p",
-							Region:            "us-west1",
-						},
-					}
-				}, "GCP zone must be provided"),
-				Entry("returns an error when region is missing", func() storage.State {
-					return storage.State{
-						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKeyPath,
-							ProjectID:         "p",
-							Zone:              "z",
-						},
-					}
-				}, "GCP region must be provided"),
-			)
 
 			It("fast fails if a gcp environment with the same name already exists", func() {
 				envIDManager.SyncCall.Returns.Error = errors.New("environment already exists")

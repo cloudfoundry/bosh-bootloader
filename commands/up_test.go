@@ -91,28 +91,6 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when iaas is not provided", func() {
-			It("returns an error", func() {
-				err := command.CheckFastFails([]string{}, storage.State{})
-				Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
-			})
-		})
-
-		Context("when iaas specified is different than the iaas in state", func() {
-			It("returns an error when the iaas is provided via args", func() {
-				err := command.CheckFastFails([]string{"--iaas", "aws"}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
-			})
-
-			It("returns an error when the iaas is provided via env vars", func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_IAAS": "aws",
-				}
-				err := command.CheckFastFails([]string{}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("The iaas type cannot be changed for an existing environment. The current iaas type is gcp."))
-			})
-		})
-
 		Context("when bbl-state contains an env-id", func() {
 			var (
 				name  = "some-name"
@@ -169,28 +147,6 @@ var _ = Describe("Up", func() {
 		})
 
 		Context("when state does not contain an iaas", func() {
-			It("uses the iaas from the env var", func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_IAAS": "gcp",
-				}
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(0))
-			})
-
-			It("uses the iaas from the args over the env var", func() {
-				fakeEnvGetter.Values = map[string]string{
-					"BBL_IAAS": "aws",
-				}
-				err := command.Execute([]string{
-					"--iaas", "gcp",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(0))
-			})
-
 			Context("when desired iaas is gcp", func() {
 				It("executes the GCP up with gcp details from args", func() {
 					err := command.Execute([]string{
@@ -225,13 +181,6 @@ var _ = Describe("Up", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
-				})
-			})
-
-			Context("when an invalid iaas is provided", func() {
-				It("returns an error", func() {
-					err := command.Execute([]string{"--iaas", "bad-iaas"}, storage.State{})
-					Expect(err).To(MatchError(`"bad-iaas" is an invalid iaas type, supported values are: [gcp, aws]`))
 				})
 			})
 
