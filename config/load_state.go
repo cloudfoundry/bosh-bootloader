@@ -26,6 +26,15 @@ type GlobalFlags struct {
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 }
 
+type ParsedFlags struct {
+	State         storage.State
+	RemainingArgs []string
+	Help          bool
+	Debug         bool
+	Version       bool
+	StateDir      string
+}
+
 func NewConfig(getState func(string) (storage.State, error)) Config {
 	return Config{
 		getState: getState,
@@ -103,49 +112,65 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.GCP.Region = globalFlags.GCPRegion
 	}
 
-	ignoreMissingIAAS := globalFlags.Help || globalFlags.Version || (len(remainingArgs) > 0 && (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")) || len(remainingArgs) == 0
+	nonStatefulCommand := len(remainingArgs) == 0 || (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")
+	ignoreMissingFlags := globalFlags.Help || globalFlags.Version || nonStatefulCommand
 
-	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws") {
-		if !ignoreMissingIAAS {
-			return ParsedFlags{}, errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
-		}
-	}
-	if state.IAAS == "aws" {
-		if state.AWS.AccessKeyID == "" {
-			return ParsedFlags{}, errors.New("AWS access key ID must be provided")
-		}
-		if state.AWS.SecretAccessKey == "" {
-			return ParsedFlags{}, errors.New("AWS secret access key must be provided")
-		}
-		if state.AWS.Region == "" {
-			return ParsedFlags{}, errors.New("AWS region must be provided")
-		}
-	}
-	if state.IAAS == "gcp" {
-		if state.GCP.ServiceAccountKey == "" {
-			return ParsedFlags{}, errors.New("GCP service account key must be provided")
-		}
-		if state.GCP.ProjectID == "" {
-			return ParsedFlags{}, errors.New("GCP project ID must be provided")
-		}
-		if state.GCP.Zone == "" {
-			return ParsedFlags{}, errors.New("GCP zone must be provided")
-		}
-		if state.GCP.Region == "" {
-			return ParsedFlags{}, errors.New("GCP region must be provided")
+	if !ignoreMissingFlags {
+		err := validate(state)
+		if err != nil {
+			return ParsedFlags{}, err
 		}
 	}
 
 	return ParsedFlags{State: state, RemainingArgs: remainingArgs, Help: globalFlags.Help, Debug: globalFlags.Debug, Version: globalFlags.Version, StateDir: globalFlags.StateDir}, nil
 }
 
-type ParsedFlags struct {
-	State         storage.State
-	RemainingArgs []string
-	Help          bool
-	Debug         bool
-	Version       bool
-	StateDir      string
+func validate(state storage.State) error {
+	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws") {
+		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
+	}
+	if state.IAAS == "aws" {
+		err := validateAWSFlags(state.AWS)
+		if err != nil {
+			return err
+		}
+	}
+	if state.IAAS == "gcp" {
+		err := validateGCPFlags(state.GCP)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateAWSFlags(awsFlags storage.AWS) error {
+	if awsFlags.AccessKeyID == "" {
+		return errors.New("AWS access key ID must be provided")
+	}
+	if awsFlags.SecretAccessKey == "" {
+		return errors.New("AWS secret access key must be provided")
+	}
+	if awsFlags.Region == "" {
+		return errors.New("AWS region must be provided")
+	}
+	return nil
+}
+
+func validateGCPFlags(gcpFlags storage.GCP) error {
+	if gcpFlags.ServiceAccountKey == "" {
+		return errors.New("GCP service account key must be provided")
+	}
+	if gcpFlags.ProjectID == "" {
+		return errors.New("GCP project ID must be provided")
+	}
+	if gcpFlags.Zone == "" {
+		return errors.New("GCP zone must be provided")
+	}
+	if gcpFlags.Region == "" {
+		return errors.New("GCP region must be provided")
+	}
+	return nil
 }
 
 func parseServiceAccountKey(serviceAccountKey string) (string, error) {
