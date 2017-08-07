@@ -667,11 +667,13 @@ var _ = Describe("InitializeState", func() {
 				"--aws-region", "some-region",
 			},
 			true, "--iaas [gcp, aws] must be provided or BBL_IAAS must be set"),
-		Entry("when IAAS is unsupported", []string{"bbl", "up", "--iaas", "openstack"}, true, "--iaas [gcp, aws] must be provided or BBL_IAAS must be set"),
+		Entry("when IAAS is unsupported", []string{"bbl", "up", "--iaas", "not-a-real-iaas"}, true,
+			`"not-a-real-iaas" is an invalid iaas type, supported values are: [gcp, aws]`),
 		Entry("when help flag is set", []string{"bbl", "up", "--help"}, false, ""),
 		Entry("when help command is used", []string{"bbl", "help"}, false, ""),
 		Entry("when no command is used", []string{"bbl"}, false, ""),
 		Entry("when version flag is set", []string{"bbl", "--version"}, false, ""),
 		Entry("when version command is used", []string{"bbl", "version"}, false, ""),
+		// Entry("when invalid flag is passed", []string{"bbl", "--foo", "bar"}, true, "flag provided but not defined: -foo"),
 	)
 })
