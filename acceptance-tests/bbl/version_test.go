@@ -12,8 +12,14 @@ import (
 )
 
 var _ = Describe("bbl", func() {
+	var iaas string
 	BeforeEach(func() {
+		iaas = os.Getenv("BBL_IAAS")
 		os.Unsetenv("BBL_IAAS")
+	})
+
+	AfterEach(func() {
+		os.Setenv("BBL_IAAS", iaas)
 	})
 
 	Describe("version", func() {
