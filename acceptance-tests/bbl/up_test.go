@@ -35,7 +35,7 @@ var _ = Describe("up test", func() {
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		bbl.Down()
 	})
 
 	It("bbl's up a new bosh director", func() {
