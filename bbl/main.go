@@ -50,7 +50,8 @@ func main() {
 	newConfig := config.NewConfig(storage.GetState)
 	parsedFlags, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
-		panic(err)
+		log.Fatalf("\n\n%s\n", err)
+		os.Exit(1)
 	}
 
 	loadedState := parsedFlags.State
@@ -103,7 +104,8 @@ func main() {
 	if loadedState.IAAS == "gcp" {
 		err = gcpClientProvider.SetConfig(loadedState.GCP.ServiceAccountKey, loadedState.GCP.ProjectID, loadedState.GCP.Region, loadedState.GCP.Zone)
 		if err != nil {
-			panic(err)
+			log.Fatalf("\n\n%s\n", err)
+			os.Exit(1)
 		}
 	}
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider.Client(), logger)

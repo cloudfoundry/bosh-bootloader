@@ -103,7 +103,7 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.GCP.Region = globalFlags.GCPRegion
 	}
 
-	if state.IAAS == "" {
+	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws") {
 		return ParsedFlags{}, errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
 	}
 	if state.IAAS == "aws" {

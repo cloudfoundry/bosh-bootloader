@@ -105,6 +105,23 @@ var _ = Describe("InitializeState", func() {
 						})
 					})
 
+					Context("when IAAS is unsupported", func() {
+						var args []string
+
+						BeforeEach(func() {
+							args = []string{
+								"bbl",
+								"--iaas", "openstack",
+							}
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+
+							Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
+						})
+					})
+
 					Context("when AWS access key ID is missing", func() {
 						var args []string
 
