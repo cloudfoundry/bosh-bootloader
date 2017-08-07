@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -23,6 +22,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/keypair"
@@ -30,7 +30,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/stack"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	flags "github.com/jessevdk/go-flags"
 
 	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
 	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
@@ -48,72 +47,13 @@ var (
 )
 
 func main() {
-	var global struct {
-		Help                 bool   `short:"h"   long:"help"`
-		Debug                bool   `short:"d"   long:"debug"`
-		Version              bool   `short:"v"   long:"version"`
-		StateDir             string `short:"s"   long:"state-dir"`
-		IAAS                 string `long:"iaas"                    env:"BBL_IAAS"`
-		AWSAccessKeyID       string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
-		AWSSecretAccessKey   string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
-		AWSRegion            string `long:"aws-region"              env:"BBL_AWS_REGION"`
-		GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
-		GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
-		GCPZone              string `long:"gcp-zone"                env:"BBL_GCP_ZONE"`
-		GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
-	}
-
-	parser := flags.NewParser(&global, flags.IgnoreUnknown)
-
-	remainingArgs, err := parser.ParseArgs(os.Args[1:])
+	newConfig := config.NewConfig(storage.GetState)
+	parsedFlags, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
 		panic(err)
 	}
 
-	if global.StateDir == "" {
-		var err error
-		global.StateDir, err = os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	global.GCPServiceAccountKey, err = parseServiceAccountKey(global.GCPServiceAccountKey)
-	if err != nil {
-		panic(err)
-	}
-
-	loadedState, err := storage.GetState(global.StateDir)
-	if err != nil {
-		panic(err)
-	}
-
-	if global.IAAS != "" {
-		loadedState.IAAS = global.IAAS
-	}
-
-	if global.AWSRegion != "" {
-		loadedState.AWS.Region = global.AWSRegion
-	}
-	if global.AWSSecretAccessKey != "" {
-		loadedState.AWS.SecretAccessKey = global.AWSSecretAccessKey
-	}
-	if global.AWSAccessKeyID != "" {
-		loadedState.AWS.AccessKeyID = global.AWSAccessKeyID
-	}
-
-	if global.GCPServiceAccountKey != "" {
-		loadedState.GCP.ServiceAccountKey = global.GCPServiceAccountKey
-	}
-	if global.GCPProjectID != "" {
-		loadedState.GCP.ProjectID = global.GCPProjectID
-	}
-	if global.GCPRegion != "" {
-		loadedState.GCP.Region = global.GCPRegion
-	}
-	if global.GCPZone != "" {
-		loadedState.GCP.Zone = global.GCPZone
-	}
+	loadedState := parsedFlags.State
 
 	// Utilities
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
@@ -126,8 +66,8 @@ func main() {
 
 	storage.GetStateLogger = stderrLogger
 
-	stateStore := storage.NewStore(global.StateDir)
-	stateValidator := application.NewStateValidator(global.StateDir)
+	stateStore := storage.NewStore(parsedFlags.StateDir)
+	stateValidator := application.NewStateValidator(parsedFlags.StateDir)
 
 	awsCredentialValidator := awsapplication.NewCredentialValidator(loadedState.AWS.AccessKeyID, loadedState.AWS.SecretAccessKey, loadedState.AWS.Region)
 	gcpCredentialValidator := gcpapplication.NewCredentialValidator(loadedState.GCP.ProjectID, loadedState.GCP.ServiceAccountKey, loadedState.GCP.Region, loadedState.GCP.Zone)
@@ -181,7 +121,7 @@ func main() {
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
 
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
-	terraformExecutor := terraform.NewExecutor(terraformCmd, global.Debug)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, parsedFlags.Debug)
 	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator()
 	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
@@ -289,62 +229,36 @@ func main() {
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 	commandSet["rotate"] = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
 
-	configuration := &application.Configuration{
+	commandConfiguration := &application.Configuration{
 		Global: application.GlobalConfiguration{
-			StateDir: global.StateDir,
-			Debug:    global.Debug,
+			StateDir: parsedFlags.StateDir,
+			Debug:    parsedFlags.Debug,
 		},
 		State:           loadedState,
-		ShowCommandHelp: global.Help,
+		ShowCommandHelp: parsedFlags.Help,
 	}
 
-	if len(remainingArgs) > 0 {
-		configuration.Command = remainingArgs[0]
-		configuration.SubcommandFlags = remainingArgs[1:]
+	if len(parsedFlags.RemainingArgs) > 0 {
+		commandConfiguration.Command = parsedFlags.RemainingArgs[0]
+		commandConfiguration.SubcommandFlags = parsedFlags.RemainingArgs[1:]
 	} else {
-		configuration.ShowCommandHelp = false
-		if global.Help {
-			configuration.Command = "help"
+		commandConfiguration.ShowCommandHelp = false
+		if parsedFlags.Help {
+			commandConfiguration.Command = "help"
 		}
-		if global.Version {
-			configuration.Command = "version"
+		if parsedFlags.Version {
+			commandConfiguration.Command = "version"
 		}
 	}
 
 	if len(os.Args) == 1 {
-		configuration.Command = "help"
+		commandConfiguration.Command = "help"
 	}
 
-	app := application.New(commandSet, *configuration, usage)
+	app := application.New(commandSet, *commandConfiguration, usage)
 
 	err = app.Run()
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
-}
-
-func parseServiceAccountKey(serviceAccountKey string) (string, error) {
-	var key string
-	if serviceAccountKey == "" {
-		return "", nil
-	}
-
-	if _, err := os.Stat(serviceAccountKey); err != nil {
-		key = serviceAccountKey
-	} else {
-		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
-		if err != nil {
-			return "", fmt.Errorf("error reading service account key from file: %v", err)
-		}
-
-		key = string(rawServiceAccountKey)
-	}
-
-	var tmp interface{}
-	err := json.Unmarshal([]byte(key), &tmp)
-	if err != nil {
-		return "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
-	}
-
-	return key, err
 }
