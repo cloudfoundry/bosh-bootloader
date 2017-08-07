@@ -86,6 +86,15 @@ func (b BBL) Destroy() {
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
+func (b BBL) Down() {
+	session := b.execute([]string{
+		"--state-dir", b.stateDirectory,
+		"down",
+		"--no-confirm",
+	}, os.Stdout, os.Stderr)
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+}
+
 func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) {
 	args := []string{
 		"--state-dir", b.stateDirectory,
