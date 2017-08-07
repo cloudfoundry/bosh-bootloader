@@ -126,8 +126,11 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 }
 
 func validate(state storage.State) error {
-	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws") {
+	if state.IAAS == "" {
 		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
+	}
+	if state.IAAS != "gcp" && state.IAAS != "aws" {
+		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", state.IAAS)
 	}
 	if state.IAAS == "aws" {
 		err := validateAWSFlags(state.AWS)
