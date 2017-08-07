@@ -103,8 +103,12 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.GCP.Region = globalFlags.GCPRegion
 	}
 
+	ignoreMissingIAAS := globalFlags.Help || globalFlags.Version || (len(remainingArgs) > 0 && (remainingArgs[0] == "help" || remainingArgs[0] == "version")) || len(remainingArgs) == 0
+
 	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws") {
-		return ParsedFlags{}, errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
+		if !ignoreMissingIAAS {
+			return ParsedFlags{}, errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
+		}
 	}
 	if state.IAAS == "aws" {
 		if state.AWS.AccessKeyID == "" {

@@ -2,6 +2,7 @@ package acceptance_test
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 
@@ -11,6 +12,10 @@ import (
 )
 
 var _ = Describe("bbl", func() {
+	BeforeEach(func() {
+		os.Unsetenv("BBL_IAAS")
+	})
+
 	Describe("version", func() {
 		Describe("bbl version", func() {
 			It("prints out the version 'dev' if not built with an ldflag", func() {
