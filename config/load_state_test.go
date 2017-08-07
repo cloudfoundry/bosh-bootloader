@@ -93,13 +93,13 @@ var _ = Describe("InitializeState", func() {
 						Expect(err).To(MatchError(expected))
 					},
 					Entry("when AWS access key is missing",
-						[]string{"bbl", "--iaas", "aws", "--aws-secret-access-key", "some-secret-key", "--aws-region", "some-region"},
+						[]string{"bbl", "up", "--iaas", "aws", "--aws-secret-access-key", "some-secret-key", "--aws-region", "some-region"},
 						"AWS access key ID must be provided"),
 					Entry("when AWS key is missing",
-						[]string{"bbl", "--iaas", "aws", "--aws-access-key-id", "some-access-key-id", "--aws-region", "some-region"},
+						[]string{"bbl", "up", "--iaas", "aws", "--aws-access-key-id", "some-access-key-id", "--aws-region", "some-region"},
 						"AWS secret access key must be provided"),
 					Entry("when AWS region is missing",
-						[]string{"bbl", "--iaas", "aws", "--aws-access-key-id", "some-access-key-id", "--aws-secret-access-key", "some-secret-key"},
+						[]string{"bbl", "up", "--iaas", "aws", "--aws-access-key-id", "some-access-key-id", "--aws-secret-access-key", "some-secret-key"},
 						"AWS region must be provided"),
 				)
 			})
