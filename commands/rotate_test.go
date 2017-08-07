@@ -52,12 +52,10 @@ var _ = Describe("Rotate", func() {
 				},
 			}
 
-			keyPairManager.RotateCall.Returns.State = storage.State{
-				KeyPair: storage.KeyPair{
-					Name:       "some-new-name",
-					PrivateKey: "some-new-private-key",
-					PublicKey:  "some-new-public-key",
-				},
+			keyPairManager.RotateCall.Returns.KeyPair = storage.KeyPair{
+				Name:       "some-new-name",
+				PrivateKey: "some-new-private-key",
+				PublicKey:  "some-new-public-key",
 			}
 
 			boshManager.CreateDirectorCall.Returns.State = storage.State{

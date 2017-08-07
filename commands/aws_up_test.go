@@ -33,12 +33,10 @@ var _ = Describe("AWSUp", func() {
 
 		BeforeEach(func() {
 			keyPairManager = &fakes.KeyPairManager{}
-			keyPairManager.SyncCall.Returns.State = storage.State{
-				KeyPair: storage.KeyPair{
-					Name:       "keypair-bbl-lake-time-stamp",
-					PublicKey:  "some-public-key",
-					PrivateKey: "some-private-key",
-				},
+			keyPairManager.SyncCall.Returns.KeyPair = storage.KeyPair{
+				Name:       "keypair-bbl-lake-time-stamp",
+				PublicKey:  "some-public-key",
+				PrivateKey: "some-private-key",
 			}
 
 			terraformManager = &fakes.TerraformManager{}
