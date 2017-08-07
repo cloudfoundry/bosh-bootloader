@@ -103,7 +103,7 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.GCP.Region = globalFlags.GCPRegion
 	}
 
-	ignoreMissingIAAS := globalFlags.Help || globalFlags.Version || (len(remainingArgs) > 0 && (remainingArgs[0] == "help" || remainingArgs[0] == "version")) || len(remainingArgs) == 0
+	ignoreMissingIAAS := globalFlags.Help || globalFlags.Version || (len(remainingArgs) > 0 && (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")) || len(remainingArgs) == 0
 
 	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws") {
 		if !ignoreMissingIAAS {
