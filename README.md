@@ -110,3 +110,14 @@ Commands:
 
   Use "bbl [command] --help" for more information about a command.
 ```
+
+## Known Issues
+
+### Re-running `bbl up` Detaches Instances from GCP LBs
+
+Due to `bbl`'s use of Terraform to create infrastructure on GCP, re-running
+`bbl up` after deploying either CloudFoundry or Concourse will detach any
+instances that were attached to a load balancer created by `bbl`.
+
+At this time, the only known work-arounds are to recreate the affected instance
+using `bosh recreate` **or** use Terraform `0.9.7+`.
