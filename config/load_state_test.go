@@ -86,42 +86,6 @@ var _ = Describe("InitializeState", func() {
 				})
 
 				Context("when configuration is invalid", func() {
-					Context("when IAAS is missing", func() {
-						var args []string
-
-						BeforeEach(func() {
-							args = []string{
-								"bbl",
-								"--aws-access-key-id", "some-access-key-id",
-								"--aws-secret-access-key", "some-secret-key",
-								"--aws-region", "some-region",
-							}
-						})
-
-						It("returns an error", func() {
-							_, err := c.Bootstrap(args)
-
-							Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
-						})
-					})
-
-					Context("when IAAS is unsupported", func() {
-						var args []string
-
-						BeforeEach(func() {
-							args = []string{
-								"bbl",
-								"--iaas", "openstack",
-							}
-						})
-
-						It("returns an error", func() {
-							_, err := c.Bootstrap(args)
-
-							Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
-						})
-					})
-
 					Context("when AWS access key ID is missing", func() {
 						var args []string
 
@@ -750,6 +714,126 @@ var _ = Describe("InitializeState", func() {
 						Expect(err).To(MatchError("The region cannot be changed for an existing environment. The current region is some-region."))
 					})
 				})
+			})
+		})
+	})
+
+	Context("when IAAS is not set", func() {
+		Context("when IAAS is missing", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl", "up",
+					"--aws-access-key-id", "some-access-key-id",
+					"--aws-secret-access-key", "some-secret-key",
+					"--aws-region", "some-region",
+				}
+			})
+
+			It("returns an error", func() {
+				_, err := c.Bootstrap(args)
+
+				Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
+			})
+		})
+
+		Context("when IAAS is unsupported", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl", "up",
+					"--iaas", "openstack",
+				}
+			})
+
+			It("returns an error", func() {
+				_, err := c.Bootstrap(args)
+
+				Expect(err).To(MatchError("--iaas [gcp, aws] must be provided or BBL_IAAS must be set"))
+			})
+		})
+
+		Context("when help flag is set", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl", "create-lbs", "--help",
+				}
+			})
+
+			It("does not return an error for missing IAAS", func() {
+				parsedFlags, err := c.Bootstrap(args)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(parsedFlags.Help).To(BeTrue())
+			})
+		})
+
+		Context("when help command is used", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl", "help",
+				}
+			})
+
+			It("does not return an error for missing IAAS", func() {
+				_, err := c.Bootstrap(args)
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when no command is used", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl",
+				}
+			})
+
+			It("does not return an error for missing IAAS", func() {
+				_, err := c.Bootstrap(args)
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when version flag is set", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl", "--version",
+				}
+			})
+
+			It("does not return an error for missing IAAS", func() {
+				parsedFlags, err := c.Bootstrap(args)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(parsedFlags.Version).To(BeTrue())
+			})
+		})
+
+		Context("when version command is used", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{
+					"bbl", "version",
+				}
+			})
+
+			It("does not return an error for missing IAAS", func() {
+				_, err := c.Bootstrap(args)
+
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})
