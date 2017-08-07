@@ -10,18 +10,18 @@ import (
 )
 
 var AMIs = `{
-    "us-east-1":      "ami-68115b02",
-    "us-east-2":      "ami-6893b20d",
-    "us-gov-west-1":  "ami-c39610a2",
-    "us-west-1":      "ami-ef1a718f",
-    "us-west-2":      "ami-77a4b816",
-    "eu-west-1":      "ami-c0993ab3",
-    "eu-central-1":   "ami-0b322e67",
-    "ap-southeast-1": "ami-e2fc3f81",
-    "ap-southeast-2": "ami-e3217a80",
-    "ap-northeast-1": "ami-f885ae96",
-    "ap-northeast-2": "ami-4118d72f",
-    "sa-east-1":      "ami-8631b5ea"
+  "ap-northeast-1":  "ami-10dfc877",
+  "ap-northeast-2":  "ami-1a1bc474",
+  "ap-southeast-1":  "ami-36af2055",
+  "ap-southeast-2":  "ami-1e91817d",
+  "eu-central-1":  "ami-9ebe18f1",
+  "eu-west-1":  "ami-3a849f5c",
+  "eu-west-2":  "ami-21120445",
+  "us-east-1":  "ami-d4c5efc2",
+  "us-east-2":  "ami-f27b5a97",
+  "us-gov-west-1":  "ami-c39610a2",
+  "us-west-1":  "ami-b87f53d8",
+  "us-west-2":  "ami-8bfce8f2"
 }`
 
 type TemplateGenerator struct{}
