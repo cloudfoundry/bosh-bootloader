@@ -118,7 +118,7 @@ var _ = Describe("GCPUp", func() {
 		envIDManager.SyncCall.Returns.State = storage.State{
 			EnvID: "some-env-id",
 		}
-		keyPairManager.SyncCall.Returns.State = expectedKeyPairState
+		keyPairManager.SyncCall.Returns.KeyPair = expectedKeyPairState.KeyPair
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateDirectorCall.Returns.State = expectedBOSHState
 		boshManager.CreateJumpboxCall.Returns.State = expectedBOSHState

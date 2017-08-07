@@ -9,8 +9,8 @@ type KeyPairManager struct {
 			State storage.State
 		}
 		Returns struct {
-			State storage.State
-			Error error
+			KeyPair storage.KeyPair
+			Error   error
 		}
 	}
 	RotateCall struct {
@@ -19,8 +19,8 @@ type KeyPairManager struct {
 			State storage.State
 		}
 		Returns struct {
-			State storage.State
-			Error error
+			KeyPair storage.KeyPair
+			Error   error
 		}
 	}
 }
@@ -28,13 +28,13 @@ type KeyPairManager struct {
 func (k *KeyPairManager) Sync(state storage.State) (storage.State, error) {
 	k.SyncCall.CallCount++
 	k.SyncCall.Receives.State = state
-	state.KeyPair = k.SyncCall.Returns.State.KeyPair
+	state.KeyPair = k.SyncCall.Returns.KeyPair
 	return state, k.SyncCall.Returns.Error
 }
 
 func (k *KeyPairManager) Rotate(state storage.State) (storage.State, error) {
 	k.RotateCall.CallCount++
 	k.RotateCall.Receives.State = state
-	state.KeyPair = k.RotateCall.Returns.State.KeyPair
+	state.KeyPair = k.RotateCall.Returns.KeyPair
 	return state, k.RotateCall.Returns.Error
 }

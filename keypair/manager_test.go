@@ -24,16 +24,12 @@ var _ = Describe("Manager", func() {
 			awsManager = &fakes.KeyPairManager{}
 			gcpManager = &fakes.KeyPairManager{}
 
-			awsManager.SyncCall.Returns.State = storage.State{
-				KeyPair: storage.KeyPair{
-					Name: "some-aws-keypair",
-				},
+			awsManager.SyncCall.Returns.KeyPair = storage.KeyPair{
+				Name: "some-aws-keypair",
 			}
 
-			gcpManager.SyncCall.Returns.State = storage.State{
-				KeyPair: storage.KeyPair{
-					Name: "some-gcp-keypair",
-				},
+			gcpManager.SyncCall.Returns.KeyPair = storage.KeyPair{
+				Name: "some-gcp-keypair",
 			}
 
 			keyPairManager = keypair.NewManager(awsManager, gcpManager)
@@ -123,16 +119,12 @@ var _ = Describe("Manager", func() {
 			awsManager = &fakes.KeyPairManager{}
 			gcpManager = &fakes.KeyPairManager{}
 
-			awsManager.RotateCall.Returns.State = storage.State{
-				KeyPair: storage.KeyPair{
-					Name: "some-new-aws-keypair",
-				},
+			awsManager.RotateCall.Returns.KeyPair = storage.KeyPair{
+				Name: "some-new-aws-keypair",
 			}
 
-			gcpManager.RotateCall.Returns.State = storage.State{
-				KeyPair: storage.KeyPair{
-					Name: "some-new-gcp-keypair",
-				},
+			gcpManager.RotateCall.Returns.KeyPair = storage.KeyPair{
+				Name: "some-new-gcp-keypair",
 			}
 
 			keyPairManager = keypair.NewManager(awsManager, gcpManager)
