@@ -51,7 +51,6 @@ func main() {
 	parsedFlags, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
-		os.Exit(1)
 	}
 
 	loadedState := parsedFlags.State
@@ -105,7 +104,6 @@ func main() {
 		err = gcpClientProvider.SetConfig(loadedState.GCP.ServiceAccountKey, loadedState.GCP.ProjectID, loadedState.GCP.Region, loadedState.GCP.Zone)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
-			os.Exit(1)
 		}
 	}
 	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider.Client(), logger)
