@@ -80,23 +80,23 @@ func main() {
 		Region:          loadedState.AWS.Region,
 	}
 
-	clientProvider := &clientmanager.ClientProvider{}
-	clientProvider.SetConfig(awsConfiguration)
+	awsClientProvider := &clientmanager.ClientProvider{}
+	awsClientProvider.SetConfig(awsConfiguration)
 
-	vpcStatusChecker := ec2.NewVPCStatusChecker(clientProvider)
-	awsKeyPairCreator := ec2.NewKeyPairCreator(clientProvider)
-	awsKeyPairDeleter := ec2.NewKeyPairDeleter(clientProvider, logger)
-	keyPairChecker := ec2.NewKeyPairChecker(clientProvider)
+	vpcStatusChecker := ec2.NewVPCStatusChecker(awsClientProvider)
+	awsKeyPairCreator := ec2.NewKeyPairCreator(awsClientProvider)
+	awsKeyPairDeleter := ec2.NewKeyPairDeleter(awsClientProvider, logger)
+	keyPairChecker := ec2.NewKeyPairChecker(awsClientProvider)
 	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(awsKeyPairCreator, keyPairChecker, logger)
-	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer, awsKeyPairDeleter, clientProvider)
-	awsAvailabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(clientProvider)
+	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer, awsKeyPairDeleter, awsClientProvider)
+	awsAvailabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(awsClientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
-	stackManager := cloudformation.NewStackManager(clientProvider, logger)
+	stackManager := cloudformation.NewStackManager(awsClientProvider, logger)
 	infrastructureManager := cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
-	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
-	certificateDeleter := iam.NewCertificateDeleter(clientProvider)
+	certificateDescriber := iam.NewCertificateDescriber(awsClientProvider)
+	certificateDeleter := iam.NewCertificateDeleter(awsClientProvider)
 	certificateValidator := certs.NewValidator()
-	userPolicyDeleter := iam.NewUserPolicyDeleter(clientProvider)
+	userPolicyDeleter := iam.NewUserPolicyDeleter(awsClientProvider)
 
 	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
@@ -166,7 +166,7 @@ func main() {
 	// Subcommands
 	awsUp := commands.NewAWSUp(
 		awsCredentialValidator, keyPairManager, boshManager,
-		cloudConfigManager, stateStore, clientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
+		cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
 		logger, awsCredentialValidator, cloudConfigManager,
