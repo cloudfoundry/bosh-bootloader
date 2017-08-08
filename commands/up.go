@@ -32,19 +32,10 @@ type envGetter interface {
 }
 
 type upConfig struct {
-	awsAccessKeyID       string
-	awsSecretAccessKey   string
-	awsRegion            string
-	awsBOSHAZ            string
-	gcpServiceAccountKey string
-	gcpProjectID         string
-	gcpZone              string
-	gcpRegion            string
-	iaas                 string
-	name                 string
-	opsFile              string
-	noDirector           bool
-	jumpbox              bool
+	name       string
+	opsFile    string
+	noDirector bool
+	jumpbox    bool
 }
 
 func NewUp(awsUp awsUp, gcpUp gcpUp, azureUp azureUp, envGetter envGetter, boshManager boshManager) Up {
