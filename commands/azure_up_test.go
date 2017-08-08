@@ -61,7 +61,7 @@ var _ = Describe("AzureUp", func() {
 						ClientSecret:   "client-secret",
 					},
 				})
-				Expect(err).To(MatchError("invalid credentials"))
+				Expect(err).To(MatchError("Error: credentials are invalid"))
 				Expect(logger.StepCall.CallCount).To(Equal(1))
 				Expect(logger.StepCall.Messages).To(Equal([]string{"verifying credentials"}))
 
