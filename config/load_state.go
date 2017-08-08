@@ -12,14 +12,21 @@ import (
 )
 
 type globalFlags struct {
-	Help                 bool   `short:"h" long:"help"`
-	Debug                bool   `short:"d" long:"debug"         env:"BBL_DEBUG"`
-	Version              bool   `short:"v" long:"version"`
-	StateDir             string `short:"s" long:"state-dir"     env:"BBL_STATE_DIR"`
-	IAAS                 string `long:"iaas"                    env:"BBL_IAAS"`
-	AWSAccessKeyID       string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
-	AWSSecretAccessKey   string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
-	AWSRegion            string `long:"aws-region"              env:"BBL_AWS_REGION"`
+	Help     bool   `short:"h" long:"help"`
+	Debug    bool   `short:"d" long:"debug"         env:"BBL_DEBUG"`
+	Version  bool   `short:"v" long:"version"`
+	StateDir string `short:"s" long:"state-dir"     env:"BBL_STATE_DIR"`
+	IAAS     string `long:"iaas"                    env:"BBL_IAAS"`
+
+	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
+	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
+	AWSRegion          string `long:"aws-region"              env:"BBL_AWS_REGION"`
+
+	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
+	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
+	AzureClientID       string `long:"azure-client-id"        env:"BBL_AZURE_CLIENT_ID"`
+	AzureClientSecret   string `long:"azure-client-secret"    env:"BBL_AZURE_CLIENT_SECRET"`
+
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
 	GCPZone              string `long:"gcp-zone"                env:"BBL_GCP_ZONE"`
@@ -111,6 +118,18 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		}
 		state.GCP.Region = globalFlags.GCPRegion
 	}
+	if globalFlags.AzureSubscriptionID != "" {
+		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
+	}
+	if globalFlags.AzureTenantID != "" {
+		state.Azure.TenantID = globalFlags.AzureTenantID
+	}
+	if globalFlags.AzureClientID != "" {
+		state.Azure.ClientID = globalFlags.AzureClientID
+	}
+	if globalFlags.AzureClientSecret != "" {
+		state.Azure.ClientSecret = globalFlags.AzureClientSecret
+	}
 
 	nonStatefulCommand := len(remainingArgs) == 0 || (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")
 	ignoreMissingFlags := globalFlags.Help || globalFlags.Version || nonStatefulCommand
@@ -126,11 +145,8 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 }
 
 func validate(state storage.State) error {
-	if state.IAAS == "" {
-		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
-	}
-	if state.IAAS != "gcp" && state.IAAS != "aws" {
-		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", state.IAAS)
+	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws" && state.IAAS != "azure") {
+		return errors.New("--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set")
 	}
 	if state.IAAS == "aws" {
 		err := validateAWSFlags(state.AWS)
@@ -140,6 +156,12 @@ func validate(state storage.State) error {
 	}
 	if state.IAAS == "gcp" {
 		err := validateGCPFlags(state.GCP)
+		if err != nil {
+			return err
+		}
+	}
+	if state.IAAS == "azure" {
+		err := validateAzureFlags(state.Azure)
 		if err != nil {
 			return err
 		}
@@ -172,6 +194,22 @@ func validateGCPFlags(gcpFlags storage.GCP) error {
 	}
 	if gcpFlags.Region == "" {
 		return errors.New("GCP region must be provided")
+	}
+	return nil
+}
+
+func validateAzureFlags(azureFlags storage.Azure) error {
+	if azureFlags.SubscriptionID == "" {
+		return errors.New("Azure subscription id must be provided")
+	}
+	if azureFlags.TenantID == "" {
+		return errors.New("Azure tenant id must be provided")
+	}
+	if azureFlags.ClientID == "" {
+		return errors.New("Azure client id must be provided")
+	}
+	if azureFlags.ClientSecret == "" {
+		return errors.New("Azure client secret must be provided")
 	}
 	return nil
 }

@@ -31,6 +31,13 @@ type AWS struct {
 	Region          string `json:"region"`
 }
 
+type Azure struct {
+	SubscriptionID string `json:"subscriptionId"`
+	TenantID       string `json:"tenantId"`
+	ClientID       string `json:"clientId"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
 type GCP struct {
 	ServiceAccountKey string   `json:"serviceAccountKey"`
 	ProjectID         string   `json:"projectID"`
@@ -68,6 +75,7 @@ type State struct {
 	NoDirector                 bool    `json:"noDirector"`
 	MigratedFromCloudFormation bool    `json:"migratedFromCloudFormation"`
 	AWS                        AWS     `json:"aws,omitempty"`
+	Azure                      Azure   `json:"azure,omitempty"`
 	GCP                        GCP     `json:"gcp,omitempty"`
 	KeyPair                    KeyPair `json:"keyPair,omitempty"`
 	Jumpbox                    Jumpbox `json:"jumpbox,omitempty"`
