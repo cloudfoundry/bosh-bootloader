@@ -6,7 +6,6 @@ import (
 )
 
 type AWSUp struct {
-	Name        string
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {

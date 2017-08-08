@@ -17,19 +17,21 @@ var _ = Describe("Up", func() {
 		command commands.Up
 
 		fakeAWSUp       *fakes.AWSUp
+		fakeAzureUp     *fakes.AzureUp
 		fakeGCPUp       *fakes.GCPUp
 		fakeEnvGetter   *fakes.EnvGetter
 		fakeBOSHManager *fakes.BOSHManager
 	)
 
 	BeforeEach(func() {
-		fakeAWSUp = &fakes.AWSUp{Name: "aws"}
-		fakeGCPUp = &fakes.GCPUp{Name: "gcp"}
+		fakeAWSUp = &fakes.AWSUp{}
+		fakeAzureUp = &fakes.AzureUp{}
+		fakeGCPUp = &fakes.GCPUp{}
 		fakeEnvGetter = &fakes.EnvGetter{}
 		fakeBOSHManager = &fakes.BOSHManager{}
 		fakeBOSHManager.VersionCall.Returns.Version = "2.0.24"
 
-		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeEnvGetter, fakeBOSHManager)
+		command = commands.NewUp(fakeAWSUp, fakeGCPUp, fakeAzureUp, fakeEnvGetter, fakeBOSHManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -103,6 +105,33 @@ var _ = Describe("Up", func() {
 	})
 
 	Describe("Execute", func() {
+		Context("when the iaas is aws", func() {
+			It("it works", func() {
+				err := command.Execute([]string{}, storage.State{IAAS: "aws"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
+			})
+		})
+
+		Context("when the iaas is azure", func() {
+			It("it works", func() {
+				err := command.Execute([]string{}, storage.State{IAAS: "azure"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeAzureUp.ExecuteCall.CallCount).To(Equal(1))
+			})
+		})
+
+		Context("when the iaas is gcp", func() {
+			It("it works", func() {
+				err := command.Execute([]string{}, storage.State{IAAS: "gcp"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+			})
+		})
+
 		Context("when an ops-file is provided via command line flag", func() {
 			It("populates the aws config with the correct ops-file path", func() {
 				err := command.Execute([]string{
@@ -110,7 +139,6 @@ var _ = Describe("Up", func() {
 				}, storage.State{IAAS: "aws"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
 				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.OpsFilePath).To(Equal("some-ops-file-path"))
 			})
 
@@ -131,7 +159,6 @@ var _ = Describe("Up", func() {
 				}, storage.State{IAAS: "gcp"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
 				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.Jumpbox).To(Equal(true))
 			})
 		})
