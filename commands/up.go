@@ -9,6 +9,7 @@ import (
 
 type Up struct {
 	awsUp       awsUp
+	azureUp     azureUp
 	gcpUp       gcpUp
 	envGetter   envGetter
 	boshManager boshManager
@@ -20,6 +21,10 @@ type awsUp interface {
 
 type gcpUp interface {
 	Execute(gcpUpConfig GCPUpConfig, state storage.State) error
+}
+
+type azureUp interface {
+	Execute(azureUpConfig AzureUpConfig, state storage.State) error
 }
 
 type envGetter interface {
@@ -42,9 +47,10 @@ type upConfig struct {
 	jumpbox              bool
 }
 
-func NewUp(awsUp awsUp, gcpUp gcpUp, envGetter envGetter, boshManager boshManager) Up {
+func NewUp(awsUp awsUp, gcpUp gcpUp, azureUp azureUp, envGetter envGetter, boshManager boshManager) Up {
 	return Up{
 		awsUp:       awsUp,
+		azureUp:     azureUp,
 		gcpUp:       gcpUp,
 		envGetter:   envGetter,
 		boshManager: boshManager,
@@ -91,6 +97,8 @@ func (u Up) Execute(args []string, state storage.State) error {
 			NoDirector:  config.noDirector,
 			Jumpbox:     config.jumpbox,
 		}, state)
+	case "azure":
+		err = u.azureUp.Execute(AzureUpConfig{}, state)
 	}
 
 	if err != nil {

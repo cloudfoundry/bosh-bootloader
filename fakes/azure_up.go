@@ -5,12 +5,13 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type GCPUp struct {
+type AzureUp struct {
+	Name        string
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {
-			GCPUpConfig commands.GCPUpConfig
-			State       storage.State
+			AzureUpConfig commands.AzureUpConfig
+			State         storage.State
 		}
 		Returns struct {
 			Error error
@@ -18,9 +19,9 @@ type GCPUp struct {
 	}
 }
 
-func (u *GCPUp) Execute(gcpUpConfig commands.GCPUpConfig, state storage.State) error {
+func (u *AzureUp) Execute(azureUpConfig commands.AzureUpConfig, state storage.State) error {
 	u.ExecuteCall.CallCount++
-	u.ExecuteCall.Receives.GCPUpConfig = gcpUpConfig
+	u.ExecuteCall.Receives.AzureUpConfig = azureUpConfig
 	u.ExecuteCall.Receives.State = state
 	return u.ExecuteCall.Returns.Error
 }

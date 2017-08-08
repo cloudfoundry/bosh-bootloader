@@ -182,6 +182,8 @@ func main() {
 		terraformManager,
 	)
 
+	azureUp := commands.NewAzureUp()
+
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
@@ -205,7 +207,7 @@ func main() {
 	commandSet := application.CommandSet{}
 	commandSet["help"] = usage
 	commandSet["version"] = commands.NewVersion(Version, logger)
-	commandSet["up"] = commands.NewUp(awsUp, gcpUp, envGetter, boshManager)
+	commandSet["up"] = commands.NewUp(awsUp, gcpUp, azureUp, envGetter, boshManager)
 	commandSet["destroy"] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
