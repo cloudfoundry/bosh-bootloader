@@ -227,7 +227,7 @@ func (e Executor) Outputs(tfState string) (map[string]interface{}, error) {
 		return map[string]interface{}{}, err
 	}
 
-	err = e.cmd.Run(os.Stdout, templateDir, []string{"init"}, e.debug)
+	err = e.cmd.Run(os.Stdout, templateDir, []string{"init"}, false)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
