@@ -2,14 +2,29 @@ package commands
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
+type azureClient interface {
+	ValidateCredentials(tenantID, clientID, clientSecret string) error
+}
+
 type AzureUpConfig struct{}
 
-type AzureUp struct{}
+type AzureUp struct {
+	azureClient azureClient
+	logger      logger
+}
 
-func NewAzureUp() AzureUp {
-	return AzureUp{}
+func NewAzureUp(azureClient azureClient, logger logger) AzureUp {
+	return AzureUp{
+		azureClient: azureClient,
+		logger:      logger,
+	}
 }
 
 func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
+	u.logger.Step("verifying credentials")
+	err := u.azureClient.ValidateCredentials(state.Azure.TenantID, state.Azure.ClientID, state.Azure.ClientSecret)
+	if err != nil {
+		return err
+	}
 	return nil
 }

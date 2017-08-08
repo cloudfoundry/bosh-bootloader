@@ -18,6 +18,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
@@ -182,7 +183,8 @@ func main() {
 		terraformManager,
 	)
 
-	azureUp := commands.NewAzureUp()
+	azureClient := azure.NewClient()
+	azureUp := commands.NewAzureUp(azureClient, logger)
 
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
