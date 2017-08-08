@@ -8,6 +8,18 @@
   version = "v0.9.0"
 
 [[projects]]
+  name = "github.com/Azure/azure-sdk-for-go"
+  packages = ["arm/resources/resources"]
+  revision = "2d49bb8f2cee530cc16f1f1a9f0aae763dee257d"
+  version = "v10.2.1-beta"
+
+[[projects]]
+  name = "github.com/Azure/go-autorest"
+  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/to","autorest/validation"]
+  revision = "f6e08fe5e4d45c9a66e40196d3fed5f37331d224"
+  version = "v8.1.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/armon/go-socks5"
   packages = ["."]
@@ -54,6 +66,12 @@
   packages = ["semver"]
   revision = "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
   version = "v0.2.0"
+
+[[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "d2709f9f1f31ebcda9651b03077758c1f3a0018c"
+  version = "v3.0.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"

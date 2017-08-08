@@ -42,6 +42,7 @@ var _ = Describe("AzureUp", func() {
 
 			Expect(azureClient.ValidateCredentialsCall.CallCount).To(Equal(1))
 
+			Expect(azureClient.ValidateCredentialsCall.Receives.SubscriptionID).To(Equal("subscription-id"))
 			Expect(azureClient.ValidateCredentialsCall.Receives.TenantID).To(Equal("tenant-id"))
 			Expect(azureClient.ValidateCredentialsCall.Receives.ClientID).To(Equal("client-id"))
 			Expect(azureClient.ValidateCredentialsCall.Receives.ClientSecret).To(Equal("client-secret"))
@@ -66,6 +67,7 @@ var _ = Describe("AzureUp", func() {
 
 				Expect(azureClient.ValidateCredentialsCall.CallCount).To(Equal(1))
 
+				Expect(azureClient.ValidateCredentialsCall.Receives.SubscriptionID).To(Equal("subscription-id"))
 				Expect(azureClient.ValidateCredentialsCall.Receives.TenantID).To(Equal("tenant-id"))
 				Expect(azureClient.ValidateCredentialsCall.Receives.ClientID).To(Equal("client-id"))
 				Expect(azureClient.ValidateCredentialsCall.Receives.ClientSecret).To(Equal("client-secret"))
