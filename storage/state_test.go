@@ -40,6 +40,12 @@ var _ = Describe("Store", func() {
 					SecretAccessKey: "some-aws-secret-access-key",
 					Region:          "some-region",
 				},
+				Azure: storage.Azure{
+					SubscriptionID: "subscription-id",
+					TenantID:       "tenant-id",
+					ClientID:       "client-id",
+					ClientSecret:   "client-secret",
+				},
 				GCP: storage.GCP{
 					ServiceAccountKey: "some-service-account-key",
 					ProjectID:         "some-project-id",
@@ -122,6 +128,12 @@ var _ = Describe("Store", func() {
 					"accessKeyId": "some-aws-access-key-id",
 					"secretAccessKey": "some-aws-secret-access-key",
 					"region": "some-region"
+				},
+				"azure": {
+					"subscriptionId": "subscription-id",
+					"tenantId": "tenant-id",
+					"clientId": "client-id",
+					"clientSecret": "client-secret"
 				},
 				"gcp": {
 					"serviceAccountKey": "some-service-account-key",

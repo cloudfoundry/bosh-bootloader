@@ -649,6 +649,283 @@ var _ = Describe("InitializeState", func() {
 		})
 	})
 
+	Context("using Azure", func() {
+		Context("when a previous state does not exist", func() {
+			Context("when configuration is passed in by flag", func() {
+				Context("when configuration is valid", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{
+							"bbl", "up", "--name", "some-env-id",
+							"--iaas", "azure",
+							"--azure-subscription-id", "subscription-id",
+							"--azure-tenant-id", "tenant-id",
+							"--azure-client-id", "client-id",
+							"--azure-client-secret", "client-secret",
+						}
+					})
+
+					It("returns a state object containing configuration flags", func() {
+						parsedFlags, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						state := parsedFlags.State
+						Expect(state.IAAS).To(Equal("azure"))
+						Expect(state.Azure.SubscriptionID).To(Equal("subscription-id"))
+						Expect(state.Azure.TenantID).To(Equal("tenant-id"))
+						Expect(state.Azure.ClientID).To(Equal("client-id"))
+						Expect(state.Azure.ClientSecret).To(Equal("client-secret"))
+					})
+
+					It("returns the remaining arguments", func() {
+						parsedFlags, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up", "--name", "some-env-id"}))
+					})
+
+					Context("when configuration includes global flags", func() {
+						BeforeEach(func() {
+							args = append([]string{
+								"bbl",
+								"--help",
+								"--debug",
+								"--version",
+								"--state-dir", "some-state-dir",
+							}, args[1:]...)
+						})
+
+						It("returns global flags", func() {
+							parsedFlags, err := c.Bootstrap(args)
+
+							Expect(err).NotTo(HaveOccurred())
+
+							Expect(parsedFlags.Help).To(BeTrue())
+							Expect(parsedFlags.Debug).To(BeTrue())
+							Expect(parsedFlags.Version).To(BeTrue())
+							Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
+						})
+					})
+				})
+
+				Context("when configuration is invalid", func() {
+					var args []string
+
+					Context("when subscription id is missing", func() {
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up",
+								"--iaas", "azure",
+								"--azure-tenant-id", "tenant-id",
+								"--azure-client-id", "client-id",
+								"--azure-client-secret", "client-secret",
+							}
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+
+							Expect(err).To(MatchError(ContainSubstring("Azure subscription id must be provided")))
+						})
+					})
+
+					Context("when tenant id is missing", func() {
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up", "--name", "some-env-id",
+								"--iaas", "azure",
+								"--azure-subscription-id", "subscription-id",
+								"--azure-client-id", "client-id",
+								"--azure-client-secret", "client-secret",
+							}
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+
+							Expect(err).To(MatchError(ContainSubstring("Azure tenant id must be provided")))
+						})
+					})
+
+					Context("when client id is missing", func() {
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up", "--name", "some-env-id",
+								"--iaas", "azure",
+								"--azure-subscription-id", "subscription-id",
+								"--azure-tenant-id", "tenant-id",
+								"--azure-client-secret", "client-secret",
+							}
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+
+							Expect(err).To(MatchError(ContainSubstring("Azure client id must be provided")))
+						})
+					})
+
+					Context("when client secret is missing", func() {
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up", "--name", "some-env-id",
+								"--iaas", "azure",
+								"--azure-subscription-id", "subscription-id",
+								"--azure-tenant-id", "tenant-id",
+								"--azure-client-id", "client-id",
+							}
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+
+							Expect(err).To(MatchError(ContainSubstring("Azure client secret must be provided")))
+						})
+					})
+				})
+			})
+
+			Context("when configuration is passed in by env vars", func() {
+				var args []string
+
+				BeforeEach(func() {
+					args = []string{"bbl", "up"}
+
+					os.Setenv("BBL_IAAS", "azure")
+					os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id")
+					os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")
+					os.Setenv("BBL_AZURE_CLIENT_ID", "azure-client-id")
+					os.Setenv("BBL_AZURE_CLIENT_SECRET", "azure-client-secret")
+				})
+
+				It("returns a state containing configuration", func() {
+					parsedFlags, err := c.Bootstrap(args)
+
+					Expect(err).NotTo(HaveOccurred())
+
+					state := parsedFlags.State
+
+					Expect(state.IAAS).To(Equal("azure"))
+					Expect(state.Azure.SubscriptionID).To(Equal("azure-subscription-id"))
+					Expect(state.Azure.TenantID).To(Equal("azure-tenant-id"))
+					Expect(state.Azure.ClientID).To(Equal("azure-client-id"))
+					Expect(state.Azure.ClientSecret).To(Equal("azure-client-secret"))
+				})
+
+				It("returns the remaining arguments", func() {
+					parsedFlags, err := c.Bootstrap(args)
+
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up"}))
+				})
+
+				Context("when configuration includes global flags", func() {
+					BeforeEach(func() {
+						os.Setenv("BBL_DEBUG", "true")
+						os.Setenv("BBL_STATE_DIR", "some-state-dir")
+					})
+
+					AfterEach(func() {
+						os.Unsetenv("BBL_DEBUG")
+						os.Unsetenv("BBL_STATE_DIR")
+					})
+
+					It("returns global flags", func() {
+						parsedFlags, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(parsedFlags.Debug).To(BeTrue())
+						Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
+					})
+				})
+			})
+		})
+
+		Context("when a previous state exists", func() {
+			var getStateArg string
+
+			BeforeEach(func() {
+				getState := func(dir string) (storage.State, error) {
+					getStateArg = dir
+
+					return storage.State{
+						IAAS: "azure",
+						Azure: storage.Azure{
+							SubscriptionID: "subscription-id",
+							TenantID:       "tenant-id",
+							ClientID:       "client-id",
+							ClientSecret:   "client-secret",
+						},
+						EnvID: "some-env-id",
+					}, nil
+				}
+				c = config.NewConfig(getState)
+			})
+
+			Context("when no configuration is passed in", func() {
+				It("returns state with existing configuration", func() {
+					parsedFlags, err := c.Bootstrap([]string{
+						"bbl",
+						"create-lbs",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
+
+					workingDir, err := os.Getwd()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(getStateArg).To(Equal(workingDir))
+				})
+
+				Context("when state dir is specified", func() {
+					It("uses that state dir", func() {
+						_, err := c.Bootstrap([]string{
+							"bbl",
+							"create-lbs",
+							"--state-dir", "some-state-dir",
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(getStateArg).To(Equal("some-state-dir"))
+					})
+				})
+			})
+
+			Context("when valid matching configuration is passed in", func() {
+				It("returns state with existing configuration", func() {
+					parsedFlags, err := c.Bootstrap([]string{
+						"bbl",
+						"create-lbs",
+						"--iaas", "azure",
+						"--azure-subscription-id", "subscription-id",
+						"--azure-tenant-id", "tenant-id",
+						"--azure-client-id", "client-id",
+						"--azure-client-secret", "client-secret",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
+				})
+			})
+
+			DescribeTable("when non-matching configuration is passed in",
+				func(args []string, expected string) {
+					_, err := c.Bootstrap(args)
+
+					Expect(err).To(MatchError(expected))
+				},
+				Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "aws"},
+					"The iaas type cannot be changed for an existing environment. The current iaas type is azure."),
+			)
+		})
+	})
+
 	DescribeTable("when IAAS is not set",
 		func(args []string, expectError bool, expected string) {
 			_, err := c.Bootstrap(args)
@@ -666,9 +943,9 @@ var _ = Describe("InitializeState", func() {
 				"--aws-secret-access-key", "some-secret-key",
 				"--aws-region", "some-region",
 			},
-			true, "--iaas [gcp, aws] must be provided or BBL_IAAS must be set"),
+			true, "--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set"),
 		Entry("when IAAS is unsupported", []string{"bbl", "up", "--iaas", "not-a-real-iaas"}, true,
-			`"not-a-real-iaas" is an invalid iaas type, supported values are: [gcp, aws]`),
+			"--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set"),
 		Entry("when help flag is set", []string{"bbl", "up", "--help"}, false, ""),
 		Entry("when help command is used", []string{"bbl", "help"}, false, ""),
 		Entry("when no command is used", []string{"bbl"}, false, ""),
