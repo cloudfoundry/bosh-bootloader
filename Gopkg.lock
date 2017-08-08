@@ -38,24 +38,6 @@
   version = "v3.5.0"
 
 [[projects]]
-  name = "github.com/bmatcuk/doublestar"
-  packages = ["."]
-  revision = "b3608229437ba4dc33dae64d56a79a2a73f1f6b2"
-  version = "v1.0.9"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/charlievieth/fs"
-  packages = ["."]
-  revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/cloudfoundry/bosh-utils"
-  packages = ["crypto","errors","logger","system"]
-  revision = "81d5c1789d1b40f426b98b2cc83e0fe4e2213834"
-
-[[projects]]
   branch = "master"
   name = "github.com/cloudfoundry/multierror"
   packages = ["."]
@@ -172,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "833a3b72b84c23dd6ffd47660eecf14c348941c71f2917ac59ed7655dfb4c098"
+  inputs-digest = "ed140b63510f409fdf17b207812506ab9df93ca981c7066f513ed43c16cca38b"
   solver-name = "gps-cdcl"
   solver-version = 1
