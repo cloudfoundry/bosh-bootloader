@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
@@ -64,6 +65,14 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 		}
 	}
 
+	if state.IAAS == "" && config.iaas == "" {
+		return errors.New("--iaas [gcp, aws] must be provided or BBL_IAAS must be set")
+	}
+
+	if state.IAAS != "" && config.iaas != "" && state.IAAS != config.iaas {
+		return fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
+	}
+
 	if state.EnvID != "" && config.name != "" && config.name != state.EnvID {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
@@ -107,6 +116,8 @@ func (u Up) Execute(args []string, state storage.State) error {
 			NoDirector:        config.noDirector,
 			Jumpbox:           config.jumpbox,
 		}, state)
+	default:
+		return fmt.Errorf("%q is an invalid iaas type, supported values are: [gcp, aws]", desiredIAAS)
 	}
 
 	if err != nil {
@@ -121,7 +132,7 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 
 	upFlags := flags.New("up")
 
-	upFlags.String(&config.iaas, "iaas", "")
+	upFlags.String(&config.iaas, "iaas", u.envGetter.Get("BBL_IAAS"))
 	upFlags.String(&config.name, "name", "")
 	upFlags.String(&config.opsFile, "ops-file", "")
 	upFlags.Bool(&config.noDirector, "", "no-director", false)
