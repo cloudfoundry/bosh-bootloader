@@ -1,8 +1,8 @@
-// Package resources implements the Azure ARM Resources service API version
-// 2016-09-01.
+// Package storage implements the Azure ARM Storage service API version
+// 2016-12-01.
 //
-// Provides operations for working with resources and resource groups.
-package resources
+// The Azure Storage Management API.
+package storage
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -27,11 +27,11 @@ import (
 )
 
 const (
-	// DefaultBaseURI is the default URI used for the service Resources
+	// DefaultBaseURI is the default URI used for the service Storage
 	DefaultBaseURI = "https://management.azure.com"
 )
 
-// ManagementClient is the base client for Resources.
+// ManagementClient is the base client for Storage.
 type ManagementClient struct {
 	autorest.Client
 	BaseURI        string
