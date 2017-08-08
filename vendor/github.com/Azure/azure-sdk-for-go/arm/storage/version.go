@@ -1,4 +1,4 @@
-package resources
+package storage
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -19,7 +19,7 @@ package resources
 
 // UserAgent returns the UserAgent string to use when sending http.Requests.
 func UserAgent() string {
-	return "Azure-SDK-For-Go/v10.2.0-beta arm-resources/2016-09-01"
+	return "Azure-SDK-For-Go/v10.2.0-beta arm-storage/2016-12-01"
 }
 
 // Version returns the semantic version (see http://semver.org) of the client.

@@ -1,7 +1,8 @@
 package azure
 
 import (
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
+	"github.com/Azure/azure-sdk-for-go/arm/storage"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 )
@@ -17,12 +18,16 @@ func (a AzureClient) ValidateCredentials(subscriptionID, tenantID, clientID, cli
 	if err != nil {
 		return err
 	}
-	_, err = adal.NewServicePrincipalToken(*oauthConfig, clientID, clientSecret, azure.PublicCloud.ResourceManagerEndpoint)
+	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, clientID, clientSecret, azure.PublicCloud.ResourceManagerEndpoint)
 	if err != nil {
 		return err
 	}
-	gc := resources.NewGroupClient(subscriptionID)
-	_, err = gc.CheckExistence("invalid-resource-name", "", "", "", "")
+
+	ac := storage.NewAccountsClient(subscriptionID)
+	ac.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	ac.Sender = autorest.CreateSender(autorest.AsIs())
+
+	_, err = ac.List()
 	if err != nil {
 		return err
 	}
