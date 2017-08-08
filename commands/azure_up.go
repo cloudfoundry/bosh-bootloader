@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"errors"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type azureClient interface {
 	ValidateCredentials(subscriptionID, tenantID, clientID, clientSecret string) error
@@ -24,7 +28,7 @@ func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
 	u.logger.Step("verifying credentials")
 	err := u.azureClient.ValidateCredentials(state.Azure.SubscriptionID, state.Azure.TenantID, state.Azure.ClientID, state.Azure.ClientSecret)
 	if err != nil {
-		return err
+		return errors.New("Error: credentials are invalid")
 	}
 	return nil
 }
