@@ -89,7 +89,7 @@ var _ = Describe("Executor", func() {
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-					"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir),
+					"-o", fmt.Sprintf("%s/aws-external-ip-not-recommended.yml", tempDir),
 					"-o", fmt.Sprintf("%s/iam-instance-profile.yml", tempDir)})
 
 				_, _, args := cmd.RunArgsForCall(0)
@@ -131,7 +131,7 @@ var _ = Describe("Executor", func() {
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-					"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir)})
+					"-o", fmt.Sprintf("%s/gcp-external-ip-not-recommended.yml", tempDir)})
 
 				_, _, args := cmd.RunArgsForCall(0)
 				Expect(args).To(Equal(expectedArgs))
@@ -278,7 +278,7 @@ networks
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-					"-o", fmt.Sprintf("%s/external-ip-not-recommended.yml", tempDir)})
+					"-o", fmt.Sprintf("%s/gcp-external-ip-not-recommended.yml", tempDir)})
 
 				_, _, args := cmd.RunArgsForCall(0)
 				Expect(args).To(Equal(expectedArgs))

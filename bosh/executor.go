@@ -87,49 +87,30 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 		return JumpboxInterpolateOutput{}, err
 	}
 
-	deploymentVarsPath := filepath.Join(tempDir, "jumpbox-deployment-vars.yml")
-	variablesPath := filepath.Join(tempDir, "variables.yml")
-	manifestPath := filepath.Join(tempDir, "jumpbox.yml")
-	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
+	var jumpboxSetupFiles = map[string][]byte{
+		"jumpbox-deployment-vars.yml": []byte(interpolateInput.JumpboxDeploymentVars),
+		"jumpbox.yml":                 MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml"),
+		"cpi.yml":                     MustAsset(fmt.Sprintf("vendor/github.com/cppforlife/jumpbox-deployment/%s/cpi.yml", interpolateInput.IAAS)),
+	}
 
 	if interpolateInput.Variables != "" {
-		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
+		jumpboxSetupFiles["variables.yml"] = []byte(interpolateInput.Variables)
+	}
+
+	for path, contents := range jumpboxSetupFiles {
+		err = e.writeFile(filepath.Join(tempDir, path), contents, os.ModePerm)
 		if err != nil {
+			//not tested
 			return JumpboxInterpolateOutput{}, err
 		}
 	}
 
-	err = e.writeFile(deploymentVarsPath, []byte(interpolateInput.JumpboxDeploymentVars), os.ModePerm)
-	if err != nil {
-		return JumpboxInterpolateOutput{}, err
-	}
-
-	manifestContents, err := Asset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml")
-	if err != nil {
-		//not tested
-		return JumpboxInterpolateOutput{}, err
-	}
-	err = e.writeFile(manifestPath, manifestContents, os.ModePerm)
-	if err != nil {
-		return JumpboxInterpolateOutput{}, err
-	}
-
-	cpiOpsFileContents, err := Asset(fmt.Sprintf("vendor/github.com/cppforlife/jumpbox-deployment/%s/cpi.yml", interpolateInput.IAAS))
-	if err != nil {
-		//not tested
-		return JumpboxInterpolateOutput{}, err
-	}
-	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
-	if err != nil {
-		return JumpboxInterpolateOutput{}, err
-	}
-
 	args := []string{
-		"interpolate", manifestPath,
+		"interpolate", filepath.Join(tempDir, "jumpbox.yml"),
 		"--var-errs",
-		"--vars-store", variablesPath,
-		"--vars-file", deploymentVarsPath,
-		"-o", cpiOpsFilePath,
+		"--vars-store", filepath.Join(tempDir, "variables.yml"),
+		"--vars-file", filepath.Join(tempDir, "jumpbox-deployment-vars.yml"),
+		"-o", filepath.Join(tempDir, "cpi.yml"),
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -138,7 +119,7 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 		return JumpboxInterpolateOutput{}, err
 	}
 
-	varsStore, err := e.readFile(variablesPath)
+	varsStore, err := e.readFile(filepath.Join(tempDir, "variables.yml"))
 	if err != nil {
 		return JumpboxInterpolateOutput{}, err
 	}
@@ -156,135 +137,54 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		return InterpolateOutput{}, err
 	}
 
-	deploymentVarsPath := filepath.Join(tempDir, "deployment-vars.yml")
-	userOpsFilePath := filepath.Join(tempDir, "user-ops-file.yml")
-	variablesPath := filepath.Join(tempDir, "variables.yml")
-	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
-	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
-	iamInstanceProfileOpsFilePath := filepath.Join(tempDir, "iam-instance-profile.yml")
-	boshDirectorEphemeralIPOpsFilepath := filepath.Join(tempDir, "bosh-director-ephemeral-ip-ops.yml")
+	var directorSetupFiles = map[string][]byte{
+		"deployment-vars.yml":                 []byte(interpolateInput.DeploymentVars),
+		"user-ops-file.yml":                   []byte(interpolateInput.OpsFile),
+		"bosh.yml":                            MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
+		"cpi.yml":                             MustAsset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS)),
+		"iam-instance-profile.yml":            MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
+		"bosh-director-ephemeral-ip-ops.yml":  []byte(boshDirectorEphemeralIPOps),
+		"jumpbox-user.yml":                    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
+		"gcp-external-ip-not-recommended.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
+		"aws-external-ip-not-recommended.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml"),
+	}
 
 	if interpolateInput.Variables != "" {
-		err = e.writeFile(variablesPath, []byte(interpolateInput.Variables), os.ModePerm)
+		directorSetupFiles["variables.yml"] = []byte(interpolateInput.Variables)
+	}
+
+	for path, contents := range directorSetupFiles {
+		err = e.writeFile(filepath.Join(tempDir, path), contents, os.ModePerm)
 		if err != nil {
 			//not tested
 			return InterpolateOutput{}, err
 		}
 	}
 
-	err = e.writeFile(deploymentVarsPath, []byte(interpolateInput.DeploymentVars), os.ModePerm)
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
+	var args = []string{
+		"interpolate", filepath.Join(tempDir, "bosh.yml"),
+		"--var-errs",
+		"--var-errs-unused",
+		"--vars-store", filepath.Join(tempDir, "variables.yml"),
+		"--vars-file", filepath.Join(tempDir, "deployment-vars.yml"),
+		"-o", filepath.Join(tempDir, "cpi.yml"),
 	}
 
-	err = e.writeFile(userOpsFilePath, []byte(interpolateInput.OpsFile), os.ModePerm)
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
+	if interpolateInput.JumpboxDeploymentVars == "" {
+		args = append(args,
+			"-o", filepath.Join(tempDir, "jumpbox-user.yml"),
+		)
 
-	boshManifestContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml")
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
-	err = e.writeFile(boshManifestPath, boshManifestContents, os.ModePerm)
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
-
-	cpiOpsFileContents, err := Asset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS))
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
-	err = e.writeFile(cpiOpsFilePath, cpiOpsFileContents, os.ModePerm)
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
-
-	err = e.writeFile(boshDirectorEphemeralIPOpsFilepath, []byte(boshDirectorEphemeralIPOps), os.ModePerm)
-	if err != nil {
-		//not tested
-		return InterpolateOutput{}, err
-	}
-
-	var args []string
-
-	if interpolateInput.JumpboxDeploymentVars != "" {
-		args = []string{
-			"interpolate", boshManifestPath,
-			"--var-errs",
-			"--var-errs-unused",
-			"--vars-store", variablesPath,
-			"--vars-file", deploymentVarsPath,
-			"-o", cpiOpsFilePath,
-			"-o", boshDirectorEphemeralIPOpsFilepath,
+		switch interpolateInput.IAAS {
+		case "aws":
+			args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"), "-o", filepath.Join(tempDir, "iam-instance-profile.yml"))
+		case "gcp":
+			args = append(args, "-o", filepath.Join(tempDir, "gcp-external-ip-not-recommended.yml"))
 		}
 	} else {
-		jumpboxUserOpsFilePath := filepath.Join(tempDir, "jumpbox-user.yml")
-		jumpboxUserOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml")
-		if err != nil {
-			//not tested
-			return InterpolateOutput{}, err
-		}
-		err = e.writeFile(jumpboxUserOpsFilePath, jumpboxUserOpsFileContents, os.ModePerm)
-		if err != nil {
-			//not tested
-			return InterpolateOutput{}, err
-		}
-
-		externalIPNotRecommendedOpsFilePath := filepath.Join(tempDir, "external-ip-not-recommended.yml")
-		var externalIPNotRecommendedOpsFileContents []byte
-		switch interpolateInput.IAAS {
-		case "gcp":
-			externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml")
-			if err != nil {
-				//not tested
-				return InterpolateOutput{}, err
-			}
-		case "aws":
-			externalIPNotRecommendedOpsFileContents, err = Asset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml")
-			if err != nil {
-				//not tested
-				return InterpolateOutput{}, err
-			}
-
-			iamInstanceProfileOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml")
-			if err != nil {
-				//not tested
-				return InterpolateOutput{}, err
-			}
-			err = e.writeFile(iamInstanceProfileOpsFilePath, iamInstanceProfileOpsFileContents, os.ModePerm)
-			if err != nil {
-				//not tested
-				return InterpolateOutput{}, err
-			}
-		}
-
-		err = e.writeFile(externalIPNotRecommendedOpsFilePath, externalIPNotRecommendedOpsFileContents, os.ModePerm)
-		if err != nil {
-			//not tested
-			return InterpolateOutput{}, err
-		}
-
-		args = []string{
-			"interpolate", boshManifestPath,
-			"--var-errs",
-			"--var-errs-unused",
-			"--vars-store", variablesPath,
-			"--vars-file", deploymentVarsPath,
-			"-o", cpiOpsFilePath,
-			"-o", jumpboxUserOpsFilePath,
-			"-o", externalIPNotRecommendedOpsFilePath,
-		}
-
-		if interpolateInput.IAAS == "aws" {
-			args = append(args, "-o", iamInstanceProfileOpsFilePath)
-		}
+		args = append(args,
+			"-o", filepath.Join(tempDir, "bosh-director-ephemeral-ip-ops.yml"),
+		)
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -294,18 +194,18 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	}
 
 	if interpolateInput.OpsFile != "" {
-		err = e.writeFile(boshManifestPath, buffer.Bytes(), os.ModePerm)
+		err = e.writeFile(filepath.Join(tempDir, "bosh.yml"), buffer.Bytes(), os.ModePerm)
 		if err != nil {
 			//not tested
 			return InterpolateOutput{}, err
 		}
 
 		args = []string{
-			"interpolate", boshManifestPath,
+			"interpolate", filepath.Join(tempDir, "bosh.yml"),
 			"--var-errs",
-			"--vars-store", variablesPath,
-			"--vars-file", deploymentVarsPath,
-			"-o", userOpsFilePath,
+			"--vars-store", filepath.Join(tempDir, "variables.yml"),
+			"--vars-file", filepath.Join(tempDir, "deployment-vars.yml"),
+			"-o", filepath.Join(tempDir, "user-ops-file.yml"),
 		}
 
 		buffer = bytes.NewBuffer([]byte{})
@@ -315,7 +215,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		}
 	}
 
-	varsStore, err := e.readFile(variablesPath)
+	varsStore, err := e.readFile(filepath.Join(tempDir, "variables.yml"))
 	if err != nil {
 		return InterpolateOutput{}, err
 	}
