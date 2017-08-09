@@ -39,6 +39,6 @@ var _ = Describe("bbl latest-error", func() {
 
 		session := executeCommand(args, 0)
 
-		Expect(session.Out.Contents()).To(ContainSubstring("some terraform output"))
+		Expect(string(session.Out.Contents())).To(ContainSubstring("some terraform output"))
 	})
 })

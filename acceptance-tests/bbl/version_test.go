@@ -29,7 +29,7 @@ var _ = Describe("bbl", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("bbl dev"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("bbl dev"))
 			})
 
 			Context("bbl provided version", func() {
@@ -49,8 +49,8 @@ var _ = Describe("bbl", func() {
 
 					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0))
-					Expect(session.Out.Contents()).To(ContainSubstring("bbl 1.2.3"))
-					Expect(session.Out.Contents()).To(ContainSubstring(fmt.Sprintf("(%s/%s)", runtime.GOOS, runtime.GOARCH)))
+					Expect(string(session.Out.Contents())).To(ContainSubstring("bbl 1.2.3"))
+					Expect(string(session.Out.Contents())).To(ContainSubstring(fmt.Sprintf("(%s/%s)", runtime.GOOS, runtime.GOARCH)))
 				})
 			})
 		})
@@ -61,7 +61,7 @@ var _ = Describe("bbl", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(ContainSubstring("bbl dev"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("bbl dev"))
 			})
 
 			Context("bbl provided version", func() {
@@ -81,8 +81,8 @@ var _ = Describe("bbl", func() {
 
 					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0))
-					Expect(session.Out.Contents()).To(ContainSubstring("bbl 1.2.3"))
-					Expect(session.Out.Contents()).To(ContainSubstring(fmt.Sprintf("(%s/%s)", runtime.GOOS, runtime.GOARCH)))
+					Expect(string(session.Out.Contents())).To(ContainSubstring("bbl 1.2.3"))
+					Expect(string(session.Out.Contents())).To(ContainSubstring(fmt.Sprintf("(%s/%s)", runtime.GOOS, runtime.GOARCH)))
 				})
 			})
 		})
