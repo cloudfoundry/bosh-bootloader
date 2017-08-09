@@ -107,7 +107,7 @@ func (u Up) parseArgs(args []string) (upConfig, error) {
 	upFlags.String(&config.name, "name", "")
 	upFlags.String(&config.opsFile, "ops-file", "")
 	upFlags.Bool(&config.noDirector, "", "no-director", false)
-	upFlags.Bool(&config.jumpbox, "", "jumpbox", false)
+	upFlags.Bool(&config.jumpbox, "", "credhub", false)
 
 	err := upFlags.Parse(args)
 	if err != nil {

@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("jumpbox test", func() {
+var _ = Describe("credhub test", func() {
 	var (
 		bbl     actors.BBL
 		bosh    actors.BOSH
@@ -27,19 +27,19 @@ var _ = Describe("jumpbox test", func() {
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "jumpbox-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "credhub-env")
 		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--jumpbox"})
+		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--credhub"})
 	})
 
 	AfterEach(func() {
 		bbl.Destroy()
 	})
 
-	It("bbl's up a new jumpbox and a new bosh director", func() {
+	It("creates a director with a jumpbox, credhub, and UAA", func() {
 		By("parsing the output of print-env", func() {
 			stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
 

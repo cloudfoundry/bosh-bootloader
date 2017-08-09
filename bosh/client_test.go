@@ -1,10 +1,12 @@
 package bosh_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"net/url"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -37,7 +39,7 @@ var _ = Describe("Client", func() {
 		})
 
 		It("configures the http client to use the socks5 proxy", func() {
-			client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+			client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", "some-fake-ca")
 			client.ConfigureHTTPClient(socks5Client)
 			info, err := client.Info()
 
@@ -63,7 +65,7 @@ var _ = Describe("Client", func() {
 				}`))
 			}))
 
-			client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+			client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", "some-fake-ca")
 			info, err := client.Info()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(info).To(Equal(bosh.Info{
@@ -79,19 +81,19 @@ var _ = Describe("Client", func() {
 					responseWriter.WriteHeader(http.StatusNotFound)
 				}))
 
-				client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+				client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", "some-fake-ca")
 				_, err := client.Info()
 				Expect(err).To(MatchError("unexpected http response 404 Not Found"))
 			})
 
 			It("returns an error when the url cannot be parsed", func() {
-				client := bosh.NewClient("%%%", "some-username", "some-password")
+				client := bosh.NewClient(false, "%%%", "some-username", "some-password", "some-false")
 				_, err := client.Info()
 				Expect(err.(*url.Error).Op).To(Equal("parse"))
 			})
 
 			It("returns an error when the request fails", func() {
-				client := bosh.NewClient("fake://some-url", "some-username", "some-password")
+				client := bosh.NewClient(false, "fake://some-url", "some-username", "some-password", "some-fake-ca")
 				_, err := client.Info()
 				Expect(err).To(MatchError(ContainSubstring("unsupported protocol scheme")))
 			})
@@ -101,79 +103,140 @@ var _ = Describe("Client", func() {
 					responseWriter.Write([]byte(`%%%`))
 				}))
 
-				client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+				client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", "some-fake-ca")
 				_, err := client.Info()
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
 			})
-
 		})
-
 	})
 
 	Describe("UpdateCloudConfig", func() {
-		It("uploads the given cloud config", func() {
-			var (
-				cloudConfig []byte
-				contentType string
-				username    string
-				password    string
-			)
-
-			fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		Context("when a jumpbox is enabled", func() {
+			It("uploads the cloud-config", func() {
 				var (
-					err error
+					cloudConfig []byte
+					token       string
+					username    string
+					password    string
 				)
 
-				username, password, _ = request.BasicAuth()
-				contentType = request.Header.Get("Content-Type")
+				fakeUAABOSH := httptest.NewTLSServer(http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+					switch req.URL.Path {
+					case "/oauth/token":
+						var ok bool
+						username, password, ok = req.BasicAuth()
+						Expect(ok).To(BeTrue())
 
-				cloudConfig, err = ioutil.ReadAll(request.Body)
+						resp.Header().Set("Content-Type", "application/json")
+
+						resp.Write([]byte(`{
+				          "access_token": "some-uaa-token",
+				          "token_type": "bearer",
+				          "expires_in": 3600
+		                }`))
+					case "/cloud_configs":
+						token = req.Header.Get("Authorization")
+
+						resp.WriteHeader(http.StatusCreated)
+
+						var err error
+						cloudConfig, err = ioutil.ReadAll(req.Body)
+						Expect(err).NotTo(HaveOccurred())
+					default:
+						dump, err := httputil.DumpRequest(req, true)
+						Expect(err).NotTo(HaveOccurred())
+						Fail(fmt.Sprintf("received unknown request: %s\n", string(dump)))
+					}
+				}))
+
+				socks5Client := &fakes.Socks5Client{}
+				socks5Client.DialCall.Stub = func(network, addr string) (net.Conn, error) {
+					u, _ := url.Parse(fakeUAABOSH.URL)
+					return net.Dial(network, u.Host)
+				}
+
+				client := bosh.NewClient(true, fakeUAABOSH.URL, "some-username", "some-password", "some-fake-ca")
+				client.ConfigureHTTPClient(socks5Client)
+
+				err := client.UpdateCloudConfig([]byte("cloud: config"))
 				Expect(err).NotTo(HaveOccurred())
 
-				responseWriter.WriteHeader(http.StatusCreated)
-			}))
+				Expect(token).To(Equal("Bearer some-uaa-token"))
+				Expect(username).To(Equal("some-username"))
+				Expect(password).To(Equal("some-password"))
+				Expect(cloudConfig).To(Equal([]byte("cloud: config")))
+			})
 
-			client := bosh.NewClient(fakeBOSH.URL, "some-username", "some-password")
+			Context("when an error occurs", func() {
+				Context("when a non-201 occurs", func() {
+					It("returns an error ", func() {
+						fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+							responseWriter.WriteHeader(http.StatusInternalServerError)
+						}))
 
-			err := client.UpdateCloudConfig([]byte("cloud: config"))
-			Expect(err).NotTo(HaveOccurred())
+						client := bosh.NewClient(true, fakeBOSH.URL, "", "", "")
 
-			Expect(cloudConfig).To(Equal([]byte("cloud: config")))
-			Expect(contentType).To(Equal("text/yaml"))
-			Expect(username).To(Equal("some-username"))
-			Expect(password).To(Equal("some-password"))
+						err := client.UpdateCloudConfig([]byte("cloud: config"))
+						Expect(err).To(MatchError(ContainSubstring("connection refused")))
+					})
+				})
+			})
 		})
 
-		Context("failure cases", func() {
-			It("returns an error when the status code is not StatusCreated", func() {
+		Context("when a jumpbox is not enabled", func() {
+			It("uploads the cloud-config", func() {
+				var (
+					cloudConfig []byte
+					contentType string
+					username    string
+					password    string
+				)
+
 				fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
+					var err error
+
+					username, password, _ = request.BasicAuth()
+					contentType = request.Header.Get("Content-Type")
+
+					cloudConfig, err = ioutil.ReadAll(request.Body)
+					Expect(err).NotTo(HaveOccurred())
+
+					responseWriter.WriteHeader(http.StatusCreated)
 				}))
 
-				client := bosh.NewClient(fakeBOSH.URL, "", "")
+				client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", "some-fake-ca")
 
 				err := client.UpdateCloudConfig([]byte("cloud: config"))
-				Expect(err).To(MatchError("unexpected http response 500 Internal Server Error"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cloudConfig).To(Equal([]byte("cloud: config")))
+				Expect(contentType).To(Equal("text/yaml"))
+				Expect(username).To(Equal("some-username"))
+				Expect(password).To(Equal("some-password"))
 			})
 
-			It("returns an error when the director address is malformed", func() {
-				client := bosh.NewClient("%%%%%%%%%%%%%%%", "", "")
+			Context("when an error occurs", func() {
+				Context("when a non-201 occurs", func() {
+					It("returns an error ", func() {
+						fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+							responseWriter.WriteHeader(http.StatusInternalServerError)
+						}))
 
-				err := client.UpdateCloudConfig([]byte("cloud: config"))
-				Expect(err.(*url.Error).Op).To(Equal("parse"))
-			})
+						client := bosh.NewClient(false, fakeBOSH.URL, "", "", "")
 
-			It("returns an error when the director address is malformed", func() {
-				fakeBOSH := httptest.NewTLSServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-					responseWriter.WriteHeader(http.StatusInternalServerError)
-				}))
+						err := client.UpdateCloudConfig([]byte("cloud: config"))
+						Expect(err).To(MatchError("unexpected http response 500 Internal Server Error"))
+					})
+				})
 
-				client := bosh.NewClient(fakeBOSH.URL, "", "")
+				Context("when the director address is malformed", func() {
+					It("returns an error", func() {
+						client := bosh.NewClient(false, "%%%%%%%%%%%%%%%", "", "", "")
 
-				fakeBOSH.Close()
-
-				err := client.UpdateCloudConfig([]byte("cloud: config"))
-				Expect(err).To(MatchError(ContainSubstring("connection refused")))
+						err := client.UpdateCloudConfig([]byte("cloud: config"))
+						Expect(err.(*url.Error).Op).To(Equal("parse"))
+					})
+				})
 			})
 		})
 	})

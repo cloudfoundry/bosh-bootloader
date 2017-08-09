@@ -251,7 +251,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				incomingState.Jumpbox.Enabled = true
 				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"external_ip": "some-external-url",
+					"jumpbox_url": "some-jumpbox-url",
 				}
 				sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
 
@@ -288,7 +288,7 @@ var _ = Describe("Manager", func() {
 
 				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 				Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-private-key"))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-external-url:22"))
+				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-jumpbox-url"))
 			})
 
 			It("configures the bosh client", func() {

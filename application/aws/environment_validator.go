@@ -16,7 +16,7 @@ type infrastructureManager interface {
 }
 
 type boshClientProvider interface {
-	Client(directorAddress, directorUsername, directorPassword string) bosh.Client
+	Client(jumpbox bool, directorAddress, directorUsername, directorPassword, directorCACert string) bosh.Client
 }
 
 func NewEnvironmentValidator(infrastructureManager infrastructureManager, boshClientProvider boshClientProvider) EnvironmentValidator {
@@ -43,7 +43,7 @@ func (e EnvironmentValidator) Validate(state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		boshClient := e.boshClientProvider.Client(state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword)
+		boshClient := e.boshClientProvider.Client(state.Jumpbox.Enabled, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
 		_, err := boshClient.Info()
 		if err != nil {
 			return application.BBLNotFound

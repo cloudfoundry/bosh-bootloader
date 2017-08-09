@@ -2,12 +2,17 @@ package bosh
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 
 	"golang.org/x/net/proxy"
 )
@@ -25,13 +30,15 @@ type Info struct {
 }
 
 type client struct {
+	jumpbox         bool
 	directorAddress string
 	username        string
 	password        string
+	caCert          string
 	httpClient      *http.Client
 }
 
-func NewClient(directorAddress, username, password string) Client {
+func NewClient(jumpbox bool, directorAddress, username, password, caCert string) Client {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -45,6 +52,8 @@ func NewClient(directorAddress, username, password string) Client {
 		username:        username,
 		password:        password,
 		httpClient:      httpClient,
+		caCert:          caCert,
+		jumpbox:         jumpbox,
 	}
 }
 
@@ -89,12 +98,49 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 	if err != nil {
 		return err
 	}
-	request.Header.Set("Content-Type", "text/yaml")
-	request.SetBasicAuth(c.username, c.password)
 
-	response, err := c.httpClient.Do(request)
-	if err != nil {
-		return err
+	request.Header.Set("Content-Type", "text/yaml")
+
+	var response *http.Response
+	if c.jumpbox {
+		urlParts, err := url.Parse(c.directorAddress)
+		if err != nil {
+			return err //not tested
+		}
+
+		boshHost, _, err := net.SplitHostPort(urlParts.Host)
+		if err != nil {
+			return err //not tested
+		}
+
+		specialTransportHTTP := &http.Client{
+			Transport: c.httpClient.Transport,
+		}
+
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, specialTransportHTTP)
+
+		conf := &clientcredentials.Config{
+			ClientID:     c.username,
+			ClientSecret: c.password,
+			TokenURL:     fmt.Sprintf("https://%s:8443/oauth/token", boshHost),
+		}
+
+		httpClient := conf.Client(ctx)
+
+		response, err = httpClient.Do(request)
+		if err != nil {
+			return err
+		}
+	} else {
+		request.SetBasicAuth(c.username, c.password)
+
+		var err error
+		response, err = c.httpClient.Do(request)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	if response.StatusCode != http.StatusCreated {

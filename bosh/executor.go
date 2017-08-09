@@ -147,6 +147,8 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"jumpbox-user.yml":                    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
 		"gcp-external-ip-not-recommended.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
 		"aws-external-ip-not-recommended.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml"),
+		"uaa.yml":     MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/uaa.yml"),
+		"credhub.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/credhub.yml"),
 	}
 
 	if interpolateInput.Variables != "" {
@@ -184,6 +186,8 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	} else {
 		args = append(args,
 			"-o", filepath.Join(tempDir, "bosh-director-ephemeral-ip-ops.yml"),
+			"-o", filepath.Join(tempDir, "uaa.yml"),
+			"-o", filepath.Join(tempDir, "credhub.yml"),
 		)
 	}
 

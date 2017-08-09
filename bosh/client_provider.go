@@ -6,6 +6,6 @@ func NewClientProvider() ClientProvider {
 	return ClientProvider{}
 }
 
-func (ClientProvider) Client(directorAddress, directorUsername, directorPassword string) Client {
-	return NewClient(directorAddress, directorUsername, directorPassword)
+func (ClientProvider) Client(jumpbox bool, directorAddress, directorUsername, directorPassword, directorCACert string) Client {
+	return NewClient(jumpbox, directorAddress, directorUsername, directorPassword, directorCACert)
 }

@@ -152,17 +152,6 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the --jumpbox flag is specified", func() {
-			It("executes the GCP up with gcp details from args", func() {
-				err := command.Execute([]string{
-					"--jumpbox",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.Jumpbox).To(Equal(true))
-			})
-		})
-
 		Context("failure cases", func() {
 			It("returns an error when the desired up command fails", func() {
 				fakeAWSUp.ExecuteCall.Returns.Error = errors.New("failed execution")
@@ -174,6 +163,21 @@ var _ = Describe("Up", func() {
 				err := command.Execute([]string{"--foo", "bar"}, storage.State{})
 				Expect(err).To(MatchError("flag provided but not defined: -foo"))
 			})
+		})
+	})
+
+	Context("when the --credhub flag is specified", func() {
+		It("executes the GCP up with gcp details from args", func() {
+			err := command.Execute([]string{
+				"--iaas", "gcp",
+				"--credhub",
+			}, storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+			Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+				Jumpbox: true,
+			}))
 		})
 	})
 
@@ -196,15 +200,6 @@ var _ = Describe("Up", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.NoDirector).To(Equal(true))
-		})
-
-		It("passes no-director as true in the GCP up config", func() {
-			err := command.Execute([]string{
-				"--no-director",
-			}, storage.State{IAAS: "gcp"})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.NoDirector).To(Equal(true))
 		})
 	})
 })

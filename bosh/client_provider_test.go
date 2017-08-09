@@ -1,9 +1,9 @@
 package bosh_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 )
 
 var _ = Describe("Client Provider", func() {
@@ -17,7 +17,7 @@ var _ = Describe("Client Provider", func() {
 		})
 
 		It("returns a bosh client", func() {
-			boshClient := clientProvider.Client("some-director-address", "some-director-username", "some-director-password")
+			boshClient := clientProvider.Client(false, "some-director-address", "some-director-username", "some-director-password", "some-fake-ca")
 
 			_, ok := boshClient.(bosh.Client)
 			Expect(ok).To(BeTrue())
