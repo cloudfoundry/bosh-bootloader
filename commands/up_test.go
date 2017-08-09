@@ -169,9 +169,8 @@ var _ = Describe("Up", func() {
 	Context("when the --credhub flag is specified", func() {
 		It("executes the GCP up with gcp details from args", func() {
 			err := command.Execute([]string{
-				"--iaas", "gcp",
 				"--credhub",
-			}, storage.State{})
+			}, storage.State{IAAS: "gcp"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))

@@ -15,7 +15,7 @@
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
-  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/to","autorest/validation"]
+  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/validation"]
   revision = "f6e08fe5e4d45c9a66e40196d3fed5f37331d224"
   version = "v8.1.1"
 
@@ -154,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "71131a8e6bb6509778e4a3936ae7317daef96f8b1cb0fc72d31d4c28462a1ba2"
+  inputs-digest = "3c30b652392b60728c25fbf183968c53ac27d217dc41514a7151529f1d074f42"
   solver-name = "gps-cdcl"
   solver-version = 1
