@@ -9,7 +9,7 @@ func NewBOSH() BOSH {
 }
 
 func (BOSH) DirectorExists(address, username, password string) bool {
-	client := bosh.NewClient(address, username, password)
+	client := bosh.NewClient(false, address, username, password, "")
 
 	_, err := client.Info()
 	return err == nil
