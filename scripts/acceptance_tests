@@ -9,7 +9,7 @@ function main() {
 
   if [ -z ${iaas} ]; then
     echo "Usage: ./scripts/acceptance_tests IAAS
-IAAS: \"aws\" or \"gcp\""
+IAAS: \"aws\" or \"gcp\" or \"azure\""
     return
   fi
 
