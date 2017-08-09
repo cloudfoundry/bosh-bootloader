@@ -62,6 +62,18 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		return ParsedFlags{}, err
 	}
 
+	nonStatefulCommand := len(remainingArgs) == 0 || globalFlags.Help || globalFlags.Version
+	nonStatefulCommand = nonStatefulCommand || (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")
+	if nonStatefulCommand {
+		return ParsedFlags{
+			RemainingArgs: remainingArgs,
+			Help:          globalFlags.Help,
+			Debug:         globalFlags.Debug,
+			Version:       globalFlags.Version,
+			StateDir:      globalFlags.StateDir,
+		}, nil
+	}
+
 	stateDir := globalFlags.StateDir
 	if stateDir == "" {
 		stateDir, err = os.Getwd()
@@ -131,14 +143,9 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.Azure.ClientSecret = globalFlags.AzureClientSecret
 	}
 
-	nonStatefulCommand := len(remainingArgs) == 0 || (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")
-	ignoreMissingFlags := globalFlags.Help || globalFlags.Version || nonStatefulCommand
-
-	if !ignoreMissingFlags {
-		err := validate(state)
-		if err != nil {
-			return ParsedFlags{}, err
-		}
+	err = validate(state)
+	if err != nil {
+		return ParsedFlags{}, err
 	}
 
 	return ParsedFlags{State: state, RemainingArgs: remainingArgs, Help: globalFlags.Help, Debug: globalFlags.Debug, Version: globalFlags.Version, StateDir: globalFlags.StateDir}, nil
