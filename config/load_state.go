@@ -63,7 +63,7 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 	}
 
 	nonStatefulCommand := len(remainingArgs) == 0 || globalFlags.Help || globalFlags.Version
-	nonStatefulCommand = nonStatefulCommand || (remainingArgs[0] == "help" || remainingArgs[0] == "version" || remainingArgs[0] == "latest-error")
+	nonStatefulCommand = nonStatefulCommand || (remainingArgs[0] == "help" || remainingArgs[0] == "version")
 	if nonStatefulCommand {
 		return ParsedFlags{
 			RemainingArgs: remainingArgs,
