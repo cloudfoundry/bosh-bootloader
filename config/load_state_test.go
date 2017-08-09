@@ -150,12 +150,10 @@ var _ = Describe("InitializeState", func() {
 					Context("when configuration includes global flags", func() {
 						BeforeEach(func() {
 							os.Setenv("BBL_DEBUG", "true")
-							os.Setenv("BBL_STATE_DIR", "some-state-dir")
 						})
 
 						AfterEach(func() {
 							os.Unsetenv("BBL_DEBUG")
-							os.Unsetenv("BBL_STATE_DIR")
 						})
 
 						It("returns global flags", func() {
@@ -164,7 +162,6 @@ var _ = Describe("InitializeState", func() {
 							Expect(err).NotTo(HaveOccurred())
 
 							Expect(parsedFlags.Debug).To(BeTrue())
-							Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
 						})
 					})
 				})
@@ -547,12 +544,10 @@ var _ = Describe("InitializeState", func() {
 				Context("when configuration includes global flags", func() {
 					BeforeEach(func() {
 						os.Setenv("BBL_DEBUG", "true")
-						os.Setenv("BBL_STATE_DIR", "some-state-dir")
 					})
 
 					AfterEach(func() {
 						os.Unsetenv("BBL_DEBUG")
-						os.Unsetenv("BBL_STATE_DIR")
 					})
 
 					It("returns global flags", func() {
@@ -561,7 +556,6 @@ var _ = Describe("InitializeState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(parsedFlags.Debug).To(BeTrue())
-						Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
 					})
 				})
 			})
@@ -826,12 +820,10 @@ var _ = Describe("InitializeState", func() {
 				Context("when configuration includes global flags", func() {
 					BeforeEach(func() {
 						os.Setenv("BBL_DEBUG", "true")
-						os.Setenv("BBL_STATE_DIR", "some-state-dir")
 					})
 
 					AfterEach(func() {
 						os.Unsetenv("BBL_DEBUG")
-						os.Unsetenv("BBL_STATE_DIR")
 					})
 
 					It("returns global flags", func() {
@@ -840,7 +832,6 @@ var _ = Describe("InitializeState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(parsedFlags.Debug).To(BeTrue())
-						Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
 					})
 				})
 			})
