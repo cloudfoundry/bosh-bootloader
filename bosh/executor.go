@@ -12,23 +12,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
-const iamProfileOps = `
-- type: remove
-  path: /resource_pools/name=vms/cloud_properties/access_key_id?
-- type: remove
-  path: /resource_pools/name=vms/cloud_properties/secret_access_key?
-- type: replace
-  path: /resource_pools/name=vms/cloud_properties/iam_instance_profile?
-  value: ((iam_instance_profile))
-- type: remove
-  path: /instance_groups/name=bosh/properties/aws/access_key_id
-- type: remove
-  path: /instance_groups/name=bosh/properties/aws/secret_access_key
-- type: replace
-  path: /instance_groups/name=bosh/properties/aws/credentials_source?
-  value: env_or_profile
-  `
-
 const boshDirectorEphemeralIPOps = `
 - type: replace
   path: /networks/name=default/subnets/0/cloud_properties/ephemeral_external_ip?
@@ -178,7 +161,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "bosh.yml")
 	cpiOpsFilePath := filepath.Join(tempDir, "cpi.yml")
-	iamProfileFilepath := filepath.Join(tempDir, "iam-instance-profile.yml")
+	iamInstanceProfileOpsFilePath := filepath.Join(tempDir, "iam-instance-profile.yml")
 	boshDirectorEphemeralIPOpsFilepath := filepath.Join(tempDir, "bosh-director-ephemeral-ip-ops.yml")
 
 	if interpolateInput.Variables != "" {
@@ -270,7 +253,12 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 				return InterpolateOutput{}, err
 			}
 
-			err = e.writeFile(iamProfileFilepath, []byte(iamProfileOps), os.ModePerm)
+			iamInstanceProfileOpsFileContents, err := Asset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml")
+			if err != nil {
+				//not tested
+				return InterpolateOutput{}, err
+			}
+			err = e.writeFile(iamInstanceProfileOpsFilePath, iamInstanceProfileOpsFileContents, os.ModePerm)
 			if err != nil {
 				//not tested
 				return InterpolateOutput{}, err
@@ -295,7 +283,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		}
 
 		if interpolateInput.IAAS == "aws" {
-			args = append(args, "-o", iamProfileFilepath)
+			args = append(args, "-o", iamInstanceProfileOpsFilePath)
 		}
 	}
 
