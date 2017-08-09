@@ -194,6 +194,8 @@ var _ = Describe("Executor", func() {
 						"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 						"-o", fmt.Sprintf("%s/bosh-director-ephemeral-ip-ops.yml", tempDir),
+						"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
+						"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
 					})
 
 					_, _, args = cmd.RunArgsForCall(1)
