@@ -2,7 +2,6 @@ package acceptance_test
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"time"
 
@@ -14,16 +13,6 @@ import (
 )
 
 var _ = Describe("bbl", func() {
-	var iaas string
-	BeforeEach(func() {
-		iaas = os.Getenv("BBL_IAAS")
-		os.Unsetenv("BBL_IAAS")
-	})
-
-	AfterEach(func() {
-		os.Setenv("BBL_IAAS", iaas)
-	})
-
 	Describe("help", func() {
 		Describe("bbl -h", func() {
 			It("prints out the usage", func() {
