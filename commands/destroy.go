@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
@@ -309,8 +308,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 }
 
 func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, terraformOutputs map[string]interface{}) (storage.State, error) {
-	emptyBOSH := storage.BOSH{}
-	if reflect.DeepEqual(state.BOSH, emptyBOSH) {
+	if state.NoDirector {
 		d.logger.Println("no BOSH director, skipping...")
 		return state, nil
 	}
