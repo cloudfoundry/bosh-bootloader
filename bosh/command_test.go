@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -39,8 +38,10 @@ var _ = Describe("Cmd", func() {
 
 	var setFastFailBOSH = func(on bool) {
 		fastFailBOSHMutex.Lock()
-		defer fastFailBOSHMutex.Unlock()
+
 		fastFailBOSH = on
+
+		fastFailBOSHMutex.Unlock()
 	}
 
 	var getFastFailBOSH = func() bool {
@@ -59,17 +60,19 @@ var _ = Describe("Cmd", func() {
 			switch request.URL.Path {
 			case "/create-env/args":
 				boshArgsMutex.Lock()
-				defer boshArgsMutex.Unlock()
+
 				body, err := ioutil.ReadAll(request.Body)
 				Expect(err).NotTo(HaveOccurred())
 				boshArgs = string(body)
+
+				boshArgsMutex.Unlock()
 			case "/create-env/fastfail":
 				if getFastFailBOSH() {
 					responseWriter.WriteHeader(http.StatusInternalServerError)
-				} else {
-					responseWriter.WriteHeader(http.StatusOK)
+					return
 				}
-				return
+
+				responseWriter.WriteHeader(http.StatusOK)
 			default:
 				responseWriter.WriteHeader(http.StatusOK)
 			}
@@ -80,29 +83,53 @@ var _ = Describe("Cmd", func() {
 			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHBackendServer.URL))
 		Expect(err).NotTo(HaveOccurred())
 
-		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToBOSH), originalPath}, ":"))
-
 		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
 		os.Setenv("PATH", originalPath)
+		gexec.CleanupBuildArtifacts()
 	})
 
-	It("runs bosh with args", func() {
-		err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"})
-		Expect(err).NotTo(HaveOccurred())
+	Context("when a user has bosh", func() {
+		It("runs bosh with args", func() {
+			os.Setenv("PATH", filepath.Dir(pathToBOSH))
 
-		boshArgsMutex.Lock()
-		defer boshArgsMutex.Unlock()
-		Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
+			err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"})
+			Expect(err).NotTo(HaveOccurred())
 
-		Expect(stdout).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
-		Expect(stdout).To(ContainSubstring("create-env some-arg"))
+			boshArgsMutex.Lock()
+			defer boshArgsMutex.Unlock()
+			Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
+
+			Expect(stdout).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
+			Expect(stdout).To(ContainSubstring("create-env some-arg"))
+		})
 	})
 
-	Context("failure case", func() {
+	Context("when a user has bosh2", func() {
+		It("runs bosh2 with args", func() {
+			err := os.Rename(pathToBOSH, filepath.Join(filepath.Dir(pathToBOSH), "bosh2"))
+			Expect(err).NotTo(HaveOccurred())
+
+			bosh2 := filepath.Join(filepath.Dir(pathToBOSH), "bosh2")
+			err = os.Setenv("PATH", filepath.Dir(bosh2))
+			Expect(err).NotTo(HaveOccurred())
+
+			err = cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"})
+			Expect(err).NotTo(HaveOccurred())
+
+			boshArgsMutex.Lock()
+			defer boshArgsMutex.Unlock()
+			Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
+
+			Expect(stdout).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
+			Expect(stdout).To(ContainSubstring("create-env some-arg"))
+		})
+	})
+
+	Context("when an error occurs", func() {
 		BeforeEach(func() {
 			setFastFailBOSH(true)
 		})
@@ -111,10 +138,14 @@ var _ = Describe("Cmd", func() {
 			setFastFailBOSH(false)
 		})
 
-		It("returns an error when bosh fails", func() {
-			err := cmd.Run(stdout, tempDir, []string{"create-env"})
-			Expect(err).To(MatchError("exit status 1"))
-			Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
+		Context("when bosh fails", func() {
+			It("returns an error", func() {
+				os.Setenv("PATH", filepath.Dir(pathToBOSH))
+
+				err := cmd.Run(stdout, tempDir, []string{"create-env"})
+				Expect(err).To(MatchError("exit status 1"))
+				Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
+			})
 		})
 	})
 })

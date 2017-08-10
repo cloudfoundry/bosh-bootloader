@@ -1,6 +1,7 @@
 package bosh
 
 import (
+	"fmt"
 	"io"
 	"os/exec"
 )
@@ -16,7 +17,20 @@ func NewCmd(stderr io.Writer) Cmd {
 }
 
 func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
-	command := exec.Command("bosh", args...)
+	var boshPath = "bosh"
+
+	path, err := exec.LookPath("bosh2")
+	if err != nil {
+		if err.(*exec.Error).Err != exec.ErrNotFound {
+			return fmt.Errorf("failed when searching for BOSH: %s", err) // not tested
+		}
+	}
+
+	if path != "" {
+		boshPath = path
+	}
+
+	command := exec.Command(boshPath, args...)
 	command.Dir = workingDirectory
 
 	command.Stdout = stdout
