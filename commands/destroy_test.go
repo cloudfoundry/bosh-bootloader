@@ -707,7 +707,7 @@ var _ = Describe("Destroy", func() {
 
 					Context("when there is no bosh to delete", func() {
 						It("does not attempt to delete the bosh", func() {
-							state.BOSH = storage.BOSH{}
+							state.NoDirector = true
 							err := destroy.Execute([]string{}, state)
 							Expect(err).NotTo(HaveOccurred())
 
