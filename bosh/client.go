@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -39,10 +40,13 @@ type client struct {
 }
 
 func NewClient(jumpbox bool, directorAddress, username, password, caCert string) Client {
+	pool := x509.NewCertPool()
+	pool.AppendCertsFromPEM([]byte(caCert))
+
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+				RootCAs: pool,
 			},
 		},
 	}
@@ -59,12 +63,12 @@ func NewClient(jumpbox bool, directorAddress, username, password, caCert string)
 
 func (c client) ConfigureHTTPClient(socks5Client proxy.Dialer) {
 	if socks5Client != nil {
+		tlsConfig := c.httpClient.Transport.(*http.Transport).TLSClientConfig
+
 		c.httpClient.Transport = &http.Transport{
+			TLSClientConfig: tlsConfig,
 			Dial: func(network, addr string) (net.Conn, error) {
 				return socks5Client.Dial(network, addr)
-			},
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
 			},
 		}
 	}
@@ -113,12 +117,8 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 			return err //not tested
 		}
 
-		specialTransportHTTP := &http.Client{
-			Transport: c.httpClient.Transport,
-		}
-
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, oauth2.HTTPClient, specialTransportHTTP)
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
 
 		conf := &clientcredentials.Config{
 			ClientID:     c.username,
