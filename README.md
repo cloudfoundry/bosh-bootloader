@@ -46,10 +46,12 @@ The AWS IAM user that is provided to bbl will need the following policy:
         {
             "Effect": "Allow",
             "Action": [
-                "ec2:*",
+		"ec2:*",
                 "cloudformation:*",
                 "elasticloadbalancing:*",
-                "iam:*"
+                "route53:*",
+                "iam:*",
+                "logs:*"
             ],
             "Resource": [
                 "*"
