@@ -69,9 +69,6 @@ var _ = Describe("Manager", func() {
 			incomingGCPState = storage.State{
 				IAAS:  "gcp",
 				EnvID: "some-env-id",
-				KeyPair: storage.KeyPair{
-					PrivateKey: "some-private-key",
-				},
 				GCP: storage.GCP{
 					Zone:              "some-zone",
 					ProjectID:         "some-project-id",
@@ -134,9 +131,12 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-jumpbox-tag, some-director-tag]
+tags:
+- some-director-tag
+- some-jumpbox-tag
 project_id: some-project-id
-gcp_credentials_json: 'some-credential-json'`,
+gcp_credentials_json: some-credential-json
+`,
 					BOSHState: map[string]interface{}{
 						"some-key": "some-value",
 					},
@@ -166,9 +166,6 @@ gcp_credentials_json: 'some-credential-json'`,
 				Expect(state).To(Equal(storage.State{
 					IAAS:  "gcp",
 					EnvID: "some-env-id",
-					KeyPair: storage.KeyPair{
-						PrivateKey: "some-private-key",
-					},
 					GCP: storage.GCP{
 						Zone:              "some-zone",
 						ProjectID:         "some-project-id",
@@ -200,10 +197,6 @@ gcp_credentials_json: 'some-credential-json'`,
 			incomingAWSState := storage.State{
 				IAAS:  "aws",
 				EnvID: "some-env-id",
-				KeyPair: storage.KeyPair{
-					Name:       "some-keypair-name",
-					PrivateKey: "some-private-key",
-				},
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
@@ -228,6 +221,8 @@ gcp_credentials_json: 'some-credential-json'`,
 						"bosh_subnet_id":                "some-bosh-subnet",
 						"external_ip":                   "some-bosh-external-ip",
 						"director_address":              "some-director-address",
+						"bosh_vms_key_name":             "some-keypair-name",
+						"bosh_vms_private_key":          "some-private-key",
 					}
 
 					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
@@ -260,10 +255,11 @@ access_key_id: some-access-key-id
 secret_access_key: some-secret-access-key
 iam_instance_profile: some-bosh-iam-instance-profile
 default_key_name: some-keypair-name
-default_security_groups: [some-bosh-security-group]
+default_security_groups:
+- some-bosh-security-group
 region: some-region
-private_key: |-
-  some-private-key`,
+private_key: some-private-key
+`,
 						BOSHState: map[string]interface{}{
 							"some-key": "some-value",
 						},
@@ -279,10 +275,6 @@ private_key: |-
 					Expect(state).To(Equal(storage.State{
 						IAAS:  "aws",
 						EnvID: "some-env-id",
-						KeyPair: storage.KeyPair{
-							Name:       "some-keypair-name",
-							PrivateKey: "some-private-key",
-						},
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key-id",
 							SecretAccessKey: "some-secret-access-key",
@@ -445,9 +437,6 @@ private_key: |-
 			incomingGCPState = storage.State{
 				IAAS:  "gcp",
 				EnvID: "some-env-id",
-				KeyPair: storage.KeyPair{
-					PrivateKey: "some-private-key",
-				},
 				GCP: storage.GCP{
 					Zone:              "some-zone",
 					ProjectID:         "some-project-id",
@@ -480,9 +469,11 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-jumpbox-tag]
+tags:
+- some-jumpbox-tag
 project_id: some-project-id
-gcp_credentials_json: 'some-credential-json'`
+gcp_credentials_json: some-credential-json
+`
 
 			deploymentVars = `internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -491,9 +482,11 @@ director_name: bosh-some-env-id
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-director-tag]
+tags:
+- some-director-tag
 project_id: some-project-id
-gcp_credentials_json: 'some-credential-json'`
+gcp_credentials_json: some-credential-json
+`
 
 			boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
 				Manifest:  "name: jumpbox",
@@ -572,9 +565,6 @@ gcp_credentials_json: 'some-credential-json'`
 				Expect(state).To(Equal(storage.State{
 					IAAS:  "gcp",
 					EnvID: "some-env-id",
-					KeyPair: storage.KeyPair{
-						PrivateKey: "some-private-key",
-					},
 					GCP: storage.GCP{
 						Zone:              "some-zone",
 						ProjectID:         "some-project-id",
@@ -652,7 +642,6 @@ gcp_credentials_json: 'some-credential-json'`
   private_key: some-private-key
   public_key: some-private-key
 `
-
 		})
 
 		It("calls delete env", func() {
@@ -924,9 +913,6 @@ gcp_credentials_json: 'some-credential-json'`
 				incomingState = storage.State{
 					IAAS:  "gcp",
 					EnvID: "some-env-id",
-					KeyPair: storage.KeyPair{
-						PrivateKey: "some-private-key",
-					},
 					GCP: storage.GCP{
 						Zone:              "some-zone",
 						ProjectID:         "some-project-id",
@@ -963,9 +949,12 @@ external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
-tags: [some-jumpbox-tag, some-director-tag]
+tags:
+- some-director-tag
+- some-jumpbox-tag
 project_id: some-project-id
-gcp_credentials_json: 'some-credential-json'`))
+gcp_credentials_json: some-credential-json
+`))
 			})
 
 			Context("when terraform outputs are missing", func() {
@@ -981,11 +970,11 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 zone: some-zone
-network: nil
-subnetwork: nil
-tags: [nil]
+tags:
+- ""
 project_id: some-project-id
-gcp_credentials_json: 'some-credential-json'`))
+gcp_credentials_json: some-credential-json
+`))
 					})
 				})
 
@@ -997,13 +986,13 @@ gcp_credentials_json: 'some-credential-json'`))
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
-external_ip: nil
 zone: some-zone
-network: nil
-subnetwork: nil
-tags: [nil, nil]
+tags:
+- ""
+- ""
 project_id: some-project-id
-gcp_credentials_json: 'some-credential-json'`))
+gcp_credentials_json: some-credential-json
+`))
 					})
 				})
 			})
@@ -1018,10 +1007,6 @@ gcp_credentials_json: 'some-credential-json'`))
 				incomingState = storage.State{
 					IAAS:  "aws",
 					EnvID: "some-env-id",
-					KeyPair: storage.KeyPair{
-						Name:       "some-keypair-name",
-						PrivateKey: "some-private-key",
-					},
 					AWS: storage.AWS{
 						AccessKeyID:     "some-access-key-id",
 						SecretAccessKey: "some-secret-access-key",
@@ -1049,6 +1034,8 @@ gcp_credentials_json: 'some-credential-json'`))
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
 						"bosh_security_group":           "some-bosh-security-group",
 						"bosh_subnet_id":                "some-bosh-subnet",
+						"bosh_vms_key_name":             "some-keypair-name",
+						"bosh_vms_private_key":          "some-private-key",
 						"external_ip":                   "some-bosh-external-ip",
 						"director_address":              "some-director-address",
 					})
@@ -1064,10 +1051,11 @@ access_key_id: some-access-key-id
 secret_access_key: some-secret-access-key
 iam_instance_profile: some-bosh-iam-instance-profile
 default_key_name: some-keypair-name
-default_security_groups: [some-bosh-security-group]
+default_security_groups:
+- some-bosh-security-group
 region: some-region
-private_key: |-
-  some-private-key`))
+private_key: some-private-key
+`))
 				})
 
 				Context("when terraform outputs are missing", func() {
@@ -1078,17 +1066,12 @@ private_key: |-
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
-external_ip: nil
-az: nil
-subnet_id: nil
 access_key_id: some-access-key-id
 secret_access_key: some-secret-access-key
-iam_instance_profile: nil
-default_key_name: some-keypair-name
-default_security_groups: [nil]
+default_security_groups:
+- ""
 region: some-region
-private_key: |-
-  some-private-key`))
+`))
 					})
 				})
 			})

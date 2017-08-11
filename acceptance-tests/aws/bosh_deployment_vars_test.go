@@ -65,7 +65,7 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.SubnetID).To(MatchRegexp("subnet-.+"))
 		Expect(vars.AccessKeyID).To(MatchRegexp(".{20}"))
 		Expect(vars.SecretAccessKey).To(MatchRegexp(".{40}"))
-		Expect(vars.DefaultKeyName).To(Equal(fmt.Sprintf("keypair-%s", bbl.PredefinedEnvID())))
+		Expect(vars.DefaultKeyName).To(Equal(fmt.Sprintf("%s_bosh_vms", bbl.PredefinedEnvID())))
 		Expect(vars.DefaultSecurityGroups).To(ContainElement(MatchRegexp("sg-.+")))
 		Expect(vars.Region).To(Equal(configuration.AWSRegion))
 		Expect(vars.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----(.*\n)*-----END RSA PRIVATE KEY-----`))

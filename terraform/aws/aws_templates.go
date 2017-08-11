@@ -5,6 +5,25 @@ const BaseTemplate = `resource "aws_eip" "bosh_eip" {
   vpc      = true
 }
 
+resource "tls_private_key" "bosh_vms" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "aws_key_pair" "bosh_vms" {
+  key_name = "${var.env_id}_bosh_vms"
+  public_key = "${tls_private_key.bosh_vms.public_key_openssh}"
+}
+
+output "bosh_vms_key_name" {
+  value = "${aws_key_pair.bosh_vms.key_name}"
+}
+
+output "bosh_vms_private_key" {
+  value = "${tls_private_key.bosh_vms.private_key_pem}"
+  sensitive = true
+}
+
 output "external_ip" {
   value = "${aws_eip.bosh_eip.public_ip}"
 }
