@@ -20,8 +20,6 @@ type Destroy struct {
 	vpcStatusChecker        vpcStatusChecker
 	stackManager            stackManager
 	infrastructureManager   infrastructureManager
-	awsKeyPairDeleter       awsKeyPairDeleter
-	gcpKeyPairDeleter       gcpKeyPairDeleter
 	certificateDeleter      certificateDeleter
 	stateStore              stateStore
 	stateValidator          stateValidator
@@ -32,14 +30,6 @@ type Destroy struct {
 type destroyConfig struct {
 	NoConfirm     bool
 	SkipIfMissing bool
-}
-
-type awsKeyPairDeleter interface {
-	Delete(name string) error
-}
-
-type gcpKeyPairDeleter interface {
-	Delete(publicKey string) error
 }
 
 type vpcStatusChecker interface {
@@ -64,8 +54,8 @@ type networkInstancesChecker interface {
 
 func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
-	infrastructureManager infrastructureManager, awsKeyPairDeleter awsKeyPairDeleter,
-	gcpKeyPairDeleter gcpKeyPairDeleter, certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
+	infrastructureManager infrastructureManager,
+	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
 	terraformManager terraformDestroyer, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
 		credentialValidator:     credentialValidator,
@@ -75,8 +65,6 @@ func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io
 		vpcStatusChecker:        vpcStatusChecker,
 		stackManager:            stackManager,
 		infrastructureManager:   infrastructureManager,
-		awsKeyPairDeleter:       awsKeyPairDeleter,
-		gcpKeyPairDeleter:       gcpKeyPairDeleter,
 		certificateDeleter:      certificateDeleter,
 		stateStore:              stateStore,
 		stateValidator:          stateValidator,
@@ -267,20 +255,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			if err := d.stateStore.Set(state); err != nil {
 				return err
 			}
-		}
-	}
-
-	switch state.IAAS {
-	case "aws":
-		err = d.awsKeyPairDeleter.Delete(state.KeyPair.Name)
-		if err != nil {
-			return err
-		}
-
-	case "gcp":
-		err = d.gcpKeyPairDeleter.Delete(state.KeyPair.PublicKey)
-		if err != nil {
-			return err
 		}
 	}
 

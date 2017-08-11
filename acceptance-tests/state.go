@@ -26,10 +26,9 @@ type keyPair struct {
 }
 
 type state struct {
-	Stack   stack   `json:"stack"`
-	KeyPair keyPair `json:"keyPair"`
-	EnvID   string  `json:"envID"`
-	TFState string  `json:"tfState"`
+	Stack   stack  `json:"stack"`
+	EnvID   string `json:"envID"`
+	TFState string `json:"tfState"`
 	BOSH    struct {
 		State    map[string]interface{} `json:"state"`
 		Manifest string                 `json:"manifest"`
@@ -56,11 +55,6 @@ func (s State) StackName() string {
 func (s State) CertificateName() string {
 	state := s.readStateFile()
 	return state.Stack.CertificateName
-}
-
-func (s State) SSHPublicKey() string {
-	state := s.readStateFile()
-	return state.KeyPair.PublicKey
 }
 
 func (s State) EnvID() string {

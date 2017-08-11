@@ -26,8 +26,6 @@ var _ = Describe("Destroy", func() {
 		infrastructureManager   *fakes.InfrastructureManager
 		vpcStatusChecker        *fakes.VPCStatusChecker
 		logger                  *fakes.Logger
-		awsKeyPairDeleter       *fakes.AWSKeyPairDeleter
-		gcpKeyPairDeleter       *fakes.GCPKeyPairDeleter
 		certificateDeleter      *fakes.CertificateDeleter
 		credentialValidator     *fakes.CredentialValidator
 		stateStore              *fakes.StateStore
@@ -47,8 +45,6 @@ var _ = Describe("Destroy", func() {
 		infrastructureManager = &fakes.InfrastructureManager{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
-		awsKeyPairDeleter = &fakes.AWSKeyPairDeleter{}
-		gcpKeyPairDeleter = &fakes.GCPKeyPairDeleter{}
 		certificateDeleter = &fakes.CertificateDeleter{}
 		credentialValidator = &fakes.CredentialValidator{}
 		stateStore = &fakes.StateStore{}
@@ -59,7 +55,7 @@ var _ = Describe("Destroy", func() {
 
 		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
 			vpcStatusChecker, stackManager, infrastructureManager,
-			awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter, stateStore,
+			certificateDeleter, stateStore,
 			stateValidator, terraformManager, networkInstancesChecker)
 	})
 
@@ -659,13 +655,6 @@ var _ = Describe("Destroy", func() {
 					})
 				})
 
-				It("deletes the keypair", func() {
-					err := destroy.Execute([]string{}, state)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(awsKeyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
-				})
-
 				It("logs the bosh deletion", func() {
 					err := destroy.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
@@ -748,37 +737,6 @@ var _ = Describe("Destroy", func() {
 						})
 					})
 
-					Context("when the keypair fails to delete", func() {
-						It("removes the certificate from the state and returns an error", func() {
-							awsKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete keypair")
-
-							err := destroy.Execute([]string{}, state)
-							Expect(err).To(MatchError("failed to delete keypair"))
-
-							Expect(stateStore.SetCall.CallCount).To(Equal(3))
-							Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
-								IAAS: "aws",
-								AWS: storage.AWS{
-									AccessKeyID:     "some-access-key-id",
-									SecretAccessKey: "some-secret-access-key",
-									Region:          "some-aws-region",
-								},
-								KeyPair: storage.KeyPair{
-									Name:       "some-ec2-key-pair-name",
-									PrivateKey: "some-private-key",
-									PublicKey:  "some-public-key",
-								},
-								BOSH: storage.BOSH{},
-								Stack: storage.Stack{
-									Name:            "",
-									LBType:          "",
-									CertificateName: "",
-								},
-								EnvID: "bbl-lake-time:stamp",
-							}))
-						})
-					})
-
 					Context("when there is no stack to delete", func() {
 						BeforeEach(func() {
 							stackManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
@@ -834,17 +792,6 @@ var _ = Describe("Destroy", func() {
 					})
 				})
 
-				Context("when the keypair cannot be deleted", func() {
-					It("returns an error", func() {
-						awsKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to delete keypair")
-
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "aws",
-						})
-						Expect(err).To(MatchError("failed to delete keypair"))
-					})
-				})
-
 				Context("when the certificate cannot be deleted", func() {
 					It("returns an error", func() {
 						certificateDeleter.DeleteCall.Returns.Error = errors.New("failed to delete certificate")
@@ -855,20 +802,6 @@ var _ = Describe("Destroy", func() {
 								CertificateName: "some-certificate",
 							}})
 						Expect(err).To(MatchError("failed to delete certificate"))
-					})
-				})
-
-				Context("when state store fails to set the state before destroying keypair", func() {
-					It("returns an error", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
-
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "aws",
-							Stack: storage.Stack{
-								CertificateName: "some-certificate-name",
-							},
-						})
-						Expect(err).To(MatchError("failed to set state"))
 					})
 				})
 
@@ -924,37 +857,6 @@ var _ = Describe("Destroy", func() {
 						boshManager.DeleteCall.Returns.Error = errors.New("deletion failed")
 						err := destroy.Execute([]string{}, state)
 						Expect(err).To(MatchError("deletion failed"))
-					})
-				})
-			})
-
-			Context("deleting the keypair", func() {
-				It("deletes the keypair using the name", func() {
-					state := storage.State{
-						IAAS: "aws",
-						KeyPair: storage.KeyPair{
-							Name:       "some-ec2-key-pair-name",
-							PrivateKey: "some-private-key",
-							PublicKey:  "some-public-key",
-						},
-					}
-					stdin.Write([]byte("yes\n"))
-					err := destroy.Execute([]string{}, state)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(awsKeyPairDeleter.DeleteCall.CallCount).To(Equal(1))
-					Expect(awsKeyPairDeleter.DeleteCall.Receives.Name).To(Equal("some-ec2-key-pair-name"))
-				})
-
-				Context("when the key pair deleter fails", func() {
-					It("returns an error", func() {
-						stdin.Write([]byte("yes\n"))
-						awsKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to destroy")
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "aws",
-						})
-
-						Expect(err).To(MatchError("failed to destroy"))
 					})
 				})
 			})
@@ -1062,37 +964,6 @@ var _ = Describe("Destroy", func() {
 						})
 
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
-					})
-				})
-			})
-
-			Context("deleting the keypair", func() {
-				It("deletes the keypair", func() {
-					stdin.Write([]byte("yes\n"))
-					err := destroy.Execute([]string{}, storage.State{
-						IAAS: "gcp",
-						KeyPair: storage.KeyPair{
-							PublicKey: "some-public-key",
-						},
-						GCP: storage.GCP{
-							ProjectID: "some-project-id",
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(gcpKeyPairDeleter.DeleteCall.CallCount).To(Equal(1))
-					Expect(gcpKeyPairDeleter.DeleteCall.Receives.PublicKey).To(Equal("some-public-key"))
-				})
-
-				Context("when the key pair deleter fails", func() {
-					It("returns an error", func() {
-						stdin.Write([]byte("yes\n"))
-						gcpKeyPairDeleter.DeleteCall.Returns.Error = errors.New("failed to destroy")
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "gcp",
-						})
-
-						Expect(err).To(MatchError("failed to destroy"))
 					})
 				})
 			})

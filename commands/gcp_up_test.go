@@ -28,7 +28,6 @@ var _ = Describe("GCPUp", func() {
 	var (
 		gcpUp                 commands.GCPUp
 		stateStore            *fakes.StateStore
-		keyPairManager        *fakes.KeyPairManager
 		terraformManager      *fakes.TerraformManager
 		boshManager           *fakes.BOSHManager
 		cloudConfigManager    *fakes.CloudConfigManager
@@ -42,7 +41,6 @@ var _ = Describe("GCPUp", func() {
 
 		expectedIAASState      storage.State
 		expectedEnvIDState     storage.State
-		expectedKeyPairState   storage.State
 		expectedZonesState     storage.State
 		expectedTerraformState storage.State
 		expectedBOSHState      storage.State
@@ -54,7 +52,6 @@ var _ = Describe("GCPUp", func() {
 
 	BeforeEach(func() {
 		stateStore = &fakes.StateStore{}
-		keyPairManager = &fakes.KeyPairManager{}
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
 		terraformManager = &fakes.TerraformManager{}
@@ -84,14 +81,10 @@ var _ = Describe("GCPUp", func() {
 		expectedEnvIDState = expectedIAASState
 		expectedEnvIDState.EnvID = "some-env-id"
 
-		expectedKeyPairState = expectedEnvIDState
-		expectedKeyPairState.KeyPair = storage.KeyPair{
-			PrivateKey: "some-private-key",
-			PublicKey:  "some-public-key",
-		}
-
-		expectedZonesState = expectedKeyPairState
+		expectedZonesState = expectedIAASState
 		expectedZonesState.GCP.Zones = []string{"some-zone", "some-other-zone"}
+		expectedZonesState.IAAS = "gcp"
+		expectedZonesState.EnvID = "some-env-id"
 
 		expectedTerraformState = expectedZonesState
 		expectedTerraformState.TFState = "some-tf-state"
@@ -118,7 +111,6 @@ var _ = Describe("GCPUp", func() {
 		envIDManager.SyncCall.Returns.State = storage.State{
 			EnvID: "some-env-id",
 		}
-		keyPairManager.SyncCall.Returns.KeyPair = expectedKeyPairState.KeyPair
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
 		boshManager.CreateDirectorCall.Returns.State = expectedBOSHState
 		boshManager.CreateJumpboxCall.Returns.State = expectedBOSHState
@@ -126,7 +118,6 @@ var _ = Describe("GCPUp", func() {
 
 		gcpUp = commands.NewGCPUp(commands.NewGCPUpArgs{
 			StateStore:                   stateStore,
-			KeyPairManager:               keyPairManager,
 			TerraformManager:             terraformManager,
 			BoshManager:                  boshManager,
 			Logger:                       logger,
@@ -168,25 +159,6 @@ var _ = Describe("GCPUp", func() {
 			By("saving the resulting state with the env ID", func() {
 				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 1))
 				Expect(stateStore.SetCall.Receives[0].State).To(Equal(expectedEnvIDState))
-			})
-
-			By("syncing the keypair", func() {
-				Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
-				Expect(keyPairManager.SyncCall.Receives.State).To(Equal(storage.State{
-					IAAS:  "gcp",
-					EnvID: "some-env-id",
-					GCP: storage.GCP{
-						ServiceAccountKey: `{"real": "json"}`,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				}))
-			})
-
-			By("saving the key pair to the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 2))
-				Expect(stateStore.SetCall.Receives[1].State).To(Equal(expectedKeyPairState))
 			})
 
 			By("getting gcp availability zones", func() {
@@ -392,24 +364,6 @@ var _ = Describe("GCPUp", func() {
 				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
-			It("saves the keypair when the terraform fails", func() {
-				terraformManager.ApplyCall.Returns.Error = errors.New("terraform manager failed")
-
-				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: `{"real": "json"}`,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				})
-				Expect(err).To(MatchError("terraform manager failed"))
-
-				Expect(stateStore.SetCall.CallCount).To(Equal(3))
-				Expect(stateStore.SetCall.Receives[2].State).To(Equal(expectedZonesState))
-			})
-
 			It("calls terraform manager with previous state", func() {
 				expectedZonesState.TFState = "existing-tf-state"
 				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
@@ -471,13 +425,11 @@ var _ = Describe("GCPUp", func() {
 					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
 
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(0))
-					Expect(keyPairManager.SyncCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				})
 			})
 
-			// Nick
 			DescribeTable("state validation", func(state func() storage.State, expectedErr string) {
 				err := gcpUp.Execute(commands.GCPUpConfig{}, state())
 				Expect(err).To(MatchError(expectedErr))
@@ -549,34 +501,6 @@ var _ = Describe("GCPUp", func() {
 					},
 				})
 				Expect(err).To(MatchError("set call failed"))
-			})
-
-			It("returns an error when the keypair could not be updated", func() {
-				keyPairManager.SyncCall.Returns.Error = errors.New("keypair sync failed")
-
-				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					},
-				})
-				Expect(err).To(MatchError("keypair sync failed"))
-			})
-
-			It("returns an error when the state fails to be set after updating keypair", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
-
-				err := gcpUp.Execute(commands.GCPUpConfig{}, storage.State{
-					GCP: storage.GCP{
-						ServiceAccountKey: serviceAccountKeyPath,
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "us-west1",
-					},
-				})
-				Expect(err).To(MatchError("state failed to be set"))
 			})
 
 			It("returns an error when GCP AZs cannot be retrieved", func() {

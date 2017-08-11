@@ -58,7 +58,6 @@ Commands:
   env-id                 Prints environment ID
   latest-error           Prints the output from the latest call to terraform
   print-env              Prints BOSH friendly environment variables
-  rotate                 Rotates the keypair for BOSH
   help                   Prints usage
   lbs                    Prints attached load balancer(s)
   ssh-key                Prints SSH private key

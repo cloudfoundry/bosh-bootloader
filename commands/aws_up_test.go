@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -22,7 +21,6 @@ var _ = Describe("AWSUp", func() {
 			command                    commands.AWSUp
 			boshManager                *fakes.BOSHManager
 			terraformManager           *fakes.TerraformManager
-			keyPairManager             *fakes.KeyPairManager
 			credentialValidator        *fakes.CredentialValidator
 			cloudConfigManager         *fakes.CloudConfigManager
 			brokenEnvironmentValidator *fakes.BrokenEnvironmentValidator
@@ -32,13 +30,6 @@ var _ = Describe("AWSUp", func() {
 		)
 
 		BeforeEach(func() {
-			keyPairManager = &fakes.KeyPairManager{}
-			keyPairManager.SyncCall.Returns.KeyPair = storage.KeyPair{
-				Name:       "keypair-bbl-lake-time-stamp",
-				PublicKey:  "some-public-key",
-				PrivateKey: "some-private-key",
-			}
-
 			terraformManager = &fakes.TerraformManager{}
 			terraformManager.ApplyCall.Returns.BBLState = storage.State{
 				IAAS: "aws",
@@ -47,12 +38,7 @@ var _ = Describe("AWSUp", func() {
 					SecretAccessKey: "some-secret-access-key",
 					AccessKeyID:     "some-access-key-id",
 				},
-				EnvID: "bbl-lake-time-stamp",
-				KeyPair: storage.KeyPair{
-					Name:       "keypair-bbl-lake-time-stamp",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				},
+				EnvID:   "bbl-lake-time-stamp",
 				TFState: "some-tf-state",
 			}
 
@@ -89,7 +75,7 @@ var _ = Describe("AWSUp", func() {
 			brokenEnvironmentValidator = &fakes.BrokenEnvironmentValidator{}
 
 			command = commands.NewAWSUp(
-				credentialValidator, keyPairManager, boshManager,
+				credentialValidator, boshManager,
 				cloudConfigManager, stateStore, awsClientProvider,
 				envIDManager, terraformManager, brokenEnvironmentValidator,
 			)
@@ -146,39 +132,6 @@ var _ = Describe("AWSUp", func() {
 			})
 		})
 
-		It("syncs the keypair", func() {
-			err := command.Execute(commands.AWSUpConfig{}, storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID: "bbl-lake-time-stamp",
-			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(awsClientProvider.SetConfigCall.CallCount).To(Equal(0))
-			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
-
-			Expect(keyPairManager.SyncCall.Receives.State).To(Equal(storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID: "bbl-lake-time-stamp",
-			}))
-
-			Expect(stateStore.SetCall.CallCount).To(Equal(4))
-			actualState := stateStore.SetCall.Receives[3].State
-			Expect(actualState.KeyPair).To(Equal(storage.KeyPair{
-				Name:       "keypair-bbl-lake-time-stamp",
-				PublicKey:  "some-public-key",
-				PrivateKey: "some-private-key",
-			}))
-		})
-
 		It("creates infrastructure", func() {
 			incomingState := storage.State{
 				AWS: storage.AWS{
@@ -201,11 +154,6 @@ var _ = Describe("AWSUp", func() {
 					AccessKeyID:     "some-access-key-id",
 				},
 				EnvID: "bbl-lake-time-stamp",
-				KeyPair: storage.KeyPair{
-					Name:       "keypair-bbl-lake-time-stamp",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				},
 			}))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(4))
@@ -216,12 +164,7 @@ var _ = Describe("AWSUp", func() {
 					SecretAccessKey: "some-secret-access-key",
 					AccessKeyID:     "some-access-key-id",
 				},
-				EnvID: "bbl-lake-time-stamp",
-				KeyPair: storage.KeyPair{
-					Name:       "keypair-bbl-lake-time-stamp",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
-				},
+				EnvID:   "bbl-lake-time-stamp",
 				TFState: "some-tf-state",
 			}))
 		})
@@ -321,7 +264,6 @@ var _ = Describe("AWSUp", func() {
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.Receives[1].State.NoDirector).To(BeTrue())
 			})
 
@@ -337,7 +279,6 @@ var _ = Describe("AWSUp", func() {
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-					Expect(keyPairManager.SyncCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 				})
 			})
@@ -367,11 +308,6 @@ var _ = Describe("AWSUp", func() {
 					Region:          "some-aws-region",
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
-				},
-				KeyPair: storage.KeyPair{
-					Name:       "keypair-bbl-lake-time-stamp",
-					PrivateKey: "some-private-key",
-					PublicKey:  "some-public-key",
 				},
 				EnvID:   "bbl-lake-time-stamp",
 				TFState: "some-tf-state",
@@ -446,11 +382,6 @@ var _ = Describe("AWSUp", func() {
 				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
 					EnvID: "bbl-lake-time-stamp",
 					IAAS:  "aws",
-					KeyPair: storage.KeyPair{
-						Name:       "keypair-bbl-lake-time-stamp",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
-					},
 					BOSH: storage.BOSH{
 						DirectorName:           "bosh-bbl-lake-time:stamp",
 						DirectorUsername:       "admin",
@@ -472,39 +403,6 @@ var _ = Describe("AWSUp", func() {
 					},
 					TFState: "some-tf-state",
 				}))
-			})
-		})
-
-		Describe("reentrant", func() {
-			Context("when the key pair fails to sync", func() {
-				It("saves the keypair name and returns an error", func() {
-					keyPairManager.SyncCall.Returns.Error = keypair.NewManagerError(storage.State{
-						KeyPair: storage.KeyPair{
-							Name: "keypair-bbl-lake-time-stamp",
-						},
-					}, errors.New("error syncing key pair"))
-
-					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-					Expect(err).To(MatchError("error syncing key pair"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives[1].State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
-				})
-
-				Context("when it can't save the state", func() {
-					It("returns an error", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set")}}
-						keyPairManager.SyncCall.Returns.Error = keypair.NewManagerError(storage.State{
-							KeyPair: storage.KeyPair{
-								Name: "keypair-bbl-lake-time-stamp",
-							},
-						}, errors.New("error syncing key pair"))
-
-						err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-						Expect(err).To(MatchError("the following errors occurred:\nerror syncing key pair,\nfailed to set"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(2))
-						Expect(stateStore.SetCall.Receives[1].State.KeyPair.Name).To(Equal("keypair-bbl-lake-time-stamp"))
-					})
-				})
 			})
 		})
 
@@ -665,13 +563,6 @@ var _ = Describe("AWSUp", func() {
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("cannot deploy bosh"))
-			})
-
-			It("returns an error when state store fails to set the state before syncing the keypair", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
-
-				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-				Expect(err).To(MatchError("failed to set state"))
 			})
 
 			It("returns an error when state store fails to set the state before retrieving availability zones", func() {

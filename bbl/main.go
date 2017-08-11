@@ -3,13 +3,10 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
-	"crypto/rsa"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
-
-	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -26,7 +23,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
-	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/proxy"
 	"github.com/cloudfoundry/bosh-bootloader/stack"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -36,8 +32,6 @@ import (
 	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
-	awskeypair "github.com/cloudfoundry/bosh-bootloader/keypair/aws"
-	gcpkeypair "github.com/cloudfoundry/bosh-bootloader/keypair/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
@@ -85,11 +79,6 @@ func main() {
 	awsClientProvider.SetConfig(awsConfiguration)
 
 	vpcStatusChecker := ec2.NewVPCStatusChecker(awsClientProvider)
-	awsKeyPairCreator := ec2.NewKeyPairCreator(awsClientProvider)
-	awsKeyPairDeleter := ec2.NewKeyPairDeleter(awsClientProvider, logger)
-	keyPairChecker := ec2.NewKeyPairChecker(awsClientProvider)
-	keyPairSynchronizer := ec2.NewKeyPairSynchronizer(awsKeyPairCreator, keyPairChecker, logger)
-	awsKeyPairManager := awskeypair.NewManager(keyPairSynchronizer, awsKeyPairDeleter, awsClientProvider)
 	awsAvailabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(awsClientProvider)
 	templateBuilder := templates.NewTemplateBuilder(logger)
 	stackManager := cloudformation.NewStackManager(awsClientProvider, logger)
@@ -107,16 +96,10 @@ func main() {
 			log.Fatalf("\n\n%s\n", err)
 		}
 	}
-	gcpKeyPairUpdater := gcp.NewKeyPairUpdater(rand.Reader, rsa.GenerateKey, ssh.NewPublicKey, gcpClientProvider.Client(), logger)
-	gcpKeyPairDeleter := gcp.NewKeyPairDeleter(gcpClientProvider.Client(), logger)
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider.Client())
-	gcpKeyPairManager := gcpkeypair.NewManager(gcpKeyPairUpdater, gcpKeyPairDeleter)
 
 	// EnvID
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider.Client(), infrastructureManager)
-
-	// Keypair Manager
-	keyPairManager := keypair.NewManager(awsKeyPairManager, gcpKeyPairManager)
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
@@ -166,7 +149,7 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(
-		awsCredentialValidator, keyPairManager, boshManager,
+		awsCredentialValidator, boshManager,
 		cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
 
 	awsCreateLBs := commands.NewAWSCreateLBs(
@@ -190,7 +173,6 @@ func main() {
 
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
 		StateStore:                   stateStore,
-		KeyPairManager:               keyPairManager,
 		TerraformManager:             terraformManager,
 		BoshManager:                  boshManager,
 		Logger:                       logger,
@@ -212,7 +194,7 @@ func main() {
 	commandSet["up"] = commands.NewUp(awsUp, gcpUp, azureUp, envGetter, boshManager)
 	commandSet["destroy"] = commands.NewDestroy(
 		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
-		infrastructureManager, awsKeyPairDeleter, gcpKeyPairDeleter, certificateDeleter,
+		infrastructureManager, certificateDeleter,
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)
 	commandSet["down"] = commandSet["destroy"]
@@ -231,7 +213,6 @@ func main() {
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
-	commandSet["rotate"] = commands.NewRotate(stateStore, keyPairManager, terraformManager, boshManager, stateValidator)
 
 	commandConfiguration := &application.Configuration{
 		Global: application.GlobalConfiguration{

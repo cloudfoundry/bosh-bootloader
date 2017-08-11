@@ -22,7 +22,6 @@ const (
 
 type GCPUp struct {
 	stateStore                   stateStore
-	keyPairManager               keyPairManager
 	boshManager                  boshManager
 	cloudConfigManager           cloudConfigManager
 	logger                       logger
@@ -40,14 +39,6 @@ type GCPUpConfig struct {
 	Name              string
 	NoDirector        bool
 	Jumpbox           bool
-}
-
-type gcpKeyPairCreator interface {
-	Create() (string, string, error)
-}
-
-type keyPairUpdater interface {
-	Update() (storage.KeyPair, error)
 }
 
 type terraformManagerError interface {
@@ -74,7 +65,6 @@ type gcpAvailabilityZoneRetriever interface {
 
 type NewGCPUpArgs struct {
 	StateStore                   stateStore
-	KeyPairManager               keyPairManager
 	TerraformManager             terraformApplier
 	BoshManager                  boshManager
 	Logger                       logger
@@ -86,7 +76,6 @@ type NewGCPUpArgs struct {
 func NewGCPUp(args NewGCPUpArgs) GCPUp {
 	return GCPUp{
 		stateStore:                   args.StateStore,
-		keyPairManager:               args.KeyPairManager,
 		terraformManager:             args.TerraformManager,
 		boshManager:                  args.BoshManager,
 		cloudConfigManager:           args.CloudConfigManager,
@@ -130,11 +119,6 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	if err := u.stateStore.Set(state); err != nil {
-		return err
-	}
-
-	state, err = u.keyPairManager.Sync(state)
-	if err != nil {
 		return err
 	}
 

@@ -8,14 +8,8 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
-	"github.com/cloudfoundry/bosh-bootloader/keypair"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
-
-type keyPairManager interface {
-	Sync(storage.State) (storage.State, error)
-	Rotate(storage.State) (storage.State, error)
-}
 
 type infrastructureManager interface {
 	Update(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
@@ -54,7 +48,6 @@ type brokenEnvironmentValidator interface {
 
 type AWSUp struct {
 	credentialValidator        credentialValidator
-	keyPairManager             keyPairManager
 	boshManager                boshManager
 	cloudConfigManager         cloudConfigManager
 	stateStore                 stateStore
@@ -76,7 +69,7 @@ type AWSUpConfig struct {
 }
 
 func NewAWSUp(
-	credentialValidator credentialValidator, keyPairManager keyPairManager,
+	credentialValidator credentialValidator,
 	boshManager boshManager,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
@@ -84,7 +77,6 @@ func NewAWSUp(
 
 	return AWSUp{
 		credentialValidator:        credentialValidator,
-		keyPairManager:             keyPairManager,
 		boshManager:                boshManager,
 		cloudConfigManager:         cloudConfigManager,
 		stateStore:                 stateStore,
@@ -138,23 +130,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 	}
 
 	if err := u.stateStore.Set(state); err != nil {
-		return err
-	}
-
-	state, err = u.keyPairManager.Sync(state)
-	switch err := err.(type) {
-	case keypair.ManagerError:
-		updatedBBLState := err.BBLState()
-		setErr := u.stateStore.Set(updatedBBLState)
-		if setErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(setErr)
-			return errorList
-		}
-		return err
-	case nil:
-	default:
 		return err
 	}
 
