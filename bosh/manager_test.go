@@ -967,6 +967,46 @@ tags: [some-jumpbox-tag, some-director-tag]
 project_id: some-project-id
 gcp_credentials_json: 'some-credential-json'`))
 			})
+
+			Context("when terraform outputs are missing", func() {
+				Context("gcp jumpbox", func() {
+					BeforeEach(func() {
+						incomingState.Jumpbox.Enabled = true
+					})
+					It("returns valid yaml", func() {
+						vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+zone: some-zone
+network: nil
+subnetwork: nil
+tags: [nil]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`))
+					})
+				})
+
+				Context("gcp", func() {
+					It("returns valid yaml", func() {
+						vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: nil
+zone: some-zone
+network: nil
+subnetwork: nil
+tags: [nil, nil]
+project_id: some-project-id
+gcp_credentials_json: 'some-credential-json'`))
+					})
+				})
+			})
 		})
 
 		Context("aws", func() {
@@ -1029,8 +1069,29 @@ region: some-region
 private_key: |-
   some-private-key`))
 				})
-			})
 
+				Context("when terraform outputs are missing", func() {
+					It("returns valid yaml", func() {
+						vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+external_ip: nil
+az: nil
+subnet_id: nil
+access_key_id: some-access-key-id
+secret_access_key: some-secret-access-key
+iam_instance_profile: nil
+default_key_name: some-keypair-name
+default_security_groups: [nil]
+region: some-region
+private_key: |-
+  some-private-key`))
+					})
+				})
+			})
 		})
 	})
 
