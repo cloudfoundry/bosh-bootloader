@@ -89,7 +89,9 @@ func (u Up) Execute(args []string, state storage.State) error {
 			Jumpbox:     config.jumpbox,
 		}, state)
 	case "azure":
-		err = u.azureUp.Execute(AzureUpConfig{}, state)
+		err = u.azureUp.Execute(AzureUpConfig{
+			Name: config.name,
+		}, state)
 	}
 
 	if err != nil {
