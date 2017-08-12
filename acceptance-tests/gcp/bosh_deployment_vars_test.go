@@ -80,8 +80,8 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.Network).To(Equal(fmt.Sprintf("%s-network", bbl.PredefinedEnvID())))
 		Expect(vars.Subnetwork).To(Equal(fmt.Sprintf("%s-subnet", bbl.PredefinedEnvID())))
 		Expect(vars.Tags).To(Equal([]string{
-			fmt.Sprintf("%s-bosh-open", bbl.PredefinedEnvID()),
 			fmt.Sprintf("%s-bosh-director", bbl.PredefinedEnvID()),
+			fmt.Sprintf("%s-bosh-open", bbl.PredefinedEnvID()),
 		}))
 		Expect(vars.ProjectID).To(Equal(configuration.GCPProjectID))
 		Expect(returnedAccountKey).To(Equal(gcpServiceAccountKey))
