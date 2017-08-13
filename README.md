@@ -27,7 +27,10 @@ $ brew install cloudfoundry/tap/bbl
 ### Install Dependencies
 
 The following should be installed on your local machine
-- BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html)
+- BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html). Ensure that the binary gets installed as `bosh`; this requires setting the option `--without-bosh2` when installing via Homebrew.
+```sh
+$ brew install cloudfoundry/tap/bosh-cli --without-bosh2
+```
 - terraform >= 0.9.7 ([download here](https://www.terraform.io/downloads.html))
 - ruby
 
