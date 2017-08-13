@@ -27,7 +27,7 @@ $ brew install cloudfoundry/tap/bbl
 ### Install Dependencies
 
 The following should be installed on your local machine
-- BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html). Ensure that the binary gets installed as `bosh`; this requires setting the option `--without-bosh2` when installing via Homebrew.
+- BOSH v2 CLI  [BOSH v2 CLI](https://bosh.io/docs/cli-v2.html). This can be installed through homebrew.
 ```sh
 $ brew install cloudfoundry/tap/bosh-cli --without-bosh2
 ```
@@ -36,7 +36,10 @@ $ brew install cloudfoundry/tap/bosh-cli --without-bosh2
 
 ### Install bosh-bootloader
 
-bosh-bootloader can be installed by downloading the [latest Github release](https://github.com/cloudfoundry/bosh-bootloader/releases/latest).
+bosh-bootloader can be installed by downloading the [latest Github release](https://github.com/cloudfoundry/bosh-bootloader/releases/latest) or via homebrew:
+```sh
+$ brew install cloudfoundry/tap/bosh-cli --without-bosh2
+```
 
 ### Configure AWS
 
