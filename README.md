@@ -38,7 +38,7 @@ $ brew install cloudfoundry/tap/bosh-cli --without-bosh2
 
 bosh-bootloader can be installed by downloading the [latest Github release](https://github.com/cloudfoundry/bosh-bootloader/releases/latest) or via homebrew:
 ```sh
-$ brew install cloudfoundry/tap/bosh-cli --without-bosh2
+$ brew install cloudfoundry/tap/bbl
 ```
 
 ### Configure AWS
