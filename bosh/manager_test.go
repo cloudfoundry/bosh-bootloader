@@ -128,6 +128,7 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 external_ip: some-external-ip
+public_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
@@ -249,6 +250,7 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 external_ip: some-bosh-external-ip
+public_ip: some-bosh-external-ip
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
 access_key_id: some-access-key-id
@@ -946,6 +948,7 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 external_ip: some-external-ip
+public_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork
@@ -1045,6 +1048,7 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 external_ip: some-bosh-external-ip
+public_ip: some-bosh-external-ip
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
 access_key_id: some-access-key-id

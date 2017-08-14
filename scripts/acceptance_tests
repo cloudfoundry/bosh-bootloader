@@ -14,7 +14,7 @@ IAAS: \"aws\" or \"gcp\" or \"azure\""
   fi
 
 	pushd "${root_dir}" > /dev/null
-      ginkgo -r -race -failFast -randomizeAllSpecs -randomizeSuites acceptance-tests/bbl acceptance-tests/${iaas}
+      ginkgo -r -race -failFast -randomizeAllSpecs -randomizeSuites acceptance-tests/${iaas} # acceptance-tests/bbl acceptance-tests/${iaas}
 	popd > /dev/null
 }
 
