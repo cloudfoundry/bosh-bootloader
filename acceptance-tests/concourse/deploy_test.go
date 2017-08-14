@@ -103,6 +103,7 @@ var _ = Describe("concourse deployment test", func() {
 				return vmsNoID, nil
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
 				{JobName: "worker", Index: 0, State: "running"},
+				{JobName: "worker", Index: 1, State: "running"},
 				{JobName: "db", Index: 0, State: "running"},
 				{JobName: "web", Index: 0, State: "running"},
 			}))
