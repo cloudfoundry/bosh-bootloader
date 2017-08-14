@@ -44,7 +44,7 @@ func (b BBL) PredefinedEnvID() string {
 	return b.envID
 }
 
-func (b BBL) Up(iaas string, additionalArgs []string) {
+func (b BBL) Up(iaas string, additionalArgs []string) *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"--debug",
@@ -73,29 +73,26 @@ func (b BBL) Up(iaas string, additionalArgs []string) {
 		panic(errors.New("invalid iaas"))
 	}
 
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+	return b.execute(args, os.Stdout, os.Stderr)
 }
 
-func (b BBL) Destroy() {
-	session := b.execute([]string{
+func (b BBL) Destroy() *gexec.Session {
+	return b.execute([]string{
 		"--state-dir", b.stateDirectory,
 		"destroy",
 		"--no-confirm",
 	}, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
-func (b BBL) Down() {
-	session := b.execute([]string{
+func (b BBL) Down() *gexec.Session {
+	return b.execute([]string{
 		"--state-dir", b.stateDirectory,
 		"down",
 		"--no-confirm",
 	}, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
-func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) {
+func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"create-lbs",
@@ -110,11 +107,10 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 		)
 	}
 
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+	return b.execute(args, os.Stdout, os.Stderr)
 }
 
-func (b BBL) UpdateLB(certPath, keyPath, chainPath string) {
+func (b BBL) UpdateLB(certPath, keyPath, chainPath string) *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"update-lbs",
@@ -126,8 +122,7 @@ func (b BBL) UpdateLB(certPath, keyPath, chainPath string) {
 		args = append(args, "--chain", chainPath)
 	}
 
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+	return b.execute(args, os.Stdout, os.Stderr)
 }
 
 func (b BBL) LBs() *gexec.Session {
@@ -136,20 +131,16 @@ func (b BBL) LBs() *gexec.Session {
 		"lbs",
 	}
 
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-
-	return session
+	return b.execute(args, os.Stdout, os.Stderr)
 }
 
-func (b BBL) DeleteLBs() {
+func (b BBL) DeleteLBs() *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"delete-lbs",
 	}
 
-	session := b.execute(args, os.Stdout, os.Stderr)
-	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+	return b.execute(args, os.Stdout, os.Stderr)
 }
 
 func (b BBL) DirectorUsername() string {

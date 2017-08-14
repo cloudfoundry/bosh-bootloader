@@ -2,6 +2,7 @@ package acceptance_test
 
 import (
 	"fmt"
+	"time"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -10,6 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 const ipRegex = `[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}`
@@ -29,11 +31,13 @@ var _ = Describe("bosh deployment vars", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("prints the bosh deployment vars for bosh create-env", func() {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
@@ -14,6 +15,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Stack Migration", func() {
@@ -62,7 +64,11 @@ var _ = Describe("Stack Migration", func() {
 	})
 
 	AfterEach(func() {
-		bblTerraform.Destroy()
+		session := bblStack.Destroy()
+		<-session.Exited
+
+		session = bblTerraform.Destroy()
+		<-session.Exited
 
 		err := os.Remove(f.Name())
 		Expect(err).NotTo(HaveOccurred())
@@ -77,7 +83,8 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				session := bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying the stack exists", func() {
@@ -95,7 +102,8 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("migrating to terraform with latest bbl", func() {
-				bblTerraform.Up("aws", []string{})
+				session := bblTerraform.Up("aws", []string{})
+				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying the stack doesn't exists", func() {
@@ -118,7 +126,8 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				session := bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying the stack exists", func() {
@@ -141,7 +150,8 @@ var _ = Describe("Stack Migration", func() {
 				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 				Expect(err).NotTo(HaveOccurred())
 
-				bblTerraform.CreateLB("concourse", certPath, keyPath, chainPath)
+				session := bblTerraform.CreateLB("concourse", certPath, keyPath, chainPath)
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying that no stack exists", func() {
@@ -164,7 +174,8 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				session := bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying the stack exists", func() {
@@ -187,7 +198,8 @@ var _ = Describe("Stack Migration", func() {
 				keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 				Expect(err).NotTo(HaveOccurred())
 
-				bblStack.CreateLB("cf", certPath, keyPath, chainPath)
+				session := bblStack.CreateLB("cf", certPath, keyPath, chainPath)
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("checking that the LB was created", func() {
@@ -200,7 +212,8 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("deleting the LBs", func() {
-				bblTerraform.DeleteLBs()
+				session := bblTerraform.DeleteLBs()
+				Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying that no stack exists", func() {

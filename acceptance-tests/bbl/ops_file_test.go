@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -12,6 +13,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("ops file test", func() {
@@ -32,14 +34,16 @@ var _ = Describe("ops file test", func() {
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(configuration.IAAS, []string{
+		session := bbl.Up(configuration.IAAS, []string{
 			"--name", bbl.PredefinedEnvID(),
 			"--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"),
 		})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("bbl's up a new bosh director", func() {

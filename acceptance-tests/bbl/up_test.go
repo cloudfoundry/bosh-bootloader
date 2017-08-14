@@ -3,6 +3,7 @@ package acceptance_test
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -11,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("up test", func() {
@@ -31,11 +33,13 @@ var _ = Describe("up test", func() {
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
-		bbl.Down()
+		session := bbl.Down()
+		<-session.Exited
 	})
 
 	It("bbl's up a new bosh director", func() {

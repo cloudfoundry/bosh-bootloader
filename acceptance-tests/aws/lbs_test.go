@@ -3,6 +3,7 @@ package acceptance_test
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
@@ -10,6 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("lbs test", func() {
@@ -58,13 +60,15 @@ var _ = Describe("lbs test", func() {
 		otherChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		vpcName = fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID())
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("creates, updates and deletes a concourse LB with the specified cert and key", func() {
@@ -73,7 +77,8 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("creating a concourse lb", func() {
-			bbl.CreateLB("concourse", certPath, keyPath, chainPath)
+			session := bbl.CreateLB("concourse", certPath, keyPath, chainPath)
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(1))
 			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(MatchRegexp(".*-concourse-lb")))
@@ -84,12 +89,16 @@ var _ = Describe("lbs test", func() {
 
 		By("verifying that the bbl lbs output contains the concourse lb", func() {
 			session := bbl.LBs()
+			Eventually(session).Should(gexec.Exit(0))
+
 			stdout := string(session.Out.Contents())
 			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
 		})
 
 		By("updating the certs of the lb", func() {
-			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
+			session := bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(1))
 			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(MatchRegexp(".*-concourse-lb")))
 
@@ -98,7 +107,8 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("deleting lbs", func() {
-			bbl.DeleteLBs()
+			session := bbl.DeleteLBs()
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the concourse lb does not exist", func() {
@@ -112,7 +122,8 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("creating cf lbs", func() {
-			bbl.CreateLB("cf", certPath, keyPath, chainPath)
+			session := bbl.CreateLB("cf", certPath, keyPath, chainPath)
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(3))
 			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
@@ -127,6 +138,8 @@ var _ = Describe("lbs test", func() {
 
 		By("verifying that the bbl lbs output contains the cf lbs", func() {
 			session := bbl.LBs()
+			Eventually(session).Should(gexec.Exit(0))
+
 			stdout := string(session.Out.Contents())
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
@@ -134,7 +147,9 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("updating the certs of the cf router lb", func() {
-			bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
+			session := bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(3))
 			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
 				MatchRegexp(".*-cf-router-lb"),
@@ -147,7 +162,8 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("deleting lbs", func() {
-			bbl.DeleteLBs()
+			session := bbl.DeleteLBs()
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the cf lbs do not exist", func() {

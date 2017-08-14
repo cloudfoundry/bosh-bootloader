@@ -1,11 +1,14 @@
 package acceptance_test
 
 import (
+	"time"
+
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("idempotent test", func() {
@@ -23,16 +26,23 @@ var _ = Describe("idempotent test", func() {
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
-		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
-		bbl.Up(configuration.IAAS, []string{})
+		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+		session = bbl.Up(configuration.IAAS, []string{})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	It("is able to bbl up idempotently with no director", func() {
-		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
-		bbl.Up(configuration.IAAS, []string{})
+		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+		session = bbl.Up(configuration.IAAS, []string{})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 })

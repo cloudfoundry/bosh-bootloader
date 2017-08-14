@@ -1,12 +1,15 @@
 package acceptance_test
 
 import (
+	"time"
+
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("lbs test", func() {
@@ -29,16 +32,19 @@ var _ = Describe("lbs test", func() {
 		terraform = actors.NewTerraform(configuration)
 		boshcli = actors.NewBOSHCLI()
 
-		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("successfully creates a concourse lb", func() {
 		By("creating a load balancer", func() {
-			bbl.CreateLB("concourse", "", "", "")
+			session := bbl.CreateLB("concourse", "", "", "")
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that target pools exist", func() {
@@ -49,12 +55,14 @@ var _ = Describe("lbs test", func() {
 
 		By("verifying that the bbl lbs output contains the concourse lb", func() {
 			session := bbl.LBs()
+			Eventually(session).Should(gexec.Exit(0))
 			stdout := string(session.Out.Contents())
 			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
 		})
 
 		By("deleting lbs", func() {
-			bbl.DeleteLBs()
+			session := bbl.DeleteLBs()
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the target pools do not exist", func() {
@@ -73,7 +81,8 @@ var _ = Describe("lbs test", func() {
 			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 			Expect(err).NotTo(HaveOccurred())
 
-			bbl.CreateLB("cf", certPath, keyPath, "")
+			session := bbl.CreateLB("cf", certPath, keyPath, "")
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that target pools exist", func() {
@@ -94,6 +103,7 @@ var _ = Describe("lbs test", func() {
 
 		By("verifying that the bbl lbs output contains the cf lbs", func() {
 			session := bbl.LBs()
+			Eventually(session).Should(gexec.Exit(0))
 			stdout := string(session.Out.Contents())
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
@@ -108,7 +118,8 @@ var _ = Describe("lbs test", func() {
 			otherKeyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
 			Expect(err).NotTo(HaveOccurred())
 
-			bbl.UpdateLB(otherCertPath, otherKeyPath, "")
+			session := bbl.UpdateLB(otherCertPath, otherKeyPath, "")
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the cert gets updated", func() {
@@ -121,7 +132,8 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("deleting lbs", func() {
-			bbl.DeleteLBs()
+			session := bbl.DeleteLBs()
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the target pools do not exist", func() {

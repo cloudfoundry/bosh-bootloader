@@ -6,12 +6,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("credhub test", func() {
@@ -32,11 +34,13 @@ var _ = Describe("credhub test", func() {
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--credhub"})
+		session := bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--credhub"})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("creates a director with a jumpbox, credhub, and UAA", func() {

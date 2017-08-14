@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
@@ -15,6 +16,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 )
@@ -25,6 +27,7 @@ var _ = Describe("concourse deployment test", func() {
 		state         acceptance.State
 		lbURL         string
 		configuration acceptance.Config
+		boshClient    bosh.Client
 	)
 
 	BeforeEach(func() {
@@ -35,7 +38,8 @@ var _ = Describe("concourse deployment test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
@@ -43,20 +47,27 @@ var _ = Describe("concourse deployment test", func() {
 		keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl.CreateLB("concourse", certPath, keyPath, "")
+		session = bbl.CreateLB("concourse", certPath, keyPath, "")
+		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 		lbURL, err = actors.LBURL(configuration, bbl, state)
 		Expect(err).NotTo(HaveOccurred())
-	})
 
-	It("is able to deploy concourse and teardown infrastructure", func() {
-		boshClient := bosh.NewClient(bosh.Config{
+		boshClient = bosh.NewClient(bosh.Config{
 			URL:              bbl.DirectorAddress(),
 			Username:         bbl.DirectorUsername(),
 			Password:         bbl.DirectorPassword(),
 			AllowInsecureSSL: true,
 		})
+	})
 
+	AfterEach(func() {
+		boshClient.DeleteDeployment("concourse")
+		session := bbl.Destroy()
+		<-session.Exited
+	})
+
+	It("is able to deploy concourse and teardown infrastructure", func() {
 		By("uploading releases and stemcells", func() {
 			err := uploadRelease(boshClient, configuration.ConcourseReleasePath)
 			Expect(err).NotTo(HaveOccurred())
@@ -132,11 +143,8 @@ var _ = Describe("concourse deployment test", func() {
 		})
 
 		By("deleting load balancers", func() {
-			bbl.DeleteLBs()
-		})
-
-		By("tearing down the infrastructure", func() {
-			bbl.Destroy()
+			session := bbl.DeleteLBs()
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 	})
 })

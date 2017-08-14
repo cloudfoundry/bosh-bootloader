@@ -1,11 +1,14 @@
 package acceptance_test
 
 import (
+	"time"
+
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("no director test", func() {
@@ -27,12 +30,14 @@ var _ = Describe("no director test", func() {
 	})
 
 	AfterEach(func() {
-		bbl.Destroy()
+		session := bbl.Destroy()
+		<-session.Exited
 	})
 
 	It("successfully standups up a no director infrastructure", func() {
 		By("calling bbl up with the no-director flag", func() {
-			bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+			session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("checking that no bosh director exists", func() {
