@@ -32,7 +32,6 @@ This user will be issuing API requests to create the infrastructure such
 as EC2 instances, load balancers, subnets, etc.
 
 The user must have the following `policy`:
-
 ```
 {
     "Version": "2012-10-17",
@@ -40,7 +39,7 @@ The user must have the following `policy`:
         {
             "Effect": "Allow",
             "Action": [
-                "ec2:*",
+		"ec2:*",
                 "cloudformation:*",
                 "elasticloadbalancing:*",
                 "route53:*",
@@ -57,7 +56,6 @@ The user must have the following `policy`:
 
 To create a user and associated policy with the AWS CLI run the 
 following commands (policy text must be in your clipboard):
-
 ```
 $ aws iam create-user --user-name "bbl-user"
 $ aws iam put-user-policy --user-name "bbl-user" \
@@ -118,7 +116,6 @@ should never be modified by hand.
 - bosh-init state and manifest (for the currently deployed director)
 
 The best way to extract this info is by issuing commands like 
-
 ```
 $ bbl director-username
 some-username
@@ -126,9 +123,9 @@ $ bbl director-ca-cert
 --- BEGIN CERTIFICATE ---
 ...
 --- END CERTIFICATE ---
-```
 
 and so on...
+```
 
 In order to run these commands, the current directory must contain the
 `bbl-state.json`.
@@ -136,15 +133,7 @@ In order to run these commands, the current directory must contain the
 ### Connecting to the BOSH director
 
 To setup your BOSH CLI with the new director you'll need the following
-command to get the credentials:
-
-```
-eval "$(bbl print-env)"
-```
-
-#### Alternatives to `bbl print-env`
-
-Separate commands are available for the `bbl print-env` fields:
+commands to get the credentials:
 
 ```
 $ bbl director-address
@@ -160,7 +149,7 @@ MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
 -----END CERTIFICATE-----
 ```
 
-You might save the CA certificate to a file:
+Save CA certificate to the file:
 
 ```
 $ bbl director-ca-cert > bosh.crt
@@ -177,8 +166,7 @@ Username: user-d3783rk
 Password: p-23dah71sk1
 ```
 
-Display cloud config to test setup and show configuration mapping:
-
+Display cloud config:
 ```
 $ bosh cloud-config
 ...
