@@ -59,7 +59,6 @@ type sharedDeploymentVarsYAML struct {
 	InternalIP   string  `yaml:"internal_ip,omitempty"`
 	DirectorName string  `yaml:"director_name,omitempty"`
 	ExternalIP   string  `yaml:"external_ip,omitempty"`
-	PublicIP     string  `yaml:"public_ip,omitempty"`
 	AWSYAML      AWSYAML `yaml:",inline"`
 	GCPYAML      GCPYAML `yaml:",inline"`
 }
@@ -406,7 +405,6 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 				InternalIP:   DIRECTOR_INTERNAL_IP,
 				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 				ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-				PublicIP:     getTerraformOutput("external_ip", terraformOutputs),
 				GCPYAML: GCPYAML{
 					Zone:           state.GCP.Zone,
 					Network:        getTerraformOutput("network_name", terraformOutputs),
@@ -423,7 +421,6 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 			InternalGW:   "10.0.0.1",
 			InternalIP:   DIRECTOR_INTERNAL_IP,
 			ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-			PublicIP:     getTerraformOutput("external_ip", terraformOutputs),
 			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 			AWSYAML: AWSYAML{
 				AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),
