@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 

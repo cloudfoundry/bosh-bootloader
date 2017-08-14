@@ -11,10 +11,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = FDescribe("up test", func() {
+var _ = Describe("up test", func() {
 	var (
 		bbl     actors.BBL
 		bosh    actors.BOSH
