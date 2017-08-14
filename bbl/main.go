@@ -167,7 +167,7 @@ func main() {
 	)
 
 	azureClient := azure.NewClient()
-	azureUp := commands.NewAzureUp(azureClient, logger)
+	azureUp := commands.NewAzureUp(azureClient, logger, envIDManager, stateStore)
 
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 
