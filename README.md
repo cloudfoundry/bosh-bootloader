@@ -11,7 +11,7 @@ on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installa
 
 - [Getting Started on AWS](docs/getting-started-aws.md)
 - [Deploying Concourse on GCP](docs/concourse.md)
-- [Deploying Cloud Foundry on GCP](docs/cloudfoundry.md)
+- [Deploying Cloud Foundry on GCP](https://github.com/cloudfoundry/cf-deployment/blob/master/gcp-deployment-guide.md)
 - [Advanced BOSH Configuration](docs/advanced.md)
 
 ## Prerequisites
