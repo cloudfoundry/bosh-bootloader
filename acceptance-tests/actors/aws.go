@@ -120,6 +120,10 @@ func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
 }
 
 func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
+	var retryCount int
+
+retry:
+
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -132,7 +136,10 @@ func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
 				if int(*ld.Listener.LoadBalancerPort) == 443 {
 					certificateArn := ld.Listener.SSLCertificateId
 					certificateArnParts := strings.Split(awslib.StringValue(certificateArn), "/")
-					Expect(certificateArnParts).To(HaveLen(2))
+					if len(certificateArnParts) != 2 && retryCount <= 5 {
+						retryCount++
+						goto retry
+					}
 					certificateName = certificateArnParts[1]
 					Expect(certificateName).NotTo(BeEmpty())
 
