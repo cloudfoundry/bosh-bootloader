@@ -42,6 +42,7 @@ var _ = Describe("TemplateGenerator", func() {
 					IAAS: "gcp",
 				}))
 				Expect(awsTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(azureTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -56,6 +57,22 @@ var _ = Describe("TemplateGenerator", func() {
 				Expect(awsTemplateGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
 					IAAS: "aws",
 				}))
+				Expect(azureTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when iaas is azure", func() {
+			It("returns the template from the azure template generator", func() {
+				template := templateGenerator.Generate(storage.State{
+					IAAS: "azure",
+				})
+
+				Expect(template).To(Equal("some-azure-template"))
+				Expect(gcpTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(awsTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(azureTemplateGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "azure",
+				}))
 			})
 		})
 
@@ -66,6 +83,7 @@ var _ = Describe("TemplateGenerator", func() {
 				Expect(template).To(Equal(""))
 				Expect(gcpTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
 				Expect(awsTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(azureTemplateGenerator.GenerateCall.CallCount).To(Equal(0))
 			})
 		})
 	})
