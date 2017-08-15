@@ -15,18 +15,20 @@ type AzureUpConfig struct {
 }
 
 type AzureUp struct {
-	azureClient  azureClient
-	logger       logger
-	envIDManager envIDManager
-	stateStore   stateStore
+	azureClient      azureClient
+	logger           logger
+	envIDManager     envIDManager
+	stateStore       stateStore
+	terraformManager terraformApplier
 }
 
-func NewAzureUp(azureClient azureClient, logger logger, envIDManager envIDManager, stateStore stateStore) AzureUp {
+func NewAzureUp(azureClient azureClient, logger logger, envIDManager envIDManager, stateStore stateStore, terraformManager terraformApplier) AzureUp {
 	return AzureUp{
-		azureClient:  azureClient,
-		logger:       logger,
-		envIDManager: envIDManager,
-		stateStore:   stateStore,
+		azureClient:      azureClient,
+		logger:           logger,
+		envIDManager:     envIDManager,
+		stateStore:       stateStore,
+		terraformManager: terraformManager,
 	}
 }
 
@@ -45,6 +47,11 @@ func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err
+	}
+
+	state, err = u.terraformManager.Apply(state)
+	if err != nil {
+		return handleTerraformError(err, u.stateStore)
 	}
 
 	return nil

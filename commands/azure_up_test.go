@@ -15,10 +15,11 @@ var _ = Describe("AzureUp", func() {
 	var (
 		azureUp commands.AzureUp
 
-		azureClient  *fakes.AzureClient
-		envIDManager *fakes.EnvIDManager
-		logger       *fakes.Logger
-		stateStore   *fakes.StateStore
+		azureClient      *fakes.AzureClient
+		envIDManager     *fakes.EnvIDManager
+		logger           *fakes.Logger
+		stateStore       *fakes.StateStore
+		terraformManager *fakes.TerraformManager
 	)
 
 	BeforeEach(func() {
@@ -26,7 +27,9 @@ var _ = Describe("AzureUp", func() {
 		azureClient = &fakes.AzureClient{}
 		envIDManager = &fakes.EnvIDManager{}
 		stateStore = &fakes.StateStore{}
-		azureUp = commands.NewAzureUp(azureClient, logger, envIDManager, stateStore)
+
+		terraformManager = &fakes.TerraformManager{}
+		azureUp = commands.NewAzureUp(azureClient, logger, envIDManager, stateStore, terraformManager)
 	})
 
 	Describe("Execute", func() {

@@ -12,8 +12,9 @@ import (
 var _ = Describe("TemplateGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			gcpTemplateGenerator *fakes.TemplateGenerator
-			awsTemplateGenerator *fakes.TemplateGenerator
+			gcpTemplateGenerator   *fakes.TemplateGenerator
+			awsTemplateGenerator   *fakes.TemplateGenerator
+			azureTemplateGenerator *fakes.TemplateGenerator
 
 			templateGenerator terraform.TemplateGenerator
 		)
@@ -21,11 +22,13 @@ var _ = Describe("TemplateGenerator", func() {
 		BeforeEach(func() {
 			gcpTemplateGenerator = &fakes.TemplateGenerator{}
 			awsTemplateGenerator = &fakes.TemplateGenerator{}
+			azureTemplateGenerator = &fakes.TemplateGenerator{}
 
 			gcpTemplateGenerator.GenerateCall.Returns.Template = "some-gcp-template"
 			awsTemplateGenerator.GenerateCall.Returns.Template = "some-aws-template"
+			azureTemplateGenerator.GenerateCall.Returns.Template = "some-azure-template"
 
-			templateGenerator = terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
+			templateGenerator = terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator, azureTemplateGenerator)
 		})
 
 		Context("when iaas is gcp", func() {
