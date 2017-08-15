@@ -12,8 +12,9 @@ import (
 var _ = Describe("InputGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			gcpInputGenerator *fakes.InputGenerator
-			awsInputGenerator *fakes.InputGenerator
+			gcpInputGenerator   *fakes.InputGenerator
+			awsInputGenerator   *fakes.InputGenerator
+			azureInputGenerator *fakes.InputGenerator
 
 			inputGenerator terraform.InputGenerator
 		)
@@ -27,8 +28,9 @@ var _ = Describe("InputGenerator", func() {
 			awsInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 				"some-input": "some-value",
 			}
+			azureInputGenerator = &fakes.InputGenerator{}
 
-			inputGenerator = terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
+			inputGenerator = terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator, azureInputGenerator)
 		})
 
 		Context("when iaas is gcp", func() {

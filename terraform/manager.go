@@ -112,6 +112,7 @@ func (m Manager) ValidateVersion() error {
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	var err error
 
+	// AWS only
 	m.logger.Step("validating whether stack needs to be migrated")
 	bblState, err = m.stackMigrator.Migrate(bblState)
 

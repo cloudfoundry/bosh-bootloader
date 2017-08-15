@@ -33,6 +33,7 @@ import (
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
+	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
 
@@ -98,8 +99,8 @@ func main() {
 		}
 	}
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider.Client())
-
 	// EnvID
+
 	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider.Client(), infrastructureManager)
 
 	// Terraform
@@ -107,15 +108,22 @@ func main() {
 
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, parsedFlags.Debug)
+
 	gcpTemplateGenerator := gcpterraform.NewTemplateGenerator()
 	gcpInputGenerator := gcpterraform.NewInputGenerator()
 	gcpOutputGenerator := gcpterraform.NewOutputGenerator(terraformExecutor)
+
 	awsTemplateGenerator := awsterraform.NewTemplateGenerator()
 	awsInputGenerator := awsterraform.NewInputGenerator(awsAvailabilityZoneRetriever)
 	awsOutputGenerator := awsterraform.NewOutputGenerator(terraformExecutor)
-	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator)
-	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator)
+	
+	azureTemplateGenerator := azureterraform.NewTemplateGenerator()
+	azureInputGenerator := azureterraform.NewInputGenerator()
+
+	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator, azureTemplateGenerator)
+	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator, azureInputGenerator)
 	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, awsAvailabilityZoneRetriever, awsKeyPairDeleter)
+	
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,
@@ -168,7 +176,7 @@ func main() {
 	)
 
 	azureClient := azure.NewClient()
-	azureUp := commands.NewAzureUp(azureClient, logger, envIDManager, stateStore)
+	azureUp := commands.NewAzureUp(azureClient, logger, envIDManager, stateStore, terraformManager)
 
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 

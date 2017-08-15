@@ -27,7 +27,7 @@ var _ = Describe("up test", func() {
 	// 	bbl.Destroy()
 	// })
 
-	It("checks the credentials", func() {
+	It("Creates the ressource group", func() {
 		var err error
 		config, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
@@ -45,6 +45,7 @@ var _ = Describe("up test", func() {
 
 		args = append(args, []string{
 			"--iaas", "azure",
+			"--debug",
 			"--azure-subscription-id", config.AzureSubscriptionID,
 			"--azure-tenant-id", config.AzureTenantID,
 			"--azure-client-id", config.AzureClientID,
@@ -57,6 +58,12 @@ var _ = Describe("up test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
-		Expect(string(stdout.Bytes())).To(ContainSubstring("step: verifying credentials"))
+		By("checking the credentials", func() {
+			Expect(string(stdout.Bytes())).To(ContainSubstring("step: verifying credentials"))
+		})
+
+		By("checking the terraform output", func() {
+			Expect(string(stdout.Bytes())).To(ContainSubstring("azurerm_resource_group.test: Creation complete"))
+		})
 	})
 })
