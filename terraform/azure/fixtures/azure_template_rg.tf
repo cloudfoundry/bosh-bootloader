@@ -1,6 +1,4 @@
-package azure
-
-const VarsTemplate = `variable "env_id" {
+variable "env_id" {
 	type = "string"
 }
 
@@ -26,9 +24,8 @@ provider "azurerm" {
   client_id        = "${var.client_id}"
   client_secret    = "${var.client_secret}"
 }
-`
 
-const ResourceGroupTemplate = `resource "azurerm_resource_group" "test" {
+resource "azurerm_resource_group" "test" {
   name     = "${var.env_id}-test"
   location = "West US"
 
@@ -36,4 +33,3 @@ const ResourceGroupTemplate = `resource "azurerm_resource_group" "test" {
     environment = "${var.env_id}"
   }
 }
-`
