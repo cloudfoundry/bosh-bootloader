@@ -35,20 +35,6 @@ func NewStackManager(cloudFormationClientProvider cloudFormationClientProvider, 
 	}
 }
 
-func (s StackManager) CreateOrUpdate(name string, template templates.Template, tags Tags) error {
-	s.logger.Step("checking if cloudformation stack %q exists", name)
-
-	_, err := s.Describe(name)
-	switch err {
-	case StackNotFound:
-		return s.create(name, template, tags)
-	case nil:
-		return s.Update(name, template, tags)
-	default:
-		return err
-	}
-}
-
 func (s StackManager) cloudFormationClient() Client {
 	return s.cloudFormationClientProvider.GetCloudFormationClient()
 }

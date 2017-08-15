@@ -12,7 +12,6 @@ import (
 )
 
 type infrastructureManager interface {
-	Update(keyPairName string, azs []string, stackName, boshAZ, lbType, lbCertificateARN, envID string) (cloudformation.Stack, error)
 	Exists(stackName string) (bool, error)
 	Delete(stackName string) error
 	Describe(stackName string) (cloudformation.Stack, error)

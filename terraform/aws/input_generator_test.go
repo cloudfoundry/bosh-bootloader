@@ -36,9 +36,6 @@ var _ = Describe("InputGenerator", func() {
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
 				},
-				KeyPair: storage.KeyPair{
-					Name: "some-key-pair-name",
-				},
 				Stack: storage.Stack{
 					BOSHAZ: "some-zone",
 				},
@@ -67,9 +64,6 @@ var _ = Describe("InputGenerator", func() {
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
 				},
-				KeyPair: storage.KeyPair{
-					Name: "some-key-pair-name",
-				},
 				Stack: storage.Stack{
 					BOSHAZ: "some-zone",
 				},
@@ -85,7 +79,6 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                 "some-env-id",
 				"short_env_id":           "some-env-id",
-				"nat_ssh_key_pair_name":  "some-key-pair-name",
 				"access_key":             "some-access-key-id",
 				"secret_key":             "some-secret-access-key",
 				"region":                 "some-region",
@@ -110,9 +103,6 @@ var _ = Describe("InputGenerator", func() {
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
 				},
-				KeyPair: storage.KeyPair{
-					Name: "some-key-pair-name",
-				},
 				Stack: storage.Stack{
 					BOSHAZ:          "some-zone",
 					CertificateName: "some-certificate-name",
@@ -135,7 +125,6 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                      "some-env-id",
 				"short_env_id":                "some-env-id",
-				"nat_ssh_key_pair_name":       "some-key-pair-name",
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
@@ -160,7 +149,6 @@ var _ = Describe("InputGenerator", func() {
 				Expect(inputs).To(Equal(map[string]string{
 					"env_id":                      "some-env-id",
 					"short_env_id":                "some-env-id",
-					"nat_ssh_key_pair_name":       "some-key-pair-name",
 					"access_key":                  "some-access-key-id",
 					"secret_key":                  "some-secret-access-key",
 					"region":                      "some-region",
@@ -189,9 +177,6 @@ var _ = Describe("InputGenerator", func() {
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
 				},
-				KeyPair: storage.KeyPair{
-					Name: "some-key-pair-name",
-				},
 				Stack: storage.Stack{
 					BOSHAZ: "some-zone",
 				},
@@ -213,7 +198,6 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                      "some-env-id",
 				"short_env_id":                "some-env-id",
-				"nat_ssh_key_pair_name":       "some-key-pair-name",
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",

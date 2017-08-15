@@ -14,8 +14,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
-	"github.com/pivotal-cf-experimental/gomegamatchers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -315,124 +313,6 @@ var _ = Describe("StackManager", func() {
 					err := manager.Update(stackName, template, cloudformation.Tags{})
 					Expect(err).To(Equal(cloudformation.StackNotFound))
 				})
-			})
-		})
-	})
-
-	Describe("CreateOrUpdate", func() {
-		var (
-			template     templates.Template
-			templateJson []byte
-		)
-
-		BeforeEach(func() {
-			var err error
-
-			cloudFormationClient.DescribeStacksCall.Returns.Output = &awscloudformation.DescribeStacksOutput{
-				Stacks: []*awscloudformation.Stack{
-					{
-						StackName:   aws.String("some-stack-name"),
-						StackStatus: aws.String(awscloudformation.StackStatusUpdateComplete),
-					},
-				},
-			}
-
-			template = templates.Template{
-				Description: "testing template",
-			}
-
-			templateJson, err = json.Marshal(&template)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("checks if the stack exists", func() {
-			err := manager.CreateOrUpdate("some-stack-name", templates.Template{}, cloudformation.Tags{})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
-				StackName: aws.String("some-stack-name"),
-			}))
-			Expect(logger.StepCall.Messages).To(ContainElement(`checking if cloudformation stack "some-stack-name" exists`))
-		})
-
-		It("creates a stack if the stack does not exist", func() {
-			cloudFormationClient.DescribeStacksCall.Returns.Error = cloudformation.StackNotFound
-
-			template := templates.Template{
-				Description: "testing template",
-			}
-
-			templateJson, err := json.Marshal(&template)
-			Expect(err).NotTo(HaveOccurred())
-
-			tags := cloudformation.Tags{
-				{
-					Key:   "bbl-env-id",
-					Value: "some-env-id",
-				},
-			}
-
-			err = manager.CreateOrUpdate("some-stack-name", template, tags)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cloudFormationClient.CreateStackCall.Receives.Input).To(Equal(&awscloudformation.CreateStackInput{
-				StackName:    aws.String("some-stack-name"),
-				Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
-				TemplateBody: aws.String(string(templateJson)),
-				Tags: []*awscloudformation.Tag{
-					{
-						Key:   aws.String("bbl-env-id"),
-						Value: aws.String("some-env-id"),
-					},
-				},
-			}))
-
-			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				`checking if cloudformation stack "some-stack-name" exists`,
-				"creating cloudformation stack",
-			}))
-		})
-
-		It("updates the stack if the stack exists", func() {
-			err := manager.CreateOrUpdate("some-stack-name", template, cloudformation.Tags{})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cloudFormationClient.UpdateStackCall.CallCount).To(Equal(1))
-			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				`checking if cloudformation stack "some-stack-name" exists`,
-				"updating cloudformation stack",
-			}))
-		})
-
-		Context("failure cases", func() {
-			It("returns an error when the stack fails to update", func() {
-				cloudFormationClient.UpdateStackCall.Returns.Error = errors.New("error updating stack")
-
-				err := manager.CreateOrUpdate("some-stack-name", template, cloudformation.Tags{})
-				Expect(err).To(MatchError("error updating stack"))
-			})
-
-			It("returns an error when the stack cannot be described", func() {
-				cloudFormationClient.DescribeStacksCall.Returns.Error = errors.New("error describing stack")
-
-				template := templates.Template{
-					Description: "testing template",
-				}
-
-				err := manager.CreateOrUpdate("some-stack-name", template, cloudformation.Tags{})
-				Expect(err).To(MatchError("error describing stack"))
-			})
-
-			It("returns an error when the stack cannot be created", func() {
-				cloudFormationClient.DescribeStacksCall.Returns.Error = cloudformation.StackNotFound
-				cloudFormationClient.CreateStackCall.Returns.Error = errors.New("error creating stack")
-
-				template := templates.Template{
-					Description: "testing template",
-				}
-
-				err := manager.CreateOrUpdate("some-stack-name", template, cloudformation.Tags{})
-				Expect(err).To(MatchError("error creating stack"))
 			})
 		})
 	})

@@ -46,7 +46,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 	inputs := map[string]string{
 		"env_id":                 state.EnvID,
 		"short_env_id":           shortEnvID,
-		"nat_ssh_key_pair_name":  state.KeyPair.Name,
 		"access_key":             state.AWS.AccessKeyID,
 		"secret_key":             state.AWS.SecretAccessKey,
 		"region":                 state.AWS.Region,

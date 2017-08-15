@@ -15,7 +15,6 @@ type templateBuilder interface {
 }
 
 type stackManager interface {
-	CreateOrUpdate(stackName string, template templates.Template, tags Tags) error
 	Update(stackName string, template templates.Template, tags Tags) error
 	WaitForCompletion(stackName string, sleepInterval time.Duration, action string) error
 	Describe(stackName string) (Stack, error)
@@ -33,42 +32,6 @@ func NewInfrastructureManager(builder templateBuilder, stackManager stackManager
 		templateBuilder: builder,
 		stackManager:    stackManager,
 	}
-}
-
-func (m InfrastructureManager) Create(keyPairName string, azs []string, stackName, boshAZ,
-	lbType, lbCertificateARN, envID string) (Stack, error) {
-
-	iamUserName := generateIAMUserName(envID)
-
-	stackExists, err := m.Exists(stackName)
-	if err != nil {
-		return Stack{}, err
-	}
-
-	if stackExists {
-		iamUserName, err = m.stackManager.GetPhysicalIDForResource(stackName, "BOSHUser")
-		if err != nil {
-			return Stack{}, err
-		}
-	}
-
-	template := m.templateBuilder.Build(keyPairName, azs, lbType, lbCertificateARN, iamUserName, envID, boshAZ)
-	tags := Tags{
-		{
-			Key:   bblTagKey,
-			Value: envID,
-		},
-	}
-
-	if err := m.stackManager.CreateOrUpdate(stackName, template, tags); err != nil {
-		return Stack{}, err
-	}
-
-	if err := m.stackManager.WaitForCompletion(stackName, 15*time.Second, "applying cloudformation template"); err != nil {
-		return Stack{}, err
-	}
-
-	return m.stackManager.Describe(stackName)
 }
 
 func (m InfrastructureManager) Update(keyPairName string, azs []string, stackName, boshAZ, lbType,

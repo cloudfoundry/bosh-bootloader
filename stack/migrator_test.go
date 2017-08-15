@@ -22,6 +22,7 @@ var _ = Describe("Migrate", func() {
 		certificate    *fakes.Certificate
 		userPolicy     *fakes.UserPolicy
 		zone           *fakes.Zone
+		keyPair        *fakes.KeyPair
 
 		migrator stack.Migrator
 
@@ -33,9 +34,10 @@ var _ = Describe("Migrate", func() {
 		infrastructure = &fakes.Infrastructure{}
 		certificate = &fakes.Certificate{}
 		userPolicy = &fakes.UserPolicy{}
+		keyPair = &fakes.KeyPair{}
 		zone = &fakes.Zone{}
 
-		migrator = stack.NewMigrator(tf, infrastructure, certificate, userPolicy, zone)
+		migrator = stack.NewMigrator(tf, infrastructure, certificate, userPolicy, zone, keyPair)
 
 		zone.RetrieveReturns([]string{"some-az"}, nil)
 
@@ -108,6 +110,9 @@ var _ = Describe("Migrate", func() {
 		Expect(lbType).To(Equal(""))
 		Expect(certificateARN).To(Equal(""))
 		Expect(envID).To(Equal("some-env-id"))
+
+		Expect(keyPair.DeleteCallCount()).To(Equal(1))
+		Expect(keyPair.DeleteArgsForCall(0)).To(Equal("some-keypair"))
 
 		Expect(userPolicy.DeleteCallCount()).To(Equal(1))
 		username, policyName := userPolicy.DeleteArgsForCall(0)
@@ -328,6 +333,15 @@ var _ = Describe("Migrate", func() {
 
 				_, err := migrator.Migrate(incomingState)
 				Expect(err).To(MatchError("no"))
+			})
+		})
+
+		Context("when the key pair cannot be deleted", func() {
+			It("returns an error", func() {
+				keyPair.DeleteReturns(errors.New("keypair delete"))
+
+				_, err := migrator.Migrate(incomingState)
+				Expect(err).To(MatchError("keypair delete"))
 			})
 		})
 	})

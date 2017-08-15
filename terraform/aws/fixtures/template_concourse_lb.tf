@@ -175,15 +175,12 @@ resource "aws_security_group" "nat_security_group" {
   }
 }
 
-variable "nat_ssh_key_pair_name" {}
-
 resource "aws_instance" "nat" {
   private_ip             = "10.0.0.7"
   instance_type          = "t2.medium"
   subnet_id              = "${aws_subnet.bosh_subnet.id}"
   source_dest_check      = false
   ami                    = "${lookup(var.nat_ami_map, var.region)}"
-  key_name               = "${var.nat_ssh_key_pair_name}"
   vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
 
   tags {
