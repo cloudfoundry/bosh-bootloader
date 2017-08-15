@@ -122,17 +122,12 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return err
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
-		return err
-	}
-
 	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
 	if err != nil {
 		return err
 	}
 
-	err = u.stateStore.Set(state)
-	if err != nil {
+	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
@@ -141,8 +136,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		return handleTerraformError(err, u.stateStore)
 	}
 
-	err = u.stateStore.Set(state)
-	if err != nil {
+	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
