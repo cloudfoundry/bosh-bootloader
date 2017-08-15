@@ -27,7 +27,7 @@ var _ = Describe("up test", func() {
 	// 	bbl.Destroy()
 	// })
 
-	It("Creates the ressource group", func() {
+	It("creates the resource group", func() {
 		var err error
 		config, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())

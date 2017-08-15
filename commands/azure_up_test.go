@@ -27,8 +27,8 @@ var _ = Describe("AzureUp", func() {
 		azureClient = &fakes.AzureClient{}
 		envIDManager = &fakes.EnvIDManager{}
 		stateStore = &fakes.StateStore{}
-
 		terraformManager = &fakes.TerraformManager{}
+
 		azureUp = commands.NewAzureUp(azureClient, logger, envIDManager, stateStore, terraformManager)
 	})
 
@@ -82,39 +82,37 @@ var _ = Describe("AzureUp", func() {
 				Expect(azureClient.ValidateCredentialsCall.Receives.ClientSecret).To(Equal("client-secret"))
 			})
 		})
-	})
 
-	Describe("Execute", func() {
-		var expectedEnvIDState storage.State
+		Context("given an environment id", func() {
+			var expectedEnvIDState storage.State
 
-		BeforeEach(func() {
-			expectedEnvIDState = storage.State{
-				Azure: storage.Azure{
-					SubscriptionID: "subscription-id",
-					TenantID:       "tenant-id",
-					ClientID:       "client-id",
-					ClientSecret:   "client-secret",
-				},
-			}
-		})
+			BeforeEach(func() {
+				expectedEnvIDState = storage.State{
+					Azure: storage.Azure{
+						SubscriptionID: "subscription-id",
+						TenantID:       "tenant-id",
+						ClientID:       "client-id",
+						ClientSecret:   "client-secret",
+					},
+				}
+			})
 
-		Context("When called with --name", func() {
-			It("Creates the environment", func() {
-				err := azureUp.Execute(commands.AzureUpConfig{Name: "myenvid"}, expectedEnvIDState)
-				Expect(err).NotTo(HaveOccurred())
-				By("Calling envidmanager.sync", func() {
+			Context("when called with --name", func() {
+				It("creates the environment", func() {
+					err := azureUp.Execute(commands.AzureUpConfig{Name: "myenvid"}, expectedEnvIDState)
+					Expect(err).NotTo(HaveOccurred())
+
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 					Expect(envIDManager.SyncCall.Receives.State).To(Equal(expectedEnvIDState))
 					Expect(envIDManager.SyncCall.Receives.Name).To(Equal("myenvid"))
 				})
 			})
-		})
 
-		Context("When callled without --name flag", func() {
-			It("Creates the environment", func() {
-				err := azureUp.Execute(commands.AzureUpConfig{}, expectedEnvIDState)
-				Expect(err).NotTo(HaveOccurred())
-				By("Calling envidmanager.sync", func() {
+			Context("when callled without --name flag", func() {
+				It("creates the environment", func() {
+					err := azureUp.Execute(commands.AzureUpConfig{}, expectedEnvIDState)
+					Expect(err).NotTo(HaveOccurred())
+
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 					Expect(envIDManager.SyncCall.Receives.State).To(Equal(expectedEnvIDState))
 					Expect(envIDManager.SyncCall.Receives.Name).To(BeEmpty())
