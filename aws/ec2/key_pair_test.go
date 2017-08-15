@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("KeyPair", func() {
+var _ = Describe("KeyPair", func() {
 	var (
 		keyPair           ec2.KeyPair
 		client            *fakes.EC2Client
