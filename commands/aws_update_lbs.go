@@ -4,27 +4,20 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type AWSUpdateLBs struct {
 	awsCreateLBs         awsCreateLBs
-	credentialValidator  credentialValidator
 	environmentValidator environmentValidator
 }
 
-func NewAWSUpdateLBs(awsCreateLBs awsCreateLBs, credentialValidator credentialValidator,
+func NewAWSUpdateLBs(awsCreateLBs awsCreateLBs,
 	environmentValidator environmentValidator) AWSUpdateLBs {
 
 	return AWSUpdateLBs{
-		credentialValidator:  credentialValidator,
 		environmentValidator: environmentValidator,
 		awsCreateLBs:         awsCreateLBs,
 	}
 }
 
 func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
-	err := c.credentialValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	err = c.environmentValidator.Validate(state)
+	err := c.environmentValidator.Validate(state)
 	if err != nil {
 		return err
 	}
@@ -32,6 +25,7 @@ func (c AWSUpdateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	if config.Domain == "" {
 		config.Domain = state.LB.Domain
 	}
+
 	if config.LBType == "" {
 		config.LBType = state.LB.Type
 	}

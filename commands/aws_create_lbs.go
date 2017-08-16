@@ -9,7 +9,6 @@ import (
 
 type AWSCreateLBs struct {
 	logger               logger
-	credentialValidator  credentialValidator
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
 	stateValidator       stateValidator
@@ -30,12 +29,11 @@ type environmentValidator interface {
 	Validate(state storage.State) error
 }
 
-func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator,
+func NewAWSCreateLBs(logger logger,
 	cloudConfigManager cloudConfigManager, stateStore stateStore,
 	terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
 		logger:               logger,
-		credentialValidator:  credentialValidator,
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,
 		terraformManager:     terraformManager,
@@ -44,11 +42,6 @@ func NewAWSCreateLBs(logger logger, credentialValidator credentialValidator,
 }
 
 func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
-	err := c.credentialValidator.Validate()
-	if err != nil {
-		return err
-	}
-
 	if config.SkipIfExists && lbExists(state.Stack.LBType) {
 		c.logger.Println(fmt.Sprintf("lb type %q exists, skipping...", state.Stack.LBType))
 		return nil
@@ -92,7 +85,7 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 
 	state.LB.Type = config.LBType
 
-	err = c.stateStore.Set(state)
+	err := c.stateStore.Set(state)
 	if err != nil {
 		return err
 	}

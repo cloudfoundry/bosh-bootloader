@@ -3,7 +3,6 @@ package commands
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type AWSDeleteLBs struct {
-	credentialValidator  credentialValidator
 	logger               logger
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
@@ -15,13 +14,10 @@ type deleteLBsConfig struct {
 	skipIfMissing bool
 }
 
-func NewAWSDeleteLBs(credentialValidator credentialValidator,
-	logger logger,
+func NewAWSDeleteLBs(logger logger,
 	cloudConfigManager cloudConfigManager, stateStore stateStore,
-	environmentValidator environmentValidator, terraformManager terraformApplier,
-) AWSDeleteLBs {
+	environmentValidator environmentValidator, terraformManager terraformApplier) AWSDeleteLBs {
 	return AWSDeleteLBs{
-		credentialValidator:  credentialValidator,
 		logger:               logger,
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,
@@ -31,12 +27,7 @@ func NewAWSDeleteLBs(credentialValidator credentialValidator,
 }
 
 func (c AWSDeleteLBs) Execute(state storage.State) error {
-	err := c.credentialValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	err = c.environmentValidator.Validate(state)
+	err := c.environmentValidator.Validate(state)
 	if err != nil {
 		return err
 	}

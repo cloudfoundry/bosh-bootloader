@@ -29,7 +29,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
-	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
@@ -64,10 +63,6 @@ func main() {
 
 	stateStore := storage.NewStore(parsedFlags.StateDir)
 	stateValidator := application.NewStateValidator(parsedFlags.StateDir)
-
-	awsCredentialValidator := awsapplication.NewCredentialValidator(loadedState.AWS.AccessKeyID, loadedState.AWS.SecretAccessKey, loadedState.AWS.Region)
-	gcpCredentialValidator := gcpapplication.NewCredentialValidator(loadedState.GCP.ProjectID, loadedState.GCP.ServiceAccountKey, loadedState.GCP.Region, loadedState.GCP.Zone)
-	credentialValidator := application.NewCredentialValidator(loadedState.IAAS, gcpCredentialValidator, awsCredentialValidator)
 
 	// Amazon
 	awsConfiguration := aws.Config{
@@ -116,14 +111,14 @@ func main() {
 	awsTemplateGenerator := awsterraform.NewTemplateGenerator()
 	awsInputGenerator := awsterraform.NewInputGenerator(awsAvailabilityZoneRetriever)
 	awsOutputGenerator := awsterraform.NewOutputGenerator(terraformExecutor)
-	
+
 	azureTemplateGenerator := azureterraform.NewTemplateGenerator()
 	azureInputGenerator := azureterraform.NewInputGenerator()
 
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator, azureTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator, azureInputGenerator)
 	stackMigrator := stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, awsAvailabilityZoneRetriever, awsKeyPairDeleter)
-	
+
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,
@@ -157,23 +152,11 @@ func main() {
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 
 	// Subcommands
-	awsUp := commands.NewAWSUp(
-		awsCredentialValidator, boshManager,
-		cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
-
-	awsCreateLBs := commands.NewAWSCreateLBs(
-		logger, awsCredentialValidator, cloudConfigManager,
-		stateStore, terraformManager, awsEnvironmentValidator,
-	)
-
+	awsUp := commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
+	awsCreateLBs := commands.NewAWSCreateLBs(logger, cloudConfigManager, stateStore, terraformManager, awsEnvironmentValidator)
 	awsLBs := commands.NewAWSLBs(terraformManager, logger)
-
-	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs, awsCredentialValidator, awsEnvironmentValidator)
-
-	awsDeleteLBs := commands.NewAWSDeleteLBs(
-		awsCredentialValidator, logger, cloudConfigManager, stateStore, awsEnvironmentValidator,
-		terraformManager,
-	)
+	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs, awsEnvironmentValidator)
+	awsDeleteLBs := commands.NewAWSDeleteLBs(logger, cloudConfigManager, stateStore, awsEnvironmentValidator, terraformManager)
 
 	azureClient := azure.NewClient()
 	azureUp := commands.NewAzureUp(azureClient, logger, envIDManager, stateStore, terraformManager)
@@ -202,7 +185,7 @@ func main() {
 	commandSet["version"] = commands.NewVersion(Version, logger)
 	commandSet["up"] = commands.NewUp(awsUp, gcpUp, azureUp, envGetter, boshManager)
 	commandSet["destroy"] = commands.NewDestroy(
-		credentialValidator, logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
+		logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		infrastructureManager, certificateDeleter,
 		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
 	)

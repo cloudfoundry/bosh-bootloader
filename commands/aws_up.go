@@ -17,10 +17,6 @@ type infrastructureManager interface {
 	Describe(stackName string) (cloudformation.Stack, error)
 }
 
-type credentialValidator interface {
-	Validate() error
-}
-
 type logger interface {
 	Step(string, ...interface{})
 	Printf(string, ...interface{})
@@ -46,7 +42,6 @@ type brokenEnvironmentValidator interface {
 }
 
 type AWSUp struct {
-	credentialValidator        credentialValidator
 	boshManager                boshManager
 	cloudConfigManager         cloudConfigManager
 	stateStore                 stateStore
@@ -68,14 +63,12 @@ type AWSUpConfig struct {
 }
 
 func NewAWSUp(
-	credentialValidator credentialValidator,
 	boshManager boshManager,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
 	terraformManager terraformApplier, brokenEnvironmentValidator brokenEnvironmentValidator) AWSUp {
 
 	return AWSUp{
-		credentialValidator:        credentialValidator,
 		boshManager:                boshManager,
 		cloudConfigManager:         cloudConfigManager,
 		stateStore:                 stateStore,
@@ -101,13 +94,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 			SecretAccessKey: config.SecretAccessKey,
 			Region:          config.Region,
 		})
-	} else if u.awsCredentialsNotPresent(config) {
-		err := u.credentialValidator.Validate()
-		if err != nil {
-			return err
-		}
-	} else {
-		return u.awsMissingCredentials(config)
 	}
 
 	if config.NoDirector {
@@ -205,21 +191,4 @@ func (u AWSUp) checkForFastFails(state storage.State, config AWSUpConfig) error 
 
 func (AWSUp) awsCredentialsPresent(config AWSUpConfig) bool {
 	return config.AccessKeyID != "" && config.SecretAccessKey != "" && config.Region != ""
-}
-
-func (AWSUp) awsCredentialsNotPresent(config AWSUpConfig) bool {
-	return config.AccessKeyID == "" && config.SecretAccessKey == "" && config.Region == ""
-}
-
-func (AWSUp) awsMissingCredentials(config AWSUpConfig) error {
-	switch {
-	case config.AccessKeyID == "":
-		return errors.New("AWS access key ID must be provided")
-	case config.SecretAccessKey == "":
-		return errors.New("AWS secret access key must be provided")
-	case config.Region == "":
-		return errors.New("AWS region must be provided")
-	}
-
-	return nil
 }

@@ -15,7 +15,6 @@ import (
 var _ = Describe("Delete LBs", func() {
 	var (
 		command              commands.AWSDeleteLBs
-		credentialValidator  *fakes.CredentialValidator
 		environmentValidator *fakes.EnvironmentValidator
 		logger               *fakes.Logger
 		cloudConfigManager   *fakes.CloudConfigManager
@@ -26,7 +25,6 @@ var _ = Describe("Delete LBs", func() {
 	)
 
 	BeforeEach(func() {
-		credentialValidator = &fakes.CredentialValidator{}
 		environmentValidator = &fakes.EnvironmentValidator{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		terraformManager = &commandsFakes.TerraformApplier{}
@@ -55,8 +53,7 @@ var _ = Describe("Delete LBs", func() {
 			TFState: "some-tf-state",
 		}
 
-		command = commands.NewAWSDeleteLBs(credentialValidator,
-			logger, cloudConfigManager,
+		command = commands.NewAWSDeleteLBs(logger, cloudConfigManager,
 			stateStore, environmentValidator, terraformManager)
 	})
 
@@ -72,7 +69,6 @@ var _ = Describe("Delete LBs", func() {
 			})
 
 			By("running terraform apply to delete lbs and certificate", func() {
-				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCallCount()).To(Equal(1))
 
 				expectedTerraformState := incomingState
@@ -117,7 +113,6 @@ var _ = Describe("Delete LBs", func() {
 				err := command.Execute(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(credentialValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCallCount()).To(Equal(2))
 				Expect(terraformManager.ApplyArgsForCall(0)).To(Equal(state))
 
@@ -176,12 +171,6 @@ var _ = Describe("Delete LBs", func() {
 		})
 
 		Context("when an error occurs", func() {
-			It("returns an error when aws credential validator fails to validate", func() {
-				credentialValidator.ValidateCall.Returns.Error = errors.New("validate failed")
-				err := command.Execute(incomingState)
-				Expect(err).To(MatchError("validate failed"))
-			})
-
 			Context("when terraform manager fails to apply the second time with terraformManagerError", func() {
 				It("return an error", func() {
 					terraformManager.ApplyReturns(storage.State{}, errors.New("apply failed"))

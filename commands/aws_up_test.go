@@ -21,7 +21,6 @@ var _ = Describe("AWSUp", func() {
 			command                    commands.AWSUp
 			boshManager                *fakes.BOSHManager
 			terraformManager           *fakes.TerraformManager
-			credentialValidator        *fakes.CredentialValidator
 			cloudConfigManager         *fakes.CloudConfigManager
 			brokenEnvironmentValidator *fakes.BrokenEnvironmentValidator
 			stateStore                 *fakes.StateStore
@@ -61,9 +60,6 @@ var _ = Describe("AWSUp", func() {
 			}
 
 			cloudConfigManager = &fakes.CloudConfigManager{}
-
-			credentialValidator = &fakes.CredentialValidator{}
-
 			stateStore = &fakes.StateStore{}
 			awsClientProvider = &fakes.AWSClientProvider{}
 
@@ -75,16 +71,10 @@ var _ = Describe("AWSUp", func() {
 			brokenEnvironmentValidator = &fakes.BrokenEnvironmentValidator{}
 
 			command = commands.NewAWSUp(
-				credentialValidator, boshManager,
+				boshManager,
 				cloudConfigManager, stateStore, awsClientProvider,
 				envIDManager, terraformManager, brokenEnvironmentValidator,
 			)
-		})
-
-		It("returns an error when aws credential validator fails", func() {
-			credentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
-			err := command.Execute(commands.AWSUpConfig{}, storage.State{})
-			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
 		It("retrieves a client with the provided credentials", func() {
@@ -101,7 +91,6 @@ var _ = Describe("AWSUp", func() {
 				SecretAccessKey: "new-aws-secret-access-key",
 				AccessKeyID:     "new-aws-access-key-id",
 			}))
-			Expect(credentialValidator.ValidateCall.CallCount).To(Equal(0))
 		})
 
 		It("calls the env id manager and saves the env id", func() {
@@ -577,11 +566,6 @@ var _ = Describe("AWSUp", func() {
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
-			})
-
-			It("returns an error when only some of the AWS parameters are provided", func() {
-				err := command.Execute(commands.AWSUpConfig{AccessKeyID: "some-key-id", Region: "some-region"}, storage.State{})
-				Expect(err).To(MatchError("AWS secret access key must be provided"))
 			})
 
 			Context("when the bosh manager fails with BOSHManagerCreate error", func() {

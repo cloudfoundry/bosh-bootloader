@@ -13,7 +13,6 @@ import (
 )
 
 type Destroy struct {
-	credentialValidator     credentialValidator
 	logger                  logger
 	stdin                   io.Reader
 	boshManager             boshManager
@@ -52,13 +51,12 @@ type networkInstancesChecker interface {
 	ValidateSafeToDelete(networkName string) error
 }
 
-func NewDestroy(credentialValidator credentialValidator, logger logger, stdin io.Reader,
+func NewDestroy(logger logger, stdin io.Reader,
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	infrastructureManager infrastructureManager,
 	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
 	terraformManager terraformDestroyer, networkInstancesChecker networkInstancesChecker) Destroy {
 	return Destroy{
-		credentialValidator:     credentialValidator,
 		logger:                  logger,
 		stdin:                   stdin,
 		boshManager:             boshManager,
@@ -99,11 +97,6 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 	}
 
 	err = d.stateValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	err = d.credentialValidator.Validate()
 	if err != nil {
 		return err
 	}

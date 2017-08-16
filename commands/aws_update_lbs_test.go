@@ -13,7 +13,6 @@ import (
 
 var _ = Describe("AWS Update LBs", func() {
 	var (
-		credentialValidator  *fakes.CredentialValidator
 		environmentValidator *fakes.EnvironmentValidator
 		awsCreateLBs         *fakes.AWSCreateLBs
 
@@ -23,7 +22,6 @@ var _ = Describe("AWS Update LBs", func() {
 	)
 
 	BeforeEach(func() {
-		credentialValidator = &fakes.CredentialValidator{}
 		environmentValidator = &fakes.EnvironmentValidator{}
 		awsCreateLBs = &fakes.AWSCreateLBs{}
 
@@ -38,7 +36,7 @@ var _ = Describe("AWS Update LBs", func() {
 			},
 		}
 
-		command = commands.NewAWSUpdateLBs(awsCreateLBs, credentialValidator, environmentValidator)
+		command = commands.NewAWSUpdateLBs(awsCreateLBs, environmentValidator)
 	})
 
 	Describe("Execute", func() {
@@ -107,16 +105,6 @@ var _ = Describe("AWS Update LBs", func() {
 		})
 
 		Context("when an error occurs", func() {
-			Context("when credential validation fails", func() {
-				It("returns an error", func() {
-					credentialValidator.ValidateCall.Returns.Error = errors.New("aws credentials validator failed")
-
-					err := command.Execute(commands.AWSCreateLBsConfig{}, storage.State{})
-
-					Expect(err).To(MatchError("aws credentials validator failed"))
-				})
-			})
-
 			Context("when environment validation fails", func() {
 				It("returns an error", func() {
 					environmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate")

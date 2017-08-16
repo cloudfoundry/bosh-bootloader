@@ -20,7 +20,6 @@ var _ = Describe("AWS Create LBs", func() {
 		var (
 			command              commands.AWSCreateLBs
 			terraformManager     *fakes.TerraformManager
-			credentialValidator  *fakes.CredentialValidator
 			logger               *fakes.Logger
 			cloudConfigManager   *fakes.CloudConfigManager
 			stateStore           *fakes.StateStore
@@ -34,7 +33,6 @@ var _ = Describe("AWS Create LBs", func() {
 
 		BeforeEach(func() {
 			terraformManager = &fakes.TerraformManager{}
-			credentialValidator = &fakes.CredentialValidator{}
 			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			stateStore = &fakes.StateStore{}
@@ -82,15 +80,9 @@ var _ = Describe("AWS Create LBs", func() {
 			err = ioutil.WriteFile(chainPath, []byte(chain), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-			command = commands.NewAWSCreateLBs(logger, credentialValidator,
+			command = commands.NewAWSCreateLBs(logger,
 				cloudConfigManager,
 				stateStore, terraformManager, environmentValidator)
-		})
-
-		It("returns an error if credential validator fails", func() {
-			credentialValidator.ValidateCall.Returns.Error = errors.New("failed to validate aws credentials")
-			err := command.Execute(commands.AWSCreateLBsConfig{}, storage.State{})
-			Expect(err).To(MatchError("failed to validate aws credentials"))
 		})
 
 		Context("when lb type desired is cf", func() {

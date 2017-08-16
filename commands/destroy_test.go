@@ -27,7 +27,6 @@ var _ = Describe("Destroy", func() {
 		vpcStatusChecker        *fakes.VPCStatusChecker
 		logger                  *fakes.Logger
 		certificateDeleter      *fakes.CertificateDeleter
-		credentialValidator     *fakes.CredentialValidator
 		stateStore              *fakes.StateStore
 		stateValidator          *fakes.StateValidator
 		terraformManager        *fakes.TerraformManager
@@ -46,14 +45,13 @@ var _ = Describe("Destroy", func() {
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 		certificateDeleter = &fakes.CertificateDeleter{}
-		credentialValidator = &fakes.CredentialValidator{}
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
 		terraformManagerError = &fakes.TerraformManagerError{}
 		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
 
-		destroy = commands.NewDestroy(credentialValidator, logger, stdin, boshManager,
+		destroy = commands.NewDestroy(logger, stdin, boshManager,
 			vpcStatusChecker, stackManager, infrastructureManager,
 			certificateDeleter, stateStore,
 			stateValidator, terraformManager, networkInstancesChecker)
@@ -107,13 +105,6 @@ var _ = Describe("Destroy", func() {
 
 			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 			Expect(err).To(MatchError("state validator failed"))
-		})
-
-		It("returns an error when credential validator fails", func() {
-			credentialValidator.ValidateCall.Returns.Error = errors.New("credentials validator failed")
-
-			err := destroy.CheckFastFails([]string{}, storage.State{})
-			Expect(err).To(MatchError("credentials validator failed"))
 		})
 
 		Context("when iaas is gcp", func() {
@@ -454,7 +445,6 @@ var _ = Describe("Destroy", func() {
 				It("returns an error", func() {
 					err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
-					Expect(credentialValidator.ValidateCall.CallCount).To(Equal(0))
 				})
 			})
 
