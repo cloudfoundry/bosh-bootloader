@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -236,6 +237,7 @@ func main() {
 
 	err = app.Run()
 	if err != nil {
-		log.Fatalf("\n\n%s\n", err)
+		fmt.Fprintf(os.Stderr, "\n\n%s\n", err)
+		os.Exit(1)
 	}
 }
