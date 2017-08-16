@@ -236,8 +236,17 @@ resource "google_compute_url_map" "cf-https-lb-url-map" {
   default_service = "${google_compute_backend_service.router-lb-backend-service.self_link}"
 }
 
-resource "google_compute_http_health_check" "cf-public-health-check" {
+resource "google_compute_health_check" "cf-public-health-check" {
   name                = "${var.env_id}-cf"
+
+  http_health_check {
+	  port                = 8080
+	  request_path        = "/health"
+  }
+}
+
+resource "google_compute_http_health_check" "cf-ws-health-check" {
+  name                = "${var.env_id}-cf-ws"
   port                = 8080
   request_path        = "/health"
 }
@@ -349,7 +358,7 @@ resource "google_compute_target_pool" "cf-ws" {
 
   session_affinity = "NONE"
 
-  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
+  health_checks = ["${google_compute_http_health_check.cf-ws-health-check.name}"]
 }
 
 resource "google_compute_forwarding_rule" "cf-ws-https" {
@@ -388,8 +397,8 @@ resource "google_compute_instance_group" "router-lb-2" {
 
 resource "google_compute_backend_service" "router-lb-backend-service" {
   name        = "${var.env_id}-router-lb"
-  port_name   = "http"
-  protocol    = "HTTP"
+  port_name   = "https"
+  protocol    = "HTTPS"
   timeout_sec = 900
   enable_cdn  = false
 
@@ -405,5 +414,5 @@ resource "google_compute_backend_service" "router-lb-backend-service" {
     group = "${google_compute_instance_group.router-lb-2.self_link}"
   }
 
-  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
+  health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
 }

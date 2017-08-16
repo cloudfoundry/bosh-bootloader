@@ -287,8 +287,17 @@ resource "google_compute_url_map" "cf-https-lb-url-map" {
   default_service = "${google_compute_backend_service.router-lb-backend-service.self_link}"
 }
 
-resource "google_compute_http_health_check" "cf-public-health-check" {
+resource "google_compute_health_check" "cf-public-health-check" {
   name                = "${var.env_id}-cf"
+
+  http_health_check {
+	  port                = 8080
+	  request_path        = "/health"
+  }
+}
+
+resource "google_compute_http_health_check" "cf-ws-health-check" {
+  name                = "${var.env_id}-cf-ws"
   port                = 8080
   request_path        = "/health"
 }
@@ -400,7 +409,7 @@ resource "google_compute_target_pool" "cf-ws" {
 
   session_affinity = "NONE"
 
-  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
+  health_checks = ["${google_compute_http_health_check.cf-ws-health-check.name}"]
 }
 
 resource "google_compute_forwarding_rule" "cf-ws-https" {

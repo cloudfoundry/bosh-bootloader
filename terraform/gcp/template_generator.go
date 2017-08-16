@@ -11,12 +11,12 @@ type TemplateGenerator struct{}
 
 const backendBase = `resource "google_compute_backend_service" "router-lb-backend-service" {
   name        = "${var.env_id}-router-lb"
-  port_name   = "http"
-  protocol    = "HTTP"
+  port_name   = "https"
+  protocol    = "HTTPS"
   timeout_sec = 900
   enable_cdn  = false
 %s
-  health_checks = ["${google_compute_http_health_check.cf-public-health-check.self_link}"]
+  health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
 }
 `
 
