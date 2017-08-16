@@ -43,7 +43,7 @@ var _ = Describe("ops file test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("bbl's up a new bosh director", func() {

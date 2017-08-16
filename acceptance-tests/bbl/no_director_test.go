@@ -31,7 +31,7 @@ var _ = Describe("no director test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("successfully standups up a no director infrastructure", func() {

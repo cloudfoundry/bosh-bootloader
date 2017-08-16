@@ -40,7 +40,7 @@ var _ = Describe("credhub test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("creates a director with a jumpbox, credhub, and UAA", func() {

@@ -15,12 +15,10 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("up test", func() {
+var _ = Describe("up", func() {
 	var (
 		bbl     actors.BBL
-		bosh    actors.BOSH
 		boshcli actors.BOSHCLI
-		state   acceptance.State
 	)
 
 	BeforeEach(func() {
@@ -29,9 +27,7 @@ var _ = Describe("up test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
-		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
-		state = acceptance.NewState(configuration.StateFileDir)
 
 		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
@@ -39,7 +35,7 @@ var _ = Describe("up test", func() {
 
 	AfterEach(func() {
 		session := bbl.Down()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("bbl's up a new bosh director", func() {

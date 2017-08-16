@@ -65,10 +65,10 @@ var _ = Describe("Stack Migration", func() {
 
 	AfterEach(func() {
 		session := bblStack.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 
 		session = bblTerraform.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 
 		err := os.Remove(f.Name())
 		Expect(err).NotTo(HaveOccurred())

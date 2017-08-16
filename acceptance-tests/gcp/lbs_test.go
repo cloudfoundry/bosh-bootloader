@@ -38,7 +38,7 @@ var _ = Describe("lbs test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("successfully creates a concourse lb", func() {

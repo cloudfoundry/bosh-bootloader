@@ -48,7 +48,7 @@ var _ = Describe("bosh deployment vars", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("prints the bosh deployment vars for bosh create-env", func() {

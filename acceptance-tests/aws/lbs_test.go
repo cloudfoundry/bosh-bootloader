@@ -68,7 +68,7 @@ var _ = Describe("lbs test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("creates, updates and deletes a concourse LB with the specified cert and key", func() {

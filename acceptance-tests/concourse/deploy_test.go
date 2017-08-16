@@ -64,7 +64,7 @@ var _ = Describe("concourse deployment test", func() {
 	AfterEach(func() {
 		boshClient.DeleteDeployment("concourse")
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("is able to deploy concourse and teardown infrastructure", func() {

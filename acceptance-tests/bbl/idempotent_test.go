@@ -27,7 +27,7 @@ var _ = Describe("idempotent test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		<-session.Exited
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("is able to bbl up idempotently with a director", func() {
