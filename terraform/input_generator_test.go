@@ -29,6 +29,9 @@ var _ = Describe("InputGenerator", func() {
 				"some-input": "some-value",
 			}
 			azureInputGenerator = &fakes.InputGenerator{}
+			azureInputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+				"some-input": "some-value",
+			}
 
 			inputGenerator = terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator, azureInputGenerator)
 		})
@@ -47,6 +50,7 @@ var _ = Describe("InputGenerator", func() {
 					IAAS: "gcp",
 				}))
 				Expect(awsInputGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(azureInputGenerator.GenerateCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -63,6 +67,25 @@ var _ = Describe("InputGenerator", func() {
 				Expect(gcpInputGenerator.GenerateCall.CallCount).To(Equal(0))
 				Expect(awsInputGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
 					IAAS: "aws",
+				}))
+				Expect(azureInputGenerator.GenerateCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when iaas is azure", func() {
+			It("returns the inputs from the azure input generator", func() {
+				input, err := inputGenerator.Generate(storage.State{
+					IAAS: "azure",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(input).To(Equal(map[string]string{
+					"some-input": "some-value",
+				}))
+				Expect(gcpInputGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(awsInputGenerator.GenerateCall.CallCount).To(Equal(0))
+				Expect(azureInputGenerator.GenerateCall.Receives.State).To(Equal(storage.State{
+					IAAS: "azure",
 				}))
 			})
 		})
