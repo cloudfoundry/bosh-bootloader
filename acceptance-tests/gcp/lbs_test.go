@@ -14,11 +14,9 @@ import (
 
 var _ = Describe("lbs test", func() {
 	var (
-		bbl       actors.BBL
-		gcp       actors.GCP
-		terraform actors.Terraform
-		boshcli   actors.BOSHCLI
-		state     acceptance.State
+		bbl   actors.BBL
+		gcp   actors.GCP
+		state acceptance.State
 	)
 
 	BeforeEach(func() {
@@ -29,8 +27,6 @@ var _ = Describe("lbs test", func() {
 		state = acceptance.NewState(configuration.StateFileDir)
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		gcp = actors.NewGCP(configuration)
-		terraform = actors.NewTerraform(configuration)
-		boshcli = actors.NewBOSHCLI()
 
 		session := bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))

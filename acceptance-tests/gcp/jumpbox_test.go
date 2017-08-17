@@ -18,10 +18,8 @@ import (
 
 var _ = Describe("credhub test", func() {
 	var (
-		bbl     actors.BBL
-		bosh    actors.BOSH
-		boshcli actors.BOSHCLI
-		state   acceptance.State
+		bbl   actors.BBL
+		state acceptance.State
 	)
 
 	BeforeEach(func() {
@@ -30,8 +28,6 @@ var _ = Describe("credhub test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "credhub-env")
-		bosh = actors.NewBOSH()
-		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
 		session := bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--credhub"})
