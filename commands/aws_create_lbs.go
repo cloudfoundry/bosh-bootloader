@@ -55,28 +55,26 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	if config.LBType == "cf" || config.LBType == "concourse" {
-		certContents, err := ioutil.ReadFile(config.CertPath)
+	certContents, err := ioutil.ReadFile(config.CertPath)
+	if err != nil {
+		return err
+	}
+
+	keyContents, err := ioutil.ReadFile(config.KeyPath)
+	if err != nil {
+		return err
+	}
+
+	state.LB.Cert = string(certContents)
+	state.LB.Key = string(keyContents)
+
+	if config.ChainPath != "" {
+		chainContents, err := ioutil.ReadFile(config.ChainPath)
 		if err != nil {
 			return err
 		}
 
-		keyContents, err := ioutil.ReadFile(config.KeyPath)
-		if err != nil {
-			return err
-		}
-
-		state.LB.Cert = string(certContents)
-		state.LB.Key = string(keyContents)
-
-		if config.ChainPath != "" {
-			chainContents, err := ioutil.ReadFile(config.ChainPath)
-			if err != nil {
-				return err
-			}
-
-			state.LB.Chain = string(chainContents)
-		}
+		state.LB.Chain = string(chainContents)
 	}
 
 	if config.Domain != "" {
@@ -85,7 +83,7 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 
 	state.LB.Type = config.LBType
 
-	err := c.stateStore.Set(state)
+	err = c.stateStore.Set(state)
 	if err != nil {
 		return err
 	}
@@ -110,16 +108,12 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	return nil
 }
 
-func (AWSCreateLBs) isValidLBType(lbType string) bool {
-	return lbType == "concourse" || lbType == "cf"
-}
-
 func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) error {
 	if newLBType == "" {
 		return fmt.Errorf("--type is a required flag")
 	}
 
-	if !c.isValidLBType(newLBType) {
+	if !lbExists(newLBType) {
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", newLBType)
 	}
 

@@ -118,10 +118,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
-		return err
-	}
-
 	state.Stack.BOSHAZ = config.BOSHAZ
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {

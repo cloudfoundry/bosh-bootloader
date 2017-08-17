@@ -145,8 +145,8 @@ var _ = Describe("AWSUp", func() {
 				EnvID: "bbl-lake-time-stamp",
 			}))
 
-			Expect(stateStore.SetCall.CallCount).To(Equal(4))
-			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
+			Expect(stateStore.SetCall.CallCount).To(Equal(3))
+			Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
 				IAAS: "aws",
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
@@ -177,8 +177,8 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).To(MatchError("cannot apply"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
 						TFState: "some-partial-tf-state",
 					}))
 				})
@@ -200,7 +200,6 @@ var _ = Describe("AWSUp", func() {
 							TFState: "some-partial-tf-state",
 						}
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{
-							{},
 							{},
 							{errors.New("failed to set bbl state")},
 						}
@@ -268,7 +267,7 @@ var _ = Describe("AWSUp", func() {
 					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				})
 			})
 
@@ -401,8 +400,8 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[3].State.IAAS).To(Equal("aws"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives[2].State.IAAS).To(Equal("aws"))
 				})
 			})
 
@@ -416,8 +415,8 @@ var _ = Describe("AWSUp", func() {
 						}, storage.State{})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.CallCount).To(Equal(5))
-						Expect(stateStore.SetCall.Receives[1].State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						Expect(stateStore.SetCall.Receives[0].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "some-aws-access-key-id",
 							SecretAccessKey: "some-aws-secret-access-key",
 							Region:          "some-aws-region",
@@ -457,7 +456,7 @@ var _ = Describe("AWSUp", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(stateStore.SetCall.Receives[1].State.AWS).To(Equal(storage.AWS{
+						Expect(stateStore.SetCall.Receives[0].State.AWS).To(Equal(storage.AWS{
 							AccessKeyID:     "aws-access-key-id",
 							SecretAccessKey: "aws-secret-access-key",
 							Region:          "aws-region",
@@ -562,7 +561,7 @@ var _ = Describe("AWSUp", func() {
 			})
 
 			It("returns an error when state store fails to set the state before updating the cloud config", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("failed to set state")}}
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
 
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to set state"))
@@ -597,16 +596,16 @@ var _ = Describe("AWSUp", func() {
 				It("returns the error and saves the state", func() {
 					err := command.Execute(commands.AWSUpConfig{}, incomingState)
 					Expect(err).To(MatchError("failed to create"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives[2].State.BOSH.State).To(Equal(expectedBOSHState))
 				})
 
 				It("returns a compound error when it fails to save the state", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
 					err := command.Execute(commands.AWSUpConfig{}, incomingState)
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives[2].State.BOSH.State).To(Equal(expectedBOSHState))
 				})
 			})
 		})
