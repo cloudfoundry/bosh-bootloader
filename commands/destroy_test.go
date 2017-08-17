@@ -498,6 +498,83 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
+		Context("when iaas is azure", func() {
+			var (
+				state        storage.State
+				updatedState storage.State
+			)
+
+			BeforeEach(func() {
+				stdin.Write([]byte("yes\n"))
+				state = storage.State{
+					IAAS: "azure",
+				}
+
+				updatedState = storage.State{
+					IAAS:    "azure",
+					TFState: "some-tf-state",
+				}
+				terraformManager.DestroyCall.Returns.BBLState = updatedState
+			})
+
+			It("deletes infrastructure with terraform", func() {
+				err := destroy.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
+				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
+			})
+
+			Context("when terraform destroy fails", func() {
+				BeforeEach(func() {
+					terraformManagerError.ErrorCall.Returns = "failed to destroy"
+					terraformManagerError.BBLStateCall.Returns.BBLState = updatedState
+
+					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
+					terraformManager.DestroyCall.Returns.Error = terraformManagerError
+
+					stdin.Write([]byte("yes\n"))
+				})
+
+				It("saves the partially destroyed tf state", func() {
+					err := destroy.Execute([]string{}, state)
+					Expect(err).To(Equal(terraformManagerError))
+
+					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
+					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
+
+					Expect(terraformManagerError.BBLStateCall.CallCount).To(Equal(1))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedState))
+				})
+
+				Context("when we cannot retrieve the updated bbl state", func() {
+					BeforeEach(func() {
+						terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
+					})
+
+					It("returns an error containing both messages", func() {
+						err := destroy.Execute([]string{}, state)
+
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
+						Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					})
+				})
+
+				Context("and the state fails to be set", func() {
+					It("returns an error containing both messages", func() {
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+						err := destroy.Execute([]string{}, storage.State{
+							IAAS: "azure",
+						})
+
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
+					})
+				})
+			})
+		})
+
 		Context("when iaas is aws", func() {
 			Describe("destroying the aws infrastructure", func() {
 				var (

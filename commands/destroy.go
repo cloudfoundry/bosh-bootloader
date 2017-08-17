@@ -222,9 +222,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 				return err
 			}
 		}
-	}
-
-	if state.IAAS == "gcp" {
+	} else if state.IAAS == "gcp" {
+		state, err = d.terraformManager.Destroy(state)
+		if err != nil {
+			return handleTerraformError(err, d.stateStore)
+		}
+	} else if state.IAAS == "azure" {
 		state, err = d.terraformManager.Destroy(state)
 		if err != nil {
 			return handleTerraformError(err, d.stateStore)
