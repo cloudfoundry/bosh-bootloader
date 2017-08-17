@@ -41,6 +41,11 @@ var _ = Describe("create-lbs", func() {
 			Expect(err).To(MatchError("state validator failed"))
 		})
 
+		It("returns an error if there is no lb type", func() {
+			err := command.CheckFastFails([]string{}, storage.State{})
+			Expect(err).To(MatchError("--type is required"))
+		})
+
 		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
@@ -71,6 +76,7 @@ var _ = Describe("create-lbs", func() {
 			It("returns an error", func() {
 				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
 				err := command.CheckFastFails([]string{
+					"--type", "concourse",
 					"--cert", "/path/to/cert",
 					"--key", "/path/to/key",
 					"--chain", "/path/to/chain",

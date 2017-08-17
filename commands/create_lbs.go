@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"errors"
+
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -52,6 +54,10 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 
 	if err := c.stateValidator.Validate(); err != nil {
 		return err
+	}
+
+	if !lbExists(config.lbType) {
+		return errors.New("--type is required")
 	}
 
 	if !(state.IAAS == "gcp" && config.lbType == "concourse") {
