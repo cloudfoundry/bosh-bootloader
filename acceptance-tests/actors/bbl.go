@@ -72,7 +72,6 @@ func (b BBL) Up(iaas string, additionalArgs []string) *gexec.Session {
 	case "azure":
 		args = append(args, []string{
 			"--iaas", "azure",
-			"--no-director",
 			"--azure-subscription-id", b.configuration.AzureSubscriptionID,
 			"--azure-tenant-id", b.configuration.AzureTenantID,
 			"--azure-client-id", b.configuration.AzureClientID,
