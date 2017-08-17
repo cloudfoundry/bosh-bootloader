@@ -19,7 +19,6 @@ import (
 var _ = Describe("ops file test", func() {
 	var (
 		bbl     actors.BBL
-		bosh    actors.BOSH
 		boshcli actors.BOSHCLI
 		state   acceptance.State
 	)
@@ -30,7 +29,6 @@ var _ = Describe("ops file test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "ops-file-env")
-		bosh = actors.NewBOSH()
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 
