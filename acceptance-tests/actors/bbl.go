@@ -69,6 +69,15 @@ func (b BBL) Up(iaas string, additionalArgs []string) *gexec.Session {
 			"--gcp-region", b.configuration.GCPRegion,
 			"--gcp-zone", b.configuration.GCPZone,
 		}...)
+	case "azure":
+		args = append(args, []string{
+			"--iaas", "azure",
+			"--no-director",
+			"--azure-subscription-id", b.configuration.AzureSubscriptionID,
+			"--azure-tenant-id", b.configuration.AzureTenantID,
+			"--azure-client-id", b.configuration.AzureClientID,
+			"--azure-client-secret", b.configuration.AzureClientSecret,
+		}...)
 	default:
 		panic(errors.New("invalid iaas"))
 	}

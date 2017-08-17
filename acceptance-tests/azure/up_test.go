@@ -1,9 +1,7 @@
 package acceptance_test
 
 import (
-	"bytes"
-	"os"
-	"os/exec"
+	"fmt"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -17,51 +15,36 @@ import (
 
 var _ = Describe("up test", func() {
 	var (
-		bbl     actors.BBL
-		bosh    actors.BOSH
-		boshcli actors.BOSHCLI
-		state   acceptance.State
+		azure  actors.Azure
+		bbl    actors.BBL
+		config acceptance.Config
+		state  acceptance.State
 	)
+
+	BeforeEach(func() {
+		var err error
+		config, err = acceptance.LoadConfig()
+		Expect(err).NotTo(HaveOccurred())
+
+		azure = actors.NewAzure(config)
+		bbl = actors.NewBBL(config.StateFileDir, pathToBBL, config, "azure-env")
+		state = acceptance.NewState(config.StateFileDir)
+	})
 
 	AfterEach(func() {
 		session := bbl.Down()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
+		_, err := azure.GetResourceGroup(fmt.Sprintf("%s-test", bbl.PredefinedEnvID()))
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("creates the resource group", func() {
-		var err error
-		config, err := acceptance.LoadConfig()
-		Expect(err).NotTo(HaveOccurred())
-
-		bbl = actors.NewBBL(config.StateFileDir, pathToBBL, config, "azure-env")
-		bosh = actors.NewBOSH()
-		boshcli = actors.NewBOSHCLI()
-		state = acceptance.NewState(config.StateFileDir)
-
-		args := []string{
-			"--state-dir", config.StateFileDir,
-			"--debug",
-			"up",
-			"--no-director",
-			"--debug",
-			"--azure-subscription-id", config.AzureSubscriptionID,
-			"--azure-tenant-id", config.AzureTenantID,
-			"--azure-client-id", config.AzureClientID,
-			"--azure-client-secret", config.AzureClientSecret,
-		}
-
-		cmd := exec.Command(pathToBBL, args...)
-		stdout := bytes.NewBuffer([]byte{})
-		session, err := gexec.Start(cmd, stdout, os.Stderr)
-		Expect(err).NotTo(HaveOccurred())
+		session := bbl.Up(config.IAAS, []string{"--name", bbl.PredefinedEnvID()})
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
-		By("checking the credentials", func() {
-			Expect(string(stdout.Bytes())).To(ContainSubstring("step: verifying credentials"))
-		})
-
-		By("checking the terraform output", func() {
-			Expect(string(stdout.Bytes())).To(ContainSubstring("azurerm_resource_group.test: Creation complete"))
-		})
+		exists, err := azure.GetResourceGroup(fmt.Sprintf("%s-test", bbl.PredefinedEnvID()))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(exists).To(BeTrue())
 	})
 })
