@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -45,6 +44,7 @@ var (
 func main() {
 	newConfig := config.NewConfig(storage.GetState)
 	parsedFlags, err := newConfig.Bootstrap(os.Args)
+	log.SetFlags(0)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
@@ -237,7 +237,6 @@ func main() {
 
 	err = app.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "\n\n%s\n", err)
-		os.Exit(1)
+		log.Fatalf("\n\n%s\n", err)
 	}
 }
