@@ -23,9 +23,10 @@ var _ = Describe("up test", func() {
 		state   acceptance.State
 	)
 
-	// AfterEach(func() {
-	// 	bbl.Destroy()
-	// })
+	AfterEach(func() {
+		session := bbl.Down()
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
+	})
 
 	It("creates the resource group", func() {
 		var err error
@@ -41,16 +42,13 @@ var _ = Describe("up test", func() {
 			"--state-dir", config.StateFileDir,
 			"--debug",
 			"up",
-		}
-
-		args = append(args, []string{
-			"--iaas", "azure",
+			"--no-director",
 			"--debug",
 			"--azure-subscription-id", config.AzureSubscriptionID,
 			"--azure-tenant-id", config.AzureTenantID,
 			"--azure-client-id", config.AzureClientID,
 			"--azure-client-secret", config.AzureClientSecret,
-		}...)
+		}
 
 		cmd := exec.Command(pathToBBL, args...)
 		stdout := bytes.NewBuffer([]byte{})

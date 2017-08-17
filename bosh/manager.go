@@ -1,7 +1,6 @@
 package bosh
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -440,16 +439,11 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 }
 
 func generateIAASInputs(state storage.State) (InterpolateInput, error) {
-	switch state.IAAS {
-	case "gcp", "aws":
-		return InterpolateInput{
-			IAAS:      state.IAAS,
-			BOSHState: state.BOSH.State,
-			Variables: state.BOSH.Variables,
-		}, nil
-	default:
-		return InterpolateInput{}, errors.New("A valid IAAS was not provided")
-	}
+	return InterpolateInput{
+		IAAS:      state.IAAS,
+		BOSHState: state.BOSH.State,
+		Variables: state.BOSH.Variables,
+	}, nil
 }
 
 func getJumpboxPrivateKey(v string) (string, error) {

@@ -119,5 +119,29 @@ var _ = Describe("AzureUp", func() {
 				})
 			})
 		})
+
+		Context("when the no-director flag is provided", func() {
+			BeforeEach(func() {
+				terraformManager.ApplyCall.Returns.BBLState.NoDirector = true
+			})
+
+			It("does not create a bosh or update cloud config", func() {
+				err := azureUp.Execute(commands.AzureUpConfig{
+					NoDirector: true,
+				}, storage.State{
+					Azure: storage.Azure{
+						SubscriptionID: "subscription-id",
+						TenantID:       "tenant-id",
+						ClientID:       "client-id",
+						ClientSecret:   "client-secret",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.Receives[0].State.NoDirector).To(Equal(true))
+			})
+		})
 	})
 })

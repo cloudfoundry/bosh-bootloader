@@ -11,7 +11,8 @@ type azureClient interface {
 }
 
 type AzureUpConfig struct {
-	Name string
+	Name       string
+	NoDirector bool
 }
 
 type AzureUp struct {
@@ -40,6 +41,10 @@ func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
 		return errors.New("Error: credentials are invalid")
 	}
 
+	if upConfig.NoDirector {
+		state.NoDirector = true
+	}
+
 	state, err = u.envIDManager.Sync(state, upConfig.Name)
 	if err != nil {
 		return err
@@ -52,6 +57,10 @@ func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {
 		return handleTerraformError(err, u.stateStore)
+	}
+
+	if err := u.stateStore.Set(state); err != nil {
+		return err
 	}
 
 	return nil

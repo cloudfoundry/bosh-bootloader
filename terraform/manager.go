@@ -190,6 +190,8 @@ func (m Manager) GetOutputs(state storage.State) (map[string]interface{}, error)
 		return m.gcpOutputGenerator.Generate(state.TFState)
 	case "aws":
 		return m.awsOutputGenerator.Generate(state.TFState)
+	case "azure":
+		return map[string]interface{}{}, nil
 	default:
 		return map[string]interface{}{}, fmt.Errorf("invalid iaas: %q", state.IAAS)
 	}

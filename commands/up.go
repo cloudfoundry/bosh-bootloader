@@ -90,7 +90,8 @@ func (u Up) Execute(args []string, state storage.State) error {
 		}, state)
 	case "azure":
 		err = u.azureUp.Execute(AzureUpConfig{
-			Name: config.name,
+			Name:       config.name,
+			NoDirector: config.noDirector,
 		}, state)
 	}
 

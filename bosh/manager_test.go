@@ -356,11 +356,6 @@ private_key: some-private-key
 		})
 
 		Context("when an error occurs", func() {
-			It("returns an error when an invalid iaas is provided", func() {
-				_, err := boshManager.CreateDirector(storage.State{IAAS: "WUT"}, terraformOutputs)
-				Expect(err).To(MatchError("A valid IAAS was not provided"))
-			})
-
 			It("returns an error when the executor's interpolate call fails", func() {
 				boshExecutor.DirectorInterpolateCall.Returns.Error = errors.New("failed to interpolate")
 
