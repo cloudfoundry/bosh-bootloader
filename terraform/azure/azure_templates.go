@@ -47,11 +47,13 @@ const NetworkTemplate = `resource "azurerm_virtual_network" "bosh" {
   address_space       = ["10.0.0.0/16"]
   location            = "West US"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
+}
 
-  subnet {
-    name           = "subnet1"
-    address_prefix = "10.0.1.0/24"
-  }
+resource "azurerm_subnet" "bosh" {
+  name                 = "${var.env_id}-bosh"
+  address_prefix       = "10.0.1.0/24"
+  resource_group_name  = "${azurerm_resource_group.bosh.name}"
+  virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
 `
 
@@ -96,7 +98,7 @@ const OutputTemplate = `output "bosh_network_name" {
 }
 
 output "bosh_subnet_name" {
-    value = "${azurerm_virtual_network.bosh.subnet.name}"
+    value = "${azurerm_subnet.bosh.name}"
 }
 
 output "bosh_resource_group_name" {

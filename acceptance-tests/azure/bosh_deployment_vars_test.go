@@ -60,21 +60,21 @@ var _ = FDescribe("bosh deployment vars", func() {
 		}
 
 		yaml.Unmarshal([]byte(stdout), &vars)
-		// Common
+
 		Expect(vars.InternalCIDR).To(Equal("10.0.0.0/24"))
 		Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
 		Expect(vars.InternalIP).To(Equal("10.0.0.6"))
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
 
-		// Azure  TODO fix expectations
-		Expect(vars.VNetName).To(Equal("bbl-test-bosh-deployment-vars-env-bosh"))
-		Expect(vars.SubnetName).To(Equal("10.0.0.6"))
 		Expect(vars.SubscriptionID).To(Equal(configuration.AzureSubscriptionID))
 		Expect(vars.TenantID).To(Equal(configuration.AzureTenantID))
 		Expect(vars.ClientID).To(Equal(configuration.AzureClientID))
 		Expect(vars.ClientSecret).To(Equal(configuration.AzureClientSecret))
-		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
+
+		Expect(vars.VNetName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
+		Expect(vars.SubnetName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
+		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
 		Expect(vars.StorageAccountName).To(Equal("bbltestboshdeploymen"))
-		Expect(vars.DefaultSecurityGroup).To(Equal("bbl-test-bosh-deployment-vars-env-bosh"))
+		Expect(vars.DefaultSecurityGroup).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
 	})
 })
