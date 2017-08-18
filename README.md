@@ -2,7 +2,8 @@
 ---
 
 This is a command line utility for standing up a CloudFoundry or Concourse installation
-on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installation on AWS and GCP.
+on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installation on
+AWS and GCP. Azure support is in progress.
 
 * [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
@@ -36,10 +37,7 @@ $ brew install cloudfoundry/tap/bosh-cli --without-bosh2
 
 ### Install bosh-bootloader
 
-bosh-bootloader can be installed by downloading the [latest Github release](https://github.com/cloudfoundry/bosh-bootloader/releases/latest) or via homebrew:
-```sh
-$ brew install cloudfoundry/tap/bbl
-```
+`bbl` can be installed by downloading the [latest Github release](https://github.com/cloudfoundry/bosh-bootloader/releases/latest):
 
 ### Configure AWS
 
