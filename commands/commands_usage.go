@@ -17,7 +17,12 @@ const (
   --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
   --gcp-project-id           GCP Project ID to use (Defaults to environment variable BBL_GCP_PROJECT_ID)
   --gcp-zone                 GCP Zone to use for BOSH director (Defaults to environment variable BBL_GCP_ZONE)
-  --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)`
+  --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)
+
+  --azure-subscription-id    Azure subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure client secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
 
