@@ -1,7 +1,6 @@
 package azure
 
-const VarsTemplate = `
-variable "env_id" {
+const VarsTemplate = `variable "env_id" {
 	type = "string"
 }
 
@@ -29,47 +28,46 @@ provider "azurerm" {
 }
 `
 
-const ResourceGroupTemplate = `
-resource "azurerm_resource_group" "test" {
+const ResourceGroupTemplate = `resource "azurerm_resource_group" "test" {
   name     = "${var.env_id}-test"
   location = "West US"
 
   tags {
-    environment = "${var.env_id}-test"
+    environment = "${var.env_id}"
   }
-}`
+}
+`
 
-const NetworkTemplate = `# Create a virtual network in the web_servers resource group
-resource "azurerm_virtual_network" "network" {
+const NetworkTemplate = `resource "azurerm_virtual_network" "network" {
   name                = "boshnet"
   address_space       = ["10.0.0.0/16"]
   location            = "West US"
-  resource_group_name = "${var.env_id}-test"
+  resource_group_name = "${azurerm_resource_group.test.name}"
 
   subnet {
     name           = "subnet1"
     address_prefix = "10.0.1.0/24"
   }
-}`
+}
+`
 
-const StorageTemplate = `# https://www.terraform.io/docs/providers/azurerm/r/storage_account.html
-resource "azurerm_storage_account" "storage" {
+const StorageTemplate = `resource "azurerm_storage_account" "storage" {
   name                = "boshstore"
-  resource_group_name = "${var.env_id}-test"
+  resource_group_name = "${azurerm_resource_group.test.name}"
 
   location     = "westus"
   account_type = "Standard_GRS"
 
   tags {
-    environment = "${var.env_id}-test"
+    environment = "${var.env_id}"
   }
-}`
+}
+`
 
-const NetworkSecurityGroupTemplate = ` # https://www.terraform.io/docs/providers/azurerm/r/network_security_group.html
-resource "azurerm_network_security_group" "security_group" {
+const NetworkSecurityGroupTemplate = `resource "azurerm_network_security_group" "security_group" {
   name                = "nsg-bosh"
   location            = "West US"
-  resource_group_name = "${var.env_id}-test"
+  resource_group_name = "${azurerm_resource_group.test.name}"
 
   security_rule {
     name                       = "nsg-bosh"
@@ -84,12 +82,12 @@ resource "azurerm_network_security_group" "security_group" {
   }
 
   tags {
-    environment = "Production"
+    environment = "${var.env_id}"
   }
-}`
+}
+`
 
-const OutputTemplate = `
-output "bosh_network_name" {
+const OutputTemplate = `output "bosh_network_name" {
     value = "${azurerm_virtual_network.network.name}"
 }
 
