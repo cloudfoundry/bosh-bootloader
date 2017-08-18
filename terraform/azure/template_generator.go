@@ -13,5 +13,5 @@ func NewTemplateGenerator() TemplateGenerator {
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	return strings.Join([]string{VarsTemplate, ResourceGroupTemplate}, "\n")
+	return strings.Join([]string{VarsTemplate, ResourceGroupTemplate, NetworkTemplate, StorageTemplate, NetworkSecurityGroupTemplate, OutputTemplate}, "\n")
 }

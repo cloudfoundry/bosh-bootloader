@@ -53,13 +53,14 @@ type deploymentVariables struct {
 }
 
 type sharedDeploymentVarsYAML struct {
-	InternalCIDR string  `yaml:"internal_cidr,omitempty"`
-	InternalGW   string  `yaml:"internal_gw,omitempty"`
-	InternalIP   string  `yaml:"internal_ip,omitempty"`
-	DirectorName string  `yaml:"director_name,omitempty"`
-	ExternalIP   string  `yaml:"external_ip,omitempty"`
-	AWSYAML      AWSYAML `yaml:",inline"`
-	GCPYAML      GCPYAML `yaml:",inline"`
+	InternalCIDR string    `yaml:"internal_cidr,omitempty"`
+	InternalGW   string    `yaml:"internal_gw,omitempty"`
+	InternalIP   string    `yaml:"internal_ip,omitempty"`
+	DirectorName string    `yaml:"director_name,omitempty"`
+	ExternalIP   string    `yaml:"external_ip,omitempty"`
+	AWSYAML      AWSYAML   `yaml:",inline"`
+	GCPYAML      GCPYAML   `yaml:",inline"`
+	AZUREYAML    AZUREYAML `yaml:",inline"`
 }
 
 type AWSYAML struct {
@@ -81,6 +82,18 @@ type GCPYAML struct {
 	Tags           []string `yaml:"tags,omitempty"`
 	ProjectID      string   `yaml:"project_id,omitempty"`
 	CredentialJSON string   `yaml:"gcp_credentials_json,omitempty"`
+}
+
+type AZUREYAML struct {
+	VNetName             string `yaml:"vnet_name,omitempty"`
+	SubnetName           string `yaml:"subnet_name,omitempty"`
+	SubscriptionID       string `yaml:"subscription_id,omitempty"`
+	TenantID             string `yaml:"tenant_id,omitempty"`
+	ClientID             string `yaml:"client_id,omitempty"`
+	ClientSecret         string `yaml:"client_secret,omitempty"`
+	ResourceGroupName    string `yaml:"resource_group_name,omitempty"`
+	StorageAccountName   string `yaml:"storage_account_name,omitempty"`
+	DefaultSecurityGroup string `yaml:"default_security_group,omitempty"`
 }
 
 type executor interface {
@@ -431,6 +444,26 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 				DefaultSecurityGroups: []string{getTerraformOutput("bosh_security_group", terraformOutputs)},
 				Region:                state.AWS.Region,
 				PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
+			},
+		})
+
+	case "azure":
+		vars, _ = yaml.Marshal(sharedDeploymentVarsYAML{
+			InternalCIDR: "10.0.0.0/24",
+			InternalGW:   "10.0.0.1",
+			InternalIP:   DIRECTOR_INTERNAL_IP,
+			ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
+			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
+			AZUREYAML: AZUREYAML{
+				VNetName:             getTerraformOutput("bosh_network_name", terraformOutputs),
+				SubnetName:           getTerraformOutput("bosh_subnet_name", terraformOutputs),
+				SubscriptionID:       state.Azure.SubscriptionID,
+				TenantID:             state.Azure.TenantID,
+				ClientID:             state.Azure.ClientID,
+				ClientSecret:         state.Azure.ClientSecret,
+				ResourceGroupName:    getTerraformOutput("bosh_resource_group_name", terraformOutputs),
+				StorageAccountName:   getTerraformOutput("bosh_storage_account_name", terraformOutputs),
+				DefaultSecurityGroup: getTerraformOutput("bosh_default_security_group", terraformOutputs),
 			},
 		})
 	}
