@@ -67,14 +67,14 @@ var _ = FDescribe("bosh deployment vars", func() {
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
 
 		// Azure  TODO fix expectations
-		Expect(vars.VNetName).To(Equal("10.0.0.6"))
+		Expect(vars.VNetName).To(Equal("bbl-test-bosh-deployment-bosh"))
 		Expect(vars.SubnetName).To(Equal("10.0.0.6"))
 		Expect(vars.SubscriptionID).To(Equal(configuration.AzureSubscriptionID))
 		Expect(vars.TenantID).To(Equal(configuration.AzureTenantID))
 		Expect(vars.ClientID).To(Equal(configuration.AzureClientID))
 		Expect(vars.ClientSecret).To(Equal(configuration.AzureClientSecret))
 		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
-		Expect(vars.StorageAccountName).To(Equal("10.0.0.6"))
-		Expect(vars.DefaultSecurityGroup).To(Equal("10.0.0.6"))
+		Expect(vars.StorageAccountName).To(Equal("bbltestboshdeploymen"))
+		Expect(vars.DefaultSecurityGroup).To(Equal("bbl-test-bosh-deployment-bosh"))
 	})
 })
