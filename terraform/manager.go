@@ -13,8 +13,9 @@ type Manager struct {
 	executor              executor
 	templateGenerator     templateGenerator
 	inputGenerator        inputGenerator
-	gcpOutputGenerator    outputGenerator
 	awsOutputGenerator    outputGenerator
+	azureOutputGenerator  outputGenerator
+	gcpOutputGenerator    outputGenerator
 	terraformOutputBuffer *bytes.Buffer
 	logger                logger
 	stackMigrator         stackMigrator
@@ -52,6 +53,7 @@ type NewManagerArgs struct {
 	TemplateGenerator     templateGenerator
 	InputGenerator        inputGenerator
 	AWSOutputGenerator    outputGenerator
+	AzureOutputGenerator  outputGenerator
 	GCPOutputGenerator    outputGenerator
 	TerraformOutputBuffer *bytes.Buffer
 	Logger                logger
@@ -64,6 +66,7 @@ func NewManager(args NewManagerArgs) Manager {
 		templateGenerator:     args.TemplateGenerator,
 		inputGenerator:        args.InputGenerator,
 		awsOutputGenerator:    args.AWSOutputGenerator,
+		azureOutputGenerator:  args.AzureOutputGenerator,
 		gcpOutputGenerator:    args.GCPOutputGenerator,
 		terraformOutputBuffer: args.TerraformOutputBuffer,
 		logger:                args.Logger,
@@ -191,7 +194,7 @@ func (m Manager) GetOutputs(state storage.State) (map[string]interface{}, error)
 	case "aws":
 		return m.awsOutputGenerator.Generate(state.TFState)
 	case "azure":
-		return map[string]interface{}{}, nil
+		return m.azureOutputGenerator.Generate(state.TFState)
 	default:
 		return map[string]interface{}{}, fmt.Errorf("invalid iaas: %q", state.IAAS)
 	}

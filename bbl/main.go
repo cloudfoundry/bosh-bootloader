@@ -115,6 +115,7 @@ func main() {
 
 	azureTemplateGenerator := azureterraform.NewTemplateGenerator()
 	azureInputGenerator := azureterraform.NewInputGenerator()
+	azureOutputGenerator := azureterraform.NewOutputGenerator(terraformExecutor)
 
 	templateGenerator := terraform.NewTemplateGenerator(gcpTemplateGenerator, awsTemplateGenerator, azureTemplateGenerator)
 	inputGenerator := terraform.NewInputGenerator(gcpInputGenerator, awsInputGenerator, azureInputGenerator)
@@ -125,6 +126,7 @@ func main() {
 		TemplateGenerator:     templateGenerator,
 		InputGenerator:        inputGenerator,
 		AWSOutputGenerator:    awsOutputGenerator,
+		AzureOutputGenerator:  azureOutputGenerator,
 		GCPOutputGenerator:    gcpOutputGenerator,
 		TerraformOutputBuffer: terraformOutputBuffer,
 		Logger:                logger,
