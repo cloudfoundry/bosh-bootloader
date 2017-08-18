@@ -50,19 +50,31 @@ var _ = FDescribe("bosh deployment vars", func() {
 			DirectorName         string `yaml:"director_name"`
 			VNetName             string `yaml:"vnet_name"`
 			SubnetName           string `yaml:"subnet_name"`
-			Subscription         string `yaml:"subscription_id"`
+			SubscriptionID       string `yaml:"subscription_id"`
 			TenantID             string `yaml:"tenant_id"`
 			ClientID             string `yaml:"client_id"`
 			ClientSecret         string `yaml:"client_secret"`
 			ResourceGroupName    string `yaml:"resource_group_name"`
-			StoreageAccountName  string `yaml:"storage_account_name"`
+			StorageAccountName   string `yaml:"storage_account_name"`
 			DefaultSecurityGroup string `yaml:"default_security_group"`
 		}
 
 		yaml.Unmarshal([]byte(stdout), &vars)
+		// Common
 		Expect(vars.InternalCIDR).To(Equal("10.0.0.0/24"))
 		Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
 		Expect(vars.InternalIP).To(Equal("10.0.0.6"))
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
+
+		// Azure  TODO fix expectations
+		Expect(vars.VNetName).To(Equal("10.0.0.6"))
+		Expect(vars.SubnetName).To(Equal("10.0.0.6"))
+		Expect(vars.SubscriptionID).To(Equal(configuration.AzureSubscriptionID))
+		Expect(vars.TenantID).To(Equal(configuration.AzureTenantID))
+		Expect(vars.ClientID).To(Equal(configuration.AzureClientID))
+		Expect(vars.ClientSecret).To(Equal(configuration.AzureClientSecret))
+		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
+		Expect(vars.StorageAccountName).To(Equal("10.0.0.6"))
+		Expect(vars.DefaultSecurityGroup).To(Equal("10.0.0.6"))
 	})
 })
