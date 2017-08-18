@@ -34,11 +34,29 @@ var _ = Describe("InputGenerator", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(inputs).To(Equal(map[string]string{
+			"simple_env_id":   "envid",
 			"env_id":          state.EnvID,
 			"subscription_id": state.Azure.SubscriptionID,
 			"tenant_id":       state.Azure.TenantID,
 			"client_id":       state.Azure.ClientID,
 			"client_secret":   state.Azure.ClientSecret,
 		}))
+	})
+
+	Context("given a long environment id", func() {
+		It("shortens the id for simple_env_id", func() {
+			state.EnvID = "super-long-environment-id-with-999"
+			inputs, err := inputGenerator.Generate(state)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(inputs).To(Equal(map[string]string{
+				"simple_env_id":   "superlongenvironment",
+				"env_id":          state.EnvID,
+				"subscription_id": state.Azure.SubscriptionID,
+				"tenant_id":       state.Azure.TenantID,
+				"client_id":       state.Azure.ClientID,
+				"client_secret":   state.Azure.ClientSecret,
+			}))
+		})
 	})
 })
