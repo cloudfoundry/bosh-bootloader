@@ -4,6 +4,10 @@ const VarsTemplate = `variable "env_id" {
 	type = "string"
 }
 
+variable "simple_env_id" {
+	type = "string"
+}
+
 variable "subscription_id" {
 	type = "string"
 }
@@ -28,8 +32,8 @@ provider "azurerm" {
 }
 `
 
-const ResourceGroupTemplate = `resource "azurerm_resource_group" "test" {
-  name     = "${var.env_id}-test"
+const ResourceGroupTemplate = `resource "azurerm_resource_group" "bosh" {
+  name     = "${var.env_id}-bosh"
   location = "West US"
 
   tags {
@@ -38,11 +42,11 @@ const ResourceGroupTemplate = `resource "azurerm_resource_group" "test" {
 }
 `
 
-const NetworkTemplate = `resource "azurerm_virtual_network" "network" {
-  name                = "boshnet"
+const NetworkTemplate = `resource "azurerm_virtual_network" "bosh" {
+  name                = "${var.simple_env_id}"
   address_space       = ["10.0.0.0/16"]
   location            = "West US"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+  resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   subnet {
     name           = "subnet1"
@@ -51,9 +55,9 @@ const NetworkTemplate = `resource "azurerm_virtual_network" "network" {
 }
 `
 
-const StorageTemplate = `resource "azurerm_storage_account" "storage" {
-  name                = "boshstore"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+const StorageTemplate = `resource "azurerm_storage_account" "bosh" {
+  name                = "${var.simple_env_id}"
+  resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   location     = "westus"
   account_type = "Standard_GRS"
@@ -64,10 +68,10 @@ const StorageTemplate = `resource "azurerm_storage_account" "storage" {
 }
 `
 
-const NetworkSecurityGroupTemplate = `resource "azurerm_network_security_group" "security_group" {
-  name                = "nsg-bosh"
+const NetworkSecurityGroupTemplate = `resource "azurerm_network_security_group" "bosh" {
+  name                = "${var.env_id}-bosh"
   location            = "West US"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+  resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   security_rule {
     name                       = "nsg-bosh"
@@ -88,22 +92,22 @@ const NetworkSecurityGroupTemplate = `resource "azurerm_network_security_group" 
 `
 
 const OutputTemplate = `output "bosh_network_name" {
-    value = "${azurerm_virtual_network.network.name}"
+    value = "${azurerm_virtual_network.bosh.name}"
 }
 
 output "bosh_subnet_name" {
-    value = "${azurerm_virtual_network.network.subnet.name}"
+    value = "${azurerm_virtual_network.bosh.subnet.name}"
 }
 
 output "bosh_resource_group_name" {
-    value = "${azurerm_resource_group.test.name}"
+    value = "${azurerm_resource_group.bosh.name}"
 }
 
 output "bosh_storage_account_name" {
-    value = "${azurerm_storage_account.storage.name}"
+    value = "${azurerm_storage_account.bosh.name}"
 }
 
 output "bosh_default_security_group" {
-    value = "${azurerm_network_security_group.security_group.name}"
+    value = "${azurerm_network_security_group.bosh.name}"
 }
 `
