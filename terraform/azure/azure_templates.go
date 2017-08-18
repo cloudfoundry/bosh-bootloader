@@ -43,7 +43,7 @@ const ResourceGroupTemplate = `resource "azurerm_resource_group" "bosh" {
 `
 
 const NetworkTemplate = `resource "azurerm_virtual_network" "bosh" {
-  name                = "${var.simple_env_id}"
+  name                = "${var.env_id}-bosh"
   address_space       = ["10.0.0.0/16"]
   location            = "West US"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
