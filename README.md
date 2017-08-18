@@ -118,7 +118,3 @@ Commands:
 
   Use "bbl [command] --help" for more information about a command.
 ```
-
-## Contributing
-
-Please make pull requests against our `develop` branch
