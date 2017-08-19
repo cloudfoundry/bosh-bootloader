@@ -30,18 +30,19 @@ var _ = FDescribe("credhub test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "credhub-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up(configuration.IAAS, []string{"--credhub", "--name", bbl.PredefinedEnvID()})
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 	})
 
 	It("creates a director with a jumpbox, credhub, and UAA", func() {
 		By("parsing the output of print-env", func() {
 			stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
+			Expect(stdout).To(ContainSubstring("ssh -f -N"))
 
 			stdout = strings.Replace(stdout, "-f -N", "", 1)
 
