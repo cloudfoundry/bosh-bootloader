@@ -35,15 +35,15 @@ var _ = Describe("up test", func() {
 		session := bbl.Down()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
-		_, err := azure.GetResourceGroup(fmt.Sprintf("%s-test", bbl.PredefinedEnvID()))
+		_, err := azure.GetResourceGroup(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID()))
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("creates the resource group", func() {
-		session := bbl.Up(config.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up(config.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
-		exists, err := azure.GetResourceGroup(fmt.Sprintf("%s-test", bbl.PredefinedEnvID()))
+		exists, err := azure.GetResourceGroup(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID()))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeTrue())
 	})

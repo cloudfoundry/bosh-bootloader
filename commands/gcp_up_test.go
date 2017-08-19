@@ -51,14 +51,14 @@ var _ = Describe("GCPUp", func() {
 	)
 
 	BeforeEach(func() {
-		stateStore = &fakes.StateStore{}
-		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
-		terraformManager = &fakes.TerraformManager{}
-		envIDManager = &fakes.EnvIDManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		terraformManagerError = &fakes.TerraformManagerError{}
+		envIDManager = &fakes.EnvIDManager{}
 		gcpZones = &fakes.GCPClient{}
+		logger = &fakes.Logger{}
+		stateStore = &fakes.StateStore{}
+		terraformManager = &fakes.TerraformManager{}
+		terraformManagerError = &fakes.TerraformManagerError{}
 
 		tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 		Expect(err).NotTo(HaveOccurred())

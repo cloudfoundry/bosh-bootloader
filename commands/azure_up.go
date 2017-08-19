@@ -16,27 +16,36 @@ type AzureUpConfig struct {
 }
 
 type AzureUp struct {
-	azureClient      azureClient
-	logger           logger
-	envIDManager     envIDManager
-	stateStore       stateStore
-	terraformManager terraformApplier
+	azureClient        azureClient
+	boshManager        boshManager
+	cloudConfigManager cloudConfigManager
+	envIDManager       envIDManager
+	logger             logger
+	stateStore         stateStore
+	terraformManager   terraformApplier
 }
 
-func NewAzureUp(azureClient azureClient, logger logger, envIDManager envIDManager, stateStore stateStore, terraformManager terraformApplier) AzureUp {
+func NewAzureUp(azureClient azureClient,
+	boshManager boshManager,
+	cloudConfigManager cloudConfigManager,
+	envIDManager envIDManager,
+	logger logger,
+	stateStore stateStore,
+	terraformManager terraformApplier) AzureUp {
 	return AzureUp{
-		azureClient:      azureClient,
-		logger:           logger,
-		envIDManager:     envIDManager,
-		stateStore:       stateStore,
-		terraformManager: terraformManager,
+		azureClient:        azureClient,
+		boshManager:        boshManager,
+		cloudConfigManager: cloudConfigManager,
+		envIDManager:       envIDManager,
+		logger:             logger,
+		stateStore:         stateStore,
+		terraformManager:   terraformManager,
 	}
 }
 
 func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
 	u.logger.Step("verifying credentials")
 	err := u.azureClient.ValidateCredentials(state.Azure.SubscriptionID, state.Azure.TenantID, state.Azure.ClientID, state.Azure.ClientSecret)
-
 	if err != nil {
 		return errors.New("Error: credentials are invalid")
 	}
@@ -61,6 +70,26 @@ func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
 
 	if err := u.stateStore.Set(state); err != nil {
 		return err
+	}
+
+	tfOutputs, err := u.terraformManager.GetOutputs(state)
+	if err != nil {
+		return err
+	}
+
+	if !state.NoDirector {
+		state, err = u.boshManager.CreateDirector(state, tfOutputs)
+		if err != nil {
+			return err
+		}
+
+		if err := u.stateStore.Set(state); err != nil {
+			return err
+		}
+
+		if err := u.cloudConfigManager.Update(state); err != nil {
+			return err
+		}
 	}
 
 	return nil

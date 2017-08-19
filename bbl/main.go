@@ -162,7 +162,7 @@ func main() {
 	awsDeleteLBs := commands.NewAWSDeleteLBs(logger, cloudConfigManager, stateStore, awsEnvironmentValidator, terraformManager)
 
 	azureClient := azure.NewClient()
-	azureUp := commands.NewAzureUp(azureClient, logger, envIDManager, stateStore, terraformManager)
+	azureUp := commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, logger, stateStore, terraformManager)
 
 	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
 

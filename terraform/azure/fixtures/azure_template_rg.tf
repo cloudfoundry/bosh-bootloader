@@ -38,6 +38,17 @@ resource "azurerm_resource_group" "bosh" {
   }
 }
 
+resource "azurerm_public_ip" "bosh" {
+  name                         = "${var.env_id}-bosh"
+  location                     = "West US"
+  resource_group_name          = "${azurerm_resource_group.bosh.name}"
+  public_ip_address_allocation = "static"
+
+  tags {
+    environment = "${var.env_id}"
+  }
+}
+
 resource "azurerm_virtual_network" "bosh" {
   name                = "${var.env_id}-bosh"
   address_space       = ["10.0.0.0/16"]
@@ -47,7 +58,7 @@ resource "azurerm_virtual_network" "bosh" {
 
 resource "azurerm_subnet" "bosh" {
   name                 = "${var.env_id}-bosh"
-  address_prefix       = "10.0.1.0/24"
+  address_prefix       = "10.0.0.0/16"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
@@ -104,4 +115,12 @@ output "bosh_storage_account_name" {
 
 output "bosh_default_security_group" {
     value = "${azurerm_network_security_group.bosh.name}"
+}
+
+output "external_ip" {
+    value = "${azurerm_public_ip.bosh.ip_address}"
+}
+
+output "director_address" {
+	value = "https://${azurerm_public_ip.bosh.ip_address}:25555"
 }

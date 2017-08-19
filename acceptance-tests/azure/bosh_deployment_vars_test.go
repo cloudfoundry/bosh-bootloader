@@ -16,7 +16,7 @@ import (
 
 const ipRegex = `[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}`
 
-var _ = FDescribe("bosh deployment vars", func() {
+var _ = Describe("bosh deployment vars", func() {
 	var (
 		bbl           actors.BBL
 		state         acceptance.State
@@ -47,6 +47,7 @@ var _ = FDescribe("bosh deployment vars", func() {
 			InternalCIDR         string `yaml:"internal_cidr"`
 			InternalGateway      string `yaml:"internal_gw"`
 			InternalIP           string `yaml:"internal_ip"`
+			ExternalIP           string `yaml:"external_ip"`
 			DirectorName         string `yaml:"director_name"`
 			VNetName             string `yaml:"vnet_name"`
 			SubnetName           string `yaml:"subnet_name"`
@@ -65,6 +66,7 @@ var _ = FDescribe("bosh deployment vars", func() {
 		Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
 		Expect(vars.InternalIP).To(Equal("10.0.0.6"))
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
+		Expect(vars.ExternalIP).To(MatchRegexp(ipRegex))
 
 		Expect(vars.SubscriptionID).To(Equal(configuration.AzureSubscriptionID))
 		Expect(vars.TenantID).To(Equal(configuration.AzureTenantID))
