@@ -462,7 +462,6 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 				InternalCIDR: "10.0.0.0/24",
 				InternalGW:   "10.0.0.1",
 				InternalIP:   DIRECTOR_INTERNAL_IP,
-				ExternalIP:   getTerraformOutput("external_ip2", terraformOutputs),
 				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 				AWSYAML: AWSYAML{
 					AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),

@@ -12,9 +12,15 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
-const boshDirectorEphemeralIPOps = `
+const gcpBoshDirectorEphemeralIPOps = `
 - type: replace
   path: /networks/name=default/subnets/0/cloud_properties/ephemeral_external_ip?
+  value: true
+`
+
+const awsBoshDirectorEphemeralIPOps = `
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties/auto_assign_public_ip?
   value: true
 `
 
@@ -138,15 +144,16 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	}
 
 	var directorSetupFiles = map[string][]byte{
-		"deployment-vars.yml":                 []byte(interpolateInput.DeploymentVars),
-		"user-ops-file.yml":                   []byte(interpolateInput.OpsFile),
-		"bosh.yml":                            MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
-		"cpi.yml":                             MustAsset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS)),
-		"iam-instance-profile.yml":            MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
-		"bosh-director-ephemeral-ip-ops.yml":  []byte(boshDirectorEphemeralIPOps),
-		"jumpbox-user.yml":                    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
-		"gcp-external-ip-not-recommended.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
-		"aws-external-ip-not-recommended.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml"),
+		"deployment-vars.yml":                    []byte(interpolateInput.DeploymentVars),
+		"user-ops-file.yml":                      []byte(interpolateInput.OpsFile),
+		"bosh.yml":                               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
+		"cpi.yml":                                MustAsset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS)),
+		"iam-instance-profile.yml":               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
+		"gcp-bosh-director-ephemeral-ip-ops.yml": []byte(gcpBoshDirectorEphemeralIPOps),
+		"aws-bosh-director-ephemeral-ip-ops.yml": []byte(awsBoshDirectorEphemeralIPOps),
+		"jumpbox-user.yml":                       MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
+		"gcp-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
+		"aws-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml"),
 		"uaa.yml":     MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/uaa.yml"),
 		"credhub.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/credhub.yml"),
 	}
@@ -180,17 +187,24 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		switch interpolateInput.IAAS {
 		case "gcp":
 			args = append(args, "-o", filepath.Join(tempDir, "gcp-external-ip-not-recommended.yml"))
+		case "aws":
+			args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"))
 		}
 	} else {
 		args = append(args,
-			"-o", filepath.Join(tempDir, "bosh-director-ephemeral-ip-ops.yml"),
 			"-o", filepath.Join(tempDir, "uaa.yml"),
 			"-o", filepath.Join(tempDir, "credhub.yml"),
 		)
+		switch interpolateInput.IAAS {
+		case "gcp":
+			args = append(args, "-o", filepath.Join(tempDir, "gcp-bosh-director-ephemeral-ip-ops.yml"))
+		case "aws":
+			args = append(args, "-o", filepath.Join(tempDir, "aws-bosh-director-ephemeral-ip-ops.yml"))
+		}
 	}
 
 	if interpolateInput.IAAS == "aws" {
-		args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"), "-o", filepath.Join(tempDir, "iam-instance-profile.yml"))
+		args = append(args, "-o", filepath.Join(tempDir, "iam-instance-profile.yml"))
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

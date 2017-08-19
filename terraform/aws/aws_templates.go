@@ -5,15 +5,6 @@ const BaseTemplate = `resource "aws_eip" "bosh_eip" {
   vpc      = true
 }
 
-resource "aws_eip" "bosh_eip2" {
-  depends_on = ["aws_internet_gateway.ig"]
-  vpc      = true
-}
-
-output "external_ip2" {
-  value = "${aws_eip.bosh_eip2.public_ip}"
-}
-
 resource "tls_private_key" "bosh_vms" {
   algorithm = "RSA"
   rsa_bits = 4096
