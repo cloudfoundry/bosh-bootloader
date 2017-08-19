@@ -16,7 +16,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = FDescribe("credhub test", func() {
+var _ = Describe("credhub test", func() {
 	var (
 		bbl   actors.BBL
 		state acceptance.State
