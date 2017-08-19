@@ -178,8 +178,6 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		)
 
 		switch interpolateInput.IAAS {
-		case "aws":
-			args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"), "-o", filepath.Join(tempDir, "iam-instance-profile.yml"))
 		case "gcp":
 			args = append(args, "-o", filepath.Join(tempDir, "gcp-external-ip-not-recommended.yml"))
 		}
@@ -189,6 +187,10 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			"-o", filepath.Join(tempDir, "uaa.yml"),
 			"-o", filepath.Join(tempDir, "credhub.yml"),
 		)
+	}
+
+	if interpolateInput.IAAS == "aws" {
+		args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"), "-o", filepath.Join(tempDir, "iam-instance-profile.yml"))
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

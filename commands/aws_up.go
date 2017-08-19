@@ -60,6 +60,7 @@ type AWSUpConfig struct {
 	Name            string
 	NoDirector      bool
 	Terraform       bool
+	Jumpbox         bool
 }
 
 func NewAWSUp(
@@ -143,6 +144,13 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 			}
 		}
 		state.BOSH.UserOpsFile = string(opsFile)
+
+		if config.Jumpbox {
+			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
+			if err != nil {
+				return err
+			}
+		}
 
 		state, err = u.boshManager.CreateDirector(state, terraformOutputs)
 		switch err.(type) {

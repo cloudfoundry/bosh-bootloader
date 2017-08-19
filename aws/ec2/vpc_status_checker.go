@@ -39,6 +39,7 @@ func (v VPCStatusChecker) ValidateSafeToDelete(vpcID, envID string) error {
 	}
 	vms = v.removeOneVM(vms, "NAT")
 	vms = v.removeOneVM(vms, "bosh/0")
+	vms = v.removeOneVM(vms, "jumpbox/0")
 
 	if len(vms) > 0 {
 		return fmt.Errorf("vpc %s is not safe to delete; vms still exist: [%s]", vpcID, strings.Join(vms, ", "))

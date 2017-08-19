@@ -27,28 +27,33 @@ func NewEnvironmentValidator(infrastructureManager infrastructureManager, boshCl
 }
 
 func (e EnvironmentValidator) Validate(state storage.State) error {
-	if state.Stack.Name == "" && state.TFState == "" {
+	if state.TFState == "" {
 		return application.BBLNotFound
 	}
 
-	if state.Stack.Name != "" {
-		stackExists, err := e.infrastructureManager.Exists(state.Stack.Name)
-		if err != nil {
-			return err
-		}
-
-		if !stackExists {
-			return application.BBLNotFound
-		}
-	}
-
-	if !state.NoDirector {
-		boshClient := e.boshClientProvider.Client(state.Jumpbox.Enabled, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
-		_, err := boshClient.Info()
-		if err != nil {
-			return application.BBLNotFound
-		}
-	}
-
 	return nil
+	// if state.Stack.Name == "" && state.TFState == "" {
+	// 	return application.BBLNotFound
+	// }
+
+	// if state.Stack.Name != "" {
+	// 	stackExists, err := e.infrastructureManager.Exists(state.Stack.Name)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	if !stackExists {
+	// 		return application.BBLNotFound
+	// 	}
+	// }
+
+	// if !state.NoDirector {
+	// 	boshClient := e.boshClientProvider.Client(state.Jumpbox.Enabled, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
+	// 	_, err := boshClient.Info()
+	// 	if err != nil {
+	// 		return application.BBLNotFound
+	// 	}
+	// }
+
+	// return nil
 }

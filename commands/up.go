@@ -80,6 +80,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 			OpsFilePath: config.opsFile,
 			Name:        config.name,
 			NoDirector:  config.noDirector,
+			Jumpbox:     config.jumpbox,
 		}, state)
 	case "gcp":
 		err = u.gcpUp.Execute(GCPUpConfig{
