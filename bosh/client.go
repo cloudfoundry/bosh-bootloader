@@ -3,8 +3,6 @@ package bosh
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -14,13 +12,10 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-
-	"golang.org/x/net/proxy"
 )
 
 type Client interface {
 	UpdateCloudConfig(yaml []byte) error
-	ConfigureHTTPClient(proxy.Dialer)
 	Info() (Info, error)
 }
 
@@ -39,38 +34,14 @@ type client struct {
 	httpClient      *http.Client
 }
 
-func NewClient(jumpbox bool, directorAddress, username, password, caCert string) Client {
-	pool := x509.NewCertPool()
-	pool.AppendCertsFromPEM([]byte(caCert))
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: pool,
-			},
-		},
-	}
-
+func NewClient(httpClient *http.Client, credhub bool, directorAddress, username, password, caCert string) Client {
 	return client{
 		directorAddress: directorAddress,
 		username:        username,
 		password:        password,
-		httpClient:      httpClient,
 		caCert:          caCert,
-		jumpbox:         jumpbox,
-	}
-}
-
-func (c client) ConfigureHTTPClient(socks5Client proxy.Dialer) {
-	if socks5Client != nil {
-		tlsConfig := c.httpClient.Transport.(*http.Transport).TLSClientConfig
-
-		c.httpClient.Transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
-			Dial: func(network, addr string) (net.Conn, error) {
-				return socks5Client.Dial(network, addr)
-			},
-		}
+		jumpbox:         credhub,
+		httpClient:      httpClient,
 	}
 }
 

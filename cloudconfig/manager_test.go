@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/net/proxy"
-
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -193,145 +191,46 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe("Update", func() {
-		Context("when no jumpbox exists", func() {
-			It("logs steps taken", func() {
-				err := manager.Update(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.StepCall.Messages).To(Equal([]string{
-					"generating cloud config",
-					"applying cloud config",
-				}))
-			})
-
-			It("updates the bosh director with a cloud config provided a valid bbl state", func() {
-				err := manager.Update(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-				Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal([]byte("some-cloud-config")))
-			})
-
-			Context("failure cases", func() {
-				Context("when manager generate's command fails to run", func() {
-					BeforeEach(func() {
-						cmd.RunReturns(errors.New("failed to run"))
-					})
-
-					It("returns an error", func() {
-						err := manager.Update(storage.State{})
-						Expect(err).To(MatchError("failed to run"))
-					})
-				})
-
-				Context("when bosh client fails to update cloud config", func() {
-					BeforeEach(func() {
-						boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update")
-					})
-
-					It("returns an error", func() {
-						err := manager.Update(storage.State{})
-						Expect(err).To(MatchError("failed to update"))
-					})
-				})
-			})
+		It("logs steps taken", func() {
+			err := manager.Update(incomingState)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logger.StepCall.Messages).To(Equal([]string{
+				"generating cloud config",
+				"applying cloud config",
+			}))
 		})
 
-		Context("when a jumpbox exists", func() {
-			var (
-				socks5Network string
-				socks5Addr    string
-				socks5Auth    *proxy.Auth
-				socks5Forward proxy.Dialer
-				socks5Client  *fakes.Socks5Client
-			)
+		It("updates the bosh director with a cloud config provided a valid bbl state", func() {
+			err := manager.Update(incomingState)
+			Expect(err).NotTo(HaveOccurred())
 
-			BeforeEach(func() {
-				incomingState.Jumpbox.Enabled = true
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"jumpbox_url": "some-jumpbox-url",
-				}
-				sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
 
-				socks5Client = &fakes.Socks5Client{}
-				cloudconfig.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
-					socks5Network = network
-					socks5Addr = addr
-					socks5Auth = auth
-					socks5Forward = forward
+			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal([]byte("some-cloud-config")))
+		})
 
-					return socks5Client, nil
+		Context("failure cases", func() {
+			Context("when manager generate's command fails to run", func() {
+				BeforeEach(func() {
+					cmd.RunReturns(errors.New("failed to run"))
+				})
+
+				It("returns an error", func() {
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("failed to run"))
 				})
 			})
 
-			AfterEach(func() {
-				cloudconfig.ResetProxySOCKS5()
-			})
-
-			It("logs steps taken", func() {
-				err := manager.Update(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.StepCall.Messages).To(Equal([]string{
-					"starting socks5 proxy",
-					"generating cloud config",
-					"applying cloud config",
-				}))
-			})
-
-			It("starts a socks5 proxy", func() {
-				err := manager.Update(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(sshKeyGetter.GetCall.Receives.State).To(Equal(incomingState))
-				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
-
-				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-private-key"))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-jumpbox-url"))
-			})
-
-			It("configures the bosh client", func() {
-				socks5Proxy.AddrCall.Returns.Addr = "some-socks-proxy-addr"
-				err := manager.Update(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClient.ConfigureHTTPClientCall.CallCount).To(Equal(1))
-				Expect(boshClient.ConfigureHTTPClientCall.Receives.Socks5Client).To(Equal(socks5Client))
-
-				Expect(socks5Proxy.AddrCall.CallCount).To(Equal(1))
-
-				Expect(socks5Network).To(Equal("tcp"))
-				Expect(socks5Addr).To(Equal("some-socks-proxy-addr"))
-				Expect(socks5Auth).To(BeNil())
-				Expect(socks5Forward).To(Equal(proxy.Direct))
-			})
-
-			Context("failure cases", func() {
-				It("returns an error when sshKeyGetter.Get fails", func() {
-					sshKeyGetter.GetCall.Returns.Error = errors.New("failed to get jumpbox ssh key")
-					err := manager.Update(incomingState)
-					Expect(err).To(MatchError("failed to get jumpbox ssh key"))
+			Context("when bosh client fails to update cloud config", func() {
+				BeforeEach(func() {
+					boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update")
 				})
 
-				It("returns an error when terraformManager.GetOutputs fails", func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform outputs")
-					err := manager.Update(incomingState)
-					Expect(err).To(MatchError("failed to get terraform outputs"))
-				})
-
-				It("returns an error when the socks5Proxy fails to start", func() {
-					socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5 proxy")
-					err := manager.Update(incomingState)
-					Expect(err).To(MatchError("failed to start socks5 proxy"))
-				})
-
-				It("returns an error when it cannot create a socks5 proxy client", func() {
-					cloudconfig.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
-						return nil, errors.New("failed to create socks5 proxy client")
-					})
-					err := manager.Update(incomingState)
-					Expect(err).To(MatchError("failed to create socks5 proxy client"))
+				It("returns an error", func() {
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("failed to update"))
 				})
 			})
 		})

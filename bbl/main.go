@@ -140,7 +140,7 @@ func main() {
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile)
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy)
-	boshClientProvider := bosh.NewClientProvider()
+	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
 
 	// Environment Validators
 	awsBrokenEnvironmentValidator := awsapplication.NewBrokenEnvironmentValidator(infrastructureManager)

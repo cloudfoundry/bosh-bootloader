@@ -43,7 +43,7 @@ type opsGenerator interface {
 }
 
 type boshClientProvider interface {
-	Client(jumpbox bool, directorAddress, directorUsername, directorPassword, caCert string) bosh.Client
+	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (bosh.Client, error)
 }
 
 type socks5Proxy interface {
@@ -108,33 +108,9 @@ func (m Manager) Generate(state storage.State) (string, error) {
 }
 
 func (m Manager) Update(state storage.State) error {
-	boshClient := m.boshClientProvider.Client(state.Jumpbox.Enabled, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
-
-	if state.Jumpbox.Enabled {
-		privateKey, err := m.sshKeyGetter.Get(state)
-		if err != nil {
-			return err
-		}
-
-		terraformOutputs, err := m.terraformManager.GetOutputs(state)
-		if err != nil {
-			return err
-		}
-
-		jumpboxURL := terraformOutputs["jumpbox_url"].(string)
-
-		m.logger.Step("starting socks5 proxy")
-		err = m.socks5Proxy.Start(privateKey, jumpboxURL)
-		if err != nil {
-			return err
-		}
-
-		socks5Client, err := proxySOCKS5("tcp", m.socks5Proxy.Addr(), nil, proxy.Direct)
-		if err != nil {
-			return err
-		}
-
-		boshClient.ConfigureHTTPClient(socks5Client)
+	boshClient, err := m.boshClientProvider.Client(state.Jumpbox, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
+	if err != nil {
+		return err // not tested
 	}
 
 	m.logger.Step("generating cloud config")

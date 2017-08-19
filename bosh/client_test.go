@@ -28,6 +28,7 @@ var _ = Describe("Client", func() {
 		username               string
 		password               string
 		cloudConfigContentType string
+		httpClient             *http.Client
 		failStatus             int
 	)
 
@@ -102,43 +103,25 @@ var _ = Describe("Client", func() {
 		}
 
 		fakeBOSH.TLS = tlsConfig
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				Dial:            (&net.Dialer{}).Dial,
+				TLSClientConfig: tlsConfig,
+			},
+		}
+
 	})
 
 	AfterEach(func() {
 		failStatus = 0
 	})
 
-	Describe("ConfigureHttpClient", func() {
-		It("configures the http client to use the socks5 proxy", func() {
-			socks5Client := &fakes.Socks5Client{}
-			socks5Client.DialCall.Stub = func(network, addr string) (net.Conn, error) {
-				u, _ := url.Parse(fakeBOSH.URL)
-				return net.Dial(network, u.Host)
-			}
-
-			fakeBOSH.StartTLS()
-
-			client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", string(ca))
-			client.ConfigureHTTPClient(socks5Client)
-			info, err := client.Info()
-
-			Expect(socks5Client.DialCall.CallCount).To(Equal(1))
-			Expect(socks5Client.DialCall.Receives.Network).To(Equal("tcp"))
-			Expect(socks5Client.DialCall.Receives.Addr).To(Equal(fakeBOSH.Listener.Addr().String()))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(info).To(Equal(bosh.Info{
-				Name:    "some-bosh-director",
-				UUID:    "some-uuid",
-				Version: "some-version",
-			}))
-		})
-	})
-
 	Describe("Info", func() {
 		It("returns the director info", func() {
 			fakeBOSH.StartTLS()
 
-			client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+			client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
 			info, err := client.Info()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(info).To(Equal(bosh.Info{
@@ -154,7 +137,7 @@ var _ = Describe("Client", func() {
 
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
 				_, err := client.Info()
 				Expect(err).To(MatchError("unexpected http response 404 Not Found"))
 			})
@@ -162,7 +145,7 @@ var _ = Describe("Client", func() {
 			It("returns an error when the url cannot be parsed", func() {
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(false, "%%%", "some-username", "some-password", "some-false")
+				client := bosh.NewClient(httpClient, false, "%%%", "some-username", "some-password", "some-false")
 				_, err := client.Info()
 				Expect(err.(*url.Error).Op).To(Equal("parse"))
 			})
@@ -170,7 +153,7 @@ var _ = Describe("Client", func() {
 			It("returns an error when the request fails", func() {
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(false, "fake://some-url", "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, false, "fake://some-url", "some-username", "some-password", string(ca))
 				_, err := client.Info()
 				Expect(err).To(MatchError(ContainSubstring("unsupported protocol scheme")))
 			})
@@ -179,7 +162,7 @@ var _ = Describe("Client", func() {
 				failStatus = http.StatusOK
 
 				fakeBOSH.StartTLS()
-				client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
 				_, err := client.Info()
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
 			})
@@ -188,17 +171,23 @@ var _ = Describe("Client", func() {
 
 	Describe("UpdateCloudConfig", func() {
 		Context("when a jumpbox is enabled", func() {
-			It("uploads the cloud-config", func() {
-				socks5Client := &fakes.Socks5Client{}
-				socks5Client.DialCall.Stub = func(network, addr string) (net.Conn, error) {
+			It("uses UAA to get a token when it uploads the cloud-config", func() {
+				dialer := &fakes.Socks5Client{}
+				dialer.DialCall.Stub = func(network, addr string) (net.Conn, error) {
 					u, _ := url.Parse(fakeBOSH.URL)
 					return net.Dial(network, u.Host)
 				}
 
+				httpClient = &http.Client{
+					Transport: &http.Transport{
+						Dial:            dialer.Dial,
+						TLSClientConfig: tlsConfig,
+					},
+				}
+
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(true, fakeBOSH.URL, "some-username", "some-password", string(ca))
-				client.ConfigureHTTPClient(socks5Client)
+				client := bosh.NewClient(httpClient, true, fakeBOSH.URL, "some-username", "some-password", string(ca))
 
 				err := client.UpdateCloudConfig([]byte("cloud: config"))
 				Expect(err).NotTo(HaveOccurred())
@@ -212,7 +201,7 @@ var _ = Describe("Client", func() {
 					It("returns an error ", func() {
 						fakeBOSH.StartTLS()
 
-						client := bosh.NewClient(true, fakeBOSH.URL, "", "", string(ca))
+						client := bosh.NewClient(httpClient, true, fakeBOSH.URL, "", "", string(ca))
 
 						err := client.UpdateCloudConfig([]byte("cloud: config"))
 						Expect(err).To(MatchError(ContainSubstring("connection refused")))
@@ -225,7 +214,7 @@ var _ = Describe("Client", func() {
 			It("uploads the cloud-config", func() {
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
 
 				err := client.UpdateCloudConfig([]byte("cloud: config"))
 				Expect(err).NotTo(HaveOccurred())
@@ -242,7 +231,7 @@ var _ = Describe("Client", func() {
 						failStatus = http.StatusInternalServerError
 						fakeBOSH.StartTLS()
 
-						client := bosh.NewClient(false, fakeBOSH.URL, "", "", string(ca))
+						client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "", "", string(ca))
 
 						err := client.UpdateCloudConfig([]byte("cloud: config"))
 						Expect(err).To(MatchError("unexpected http response 500 Internal Server Error"))
@@ -253,7 +242,7 @@ var _ = Describe("Client", func() {
 					It("returns an error", func() {
 						fakeBOSH.StartTLS()
 
-						client := bosh.NewClient(false, "%%%%%%%%%%%%%%%", "", "", "")
+						client := bosh.NewClient(httpClient, false, "%%%%%%%%%%%%%%%", "", "", "")
 
 						err := client.UpdateCloudConfig([]byte("cloud: config"))
 						Expect(err.(*url.Error).Op).To(Equal("parse"))
