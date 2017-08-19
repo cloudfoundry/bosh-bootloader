@@ -59,11 +59,12 @@ var _ = Describe("VPCStatusChecker", func() {
 		})
 
 		Context("when passed an environment ID", func() {
-			It("returns nil when the only EC2 instances are bosh and envID-nat", func() {
+			It("returns nil when the only EC2 instances are bosh, jumpbox and envID-nat", func() {
 				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
 					Reservations: []*awsec2.Reservation{
 						reservationContainingInstance("example-env-id-nat"),
 						reservationContainingInstance("bosh/0"),
+						reservationContainingInstance("jumpbox/0"),
 					},
 				}
 

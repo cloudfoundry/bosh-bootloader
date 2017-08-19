@@ -26,6 +26,10 @@ output "external_ip" {
   value = "${aws_eip.bosh_eip.public_ip}"
 }
 
+output "jumpbox_url" {
+    value = "${aws_eip.bosh_eip.public_ip}:22"
+}
+
 output "director_address" {
   value = "https://${aws_eip.bosh_eip.public_ip}:25555"
 }
@@ -283,6 +287,10 @@ resource "aws_security_group" "bosh_security_group" {
   }
 }
 
+output "bosh_security_group" {
+  value="${aws_security_group.bosh_security_group.id}"
+}
+
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_ssh" {
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
   type                     = "ingress"
@@ -298,6 +306,15 @@ resource "aws_security_group_rule" "bosh_security_group_rule_tcp_bosh_agent" {
   protocol                 = "tcp"
   from_port                = 6868
   to_port                  = 6868
+  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+}
+
+resource "aws_security_group_rule" "bosh_security_group_rule_uaa" {
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 8443
+  to_port                  = 8443
   cidr_blocks              = ["${var.bosh_inbound_cidr}"]
 }
 
@@ -337,8 +354,53 @@ resource "aws_security_group_rule" "bosh_security_group_rule_allow_internet" {
   cidr_blocks              = ["0.0.0.0/0"]
 }
 
-output "bosh_security_group" {
-  value="${aws_security_group.bosh_security_group.id}"
+resource "aws_security_group" "jumpbox" {
+  description = "automatically created jumpbox by BBL"
+  vpc_id      = "${aws_vpc.vpc.id}"
+
+  tags {
+    Name = "${var.env_id}-jumpbox-security-group"
+  }
+}
+
+output "jumpbox_security_group" {
+  value="${aws_security_group.jumpbox.id}"
+}
+
+resource "aws_security_group_rule" "jumpbox_ssh" {
+  security_group_id        = "${aws_security_group.jumpbox.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 22
+  to_port                  = 22
+  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+}
+
+resource "aws_security_group_rule" "jumpbox_agent" {
+  security_group_id        = "${aws_security_group.jumpbox.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 6868
+  to_port                  = 6868
+  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+}
+
+resource "aws_security_group_rule" "jumpbox_director" {
+  security_group_id        = "${aws_security_group.jumpbox.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 25555
+  to_port                  = 25555
+  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+}
+
+resource "aws_security_group_rule" "jumpbox_egress" {
+  security_group_id        = "${aws_security_group.jumpbox.id}"
+  type                     = "egress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  cidr_blocks              = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group_rule" "bosh_internal_security_rule_tcp" {

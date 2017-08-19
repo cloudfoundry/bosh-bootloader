@@ -156,6 +156,35 @@ var _ = Describe("AWSUp", func() {
 				EnvID:   "bbl-lake-time-stamp",
 				TFState: "some-tf-state",
 			}))
+			Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(0))
+		})
+
+		Context("when using a jumpbox", func() {
+			It("creates the jumpbox in addition to the infrastructure", func() {
+				incomingState := storage.State{
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					EnvID: "bbl-lake-time-stamp",
+				}
+
+				err := command.Execute(commands.AWSUpConfig{Jumpbox: true}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(storage.State{
+					IAAS: "aws",
+					AWS: storage.AWS{
+						Region:          "some-aws-region",
+						SecretAccessKey: "some-secret-access-key",
+						AccessKeyID:     "some-access-key-id",
+					},
+					EnvID:   "bbl-lake-time-stamp",
+					TFState: "some-tf-state",
+				}))
+			})
 		})
 
 		Context("failure cases", func() {

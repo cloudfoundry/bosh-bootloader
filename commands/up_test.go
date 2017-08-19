@@ -167,16 +167,31 @@ var _ = Describe("Up", func() {
 	})
 
 	Context("when the --credhub flag is specified", func() {
-		It("executes the GCP up with gcp details from args", func() {
-			err := command.Execute([]string{
-				"--credhub",
-			}, storage.State{IAAS: "gcp"})
-			Expect(err).NotTo(HaveOccurred())
+		Context("gcp", func() {
+			It("executes the GCP up with gcp details from args", func() {
+				err := command.Execute([]string{
+					"--credhub",
+				}, storage.State{IAAS: "gcp"})
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-			Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-				Jumpbox: true,
-			}))
+				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
+					Jumpbox: true,
+				}))
+			})
+		})
+		Context("aws", func() {
+			It("executes the AWS up with details from args", func() {
+				err := command.Execute([]string{
+					"--credhub",
+				}, storage.State{IAAS: "aws"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
+				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
+					Jumpbox: true,
+				}))
+			})
 		})
 	})
 

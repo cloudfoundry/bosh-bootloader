@@ -884,6 +884,112 @@ gcp_credentials_json: some-credential-json
 		})
 	})
 
+	Describe("GetJumpboxDeploymentVars", func() {
+		var (
+			boshExecutor *fakes.BOSHExecutor
+			logger       *fakes.Logger
+			socks5Proxy  *fakes.Socks5Proxy
+			boshManager  *bosh.Manager
+		)
+
+		BeforeEach(func() {
+			boshExecutor = &fakes.BOSHExecutor{}
+			logger = &fakes.Logger{}
+			socks5Proxy = &fakes.Socks5Proxy{}
+			boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
+		})
+
+		Context("aws", func() {
+			var incomingState storage.State
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "aws",
+					EnvID: "some-env-id",
+					AWS: storage.AWS{
+						Region:          "some-region",
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+					},
+					TFState: "some-tf-state",
+					LB: storage.LB{
+						Type: "cf",
+					},
+				}
+			})
+
+			It("returns a correct yaml string of bosh deployment variables", func() {
+				vars, err := boshManager.GetJumpboxDeploymentVars(incomingState, map[string]interface{}{
+					"network_name":                  "some-network",
+					"bosh_subnet_id":                "some-subnetwork",
+					"bosh_subnet_availability_zone": "some-zone",
+					"bosh_iam_instance_profile":     "some-instance-profile",
+					"bosh_vms_key_name":             "some-key-name",
+					"bosh_vms_private_key":          "some-private-key",
+					"jumpbox_security_group":        "some-security-group",
+					"external_ip":                   "some-external-ip",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+az: some-zone
+subnet_id: some-subnetwork
+access_key_id: some-access-key-id
+secret_access_key: some-secret-access-key
+iam_instance_profile: some-instance-profile
+default_key_name: some-key-name
+default_security_groups:
+- some-security-group
+region: some-region
+private_key: some-private-key
+`))
+			})
+		})
+
+		Context("gcp", func() {
+			var incomingState storage.State
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "gcp",
+					EnvID: "some-env-id",
+					GCP: storage.GCP{
+						Zone:              "some-zone",
+						ProjectID:         "some-project-id",
+						ServiceAccountKey: "some-credential-json",
+					},
+					TFState: "some-tf-state",
+					LB: storage.LB{
+						Type: "cf",
+					},
+				}
+			})
+			It("returns a correct yaml string of bosh deployment variables", func() {
+				vars, err := boshManager.GetJumpboxDeploymentVars(incomingState, map[string]interface{}{
+					"network_name":       "some-network",
+					"subnetwork_name":    "some-subnetwork",
+					"bosh_open_tag_name": "some-jumpbox-tag",
+					"external_ip":        "some-external-ip",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags:
+- some-jumpbox-tag
+project_id: some-project-id
+gcp_credentials_json: some-credential-json
+`))
+			})
+		})
+	})
+
 	Describe("GetDeploymentVars", func() {
 		var (
 			boshExecutor *fakes.BOSHExecutor
@@ -900,10 +1006,7 @@ gcp_credentials_json: some-credential-json
 		})
 
 		Context("gcp", func() {
-			var (
-				incomingState storage.State
-			)
-
+			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
 					IAAS:  "gcp",
@@ -924,7 +1027,6 @@ gcp_credentials_json: some-credential-json
 					},
 				}
 			})
-
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
 					"network_name":           "some-network",
@@ -950,6 +1052,36 @@ tags:
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))
+			})
+
+			Context("when using a jumpbox", func() {
+				BeforeEach(func() {
+					incomingState.Jumpbox.Enabled = true
+				})
+				It("returns a correct yaml string of bosh deployment variables", func() {
+					vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+						"network_name":           "some-network",
+						"subnetwork_name":        "some-subnetwork",
+						"bosh_open_tag_name":     "some-jumpbox-tag",
+						"bosh_director_tag_name": "some-director-tag",
+						"internal_tag_name":      "some-internal-tag",
+						"external_ip":            "some-external-ip",
+						"director_address":       "some-director-address",
+					})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags:
+- some-director-tag
+project_id: some-project-id
+gcp_credentials_json: some-credential-json
+`))
+				})
 			})
 
 			Context("when terraform outputs are missing", func() {
@@ -1051,6 +1183,41 @@ default_security_groups:
 region: some-region
 private_key: some-private-key
 `))
+				})
+
+				Context("when using a jumpbox", func() {
+					BeforeEach(func() {
+						incomingState.TFState = "some-tf-state"
+						incomingState.Jumpbox.Enabled = true
+					})
+					It("returns a correct yaml string of bosh deployment variables", func() {
+						vars, err := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+							"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
+							"bosh_subnet_availability_zone": "some-bosh-subnet-az",
+							"bosh_security_group":           "some-bosh-security-group",
+							"bosh_subnet_id":                "some-bosh-subnet",
+							"bosh_vms_key_name":             "some-keypair-name",
+							"bosh_vms_private_key":          "some-private-key",
+							"external_ip":                   "some-bosh-external-ip",
+							"director_address":              "some-director-address",
+						})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-some-env-id
+az: some-bosh-subnet-az
+subnet_id: some-bosh-subnet
+access_key_id: some-access-key-id
+secret_access_key: some-secret-access-key
+iam_instance_profile: some-bosh-iam-instance-profile
+default_key_name: some-keypair-name
+default_security_groups:
+- some-bosh-security-group
+region: some-region
+private_key: some-private-key
+`))
+					})
 				})
 
 				Context("when terraform outputs are missing", func() {
