@@ -75,10 +75,12 @@ var _ = Describe("BOSHDeploymentVars", func() {
 		})
 
 		Context("failure cases", func() {
+			BeforeEach(func() {
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("coconut")
+			})
 			It("returns an error when we fail to get deployment vars", func() {
-				boshManager.GetDeploymentVarsCall.Returns.Error = errors.New("failed to get deployment vars")
 				err := boshDeploymentVars.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("failed to get deployment vars"))
+				Expect(err).To(MatchError("get terraform outputs: coconut"))
 			})
 		})
 	})

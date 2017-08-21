@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"fmt"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type BOSHDeploymentVars struct {
 	logger         logger
@@ -37,13 +41,10 @@ func (b BOSHDeploymentVars) CheckFastFails(subcommandFlags []string, state stora
 func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
 	terraformOutputs, err := b.terraform.GetOutputs(state)
 	if err != nil {
-		return err
+		return fmt.Errorf("get terraform outputs: %s", err)
 	}
 
-	vars, err := b.boshManager.GetDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return err
-	}
+	vars := b.boshManager.GetDeploymentVars(state, terraformOutputs)
 	b.logger.Println(vars)
 	return nil
 }

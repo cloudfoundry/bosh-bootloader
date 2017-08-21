@@ -140,10 +140,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 		return storage.State{}, err
 	}
 
-	m.iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return storage.State{}, err //not tested
-	}
+	m.iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(m.iaasInputs)
 	if err != nil {
@@ -217,10 +214,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 	}
 
 	m.logger.Step("creating bosh director")
-	m.iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return storage.State{}, err //not tested
-	}
+	m.iaasInputs.DeploymentVars = m.GetDeploymentVars(state, terraformOutputs)
 
 	m.iaasInputs.OpsFile = state.BOSH.UserOpsFile
 
@@ -288,16 +282,10 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 
 		osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
 
-		iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
-		if err != nil {
-			return err //not tested
-		}
+		iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 	}
 
-	iaasInputs.DeploymentVars, err = m.GetDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return err //not tested
-	}
+	iaasInputs.DeploymentVars = m.GetDeploymentVars(state, terraformOutputs)
 
 	iaasInputs.OpsFile = state.BOSH.UserOpsFile
 
@@ -334,10 +322,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 		return err
 	}
 
-	iaasInputs.JumpboxDeploymentVars, err = m.GetJumpboxDeploymentVars(state, terraformOutputs)
-	if err != nil {
-		return err //not tested
-	}
+	iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
 	if err != nil {
@@ -361,7 +346,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 	return nil
 }
 
-func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
+func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) string {
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
 		InternalGW:   "10.0.0.1",
@@ -394,7 +379,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		}
 	}
 
-	return string(mustMarshal(vars)), nil
+	return string(mustMarshal(vars))
 }
 
 func mustMarshal(yamlStruct interface{}) []byte {
@@ -413,7 +398,7 @@ func getTerraformOutput(key string, outputs map[string]interface{}) string {
 	return ""
 }
 
-func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
+func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) string {
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
 		InternalGW:   "10.0.0.1",
@@ -464,7 +449,7 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 		}
 	}
 
-	return string(mustMarshal(vars)), nil
+	return string(mustMarshal(vars))
 }
 
 func generateIAASInputs(state storage.State) (InterpolateInput, error) {

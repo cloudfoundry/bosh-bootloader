@@ -51,7 +51,7 @@ type boshManager interface {
 	CreateJumpbox(bblState storage.State, terraformOutputs map[string]interface{}) (storage.State, error)
 	Delete(bblState storage.State, terraformOutputs map[string]interface{}) error
 	DeleteJumpbox(bblState storage.State, terraformOutputs map[string]interface{}) error
-	GetDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) (string, error)
+	GetDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) string
 	Version() (string, error)
 }
 
