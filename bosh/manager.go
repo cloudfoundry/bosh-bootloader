@@ -60,7 +60,7 @@ type sharedDeploymentVarsYAML struct {
 	ExternalIP   string    `yaml:"external_ip,omitempty"`
 	AWSYAML      AWSYAML   `yaml:",inline"`
 	GCPYAML      GCPYAML   `yaml:",inline"`
-	AZUREYAML    AZUREYAML `yaml:",inline"`
+	AzureYAML    AzureYAML `yaml:",inline"`
 }
 
 type AWSYAML struct {
@@ -84,7 +84,7 @@ type GCPYAML struct {
 	CredentialJSON string   `yaml:"gcp_credentials_json,omitempty"`
 }
 
-type AZUREYAML struct {
+type AzureYAML struct {
 	VNetName             string `yaml:"vnet_name,omitempty"`
 	SubnetName           string `yaml:"subnet_name,omitempty"`
 	SubscriptionID       string `yaml:"subscription_id,omitempty"`
@@ -420,103 +420,62 @@ func getTerraformOutput(key string, outputs map[string]interface{}) string {
 }
 
 func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
-	var vars []byte
+	vars := sharedDeploymentVarsYAML{
+		InternalCIDR: "10.0.0.0/24",
+		InternalGW:   "10.0.0.1",
+		InternalIP:   DIRECTOR_INTERNAL_IP,
+		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
+		ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
+	}
+	if state.Jumpbox.Enabled {
+		vars.ExternalIP = ""
+	}
 
 	switch state.IAAS {
 	case "gcp":
+		vars.GCPYAML = GCPYAML{
+			Zone:           state.GCP.Zone,
+			Network:        getTerraformOutput("network_name", terraformOutputs),
+			Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
+			Tags:           []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs), getTerraformOutput("bosh_open_tag_name", terraformOutputs)},
+			ProjectID:      state.GCP.ProjectID,
+			CredentialJSON: state.GCP.ServiceAccountKey,
+		}
 		if state.Jumpbox.Enabled {
-			vars, _ = yaml.Marshal(sharedDeploymentVarsYAML{
-				InternalCIDR: "10.0.0.0/24",
-				InternalGW:   "10.0.0.1",
-				InternalIP:   DIRECTOR_INTERNAL_IP,
-				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-				GCPYAML: GCPYAML{
-					Zone:           state.GCP.Zone,
-					Network:        getTerraformOutput("network_name", terraformOutputs),
-					Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
-					Tags:           []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs)},
-					ProjectID:      state.GCP.ProjectID,
-					CredentialJSON: state.GCP.ServiceAccountKey,
-				},
-			})
-		} else {
-			vars, _ = yaml.Marshal(sharedDeploymentVarsYAML{
-				InternalCIDR: "10.0.0.0/24",
-				InternalGW:   "10.0.0.1",
-				InternalIP:   DIRECTOR_INTERNAL_IP,
-				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-				ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-				GCPYAML: GCPYAML{
-					Zone:           state.GCP.Zone,
-					Network:        getTerraformOutput("network_name", terraformOutputs),
-					Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
-					Tags:           []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs), getTerraformOutput("bosh_open_tag_name", terraformOutputs)},
-					ProjectID:      state.GCP.ProjectID,
-					CredentialJSON: state.GCP.ServiceAccountKey,
-				},
-			})
+			vars.GCPYAML.Tags = []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs)}
 		}
 	case "aws":
-		if state.Jumpbox.Enabled {
-			vars, _ = yaml.Marshal(sharedDeploymentVarsYAML{
-				InternalCIDR: "10.0.0.0/24",
-				InternalGW:   "10.0.0.1",
-				InternalIP:   DIRECTOR_INTERNAL_IP,
-				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-				AWSYAML: AWSYAML{
-					AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),
-					SubnetID:              getTerraformOutput("bosh_subnet_id", terraformOutputs),
-					AccessKeyID:           state.AWS.AccessKeyID,
-					SecretAccessKey:       state.AWS.SecretAccessKey,
-					IAMInstanceProfile:    getTerraformOutput("bosh_iam_instance_profile", terraformOutputs),
-					DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
-					DefaultSecurityGroups: []string{getTerraformOutput("bosh_security_group", terraformOutputs)},
-					Region:                state.AWS.Region,
-					PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
-				},
-			})
-		} else {
-			vars, _ = yaml.Marshal(sharedDeploymentVarsYAML{
-				InternalCIDR: "10.0.0.0/24",
-				InternalGW:   "10.0.0.1",
-				InternalIP:   DIRECTOR_INTERNAL_IP,
-				ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-				DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-				AWSYAML: AWSYAML{
-					AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),
-					SubnetID:              getTerraformOutput("bosh_subnet_id", terraformOutputs),
-					AccessKeyID:           state.AWS.AccessKeyID,
-					SecretAccessKey:       state.AWS.SecretAccessKey,
-					IAMInstanceProfile:    getTerraformOutput("bosh_iam_instance_profile", terraformOutputs),
-					DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
-					DefaultSecurityGroups: []string{getTerraformOutput("bosh_security_group", terraformOutputs)},
-					Region:                state.AWS.Region,
-					PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
-				},
-			})
+		vars.AWSYAML = AWSYAML{
+			AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),
+			SubnetID:              getTerraformOutput("bosh_subnet_id", terraformOutputs),
+			AccessKeyID:           state.AWS.AccessKeyID,
+			SecretAccessKey:       state.AWS.SecretAccessKey,
+			IAMInstanceProfile:    getTerraformOutput("bosh_iam_instance_profile", terraformOutputs),
+			DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
+			DefaultSecurityGroups: []string{getTerraformOutput("bosh_security_group", terraformOutputs)},
+			Region:                state.AWS.Region,
+			PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
 		}
 	case "azure":
-		vars, _ = yaml.Marshal(sharedDeploymentVarsYAML{
-			InternalCIDR: "10.0.0.0/24",
-			InternalGW:   "10.0.0.1",
-			InternalIP:   DIRECTOR_INTERNAL_IP,
-			ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-			AZUREYAML: AZUREYAML{
-				VNetName:             getTerraformOutput("bosh_network_name", terraformOutputs),
-				SubnetName:           getTerraformOutput("bosh_subnet_name", terraformOutputs),
-				SubscriptionID:       state.Azure.SubscriptionID,
-				TenantID:             state.Azure.TenantID,
-				ClientID:             state.Azure.ClientID,
-				ClientSecret:         state.Azure.ClientSecret,
-				ResourceGroupName:    getTerraformOutput("bosh_resource_group_name", terraformOutputs),
-				StorageAccountName:   getTerraformOutput("bosh_storage_account_name", terraformOutputs),
-				DefaultSecurityGroup: getTerraformOutput("bosh_default_security_group", terraformOutputs),
-			},
-		})
+		vars.AzureYAML = AzureYAML{
+			VNetName:             getTerraformOutput("bosh_network_name", terraformOutputs),
+			SubnetName:           getTerraformOutput("bosh_subnet_name", terraformOutputs),
+			SubscriptionID:       state.Azure.SubscriptionID,
+			TenantID:             state.Azure.TenantID,
+			ClientID:             state.Azure.ClientID,
+			ClientSecret:         state.Azure.ClientSecret,
+			ResourceGroupName:    getTerraformOutput("bosh_resource_group_name", terraformOutputs),
+			StorageAccountName:   getTerraformOutput("bosh_storage_account_name", terraformOutputs),
+			DefaultSecurityGroup: getTerraformOutput("bosh_default_security_group", terraformOutputs),
+		}
 	}
 
-	return string(vars), nil
+	yamlBytes, err := yaml.Marshal(vars)
+	if err != nil {
+		// this should never happen since we are constructing the YAML to be marshaled
+		panic("bosh manager: marshal yaml: unexpected error")
+	}
+	return string(yamlBytes), nil
 }
 
 func generateIAASInputs(state storage.State) (InterpolateInput, error) {
