@@ -362,54 +362,48 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 }
 
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) (string, error) {
-	var vars []byte
-	var err error
+	vars := sharedDeploymentVarsYAML{
+		InternalCIDR: "10.0.0.0/24",
+		InternalGW:   "10.0.0.1",
+		InternalIP:   "10.0.0.5",
+		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
+		ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
+	}
 
 	switch state.IAAS {
 	case "gcp":
-		vars, err = yaml.Marshal(sharedDeploymentVarsYAML{
-			InternalCIDR: "10.0.0.0/24",
-			InternalGW:   "10.0.0.1",
-			InternalIP:   "10.0.0.5",
-			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-			ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-			GCPYAML: GCPYAML{
-				Zone:           state.GCP.Zone,
-				Network:        getTerraformOutput("network_name", terraformOutputs),
-				Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
-				Tags:           []string{getTerraformOutput("bosh_open_tag_name", terraformOutputs)},
-				ProjectID:      state.GCP.ProjectID,
-				CredentialJSON: state.GCP.ServiceAccountKey,
-			},
-		})
-		if err != nil {
-			panic(err)
+		vars.GCPYAML = GCPYAML{
+			Zone:           state.GCP.Zone,
+			Network:        getTerraformOutput("network_name", terraformOutputs),
+			Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
+			Tags:           []string{getTerraformOutput("bosh_open_tag_name", terraformOutputs)},
+			ProjectID:      state.GCP.ProjectID,
+			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
 	case "aws":
-		vars, err = yaml.Marshal(sharedDeploymentVarsYAML{
-			InternalCIDR: "10.0.0.0/24",
-			InternalGW:   "10.0.0.1",
-			InternalIP:   "10.0.0.5",
-			DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-			ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-			AWSYAML: AWSYAML{
-				AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),
-				SubnetID:              getTerraformOutput("bosh_subnet_id", terraformOutputs),
-				AccessKeyID:           state.AWS.AccessKeyID,
-				SecretAccessKey:       state.AWS.SecretAccessKey,
-				IAMInstanceProfile:    getTerraformOutput("bosh_iam_instance_profile", terraformOutputs),
-				DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
-				DefaultSecurityGroups: []string{getTerraformOutput("jumpbox_security_group", terraformOutputs)},
-				Region:                state.AWS.Region,
-				PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
-			},
-		})
-		if err != nil {
-			panic(err)
+		vars.AWSYAML = AWSYAML{
+			AZ:                    getTerraformOutput("bosh_subnet_availability_zone", terraformOutputs),
+			SubnetID:              getTerraformOutput("bosh_subnet_id", terraformOutputs),
+			AccessKeyID:           state.AWS.AccessKeyID,
+			SecretAccessKey:       state.AWS.SecretAccessKey,
+			IAMInstanceProfile:    getTerraformOutput("bosh_iam_instance_profile", terraformOutputs),
+			DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
+			DefaultSecurityGroups: []string{getTerraformOutput("jumpbox_security_group", terraformOutputs)},
+			Region:                state.AWS.Region,
+			PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
 		}
 	}
 
-	return string(vars), nil
+	return string(mustMarshal(vars)), nil
+}
+
+func mustMarshal(yamlStruct interface{}) []byte {
+	yamlBytes, err := yaml.Marshal(yamlStruct)
+	if err != nil {
+		// this should never happen since we are constructing the YAML to be marshaled
+		panic("bosh manager: marshal yaml: unexpected error")
+	}
+	return yamlBytes
 }
 
 func getTerraformOutput(key string, outputs map[string]interface{}) string {
@@ -470,12 +464,7 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 		}
 	}
 
-	yamlBytes, err := yaml.Marshal(vars)
-	if err != nil {
-		// this should never happen since we are constructing the YAML to be marshaled
-		panic("bosh manager: marshal yaml: unexpected error")
-	}
-	return string(yamlBytes), nil
+	return string(mustMarshal(vars)), nil
 }
 
 func generateIAASInputs(state storage.State) (InterpolateInput, error) {
