@@ -22,7 +22,7 @@ var _ = Describe("rotate ssh key test", func() {
 		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "reentrant-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "rotate-env")
 	})
 
 	AfterEach(func() {
