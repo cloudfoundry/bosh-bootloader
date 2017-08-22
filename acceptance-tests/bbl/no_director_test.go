@@ -59,5 +59,10 @@ var _ = Describe("no director test", func() {
 			Expect(stdout).NotTo(ContainSubstring("export BOSH_CLIENT_SECRET="))
 			Expect(stdout).NotTo(ContainSubstring("export BOSH_CA_CERT="))
 		})
+
+		By("checking bbl up with no director is idemptotent", func() {
+			session := bbl.Up(configuration.IAAS, []string{})
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
 	})
 })

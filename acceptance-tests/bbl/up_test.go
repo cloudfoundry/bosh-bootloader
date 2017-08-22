@@ -89,6 +89,11 @@ var _ = Describe("up", func() {
 			Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT="))
 		})
 
+		By("checking bbl up with director is idempotent", func() {
+			session := bbl.Up(configuration.IAAS, []string{})
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
+
 		By("destroying the director", func() {
 			session := bbl.Down()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
