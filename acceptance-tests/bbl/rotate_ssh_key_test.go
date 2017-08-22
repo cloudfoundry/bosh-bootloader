@@ -45,7 +45,7 @@ var _ = Describe("rotate ssh key test", func() {
 	})
 
 	It("is able to bbl up with credhub and rotate the jumpbox's ssh key", func() {
-		session := bbl.Up(configuration.IAAS, []string{"--credhub --name", bbl.PredefinedEnvID()})
+		session := bbl.Up(configuration.IAAS, []string{"--credhub", "--name", bbl.PredefinedEnvID()})
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		sshKey := bbl.SSHKey()
 		Expect(sshKey).NotTo(BeEmpty())
