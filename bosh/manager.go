@@ -94,6 +94,7 @@ type AzureYAML struct {
 	ResourceGroupName    string `yaml:"resource_group_name,omitempty"`
 	StorageAccountName   string `yaml:"storage_account_name,omitempty"`
 	DefaultSecurityGroup string `yaml:"default_security_group,omitempty"`
+	director_address     string `yaml:"director_address,omitempty"`
 }
 
 type executor interface {
