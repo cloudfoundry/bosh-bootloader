@@ -88,5 +88,10 @@ var _ = Describe("up", func() {
 			Expect(stdout).To(ContainSubstring("export BOSH_CLIENT_SECRET="))
 			Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT="))
 		})
+
+		By("destroying the director", func() {
+			session := bbl.Down()
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+		})
 	})
 })
