@@ -17,13 +17,14 @@ import (
 
 var _ = Describe("up", func() {
 	var (
-		bbl     actors.BBL
-		boshcli actors.BOSHCLI
+		bbl           actors.BBL
+		boshcli       actors.BOSHCLI
+		configuration acceptance.Config
 	)
 
 	BeforeEach(func() {
 		var err error
-		configuration, err := acceptance.LoadConfig()
+		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
