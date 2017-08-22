@@ -64,11 +64,15 @@ var _ = Describe("Stack Migration", func() {
 	})
 
 	AfterEach(func() {
-		session := bblStack.Destroy()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		By("destroying with the old bbl", func() {
+			session := bblStack.Destroy()
+			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		})
 
-		session = bblTerraform.Destroy()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		By("destroying with the latest bbl", func() {
+			session := bblTerraform.Destroy()
+			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		})
 
 		err := os.Remove(f.Name())
 		Expect(err).NotTo(HaveOccurred())
