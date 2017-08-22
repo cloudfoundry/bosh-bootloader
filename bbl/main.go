@@ -182,11 +182,15 @@ func main() {
 
 	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
 
+	up := commands.NewUp(awsUp, gcpUp, azureUp, envGetter, boshManager)
+
 	// Commands
 	commandSet := application.CommandSet{}
 	commandSet["help"] = usage
 	commandSet["version"] = commands.NewVersion(Version, logger)
-	commandSet["up"] = commands.NewUp(awsUp, gcpUp, azureUp, envGetter, boshManager)
+	commandSet["up"] = up
+	sshKeyDeleter := bosh.NewSSHKeyDeleter()
+	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(
 		logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
 		infrastructureManager, certificateDeleter,

@@ -84,6 +84,13 @@ func (b BBL) Up(iaas string, additionalArgs []string) *gexec.Session {
 	return b.execute(args, os.Stdout, os.Stderr)
 }
 
+func (b BBL) Rotate() *gexec.Session {
+	return b.execute([]string{
+		"--state-dir", b.stateDirectory,
+		"rotate",
+	}, os.Stdout, os.Stderr)
+}
+
 func (b BBL) Destroy() *gexec.Session {
 	return b.execute([]string{
 		"--state-dir", b.stateDirectory,

@@ -69,6 +69,8 @@ const (
 
 	SSHKeyCommandUsage = "Prints SSH private key for the jumpbox user. This can be used to ssh to the director/use the director as a gateway host."
 
+	RotateCommandUsage = "Rotates SSH key for the jumpbox user."
+
 	JumpboxAddressCommandUsage = "Prints BOSH jumpbox address"
 
 	DirectorUsernameCommandUsage = "Prints BOSH director username"
@@ -113,6 +115,8 @@ func (CloudConfig) Usage() string { return CloudConfigUsage }
 func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage }
 
 func (SSHKey) Usage() string { return SSHKeyCommandUsage }
+
+func (Rotate) Usage() string { return RotateCommandUsage }
 
 func (s StateQuery) Usage() string {
 	switch s.propertyName {
