@@ -129,11 +129,13 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("generating terraform template")
 	template := m.templateGenerator.Generate(bblState)
 
+	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
 		return storage.State{}, err
 	}
 
+	m.logger.Step("applying terraform template")
 	tfState, err := m.executor.Apply(
 		input,
 		template,
@@ -148,8 +150,6 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	case error:
 		return storage.State{}, err
 	}
-
-	m.logger.Step("applied terraform template")
 
 	bblState.TFState = tfState
 	return bblState, nil

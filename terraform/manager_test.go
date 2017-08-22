@@ -103,7 +103,8 @@ var _ = Describe("Manager", func() {
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				"validating whether stack needs to be migrated",
 				"generating terraform template",
-				"applied terraform template",
+				"generating terraform variables",
+				"applying terraform template",
 			}))
 		})
 
