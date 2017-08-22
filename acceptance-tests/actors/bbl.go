@@ -110,6 +110,7 @@ func (b BBL) Down() *gexec.Session {
 func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"create-lbs",
 		"--type", loadBalancerType,
 	}
@@ -128,6 +129,7 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 func (b BBL) UpdateLB(certPath, keyPath, chainPath string) *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"update-lbs",
 		"--cert", certPath,
 		"--key", keyPath,
