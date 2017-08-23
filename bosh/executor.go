@@ -163,6 +163,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"aws-bosh-director-encrypt-disk-ops.yml": []byte(awsEncryptDiskOps),
 		"jumpbox-user.yml":                       MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
 		"gcp-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
+		"azure-external-ip-not-recommended.yml":  MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
 		"aws-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml"),
 		"uaa.yml":     MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/uaa.yml"),
 		"credhub.yml": MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/credhub.yml"),
@@ -198,6 +199,8 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			args = append(args, "-o", filepath.Join(tempDir, "gcp-external-ip-not-recommended.yml"))
 		case "aws":
 			args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"))
+		case "azure":
+			args = append(args, "-o", filepath.Join(tempDir, "azure-external-ip-not-recommended.yml"))
 		}
 	} else {
 		args = append(args,
