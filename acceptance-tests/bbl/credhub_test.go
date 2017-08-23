@@ -42,9 +42,9 @@ var _ = Describe("credhub test", func() {
 	It("creates a director with a jumpbox, credhub, and UAA", func() {
 		By("parsing the output of print-env", func() {
 			stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
-			Expect(stdout).To(ContainSubstring("ssh -f -N"))
+			Expect(stdout).To(ContainSubstring("ssh -f"))
 
-			stdout = strings.Replace(stdout, "-f -N", "", 1)
+			stdout = strings.Replace(stdout, "-f", "", 1)
 
 			dir, err := ioutil.TempDir("", "bosh-print-env-command")
 			Expect(err).NotTo(HaveOccurred())
