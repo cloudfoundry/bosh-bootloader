@@ -90,7 +90,7 @@ func NewExecutor(cmd command, tempDir func(string, string) (string, error), read
 func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (JumpboxInterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
-		return JumpboxInterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, fmt.Errorf("create temp dir: %s", err)
 	}
 
 	var jumpboxSetupFiles = map[string][]byte{
@@ -107,7 +107,7 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 		err = e.writeFile(filepath.Join(tempDir, path), contents, os.ModePerm)
 		if err != nil {
 			//not tested
-			return JumpboxInterpolateOutput{}, err
+			return JumpboxInterpolateOutput{}, fmt.Errorf("write file: %s", err)
 		}
 	}
 
@@ -122,12 +122,12 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 	buffer := bytes.NewBuffer([]byte{})
 	err = e.command.Run(buffer, tempDir, args)
 	if err != nil {
-		return JumpboxInterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, fmt.Errorf("bosh interpolate: %s: %s", err, buffer)
 	}
 
 	varsStore, err := e.readFile(filepath.Join(tempDir, "variables.yml"))
 	if err != nil {
-		return JumpboxInterpolateOutput{}, err
+		return JumpboxInterpolateOutput{}, fmt.Errorf("read file: %s", err)
 	}
 
 	return JumpboxInterpolateOutput{

@@ -146,6 +146,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		state.BOSH.UserOpsFile = string(opsFile)
 
 		if config.Jumpbox {
+			state.Jumpbox.Enabled = true
 			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
 			if err != nil {
 				return err

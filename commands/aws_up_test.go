@@ -183,6 +183,7 @@ var _ = Describe("AWSUp", func() {
 					},
 					EnvID:   "bbl-lake-time-stamp",
 					TFState: "some-tf-state",
+					Jumpbox: storage.Jumpbox{Enabled: true},
 				}))
 			})
 		})

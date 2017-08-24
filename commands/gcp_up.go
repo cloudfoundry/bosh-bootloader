@@ -149,6 +149,7 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 		state.BOSH.UserOpsFile = string(opsFileContents)
 
 		if upConfig.Jumpbox {
+			state.Jumpbox.Enabled = true
 			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
 			if err != nil {
 				return err

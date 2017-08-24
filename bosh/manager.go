@@ -137,17 +137,18 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	iaasInputs := InterpolateInput{
 		IAAS: state.IAAS,
 		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		DeploymentVars:        m.GetDeploymentVars(state, terraformOutputs),
 		Variables:             state.Jumpbox.Variables,
 	}
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
 	if err != nil {
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("jumpbox interpolate: %s", err)
 	}
 
 	variables, err := yaml.Marshal(interpolateOutputs.Variables)
 	if err != nil {
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("marshal yaml: %s", err)
 	}
 
 	osUnsetenv("BOSH_ALL_PROXY")
@@ -165,9 +166,9 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 			State:     ceErr.BOSHState(),
 			Manifest:  interpolateOutputs.Manifest,
 		}
-		return storage.State{}, NewManagerCreateError(state, err)
+		return storage.State{}, fmt.Errorf("create env error: %s", NewManagerCreateError(state, err))
 	case error:
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("create env: %s", err)
 	}
 
 	state.Jumpbox = storage.Jumpbox{
@@ -183,12 +184,12 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	m.logger.Step("starting socks5 proxy to jumpbox")
 	jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
 	if err != nil {
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("jumpbox key: %s", err)
 	}
 
 	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
 	if err != nil {
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("start proxy: %s", err)
 	}
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
@@ -317,7 +318,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 
 	iaasInputs := InterpolateInput{
 		IAAS:                  state.IAAS,
-		Variables:             state.Jumpbox.Variables,
+		Variables:             state.BOSH.Variables,
 		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 	}
 

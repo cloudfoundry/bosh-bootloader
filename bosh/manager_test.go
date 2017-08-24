@@ -598,15 +598,39 @@ gcp_credentials_json: some-credential-json
 
 				It("returns an error", func() {
 					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
-					Expect(err).To(MatchError("yaml: could not find expected directive name"))
+					Expect(err).To(MatchError("jumpbox key: yaml: could not find expected directive name"))
+				})
+			})
+
+			Context("when create env returns a typed error", func() {
+				BeforeEach(func() {
+					boshState := make(map[string]interface{})
+					boshState["foo"] = "bar"
+					boshExecutor.CreateEnvCall.Returns.Error = bosh.NewCreateEnvError(boshState, errors.New("apple"))
+				})
+
+				It("returns an error", func() {
+					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+					Expect(err).To(MatchError("create env error: apple"))
+				})
+			})
+
+			Context("when create env returns an untyped error", func() {
+				BeforeEach(func() {
+					boshExecutor.CreateEnvCall.Returns.Error = errors.New("banana")
+				})
+
+				It("returns an error", func() {
+					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+					Expect(err).To(MatchError("create env: banana"))
 				})
 			})
 
 			It("returns an error when the socks5Proxy fails to start", func() {
-				socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
+				socks5Proxy.StartCall.Returns.Error = errors.New("coconut")
 
 				_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
-				Expect(err).To(MatchError("failed to start socks5Proxy"))
+				Expect(err).To(MatchError("start proxy: coconut"))
 			})
 		})
 	})
