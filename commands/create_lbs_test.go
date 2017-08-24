@@ -34,11 +34,11 @@ var _ = Describe("create-lbs", func() {
 
 	Describe("CheckFastFails", func() {
 		It("returns an error when state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			stateValidator.ValidateCall.Returns.Error = errors.New("raspberry")
 			err := command.CheckFastFails([]string{}, storage.State{})
 
 			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-			Expect(err).To(MatchError("state validator failed"))
+			Expect(err).To(MatchError("validate state: raspberry"))
 		})
 
 		It("returns an error if there is no lb type", func() {
@@ -82,7 +82,7 @@ var _ = Describe("create-lbs", func() {
 					"--chain", "/path/to/chain",
 				}, storage.State{})
 
-				Expect(err).To(MatchError("failed to validate"))
+				Expect(err).To(MatchError("validate certificate: failed to validate"))
 				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
 				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
 				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))

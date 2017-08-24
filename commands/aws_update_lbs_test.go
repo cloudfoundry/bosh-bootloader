@@ -13,16 +13,12 @@ import (
 
 var _ = Describe("AWS Update LBs", func() {
 	var (
-		environmentValidator *fakes.EnvironmentValidator
-		awsCreateLBs         *fakes.AWSCreateLBs
-
-		command commands.AWSUpdateLBs
-
+		awsCreateLBs  *fakes.AWSCreateLBs
+		command       commands.AWSUpdateLBs
 		incomingState storage.State
 	)
 
 	BeforeEach(func() {
-		environmentValidator = &fakes.EnvironmentValidator{}
 		awsCreateLBs = &fakes.AWSCreateLBs{}
 
 		incomingState = storage.State{
@@ -36,7 +32,7 @@ var _ = Describe("AWS Update LBs", func() {
 			},
 		}
 
-		command = commands.NewAWSUpdateLBs(awsCreateLBs, environmentValidator)
+		command = commands.NewAWSUpdateLBs(awsCreateLBs)
 	})
 
 	Describe("Execute", func() {
@@ -104,16 +100,13 @@ var _ = Describe("AWS Update LBs", func() {
 			})
 		})
 
-		Context("when an error occurs", func() {
-			Context("when environment validation fails", func() {
-				It("returns an error", func() {
-					environmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
-					err := command.Execute(commands.AWSCreateLBsConfig{}, incomingState)
-
-					Expect(err).To(MatchError("failed to validate"))
-					Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
-					Expect(environmentValidator.ValidateCall.CallCount).To(Equal(1))
-				})
+		Context("when create lbs fails", func() {
+			BeforeEach(func() {
+				awsCreateLBs.ExecuteCall.Returns.Error = errors.New("fig")
+			})
+			It("returns an error", func() {
+				err := command.Execute(commands.AWSCreateLBsConfig{}, incomingState)
+				Expect(err).To(MatchError("fig"))
 			})
 		})
 	})

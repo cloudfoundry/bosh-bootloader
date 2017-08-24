@@ -160,7 +160,7 @@ func main() {
 	awsUp := commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
 	awsCreateLBs := commands.NewAWSCreateLBs(logger, cloudConfigManager, stateStore, terraformManager, awsEnvironmentValidator)
 	awsLBs := commands.NewAWSLBs(terraformManager, logger)
-	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs, awsEnvironmentValidator)
+	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs)
 	awsDeleteLBs := commands.NewAWSDeleteLBs(logger, cloudConfigManager, stateStore, awsEnvironmentValidator, terraformManager)
 
 	azureClient := azure.NewClient()

@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -45,11 +47,11 @@ func (e EnvironmentValidator) Validate(state storage.State) error {
 	if !state.NoDirector {
 		boshClient, err := e.boshClientProvider.Client(state.Jumpbox, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
 		if err != nil {
-			return err //not tested
+			return fmt.Errorf("bosh client provider: %s", err)
 		}
 		_, err = boshClient.Info()
 		if err != nil {
-			return application.DirectorNotReachable
+			return fmt.Errorf("%s %s", application.DirectorNotReachable, err)
 		}
 	}
 
