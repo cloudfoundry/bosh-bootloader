@@ -595,6 +595,14 @@ resource "aws_iam_role_policy" "flow_logs" {
 EOF
 }
 
+resource "aws_kms_key" "kms_key" {
+  enable_key_rotation = true
+}
+
+output "kms_key_arn" {
+  value = "${aws_kms_key.kms_key.arn}"
+}
+
 resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"

@@ -136,6 +136,15 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 	}, nil
 }
 
+const awsEncryptDiskOps = `---
+- type: replace
+  path: /disk_pools/name=disks/cloud_properties?
+  value:
+    type: gp2
+    encrypted: true
+    kms_key_arn: ((kms_key_arn))
+`
+
 func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")
 	if err != nil {
@@ -151,6 +160,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"iam-instance-profile.yml":               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
 		"gcp-bosh-director-ephemeral-ip-ops.yml": []byte(gcpBoshDirectorEphemeralIPOps),
 		"aws-bosh-director-ephemeral-ip-ops.yml": []byte(awsBoshDirectorEphemeralIPOps),
+		"aws-bosh-director-encrypt-disk-ops.yml": []byte(awsEncryptDiskOps),
 		"jumpbox-user.yml":                       MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
 		"gcp-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
 		"aws-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml"),
@@ -204,7 +214,10 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	}
 
 	if interpolateInput.IAAS == "aws" {
-		args = append(args, "-o", filepath.Join(tempDir, "iam-instance-profile.yml"))
+		args = append(args,
+			"-o", filepath.Join(tempDir, "iam-instance-profile.yml"),
+			"-o", filepath.Join(tempDir, "aws-bosh-director-encrypt-disk-ops.yml"),
+		)
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

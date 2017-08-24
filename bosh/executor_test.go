@@ -90,7 +90,9 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
 					"-o", fmt.Sprintf("%s/aws-external-ip-not-recommended.yml", tempDir),
-					"-o", fmt.Sprintf("%s/iam-instance-profile.yml", tempDir)})
+					"-o", fmt.Sprintf("%s/iam-instance-profile.yml", tempDir),
+					"-o", fmt.Sprintf("%s/aws-bosh-director-encrypt-disk-ops.yml", tempDir),
+				})
 
 				_, _, args := cmd.RunArgsForCall(0)
 				Expect(args).To(Equal(expectedArgs))
@@ -109,6 +111,7 @@ var _ = Describe("Executor", func() {
 				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 				Expect(interpolateOutput.Variables).To(gomegamatchers.MatchYAML(variablesYMLContents))
 			})
+
 			Context("when there are jumpbox deployment vars", func() {
 				It("interpolates the jumpbox and bosh manifests", func() {
 					awsInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
@@ -156,6 +159,7 @@ var _ = Describe("Executor", func() {
 						"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
 						"-o", fmt.Sprintf("%s/aws-bosh-director-ephemeral-ip-ops.yml", tempDir),
 						"-o", fmt.Sprintf("%s/iam-instance-profile.yml", tempDir),
+						"-o", fmt.Sprintf("%s/aws-bosh-director-encrypt-disk-ops.yml", tempDir),
 					})
 
 					_, _, args = cmd.RunArgsForCall(1)
