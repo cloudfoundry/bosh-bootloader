@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"errors"
+
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -30,6 +32,8 @@ type gcpUpdateLBs interface {
 	Execute(GCPCreateLBsConfig, storage.State) error
 }
 
+var LBNotFound error = errors.New("no load balancer has been found for this bbl environment")
+
 func NewUpdateLBs(awsUpdateLBs awsUpdateLBs, gcpUpdateLBs gcpUpdateLBs, certificateValidator certificateValidator,
 	stateValidator stateValidator, logger logger, boshManager boshManager) UpdateLBs {
 
@@ -47,12 +51,6 @@ func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 	config, err := u.parseFlags(subcommandFlags)
 	if err != nil {
 		return err
-	}
-
-	lbExists := lbExists(state.Stack.LBType) || lbExists(state.LB.Type)
-	if config.skipIfMissing && !lbExists {
-		u.logger.Println("no lb type exists, skipping...")
-		return nil
 	}
 
 	switch state.IAAS {

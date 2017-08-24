@@ -29,6 +29,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
+	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
@@ -145,6 +146,7 @@ func main() {
 	// Environment Validators
 	awsBrokenEnvironmentValidator := awsapplication.NewBrokenEnvironmentValidator(infrastructureManager)
 	awsEnvironmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
+	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 
 	// Cloud Config
 	sshKeyGetter := bosh.NewSSHKeyGetter()
@@ -164,7 +166,7 @@ func main() {
 	azureClient := azure.NewClient()
 	azureUp := commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, logger, stateStore, terraformManager)
 
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
 
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
 		StateStore:                   stateStore,
@@ -176,7 +178,7 @@ func main() {
 		GCPAvailabilityZoneRetriever: gcpClientProvider.Client(),
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, gcpClientProvider.Client())
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, gcpEnvironmentValidator, logger, gcpClientProvider.Client())
 
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
 

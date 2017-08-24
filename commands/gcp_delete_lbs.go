@@ -7,17 +7,19 @@ import (
 )
 
 type GCPDeleteLBs struct {
-	cloudConfigManager cloudConfigManager
-	stateStore         stateStore
-	terraformManager   terraformApplier
+	cloudConfigManager   cloudConfigManager
+	stateStore           stateStore
+	environmentValidator environmentValidator
+	terraformManager     terraformApplier
 }
 
-func NewGCPDeleteLBs(stateStore stateStore,
+func NewGCPDeleteLBs(stateStore stateStore, environmentValidator environmentValidator,
 	terraformManager terraformApplier, cloudConfigManager cloudConfigManager) GCPDeleteLBs {
 	return GCPDeleteLBs{
-		stateStore:         stateStore,
-		terraformManager:   terraformManager,
-		cloudConfigManager: cloudConfigManager,
+		stateStore:           stateStore,
+		environmentValidator: environmentValidator,
+		terraformManager:     terraformManager,
+		cloudConfigManager:   cloudConfigManager,
 	}
 }
 
@@ -26,6 +28,11 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 	if err != nil {
 		return err
 	}
+
+	if err := g.environmentValidator.Validate(state); err != nil {
+		return err
+	}
+
 	state.LB.Type = ""
 
 	if !state.NoDirector {

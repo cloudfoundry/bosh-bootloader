@@ -49,7 +49,7 @@ func (e EnvironmentValidator) Validate(state storage.State) error {
 		}
 		_, err = boshClient.Info()
 		if err != nil {
-			return application.BBLNotFound
+			return application.DirectorNotReachable
 		}
 	}
 

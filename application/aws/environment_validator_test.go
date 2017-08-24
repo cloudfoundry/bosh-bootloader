@@ -93,7 +93,7 @@ var _ = Describe("EnvironmentValidator", func() {
 			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
 			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
 			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-			Expect(err).To(MatchError(application.BBLNotFound))
+			Expect(err).To(MatchError(application.DirectorNotReachable))
 		})
 
 		Context("failure cases", func() {
@@ -132,7 +132,7 @@ var _ = Describe("EnvironmentValidator", func() {
 			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
 			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
 			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-			Expect(err).To(MatchError(application.BBLNotFound))
+			Expect(err).To(MatchError(application.DirectorNotReachable))
 		})
 	})
 })

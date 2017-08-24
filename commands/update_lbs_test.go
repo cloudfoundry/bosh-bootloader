@@ -164,17 +164,6 @@ var _ = Describe("Update LBs", func() {
 			}))
 		})
 
-		Context("when --skip-if-missing is provided", func() {
-			It("returns no error when lb does not exist", func() {
-				err := command.Execute([]string{
-					"--skip-if-missing",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
-			})
-		})
-
 		Describe("failure cases", func() {
 			It("returns an error when invalid flags are provided", func() {
 				err := command.Execute([]string{

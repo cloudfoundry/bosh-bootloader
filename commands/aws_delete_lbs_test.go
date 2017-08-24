@@ -62,6 +62,11 @@ var _ = Describe("Delete LBs", func() {
 			err := command.Execute(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
+			By("validating the environment", func() {
+				Expect(environmentValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
+			})
+
 			By("updating cloud config", func() {
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Type).To(BeEmpty())
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Cert).To(BeEmpty())
@@ -171,6 +176,14 @@ var _ = Describe("Delete LBs", func() {
 		})
 
 		Context("when an error occurs", func() {
+			Context("when the environment validator fails", func() {
+				It("returns an error", func() {
+					environmentValidator.ValidateCall.Returns.Error = errors.New("validate failed")
+
+					err := command.Execute(incomingState)
+					Expect(err).To(MatchError("validate failed"))
+				})
+			})
 			Context("when terraform manager fails to apply the second time with terraformManagerError", func() {
 				It("return an error", func() {
 					terraformManager.ApplyReturns(storage.State{}, errors.New("apply failed"))

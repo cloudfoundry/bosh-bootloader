@@ -17,6 +17,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 	var (
 		cloudConfigManager     *fakes.CloudConfigManager
 		stateStore             *fakes.StateStore
+		environmentValidator   *fakes.EnvironmentValidator
 		terraformManager       *fakes.TerraformManager
 		terraformExecutorError *fakes.TerraformExecutorError
 
@@ -28,11 +29,12 @@ var _ = Describe("GCPDeleteLBs", func() {
 	Describe("Execute", func() {
 		BeforeEach(func() {
 			stateStore = &fakes.StateStore{}
+			environmentValidator = &fakes.EnvironmentValidator{}
 			terraformManager = &fakes.TerraformManager{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			terraformExecutorError = &fakes.TerraformExecutorError{}
 
-			command = commands.NewGCPDeleteLBs(stateStore, terraformManager, cloudConfigManager)
+			command = commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
 
 			body, err := ioutil.ReadFile("fixtures/terraform_template_no_lb.tf")
 			Expect(err).NotTo(HaveOccurred())
@@ -42,7 +44,7 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 		Context("when bbl has a bosh director", func() {
 			It("updates the cloud config", func() {
-				err := command.Execute(storage.State{
+				state := storage.State{
 					IAAS: "gcp",
 					BOSH: storage.BOSH{
 						DirectorUsername: "some-director-username",
@@ -55,20 +57,15 @@ var _ = Describe("GCPDeleteLBs", func() {
 					LB: storage.LB{
 						Type: "cf",
 					},
-				})
+				}
+				err := command.Execute(state)
 				Expect(err).NotTo(HaveOccurred())
+
+				Expect(environmentValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(state))
+
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
-				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
-					IAAS: "gcp",
-					BOSH: storage.BOSH{
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-						DirectorAddress:  "some-director-address",
-					},
-					GCP: storage.GCP{
-						Region: "some-region",
-					},
-				}))
+				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Type).To(Equal(""))
 			})
 		})
 
@@ -183,6 +180,13 @@ var _ = Describe("GCPDeleteLBs", func() {
 		})
 
 		Context("failure cases", func() {
+			It("fast fails if the environment validator fails", func() {
+				environmentValidator.ValidateCall.Returns.Error = errors.New("invalid")
+
+				err := command.Execute(storage.State{})
+				Expect(err).To(MatchError("invalid"))
+			})
+
 			It("fast fails if the terraform version is invalid", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("invalid")
 

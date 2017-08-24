@@ -14,6 +14,7 @@ type GCPCreateLBs struct {
 	terraformManager          terraformApplier
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
+	environmentValidator      environmentValidator
 	logger                    logger
 	availabilityZoneRetriever availabilityZoneRetriever
 }
@@ -32,14 +33,15 @@ type availabilityZoneRetriever interface {
 
 func NewGCPCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
-	stateStore stateStore, logger logger,
+	stateStore stateStore, environmentValidator environmentValidator, logger logger,
 	availabilityZoneRetriever availabilityZoneRetriever,
 ) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformManager:   terraformManager,
-		cloudConfigManager: cloudConfigManager,
-		stateStore:         stateStore,
-		logger:             logger,
+		terraformManager:     terraformManager,
+		cloudConfigManager:   cloudConfigManager,
+		stateStore:           stateStore,
+		environmentValidator: environmentValidator,
+		logger:               logger,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
@@ -52,6 +54,10 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 
 	err = c.checkFastFails(config, state)
 	if err != nil {
+		return err
+	}
+
+	if err := c.environmentValidator.Validate(state); err != nil {
 		return err
 	}
 
@@ -128,7 +134,7 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 		return fmt.Errorf("--type is a required flag")
 	}
 
-	if config.LBType != "concourse" && config.LBType != "cf" {
+	if !lbExists(config.LBType) {
 		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse, cf", config.LBType)
 	}
 
@@ -144,14 +150,6 @@ func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.Stat
 		if errs.Length() > 0 {
 			return errs
 		}
-	}
-
-	if state.IAAS != "gcp" {
-		return fmt.Errorf("iaas type must be gcp")
-	}
-
-	if state.TFState == "" {
-		return BBLNotFound
 	}
 
 	return nil

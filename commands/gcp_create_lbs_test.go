@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -20,6 +21,7 @@ var _ = Describe("GCPCreateLBs", func() {
 		terraformManager          *fakes.TerraformManager
 		cloudConfigManager        *fakes.CloudConfigManager
 		stateStore                *fakes.StateStore
+		environmentValidator      *fakes.EnvironmentValidator
 		logger                    *fakes.Logger
 		terraformExecutorError    *fakes.TerraformExecutorError
 		availabilityZoneRetriever *fakes.GCPClient
@@ -36,11 +38,12 @@ var _ = Describe("GCPCreateLBs", func() {
 		terraformManager = &fakes.TerraformManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
+		environmentValidator = &fakes.EnvironmentValidator{}
 		logger = &fakes.Logger{}
 		terraformExecutorError = &fakes.TerraformExecutorError{}
 		availabilityZoneRetriever = &fakes.GCPClient{}
 
-		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, logger, availabilityZoneRetriever)
+		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, logger, availabilityZoneRetriever)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
@@ -296,12 +299,14 @@ var _ = Describe("GCPCreateLBs", func() {
 				Expect(err).To(MatchError(`"some-fake-lb" is not a valid lb type, valid lb types are: concourse, cf`))
 			})
 
-			Context("tf state is empty", func() {
-				It("returns a BBLNotFound error", func() {
+			Context("when environment validator validate returns an error", func() {
+				It("returns a DirectorNotReachable error", func() {
+					environmentValidator.ValidateCall.Returns.Error = application.DirectorNotReachable
+
 					err := command.Execute(commands.GCPCreateLBsConfig{
 						LBType: "concourse",
 					}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError(commands.BBLNotFound))
+					Expect(err).To(MatchError(application.DirectorNotReachable))
 				})
 			})
 
@@ -316,13 +321,6 @@ var _ = Describe("GCPCreateLBs", func() {
 					}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
 					Expect(err).To(MatchError(expectedErrors))
 				})
-			})
-
-			It("returns an error when the iaas type is not gcp", func() {
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}, storage.State{IAAS: "aws"})
-				Expect(err).To(MatchError("iaas type must be gcp"))
 			})
 
 			It("returns an error when the availability zone retriever fails to get zones", func() {
