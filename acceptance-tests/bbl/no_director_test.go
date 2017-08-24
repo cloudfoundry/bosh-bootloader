@@ -45,10 +45,8 @@ var _ = Describe("no director test", func() {
 		})
 
 		By("checking that director details are not printed", func() {
-			directorUsername := bbl.DirectorUsername()
-			Expect(directorUsername).To(Equal(""))
-			directorPassword := bbl.DirectorPassword()
-			Expect(directorPassword).To(Equal(""))
+			Expect(bbl.DirectorUsername()).To(Equal(""))
+			Expect(bbl.DirectorPassword()).To(Equal(""))
 		})
 
 		By("checking if bbl print-env prints the external ip", func() {
@@ -60,7 +58,7 @@ var _ = Describe("no director test", func() {
 			Expect(stdout).NotTo(ContainSubstring("export BOSH_CA_CERT="))
 		})
 
-		By("checking bbl up with no director is idemptotent", func() {
+		By("checking bbl up with no director is idempotent", func() {
 			session := bbl.Up()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
