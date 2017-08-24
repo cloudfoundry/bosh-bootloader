@@ -158,6 +158,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"bosh.yml":                               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
 		"cpi.yml":                                MustAsset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS)),
 		"iam-instance-profile.yml":               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
+		"use-managed-disks.yml":                  MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/azure/use-managed-disks.yml"),
 		"gcp-bosh-director-ephemeral-ip-ops.yml": []byte(gcpBoshDirectorEphemeralIPOps),
 		"aws-bosh-director-ephemeral-ip-ops.yml": []byte(awsBoshDirectorEphemeralIPOps),
 		"aws-bosh-director-encrypt-disk-ops.yml": []byte(awsEncryptDiskOps),
@@ -187,6 +188,10 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"--vars-store", filepath.Join(tempDir, "variables.yml"),
 		"--vars-file", filepath.Join(tempDir, "deployment-vars.yml"),
 		"-o", filepath.Join(tempDir, "cpi.yml"),
+	}
+
+	if interpolateInput.IAAS == "azure" {
+		args = append(args, "-o", filepath.Join(tempDir, "use-managed-disks.yml"))
 	}
 
 	if interpolateInput.JumpboxDeploymentVars == "" {
