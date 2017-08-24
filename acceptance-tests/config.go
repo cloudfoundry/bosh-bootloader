@@ -23,7 +23,6 @@ type Config struct {
 	GCPProjectID         string
 	GCPRegion            string
 	GCPZone              string
-	GCPEnvPrefix         string
 
 	StateFileDir            string
 	StemcellPath            string
@@ -151,7 +150,6 @@ func loadConfigFromEnvVars() Config {
 		GCPProjectID:         os.Getenv("BBL_GCP_PROJECT_ID"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
 		GCPZone:              os.Getenv("BBL_GCP_ZONE"),
-		GCPEnvPrefix:         os.Getenv("BBL_GCP_ENV_PREFIX"),
 
 		StateFileDir:            os.Getenv("BBL_STATE_DIR"),
 		StemcellPath:            os.Getenv("STEMCELL_PATH"),
