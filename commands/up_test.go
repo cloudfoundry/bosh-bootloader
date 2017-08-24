@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"errors"
+	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -132,23 +133,180 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when an ops-file is provided via command line flag", func() {
-			It("populates the aws config with the correct ops-file path", func() {
+		Context("when the --ops-file flag is specified", func() {
+			Context("aws", func() {
+				It("populates the aws config with the correct ops-file path", func() {
+					err := command.Execute([]string{
+						"--ops-file", "some-ops-file-path",
+					}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.OpsFilePath).To(Equal("some-ops-file-path"))
+				})
+
+				Context("when the --ops-file flag is not specified", func() {
+					It("creates a default ops-file with the contents of state.BOSH.UserOpsFile", func() {
+						err := command.Execute([]string{}, storage.State{
+							IAAS: "aws",
+							BOSH: storage.BOSH{
+								UserOpsFile: "some-ops-file-contents",
+							},
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						filePath := fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.OpsFilePath
+						fileContents, err := ioutil.ReadFile(filePath)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
+					})
+				})
+			})
+
+			Context("gcp", func() {
+				It("populates the gcp config with the correct ops-file path", func() {
+					err := command.Execute([]string{
+						"--ops-file", "some-ops-file-path",
+					}, storage.State{IAAS: "gcp"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.OpsFilePath).To(Equal("some-ops-file-path"))
+				})
+
+				Context("when the --ops-file flag is not specified", func() {
+					It("creates a default ops-file with the contents of state.BOSH.UserOpsFile", func() {
+						err := command.Execute([]string{}, storage.State{
+							IAAS: "gcp",
+							BOSH: storage.BOSH{
+								UserOpsFile: "some-ops-file-contents",
+							},
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						filePath := fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.OpsFilePath
+						fileContents, err := ioutil.ReadFile(filePath)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
+					})
+				})
+			})
+		})
+
+		Context("when the --credhub flag is specified", func() {
+			Context("gcp", func() {
+				It("executes the GCP up with gcp details from args", func() {
+					err := command.Execute([]string{
+						"--credhub",
+					}, storage.State{IAAS: "gcp"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.Jumpbox).To(BeTrue())
+				})
+
+				Context("when the --credhub flag was not specified on a subsequent bbl up", func() {
+					It("executes the GCP up with jumpbox enabled", func() {
+						err := command.Execute([]string{}, storage.State{
+							IAAS: "gcp",
+							Jumpbox: storage.Jumpbox{
+								Enabled: true,
+							},
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
+						Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.Jumpbox).To(BeTrue())
+					})
+				})
+			})
+
+			Context("aws", func() {
+				It("executes the AWS up with details from args", func() {
+					err := command.Execute([]string{
+						"--credhub",
+					}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
+					Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Jumpbox).To(BeTrue())
+				})
+
+				Context("when the --credhub flag was not specified on a subsequent bbl up", func() {
+					It("executes the AWS up with jumpbox enabled", func() {
+						err := command.Execute([]string{}, storage.State{
+							IAAS: "aws",
+							Jumpbox: storage.Jumpbox{
+								Enabled: true,
+							},
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
+						Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Jumpbox).To(BeTrue())
+					})
+				})
+			})
+		})
+
+		Context("when the user provides the name flag", func() {
+			It("passes the name flag in the up config", func() {
 				err := command.Execute([]string{
-					"--ops-file", "some-ops-file-path",
+					"--name", "a-better-name",
 				}, storage.State{IAAS: "aws"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.OpsFilePath).To(Equal("some-ops-file-path"))
+				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Name).To(Equal("a-better-name"))
+			})
+		})
+
+		Context("when the user provides the no-director flag", func() {
+			Context("aws", func() {
+				It("passes no-director as true in the up config", func() {
+					err := command.Execute([]string{
+						"--no-director",
+					}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.NoDirector).To(Equal(true))
+				})
+
+				Context("when the --no-director flag was omitted on a subsequent bbl-up", func() {
+					It("passes no-director as true in the up config", func() {
+						err := command.Execute([]string{},
+							storage.State{
+								IAAS:       "aws",
+								NoDirector: true,
+							})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.NoDirector).To(Equal(true))
+					})
+				})
 			})
 
-			It("populates the gcp config with the correct ops-file path", func() {
-				err := command.Execute([]string{
-					"--ops-file", "some-ops-file-path",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).NotTo(HaveOccurred())
+			Context("gcp", func() {
+				It("passes no-director as true in the up config", func() {
+					err := command.Execute([]string{
+						"--no-director",
+					}, storage.State{IAAS: "gcp"})
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.OpsFilePath).To(Equal("some-ops-file-path"))
+					Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.NoDirector).To(Equal(true))
+				})
+
+				Context("when the --no-director flag was omitted on a subsequent bbl-up", func() {
+					It("passes no-director as true in the up config", func() {
+						err := command.Execute([]string{},
+							storage.State{
+								IAAS:       "gcp",
+								NoDirector: true,
+							})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig.NoDirector).To(Equal(true))
+					})
+				})
 			})
 		})
 
@@ -163,57 +321,6 @@ var _ = Describe("Up", func() {
 				err := command.Execute([]string{"--foo", "bar"}, storage.State{})
 				Expect(err).To(MatchError("flag provided but not defined: -foo"))
 			})
-		})
-	})
-
-	Context("when the --credhub flag is specified", func() {
-		Context("gcp", func() {
-			It("executes the GCP up with gcp details from args", func() {
-				err := command.Execute([]string{
-					"--credhub",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeGCPUp.ExecuteCall.CallCount).To(Equal(1))
-				Expect(fakeGCPUp.ExecuteCall.Receives.GCPUpConfig).To(Equal(commands.GCPUpConfig{
-					Jumpbox: true,
-				}))
-			})
-		})
-		Context("aws", func() {
-			It("executes the AWS up with details from args", func() {
-				err := command.Execute([]string{
-					"--credhub",
-				}, storage.State{IAAS: "aws"})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeAWSUp.ExecuteCall.CallCount).To(Equal(1))
-				Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig).To(Equal(commands.AWSUpConfig{
-					Jumpbox: true,
-				}))
-			})
-		})
-	})
-
-	Context("when the user provides the name flag", func() {
-		It("passes the name flag in the up config", func() {
-			err := command.Execute([]string{
-				"--name", "a-better-name",
-			}, storage.State{IAAS: "aws"})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.Name).To(Equal("a-better-name"))
-		})
-	})
-
-	Context("when the user provides the no-director flag", func() {
-		It("passes no-director as true in the AWS up config", func() {
-			err := command.Execute([]string{
-				"--no-director",
-			}, storage.State{IAAS: "aws"})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(fakeAWSUp.ExecuteCall.Receives.AWSUpConfig.NoDirector).To(Equal(true))
 		})
 	})
 })

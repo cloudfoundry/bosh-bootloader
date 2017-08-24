@@ -23,15 +23,11 @@ var _ = Describe("credhub test", func() {
 	)
 
 	BeforeEach(func() {
-		var err error
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "credhub-env")
 		state = acceptance.NewState(configuration.StateFileDir)
-
-		session := bbl.Up("--credhub", "--name", bbl.PredefinedEnvID())
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
@@ -40,7 +36,10 @@ var _ = Describe("credhub test", func() {
 	})
 
 	It("creates a director with a jumpbox, credhub, and UAA", func() {
-		By("parsing the output of print-env", func() {
+		session := bbl.Up("--credhub", "--name", bbl.PredefinedEnvID())
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+		By("creating an ssh tunnel to the director in print-env", func() {
 			stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
 			Expect(stdout).To(ContainSubstring("ssh -f -N"))
 

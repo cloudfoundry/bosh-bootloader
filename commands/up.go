@@ -1,7 +1,11 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -61,6 +65,10 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 		}
 	}
 
+	if config.jumpbox && !state.Jumpbox.Enabled && state.EnvID != "" {
+		return errors.New(`Environment without credhub already exists, you must recreate your environment to use "--credhub"`)
+	}
+
 	if state.EnvID != "" && config.name != "" && config.name != state.EnvID {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
@@ -106,14 +114,25 @@ func (u Up) Execute(args []string, state storage.State) error {
 func (u Up) parseArgs(state storage.State, args []string) (upConfig, error) {
 	var config upConfig
 
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return upConfig{}, err //not tested
+	}
+
+	prevOpsFilePath := filepath.Join(tempDir, "user-ops-file")
+	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
+	if err != nil {
+		return upConfig{}, err //not tested
+	}
+
 	upFlags := flags.New("up")
 
 	upFlags.String(&config.name, "name", "")
-	upFlags.String(&config.opsFile, "ops-file", "")
+	upFlags.String(&config.opsFile, "ops-file", prevOpsFilePath)
 	upFlags.Bool(&config.noDirector, "", "no-director", state.NoDirector)
 	upFlags.Bool(&config.jumpbox, "", "credhub", state.Jumpbox.Enabled)
 
-	err := upFlags.Parse(args)
+	err = upFlags.Parse(args)
 	if err != nil {
 		return upConfig{}, err
 	}
