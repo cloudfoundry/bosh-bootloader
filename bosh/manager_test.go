@@ -78,6 +78,7 @@ var _ = Describe("Manager", func() {
 					State: map[string]interface{}{
 						"some-key": "some-value",
 					},
+					UserOpsFile: "some-yaml",
 				},
 				TFState: "some-tf-state",
 				LB: storage.LB{
@@ -137,9 +138,6 @@ tags:
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `,
-					BOSHState: map[string]interface{}{
-						"some-key": "some-value",
-					},
 					Variables: "",
 					OpsFile:   "some-ops-file",
 				}))
@@ -184,6 +182,7 @@ gcp_credentials_json: some-credential-json
 						DirectorSSLCA:          "some-ca",
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
+						UserOpsFile:            "some-yaml",
 					},
 					TFState: "some-tf-state",
 					LB: storage.LB{
@@ -206,6 +205,7 @@ gcp_credentials_json: some-credential-json
 					State: map[string]interface{}{
 						"some-key": "some-value",
 					},
+					UserOpsFile: "some-yaml",
 				},
 				TFState: "some-tf-state",
 				LB: storage.LB{
@@ -238,7 +238,6 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("generates a bosh manifest", func() {
-					incomingAWSState.BOSH.UserOpsFile = "some-ops-file"
 					_, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -260,11 +259,8 @@ default_security_groups:
 region: some-region
 private_key: some-private-key
 `,
-						BOSHState: map[string]interface{}{
-							"some-key": "some-value",
-						},
 						Variables: "",
-						OpsFile:   "some-ops-file",
+						OpsFile:   "some-yaml",
 					}))
 				})
 
@@ -293,6 +289,7 @@ private_key: some-private-key
 							DirectorSSLCA:          "some-ca",
 							DirectorSSLCertificate: "some-certificate",
 							DirectorSSLPrivateKey:  "some-private-key",
+							UserOpsFile:            "some-yaml",
 						},
 						TFState: "some-tf-state",
 						LB: storage.LB{
@@ -537,10 +534,7 @@ gcp_credentials_json: some-credential-json
 					IAAS: "gcp",
 					JumpboxDeploymentVars: jumpboxDeploymentVars,
 					DeploymentVars:        deploymentVars,
-					BOSHState: map[string]interface{}{
-						"some-key": "some-value",
-					},
-					Variables: "",
+					Variables:             "",
 				}))
 			})
 
@@ -903,7 +897,10 @@ gcp_credentials_json: some-credential-json
 			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:  "aws",
+					IAAS: "aws",
+					Jumpbox: storage.Jumpbox{
+						Enabled: true,
+					},
 					EnvID: "some-env-id",
 					AWS: storage.AWS{
 						Region:          "some-region",
@@ -953,6 +950,9 @@ private_key: some-private-key
 				incomingState = storage.State{
 					IAAS:  "gcp",
 					EnvID: "some-env-id",
+					Jumpbox: storage.Jumpbox{
+						Enabled: true,
+					},
 					GCP: storage.GCP{
 						Zone:              "some-zone",
 						ProjectID:         "some-project-id",

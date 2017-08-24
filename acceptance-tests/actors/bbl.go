@@ -2,7 +2,6 @@ package actors
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -52,34 +51,6 @@ func (b BBL) Up(iaas string, additionalArgs []string) *gexec.Session {
 	}
 
 	args = append(args, additionalArgs...)
-
-	switch iaas {
-	case "aws":
-		args = append(args, []string{
-			"--iaas", "aws",
-			"--aws-access-key-id", b.configuration.AWSAccessKeyID,
-			"--aws-secret-access-key", b.configuration.AWSSecretAccessKey,
-			"--aws-region", b.configuration.AWSRegion,
-		}...)
-	case "gcp":
-		args = append(args, []string{
-			"--iaas", "gcp",
-			"--gcp-service-account-key", b.configuration.GCPServiceAccountKey,
-			"--gcp-project-id", b.configuration.GCPProjectID,
-			"--gcp-region", b.configuration.GCPRegion,
-			"--gcp-zone", b.configuration.GCPZone,
-		}...)
-	case "azure":
-		args = append(args, []string{
-			"--iaas", "azure",
-			"--azure-subscription-id", b.configuration.AzureSubscriptionID,
-			"--azure-tenant-id", b.configuration.AzureTenantID,
-			"--azure-client-id", b.configuration.AzureClientID,
-			"--azure-client-secret", b.configuration.AzureClientSecret,
-		}...)
-	default:
-		panic(errors.New("invalid iaas"))
-	}
 
 	return b.execute(args, os.Stdout, os.Stderr)
 }

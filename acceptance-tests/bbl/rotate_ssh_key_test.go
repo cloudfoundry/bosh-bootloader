@@ -36,12 +36,22 @@ var _ = Describe("rotate ssh key test", func() {
 		sshKey := bbl.SSHKey()
 		Expect(sshKey).NotTo(BeEmpty())
 
+		By("checking if ssh'ing works", func() {
+			err := sshToDirector(bbl, "jumpbox")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		session = bbl.Rotate()
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		rotatedKey := bbl.SSHKey()
 		Expect(rotatedKey).NotTo(BeEmpty())
 		Expect(rotatedKey).NotTo(Equal(sshKey))
+
+		By("checking that ssh still works", func() {
+			err := sshToDirector(bbl, "jumpbox")
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
 	It("is able to bbl up with credhub and rotate the jumpbox's ssh key", func() {

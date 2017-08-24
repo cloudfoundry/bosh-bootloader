@@ -49,7 +49,7 @@ func NewUp(awsUp awsUp, gcpUp gcpUp, azureUp azureUp, envGetter envGetter, boshM
 }
 
 func (u Up) CheckFastFails(args []string, state storage.State) error {
-	config, err := u.parseArgs(args)
+	config, err := u.parseArgs(state, args)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
-	config, err := u.parseArgs(args)
+	config, err := u.parseArgs(state, args)
 	if err != nil {
 		return err
 	}
@@ -103,15 +103,15 @@ func (u Up) Execute(args []string, state storage.State) error {
 	return nil
 }
 
-func (u Up) parseArgs(args []string) (upConfig, error) {
+func (u Up) parseArgs(state storage.State, args []string) (upConfig, error) {
 	var config upConfig
 
 	upFlags := flags.New("up")
 
 	upFlags.String(&config.name, "name", "")
 	upFlags.String(&config.opsFile, "ops-file", "")
-	upFlags.Bool(&config.noDirector, "", "no-director", false)
-	upFlags.Bool(&config.jumpbox, "", "credhub", false)
+	upFlags.Bool(&config.noDirector, "", "no-director", state.NoDirector)
+	upFlags.Bool(&config.jumpbox, "", "credhub", state.Jumpbox.Enabled)
 
 	err := upFlags.Parse(args)
 	if err != nil {

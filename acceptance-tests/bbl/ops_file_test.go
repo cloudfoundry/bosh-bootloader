@@ -24,19 +24,12 @@ var _ = Describe("ops file test", func() {
 	)
 
 	BeforeEach(func() {
-		var err error
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "ops-file-env")
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
-
-		session := bbl.Up(configuration.IAAS, []string{
-			"--name", bbl.PredefinedEnvID(),
-			"--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"),
-		})
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
@@ -45,6 +38,12 @@ var _ = Describe("ops file test", func() {
 	})
 
 	It("bbl's up a new bosh director", func() {
+		session := bbl.Up("foo", []string{
+			"--name", bbl.PredefinedEnvID(),
+			"--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"),
+		})
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
 		By("checking if the bosh director exists", func() {
 			directorAddress := bbl.DirectorAddress()
 			caCertPath := bbl.SaveDirectorCA()
@@ -55,21 +54,33 @@ var _ = Describe("ops file test", func() {
 		})
 
 		By("checking if ssh'ing works", func() {
-			privateKey, err := ssh.ParsePrivateKey([]byte(bbl.SSHKey()))
-			Expect(err).NotTo(HaveOccurred())
-
-			directorAddressURL, err := url.Parse(bbl.DirectorAddress())
-			Expect(err).NotTo(HaveOccurred())
-
-			address := fmt.Sprintf("%s:22", directorAddressURL.Hostname())
-			_, err = ssh.Dial("tcp", address, &ssh.ClientConfig{
-				User: "jumpbox_other",
-				Auth: []ssh.AuthMethod{
-					ssh.PublicKeys(privateKey),
-				},
-				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-			})
+			err := sshToDirector(bbl, "jumpbox_other")
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })
+
+func sshToDirector(bbl actors.BBL, username string) error {
+	privateKey, err := ssh.ParsePrivateKey([]byte(bbl.SSHKey()))
+	if err != nil {
+		return err
+	}
+
+	directorAddressURL, err := url.Parse(bbl.DirectorAddress())
+	if err != nil {
+		return err
+	}
+
+	address := fmt.Sprintf("%s:22", directorAddressURL.Hostname())
+	_, err = ssh.Dial("tcp", address, &ssh.ClientConfig{
+		User: username,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(privateKey),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}

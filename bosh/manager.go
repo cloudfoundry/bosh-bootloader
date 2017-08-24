@@ -23,7 +23,6 @@ type Manager struct {
 	executor    executor
 	logger      logger
 	socks5Proxy socks5Proxy
-	iaasInputs  InterpolateInput
 }
 
 type directorVars struct {
@@ -135,14 +134,13 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	var err error
 	m.logger.Step("creating jumpbox")
 
-	m.iaasInputs, err = generateIAASInputs(state)
-	if err != nil {
-		return storage.State{}, err
+	iaasInputs := InterpolateInput{
+		IAAS: state.IAAS,
+		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		Variables:             state.Jumpbox.Variables,
 	}
 
-	m.iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
-
-	interpolateOutputs, err := m.executor.JumpboxInterpolate(m.iaasInputs)
+	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -199,26 +197,17 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 }
 
 func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	var err error
-	var directorAddress string
+	m.logger.Step("creating bosh director")
 
-	directorAddress = terraformOutputs["director_address"].(string)
-
-	if state.Jumpbox.Enabled {
-		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
-	} else {
-		m.iaasInputs, err = generateIAASInputs(state)
-		if err != nil {
-			return storage.State{}, err
-		}
+	iaasInputs := InterpolateInput{
+		IAAS:                  state.IAAS,
+		DeploymentVars:        m.GetDeploymentVars(state, terraformOutputs),
+		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		Variables:             state.BOSH.Variables,
+		OpsFile:               state.BOSH.UserOpsFile,
 	}
 
-	m.logger.Step("creating bosh director")
-	m.iaasInputs.DeploymentVars = m.GetDeploymentVars(state, terraformOutputs)
-
-	m.iaasInputs.OpsFile = state.BOSH.UserOpsFile
-
-	interpolateOutputs, err := m.executor.DirectorInterpolate(m.iaasInputs)
+	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -228,6 +217,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 		State:     state.BOSH.State,
 		Variables: interpolateOutputs.Variables,
 	})
+
 	switch err.(type) {
 	case CreateEnvError:
 		ceErr := err.(CreateEnvError)
@@ -246,6 +236,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
 	}
 
+	var directorAddress string
+	directorAddress = terraformOutputs["director_address"].(string)
+	if state.Jumpbox.Enabled {
+		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
+	}
+
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
 		DirectorAddress:        directorAddress,
@@ -257,6 +253,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 		Variables:              interpolateOutputs.Variables,
 		State:                  createEnvOutputs.State,
 		Manifest:               interpolateOutputs.Manifest,
+		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
 
 	m.logger.Step("created bosh director")
@@ -264,9 +261,11 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 }
 
 func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
-	iaasInputs, err := generateIAASInputs(state)
-	if err != nil {
-		return err
+	iaasInputs := InterpolateInput{
+		IAAS:      state.IAAS,
+		BOSHState: state.BOSH.State,
+		Variables: state.BOSH.Variables,
+		OpsFile:   state.BOSH.UserOpsFile,
 	}
 
 	if state.Jumpbox.Enabled {
@@ -286,8 +285,6 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 	}
 
 	iaasInputs.DeploymentVars = m.GetDeploymentVars(state, terraformOutputs)
-
-	iaasInputs.OpsFile = state.BOSH.UserOpsFile
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
 	if err != nil {
@@ -317,12 +314,12 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 	}
 
 	m.logger.Step("destroying jumpbox")
-	iaasInputs, err := generateIAASInputs(state)
-	if err != nil {
-		return err
-	}
 
-	iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+	iaasInputs := InterpolateInput{
+		IAAS:                  state.IAAS,
+		Variables:             state.Jumpbox.Variables,
+		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+	}
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
 	if err != nil {
@@ -347,6 +344,10 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 }
 
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) string {
+	if !state.Jumpbox.Enabled {
+		return ""
+	}
+
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
 		InternalGW:   "10.0.0.1",
@@ -450,14 +451,6 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 	}
 
 	return string(mustMarshal(vars))
-}
-
-func generateIAASInputs(state storage.State) (InterpolateInput, error) {
-	return InterpolateInput{
-		IAAS:      state.IAAS,
-		BOSHState: state.BOSH.State,
-		Variables: state.BOSH.Variables,
-	}, nil
 }
 
 func getJumpboxPrivateKey(v string) (string, error) {
