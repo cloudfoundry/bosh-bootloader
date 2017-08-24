@@ -223,6 +223,7 @@ gcp_credentials_json: some-credential-json
 						"director_address":              "some-director-address",
 						"bosh_vms_key_name":             "some-keypair-name",
 						"bosh_vms_private_key":          "some-private-key",
+						"kms_key_arn":                   "some-kms-arn",
 					}
 
 					boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
@@ -258,6 +259,7 @@ default_security_groups:
 - some-bosh-security-group
 region: some-region
 private_key: some-private-key
+kms_key_arn: some-kms-arn
 `,
 						Variables: "",
 						OpsFile:   "some-yaml",
@@ -988,6 +990,7 @@ private_key: some-private-key
 					},
 				}
 			})
+
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, map[string]interface{}{
 					"network_name":       "some-network",
@@ -1183,6 +1186,7 @@ gcp_credentials_json: some-credential-json
 						"bosh_vms_private_key":          "some-private-key",
 						"external_ip":                   "some-bosh-external-ip",
 						"director_address":              "some-director-address",
+						"kms_key_arn":                   "some-kms-arn",
 					})
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -1199,6 +1203,7 @@ default_security_groups:
 - some-bosh-security-group
 region: some-region
 private_key: some-private-key
+kms_key_arn: some-kms-arn
 `))
 				})
 
@@ -1207,6 +1212,7 @@ private_key: some-private-key
 						incomingState.TFState = "some-tf-state"
 						incomingState.Jumpbox.Enabled = true
 					})
+
 					It("returns a correct yaml string of bosh deployment variables", func() {
 						vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
 							"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
@@ -1217,6 +1223,7 @@ private_key: some-private-key
 							"bosh_vms_private_key":          "some-private-key",
 							"external_ip":                   "some-bosh-external-ip",
 							"director_address":              "some-director-address",
+							"kms_key_arn":                   "some-kms-arn",
 						})
 						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -1232,6 +1239,7 @@ default_security_groups:
 - some-bosh-security-group
 region: some-region
 private_key: some-private-key
+kms_key_arn: some-kms-arn
 `))
 					})
 				})

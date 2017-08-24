@@ -72,6 +72,7 @@ type AWSYAML struct {
 	DefaultSecurityGroups []string `yaml:"default_security_groups,omitempty"`
 	Region                string   `yaml:"region,omitempty"`
 	PrivateKey            string   `yaml:"private_key,flow,omitempty"`
+	KMSKeyARN             string   `yaml:"kms_key_arn,omitempty"`
 }
 
 type GCPYAML struct {
@@ -436,6 +437,7 @@ func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[st
 			DefaultSecurityGroups: []string{getTerraformOutput("bosh_security_group", terraformOutputs)},
 			Region:                state.AWS.Region,
 			PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
+			KMSKeyARN:             getTerraformOutput("kms_key_arn", terraformOutputs),
 		}
 	case "azure":
 		vars.AzureYAML = AzureYAML{

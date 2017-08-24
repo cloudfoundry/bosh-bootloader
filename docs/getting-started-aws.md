@@ -45,7 +45,8 @@ The user must have the following `policy`:
                 "elasticloadbalancing:*",
                 "route53:*",
                 "iam:*",
-                "logs:*"
+                "logs:*",
+                "kms:*",
             ],
             "Resource": [
                 "*"
