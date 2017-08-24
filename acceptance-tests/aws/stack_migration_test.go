@@ -87,7 +87,7 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				session := bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				session := bblStack.Up("--iaas", "aws", "--name", bblStack.PredefinedEnvID())
 				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
@@ -106,7 +106,7 @@ var _ = Describe("Stack Migration", func() {
 			})
 
 			By("migrating to terraform with latest bbl", func() {
-				session := bblTerraform.Up("aws", []string{})
+				session := bblTerraform.Up()
 				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
@@ -130,7 +130,7 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				session := bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				session := bblStack.Up("--iaas", "aws", "--name", bblStack.PredefinedEnvID())
 				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 
@@ -178,7 +178,7 @@ var _ = Describe("Stack Migration", func() {
 			)
 
 			By("bbl'ing up with cloudformation", func() {
-				session := bblStack.Up("aws", []string{"--name", bblStack.PredefinedEnvID()})
+				session := bblStack.Up("--iaas", "aws", "--name", bblStack.PredefinedEnvID())
 				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 			})
 

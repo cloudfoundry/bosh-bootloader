@@ -30,7 +30,7 @@ var _ = Describe("up", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
 		boshcli = actors.NewBOSHCLI()
 
-		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
@@ -91,7 +91,7 @@ var _ = Describe("up", func() {
 		})
 
 		By("checking bbl up with director is idempotent", func() {
-			session := bbl.Up(configuration.IAAS, []string{})
+			session := bbl.Up()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 

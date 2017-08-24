@@ -38,7 +38,7 @@ var _ = Describe("concourse deployment test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "concourse-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)

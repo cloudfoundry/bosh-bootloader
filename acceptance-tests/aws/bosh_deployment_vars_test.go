@@ -31,7 +31,7 @@ var _ = Describe("bosh deployment vars", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		session := bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 

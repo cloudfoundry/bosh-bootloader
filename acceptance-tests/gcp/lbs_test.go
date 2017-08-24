@@ -28,7 +28,7 @@ var _ = Describe("lbs test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		gcp = actors.NewGCP(configuration)
 
-		session := bbl.Up("gcp", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 

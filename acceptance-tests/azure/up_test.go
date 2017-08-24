@@ -40,7 +40,7 @@ var _ = Describe("up test", func() {
 	})
 
 	It("creates the resource group", func() {
-		session := bbl.Up(config.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		exists, err := azure.GetResourceGroup(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID()))

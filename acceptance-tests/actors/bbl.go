@@ -43,7 +43,7 @@ func (b BBL) PredefinedEnvID() string {
 	return b.envID
 }
 
-func (b BBL) Up(iaas string, additionalArgs []string) *gexec.Session {
+func (b BBL) Up(additionalArgs ...string) *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		"--debug",

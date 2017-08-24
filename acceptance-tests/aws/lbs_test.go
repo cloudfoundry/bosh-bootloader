@@ -60,7 +60,7 @@ var _ = Describe("lbs test", func() {
 		otherChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		session := bbl.Up("aws", []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		vpcName = fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID())

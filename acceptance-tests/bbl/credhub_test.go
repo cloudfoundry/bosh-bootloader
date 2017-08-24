@@ -30,7 +30,7 @@ var _ = Describe("credhub test", func() {
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "credhub-env")
 		state = acceptance.NewState(configuration.StateFileDir)
 
-		session := bbl.Up(configuration.IAAS, []string{"--credhub", "--name", bbl.PredefinedEnvID()})
+		session := bbl.Up("--credhub", "--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 

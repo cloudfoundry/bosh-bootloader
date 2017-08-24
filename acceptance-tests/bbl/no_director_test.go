@@ -36,7 +36,7 @@ var _ = Describe("no director test", func() {
 
 	It("successfully standups up a no director infrastructure", func() {
 		By("calling bbl up with the no-director flag", func() {
-			session := bbl.Up(configuration.IAAS, []string{"--name", bbl.PredefinedEnvID(), "--no-director"})
+			session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
@@ -61,8 +61,12 @@ var _ = Describe("no director test", func() {
 		})
 
 		By("checking bbl up with no director is idemptotent", func() {
-			session := bbl.Up(configuration.IAAS, []string{})
+			session := bbl.Up()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("checking that bosh director still does not exist", func() {
+			Expect(boshDirectorChecker.NetworkHasBOSHDirector(bbl.PredefinedEnvID())).To(BeFalse())
 		})
 	})
 })

@@ -38,10 +38,7 @@ var _ = Describe("ops file test", func() {
 	})
 
 	It("bbl's up a new bosh director", func() {
-		session := bbl.Up("foo", []string{
-			"--name", bbl.PredefinedEnvID(),
-			"--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"),
-		})
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--ops-file", filepath.Join("fixtures", "jumpbox_user_other.yml"))
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("checking if the bosh director exists", func() {
