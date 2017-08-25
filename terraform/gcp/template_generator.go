@@ -63,6 +63,11 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
   name        = "${var.env_id}-router-lb-%[1]d-%[2]s"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"
   zone        = "%[2]s"
+
+  named_port {
+    name = "https"
+    port = "443"
+  }
 }
 `, i, zone))
 	}
