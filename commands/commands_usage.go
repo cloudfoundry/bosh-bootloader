@@ -6,7 +6,6 @@ const (
   --iaas                     IAAS to deploy your BOSH director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
   [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
   [--ops-file]               Path to BOSH ops file (optional)
-  [--jumpbox]                Deploy your BOSH director behind a jumpbox (supported when iaas="gcp")
   [--no-director]            Skips creating BOSH environment
 
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
