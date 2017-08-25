@@ -20,7 +20,6 @@ var _ = Describe("lbs test", func() {
 	)
 
 	BeforeEach(func() {
-		var err error
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -35,36 +34,6 @@ var _ = Describe("lbs test", func() {
 	AfterEach(func() {
 		session := bbl.Destroy()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
-	})
-
-	It("successfully creates a concourse lb", func() {
-		By("creating a load balancer", func() {
-			session := bbl.CreateLB("concourse", "", "", "")
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-		})
-
-		By("confirming that target pools exist", func() {
-			targetPool, err := gcp.GetTargetPool(bbl.PredefinedEnvID() + "-concourse")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(targetPool.Name).NotTo(BeNil())
-		})
-
-		By("verifying that the bbl lbs output contains the concourse lb", func() {
-			session := bbl.LBs()
-			Eventually(session).Should(gexec.Exit(0))
-			stdout := string(session.Out.Contents())
-			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
-		})
-
-		By("deleting lbs", func() {
-			session := bbl.DeleteLBs()
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
-		})
-
-		By("confirming that the target pools do not exist", func() {
-			_, err := gcp.GetTargetPool(bbl.PredefinedEnvID() + "-concourse")
-			Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + bbl.PredefinedEnvID() + "-concourse" + `' was not found`)))
-		})
 	})
 
 	It("successfully creates, updates, and deletes cf lbs", func() {
