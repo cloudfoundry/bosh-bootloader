@@ -15,7 +15,7 @@ var (
 )
 
 const (
-	STATE_VERSION = 8
+	STATE_VERSION = 9
 
 	OS_READ_WRITE_MODE = os.FileMode(0644)
 	StateFileName      = "bbl-state.json"
@@ -26,8 +26,8 @@ type logger interface {
 }
 
 type AWS struct {
-	AccessKeyID     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 	Region          string `json:"region"`
 }
 
@@ -39,8 +39,8 @@ type Azure struct {
 }
 
 type GCP struct {
-	ServiceAccountKey string   `json:"serviceAccountKey"`
-	ProjectID         string   `json:"projectID"`
+	ServiceAccountKey string   `json:"serviceAccountKey,omitempty"`
+	ProjectID         string   `json:"projectID,omitempty"`
 	Zone              string   `json:"zone"`
 	Region            string   `json:"region"`
 	Zones             []string `json:"zones"`
@@ -115,6 +115,13 @@ func (s Store) Set(state State) error {
 	}
 
 	state.Version = s.version
+
+	if state.Jumpbox.Enabled {
+		state.AWS.AccessKeyID = ""
+		state.AWS.SecretAccessKey = ""
+		state.GCP.ServiceAccountKey = ""
+		state.GCP.ProjectID = ""
+	}
 
 	jsonData, err := marshalIndent(state, "", "\t")
 	if err != nil {
