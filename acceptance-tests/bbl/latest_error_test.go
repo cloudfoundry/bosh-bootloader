@@ -3,11 +3,14 @@ package acceptance_test
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("bbl latest-error", func() {
@@ -42,3 +45,12 @@ var _ = Describe("bbl latest-error", func() {
 		Expect(string(session.Out.Contents())).To(ContainSubstring("some terraform output"))
 	})
 })
+
+func executeCommand(args []string, exitCode int) *gexec.Session {
+	cmd := exec.Command(pathToBBL, args...)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
+
+	return session
+}
