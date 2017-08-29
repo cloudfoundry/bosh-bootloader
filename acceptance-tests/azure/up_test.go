@@ -46,7 +46,7 @@ var _ = FDescribe("up test", func() {
 	// })
 
 	FIt("creates the director", func() {
-		session := bbl.Up(config.IAAS, []string{"--name", bbl.PredefinedEnvID()})
+		session := bbl.Up("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 	})
