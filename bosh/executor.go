@@ -24,6 +24,13 @@ const awsBoshDirectorEphemeralIPOps = `
   value: true
 `
 
+const azureSSHStaticIP = `
+- type: replace
+  path: /cloud_provider/ssh_tunnel?
+  value:
+	host: ((external_ip))
+`
+
 type Executor struct {
 	command       command
 	tempDir       func(string, string) (string, error)
@@ -162,6 +169,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"gcp-bosh-director-ephemeral-ip-ops.yml": []byte(gcpBoshDirectorEphemeralIPOps),
 		"aws-bosh-director-ephemeral-ip-ops.yml": []byte(awsBoshDirectorEphemeralIPOps),
 		"aws-bosh-director-encrypt-disk-ops.yml": []byte(awsEncryptDiskOps),
+		"azure-ssh-static-ip.yml":                []byte(azureSSHStaticIP),
 		"jumpbox-user.yml":                       MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
 		"gcp-external-ip-not-recommended.yml":    MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
 		"azure-external-ip-not-recommended.yml":  MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml"),
@@ -190,9 +198,9 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"-o", filepath.Join(tempDir, "cpi.yml"),
 	}
 
-	if interpolateInput.IAAS == "azure" {
-		args = append(args, "-o", filepath.Join(tempDir, "use-managed-disks.yml"))
-	}
+	// if interpolateInput.IAAS == "azure" {
+	// 	args = append(args, "-o", filepath.Join(tempDir, "use-managed-disks.yml"))
+	// }
 
 	if interpolateInput.JumpboxDeploymentVars == "" {
 		args = append(args,
@@ -217,6 +225,8 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			args = append(args, "-o", filepath.Join(tempDir, "gcp-bosh-director-ephemeral-ip-ops.yml"))
 		case "aws":
 			args = append(args, "-o", filepath.Join(tempDir, "aws-bosh-director-ephemeral-ip-ops.yml"))
+		case "azure":
+			args = append(args, "-o", filepath.Join(tempDir, "azure-ssh-static-ip.yml"))
 		}
 	}
 
