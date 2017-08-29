@@ -26,9 +26,8 @@ const awsBoshDirectorEphemeralIPOps = `
 
 const azureSSHStaticIP = `
 - type: replace
-  path: /cloud_provider/ssh_tunnel?
-  value:
-	host: ((external_ip))
+  path: /cloud_provider/ssh_tunnel/host
+  value: ((external_ip))
 `
 
 type Executor struct {
@@ -214,6 +213,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"))
 		case "azure":
 			args = append(args, "-o", filepath.Join(tempDir, "azure-external-ip-not-recommended.yml"))
+			args = append(args, "-o", filepath.Join(tempDir, "azure-ssh-static-ip.yml"))
 		}
 	} else {
 		args = append(args,
@@ -225,8 +225,6 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			args = append(args, "-o", filepath.Join(tempDir, "gcp-bosh-director-ephemeral-ip-ops.yml"))
 		case "aws":
 			args = append(args, "-o", filepath.Join(tempDir, "aws-bosh-director-ephemeral-ip-ops.yml"))
-		case "azure":
-			args = append(args, "-o", filepath.Join(tempDir, "azure-ssh-static-ip.yml"))
 		}
 	}
 
