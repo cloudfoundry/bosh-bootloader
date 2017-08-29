@@ -46,7 +46,7 @@ The user must have the following `policy`:
                 "route53:*",
                 "iam:*",
                 "logs:*",
-                "kms:*",
+                "kms:*"
             ],
             "Resource": [
                 "*"
