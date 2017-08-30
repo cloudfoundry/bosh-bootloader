@@ -48,7 +48,7 @@ func NewUpdateLBs(awsUpdateLBs awsUpdateLBs, gcpUpdateLBs gcpUpdateLBs, certific
 }
 
 func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error {
-	config, err := u.parseFlags(subcommandFlags)
+	config, err := u.parseFlags(subcommandFlags, state.LB)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (u UpdateLBs) Execute(subcommandFlags []string, state storage.State) error 
 }
 
 func (u UpdateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	config, err := u.parseFlags(subcommandFlags)
+	config, err := u.parseFlags(subcommandFlags, state.LB)
 	if err != nil {
 		return err
 	}
@@ -112,14 +112,14 @@ func (u UpdateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 	return nil
 }
 
-func (UpdateLBs) parseFlags(subcommandFlags []string) (updateLBConfig, error) {
+func (UpdateLBs) parseFlags(subcommandFlags []string, lbState storage.LB) (updateLBConfig, error) {
 	lbFlags := flags.New("update-lbs")
 
 	config := updateLBConfig{}
 	lbFlags.String(&config.certPath, "cert", "")
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
-	lbFlags.String(&config.domain, "domain", "")
+	lbFlags.String(&config.domain, "domain", lbState.Domain)
 	lbFlags.Bool(&config.skipIfMissing, "skip-if-missing", "", false)
 
 	err := lbFlags.Parse(subcommandFlags)

@@ -120,6 +120,29 @@ var _ = Describe("Update LBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
+
+		Context("when --domain flag is not provided", func() {
+			It("uses the domain value stored in state", func() {
+				err := command.Execute([]string{
+					"--cert", "my-cert",
+					"--key", "my-key",
+				}, storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type:   "cf",
+						Domain: "my-domain",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(gcpUpdateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: "my-cert",
+					KeyPath:  "my-key",
+					Domain:   "my-domain",
+				}))
+			})
+		})
 	})
 
 	Describe("Execute", func() {
