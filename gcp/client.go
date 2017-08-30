@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"fmt"
+	"sort"
 
 	compute "google.golang.org/api/compute/v1"
 )
@@ -48,6 +49,7 @@ func (c GCPClient) GetZones(region string) ([]string, error) {
 		}
 	}
 
+	sort.Strings(zonesInRegion)
 	return zonesInRegion, nil
 }
 
