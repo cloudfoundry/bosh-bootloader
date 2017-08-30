@@ -288,7 +288,7 @@ resource "google_compute_url_map" "cf-https-lb-url-map" {
 }
 
 resource "google_compute_health_check" "cf-public-health-check" {
-  name                = "${var.env_id}-cf"
+  name                = "${var.env_id}-cf-public"
 
   http_health_check {
 	  port                = 8080
@@ -296,8 +296,8 @@ resource "google_compute_health_check" "cf-public-health-check" {
   }
 }
 
-resource "google_compute_http_health_check" "cf-ws-health-check" {
-  name                = "${var.env_id}-cf-ws"
+resource "google_compute_http_health_check" "cf-public-health-check" {
+  name                = "${var.env_id}-cf"
   port                = 8080
   request_path        = "/health"
 }
@@ -409,7 +409,7 @@ resource "google_compute_target_pool" "cf-ws" {
 
   session_affinity = "NONE"
 
-  health_checks = ["${google_compute_http_health_check.cf-ws-health-check.name}"]
+  health_checks = ["${google_compute_http_health_check.cf-public-health-check.name}"]
 }
 
 resource "google_compute_forwarding_rule" "cf-ws-https" {
