@@ -50,6 +50,9 @@ var _ = Describe("concourse deployment test", func() {
 		session = bbl.CreateLB("concourse", certPath, keyPath, "")
 		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
+		session = bbl.UpdateLB("concourse", certPath, keyPath, "")
+		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
 		lbURL, err = actors.LBURL(configuration, bbl, state)
 		Expect(err).NotTo(HaveOccurred())
 
