@@ -10,13 +10,15 @@ type OpsGenerator struct {
 	awsCloudFormationOpsGenerator opsGenerator
 	awsTerraformOpsGenerator      opsGenerator
 	gcpOpsGenerator               opsGenerator
+	azureOpsGenerator             opsGenerator
 }
 
-func NewOpsGenerator(awsCloudFormationOpsGenerator opsGenerator, awsTerraformOpsGenerator opsGenerator, gcpOpsGenerator opsGenerator) OpsGenerator {
+func NewOpsGenerator(awsCloudFormationOpsGenerator opsGenerator, awsTerraformOpsGenerator opsGenerator, gcpOpsGenerator opsGenerator, azureOpsGenerator opsGenerator) OpsGenerator {
 	return OpsGenerator{
 		awsCloudFormationOpsGenerator: awsCloudFormationOpsGenerator,
 		awsTerraformOpsGenerator:      awsTerraformOpsGenerator,
 		gcpOpsGenerator:               gcpOpsGenerator,
+		azureOpsGenerator:             azureOpsGenerator,
 	}
 }
 
@@ -30,6 +32,8 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		} else {
 			return o.awsCloudFormationOpsGenerator.Generate(state)
 		}
+	case "azure":
+		return o.azureOpsGenerator.Generate(state)
 	default:
 		return "", errors.New("invalid iaas type")
 	}
