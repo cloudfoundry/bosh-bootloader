@@ -103,6 +103,20 @@ var _ = Describe("create-lbs", func() {
 				Expect(certificateValidator.ValidateCall.CallCount).To(Equal(0))
 			})
 		})
+
+		Context("when lb type is concourse and domain flag is supplied", func() {
+			It("returns an error", func() {
+				err := command.CheckFastFails(
+					[]string{
+						"--type", "concourse",
+						"--domain", "ci.example.com",
+					},
+					storage.State{
+						IAAS: "gcp",
+					})
+				Expect(err).To(MatchError("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again."))
+			})
+		})
 	})
 
 	Describe("Execute", func() {

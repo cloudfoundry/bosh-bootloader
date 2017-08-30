@@ -68,6 +68,10 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 		}
 	}
 
+	if config.lbType == "concourse" && config.domain != "" {
+		return errors.New("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
+	}
+
 	if !state.NoDirector {
 		err := fastFailBOSHVersion(c.boshManager)
 		if err != nil {
