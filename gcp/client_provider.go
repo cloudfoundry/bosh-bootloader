@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"golang.org/x/oauth2/google"
@@ -66,7 +67,18 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone st
 		return err
 	}
 
-	return nil
+	zones, err := p.client.GetZones(region)
+	if err != nil {
+		return err
+	}
+
+	for _, zoneInRegion := range zones {
+		if zoneInRegion == zone {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Zone %s is not in region %s.", zone, region)
 }
 
 func (p *ClientProvider) Client() GCPClient {
