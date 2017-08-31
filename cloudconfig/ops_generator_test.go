@@ -18,6 +18,7 @@ var _ = Describe("OpsGenerator", func() {
 			awsCloudFormationOpsGenerator *fakes.CloudConfigOpsGenerator
 			awsTerraformOpsGenerator      *fakes.CloudConfigOpsGenerator
 			gcpOpsGenerator               *fakes.CloudConfigOpsGenerator
+			azureOpsGenerator             *fakes.CloudConfigOpsGenerator
 			opsGenerator                  cloudconfig.OpsGenerator
 
 			incomingState storage.State
@@ -27,11 +28,14 @@ var _ = Describe("OpsGenerator", func() {
 			awsCloudFormationOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 			awsTerraformOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 			gcpOpsGenerator = &fakes.CloudConfigOpsGenerator{}
+			azureOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 
 			awsCloudFormationOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-cloudformation-ops"
 			awsTerraformOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-terraform-ops"
 			gcpOpsGenerator.GenerateCall.Returns.OpsYAML = "some-gcp-ops"
-			opsGenerator = cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator)
+			azureOpsGenerator.GenerateCall.Returns.OpsYAML = "some-azure-ops"
+
+			opsGenerator = cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator, azureOpsGenerator)
 		})
 
 		DescribeTable("returns an ops file to transform base cloud config to iaas specific cloud config", func(incomingState storage.State, expectedOpsYAML string) {
@@ -50,6 +54,9 @@ var _ = Describe("OpsGenerator", func() {
 				IAAS:    "aws",
 				TFState: "",
 			}, "some-aws-cloudformation-ops"),
+			Entry("when iaas is azure", storage.State{
+				IAAS: "azure",
+			}, "some-azure-ops"),
 		)
 
 		Context("failure cases", func() {
@@ -83,6 +90,11 @@ var _ = Describe("OpsGenerator", func() {
 					TFState: "",
 				}, func() *fakes.CloudConfigOpsGenerator {
 					return awsCloudFormationOpsGenerator
+				}),
+				Entry("when iaas is azure", storage.State{
+					IAAS: "azure",
+				}, func() *fakes.CloudConfigOpsGenerator {
+					return azureOpsGenerator
 				}),
 			)
 		})
