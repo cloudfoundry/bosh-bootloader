@@ -197,10 +197,6 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"-o", filepath.Join(tempDir, "cpi.yml"),
 	}
 
-	// if interpolateInput.IAAS == "azure" {
-	// 	args = append(args, "-o", filepath.Join(tempDir, "use-managed-disks.yml"))
-	// }
-
 	if interpolateInput.JumpboxDeploymentVars == "" {
 		args = append(args,
 			"-o", filepath.Join(tempDir, "jumpbox-user.yml"),
