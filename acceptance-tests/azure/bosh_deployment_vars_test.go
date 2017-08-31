@@ -73,10 +73,10 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.ClientID).To(Equal(configuration.AzureClientID))
 		Expect(vars.ClientSecret).To(Equal(configuration.AzureClientSecret))
 
-		Expect(vars.VNetName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
-		Expect(vars.SubnetName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
+		Expect(vars.VNetName).To(Equal(fmt.Sprintf("%s-bosh-vn", bbl.PredefinedEnvID())))
+		Expect(vars.SubnetName).To(Equal(fmt.Sprintf("%s-bosh-sn", bbl.PredefinedEnvID())))
 		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
-		Expect(vars.StorageAccountName).To(Equal("bbltestboshdeploymen"))
+		Expect(vars.StorageAccountName).To(ContainSubstring("boshdeploy"))
 		Expect(vars.DefaultSecurityGroup).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
 	})
 })
