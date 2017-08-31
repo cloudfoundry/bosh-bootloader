@@ -50,14 +50,14 @@ resource "azurerm_public_ip" "bosh" {
 }
 
 resource "azurerm_virtual_network" "bosh" {
-  name                = "${var.env_id}-bosh"
+  name                = "${var.env_id}-bosh-vn"
   address_space       = ["10.0.0.0/16"]
   location            = "West US"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 }
 
 resource "azurerm_subnet" "bosh" {
-  name                 = "${var.env_id}-bosh"
+  name                 = "${var.env_id}-bosh-sn"
   address_prefix       = "10.0.0.0/16"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
@@ -76,20 +76,21 @@ resource "azurerm_storage_account" "bosh" {
 }
 
 resource "azurerm_storage_container" "bosh" {
-  name                  = "bosh"
+  name                  = "${var.env_id}-bosh"
   resource_group_name   = "${azurerm_resource_group.bosh.name}"
   storage_account_name  = "${azurerm_storage_account.bosh.name}"
   container_access_type = "private"
 }
 
 resource "azurerm_storage_container" "stemcell" {
-  name                  = "stemcell"
+  name                  = "${var.env_id}-stemcell"
   resource_group_name   = "${azurerm_resource_group.bosh.name}"
   storage_account_name  = "${azurerm_storage_account.bosh.name}"
   container_access_type = "blob"
 }
+
 resource "azurerm_network_security_group" "bosh" {
-  name                = "nsg-bosh"
+  name                = "${var.env_id}-bosh"
   location            = "West US"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
@@ -99,7 +100,7 @@ resource "azurerm_network_security_group" "bosh" {
 }
 
 resource "azurerm_network_security_group" "cf" {
-  name                = "nsg-cf"
+  name                = "${var.env_id}-cf"
   location            = "West US"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
@@ -109,7 +110,7 @@ resource "azurerm_network_security_group" "cf" {
 }
 
 resource "azurerm_network_security_rule" "ssh" {
-  name                       = "ssh"
+  name                       = "${var.env_id}-ssh"
   priority                   = 200
   direction                  = "Inbound"
   access                     = "Allow"
@@ -121,8 +122,9 @@ resource "azurerm_network_security_rule" "ssh" {
   resource_group_name         = "${azurerm_resource_group.bosh.name}"
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
+
 resource "azurerm_network_security_rule" "bosh-agent" {
-  name                       = "bosh-agent"
+  name                       = "${var.env_id}-bosh-agent"
   priority                   = 201
   direction                  = "Inbound"
   access                     = "Allow"
@@ -134,8 +136,9 @@ resource "azurerm_network_security_rule" "bosh-agent" {
   resource_group_name         = "${azurerm_resource_group.bosh.name}"
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
+
 resource "azurerm_network_security_rule" "bosh-director" {
-  name                       = "bosh-director"
+  name                       = "${var.env_id}-bosh-director"
   priority                   = 202
   direction                  = "Inbound"
   access                     = "Allow"
@@ -147,8 +150,9 @@ resource "azurerm_network_security_rule" "bosh-director" {
   resource_group_name         = "${azurerm_resource_group.bosh.name}"
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
+
 resource "azurerm_network_security_rule" "dns" {
-  name                       = "dns"
+  name                       = "${var.env_id}-dns"
   priority                   = 203
   direction                  = "Inbound"
   access                     = "Allow"
@@ -162,7 +166,7 @@ resource "azurerm_network_security_rule" "dns" {
 }
 
 resource "azurerm_network_security_rule" "cf-https" {
-  name                       = "dns"
+  name                       = "${var.env_id}-dns"
   priority                   = 201
   direction                  = "Inbound"
   access                     = "Allow"
@@ -176,7 +180,7 @@ resource "azurerm_network_security_rule" "cf-https" {
 }
 
 resource "azurerm_network_security_rule" "cf-log" {
-  name                       = "cf-log"
+  name                       = "${var.env_id}-cf-log"
   priority                   = 202
   direction                  = "Inbound"
   access                     = "Allow"
