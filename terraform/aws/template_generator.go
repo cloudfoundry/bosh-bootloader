@@ -57,7 +57,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		t = strings.Join([]string{t, LBSubnetTemplate, CFLBTemplate, SSLCertificateTemplate}, "\n")
 
 		if state.LB.Domain != "" {
-			t = strings.Join([]string{t, CFDNSTemplate}, "\n")
+			t = strings.Join([]string{t, CFDNSTemplate, CFISOTemplate}, "\n")
 		}
 	}
 

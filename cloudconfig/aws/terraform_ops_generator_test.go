@@ -58,6 +58,12 @@ var _ = Describe("TerraformOpsGenerator", func() {
 					"us-east-1c": "10.0.48.0/20",
 					"us-east-1b": "10.0.32.0/20",
 				},
+				"cf_iso1_router_lb_name":       "some-cf-iso1-router-lb-name",
+				"iso_shared_security_group_id": "some-iso-shared-security-group-id",
+				"iso1_security_group_id":       "some-iso1-security-group-id",
+				"iso1_az_subnet_id_mapping": map[string]interface{}{
+					"us-east-1a": "some-iso-subnet-ids-1",
+				},
 			}
 
 			opsGenerator = aws.NewTerraformOpsGenerator(terraformManager)

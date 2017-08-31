@@ -47,3 +47,32 @@
       security_groups:
       - some-cf-ssh-lb-internal-security-group
       - some-internal-security-group
+
+- type: replace
+  path: /networks/name=default/subnets/az=z1/cloud_properties/security_groups/-
+  value: some-iso-shared-security-group-id
+#using az=z1 for identification might not work if the iso subnet is also az=z1
+
+- type: replace
+  path: /networks/name=default/subnets/az=z2/cloud_properties/security_groups/-
+  value: some-iso-shared-security-group-id
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cf-iso1-router-network-properties
+    cloud_properties:
+      elbs: [some-cf-iso1-router-lb-name]
+      security_groups:
+      - some-iso1-security-group-id
+      - some-internal-security-group
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cf-iso1-network-properties
+    cloud_properties:
+      security_groups:
+      - some-iso1-security-group-id
+      - some-internal-security-group
+
