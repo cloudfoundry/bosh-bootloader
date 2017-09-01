@@ -8,14 +8,17 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 var (
 	marshalIndent = json.MarshalIndent
+	uuidNewV4     = uuid.NewV4
 )
 
 const (
-	STATE_VERSION = 9
+	STATE_VERSION = 10
 
 	OS_READ_WRITE_MODE = os.FileMode(0644)
 	StateFileName      = "bbl-state.json"
@@ -72,6 +75,7 @@ type Jumpbox struct {
 type State struct {
 	Version                    int     `json:"version"`
 	IAAS                       string  `json:"iaas"`
+	ID                         string  `json:"id"`
 	NoDirector                 bool    `json:"noDirector"`
 	MigratedFromCloudFormation bool    `json:"migratedFromCloudFormation"`
 	AWS                        AWS     `json:"aws,omitempty"`
@@ -115,6 +119,14 @@ func (s Store) Set(state State) error {
 	}
 
 	state.Version = s.version
+
+	if state.ID == "" {
+		uuid, err := uuidNewV4()
+		if err != nil {
+			return fmt.Errorf("Create state ID: %s", err)
+		}
+		state.ID = uuid.String()
+	}
 
 	if state.Jumpbox.Enabled {
 		state.AWS.AccessKeyID = ""

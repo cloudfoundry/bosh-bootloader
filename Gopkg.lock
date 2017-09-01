@@ -80,6 +80,12 @@
   version = "0.2.2"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/nu7hatch/gouuid"
+  packages = ["."]
+  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[projects]]
   name = "github.com/onsi/ginkgo"
   packages = [".","config","extensions/table","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
   revision = "77a8c1e5c40d6bb6c5eb4dd4bdce9763564f6298"
@@ -154,6 +160,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "22aa5b8a7fdbcb62e2d883387f50d3c50f74b93b944b35042f6041cdc2b756c0"
+  inputs-digest = "64e40f4a07ac9788633724bae92532c99db3a4a709f9a6749344165bd2708a8c"
   solver-name = "gps-cdcl"
   solver-version = 1

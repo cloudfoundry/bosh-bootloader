@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	uuid "github.com/nu7hatch/gouuid"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,12 +29,20 @@ var _ = Describe("Store", func() {
 	})
 
 	AfterEach(func() {
+		storage.ResetUUIDNewV4()
 		storage.ResetMarshalIndent()
 	})
 
 	Describe("Set", func() {
 		Context("when credhub is enabled", func() {
-			It("stores the state into a file, sans IAAS credentials", func() {
+			It("stores the state into a file, without IAAS credentials", func() {
+				storage.SetUUIDNewV4(func() (*uuid.UUID, error) {
+					return &uuid.UUID{
+						0x01, 0x02, 0x03, 0x04,
+						0x05, 0x06, 0x07, 0x08,
+						0x09, 0x10, 0x11, 0x12,
+						0x13, 0x14, 0x15, 0x16}, nil
+				})
 				err := store.Set(storage.State{
 					IAAS: "aws",
 					AWS: storage.AWS{
@@ -120,7 +129,7 @@ var _ = Describe("Store", func() {
 				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).To(MatchJSON(`{
-				"version": 9,
+				"version": 10,
 				"iaas": "aws",
 				"noDirector": false,
 				"migratedFromCloudFormation": false,
@@ -199,6 +208,7 @@ var _ = Describe("Store", func() {
 				},
 				"envID": "some-env-id",
 				"tfState": "some-tf-state",
+				"id": "01020304-0506-0708-0910-111213141516",
 				"latestTFOutput": ""
 		    	}`))
 
@@ -212,6 +222,7 @@ var _ = Describe("Store", func() {
 			It("persists IAAS credentials", func() {
 				err := store.Set(storage.State{
 					IAAS: "aws",
+					ID:   "some-id",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",
 						SecretAccessKey: "some-aws-secret-access-key",
@@ -290,8 +301,9 @@ var _ = Describe("Store", func() {
 				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).To(MatchJSON(`{
-					"version": 9,
+					"version": 10,
 					"iaas": "aws",
+					"id": "some-id",
 					"noDirector": false,
 					"migratedFromCloudFormation": false,
 					"aws": {
@@ -411,6 +423,18 @@ var _ = Describe("Store", func() {
 						Expect(err).To(MatchError(ContainSubstring("permission denied")))
 					})
 				})
+
+				Context("when uuid new V4 fails", func() {
+					It("returns an error", func() {
+						storage.SetUUIDNewV4(func() (*uuid.UUID, error) {
+							return nil, errors.New("some error")
+						})
+						err := store.Set(storage.State{
+							IAAS: "some-iaas",
+						})
+						Expect(err).To(MatchError("Create state ID: some error"))
+					})
+				})
 			})
 		})
 
@@ -479,7 +503,7 @@ var _ = Describe("Store", func() {
 				state, err := storage.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{
-					Version: 9,
+					Version: 10,
 				}))
 			})
 		})
@@ -498,10 +522,10 @@ var _ = Describe("Store", func() {
 			})
 		})
 
-		Context("when there is a v9 state file", func() {
+		Context("when there is a v10 state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 9,
+					"version": 10,
 					"iaas": "aws",
 					"aws": {
 						"accessKeyId": "some-aws-access-key-id",
@@ -519,11 +543,6 @@ var _ = Describe("Store", func() {
 						"directorSSLCertificate": "some-bosh-ssl-certificate",
 						"directorSSLPrivateKey": "some-bosh-ssl-private-key",
 						"manifest": "name: bosh"
-					},
-					"stack": {
-						"name": "some-stack-name",
-						"lbType": "some-lb",
-						"certificateName": "some-certificate-name"
 					}
 				}`), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
@@ -534,7 +553,7 @@ var _ = Describe("Store", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version: 9,
+					Version: 10,
 					IAAS:    "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",
@@ -552,11 +571,6 @@ var _ = Describe("Store", func() {
 						DirectorSSLCertificate: "some-bosh-ssl-certificate",
 						DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
 						Manifest:               "name: bosh",
-					},
-					Stack: storage.Stack{
-						Name:            "some-stack-name",
-						LBType:          "some-lb",
-						CertificateName: "some-certificate-name",
 					},
 				}))
 			})
