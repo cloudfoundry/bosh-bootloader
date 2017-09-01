@@ -1,20 +1,20 @@
 #!/bin/bash -eu
 
 function main() {
-  local iaas
-  iaas=${1}
+  local packages
+  packages=${@}
 
 	local root_dir
 	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-  if [ -z ${iaas} ]; then
-    echo "Usage: ./scripts/acceptance_tests IAAS
-IAAS: \"aws\" or \"gcp\" or \"azure\""
+  if [ -z "${packages}" ]; then
+    echo "Usage: ./scripts/acceptance_tests packages...
+Example: ./scripts/acceptance_tests bbl gcp"
     return
   fi
 
-	pushd "${root_dir}" > /dev/null
-      ginkgo -r -p -race -failFast -randomizeAllSpecs -randomizeSuites acceptance-tests/bbl acceptance-tests/${iaas}
+	pushd "${root_dir}/acceptance-tests" > /dev/null
+      ginkgo -r -p -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
 	popd > /dev/null
 }
 
