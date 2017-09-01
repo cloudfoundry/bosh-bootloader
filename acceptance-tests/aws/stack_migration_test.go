@@ -80,6 +80,7 @@ var _ = Describe("Stack Migration", func() {
 
 	Describe("Up", func() {
 		It("is able to bbl up idempotently with a director", func() {
+			acceptance.SkipUnless("stack-migration-up")
 			var (
 				stackName       string
 				directorAddress string
@@ -124,6 +125,7 @@ var _ = Describe("Stack Migration", func() {
 
 	Describe("Create LBs", func() {
 		It("is able to bbl create-lbs", func() {
+			acceptance.SkipUnless("stack-migration-create-lbs")
 			var (
 				stackName string
 				lbNames   []string
@@ -172,6 +174,7 @@ var _ = Describe("Stack Migration", func() {
 		})
 
 		It("deletes lbs from older bbl", func() {
+			acceptance.SkipUnless("stack-migration-delete-lbs")
 			var (
 				stackName string
 				lbNames   []string

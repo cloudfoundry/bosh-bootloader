@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	. "github.com/onsi/ginkgo"
 )
 
 type Config struct {
@@ -156,5 +158,12 @@ func loadConfigFromEnvVars() Config {
 		GardenReleasePath:       os.Getenv("GARDEN_RELEASE_PATH"),
 		ConcourseReleasePath:    os.Getenv("CONCOURSE_RELEASE_PATH"),
 		ConcourseDeploymentPath: os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
+	}
+}
+
+func SkipUnless(match string) {
+	test := os.Getenv("RUN_TEST")
+	if test != "" && test != match {
+		Skip(fmt.Sprintf("RUN_TEST: %s", test))
 	}
 }

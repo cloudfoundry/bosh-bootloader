@@ -17,9 +17,11 @@ import (
 
 var _ = Describe("up", func() {
 	var (
-		bbl           actors.BBL
-		boshcli       actors.BOSHCLI
-		configuration acceptance.Config
+		bbl             actors.BBL
+		boshcli         actors.BOSHCLI
+		configuration   acceptance.Config
+		directorAddress string
+		caCertPath      string
 	)
 
 	BeforeEach(func() {
@@ -29,9 +31,6 @@ var _ = Describe("up", func() {
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
 		boshcli = actors.NewBOSHCLI()
-
-		session := bbl.Up("--name", bbl.PredefinedEnvID())
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
@@ -40,10 +39,9 @@ var _ = Describe("up", func() {
 	})
 
 	It("bbl's up a new bosh director", func() {
-		var (
-			directorAddress string
-			caCertPath      string
-		)
+		acceptance.SkipUnless("bbl-up")
+		session := bbl.Up("--name", bbl.PredefinedEnvID())
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("checking if the bosh director exists", func() {
 			directorAddress = bbl.DirectorAddress()

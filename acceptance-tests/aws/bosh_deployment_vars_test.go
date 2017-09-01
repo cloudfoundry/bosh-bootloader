@@ -30,9 +30,6 @@ var _ = Describe("bosh deployment vars", func() {
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
 		state = acceptance.NewState(configuration.StateFileDir)
-
-		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
@@ -41,6 +38,10 @@ var _ = Describe("bosh deployment vars", func() {
 	})
 
 	It("prints the bosh deployment vars for bosh create-env", func() {
+		acceptance.SkipUnless("bosh-deployment-vars")
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
 		stdout := bbl.BOSHDeploymentVars()
 
 		var vars struct {

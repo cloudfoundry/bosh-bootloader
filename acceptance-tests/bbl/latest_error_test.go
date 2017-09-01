@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,6 +36,7 @@ var _ = Describe("bbl latest-error", func() {
 	})
 
 	It("prints the terraform output from the last command", func() {
+		acceptance.SkipUnless("latest-error")
 		args := []string{
 			"--state-dir", tempDirectory,
 			"latest-error",

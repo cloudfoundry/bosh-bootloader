@@ -32,10 +32,11 @@ var _ = Describe("credhub test", func() {
 
 	AfterEach(func() {
 		session := bbl.Destroy()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("creates a director with a jumpbox, credhub, and UAA", func() {
+		acceptance.SkipUnless("bbl-up-credhub")
 		session := bbl.Up("--credhub", "--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 

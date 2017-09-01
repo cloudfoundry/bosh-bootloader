@@ -56,9 +56,6 @@ var _ = Describe("lbs test", func() {
 		otherChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
-		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
-
 		vpcName = fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID())
 	})
 
@@ -68,6 +65,10 @@ var _ = Describe("lbs test", func() {
 	})
 
 	It("creates, updates and deletes cf LBs with the specified cert and key", func() {
+		acceptance.SkipUnless("load-balancers")
+		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
 		By("verifying there are no load balancers", func() {
 			Expect(aws.LoadBalancers(vpcName)).To(BeEmpty())
 		})
