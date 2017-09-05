@@ -13,8 +13,15 @@ Example: ./scripts/acceptance_tests bbl gcp"
     return
   fi
 
+  local parallelFlag
+  if [ "${BBL_IAAS}" == "aws" ]; then
+    parallelFlag=""
+  else
+    parallelFlag="-p"
+  fi
+
 	pushd "${root_dir}/acceptance-tests" > /dev/null
-      ginkgo -r -p -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
+      ginkgo -r ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
 	popd > /dev/null
 }
 
