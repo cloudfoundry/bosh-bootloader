@@ -77,6 +77,7 @@ func (a CloudFormationOpsGenerator) generateCloudFormationAWSOps(state storage.S
 			stack.Outputs[fmt.Sprintf("InternalSubnet%dCIDR", i+1)],
 			stack.Outputs[fmt.Sprintf("InternalSubnet%dName", i+1)],
 			stack.Outputs["InternalSecurityGroup"],
+			65,
 		)
 		if err != nil {
 			return []op{}, err

@@ -1830,7 +1830,9 @@ resource "aws_route53_record" "tcp" {
 }
 `
 
-const CFISOTemplate = `resource "aws_subnet" "iso1_subnets" {
+const CFISOTemplate = `# Charles' fault starts here
+
+resource "aws_subnet" "iso1_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet("10.0.200.0/24", 4, count.index)}"
@@ -1841,11 +1843,24 @@ const CFISOTemplate = `resource "aws_subnet" "iso1_subnets" {
   }
 }
 
+resource "aws_route_table_association" "route_iso1_subnets" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.iso1_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
+}
+
 output "iso1_az_subnet_id_mapping" {
   value = "${
 	  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.id}")
 	}"
 }
+
+output "iso1_az_subnet_cidr_mapping" {
+  value = "${
+	  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.cidr_block}")
+	}"
+}
+
 
 resource "aws_elb" "iso1_router_lb" {
   name                      = "bbl-iso1-router-lb" #make this more unique later
@@ -1883,7 +1898,7 @@ resource "aws_elb" "iso1_router_lb" {
   }
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
-  subnets         = ["${aws_subnet.iso1_subnets.*.id}"]
+  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 }
 
 output "cf_iso1_router_lb_name" {
@@ -1908,6 +1923,13 @@ resource "aws_security_group" "iso1_security_group" {
     from_port = 0
     to_port = 0
     protocol = "-1"
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
   }
 
   tags {
@@ -1955,6 +1977,8 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
   source_security_group_id = "${aws_security_group.iso1_security_group.id}"
 }
 
+## open ports from bosh-director to bosh-agent (look at gcp load balancers?)
+
 variable "iso_to_shared_tcp_ports" {
   type = "list"
   default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
@@ -1993,4 +2017,6 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   from_port = 1801
   source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
 }
+
+# security rules so that bosh director can talk to bosh agent?
 `

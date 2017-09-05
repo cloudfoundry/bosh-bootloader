@@ -154,6 +154,7 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 			internalAZSubnetCIDRMap[myAZ].(string),
 			internalAZSubnetIDMap[myAZ].(string),
 			internalSecurityGroup,
+			65,
 		)
 		if err != nil {
 			return []op{}, err
@@ -176,6 +177,59 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 
 	switch state.LB.Type {
 	case "cf":
+		sharedSGId := terraformOutputs["iso_shared_security_group_id"]
+
+		for i := range azs {
+			path := fmt.Sprintf("/networks/name=default/subnets/az=z%d/cloud_properties/security_groups/-", i+1)
+			ops = append(ops, createOp("replace", path, sharedSGId))
+		}
+
+		iso1AZSubnetIDMap, ok := terraformOutputs["iso1_az_subnet_id_mapping"].(map[string]interface{})
+		if !ok {
+			return []op{}, errors.New("missing iso1_az_subnet_id_mapping terraform output")
+		}
+
+		iso1AZSubnetCIDRMap, ok := terraformOutputs["iso1_az_subnet_cidr_mapping"].(map[string]interface{})
+		if !ok {
+			return []op{}, errors.New("missing iso1_az_subnet_cidr_mapping terraform output")
+		}
+
+		iso1_subnets := []networkSubnet{}
+
+		var iso1_azs []string
+		for myAZ, _ := range iso1AZSubnetIDMap {
+			iso1_azs = append(iso1_azs, myAZ)
+		}
+		sort.Strings(iso1_azs)
+
+		for i, myAZ := range iso1_azs {
+			azOp := createOp("replace", "/azs/-", az{
+				Name: fmt.Sprintf("z%d", len(azs)+i+1),
+				CloudProperties: azCloudProperties{
+					AvailabilityZone: myAZ,
+				},
+			})
+			ops = append(ops, azOp)
+
+			subnet, err := generateNetworkSubnet(
+				fmt.Sprintf("z%d", len(azs)+i+1),
+				iso1AZSubnetCIDRMap[myAZ].(string),
+				iso1AZSubnetIDMap[myAZ].(string),
+				terraformOutputs["iso1_security_group_id"].(string),
+				4,
+			)
+			if err != nil {
+				return []op{}, err
+			}
+
+			iso1_subnets = append(iso1_subnets, subnet)
+		}
+
+		//ops = append(ops, createOp("replace", "/networks/name=default/subnets/-", iso1_subnets))
+		for _, iso1_subnet := range iso1_subnets {
+			ops = append(ops, createOp("replace", "/networks/name=default/subnets/-", iso1_subnet))
+		}
+
 		tfOutputs := []map[string]string{
 			map[string]string{"name": "cf-router-network-properties", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
 			map[string]string{"name": "diego-ssh-proxy-network-properties", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
@@ -207,16 +261,12 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 			}))
 		}
 
-		sharedSGId := terraformOutputs["iso_shared_security_group_id"]
-
-		ops = append(ops, createOp("replace", "/networks/name=default/subnets/az=z1/cloud_properties/security_groups/-", sharedSGId))
-		ops = append(ops, createOp("replace", "/networks/name=default/subnets/az=z2/cloud_properties/security_groups/-", sharedSGId))
-
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-iso1-router-network-properties",
 			CloudProperties: lbCloudProperties{
 				ELBs: []string{terraformOutputs["cf_iso1_router_lb_name"].(string)},
 				SecurityGroups: []string{
+					terraformOutputs["cf_router_lb_internal_security_group"].(string),
 					terraformOutputs["iso1_security_group_id"].(string),
 					internalSecurityGroup,
 				},
@@ -273,7 +323,7 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 	return ops, nil
 }
 
-func generateNetworkSubnet(az, cidr, subnet, securityGroup string) (networkSubnet, error) {
+func generateNetworkSubnet(az, cidr, subnet, securityGroup string, staticSize int) (networkSubnet, error) {
 	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
 	if err != nil {
 		return networkSubnet{}, err
@@ -284,7 +334,7 @@ func generateNetworkSubnet(az, cidr, subnet, securityGroup string) (networkSubne
 	secondReserved := parsedCidr.GetFirstIP().Add(3).String()
 	lastReserved := parsedCidr.GetLastIP().String()
 	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
-	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
+	firstStatic := parsedCidr.GetLastIP().Subtract(staticSize).String()
 
 	return networkSubnet{
 		AZ:      az,
