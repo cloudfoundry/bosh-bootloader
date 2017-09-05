@@ -1,7 +1,6 @@
 package acceptance_test
 
 import (
-	// "fmt"
 	"fmt"
 	"time"
 
@@ -44,9 +43,5 @@ var _ = Describe("up test", func() {
 		exists, err := azure.GetResourceGroup(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID()))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeTrue())
-
-		// 	exists, err := azure.GetResourceGroup(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID()))
-		// 	Expect(err).NotTo(HaveOccurred())
-		// 	Expect(exists).To(BeTrue())
 	})
 })
