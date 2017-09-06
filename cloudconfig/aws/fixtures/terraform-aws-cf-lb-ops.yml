@@ -1,6 +1,36 @@
 - type: replace
   path: /vm_extensions/-
   value:
+    name: cf-router-network-properties
+    cloud_properties:
+      elbs: [some-cf-router-lb-name]
+      security_groups:
+      - some-cf-router-lb-internal-security-group
+      - some-internal-security-group
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: diego-ssh-proxy-network-properties
+    cloud_properties:
+      elbs: [some-cf-ssh-lb-name]
+      security_groups:
+      - some-cf-ssh-lb-internal-security-group
+      - some-internal-security-group
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cf-tcp-router-network-properties
+    cloud_properties:
+      elbs: [some-cf-tcp-lb-name]
+      security_groups:
+      - some-cf-tcp-lb-internal-security-group
+      - some-internal-security-group
+
+- type: replace
+  path: /vm_extensions/-
+  value:
     name: router-lb
     cloud_properties:
       elbs: [some-cf-router-lb-name]
@@ -16,14 +46,4 @@
       elbs: [some-cf-ssh-lb-name]
       security_groups:
       - some-cf-ssh-lb-internal-security-group
-      - some-internal-security-group
-
-- type: replace
-  path: /vm_extensions/-
-  value:
-    name: cf-tcp-router-network-properties
-    cloud_properties:
-      elbs: [some-cf-tcp-lb-name]
-      security_groups:
-      - some-cf-tcp-lb-internal-security-group
       - some-internal-security-group

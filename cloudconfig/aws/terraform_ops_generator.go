@@ -168,9 +168,11 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 	switch state.LB.Type {
 	case "cf":
 		tfOutputs := []map[string]string{
+			map[string]string{"name": "cf-router-network-properties", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
+			map[string]string{"name": "diego-ssh-proxy-network-properties", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
+			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_lb_name", "group": "cf_tcp_lb_internal_security_group"},
 			map[string]string{"name": "router-lb", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
 			map[string]string{"name": "ssh-proxy-lb", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
-			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_lb_name", "group": "cf_tcp_lb_internal_security_group"},
 		}
 
 		for _, details := range tfOutputs {
