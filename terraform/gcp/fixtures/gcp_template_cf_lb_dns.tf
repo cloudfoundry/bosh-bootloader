@@ -261,7 +261,7 @@ resource "google_compute_firewall" "cf-health-check" {
     ports    = ["8080", "80"]
   }
 
-  source_ranges = ["130.211.0.0/22"]
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
   target_tags   = ["${google_compute_backend_service.router-lb-backend-service.name}"]
 }
 
