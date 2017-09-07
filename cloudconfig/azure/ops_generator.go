@@ -1,12 +1,10 @@
 package azure
 
 import (
-	// "fmt"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
-	// "github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -24,6 +22,26 @@ type op struct {
 	Value interface{}
 }
 
+type network struct {
+	Name    string
+	Subnets []networkSubnet
+	Type    string
+}
+
+type networkSubnet struct {
+	AZs             []string
+	Gateway         string
+	Range           string
+	CloudProperties subnetCloudProperties `yaml:"cloud_properties"`
+}
+
+type subnetCloudProperties struct {
+	ResourceGroupName  string `yaml:"resource_group_name,omitempty"`
+	VirtualNetworkName string `yaml:"virtual_network_name"`
+	SubnetName         string `yaml:"subnet_name"`
+	SecurityGroup      string `yaml:"security_group,omitempty"`
+}
+
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
 func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
@@ -33,20 +51,43 @@ func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 }
 
 func (o OpsGenerator) Generate(state storage.State) (string, error) {
-	// ops, err := [], nil
-	// if err != nil {
-	// 	return "", err
-	// }
-	ops := []op{}
+	terraformOutputs, err := o.terraformManager.GetOutputs(state)
+	if err != nil {
+		return "", err
+	}
 
-	cloudConfigOpsYAML, err := marshal(ops)
+	defaultSubnet := networkSubnet{
+		Gateway: "10.0.0.1",
+		Range:   "10.0.0.0/24",
+		AZs:     []string{"z1", "z2", "z3"},
+		CloudProperties: subnetCloudProperties{
+			ResourceGroupName:  terraformOutputs["bosh_resource_group_name"].(string),
+			VirtualNetworkName: terraformOutputs["bosh_network_name"].(string),
+			SubnetName:         terraformOutputs["bosh_subnet_name"].(string),
+			SecurityGroup:      terraformOutputs["bosh_default_security_group"].(string),
+		},
+	}
+
+	cloudConfigOps := []op{
+		{
+			Type: "replace",
+			Path: "/networks/-",
+			Value: network{
+				Name:    "default",
+				Subnets: []networkSubnet{defaultSubnet},
+				Type:    "manual",
+			},
+		},
+	}
+
+	cloudConfigOpsYAML, err := marshal(cloudConfigOps)
 	if err != nil {
 		return "", err
 	}
 
 	return strings.Join(
 		[]string{
-			// BaseOps,
+			BaseOps,
 			string(cloudConfigOpsYAML),
 		},
 		"\n",
