@@ -32,22 +32,25 @@
 - type: replace
   path: /networks/-
   value:
-    name: vip
-    type: vip
-
-- type: replace
-  path: /compilation?
-  value:
-    workers: 5
-    reuse_compilation_vms: true
-    az: z1
-    vm_type: default
-    network: default
+    name: default
+    type: manual
+    subnets:
+    - gateway: 10.0.0.1
+      range: 10.0.0.0/24
+      azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        resource_group_name: some-resource-group-name
+        virtual_network_name: some-virtual-network-name
+        subnet_name: some-subnet-name
+        security_group: some-security-group
 
 - type: replace
   path: /networks/-
   value:
-    name: default
+    name: private
     type: manual
     subnets:
     - gateway: 10.0.0.1

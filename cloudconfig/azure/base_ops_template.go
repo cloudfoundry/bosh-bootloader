@@ -32,20 +32,5 @@ const (
 - type: replace
   path: /disk_types/name=large/disk_size?
   value: 50_000
-
-- type: replace
-  path: /networks/-
-  value:
-    name: vip
-    type: vip
-
-- type: replace
-  path: /compilation?
-  value:
-    workers: 5
-    reuse_compilation_vms: true
-    az: z1
-    vm_type: default
-    network: default
 `
 )

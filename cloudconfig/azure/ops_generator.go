@@ -56,7 +56,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
-	defaultSubnet := networkSubnet{
+	subnet := networkSubnet{
 		Gateway: "10.0.0.1",
 		Range:   "10.0.0.0/24",
 		AZs:     []string{"z1", "z2", "z3"},
@@ -74,7 +74,16 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			Path: "/networks/-",
 			Value: network{
 				Name:    "default",
-				Subnets: []networkSubnet{defaultSubnet},
+				Subnets: []networkSubnet{subnet},
+				Type:    "manual",
+			},
+		},
+		{
+			Type: "replace",
+			Path: "/networks/-",
+			Value: network{
+				Name:    "private",
+				Subnets: []networkSubnet{subnet},
 				Type:    "manual",
 			},
 		},
