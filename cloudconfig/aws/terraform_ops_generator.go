@@ -268,35 +268,14 @@ func (a TerraformOpsGenerator) generateTerraformAWSOps(state storage.State) ([]o
 				SecurityGroups: []string{
 					terraformOutputs["cf_router_lb_internal_security_group"].(string),
 					terraformOutputs["iso1_security_group_id"].(string),
-					internalSecurityGroup,
 				},
 			},
 		}))
 
-		ops = append(ops, createOp("replace", "/vm_extensions/-", isoVMExtension{
-			Name: "cf-iso1-network-properties",
-			CloudProperties: securityGroupCloudProperties{
-				SecurityGroups: []string{
-					terraformOutputs["iso1_security_group_id"].(string),
-					internalSecurityGroup,
-				},
-			},
-		}))
+		ops = append(ops, createOp("replace", "/vm_extensions/name=ssh-proxy-lb/cloud_properties/security_groups/-", sharedSGId))
+		ops = append(ops, createOp("replace", "/vm_extensions/name=router-lb/cloud_properties/security_groups/-", sharedSGId))
+		ops = append(ops, createOp("replace", "/vm_extensions/name=cf-tcp-router-network-properties/cloud_properties/security_groups/-", sharedSGId))
 
-		//iso_subnets := terraformOutputs["iso1_az_subnet_id_mapping"].(map[string]interface{})
-		//ops = append(ops, createOp("replace", "/networks/name=default/subnets/-",
-		//	networkSubnet{
-		//		AZ:       "z1",
-		//		Gateway:  "10.0.200.1",
-		//		Range:    "10.0.200.0/28",
-		//		Reserved: []string{"10.0.200.2-10.0.200.3"},
-		//		Static:   []string{"10.0.200.4-10.200.15"},
-		//		CloudProperties: networkSubnetCloudProperties{
-		//			Subnet:         iso_subnets["us-east-1a"].(string),
-		//			SecurityGroups: []string{terraformOutputs["iso1_security_group_id"].(string)},
-		//		},
-		//	},
-		//))
 	case "concourse":
 		concourseLoadBalancer, ok := terraformOutputs["concourse_lb_name"].(string)
 		if !ok {

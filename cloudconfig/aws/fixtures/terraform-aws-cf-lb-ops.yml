@@ -115,14 +115,17 @@
       security_groups:
       - some-cf-router-lb-internal-security-group
       - some-iso1-security-group-id
-      - some-internal-security-group
 
 - type: replace
-  path: /vm_extensions/-
-  value:
-    name: cf-iso1-network-properties
-    cloud_properties:
-      security_groups:
-      - some-iso1-security-group-id
-      - some-internal-security-group
+  path: /vm_extensions/name=ssh-proxy-lb/cloud_properties/security_groups/-
+  value: some-iso-shared-security-group-id
+
+- type: replace
+  path: /vm_extensions/name=router-lb/cloud_properties/security_groups/-
+  value: some-iso-shared-security-group-id
+
+- type: replace
+  path: /vm_extensions/name=cf-tcp-router-network-properties/cloud_properties/security_groups/-
+  value: some-iso-shared-security-group-id
+
 

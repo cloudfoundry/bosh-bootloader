@@ -1932,6 +1932,13 @@ resource "aws_security_group" "iso1_security_group" {
     cidr_blocks     = ["0.0.0.0/0"]
   }
 
+  ingress {
+    to_port = 0
+    from_port = 0
+    protocol = "-1"
+    security_groups = ["${aws_security_group.bosh_security_group.id}"]
+  }
+
   tags {
     Name = "${var.env_id}-iso1-security-group"
   }
@@ -1940,6 +1947,17 @@ resource "aws_security_group" "iso1_security_group" {
 output "iso1_security_group_id" {
   value="${aws_security_group.iso1_security_group.id}"
 }
+
+variable "iso_to_shared_tcp_ports" {
+  type = "list"
+  default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
+}
+
+variable "iso_to_shared_udp_ports" {
+  type = "list"
+  default = [8301,8302,8600]
+}
+
 
 #iso_shared_security group needs to be attached to primary subnet in the cloud config
 resource "aws_security_group" "iso_shared_security_group" {
@@ -1951,6 +1969,83 @@ resource "aws_security_group" "iso_shared_security_group" {
     from_port = 0
     to_port = 0
     protocol = "-1"
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 3000
+    from_port = 3000
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 3457
+    from_port = 3457
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 8080
+    from_port = 8080
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 8082
+    from_port = 8082
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 8301
+    from_port = 8300
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 8443
+    from_port = 8443
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 8889
+    from_port = 8889
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 9023
+    from_port = 9022
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "tcp"
+    to_port = 9091
+    from_port = 9090
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "udp"
+    to_port = 8302
+    from_port = 8301
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  ingress {
+    protocol = "udp"
+    to_port = 8600
+    from_port = 8600
+    security_groups = ["${aws_security_group.iso1_security_group.id}"]
   }
 
   tags {
@@ -1967,7 +2062,28 @@ variable "iso_to_bosh_ports" {
   default = [22,6868,25555,4222,25250]
 }
 
+resource "aws_security_group_rule" "isolation_segments_to_nat" {
+  depends_on = ["aws_security_group.nat_security_group"]
+  security_group_id        = "${aws_security_group.nat_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule" {
+  depends_on = ["aws_security_group.bosh_security_group"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
 resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
+  depends_on = ["aws_security_group.bosh_security_group"]
   count = "${length(var.iso_to_bosh_ports)}"
   security_group_id = "${aws_security_group.bosh_security_group.id}"
   type = "ingress"
@@ -1977,39 +2093,8 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
   source_security_group_id = "${aws_security_group.iso1_security_group.id}"
 }
 
-## open ports from bosh-director to bosh-agent (look at gcp load balancers?)
-
-variable "iso_to_shared_tcp_ports" {
-  type = "list"
-  default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
-}
-
-resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
-  count = "${length(var.iso_to_shared_tcp_ports)}"
-  security_group_id = "${aws_security_group.iso_shared_security_group.id}"
-  type = "ingress"
-  protocol = "tcp"
-  to_port = "${element(var.iso_to_shared_tcp_ports, count.index)}"
-  from_port = "${element(var.iso_to_shared_tcp_ports, count.index)}"
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
-}
-
-variable "iso_to_shared_udp_ports" {
-  type = "list"
-  default = [8301,8302,8600]
-}
-
-resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
-  count = "${length(var.iso_to_shared_udp_ports)}"
-  security_group_id = "${aws_security_group.iso_shared_security_group.id}"
-  type = "ingress"
-  protocol = "udp"
-  to_port = "${element(var.iso_to_shared_udp_ports, count.index)}"
-  from_port = "${element(var.iso_to_shared_udp_ports, count.index)}"
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
-}
-
 resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
+  depends_on = ["aws_security_group.iso1_security_group"]
   security_group_id = "${aws_security_group.iso1_security_group.id}"
   type = "ingress"
   protocol = "tcp"
@@ -2017,6 +2102,4 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   from_port = 1801
   source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
 }
-
-# security rules so that bosh director can talk to bosh agent?
 `
