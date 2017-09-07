@@ -26,11 +26,7 @@ const (
   value: Standard_D3_v2
 
 - type: replace
-  path: /disk_types/name=default/disk_size?
+  path: /disk_types/name=default/disk_size
   value: 3000
-
-- type: replace
-  path: /disk_types/name=large/disk_size?
-  value: 50_000
 `
 )
