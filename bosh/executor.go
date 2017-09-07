@@ -191,6 +191,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	var args = []string{
 		"interpolate", filepath.Join(tempDir, "bosh.yml"),
 		"--var-errs",
+		"--var-errs-unused",
 		"--vars-store", filepath.Join(tempDir, "variables.yml"),
 		"--vars-file", filepath.Join(tempDir, "deployment-vars.yml"),
 		"-o", filepath.Join(tempDir, "cpi.yml"),
