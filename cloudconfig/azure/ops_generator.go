@@ -1,11 +1,13 @@
 package azure
 
 import (
+	"fmt"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/niroyb/bosh-bootloader/bosh"
 )
 
 type OpsGenerator struct {
@@ -29,14 +31,15 @@ type network struct {
 }
 
 type networkSubnet struct {
-	AZs             []string
+	AZ              string
 	Gateway         string
 	Range           string
+	Reserved        []string
+	Static          []string
 	CloudProperties subnetCloudProperties `yaml:"cloud_properties"`
 }
 
 type subnetCloudProperties struct {
-	ResourceGroupName  string `yaml:"resource_group_name,omitempty"`
 	VirtualNetworkName string `yaml:"virtual_network_name"`
 	SubnetName         string `yaml:"subnet_name"`
 	SecurityGroup      string `yaml:"security_group,omitempty"`
@@ -56,16 +59,23 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
-	subnet := networkSubnet{
-		Gateway: "10.0.0.1",
-		Range:   "10.0.0.0/24",
-		AZs:     []string{"z1", "z2", "z3"},
-		CloudProperties: subnetCloudProperties{
-			ResourceGroupName:  terraformOutputs["bosh_resource_group_name"].(string),
-			VirtualNetworkName: terraformOutputs["bosh_network_name"].(string),
-			SubnetName:         terraformOutputs["bosh_subnet_name"].(string),
-			SecurityGroup:      terraformOutputs["bosh_default_security_group"].(string),
-		},
+	zones := []string{"z1", "z2", "z3"}
+	var subnets []networkSubnet
+	for i, _ := range zones {
+		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))
+		subnet, err := generateNetworkSubnet(
+			fmt.Sprintf("z%d", i+1),
+			cidr,
+			terraformOutputs["bosh_network_name"].(string),
+			terraformOutputs["bosh_subnet_name"].(string),
+			terraformOutputs["bosh_default_security_group"].(string),
+		)
+		if err != nil {
+			panic(err)
+			return "", err
+		}
+
+		subnets = append(subnets, subnet)
 	}
 
 	cloudConfigOps := []op{
@@ -74,7 +84,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			Path: "/networks/-",
 			Value: network{
 				Name:    "default",
-				Subnets: []networkSubnet{subnet},
+				Subnets: subnets,
 				Type:    "manual",
 			},
 		},
@@ -83,7 +93,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			Path: "/networks/-",
 			Value: network{
 				Name:    "private",
-				Subnets: []networkSubnet{subnet},
+				Subnets: subnets,
 				Type:    "manual",
 			},
 		},
@@ -101,4 +111,36 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		},
 		"\n",
 	), nil
+}
+
+func generateNetworkSubnet(az, cidr, networkName, subnetName, securityGroup string) (networkSubnet, error) {
+	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
+	if err != nil {
+		return networkSubnet{}, err
+	}
+
+	gateway := parsedCidr.GetFirstIP().Add(1).String()
+	firstReserved := parsedCidr.GetFirstIP().Add(2).String()
+	secondReserved := parsedCidr.GetFirstIP().Add(3).String()
+	lastReserved := parsedCidr.GetLastIP().String()
+	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
+	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
+
+	return networkSubnet{
+		AZ:      az,
+		Gateway: gateway,
+		Range:   cidr,
+		Reserved: []string{
+			fmt.Sprintf("%s-%s", firstReserved, secondReserved),
+			fmt.Sprintf("%s", lastReserved),
+		},
+		Static: []string{
+			fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+		},
+		CloudProperties: subnetCloudProperties{
+			VirtualNetworkName: networkName,
+			SubnetName:         subnetName,
+			SecurityGroup:      securityGroup,
+		},
+	}, nil
 }

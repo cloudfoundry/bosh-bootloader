@@ -31,7 +31,6 @@ var _ = Describe("AzureOpsGenerator", func() {
 			}
 
 			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-				"bosh_resource_group_name":    "some-resource-group-name",
 				"bosh_network_name":           "some-virtual-network-name",
 				"bosh_subnet_name":            "some-subnet-name",
 				"bosh_default_security_group": "some-security-group",
