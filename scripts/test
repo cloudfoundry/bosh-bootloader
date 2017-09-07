@@ -26,7 +26,10 @@ function main() {
 
 	pushd "${root_dir}" > /dev/null
 		ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites -skipPackage acceptance-test ${@}
-    ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites acceptance-tests/no-iaas ${@}
+    if [ -z ${@} ]
+    then
+      ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites acceptance-tests/no-iaas ${@}
+    fi
 	popd > /dev/null
 }
 
