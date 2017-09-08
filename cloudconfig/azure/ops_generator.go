@@ -6,8 +6,8 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/niroyb/bosh-bootloader/bosh"
 )
 
 type OpsGenerator struct {
