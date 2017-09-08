@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	"github.com/cloudfoundry/multierror"
 )
 
@@ -93,26 +91,8 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	}
 
 	state, err = c.terraformManager.Apply(state)
-	switch err.(type) {
-	case terraform.ManagerError:
-		taError := err.(terraform.ManagerError)
-		var bblStateErr error
-		state, bblStateErr = taError.BBLState()
-		if bblStateErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(bblStateErr)
-			return errorList
-		}
-		if setErr := c.stateStore.Set(state); setErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(setErr)
-			return errorList
-		}
-		return taError
-	case error:
-		return err
+	if err != nil {
+		return handleTerraformError(err, c.stateStore)
 	}
 
 	if err := c.stateStore.Set(state); err != nil {
