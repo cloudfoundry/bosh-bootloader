@@ -89,24 +89,24 @@ resource "aws_iam_policy" "bosh" {
         "ec2:TerminateInstances",
         "ec2:RegisterImage",
         "ec2:DeregisterImage"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "*"
-    },
-	{
-	  "Action": [
-	    "iam:PassRole"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "${aws_iam_role.bosh.arn}"
-	},
-	{
-	  "Action": [
-	    "elasticloadbalancing:*"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "*"
-	}
+  ],
+  "Effect": "Allow",
+  "Resource": "*"
+  },
+  {
+  "Action": [
+    "iam:PassRole"
+  ],
+  "Effect": "Allow",
+  "Resource": "${aws_iam_role.bosh.arn}"
+  },
+  {
+  "Action": [
+    "elasticloadbalancing:*"
+  ],
+  "Effect": "Allow",
+  "Resource": "*"
+  }
   ]
 }
 EOF
@@ -129,70 +129,21 @@ variable "nat_ami_map" {
   type = "map"
 
   default = {
-  {{range $key, $value := .AWSNATAMIs}}  {{$key}} = "{{$value}}"
-  {{end}}}
-}
-
-resource "aws_security_group" "nat_security_group" {
-  description = "{{.NATDescription}}"
-  vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "udp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "icmp"
-    from_port   = -1
-    to_port     = -1
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "${var.env_id}-nat-security-group"
+    ap-northeast-1 = "ami-10dfc877"
+    ap-northeast-2 = "ami-1a1bc474"
+    ap-southeast-1 = "ami-36af2055"
+    ap-southeast-2 = "ami-1e91817d"
+    eu-central-1 = "ami-9ebe18f1"
+    eu-west-1 = "ami-3a849f5c"
+    eu-west-2 = "ami-21120445"
+    us-east-1 = "ami-d4c5efc2"
+    us-east-2 = "ami-f27b5a97"
+    us-gov-west-1 = "ami-c39610a2"
+    us-west-1 = "ami-b87f53d8"
+    us-west-2 = "ami-8bfce8f2"
   }
 }
 
-resource "aws_instance" "nat" {
-  private_ip             = "10.0.0.7"
-  instance_type          = "t2.medium"
-  subnet_id              = "${aws_subnet.bosh_subnet.id}"
-  source_dest_check      = false
-  ami                    = "${lookup(var.nat_ami_map, var.region)}"
-  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
-
-  tags {
-    Name = "${var.env_id}-nat",
-    EnvID = "${var.env_id}"
-  }
-}
-
-resource "aws_eip" "nat_eip" {
-  depends_on = ["aws_internet_gateway.ig"]
-  instance = "${aws_instance.nat.id}"
-  vpc      = true
-}
-
-output "nat_eip" {
-  value = "${aws_eip.nat_eip.public_ip}"
-}
 
 variable "access_key" {
   type = "string"
@@ -213,7 +164,7 @@ provider "aws" {
 }
 
 resource "aws_default_security_group" "default_security_group" {
-	vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${aws_vpc.vpc.id}"
 }
 
 resource "aws_security_group" "internal_security_group" {
@@ -273,7 +224,7 @@ resource "aws_security_group" "bosh_security_group" {
   description = "{{.BOSHDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
-  tags {
+tags {
     Name = "${var.env_id}-bosh-security-group"
   }
 }
@@ -489,15 +440,15 @@ resource "aws_route_table_association" "route_internal_subnets" {
 }
 
 output "internal_az_subnet_id_mapping" {
-	value = "${
-	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
-	}"
+  value = "${
+  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
+  }"
 }
 
 output "internal_az_subnet_cidr_mapping" {
-	value = "${
-	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
-	}"
+  value = "${
+  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
+  }"
 }
 
 variable "env_id" {
@@ -668,7 +619,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-	{{.IgnoreSSLCertificateProperties}}
+  {{.IgnoreSSLCertificateProperties}}
   }
 }
 `
@@ -1851,14 +1802,14 @@ resource "aws_route_table_association" "route_iso1_subnets" {
 
 output "iso1_az_subnet_id_mapping" {
   value = "${
-	  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.id}")
-	}"
+  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.id}")
+  }"
 }
 
 output "iso1_az_subnet_cidr_mapping" {
   value = "${
-	  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.cidr_block}")
-	}"
+  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.cidr_block}")
+  }"
 }
 
 
@@ -1948,109 +1899,10 @@ output "iso1_security_group_id" {
   value="${aws_security_group.iso1_security_group.id}"
 }
 
-variable "iso_to_shared_tcp_ports" {
-  type = "list"
-  default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
-}
-
-variable "iso_to_shared_udp_ports" {
-  type = "list"
-  default = [8301,8302,8600]
-}
-
-
 #iso_shared_security group needs to be attached to primary subnet in the cloud config
 resource "aws_security_group" "iso_shared_security_group" {
   description = "iso-shared"
   vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    self = true
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 3000
-    from_port = 3000
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 3457
-    from_port = 3457
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 8080
-    from_port = 8080
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 8082
-    from_port = 8082
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 8301
-    from_port = 8300
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 8443
-    from_port = 8443
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 8889
-    from_port = 8889
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 9023
-    from_port = 9022
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    to_port = 9091
-    from_port = 9090
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "udp"
-    to_port = 8302
-    from_port = 8301
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  ingress {
-    protocol = "udp"
-    to_port = 8600
-    from_port = 8600
-    security_groups = ["${aws_security_group.iso1_security_group.id}"]
-  }
-
-  tags {
-    Name = "${var.env_id}-iso-shared-security-group"
-  }
 }
 
 output "iso_shared_security_group_id" {
@@ -2062,13 +1914,45 @@ variable "iso_to_bosh_ports" {
   default = [22,6868,25555,4222,25250]
 }
 
-resource "aws_security_group_rule" "isolation_segments_to_nat" {
-  depends_on = ["aws_security_group.nat_security_group"]
-  security_group_id        = "${aws_security_group.nat_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 0
+resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
+  count = "${length(var.iso_to_bosh_ports)}"
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type = "ingress"
+  protocol = "tcp"
+  to_port = "${element(var.iso_to_bosh_ports, count.index)}"
+  from_port = "${element(var.iso_to_bosh_ports, count.index)}"
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+## open ports from bosh-director to bosh-agent (look at gcp load balancers?)
+
+variable "iso_to_shared_tcp_ports" {
+  type = "list"
+  default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
+  count = "${length(var.iso_to_shared_tcp_ports)}"
+  security_group_id = "${aws_security_group.iso_shared_security_group.id}"
+  type = "ingress"
+  protocol = "tcp"
+  to_port = "${element(var.iso_to_shared_tcp_ports, count.index)}"
+  from_port = "${element(var.iso_to_shared_tcp_ports, count.index)}"
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+variable "iso_to_shared_udp_ports" {
+  type = "list"
+  default = [8301,8302,8600]
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
+  count = "${length(var.iso_to_shared_udp_ports)}"
+  security_group_id = "${aws_security_group.iso_shared_security_group.id}"
+  type = "ingress"
+  protocol = "udp"
+  to_port = "${element(var.iso_to_shared_udp_ports, count.index)}"
+  from_port = "${element(var.iso_to_shared_udp_ports, count.index)}"
   source_security_group_id = "${aws_security_group.iso1_security_group.id}"
 }
 
@@ -2082,17 +1966,6 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule"
   source_security_group_id = "${aws_security_group.iso1_security_group.id}"
 }
 
-resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
-  depends_on = ["aws_security_group.bosh_security_group"]
-  count = "${length(var.iso_to_bosh_ports)}"
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type = "ingress"
-  protocol = "tcp"
-  to_port = "${element(var.iso_to_bosh_ports, count.index)}"
-  from_port = "${element(var.iso_to_bosh_ports, count.index)}"
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
-}
-
 resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   depends_on = ["aws_security_group.iso1_security_group"]
   security_group_id = "${aws_security_group.iso1_security_group.id}"
@@ -2101,5 +1974,74 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   to_port = 1801
   from_port = 1801
   source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
+}
+# create NAT after everything else
+
+resource "aws_security_group" "nat_security_group" {
+  description = "NAT"
+  vpc_id      = "${aws_vpc.vpc.id}"
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 65535
+    security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+  ingress {
+    protocol    = "udp"
+    from_port   = 0
+    to_port     = 65535
+    security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+ ingress {
+   protocol    = "icmp"
+   from_port   = -1
+   to_port     = -1
+   security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+ ingress {
+   protocol    = "-1"
+   from_port   = 0
+   to_port     = 0
+   security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "${var.env_id}-nat-security-group"
+  }
+}
+
+resource "aws_instance" "nat" {
+  private_ip             = "10.0.0.7"
+  instance_type          = "t2.medium"
+  subnet_id              = "${aws_subnet.bosh_subnet.id}"
+  source_dest_check      = false
+  ami                    = "${lookup(var.nat_ami_map, var.region)}"
+  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
+
+  tags {
+    Name = "${var.env_id}-nat",
+    EnvID = "${var.env_id}"
+  }
+}
+
+resource "aws_eip" "nat_eip" {
+  depends_on = ["aws_internet_gateway.ig"]
+  instance = "${aws_instance.nat.id}"
+  vpc      = true
+}
+
+output "nat_eip" {
+  value = "${aws_eip.nat_eip.public_ip}"
 }
 `
