@@ -54,14 +54,6 @@ const (
   value: 1048576
 
 - type: replace
-  path: /vm_extensions/name=cf-router-network-properties?/cloud_properties/load_balancer
-  value: router-lb
-
-- type: replace
-  path: /vm_extensions/name=diego-ssh-proxy-network-properties?/cloud_properties/load_balancer
-  value: ssh-proxy-lb
-
-- type: replace
   path: /vm_types/name=minimal/cloud_properties?
   value:
     ephemeral_disk:
