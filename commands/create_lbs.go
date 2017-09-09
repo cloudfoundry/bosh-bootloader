@@ -10,10 +10,11 @@ import (
 
 type CreateLBs struct {
 	awsCreateLBs         awsCreateLBs
-	gcpCreateLBs         gcpCreateLBs
-	stateValidator       stateValidator
-	certificateValidator certificateValidator
 	boshManager          boshManager
+	certificateValidator certificateValidator
+	gcpCreateLBs         gcpCreateLBs
+	logger               logger
+	stateValidator       stateValidator
 }
 
 type lbConfig struct {
@@ -37,13 +38,14 @@ type certificateValidator interface {
 	Validate(command, certPath, keyPath, chainPath string) error
 }
 
-func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
+func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, logger logger, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
 	return CreateLBs{
+		boshManager:          boshManager,
+		logger:               logger,
 		awsCreateLBs:         awsCreateLBs,
 		gcpCreateLBs:         gcpCreateLBs,
 		stateValidator:       stateValidator,
 		certificateValidator: certificateValidator,
-		boshManager:          boshManager,
 	}
 }
 
@@ -54,7 +56,12 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 	}
 
 	if err := c.stateValidator.Validate(); err != nil {
-		return fmt.Errorf("validate state: %s", err)
+		return fmt.Errorf("Validate state: %s", err)
+	}
+
+	if config.skipIfExists && config.lbType == state.LB.Type {
+		c.logger.Step(fmt.Sprintf("lb type %q exists, skipping...", state.LB.Type))
+		return nil
 	}
 
 	if !lbExists(config.lbType) {
@@ -64,7 +71,7 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 	if !(state.IAAS == "gcp" && config.lbType == "concourse") {
 		err = c.certificateValidator.Validate("create-lbs", config.certPath, config.keyPath, config.chainPath)
 		if err != nil {
-			return fmt.Errorf("validate certificate: %s", err)
+			return fmt.Errorf("Validate certificate: %s", err)
 		}
 	}
 

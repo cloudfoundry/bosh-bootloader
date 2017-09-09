@@ -31,8 +31,8 @@ import (
 	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
 	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
-	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
+	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
@@ -160,7 +160,7 @@ func main() {
 
 	// Subcommands
 	awsUp := commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
-	awsCreateLBs := commands.NewAWSCreateLBs(logger, cloudConfigManager, stateStore, terraformManager, awsEnvironmentValidator)
+	awsCreateLBs := commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, awsEnvironmentValidator)
 	awsLBs := commands.NewAWSLBs(terraformManager, logger)
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs)
 	awsDeleteLBs := commands.NewAWSDeleteLBs(logger, cloudConfigManager, stateStore, awsEnvironmentValidator, terraformManager)
@@ -180,7 +180,7 @@ func main() {
 		GCPAvailabilityZoneRetriever: gcpClientProvider.Client(),
 	})
 
-	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, gcpEnvironmentValidator, logger, gcpClientProvider.Client())
+	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, gcpEnvironmentValidator, gcpClientProvider.Client())
 
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
 
@@ -195,13 +195,9 @@ func main() {
 	commandSet["up"] = up
 	sshKeyDeleter := bosh.NewSSHKeyDeleter()
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
-	commandSet["destroy"] = commands.NewDestroy(
-		logger, os.Stdin, boshManager, vpcStatusChecker, stackManager,
-		infrastructureManager, certificateDeleter,
-		stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker,
-	)
+	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, vpcStatusChecker, stackManager, infrastructureManager, certificateDeleter, stateStore, stateValidator, terraformManager, gcpNetworkInstancesChecker)
 	commandSet["down"] = commandSet["destroy"]
-	commandSet["create-lbs"] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, certificateValidator, boshManager)
+	commandSet["create-lbs"] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, logger, stateValidator, certificateValidator, boshManager)
 	commandSet["update-lbs"] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
 	commandSet["delete-lbs"] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
 	commandSet["lbs"] = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)

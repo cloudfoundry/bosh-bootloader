@@ -1,11 +1,9 @@
 package commands
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/multierror"
 )
 
 type GCPCreateLBs struct {
@@ -13,7 +11,6 @@ type GCPCreateLBs struct {
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
 	environmentValidator      environmentValidator
-	logger                    logger
 	availabilityZoneRetriever availabilityZoneRetriever
 }
 
@@ -31,26 +28,19 @@ type availabilityZoneRetriever interface {
 
 func NewGCPCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
-	stateStore stateStore, environmentValidator environmentValidator, logger logger,
-	availabilityZoneRetriever availabilityZoneRetriever,
-) GCPCreateLBs {
+	stateStore stateStore, environmentValidator environmentValidator,
+	availabilityZoneRetriever availabilityZoneRetriever) GCPCreateLBs {
 	return GCPCreateLBs{
-		terraformManager:     terraformManager,
-		cloudConfigManager:   cloudConfigManager,
-		stateStore:           stateStore,
-		environmentValidator: environmentValidator,
-		logger:               logger,
+		terraformManager:          terraformManager,
+		cloudConfigManager:        cloudConfigManager,
+		stateStore:                stateStore,
+		environmentValidator:      environmentValidator,
 		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
 
 func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) error {
 	err := c.terraformManager.ValidateVersion()
-	if err != nil {
-		return err
-	}
-
-	err = c.checkFastFails(config, state)
 	if err != nil {
 		return err
 	}
@@ -62,11 +52,6 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 	state.GCP.Zones, err = c.availabilityZoneRetriever.GetZones(state.GCP.Region)
 	if err != nil {
 		return err
-	}
-
-	if config.SkipIfExists && config.LBType == state.LB.Type {
-		c.logger.Step(fmt.Sprintf("lb type %q exists, skipping...", config.LBType))
-		return nil
 	}
 
 	state.LB.Type = config.LBType
@@ -106,47 +91,5 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		}
 	}
 
-	return nil
-}
-
-func (GCPCreateLBs) checkFastFails(config GCPCreateLBsConfig, state storage.State) error {
-	if config.LBType == "" {
-		return fmt.Errorf("--type is a required flag")
-	}
-
-	if !lbExists(config.LBType) {
-		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse, cf", config.LBType)
-	}
-
-	if config.LBType == "cf" {
-		errs := multierror.NewMultiError("create-lbs")
-		if err := validateCertOrKeyFlag("cert", config.CertPath); err != nil {
-			errs.Add(err)
-		}
-		if err := validateCertOrKeyFlag("key", config.KeyPath); err != nil {
-			errs.Add(err)
-		}
-
-		if errs.Length() > 0 {
-			return errs
-		}
-	}
-
-	return nil
-}
-
-func validateCertOrKeyFlag(flagName, path string) error {
-	if path == "" {
-		return fmt.Errorf("--%s is required", flagName)
-	} else {
-		body, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		if string(body) == "" {
-			return fmt.Errorf("provided %s file is empty", flagName)
-		}
-	}
 	return nil
 }

@@ -20,7 +20,6 @@ var _ = Describe("AWS Create LBs", func() {
 		var (
 			command              commands.AWSCreateLBs
 			terraformManager     *fakes.TerraformManager
-			logger               *fakes.Logger
 			cloudConfigManager   *fakes.CloudConfigManager
 			stateStore           *fakes.StateStore
 			environmentValidator *fakes.EnvironmentValidator
@@ -33,7 +32,6 @@ var _ = Describe("AWS Create LBs", func() {
 
 		BeforeEach(func() {
 			terraformManager = &fakes.TerraformManager{}
-			logger = &fakes.Logger{}
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			stateStore = &fakes.StateStore{}
 			environmentValidator = &fakes.EnvironmentValidator{}
@@ -80,9 +78,7 @@ var _ = Describe("AWS Create LBs", func() {
 			err = ioutil.WriteFile(chainPath, []byte(chain), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
-			command = commands.NewAWSCreateLBs(logger,
-				cloudConfigManager,
-				stateStore, terraformManager, environmentValidator)
+			command = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		})
 
 		Context("when lb type desired is cf", func() {
@@ -295,21 +291,6 @@ var _ = Describe("AWS Create LBs", func() {
 		})
 
 		Context("when --skip-if-exists is provided", func() {
-			It("no-ops when lb exists", func() {
-				incomingState.Stack.LBType = "cf"
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:       "concourse",
-					CertPath:     certPath,
-					KeyPath:      keyPath,
-					SkipIfExists: true,
-				}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
-
-				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`lb type "cf" exists, skipping...`))
-			})
-
 			DescribeTable("creates the lb if the lb does not exist",
 				func(currentLBType string) {
 					incomingState.Stack.LBType = currentLBType
@@ -326,26 +307,6 @@ var _ = Describe("AWS Create LBs", func() {
 				Entry("when the current lb-type is 'none'", "none"),
 				Entry("when the current lb-type is ''", ""),
 			)
-		})
-
-		Context("invalid lb type", func() {
-			It("returns an error", func() {
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "some-invalid-lb",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, incomingState)
-				Expect(err).To(MatchError("\"some-invalid-lb\" is not a valid lb type, valid lb types are: concourse and cf"))
-			})
-
-			It("returns a helpful error when no lb type is provided", func() {
-				err := command.Execute(commands.AWSCreateLBsConfig{
-					LBType:   "",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}, incomingState)
-				Expect(err).To(MatchError("--type is a required flag"))
-			})
 		})
 
 		It("returns an error when the environment validator fails", func() {

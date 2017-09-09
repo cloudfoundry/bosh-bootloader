@@ -16,20 +16,22 @@ var _ = Describe("create-lbs", func() {
 		command              commands.CreateLBs
 		awsCreateLBs         *fakes.AWSCreateLBs
 		gcpCreateLBs         *fakes.GCPCreateLBs
-		stateValidator       *fakes.StateValidator
-		certificateValidator *fakes.CertificateValidator
 		boshManager          *fakes.BOSHManager
+		certificateValidator *fakes.CertificateValidator
+		logger               *fakes.Logger
+		stateValidator       *fakes.StateValidator
 	)
 
 	BeforeEach(func() {
 		awsCreateLBs = &fakes.AWSCreateLBs{}
 		gcpCreateLBs = &fakes.GCPCreateLBs{}
-		stateValidator = &fakes.StateValidator{}
-		certificateValidator = &fakes.CertificateValidator{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
+		certificateValidator = &fakes.CertificateValidator{}
+		logger = &fakes.Logger{}
+		stateValidator = &fakes.StateValidator{}
 
-		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, stateValidator, certificateValidator, boshManager)
+		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, logger, stateValidator, certificateValidator, boshManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -38,12 +40,26 @@ var _ = Describe("create-lbs", func() {
 			err := command.CheckFastFails([]string{}, storage.State{})
 
 			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-			Expect(err).To(MatchError("validate state: raspberry"))
+			Expect(err).To(MatchError("Validate state: raspberry"))
 		})
 
 		It("returns an error if there is no lb type", func() {
 			err := command.CheckFastFails([]string{}, storage.State{})
 			Expect(err).To(MatchError("--type is required"))
+		})
+
+		It("no-ops when lb exists", func() {
+			err := command.CheckFastFails([]string{
+				"--type", "cf",
+				"--skip-if-exists",
+			}, storage.State{
+				LB: storage.LB{
+					Type: "cf",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.StepCall.Receives.Message).To(Equal(`lb type "cf" exists, skipping...`))
 		})
 
 		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
@@ -82,7 +98,7 @@ var _ = Describe("create-lbs", func() {
 					"--chain", "/path/to/chain",
 				}, storage.State{})
 
-				Expect(err).To(MatchError("validate certificate: failed to validate"))
+				Expect(err).To(MatchError("Validate certificate: failed to validate"))
 				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
 				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
 				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))

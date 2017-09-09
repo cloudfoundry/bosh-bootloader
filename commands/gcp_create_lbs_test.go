@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	"github.com/cloudfoundry/multierror"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -22,7 +21,6 @@ var _ = Describe("GCPCreateLBs", func() {
 		cloudConfigManager        *fakes.CloudConfigManager
 		stateStore                *fakes.StateStore
 		environmentValidator      *fakes.EnvironmentValidator
-		logger                    *fakes.Logger
 		terraformExecutorError    *fakes.TerraformExecutorError
 		availabilityZoneRetriever *fakes.GCPClient
 
@@ -39,11 +37,10 @@ var _ = Describe("GCPCreateLBs", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		environmentValidator = &fakes.EnvironmentValidator{}
-		logger = &fakes.Logger{}
 		terraformExecutorError = &fakes.TerraformExecutorError{}
 		availabilityZoneRetriever = &fakes.GCPClient{}
 
-		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, logger, availabilityZoneRetriever)
+		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, availabilityZoneRetriever)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
@@ -193,19 +190,6 @@ var _ = Describe("GCPCreateLBs", func() {
 			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(bblState))
 		})
 
-		It("no-ops if SkipIfExists is supplied and the LBType does not change", func() {
-			bblState.LB.Type = "concourse"
-			err := command.Execute(commands.GCPCreateLBsConfig{
-				LBType:       "concourse",
-				SkipIfExists: true,
-			}, bblState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logger.StepCall.Messages).To(ContainElement(`lb type "concourse" exists, skipping...`))
-			Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
-			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-		})
-
 		Context("when there is no BOSH director", func() {
 			It("creates the LBs", func() {
 				err := command.Execute(commands.GCPCreateLBsConfig{
@@ -247,32 +231,6 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
-			Context("when creating a cf lb and provided cert and key files are empty", func() {
-				BeforeEach(func() {
-					err := ioutil.WriteFile(certPath, []byte{}, os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-
-					err = ioutil.WriteFile(keyPath, []byte{}, os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				It("returns a helpful error message", func() {
-					expectedErrors := multierror.NewMultiError("create-lbs")
-					expectedErrors.Add(errors.New("provided cert file is empty"))
-					expectedErrors.Add(errors.New("provided key file is empty"))
-
-					err := command.Execute(commands.GCPCreateLBsConfig{
-						LBType:   "cf",
-						CertPath: certPath,
-						KeyPath:  keyPath,
-						Domain:   "some-domain",
-					}, storage.State{
-						IAAS: "gcp",
-					})
-					Expect(err).To(Equal(expectedErrors))
-				})
-			})
-
 			It("returns an error if terraform manager version validator fails", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
 
@@ -283,20 +241,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				Expect(err).To(MatchError("cannot validate version"))
-			})
-
-			It("returns a helpful error when no lb type is provided", func() {
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("--type is a required flag"))
-			})
-
-			It("returns an error when the lb type is not concourse or cf", func() {
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType: "some-fake-lb",
-				}, storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError(`"some-fake-lb" is not a valid lb type, valid lb types are: concourse, cf`))
 			})
 
 			Context("when environment validator validate returns an error", func() {
@@ -310,49 +254,12 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 			})
 
-			Context("when lb type is cf", func() {
-				It("returns an error when cert and key are not provided", func() {
-					expectedErrors := multierror.NewMultiError("create-lbs")
-					expectedErrors.Add(errors.New("--cert is required"))
-					expectedErrors.Add(errors.New("--key is required"))
-
-					err := command.Execute(commands.GCPCreateLBsConfig{
-						LBType: "cf",
-					}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
-					Expect(err).To(MatchError(expectedErrors))
-				})
-			})
-
 			It("returns an error when the availability zone retriever fails to get zones", func() {
 				availabilityZoneRetriever.GetZonesCall.Returns.Error = errors.New("failed to get zones")
 				err := command.Execute(commands.GCPCreateLBsConfig{
 					LBType: "concourse",
 				}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
 				Expect(err).To(MatchError("failed to get zones"))
-			})
-
-			It("returns an error if the command fails to read the certificate", func() {
-				expectedErrors := multierror.NewMultiError("create-lbs")
-				expectedErrors.Add(errors.New("open some/fake/path: no such file or directory"))
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: "some/fake/path",
-					KeyPath:  keyPath,
-				}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
-				Expect(err).To(MatchError(expectedErrors))
-			})
-
-			It("returns an error if the command fails to read the key", func() {
-				expectedErrors := multierror.NewMultiError("create-lbs")
-				expectedErrors.Add(errors.New("open some/fake/path: no such file or directory"))
-
-				err := command.Execute(commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: certPath,
-					KeyPath:  "some/fake/path",
-				}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
-				Expect(err).To(MatchError(expectedErrors))
 			})
 
 			It("saves the tf state even if the applier fails", func() {

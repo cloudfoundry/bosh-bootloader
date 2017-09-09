@@ -8,7 +8,6 @@ import (
 )
 
 type AWSCreateLBs struct {
-	logger               logger
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
 	stateValidator       stateValidator
@@ -29,11 +28,9 @@ type environmentValidator interface {
 	Validate(state storage.State) error
 }
 
-func NewAWSCreateLBs(logger logger,
-	cloudConfigManager cloudConfigManager, stateStore stateStore,
+func NewAWSCreateLBs(cloudConfigManager cloudConfigManager, stateStore stateStore,
 	terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
-		logger:               logger,
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,
 		terraformManager:     terraformManager,
@@ -42,13 +39,8 @@ func NewAWSCreateLBs(logger logger,
 }
 
 func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
-	if config.SkipIfExists && lbExists(state.Stack.LBType) {
-		c.logger.Println(fmt.Sprintf("lb type %q exists, skipping...", state.Stack.LBType))
-		return nil
-	}
-
-	if err := c.checkFastFails(config.LBType, state.Stack.LBType); err != nil {
-		return err
+	if lbExists(state.Stack.LBType) {
+		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", state.Stack.LBType)
 	}
 
 	if err := c.environmentValidator.Validate(state); err != nil {
@@ -103,22 +95,6 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		if err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (c AWSCreateLBs) checkFastFails(newLBType string, currentLBType string) error {
-	if newLBType == "" {
-		return fmt.Errorf("--type is a required flag")
-	}
-
-	if !lbExists(newLBType) {
-		return fmt.Errorf("%q is not a valid lb type, valid lb types are: concourse and cf", newLBType)
-	}
-
-	if lbExists(currentLBType) {
-		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", currentLBType)
 	}
 
 	return nil
