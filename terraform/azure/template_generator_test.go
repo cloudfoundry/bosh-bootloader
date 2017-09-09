@@ -20,7 +20,7 @@ var _ = Describe("TemplateGenerator", func() {
 
 	Describe("Generate", func() {
 		It("generates a terraform template for azure", func() {
-			expectedTemplate, err := ioutil.ReadFile("fixtures/azure_template_rg.tf")
+			expectedTemplate, err := ioutil.ReadFile("fixtures/azure_template.tf")
 			Expect(err).NotTo(HaveOccurred())
 
 			template := templateGenerator.Generate(storage.State{
