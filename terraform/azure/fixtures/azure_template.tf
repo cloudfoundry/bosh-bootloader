@@ -2,6 +2,10 @@ variable "env_id" {
 	type = "string"
 }
 
+variable "location" {
+	type = "string"
+}
+
 variable "simple_env_id" {
 	type = "string"
 }
@@ -31,7 +35,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "bosh" {
   name     = "${var.env_id}-bosh"
-  location = "West US"
+  location = "${var.location}"
 
   tags {
     environment = "${var.env_id}"
@@ -40,7 +44,7 @@ resource "azurerm_resource_group" "bosh" {
 
 resource "azurerm_public_ip" "bosh" {
   name                         = "${var.env_id}-bosh"
-  location                     = "West US"
+  location                     = "${var.location}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
   public_ip_address_allocation = "static"
 
@@ -52,7 +56,7 @@ resource "azurerm_public_ip" "bosh" {
 resource "azurerm_virtual_network" "bosh" {
   name                = "${var.env_id}-bosh-vn"
   address_space       = ["10.0.0.0/16"]
-  location            = "West US"
+  location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 }
 
@@ -91,7 +95,7 @@ resource "azurerm_storage_container" "stemcell" {
 
 resource "azurerm_network_security_group" "bosh" {
   name                = "${var.env_id}-bosh"
-  location            = "West US"
+  location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   tags {
@@ -101,7 +105,7 @@ resource "azurerm_network_security_group" "bosh" {
 
 resource "azurerm_network_security_group" "cf" {
   name                = "${var.env_id}-cf"
-  location            = "West US"
+  location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   tags {
