@@ -423,22 +423,6 @@ resource "aws_subnet" "internal_subnets" {
   }
 }
 
-resource "aws_route_table" "internal_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
-}
-
-resource "aws_route" "internal_route_table" {
-  destination_cidr_block = "0.0.0.0/0"
-  instance_id = "${aws_instance.nat.id}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
-resource "aws_route_table_association" "route_internal_subnets" {
-  count          = "${length(var.availability_zones)}"
-  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
 output "internal_az_subnet_id_mapping" {
   value = "${
   zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
@@ -1975,6 +1959,7 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   from_port = 1801
   source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
 }
+
 # create NAT after everything else
 
 resource "aws_security_group" "nat_security_group" {
@@ -2043,5 +2028,21 @@ resource "aws_eip" "nat_eip" {
 
 output "nat_eip" {
   value = "${aws_eip.nat_eip.public_ip}"
+}
+
+resource "aws_route_table" "internal_route_table" {
+  vpc_id = "${aws_vpc.vpc.id}"
+}
+
+resource "aws_route" "internal_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  instance_id = "${aws_instance.nat.id}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
+}
+
+resource "aws_route_table_association" "route_internal_subnets" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 `
