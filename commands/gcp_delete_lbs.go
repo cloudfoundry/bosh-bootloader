@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type GCPDeleteLBs struct {
@@ -43,26 +41,8 @@ func (g GCPDeleteLBs) Execute(state storage.State) error {
 	}
 
 	state, err = g.terraformManager.Apply(state)
-	switch err.(type) {
-	case terraform.ManagerError:
-		taErr := err.(terraform.ManagerError)
-		var bblStateErr error
-		state, bblStateErr = taErr.BBLState()
-		if bblStateErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(bblStateErr)
-			return errorList
-		}
-		if setErr := g.stateStore.Set(state); setErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(setErr)
-			return errorList
-		}
-		return err
-	case error:
-		return err
+	if err != nil {
+		return handleTerraformError(err, g.stateStore)
 	}
 
 	err = g.stateStore.Set(state)
