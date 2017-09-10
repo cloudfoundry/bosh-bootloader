@@ -3,7 +3,6 @@ package commands
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
 type AWSDeleteLBs struct {
-	logger               logger
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
 	environmentValidator environmentValidator
@@ -14,11 +13,9 @@ type deleteLBsConfig struct {
 	skipIfMissing bool
 }
 
-func NewAWSDeleteLBs(logger logger,
-	cloudConfigManager cloudConfigManager, stateStore stateStore,
+func NewAWSDeleteLBs(cloudConfigManager cloudConfigManager, stateStore stateStore,
 	environmentValidator environmentValidator, terraformManager terraformApplier) AWSDeleteLBs {
 	return AWSDeleteLBs{
-		logger:               logger,
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,
 		environmentValidator: environmentValidator,

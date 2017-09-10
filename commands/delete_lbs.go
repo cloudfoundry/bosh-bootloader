@@ -8,26 +8,32 @@ import (
 )
 
 type DeleteLBs struct {
-	gcpDeleteLBs   gcpDeleteLBs
 	awsDeleteLBs   awsDeleteLBs
+	azureDeleteLBs azureDeleteLBs
+	gcpDeleteLBs   gcpDeleteLBs
 	logger         logger
 	stateValidator stateValidator
 	boshManager    boshManager
-}
-
-type gcpDeleteLBs interface {
-	Execute(state storage.State) error
 }
 
 type awsDeleteLBs interface {
 	Execute(state storage.State) error
 }
 
-func NewDeleteLBs(gcpDeleteLBs gcpDeleteLBs, awsDeleteLBs awsDeleteLBs,
+type azureDeleteLBs interface {
+	Execute(state storage.State) error
+}
+
+type gcpDeleteLBs interface {
+	Execute(state storage.State) error
+}
+
+func NewDeleteLBs(awsDeleteLBs awsDeleteLBs, azureDeleteLBs azureDeleteLBs, gcpDeleteLBs gcpDeleteLBs,
 	logger logger, stateValidator stateValidator, boshManager boshManager) DeleteLBs {
 	return DeleteLBs{
-		gcpDeleteLBs:   gcpDeleteLBs,
 		awsDeleteLBs:   awsDeleteLBs,
+		azureDeleteLBs: azureDeleteLBs,
+		gcpDeleteLBs:   gcpDeleteLBs,
 		logger:         logger,
 		stateValidator: stateValidator,
 		boshManager:    boshManager,
@@ -62,10 +68,12 @@ func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 	}
 
 	switch state.IAAS {
-	case "gcp":
-		return d.gcpDeleteLBs.Execute(state)
 	case "aws":
 		return d.awsDeleteLBs.Execute(state)
+	case "azure":
+		return d.azureDeleteLBs.Execute(state)
+	case "gcp":
+		return d.gcpDeleteLBs.Execute(state)
 	default:
 		return fmt.Errorf("%q is an invalid iaas type in state, supported iaas types are: [gcp, aws]", state.IAAS)
 	}

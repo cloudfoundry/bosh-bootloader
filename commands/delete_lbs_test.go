@@ -16,22 +16,24 @@ var _ = Describe("DeleteLBs", func() {
 	var (
 		command commands.DeleteLBs
 
-		gcpDeleteLBs   *fakes.GCPDeleteLBs
 		awsDeleteLBs   *fakes.AWSDeleteLBs
+		azureDeleteLBs *fakes.AzureDeleteLBs
+		gcpDeleteLBs   *fakes.GCPDeleteLBs
 		stateValidator *fakes.StateValidator
 		logger         *fakes.Logger
 		boshManager    *fakes.BOSHManager
 	)
 
 	BeforeEach(func() {
-		gcpDeleteLBs = &fakes.GCPDeleteLBs{}
 		awsDeleteLBs = &fakes.AWSDeleteLBs{}
+		azureDeleteLBs = &fakes.AzureDeleteLBs{}
+		gcpDeleteLBs = &fakes.GCPDeleteLBs{}
 		stateValidator = &fakes.StateValidator{}
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 
-		command = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+		command = commands.NewDeleteLBs(awsDeleteLBs, azureDeleteLBs, gcpDeleteLBs, logger, stateValidator, boshManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -69,30 +71,9 @@ var _ = Describe("DeleteLBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
-
 	})
 
 	Describe("Execute", func() {
-		Context("when iaas is gcp", func() {
-			It("calls gcp delete lbs", func() {
-				err := command.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
-				Expect(gcpDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				}))
-				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
-			})
-		})
-
 		Context("when iaas is aws", func() {
 			It("calls aws delete lbs", func() {
 				err := command.Execute([]string{}, storage.State{
@@ -110,6 +91,45 @@ var _ = Describe("DeleteLBs", func() {
 					},
 				}))
 				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when iaas is azure", func() {
+			It("calls azure delete lbs", func() {
+				err := command.Execute([]string{}, storage.State{
+					IAAS: "azure",
+					LB: storage.LB{
+						Type: "cf",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(azureDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
+				Expect(azureDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
+					IAAS: "azure",
+					LB: storage.LB{
+						Type: "cf",
+					},
+				}))
+			})
+		})
+
+		Context("when iaas is gcp", func() {
+			It("calls gcp delete lbs", func() {
+				err := command.Execute([]string{}, storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
+				Expect(gcpDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				}))
+				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
 			})
 		})
 

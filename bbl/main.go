@@ -163,12 +163,11 @@ func main() {
 	awsCreateLBs := commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, awsEnvironmentValidator)
 	awsLBs := commands.NewAWSLBs(terraformManager, logger)
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs)
-	awsDeleteLBs := commands.NewAWSDeleteLBs(logger, cloudConfigManager, stateStore, awsEnvironmentValidator, terraformManager)
+	awsDeleteLBs := commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, awsEnvironmentValidator, terraformManager)
 
 	azureClient := azure.NewClient()
 	azureUp := commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, logger, stateStore, terraformManager)
-
-	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, gcpEnvironmentValidator, terraformManager, cloudConfigManager)
+	azureDeleteLBs := commands.NewAzureDeleteLBs(cloudConfigManager, stateStore, terraformManager)
 
 	gcpUp := commands.NewGCPUp(commands.NewGCPUpArgs{
 		StateStore:                   stateStore,
@@ -179,12 +178,10 @@ func main() {
 		CloudConfigManager:           cloudConfigManager,
 		GCPAvailabilityZoneRetriever: gcpClientProvider.Client(),
 	})
-
 	gcpCreateLBs := commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, gcpEnvironmentValidator, gcpClientProvider.Client())
-
 	gcpLBs := commands.NewGCPLBs(terraformManager, logger)
-
 	gcpUpdateLBs := commands.NewGCPUpdateLBs(gcpCreateLBs)
+	gcpDeleteLBs := commands.NewGCPDeleteLBs(stateStore, gcpEnvironmentValidator, terraformManager, cloudConfigManager)
 
 	up := commands.NewUp(awsUp, gcpUp, azureUp, envGetter, boshManager)
 
@@ -199,7 +196,7 @@ func main() {
 	commandSet["down"] = commandSet["destroy"]
 	commandSet["create-lbs"] = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, logger, stateValidator, certificateValidator, boshManager)
 	commandSet["update-lbs"] = commands.NewUpdateLBs(awsUpdateLBs, gcpUpdateLBs, certificateValidator, stateValidator, logger, boshManager)
-	commandSet["delete-lbs"] = commands.NewDeleteLBs(gcpDeleteLBs, awsDeleteLBs, logger, stateValidator, boshManager)
+	commandSet["delete-lbs"] = commands.NewDeleteLBs(awsDeleteLBs, azureDeleteLBs, gcpDeleteLBs, logger, stateValidator, boshManager)
 	commandSet["lbs"] = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)
 	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.JumpboxAddressPropertyName)
 	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
