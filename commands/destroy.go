@@ -210,24 +210,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	if state.IAAS == "aws" {
-		if state.TFState != "" {
-			state, err = d.terraformManager.Destroy(state)
-			if err != nil {
-				return handleTerraformError(err, d.stateStore)
-			}
-		} else {
-			state, err = d.deleteStack(stack, state)
-			if err != nil {
-				return err
-			}
-		}
-	} else if state.IAAS == "gcp" {
-		state, err = d.terraformManager.Destroy(state)
+	if state.IAAS == "aws" && state.TFState == "" {
+		state, err = d.deleteStack(stack, state)
 		if err != nil {
-			return handleTerraformError(err, d.stateStore)
+			return err
 		}
-	} else if state.IAAS == "azure" {
+	} else {
 		state, err = d.terraformManager.Destroy(state)
 		if err != nil {
 			return handleTerraformError(err, d.stateStore)
