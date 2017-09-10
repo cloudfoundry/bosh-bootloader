@@ -48,8 +48,6 @@ var _ = Describe("GCPDeleteLBs", func() {
 					IAAS: "gcp",
 					BOSH: storage.BOSH{
 						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-						DirectorAddress:  "some-director-address",
 					},
 					GCP: storage.GCP{
 						Region: "some-region",
@@ -83,43 +81,29 @@ var _ = Describe("GCPDeleteLBs", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-
 			})
 		})
 
 		It("runs terraform apply", func() {
-			credentials := "some-credentials"
-			envID := "some-env-id"
-			projectID := "some-project-id"
-			zone := "some-zone"
-			region := "some-region"
-			tfState := "some-tf-state"
-
-			err := command.Execute(storage.State{
-				EnvID: envID,
+			state := storage.State{
 				GCP: storage.GCP{
-					ServiceAccountKey: credentials,
-					Zone:              zone,
-					Region:            region,
-					ProjectID:         projectID,
+					ProjectID: "some-project-id",
 				},
 				LB: storage.LB{
 					Type: "concourse",
 				},
-				TFState: tfState,
-			})
+				TFState: "some-tf-state",
+			}
+
+			err := command.Execute(state)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
-				EnvID: envID,
 				GCP: storage.GCP{
-					ServiceAccountKey: credentials,
-					Zone:              zone,
-					Region:            region,
-					ProjectID:         projectID,
+					ProjectID: "some-project-id",
 				},
-				TFState: tfState,
+				TFState: "some-tf-state",
 			}))
 		})
 
