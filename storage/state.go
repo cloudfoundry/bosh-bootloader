@@ -64,14 +64,6 @@ type LB struct {
 	Domain string `json:"domain,omitempty"`
 }
 
-type Jumpbox struct {
-	Enabled   bool                   `json:"enabled"`
-	URL       string                 `json:"url"`
-	Variables string                 `json:"variables"`
-	Manifest  string                 `json:"manifest"`
-	State     map[string]interface{} `json:"state"`
-}
-
 type State struct {
 	Version                    int     `json:"version"`
 	IAAS                       string  `json:"iaas"`

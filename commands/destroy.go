@@ -271,21 +271,27 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 		return state, nil
 	}
 
-	d.logger.Step("destroying bosh director")
+	if !state.BOSH.IsEmpty() {
+		d.logger.Step("destroying bosh director")
 
-	err := d.boshManager.Delete(state, terraformOutputs)
-	if err != nil {
-		return state, err
+		err := d.boshManager.Delete(state, terraformOutputs)
+		if err != nil {
+			return state, err
+		}
+
+		state.BOSH = storage.BOSH{}
 	}
 
-	state.BOSH = storage.BOSH{}
+	if !state.Jumpbox.IsEmpty() {
+		d.logger.Step("destroying jumpbox")
 
-	err = d.boshManager.DeleteJumpbox(state, terraformOutputs)
-	if err != nil {
-		return state, err
+		err := d.boshManager.DeleteJumpbox(state, terraformOutputs)
+		if err != nil {
+			return state, err
+		}
+
+		state.Jumpbox = storage.Jumpbox{}
 	}
-
-	state.Jumpbox = storage.Jumpbox{}
 
 	return state, nil
 }
