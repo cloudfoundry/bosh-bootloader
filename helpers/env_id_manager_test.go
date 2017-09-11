@@ -3,6 +3,7 @@ package helpers_test
 import (
 	"errors"
 
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -16,6 +17,7 @@ var _ = Describe("EnvIDManager", func() {
 		envIDGenerator        *fakes.EnvIDGenerator
 		gcpClient             *fakes.GCPClient
 		infrastructureManager *fakes.InfrastructureManager
+		ec2Client             *fakes.EC2Client
 		envIDManager          helpers.EnvIDManager
 	)
 
@@ -26,8 +28,9 @@ var _ = Describe("EnvIDManager", func() {
 		gcpClient = &fakes.GCPClient{}
 
 		infrastructureManager = &fakes.InfrastructureManager{}
+		ec2Client = &fakes.EC2Client{}
 
-		envIDManager = helpers.NewEnvIDManager(envIDGenerator, gcpClient, infrastructureManager)
+		envIDManager = helpers.NewEnvIDManager(envIDGenerator, gcpClient, infrastructureManager, ec2Client)
 	})
 
 	Describe("Sync", func() {
@@ -78,6 +81,20 @@ var _ = Describe("EnvIDManager", func() {
 
 					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
 				})
+
+				It("fails if a name of a pre-existing environment is passed in", func() {
+					ec2Client.DescribeVpcsCall.Returns.Output = &ec2.DescribeVpcsOutput{
+						Vpcs: []*ec2.Vpc{&ec2.Vpc{}},
+					}
+					_, err := envIDManager.Sync(storage.State{
+						IAAS: "aws",
+					}, "existing-env")
+
+					Expect(*ec2Client.DescribeVpcsCall.Receives.Input.Filters[0].Name).To(Equal("tag:Name"))
+					Expect(*ec2Client.DescribeVpcsCall.Receives.Input.Filters[0].Values[0]).To(Equal("existing-env-vpc"))
+
+					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
+				})
 			})
 		})
 
@@ -100,6 +117,16 @@ var _ = Describe("EnvIDManager", func() {
 				}, "existing")
 
 				Expect(err).To(MatchError("failed to get network list"))
+			})
+
+			It("returns an error when the ec2 client cannot verify vpc existence", func() {
+				ec2Client.DescribeVpcsCall.Returns.Error = errors.New("raspberry")
+
+				_, err := envIDManager.Sync(storage.State{
+					IAAS: "aws",
+				}, "existing")
+
+				Expect(err).To(MatchError("Failed to check vpc existence: raspberry"))
 			})
 
 			It("returns an error when the infrastructure manager cannot verify stack existence", func() {

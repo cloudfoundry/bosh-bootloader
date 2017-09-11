@@ -97,9 +97,9 @@ func main() {
 		}
 	}
 	gcpNetworkInstancesChecker := gcp.NewNetworkInstancesChecker(gcpClientProvider.Client())
-	// EnvID
 
-	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider.Client(), infrastructureManager)
+	// EnvID
+	envIDManager := helpers.NewEnvIDManager(envIDGenerator, gcpClientProvider.Client(), infrastructureManager, awsClientProvider.GetEC2Client())
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})

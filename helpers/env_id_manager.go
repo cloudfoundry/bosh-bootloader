@@ -7,6 +7,8 @@ import (
 
 	compute "google.golang.org/api/compute/v1"
 
+	awslib "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -16,6 +18,7 @@ type EnvIDManager struct {
 	envIDGenerator        envIDGenerator
 	gcpClient             gcpClient
 	infrastructureManager infrastructureManager
+	ec2Client             ec2Client
 }
 
 type envIDGenerator interface {
@@ -26,15 +29,20 @@ type infrastructureManager interface {
 	Exists(stackName string) (bool, error)
 }
 
+type ec2Client interface {
+	DescribeVpcs(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
+}
+
 type gcpClient interface {
 	GetNetworks(name string) (*compute.NetworkList, error)
 }
 
-func NewEnvIDManager(envIDGenerator envIDGenerator, gcpClient gcpClient, infrastructureManager infrastructureManager) EnvIDManager {
+func NewEnvIDManager(envIDGenerator envIDGenerator, gcpClient gcpClient, infrastructureManager infrastructureManager, ec2Client ec2Client) EnvIDManager {
 	return EnvIDManager{
 		envIDGenerator:        envIDGenerator,
 		gcpClient:             gcpClient,
 		infrastructureManager: infrastructureManager,
+		ec2Client:             ec2Client,
 	}
 }
 
@@ -83,6 +91,24 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 			return err
 		}
 		if stackExists {
+			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
+		}
+
+		vpcs, err := e.ec2Client.DescribeVpcs(&ec2.DescribeVpcsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name: awslib.String("tag:Name"),
+					Values: []*string{
+						awslib.String(fmt.Sprintf("%s-vpc", envID)),
+					},
+				},
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("Failed to check vpc existence: %s", err)
+		}
+
+		if len(vpcs.Vpcs) > 0 {
 			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
 		}
 	}
