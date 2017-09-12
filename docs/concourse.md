@@ -47,7 +47,7 @@ bosh upload-stemcell ~/Downloads/light-bosh-stemcell-XXXX.X-google-kvm-ubuntu-tr
 2. Download and upload latest concourse [BOSH Releases](http://concourse.ci/downloads.html)
 ```
 bosh upload-release ~/Downloads/garden-runc-X.X.X.tgz
-bosh upload-release ~/Downloads/concourse-2.5.1.tgz
+bosh upload-release ~/Downloads/concourse-X.X.X.tgz
 ```
 
 ## Deploy
