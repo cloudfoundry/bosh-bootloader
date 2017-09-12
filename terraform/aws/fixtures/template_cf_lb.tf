@@ -27,7 +27,7 @@ output "external_ip" {
 }
 
 output "jumpbox_url" {
-    value = "${aws_eip.bosh_eip.public_ip}:22"
+  value = "${aws_eip.bosh_eip.public_ip}:22"
 }
 
 output "director_address" {
@@ -87,24 +87,24 @@ resource "aws_iam_policy" "bosh" {
         "ec2:TerminateInstances",
         "ec2:RegisterImage",
         "ec2:DeregisterImage"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "*"
-    },
-	{
-	  "Action": [
-	    "iam:PassRole"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "${aws_iam_role.bosh.arn}"
-	},
-	{
-	  "Action": [
-	    "elasticloadbalancing:*"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "*"
-	}
+  ],
+  "Effect": "Allow",
+  "Resource": "*"
+  },
+  {
+  "Action": [
+    "iam:PassRole"
+  ],
+  "Effect": "Allow",
+  "Resource": "${aws_iam_role.bosh.arn}"
+  },
+  {
+  "Action": [
+    "elasticloadbalancing:*"
+  ],
+  "Effect": "Allow",
+  "Resource": "*"
+  }
   ]
 }
 EOF
@@ -142,66 +142,6 @@ variable "nat_ami_map" {
   }
 }
 
-resource "aws_security_group" "nat_security_group" {
-  description = "NAT"
-  vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "udp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "icmp"
-    from_port   = -1
-    to_port     = -1
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "${var.env_id}-nat-security-group"
-  }
-}
-
-resource "aws_instance" "nat" {
-  private_ip             = "10.0.0.7"
-  instance_type          = "t2.medium"
-  subnet_id              = "${aws_subnet.bosh_subnet.id}"
-  source_dest_check      = false
-  ami                    = "${lookup(var.nat_ami_map, var.region)}"
-  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
-
-  tags {
-    Name = "${var.env_id}-nat",
-    EnvID = "${var.env_id}"
-  }
-}
-
-resource "aws_eip" "nat_eip" {
-  depends_on = ["aws_internet_gateway.ig"]
-  instance = "${aws_instance.nat.id}"
-  vpc      = true
-}
-
-output "nat_eip" {
-  value = "${aws_eip.nat_eip.public_ip}"
-}
 
 variable "access_key" {
   type = "string"
@@ -222,7 +162,7 @@ provider "aws" {
 }
 
 resource "aws_default_security_group" "default_security_group" {
-	vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${aws_vpc.vpc.id}"
 }
 
 resource "aws_security_group" "internal_security_group" {
@@ -481,32 +421,16 @@ resource "aws_subnet" "internal_subnets" {
   }
 }
 
-resource "aws_route_table" "internal_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
-}
-
-resource "aws_route" "internal_route_table" {
-  destination_cidr_block = "0.0.0.0/0"
-  instance_id = "${aws_instance.nat.id}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
-resource "aws_route_table_association" "route_internal_subnets" {
-  count          = "${length(var.availability_zones)}"
-  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
 output "internal_az_subnet_id_mapping" {
-	value = "${
-	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
-	}"
+  value = "${
+  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
+  }"
 }
 
 output "internal_az_subnet_cidr_mapping" {
-	value = "${
-	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
-	}"
+  value = "${
+  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
+  }"
 }
 
 variable "env_id" {
@@ -1660,6 +1584,6 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-	ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
+    ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
   }
 }

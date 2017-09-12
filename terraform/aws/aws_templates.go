@@ -29,7 +29,7 @@ output "external_ip" {
 }
 
 output "jumpbox_url" {
-    value = "${aws_eip.bosh_eip.public_ip}:22"
+  value = "${aws_eip.bosh_eip.public_ip}:22"
 }
 
 output "director_address" {
@@ -224,7 +224,7 @@ resource "aws_security_group" "bosh_security_group" {
   description = "{{.BOSHDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
-tags {
+  tags {
     Name = "${var.env_id}-bosh-security-group"
   }
 }
@@ -603,7 +603,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-  {{.IgnoreSSLCertificateProperties}}
+    {{.IgnoreSSLCertificateProperties}}
   }
 }
 `

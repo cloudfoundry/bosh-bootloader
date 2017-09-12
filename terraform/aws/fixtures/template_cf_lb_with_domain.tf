@@ -27,7 +27,7 @@ output "external_ip" {
 }
 
 output "jumpbox_url" {
-    value = "${aws_eip.bosh_eip.public_ip}:22"
+  value = "${aws_eip.bosh_eip.public_ip}:22"
 }
 
 output "director_address" {
@@ -222,7 +222,7 @@ resource "aws_security_group" "bosh_security_group" {
   description = "Bosh"
   vpc_id      = "${aws_vpc.vpc.id}"
 
-tags {
+  tags {
     Name = "${var.env_id}-bosh-security-group"
   }
 }
@@ -419,22 +419,6 @@ resource "aws_subnet" "internal_subnets" {
   lifecycle {
     ignore_changes = ["cidr_block", "availability_zone"]
   }
-}
-
-resource "aws_route_table" "internal_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
-}
-
-resource "aws_route" "internal_route_table" {
-  destination_cidr_block = "0.0.0.0/0"
-  instance_id = "${aws_instance.nat.id}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
-resource "aws_route_table_association" "route_internal_subnets" {
-  count          = "${length(var.availability_zones)}"
-  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
 output "internal_az_subnet_id_mapping" {
@@ -1600,7 +1584,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-  ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
+    ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
   }
 }
 
@@ -1850,6 +1834,7 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   from_port = 1801
   source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
 }
+
 # create NAT after everything else
 
 resource "aws_security_group" "nat_security_group" {
@@ -1920,3 +1905,18 @@ output "nat_eip" {
   value = "${aws_eip.nat_eip.public_ip}"
 }
 
+resource "aws_route_table" "internal_route_table" {
+  vpc_id = "${aws_vpc.vpc.id}"
+}
+
+resource "aws_route" "internal_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  instance_id = "${aws_instance.nat.id}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
+}
+
+resource "aws_route_table_association" "route_internal_subnets" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
+}
