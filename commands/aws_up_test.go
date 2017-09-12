@@ -18,14 +18,13 @@ import (
 var _ = Describe("AWSUp", func() {
 	Describe("Execute", func() {
 		var (
-			command                    commands.AWSUp
-			boshManager                *fakes.BOSHManager
-			terraformManager           *fakes.TerraformManager
-			cloudConfigManager         *fakes.CloudConfigManager
-			brokenEnvironmentValidator *fakes.BrokenEnvironmentValidator
-			stateStore                 *fakes.StateStore
-			awsClientProvider          *fakes.AWSClientProvider
-			envIDManager               *fakes.EnvIDManager
+			command            commands.AWSUp
+			boshManager        *fakes.BOSHManager
+			terraformManager   *fakes.TerraformManager
+			cloudConfigManager *fakes.CloudConfigManager
+			stateStore         *fakes.StateStore
+			awsClientProvider  *fakes.AWSClientProvider
+			envIDManager       *fakes.EnvIDManager
 		)
 
 		BeforeEach(func() {
@@ -68,13 +67,9 @@ var _ = Describe("AWSUp", func() {
 				EnvID: "bbl-lake-time-stamp",
 			}
 
-			brokenEnvironmentValidator = &fakes.BrokenEnvironmentValidator{}
-
-			command = commands.NewAWSUp(
-				boshManager,
+			command = commands.NewAWSUp(boshManager,
 				cloudConfigManager, stateStore, awsClientProvider,
-				envIDManager, terraformManager, brokenEnvironmentValidator,
-			)
+				envIDManager, terraformManager)
 		})
 
 		It("retrieves a client with the provided credentials", func() {
@@ -527,39 +522,6 @@ var _ = Describe("AWSUp", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
 				err := command.Execute(commands.AWSUpConfig{}, storage.State{})
 				Expect(err).To(MatchError("failed to update"))
-			})
-
-			It("returns an error when the broken environment validator fails", func() {
-				brokenEnvironmentValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
-				err := command.Execute(commands.AWSUpConfig{}, storage.State{
-					IAAS: "aws",
-					AWS: storage.AWS{
-						Region: "some-aws-region",
-					},
-					BOSH: storage.BOSH{
-						DirectorAddress: "some-director-address",
-					},
-					Stack: storage.Stack{
-						Name: "some-stack-name",
-					},
-				})
-
-				Expect(brokenEnvironmentValidator.ValidateCall.Receives.State).To(Equal(storage.State{
-					IAAS: "aws",
-					AWS: storage.AWS{
-						Region: "some-aws-region",
-					},
-					BOSH: storage.BOSH{
-						DirectorAddress: "some-director-address",
-					},
-					Stack: storage.Stack{
-						Name: "some-stack-name",
-					},
-				}))
-
-				Expect(err).To(MatchError("failed to validate"))
-
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
 			})
 
 			It("returns an error when the terraform manager cannot get terraform outputs", func() {

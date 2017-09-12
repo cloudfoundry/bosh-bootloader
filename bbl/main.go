@@ -145,7 +145,6 @@ func main() {
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
 
 	// Environment Validators
-	awsBrokenEnvironmentValidator := awsapplication.NewBrokenEnvironmentValidator(infrastructureManager)
 	awsEnvironmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
 	gcpEnvironmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 
@@ -159,7 +158,7 @@ func main() {
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 
 	// Subcommands
-	awsUp := commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager, awsBrokenEnvironmentValidator)
+	awsUp := commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, awsClientProvider, envIDManager, terraformManager)
 	awsCreateLBs := commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, awsEnvironmentValidator)
 	awsLBs := commands.NewAWSLBs(terraformManager, logger)
 	awsUpdateLBs := commands.NewAWSUpdateLBs(awsCreateLBs)

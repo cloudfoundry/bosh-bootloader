@@ -37,18 +37,13 @@ type cloudConfigManager interface {
 	Generate(state storage.State) (string, error)
 }
 
-type brokenEnvironmentValidator interface {
-	Validate(state storage.State) error
-}
-
 type AWSUp struct {
-	boshManager                boshManager
-	cloudConfigManager         cloudConfigManager
-	stateStore                 stateStore
-	configProvider             configProvider
-	envIDManager               envIDManager
-	terraformManager           terraformApplier
-	brokenEnvironmentValidator brokenEnvironmentValidator
+	boshManager        boshManager
+	cloudConfigManager cloudConfigManager
+	stateStore         stateStore
+	configProvider     configProvider
+	envIDManager       envIDManager
+	terraformManager   terraformApplier
 }
 
 type AWSUpConfig struct {
@@ -63,20 +58,16 @@ type AWSUpConfig struct {
 	Jumpbox         bool
 }
 
-func NewAWSUp(
-	boshManager boshManager,
-	cloudConfigManager cloudConfigManager,
+func NewAWSUp(boshManager boshManager, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
-	terraformManager terraformApplier, brokenEnvironmentValidator brokenEnvironmentValidator) AWSUp {
-
+	terraformManager terraformApplier) AWSUp {
 	return AWSUp{
-		boshManager:                boshManager,
-		cloudConfigManager:         cloudConfigManager,
-		stateStore:                 stateStore,
-		configProvider:             configProvider,
-		envIDManager:               envIDManager,
-		terraformManager:           terraformManager,
-		brokenEnvironmentValidator: brokenEnvironmentValidator,
+		boshManager:        boshManager,
+		cloudConfigManager: cloudConfigManager,
+		stateStore:         stateStore,
+		configProvider:     configProvider,
+		envIDManager:       envIDManager,
+		terraformManager:   terraformManager,
 	}
 }
 
@@ -182,11 +173,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 }
 
 func (u AWSUp) checkForFastFails(state storage.State, config AWSUpConfig) error {
-	err := u.brokenEnvironmentValidator.Validate(state)
-	if err != nil {
-		return err
-	}
-
 	if state.Stack.Name != "" && state.Stack.BOSHAZ != config.BOSHAZ {
 		return errors.New("The --aws-bosh-az cannot be changed for existing environments.")
 	}
