@@ -639,6 +639,8 @@ var _ = Describe("InitializeState", func() {
 					"The iaas type cannot be changed for an existing environment. The current iaas type is gcp."),
 				Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--gcp-region", "some-other-region"},
 					"The region cannot be changed for an existing environment. The current region is some-region."),
+				Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-zone", "some-other-zone"},
+					"The zone cannot be changed for an existing environment. The current zone is some-zone."),
 			)
 		})
 	})

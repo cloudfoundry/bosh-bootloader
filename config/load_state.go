@@ -121,6 +121,10 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.GCP.ProjectID = globalFlags.GCPProjectID
 	}
 	if globalFlags.GCPZone != "" {
+		if state.GCP.Zone != "" && globalFlags.GCPZone != state.GCP.Zone {
+			zoneMismatch := fmt.Sprintf("The zone cannot be changed for an existing environment. The current zone is %s.", state.GCP.Zone)
+			return ParsedFlags{}, errors.New(zoneMismatch)
+		}
 		state.GCP.Zone = globalFlags.GCPZone
 	}
 	if globalFlags.GCPRegion != "" {

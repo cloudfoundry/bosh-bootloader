@@ -199,19 +199,3 @@ func (u GCPUp) validateState(state storage.State) error {
 
 	return nil
 }
-
-func fastFailConflictingGCPState(configGCP storage.GCP, stateGCP storage.GCP) error {
-	if stateGCP.Region != "" && stateGCP.Region != configGCP.Region {
-		return errors.New(fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", stateGCP.Region))
-	}
-
-	if stateGCP.Zone != "" && stateGCP.Zone != configGCP.Zone {
-		return errors.New(fmt.Sprintf("The zone cannot be changed for an existing environment. The current zone is %s.", stateGCP.Zone))
-	}
-
-	if stateGCP.ProjectID != "" && stateGCP.ProjectID != configGCP.ProjectID {
-		return errors.New(fmt.Sprintf("The project id cannot be changed for an existing environment. The current project id is %s.", stateGCP.ProjectID))
-	}
-
-	return nil
-}
