@@ -27,6 +27,7 @@ _testmain.go
 bbl-state.json
 state.json*
 integration_config.json
+/*.json
 
 # Debug symbols
 bbl/debug
