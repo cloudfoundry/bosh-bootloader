@@ -46,8 +46,7 @@ var _ = Describe("Manager", func() {
 			Executor:              executor,
 			TemplateGenerator:     templateGenerator,
 			InputGenerator:        inputGenerator,
-			AWSOutputGenerator:    outputGenerator,
-			GCPOutputGenerator:    outputGenerator,
+			OutputGenerator:       outputGenerator,
 			TerraformOutputBuffer: &terraformOutputBuffer,
 			Logger:                logger,
 			StackMigrator:         migrator,
@@ -101,11 +100,51 @@ var _ = Describe("Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				"validating whether stack needs to be migrated",
 				"generating terraform template",
 				"generating terraform variables",
 				"applying terraform template",
 			}))
+		})
+
+		Context("when the iaas is aws", func() {
+			It("logs steps", func() {
+				_, err := manager.Apply(storage.State{IAAS: "aws"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+					"validating whether stack needs to be migrated",
+					"generating terraform template",
+					"generating terraform variables",
+					"applying terraform template",
+				}))
+			})
+
+			It("returns a state with new tfState and output from executor apply", func() {
+				terraformOutputBuffer.Write([]byte("some-updated-tf-state"))
+
+				awsState := storage.State{
+					IAAS:    "aws",
+					EnvID:   "some-env-id",
+					TFState: "some-tf-state",
+				}
+				expectedAWSState := awsState
+				expectedAWSState.TFState = "some-updated-tf-state"
+				state, err := manager.Apply(awsState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(migrator.MigrateCallCount()).To(Equal(1))
+				Expect(migrator.MigrateArgsForCall(0)).To(Equal(awsState))
+
+				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(awsState))
+				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(awsState))
+
+				Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{
+					"env_id": awsState.EnvID,
+				}))
+				Expect(executor.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
+				Expect(executor.ApplyCall.Receives.Template).To(Equal(string("some-updated-tf-state")))
+				Expect(state).To(Equal(expectedAWSState))
+			})
 		})
 
 		It("returns a state with new tfState and output from executor apply", func() {
@@ -114,11 +153,9 @@ var _ = Describe("Manager", func() {
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(migrator.MigrateCallCount()).To(Equal(1))
-			Expect(migrator.MigrateArgsForCall(0)).To(Equal(incomingState))
+			Expect(migrator.MigrateCallCount()).To(Equal(0))
 
 			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
-
 			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{

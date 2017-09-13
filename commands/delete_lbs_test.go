@@ -16,24 +16,20 @@ var _ = Describe("DeleteLBs", func() {
 	var (
 		command commands.DeleteLBs
 
-		awsDeleteLBs   *fakes.AWSDeleteLBs
-		azureDeleteLBs *fakes.AzureDeleteLBs
-		gcpDeleteLBs   *fakes.GCPDeleteLBs
+		deleteLBs      *fakes.DeleteLBs
 		stateValidator *fakes.StateValidator
 		logger         *fakes.Logger
 		boshManager    *fakes.BOSHManager
 	)
 
 	BeforeEach(func() {
-		awsDeleteLBs = &fakes.AWSDeleteLBs{}
-		azureDeleteLBs = &fakes.AzureDeleteLBs{}
-		gcpDeleteLBs = &fakes.GCPDeleteLBs{}
+		deleteLBs = &fakes.DeleteLBs{}
 		stateValidator = &fakes.StateValidator{}
 		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 
-		command = commands.NewDeleteLBs(awsDeleteLBs, azureDeleteLBs, gcpDeleteLBs, logger, stateValidator, boshManager)
+		command = commands.NewDeleteLBs(deleteLBs, logger, stateValidator, boshManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -74,63 +70,19 @@ var _ = Describe("DeleteLBs", func() {
 	})
 
 	Describe("Execute", func() {
-		Context("when iaas is aws", func() {
-			It("calls aws delete lbs", func() {
-				err := command.Execute([]string{}, storage.State{
-					IAAS: "aws",
-					Stack: storage.Stack{
-						LBType: "concourse",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
-				Expect(awsDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
-					IAAS: "aws",
-					Stack: storage.Stack{
-						LBType: "concourse",
-					},
-				}))
-				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
+		It("calls  delete lbs", func() {
+			err := command.Execute([]string{}, storage.State{
+				LB: storage.LB{
+					Type: "concourse",
+				},
 			})
-		})
-
-		Context("when iaas is azure", func() {
-			It("calls azure delete lbs", func() {
-				err := command.Execute([]string{}, storage.State{
-					IAAS: "azure",
-					LB: storage.LB{
-						Type: "cf",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(azureDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
-				Expect(azureDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
-					IAAS: "azure",
-					LB: storage.LB{
-						Type: "cf",
-					},
-				}))
-			})
-		})
-
-		Context("when iaas is gcp", func() {
-			It("calls gcp delete lbs", func() {
-				err := command.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
-				Expect(gcpDeleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				}))
-				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
-			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deleteLBs.ExecuteCall.CallCount).To(Equal(1))
+			Expect(deleteLBs.ExecuteCall.Receives.State).To(Equal(storage.State{
+				LB: storage.LB{
+					Type: "concourse",
+				},
+			}))
 		})
 
 		Context("when --skip-if-missing is provided", func() {
@@ -140,9 +92,7 @@ var _ = Describe("DeleteLBs", func() {
 				}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
-				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
-
+				Expect(deleteLBs.ExecuteCall.CallCount).To(Equal(0))
 				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
 			},
 				Entry("no-ops when LB type does not exist in state stack", storage.State{
@@ -156,32 +106,6 @@ var _ = Describe("DeleteLBs", func() {
 					},
 				}),
 			)
-
-			DescribeTable("deletes the LB", func(state storage.State) {
-				err := command.Execute([]string{
-					"--skip-if-missing",
-				}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				if state.IAAS == "aws" {
-					Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
-				} else {
-					Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(1))
-				}
-			},
-				Entry("deletes the LB when LB type exists in state stack", storage.State{
-					IAAS: "aws",
-					Stack: storage.Stack{
-						LBType: "concourse",
-					},
-				}),
-				Entry("deletes the LB when LB type exists in state LB", storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				}),
-			)
 		})
 
 		Context("failure cases", func() {
@@ -189,15 +113,7 @@ var _ = Describe("DeleteLBs", func() {
 				err := command.Execute([]string{"--unknown-flag"}, storage.State{})
 				Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
 
-				Expect(awsDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
-				Expect(gcpDeleteLBs.ExecuteCall.CallCount).To(Equal(0))
-			})
-
-			It("returns an error when an unknown iaas is in the state", func() {
-				err := command.Execute([]string{}, storage.State{
-					IAAS: "some-unknown-iaas",
-				})
-				Expect(err).To(MatchError(`"some-unknown-iaas" is an invalid iaas type in state, supported iaas types are: [gcp, aws]`))
+				Expect(deleteLBs.ExecuteCall.CallCount).To(Equal(0))
 			})
 		})
 	})

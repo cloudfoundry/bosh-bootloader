@@ -2,7 +2,7 @@ package fakes
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-type AWSDeleteLBs struct {
+type DeleteLBs struct {
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {
@@ -15,7 +15,7 @@ type AWSDeleteLBs struct {
 	}
 }
 
-func (a *AWSDeleteLBs) Execute(state storage.State) error {
+func (a *DeleteLBs) Execute(state storage.State) error {
 	a.ExecuteCall.CallCount++
 	a.ExecuteCall.Receives.State = state
 	return a.ExecuteCall.Returns.Error

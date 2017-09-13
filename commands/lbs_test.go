@@ -15,20 +15,15 @@ var _ = Describe("LBs", func() {
 	var (
 		lbsCommand commands.LBs
 
-		gcpLBs         *fakes.GCPLBs
-		awsLBs         *fakes.AWSLBs
+		lbs            *fakes.LBs
 		stateValidator *fakes.StateValidator
-		logger         *fakes.Logger
 	)
 
 	BeforeEach(func() {
-		gcpLBs = &fakes.GCPLBs{}
-		awsLBs = &fakes.AWSLBs{}
-
+		lbs = &fakes.LBs{}
 		stateValidator = &fakes.StateValidator{}
-		logger = &fakes.Logger{}
 
-		lbsCommand = commands.NewLBs(gcpLBs, awsLBs, stateValidator, logger)
+		lbsCommand = commands.NewLBs(lbs, stateValidator)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -44,48 +39,22 @@ var _ = Describe("LBs", func() {
 	})
 
 	Describe("Execute", func() {
-		Context("when bbl'd up on aws", func() {
-			It("prints LB ips", func() {
-				incomingState := storage.State{
-					IAAS: "aws",
-				}
-				err := lbsCommand.Execute([]string{}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
+		It("prints LB ips", func() {
+			incomingState := storage.State{
+				IAAS: "aws",
+			}
+			err := lbsCommand.Execute([]string{}, incomingState)
+			Expect(err).NotTo(HaveOccurred())
 
-				Expect(awsLBs.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
-				Expect(awsLBs.ExecuteCall.Receives.State).To(Equal(incomingState))
-			})
-		})
-
-		Context("when bbl'd up on gcp", func() {
-			It("prints LB ips", func() {
-				incomingState := storage.State{
-					IAAS: "gcp",
-				}
-				err := lbsCommand.Execute([]string{}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(gcpLBs.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
-				Expect(gcpLBs.ExecuteCall.Receives.State).To(Equal(incomingState))
-			})
+			Expect(lbs.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{}))
+			Expect(lbs.ExecuteCall.Receives.State).To(Equal(incomingState))
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the AWSLBs fails", func() {
-				awsLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+			It("returns an error when LBs fails", func() {
+				lbs.ExecuteCall.Returns.Error = errors.New("something bad happened")
 
-				err := lbsCommand.Execute([]string{}, storage.State{
-					IAAS: "aws",
-				})
-				Expect(err).To(MatchError("something bad happened"))
-			})
-
-			It("returns an error when the GCPLBs fails", func() {
-				gcpLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
-
-				err := lbsCommand.Execute([]string{}, storage.State{
-					IAAS: "gcp",
-				})
+				err := lbsCommand.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("something bad happened"))
 			})
 		})

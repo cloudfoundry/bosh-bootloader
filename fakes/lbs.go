@@ -2,7 +2,7 @@ package fakes
 
 import "github.com/cloudfoundry/bosh-bootloader/storage"
 
-type AWSLBs struct {
+type LBs struct {
 	Name        string
 	ExecuteCall struct {
 		CallCount int
@@ -16,7 +16,7 @@ type AWSLBs struct {
 	}
 }
 
-func (u *AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
+func (u *LBs) Execute(subcommandFlags []string, state storage.State) error {
 	u.ExecuteCall.CallCount++
 	u.ExecuteCall.Receives.SubcommandFlags = subcommandFlags
 	u.ExecuteCall.Receives.State = state

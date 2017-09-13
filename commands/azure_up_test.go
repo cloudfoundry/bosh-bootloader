@@ -74,7 +74,7 @@ var _ = Describe("AzureUp", func() {
 		})
 
 		It("creates the environment", func() {
-			err := azureUp.Execute(commands.AzureUpConfig{}, state)
+			err := azureUp.Execute(commands.UpConfig{}, state)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.StepCall.CallCount).To(Equal(1))
@@ -138,7 +138,7 @@ var _ = Describe("AzureUp", func() {
 			})
 
 			It("returns the error", func() {
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{
 					Azure: storage.Azure{},
 				})
 				Expect(err).To(MatchError("Error: credentials are invalid"))
@@ -162,7 +162,7 @@ var _ = Describe("AzureUp", func() {
 
 			Context("when called with --name", func() {
 				It("creates the environment", func() {
-					err := azureUp.Execute(commands.AzureUpConfig{Name: "myenvid"}, expectedEnvIDState)
+					err := azureUp.Execute(commands.UpConfig{Name: "myenvid"}, expectedEnvIDState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
@@ -173,7 +173,7 @@ var _ = Describe("AzureUp", func() {
 
 			It("fast fails if an environment with the same name already exists", func() {
 				envIDManager.SyncCall.Returns.Error = errors.New("environment already exists")
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("environment already exists"))
 			})
@@ -182,7 +182,7 @@ var _ = Describe("AzureUp", func() {
 		Context("when state store fails to set after syncing env id", func() {
 			It("returns an error", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("set call failed")}}
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("set call failed"))
 			})
@@ -202,7 +202,7 @@ var _ = Describe("AzureUp", func() {
 			It("saves the terraform state when the applier fails", func() {
 				terraformManager.ApplyCall.Returns.Error = terraformManagerError
 
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("failed to apply"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(2))
@@ -213,7 +213,7 @@ var _ = Describe("AzureUp", func() {
 				terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
 				terraformManager.ApplyCall.Returns.Error = terraformManagerError
 
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nsome-bbl-state-error"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
@@ -222,7 +222,7 @@ var _ = Describe("AzureUp", func() {
 			It("returns an error if applier fails with non terraform manager apply error", func() {
 				terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
 
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("failed to apply"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
@@ -233,7 +233,7 @@ var _ = Describe("AzureUp", func() {
 				terraformManager.ApplyCall.Returns.Error = terraformManagerError
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
 
-				err := azureUp.Execute(commands.AzureUpConfig{}, state)
+				err := azureUp.Execute(commands.UpConfig{}, state)
 
 				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(2))
@@ -244,7 +244,7 @@ var _ = Describe("AzureUp", func() {
 		Context("when state store fails to set after terraform apply", func() {
 			It("returns an error when state store fails to set after syncing env id", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("set call failed")}}
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("set call failed"))
 			})
@@ -253,7 +253,7 @@ var _ = Describe("AzureUp", func() {
 		Context("when terraform manager get outputs fails", func() {
 			It("returns an error", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("get outputs call failed")
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("get outputs call failed"))
 			})
@@ -262,7 +262,7 @@ var _ = Describe("AzureUp", func() {
 		Context("when bosh manager create director fails", func() {
 			It("returns an error", func() {
 				boshManager.CreateDirectorCall.Returns.Error = errors.New("create director failed")
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("create director failed"))
 			})
@@ -271,7 +271,7 @@ var _ = Describe("AzureUp", func() {
 		Context("when state store fails to set after create director", func() {
 			It("returns an error", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("set call failed")}}
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("set call failed"))
 			})
@@ -280,7 +280,7 @@ var _ = Describe("AzureUp", func() {
 		Context("when cloud config manager update fails", func() {
 			It("returns an error", func() {
 				cloudConfigManager.UpdateCall.Returns.Error = errors.New("update failed")
-				err := azureUp.Execute(commands.AzureUpConfig{}, storage.State{})
+				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
 
 				Expect(err).To(MatchError("update failed"))
 			})
@@ -292,7 +292,7 @@ var _ = Describe("AzureUp", func() {
 			})
 
 			It("does not create a bosh director or update cloud config", func() {
-				err := azureUp.Execute(commands.AzureUpConfig{
+				err := azureUp.Execute(commands.UpConfig{
 					NoDirector: true,
 				}, storage.State{
 					Azure: storage.Azure{

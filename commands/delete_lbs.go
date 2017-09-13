@@ -1,39 +1,25 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type DeleteLBs struct {
-	awsDeleteLBs   awsDeleteLBs
-	azureDeleteLBs azureDeleteLBs
-	gcpDeleteLBs   gcpDeleteLBs
+	deleteLBs      DeleteLBsCmd
 	logger         logger
 	stateValidator stateValidator
 	boshManager    boshManager
 }
 
-type awsDeleteLBs interface {
+type DeleteLBsCmd interface {
 	Execute(state storage.State) error
 }
 
-type azureDeleteLBs interface {
-	Execute(state storage.State) error
-}
-
-type gcpDeleteLBs interface {
-	Execute(state storage.State) error
-}
-
-func NewDeleteLBs(awsDeleteLBs awsDeleteLBs, azureDeleteLBs azureDeleteLBs, gcpDeleteLBs gcpDeleteLBs,
+func NewDeleteLBs(deleteLBs DeleteLBsCmd,
 	logger logger, stateValidator stateValidator, boshManager boshManager) DeleteLBs {
 	return DeleteLBs{
-		awsDeleteLBs:   awsDeleteLBs,
-		azureDeleteLBs: azureDeleteLBs,
-		gcpDeleteLBs:   gcpDeleteLBs,
+		deleteLBs:      deleteLBs,
 		logger:         logger,
 		stateValidator: stateValidator,
 		boshManager:    boshManager,
@@ -67,18 +53,8 @@ func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 		return nil
 	}
 
-	switch state.IAAS {
-	case "aws":
-		return d.awsDeleteLBs.Execute(state)
-	case "azure":
-		return d.azureDeleteLBs.Execute(state)
-	case "gcp":
-		return d.gcpDeleteLBs.Execute(state)
-	default:
-		return fmt.Errorf("%q is an invalid iaas type in state, supported iaas types are: [gcp, aws]", state.IAAS)
-	}
+	return d.deleteLBs.Execute(state)
 
-	return nil
 }
 
 func (DeleteLBs) parseFlags(subcommandFlags []string) (deleteLBsConfig, error) {

@@ -3,7 +3,6 @@ package terraform
 import (
 	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/coreos/go-semver/semver"
@@ -11,11 +10,9 @@ import (
 
 type Manager struct {
 	executor              executor
-	templateGenerator     templateGenerator
-	inputGenerator        inputGenerator
-	awsOutputGenerator    outputGenerator
-	azureOutputGenerator  outputGenerator
-	gcpOutputGenerator    outputGenerator
+	templateGenerator     TemplateGenerator
+	inputGenerator        InputGenerator
+	outputGenerator       OutputGenerator
 	terraformOutputBuffer *bytes.Buffer
 	logger                logger
 	stackMigrator         stackMigrator
@@ -27,21 +24,21 @@ type executor interface {
 	Apply(inputs map[string]string, terraformTemplate, tfState string) (string, error)
 }
 
-type templateGenerator interface {
-	Generate(storage.State) string
-}
-
 //go:generate counterfeiter -o ./fakes/stack_migrator.go --fake-name StackMigrator . stackMigrator
 type stackMigrator interface {
 	Migrate(state storage.State) (storage.State, error)
 }
 
-type inputGenerator interface {
+type InputGenerator interface {
 	Generate(storage.State) (map[string]string, error)
 }
 
-type outputGenerator interface {
+type OutputGenerator interface {
 	Generate(tfState string) (map[string]interface{}, error)
+}
+
+type TemplateGenerator interface {
+	Generate(storage.State) string
 }
 
 type logger interface {
@@ -50,11 +47,9 @@ type logger interface {
 
 type NewManagerArgs struct {
 	Executor              executor
-	TemplateGenerator     templateGenerator
-	InputGenerator        inputGenerator
-	AWSOutputGenerator    outputGenerator
-	AzureOutputGenerator  outputGenerator
-	GCPOutputGenerator    outputGenerator
+	TemplateGenerator     TemplateGenerator
+	InputGenerator        InputGenerator
+	OutputGenerator       OutputGenerator
 	TerraformOutputBuffer *bytes.Buffer
 	Logger                logger
 	StackMigrator         stackMigrator
@@ -65,9 +60,7 @@ func NewManager(args NewManagerArgs) Manager {
 		executor:              args.Executor,
 		templateGenerator:     args.TemplateGenerator,
 		inputGenerator:        args.InputGenerator,
-		awsOutputGenerator:    args.AWSOutputGenerator,
-		azureOutputGenerator:  args.AzureOutputGenerator,
-		gcpOutputGenerator:    args.GCPOutputGenerator,
+		outputGenerator:       args.OutputGenerator,
 		terraformOutputBuffer: args.TerraformOutputBuffer,
 		logger:                args.Logger,
 		stackMigrator:         args.StackMigrator,
@@ -115,15 +108,16 @@ func (m Manager) ValidateVersion() error {
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	var err error
 
-	// AWS only
-	m.logger.Step("validating whether stack needs to be migrated")
-	bblState, err = m.stackMigrator.Migrate(bblState)
+	if bblState.IAAS == "aws" {
+		m.logger.Step("validating whether stack needs to be migrated")
+		bblState, err = m.stackMigrator.Migrate(bblState)
 
-	switch err.(type) {
-	case executorError:
-		return storage.State{}, NewManagerError(bblState, err.(executorError))
-	case error:
-		return storage.State{}, err
+		switch err.(type) {
+		case executorError:
+			return storage.State{}, NewManagerError(bblState, err.(executorError))
+		case error:
+			return storage.State{}, err
+		}
 	}
 
 	m.logger.Step("generating terraform template")
@@ -188,16 +182,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 }
 
 func (m Manager) GetOutputs(state storage.State) (map[string]interface{}, error) {
-	switch state.IAAS {
-	case "gcp":
-		return m.gcpOutputGenerator.Generate(state.TFState)
-	case "aws":
-		return m.awsOutputGenerator.Generate(state.TFState)
-	case "azure":
-		return m.azureOutputGenerator.Generate(state.TFState)
-	default:
-		return map[string]interface{}{}, fmt.Errorf("invalid iaas: %q", state.IAAS)
-	}
+	return m.outputGenerator.Generate(state.TFState)
 }
 
 func readAndReset(buf *bytes.Buffer) string {

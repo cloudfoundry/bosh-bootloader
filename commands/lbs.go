@@ -5,26 +5,18 @@ import (
 )
 
 type LBs struct {
-	gcpLBs         gcpLBs
-	awsLBs         awsLBs
+	lbs            LBsCmd
 	stateValidator stateValidator
-	logger         logger
 }
 
-type gcpLBs interface {
+type LBsCmd interface {
 	Execute([]string, storage.State) error
 }
 
-type awsLBs interface {
-	Execute([]string, storage.State) error
-}
-
-func NewLBs(gcpLBs gcpLBs, awsLBs awsLBs, stateValidator stateValidator, logger logger) LBs {
+func NewLBs(lbs LBsCmd, stateValidator stateValidator) LBs {
 	return LBs{
-		gcpLBs:         gcpLBs,
-		awsLBs:         awsLBs,
+		lbs:            lbs,
 		stateValidator: stateValidator,
-		logger:         logger,
 	}
 }
 
@@ -38,16 +30,5 @@ func (l LBs) CheckFastFails(subcommandFlags []string, state storage.State) error
 }
 
 func (l LBs) Execute(subcommandFlags []string, state storage.State) error {
-	switch state.IAAS {
-	case "aws":
-		if err := l.awsLBs.Execute(subcommandFlags, state); err != nil {
-			return err
-		}
-	case "gcp":
-		if err := l.gcpLBs.Execute(subcommandFlags, state); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return l.lbs.Execute(subcommandFlags, state)
 }

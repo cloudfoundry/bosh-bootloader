@@ -10,11 +10,6 @@ type azureClient interface {
 	ValidateCredentials(subscriptionID, tenantID, clientID, clientSecret string) error
 }
 
-type AzureUpConfig struct {
-	Name       string
-	NoDirector bool
-}
-
 type AzureUp struct {
 	azureClient        azureClient
 	boshManager        boshManager
@@ -43,7 +38,7 @@ func NewAzureUp(azureClient azureClient,
 	}
 }
 
-func (u AzureUp) Execute(upConfig AzureUpConfig, state storage.State) error {
+func (u AzureUp) Execute(upConfig UpConfig, state storage.State) error {
 	u.logger.Step("verifying credentials")
 	err := u.azureClient.ValidateCredentials(state.Azure.SubscriptionID, state.Azure.TenantID, state.Azure.ClientID, state.Azure.ClientSecret)
 	if err != nil {

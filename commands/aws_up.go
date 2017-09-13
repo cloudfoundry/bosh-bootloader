@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
@@ -28,10 +27,6 @@ type stateStore interface {
 	Set(state storage.State) error
 }
 
-type configProvider interface {
-	SetConfig(config aws.Config)
-}
-
 type cloudConfigManager interface {
 	Update(state storage.State) error
 	Generate(state storage.State) (string, error)
@@ -41,52 +36,23 @@ type AWSUp struct {
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
-	configProvider     configProvider
 	envIDManager       envIDManager
 	terraformManager   terraformApplier
 }
 
-type AWSUpConfig struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Region          string
-	OpsFilePath     string
-	BOSHAZ          string
-	Name            string
-	NoDirector      bool
-	Terraform       bool
-	Jumpbox         bool
-}
-
 func NewAWSUp(boshManager boshManager, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, configProvider configProvider, envIDManager envIDManager,
-	terraformManager terraformApplier) AWSUp {
+	stateStore stateStore, envIDManager envIDManager, terraformManager terraformApplier) AWSUp {
 	return AWSUp{
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
-		configProvider:     configProvider,
 		envIDManager:       envIDManager,
 		terraformManager:   terraformManager,
 	}
 }
 
-func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
+func (u AWSUp) Execute(config UpConfig, state storage.State) error {
 	state.IAAS = "aws"
-
-	if u.awsCredentialsPresent(config) {
-		state.AWS.AccessKeyID = config.AccessKeyID
-		state.AWS.SecretAccessKey = config.SecretAccessKey
-		state.AWS.Region = config.Region
-		if err := u.stateStore.Set(state); err != nil {
-			return err
-		}
-		u.configProvider.SetConfig(aws.Config{
-			AccessKeyID:     config.AccessKeyID,
-			SecretAccessKey: config.SecretAccessKey,
-			Region:          config.Region,
-		})
-	}
 
 	if config.NoDirector {
 		if !state.BOSH.IsEmpty() {
@@ -96,11 +62,7 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		state.NoDirector = true
 	}
 
-	err := u.checkForFastFails(state, config)
-	if err != nil {
-		return err
-	}
-
+	var err error
 	state, err = u.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return err
@@ -110,7 +72,6 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		return err
 	}
 
-	state.Stack.BOSHAZ = config.BOSHAZ
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {
 		return handleTerraformError(err, u.stateStore)
@@ -128,8 +89,8 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 
 	if !state.NoDirector {
 		opsFile := []byte{}
-		if config.OpsFilePath != "" {
-			opsFile, err = ioutil.ReadFile(config.OpsFilePath)
+		if config.OpsFile != "" {
+			opsFile, err = ioutil.ReadFile(config.OpsFile)
 			if err != nil {
 				return err
 			}
@@ -170,16 +131,4 @@ func (u AWSUp) Execute(config AWSUpConfig, state storage.State) error {
 		}
 	}
 	return nil
-}
-
-func (u AWSUp) checkForFastFails(state storage.State, config AWSUpConfig) error {
-	if state.Stack.Name != "" && state.Stack.BOSHAZ != config.BOSHAZ {
-		return errors.New("The --aws-bosh-az cannot be changed for existing environments.")
-	}
-
-	return nil
-}
-
-func (AWSUp) awsCredentialsPresent(config AWSUpConfig) bool {
-	return config.AccessKeyID != "" && config.SecretAccessKey != "" && config.Region != ""
 }

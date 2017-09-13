@@ -10,8 +10,8 @@ type AzureUp struct {
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {
-			AzureUpConfig commands.AzureUpConfig
-			State         storage.State
+			UpConfig commands.UpConfig
+			State    storage.State
 		}
 		Returns struct {
 			Error error
@@ -19,9 +19,9 @@ type AzureUp struct {
 	}
 }
 
-func (u *AzureUp) Execute(azureUpConfig commands.AzureUpConfig, state storage.State) error {
+func (u *AzureUp) Execute(upConfig commands.UpConfig, state storage.State) error {
 	u.ExecuteCall.CallCount++
-	u.ExecuteCall.Receives.AzureUpConfig = azureUpConfig
+	u.ExecuteCall.Receives.UpConfig = upConfig
 	u.ExecuteCall.Receives.State = state
 	return u.ExecuteCall.Returns.Error
 }

@@ -12,42 +12,24 @@ import (
 )
 
 type Up struct {
-	awsUp       awsUp
-	azureUp     azureUp
-	gcpUp       gcpUp
-	envGetter   envGetter
+	upCmd       UpCmd
 	boshManager boshManager
 }
 
-type awsUp interface {
-	Execute(awsUpConfig AWSUpConfig, state storage.State) error
+type UpCmd interface {
+	Execute(upConfig UpConfig, state storage.State) error
 }
 
-type gcpUp interface {
-	Execute(gcpUpConfig GCPUpConfig, state storage.State) error
+type UpConfig struct {
+	Name       string
+	OpsFile    string
+	NoDirector bool
+	Jumpbox    bool
 }
 
-type azureUp interface {
-	Execute(azureUpConfig AzureUpConfig, state storage.State) error
-}
-
-type envGetter interface {
-	Get(name string) string
-}
-
-type upConfig struct {
-	name       string
-	opsFile    string
-	noDirector bool
-	jumpbox    bool
-}
-
-func NewUp(awsUp awsUp, gcpUp gcpUp, azureUp azureUp, envGetter envGetter, boshManager boshManager) Up {
+func NewUp(upCmd UpCmd, boshManager boshManager) Up {
 	return Up{
-		awsUp:       awsUp,
-		azureUp:     azureUp,
-		gcpUp:       gcpUp,
-		envGetter:   envGetter,
+		upCmd:       upCmd,
 		boshManager: boshManager,
 	}
 }
@@ -58,18 +40,18 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 		return err
 	}
 
-	if !config.noDirector && !state.NoDirector {
+	if !config.NoDirector && !state.NoDirector {
 		err = fastFailBOSHVersion(u.boshManager)
 		if err != nil {
 			return err
 		}
 	}
 
-	if config.jumpbox && !state.Jumpbox.Enabled && state.EnvID != "" {
+	if config.Jumpbox && !state.Jumpbox.Enabled && state.EnvID != "" {
 		return errors.New(`Environment without credhub already exists, you must recreate your environment to use "--credhub"`)
 	}
 
-	if state.EnvID != "" && config.name != "" && config.name != state.EnvID {
+	if state.EnvID != "" && config.Name != "" && config.Name != state.EnvID {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
 
@@ -82,59 +64,38 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	switch state.IAAS {
-	case "aws":
-		err = u.awsUp.Execute(AWSUpConfig{
-			OpsFilePath: config.opsFile,
-			Name:        config.name,
-			NoDirector:  config.noDirector,
-			Jumpbox:     config.jumpbox,
-		}, state)
-	case "gcp":
-		err = u.gcpUp.Execute(GCPUpConfig{
-			OpsFilePath: config.opsFile,
-			Name:        config.name,
-			NoDirector:  config.noDirector,
-			Jumpbox:     config.jumpbox,
-		}, state)
-	case "azure":
-		err = u.azureUp.Execute(AzureUpConfig{
-			Name:       config.name,
-			NoDirector: config.noDirector,
-		}, state)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return u.upCmd.Execute(UpConfig{
+		OpsFile:    config.OpsFile,
+		Name:       config.Name,
+		NoDirector: config.NoDirector,
+		Jumpbox:    config.Jumpbox,
+	}, state)
 }
 
-func (u Up) parseArgs(state storage.State, args []string) (upConfig, error) {
-	var config upConfig
+func (u Up) parseArgs(state storage.State, args []string) (UpConfig, error) {
+	var config UpConfig
 
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
-		return upConfig{}, err //not tested
+		return UpConfig{}, err //not tested
 	}
 
 	prevOpsFilePath := filepath.Join(tempDir, "user-ops-file")
 	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
 	if err != nil {
-		return upConfig{}, err //not tested
+		return UpConfig{}, err //not tested
 	}
 
 	upFlags := flags.New("up")
 
-	upFlags.String(&config.name, "name", "")
-	upFlags.String(&config.opsFile, "ops-file", prevOpsFilePath)
-	upFlags.Bool(&config.noDirector, "", "no-director", state.NoDirector)
-	upFlags.Bool(&config.jumpbox, "", "credhub", state.Jumpbox.Enabled)
+	upFlags.String(&config.Name, "name", "")
+	upFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
+	upFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
+	upFlags.Bool(&config.Jumpbox, "", "credhub", state.Jumpbox.Enabled)
 
 	err = upFlags.Parse(args)
 	if err != nil {
-		return upConfig{}, err
+		return UpConfig{}, err
 	}
 
 	return config, nil

@@ -24,21 +24,9 @@ type GCPUp struct {
 	stateStore                   stateStore
 	boshManager                  boshManager
 	cloudConfigManager           cloudConfigManager
-	logger                       logger
 	terraformManager             terraformApplier
 	envIDManager                 envIDManager
 	gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever
-}
-
-type GCPUpConfig struct {
-	ServiceAccountKey string
-	ProjectID         string
-	Zone              string
-	Region            string
-	OpsFilePath       string
-	Name              string
-	NoDirector        bool
-	Jumpbox           bool
 }
 
 type terraformManagerError interface {
@@ -63,29 +51,19 @@ type gcpAvailabilityZoneRetriever interface {
 	GetZones(string) ([]string, error)
 }
 
-type NewGCPUpArgs struct {
-	StateStore                   stateStore
-	TerraformManager             terraformApplier
-	BoshManager                  boshManager
-	Logger                       logger
-	EnvIDManager                 envIDManager
-	CloudConfigManager           cloudConfigManager
-	GCPAvailabilityZoneRetriever gcpAvailabilityZoneRetriever
-}
-
-func NewGCPUp(args NewGCPUpArgs) GCPUp {
+func NewGCPUp(stateStore stateStore, terraformManager terraformApplier, boshManager boshManager,
+	cloudConfigManager cloudConfigManager, envIDManager envIDManager, gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever) GCPUp {
 	return GCPUp{
-		stateStore:                   args.StateStore,
-		terraformManager:             args.TerraformManager,
-		boshManager:                  args.BoshManager,
-		cloudConfigManager:           args.CloudConfigManager,
-		logger:                       args.Logger,
-		envIDManager:                 args.EnvIDManager,
-		gcpAvailabilityZoneRetriever: args.GCPAvailabilityZoneRetriever,
+		stateStore:                   stateStore,
+		terraformManager:             terraformManager,
+		boshManager:                  boshManager,
+		cloudConfigManager:           cloudConfigManager,
+		envIDManager:                 envIDManager,
+		gcpAvailabilityZoneRetriever: gcpAvailabilityZoneRetriever,
 	}
 }
 
-func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
+func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 	state.Jumpbox.Enabled = upConfig.Jumpbox
 
 	err := u.terraformManager.ValidateVersion()
@@ -94,8 +72,8 @@ func (u GCPUp) Execute(upConfig GCPUpConfig, state storage.State) error {
 	}
 
 	var opsFileContents []byte
-	if upConfig.OpsFilePath != "" {
-		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFilePath)
+	if upConfig.OpsFile != "" {
+		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFile)
 		if err != nil {
 			return fmt.Errorf("error reading ops-file contents: %v", err)
 		}

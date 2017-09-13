@@ -5,7 +5,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type AWSUp struct {
+type UpCmd struct {
 	ExecuteCall struct {
 		CallCount int
 		Receives  struct {
@@ -18,7 +18,7 @@ type AWSUp struct {
 	}
 }
 
-func (u *AWSUp) Execute(upConfig commands.UpConfig, state storage.State) error {
+func (u *UpCmd) Execute(upConfig commands.UpConfig, state storage.State) error {
 	u.ExecuteCall.CallCount++
 	u.ExecuteCall.Receives.UpConfig = upConfig
 	u.ExecuteCall.Receives.State = state
