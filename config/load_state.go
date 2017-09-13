@@ -147,32 +147,27 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.Azure.ClientSecret = globalFlags.AzureClientSecret
 	}
 
-	err = validate(state)
-	if err != nil {
-		return ParsedFlags{}, err
-	}
-
 	return ParsedFlags{State: state, RemainingArgs: remainingArgs, Help: globalFlags.Help, Debug: globalFlags.Debug, Version: globalFlags.Version, StateDir: globalFlags.StateDir}, nil
 }
 
-func validate(state storage.State) error {
+func ValidateIAAS(state storage.State, command string) error {
 	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws" && state.IAAS != "azure") {
 		return errors.New("--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set")
 	}
 	if state.IAAS == "aws" {
-		err := validateAWSFlags(state.AWS)
+		err := validateAWS(state.AWS)
 		if err != nil {
 			return err
 		}
 	}
 	if state.IAAS == "gcp" {
-		err := validateGCPFlags(state.GCP)
+		err := validateGCP(state.GCP)
 		if err != nil {
 			return err
 		}
 	}
 	if state.IAAS == "azure" {
-		err := validateAzureFlags(state.Azure)
+		err := validateAzure(state.Azure)
 		if err != nil {
 			return err
 		}
@@ -180,46 +175,58 @@ func validate(state storage.State) error {
 	return nil
 }
 
-func validateAWSFlags(awsFlags storage.AWS) error {
-	if awsFlags.AccessKeyID == "" {
+func NeedsIAASConfig(command string) bool {
+	_, ok := map[string]struct{}{
+		"up":         struct{}{},
+		"down":       struct{}{},
+		"destroy":    struct{}{},
+		"create-lbs": struct{}{},
+		"delete-lbs": struct{}{},
+		"update-lbs": struct{}{},
+	}[command]
+	return ok
+}
+
+func validateAWS(aws storage.AWS) error {
+	if aws.AccessKeyID == "" {
 		return errors.New("AWS access key ID must be provided")
 	}
-	if awsFlags.SecretAccessKey == "" {
+	if aws.SecretAccessKey == "" {
 		return errors.New("AWS secret access key must be provided")
 	}
-	if awsFlags.Region == "" {
+	if aws.Region == "" {
 		return errors.New("AWS region must be provided")
 	}
 	return nil
 }
 
-func validateGCPFlags(gcpFlags storage.GCP) error {
-	if gcpFlags.ServiceAccountKey == "" {
+func validateGCP(gcp storage.GCP) error {
+	if gcp.ServiceAccountKey == "" {
 		return errors.New("GCP service account key must be provided")
 	}
-	if gcpFlags.ProjectID == "" {
+	if gcp.ProjectID == "" {
 		return errors.New("GCP project ID must be provided")
 	}
-	if gcpFlags.Zone == "" {
+	if gcp.Zone == "" {
 		return errors.New("GCP zone must be provided")
 	}
-	if gcpFlags.Region == "" {
+	if gcp.Region == "" {
 		return errors.New("GCP region must be provided")
 	}
 	return nil
 }
 
-func validateAzureFlags(azureFlags storage.Azure) error {
-	if azureFlags.SubscriptionID == "" {
+func validateAzure(azure storage.Azure) error {
+	if azure.SubscriptionID == "" {
 		return errors.New("Azure subscription id must be provided")
 	}
-	if azureFlags.TenantID == "" {
+	if azure.TenantID == "" {
 		return errors.New("Azure tenant id must be provided")
 	}
-	if azureFlags.ClientID == "" {
+	if azure.ClientID == "" {
 		return errors.New("Azure client id must be provided")
 	}
-	if azureFlags.ClientSecret == "" {
+	if azure.ClientSecret == "" {
 		return errors.New("Azure client secret must be provided")
 	}
 	return nil

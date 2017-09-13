@@ -50,8 +50,39 @@ func main() {
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
-
 	loadedState := parsedFlags.State
+
+	appConfig := &application.Configuration{
+		Global: application.GlobalConfiguration{
+			StateDir: parsedFlags.StateDir,
+			Debug:    parsedFlags.Debug,
+		},
+		State:           loadedState,
+		ShowCommandHelp: parsedFlags.Help,
+	}
+	if len(parsedFlags.RemainingArgs) > 0 {
+		appConfig.Command = parsedFlags.RemainingArgs[0]
+		appConfig.SubcommandFlags = parsedFlags.RemainingArgs[1:]
+	} else {
+		appConfig.ShowCommandHelp = false
+		if parsedFlags.Help {
+			appConfig.Command = "help"
+		}
+		if parsedFlags.Version {
+			appConfig.Command = "version"
+		}
+	}
+	if len(os.Args) == 1 {
+		appConfig.Command = "help"
+	}
+
+	needsIAASConfig := config.NeedsIAASConfig(appConfig.Command)
+	if needsIAASConfig {
+		err = config.ValidateIAAS(appConfig.State, appConfig.Command)
+		if err != nil {
+			log.Fatalf("\n\n%s\n", err)
+		}
+	}
 
 	// Utilities
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
@@ -67,15 +98,16 @@ func main() {
 	stateStore := storage.NewStore(parsedFlags.StateDir)
 	stateValidator := application.NewStateValidator(parsedFlags.StateDir)
 
-	// Amazon
-	awsConfiguration := aws.Config{
-		AccessKeyID:     loadedState.AWS.AccessKeyID,
-		SecretAccessKey: loadedState.AWS.SecretAccessKey,
-		Region:          loadedState.AWS.Region,
-	}
-
 	awsClientProvider := &clientmanager.ClientProvider{}
-	awsClientProvider.SetConfig(awsConfiguration)
+	if appConfig.State.IAAS == "aws" && needsIAASConfig {
+		awsConfiguration := aws.Config{
+			AccessKeyID:     appConfig.State.AWS.AccessKeyID,
+			SecretAccessKey: appConfig.State.AWS.SecretAccessKey,
+			Region:          appConfig.State.AWS.Region,
+		}
+
+		awsClientProvider.SetConfig(awsConfiguration)
+	}
 
 	vpcStatusChecker := ec2.NewVPCStatusChecker(awsClientProvider)
 	awsAvailabilityZoneRetriever := ec2.NewAvailabilityZoneRetriever(awsClientProvider)
@@ -88,10 +120,9 @@ func main() {
 	userPolicyDeleter := iam.NewUserPolicyDeleter(awsClientProvider)
 	awsKeyPairDeleter := ec2.NewKeyPair(awsClientProvider, logger)
 
-	// GCP
 	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
-	if loadedState.IAAS == "gcp" {
-		err = gcpClientProvider.SetConfig(loadedState.GCP.ServiceAccountKey, loadedState.GCP.ProjectID, loadedState.GCP.Region, loadedState.GCP.Zone)
+	if appConfig.State.IAAS == "gcp" && needsIAASConfig {
+		err = gcpClientProvider.SetConfig(appConfig.State.GCP.ServiceAccountKey, appConfig.State.GCP.ProjectID, appConfig.State.GCP.Region, appConfig.State.GCP.Zone)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
@@ -209,33 +240,7 @@ func main() {
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 
-	commandConfiguration := &application.Configuration{
-		Global: application.GlobalConfiguration{
-			StateDir: parsedFlags.StateDir,
-			Debug:    parsedFlags.Debug,
-		},
-		State:           loadedState,
-		ShowCommandHelp: parsedFlags.Help,
-	}
-
-	if len(parsedFlags.RemainingArgs) > 0 {
-		commandConfiguration.Command = parsedFlags.RemainingArgs[0]
-		commandConfiguration.SubcommandFlags = parsedFlags.RemainingArgs[1:]
-	} else {
-		commandConfiguration.ShowCommandHelp = false
-		if parsedFlags.Help {
-			commandConfiguration.Command = "help"
-		}
-		if parsedFlags.Version {
-			commandConfiguration.Command = "version"
-		}
-	}
-
-	if len(os.Args) == 1 {
-		commandConfiguration.Command = "help"
-	}
-
-	app := application.New(commandSet, *commandConfiguration, usage)
+	app := application.New(commandSet, *appConfig, usage)
 
 	err = app.Run()
 	if err != nil {
