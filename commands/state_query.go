@@ -57,21 +57,24 @@ func (s StateQuery) CheckFastFails(subcommandFlags []string, state storage.State
 }
 
 func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error {
-	var propertyValue string
+	var (
+		propertyValue string
+		err           error
+	)
 	switch s.propertyName {
 	case JumpboxAddressPropertyName:
 		if state.Jumpbox.Enabled {
 			propertyValue = state.Jumpbox.URL
-		}
-	case DirectorAddressPropertyName:
-		if !state.NoDirector {
-			propertyValue = state.BOSH.DirectorAddress
 		} else {
-			externalIP, err := s.getEIP(state)
+			propertyValue, err = s.getDirectorAddress(state)
 			if err != nil {
 				return err
 			}
-			propertyValue = fmt.Sprintf("https://%s:25555", externalIP)
+		}
+	case DirectorAddressPropertyName:
+		propertyValue, err = s.getDirectorAddress(state)
+		if err != nil {
+			return err
 		}
 	case DirectorUsernamePropertyName:
 		propertyValue = state.BOSH.DirectorUsername
@@ -91,22 +94,33 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 	return nil
 }
 
+func (s StateQuery) getDirectorAddress(state storage.State) (string, error) {
+	var directorAddress string
+	if state.NoDirector {
+		externalIP, err := s.getEIP(state)
+		if err != nil {
+			return "", err
+		}
+		directorAddress = fmt.Sprintf("https://%s:25555", externalIP)
+	} else {
+		directorAddress = state.BOSH.DirectorAddress
+	}
+	return directorAddress, nil
+}
+
 func (s StateQuery) getEIP(state storage.State) (string, error) {
-	switch state.IAAS {
-	case "aws":
+	if state.Stack.Name != "" {
 		stack, err := s.infrastructureManager.Describe(state.Stack.Name)
 		if err != nil {
 			return "", err
 		}
 		return stack.Outputs["BOSHEIP"], nil
-	case "gcp":
-		terraformOutputs, err := s.terraformManager.GetOutputs(state)
-		if err != nil {
-			return "", err
-		}
-
-		return terraformOutputs["external_ip"].(string), nil
 	}
 
-	return "", errors.New("Could not find external IP for given IAAS")
+	terraformOutputs, err := s.terraformManager.GetOutputs(state)
+	if err != nil {
+		return "", err
+	}
+
+	return terraformOutputs["external_ip"].(string), nil
 }

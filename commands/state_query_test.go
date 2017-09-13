@@ -87,6 +87,49 @@ var _ = Describe("StateQuery", func() {
 			})
 		})
 
+		Context("jumpbox is not enabled and bbl manages the director", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					BOSH: storage.BOSH{
+						DirectorAddress: "some-director-address",
+					},
+				}
+			})
+
+			It("prints out the jumpbox information", func() {
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "jumpbox address")
+
+				err := command.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-director-address"))
+			})
+		})
+
+		Context("jumpbox is not enabled and bbl does not manage the director", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					NoDirector: true,
+				}
+				fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip": "some-external-ip",
+				}
+			})
+
+			It("prints out the jumpbox information", func() {
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "jumpbox address")
+
+				err := command.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
+			})
+		})
+
 		Context("bbl manages the bosh director", func() {
 			var state storage.State
 
@@ -136,30 +179,28 @@ var _ = Describe("StateQuery", func() {
 				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-env-id"))
 			})
 
-			Context("gcp", func() {
-				It("prints the eip as the director-address", func() {
-					fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-						"external_ip": "some-external-ip",
-					}
+			It("prints the eip as the director-address", func() {
+				fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip": "some-external-ip",
+				}
 
-					state.IAAS = "gcp"
-
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
-					err := command.Execute([]string{}, state)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
-				})
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
+				err := command.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
 			})
 
-			Context("aws", func() {
+			Context("when infrastructure is managed by CloudFormation", func() {
+				BeforeEach(func() {
+					state.Stack.Name = "some-stack-name"
+				})
+
 				It("prints the eip as the director-address", func() {
 					fakeInfrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
 						Outputs: map[string]string{
 							"BOSHEIP": "some-external-ip",
 						},
 					}
-
-					state.IAAS = "aws"
 
 					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
 					err := command.Execute([]string{}, state)
@@ -189,20 +230,12 @@ var _ = Describe("StateQuery", func() {
 				err := command.Execute([]string{}, storage.State{
 					IAAS:       "aws",
 					NoDirector: true,
+					Stack: storage.Stack{
+						Name: "some-stack-name",
+					},
 				})
 
 				Expect(err).To(MatchError("failed to describe stack"))
-			})
-
-			It("returns an error when an external ip cannot be found", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "director address")
-
-				err := command.Execute([]string{}, storage.State{
-					IAAS:       "lol",
-					NoDirector: true,
-				})
-
-				Expect(err).To(MatchError("Could not find external IP for given IAAS"))
 			})
 
 			It("returns an error when the state value is empty", func() {
