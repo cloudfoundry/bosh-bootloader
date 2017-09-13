@@ -183,6 +183,7 @@ func NeedsIAASConfig(command string) bool {
 		"create-lbs": struct{}{},
 		"delete-lbs": struct{}{},
 		"update-lbs": struct{}{},
+		"rotate":     struct{}{},
 	}[command]
 	return ok
 }
