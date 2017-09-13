@@ -107,6 +107,20 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("when the iaas is aws", func() {
+			var awsState storage.State
+			BeforeEach(func() {
+				awsState = storage.State{
+					IAAS:    "aws",
+					EnvID:   "some-env-id",
+					TFState: "some-tf-state",
+				}
+				migrator.MigrateReturns(awsState, nil)
+				inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+					"env_id": incomingState.EnvID,
+				}
+				templateGenerator.GenerateCall.Returns.Template = "some-terraform-template"
+			})
+
 			It("logs steps", func() {
 				_, err := manager.Apply(storage.State{IAAS: "aws"})
 				Expect(err).NotTo(HaveOccurred())
@@ -122,13 +136,9 @@ var _ = Describe("Manager", func() {
 			It("returns a state with new tfState and output from executor apply", func() {
 				terraformOutputBuffer.Write([]byte("some-updated-tf-state"))
 
-				awsState := storage.State{
-					IAAS:    "aws",
-					EnvID:   "some-env-id",
-					TFState: "some-tf-state",
-				}
 				expectedAWSState := awsState
 				expectedAWSState.TFState = "some-updated-tf-state"
+				expectedAWSState.LatestTFOutput = "some-updated-tf-state"
 				state, err := manager.Apply(awsState)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -138,12 +148,19 @@ var _ = Describe("Manager", func() {
 				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(awsState))
 				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(awsState))
 
-				Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{
-					"env_id": awsState.EnvID,
-				}))
+				Expect(executor.ApplyCall.Receives.Inputs).To(HaveKeyWithValue("env_id", awsState.EnvID))
 				Expect(executor.ApplyCall.Receives.TFState).To(Equal("some-tf-state"))
-				Expect(executor.ApplyCall.Receives.Template).To(Equal(string("some-updated-tf-state")))
+				Expect(executor.ApplyCall.Receives.Template).To(Equal(string("some-terraform-template")))
 				Expect(state).To(Equal(expectedAWSState))
+			})
+
+			Context("when the stack cannot be migrated", func() {
+				It("returns an error", func() {
+					migrator.MigrateReturns(storage.State{}, errors.New("failed to migrate"))
+
+					_, err := manager.Apply(awsState)
+					Expect(err).To(MatchError("failed to migrate"))
+				})
 			})
 		})
 
@@ -172,15 +189,6 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("when an error occurs", func() {
-			Context("when the stack cannot be migrated", func() {
-				It("returns an error", func() {
-					migrator.MigrateReturns(storage.State{}, errors.New("failed to migrate"))
-
-					_, err := manager.Apply(incomingState)
-					Expect(err).To(MatchError("failed to migrate"))
-				})
-			})
-
 			Context("when InputGenerator.Generate returns an error", func() {
 				BeforeEach(func() {
 					inputGenerator.GenerateCall.Returns.Error = errors.New("failed to generate inputs")
@@ -201,18 +209,6 @@ var _ = Describe("Manager", func() {
 
 				AfterEach(func() {
 					executor.ApplyCall.Returns.Error = nil
-				})
-
-				It("returns the bblState with latest terraform output and a ManagerError", func() {
-					_, err := manager.Apply(incomingState)
-
-					Expect(err).To(BeAssignableToTypeOf(terraform.ManagerError{}))
-				})
-			})
-
-			Context("when migrating causes an executor error", func() {
-				BeforeEach(func() {
-					migrator.MigrateReturns(storage.State{}, &fakes.TerraformExecutorError{})
 				})
 
 				It("returns the bblState with latest terraform output and a ManagerError", func() {
