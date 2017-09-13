@@ -50,14 +50,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
-	loadedState := parsedFlags.State
 
 	appConfig := &application.Configuration{
 		Global: application.GlobalConfiguration{
 			StateDir: parsedFlags.StateDir,
 			Debug:    parsedFlags.Debug,
 		},
-		State:           loadedState,
+		State:           parsedFlags.State,
 		ShowCommandHelp: parsedFlags.Help,
 	}
 	if len(parsedFlags.RemainingArgs) > 0 {
@@ -76,7 +75,7 @@ func main() {
 		appConfig.Command = "help"
 	}
 
-	needsIAASConfig := config.NeedsIAASConfig(appConfig.Command)
+	needsIAASConfig := config.NeedsIAASConfig(appConfig.Command) && !appConfig.ShowCommandHelp
 	if needsIAASConfig {
 		err = config.ValidateIAAS(appConfig.State, appConfig.Command)
 		if err != nil {
