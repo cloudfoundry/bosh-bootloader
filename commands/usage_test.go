@@ -45,11 +45,17 @@ Global Options:
   --version              Prints version
 
 Commands:
+  help                   Prints usage
+  version                Prints version
+  up                     Deploys BOSH director on an IAAS
+  destroy                Tears down BOSH director infrastructure
+  lbs                    Prints attached load balancer(s)
+  create-lbs             Attaches load balancer(s)
+  update-lbs             Updates load balancer(s)
+  delete-lbs             Deletes attached load balancer(s)
+  rotate                 Rotates SSH key for the jumpbox user
   bosh-deployment-vars   Prints required variables for BOSH deployment
   cloud-config           Prints suggested cloud configuration for BOSH environment
-  create-lbs             Attaches load balancer(s)
-  delete-lbs             Deletes attached load balancer(s)
-  destroy                Tears down BOSH director infrastructure
   jumpbox-address        Prints BOSH jumpbox address
   director-address       Prints BOSH director address
   director-username      Prints BOSH director username
@@ -58,12 +64,7 @@ Commands:
   env-id                 Prints environment ID
   latest-error           Prints the output from the latest call to terraform
   print-env              Prints BOSH friendly environment variables
-  help                   Prints usage
-  lbs                    Prints attached load balancer(s)
   ssh-key                Prints SSH private key
-  up                     Deploys BOSH director on an IAAS
-  update-lbs             Updates load balancer(s)
-  version                Prints version
 
   Use "bbl [command] --help" for more information about a command.
 `, "\n")))

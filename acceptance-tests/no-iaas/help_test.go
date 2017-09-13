@@ -102,6 +102,8 @@ var _ = Describe("bbl", func() {
 			Entry("Update LBs", "update-lbs", "Updates load balancer(s)", []string{"update-lbs", "--help"}),
 			Entry("Delete LBs", "delete-lbs", "Deletes load balancer(s)", []string{"help", "delete-lbs"}),
 			Entry("Delete LBs", "delete-lbs", "Deletes load balancer(s)", []string{"delete-lbs", "--help"}),
+			Entry("Rotate", "rotate", "Rotates SSH key", []string{"help", "rotate"}),
+			Entry("Rotate", "rotate", "Rotates SSH key", []string{"rotate", "--help"}),
 			Entry("Version", "version", "Prints version", []string{"help", "version"}),
 			Entry("Version", "version", "Prints version", []string{"version", "--help"}),
 			Entry("Jumpbox Address", "jumpbox-address", "Prints BOSH jumpbox address", []string{"help", "jumpbox-address"}),
