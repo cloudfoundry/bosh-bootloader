@@ -15,11 +15,10 @@ type GCPCreateLBs struct {
 }
 
 type GCPCreateLBsConfig struct {
-	LBType       string
-	CertPath     string
-	KeyPath      string
-	Domain       string
-	SkipIfExists bool
+	LBType   string
+	CertPath string
+	KeyPath  string
+	Domain   string
 }
 
 type availabilityZoneRetriever interface {

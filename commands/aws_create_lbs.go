@@ -16,12 +16,11 @@ type AWSCreateLBs struct {
 }
 
 type AWSCreateLBsConfig struct {
-	LBType       string
-	CertPath     string
-	KeyPath      string
-	ChainPath    string
-	Domain       string
-	SkipIfExists bool
+	LBType    string
+	CertPath  string
+	KeyPath   string
+	ChainPath string
+	Domain    string
 }
 
 type environmentValidator interface {

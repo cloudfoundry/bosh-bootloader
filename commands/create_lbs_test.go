@@ -48,20 +48,6 @@ var _ = Describe("create-lbs", func() {
 			Expect(err).To(MatchError("--type is required"))
 		})
 
-		It("no-ops when lb exists", func() {
-			err := command.CheckFastFails([]string{
-				"--type", "cf",
-				"--skip-if-exists",
-			}, storage.State{
-				LB: storage.LB{
-					Type: "cf",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logger.StepCall.Receives.Message).To(Equal(`lb type "cf" exists, skipping...`))
-		})
-
 		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
@@ -139,14 +125,12 @@ var _ = Describe("create-lbs", func() {
 		It("creates a GCP lb type if the iaas if GCP", func() {
 			err := command.Execute([]string{
 				"--type", "concourse",
-				"--skip-if-exists",
 			}, storage.State{
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
-				LBType:       "concourse",
-				SkipIfExists: true,
+				LBType: "concourse",
 			}))
 		})
 
@@ -156,17 +140,15 @@ var _ = Describe("create-lbs", func() {
 				"--cert", "my-cert",
 				"--key", "my-key",
 				"--domain", "some-domain",
-				"--skip-if-exists",
 			}, storage.State{
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
-				LBType:       "cf",
-				CertPath:     "my-cert",
-				KeyPath:      "my-key",
-				Domain:       "some-domain",
-				SkipIfExists: true,
+				LBType:   "cf",
+				CertPath: "my-cert",
+				KeyPath:  "my-key",
+				Domain:   "some-domain",
 			}))
 		})
 
@@ -177,19 +159,17 @@ var _ = Describe("create-lbs", func() {
 				"--key", "my-key",
 				"--chain", "my-chain",
 				"--domain", "some-domain",
-				"--skip-if-exists", "true",
 			}, storage.State{
 				IAAS: "aws",
 			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(awsCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.AWSCreateLBsConfig{
-				LBType:       "concourse",
-				CertPath:     "my-cert",
-				KeyPath:      "my-key",
-				ChainPath:    "my-chain",
-				Domain:       "some-domain",
-				SkipIfExists: true,
+				LBType:    "concourse",
+				CertPath:  "my-cert",
+				KeyPath:   "my-key",
+				ChainPath: "my-chain",
+				Domain:    "some-domain",
 			}))
 		})
 

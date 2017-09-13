@@ -18,12 +18,11 @@ type CreateLBs struct {
 }
 
 type lbConfig struct {
-	lbType       string
-	certPath     string
-	keyPath      string
-	chainPath    string
-	domain       string
-	skipIfExists bool
+	lbType    string
+	certPath  string
+	keyPath   string
+	chainPath string
+	domain    string
 }
 
 type gcpCreateLBs interface {
@@ -57,11 +56,6 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 
 	if err := c.stateValidator.Validate(); err != nil {
 		return fmt.Errorf("Validate state: %s", err)
-	}
-
-	if config.skipIfExists && config.lbType == state.LB.Type {
-		c.logger.Step(fmt.Sprintf("lb type %q exists, skipping...", state.LB.Type))
-		return nil
 	}
 
 	if !lbExists(config.lbType) {
@@ -98,22 +92,20 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 	switch state.IAAS {
 	case "gcp":
 		if err := c.gcpCreateLBs.Execute(GCPCreateLBsConfig{
-			LBType:       config.lbType,
-			CertPath:     config.certPath,
-			KeyPath:      config.keyPath,
-			Domain:       config.domain,
-			SkipIfExists: config.skipIfExists,
+			LBType:   config.lbType,
+			CertPath: config.certPath,
+			KeyPath:  config.keyPath,
+			Domain:   config.domain,
 		}, state); err != nil {
 			return err
 		}
 	case "aws":
 		if err := c.awsCreateLBs.Execute(AWSCreateLBsConfig{
-			LBType:       config.lbType,
-			CertPath:     config.certPath,
-			KeyPath:      config.keyPath,
-			ChainPath:    config.chainPath,
-			Domain:       config.domain,
-			SkipIfExists: config.skipIfExists,
+			LBType:    config.lbType,
+			CertPath:  config.certPath,
+			KeyPath:   config.keyPath,
+			ChainPath: config.chainPath,
+			Domain:    config.domain,
 		}, state); err != nil {
 			return err
 		}
@@ -131,7 +123,6 @@ func parseFlags(subcommandFlags []string) (lbConfig, error) {
 	lbFlags.String(&config.keyPath, "key", "")
 	lbFlags.String(&config.chainPath, "chain", "")
 	lbFlags.String(&config.domain, "domain", "")
-	lbFlags.Bool(&config.skipIfExists, "skip-if-exists", "", false)
 
 	if err := lbFlags.Parse(subcommandFlags); err != nil {
 		return config, err

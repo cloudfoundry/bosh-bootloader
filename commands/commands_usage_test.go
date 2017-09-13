@@ -51,7 +51,6 @@ var _ = Describe("Commands Usage", func() {
   [--key]             Path to SSL certificate key (conditionally required; refer to table below)
   [--chain]           Path to SSL certificate chain (optional; applicable if --cert/--key are required; refer to table below)
   [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
-  [--skip-if-exists]  Skips creating load balancer(s) if it is already attached (optional)
 
   --cert/--key requirements:
   ------------------------------

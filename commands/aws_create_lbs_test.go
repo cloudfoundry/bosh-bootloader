@@ -290,25 +290,6 @@ var _ = Describe("AWS Create LBs", func() {
 			})
 		})
 
-		Context("when --skip-if-exists is provided", func() {
-			DescribeTable("creates the lb if the lb does not exist",
-				func(currentLBType string) {
-					incomingState.Stack.LBType = currentLBType
-					err := command.Execute(commands.AWSCreateLBsConfig{
-						LBType:       "concourse",
-						CertPath:     certPath,
-						KeyPath:      keyPath,
-						SkipIfExists: true,
-					}, incomingState)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				},
-				Entry("when the current lb-type is 'none'", "none"),
-				Entry("when the current lb-type is ''", ""),
-			)
-		})
-
 		It("returns an error when the environment validator fails", func() {
 			environmentValidator.ValidateCall.Returns.Error = errors.New("environment not found")
 
