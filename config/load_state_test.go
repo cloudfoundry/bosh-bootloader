@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
@@ -24,130 +25,279 @@ var _ = Describe("LoadState", func() {
 	})
 
 	Describe("Bootstrap", func() {
+		Describe("help and version", func() {
+			Context("when no commands are passed", func() {
+				It("sets the help command", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Command).To(Equal("help"))
+				})
+			})
+
+			Context("when help is passed as a flag", func() {
+				It("sets the help command", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl", "--help"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Command).To(Equal("help"))
+				})
+			})
+
+			Context("when version is passed as a flag", func() {
+				It("sets the version command", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl", "--version"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Command).To(Equal("version"))
+				})
+			})
+
+			DescribeTable("subcommand help for help and version",
+				func(args []string, expectedCommand string) {
+					appConfig, err := c.Bootstrap(args)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Command).To(Equal(expectedCommand))
+					Expect(appConfig.ShowCommandHelp).To(BeTrue())
+				},
+				Entry("bbl help help", []string{"bbl", "help", "help"}, "help"),
+				Entry("bbl help --help", []string{"bbl", "help", "--help"}, "help"),
+				Entry("bbl help version", []string{"bbl", "help", "version"}, "version"),
+				Entry("bbl version --help", []string{"bbl", "version", "--help"}, "version"),
+			)
+		})
+
+		Describe("global flags", func() {
+			It("returns global flags", func() {
+				args := []string{
+					"bbl",
+					"up",
+					"--debug",
+					"--state-dir", "some-state-dir",
+				}
+
+				appConfig, err := c.Bootstrap(args)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(appConfig.Command).To(Equal("up"))
+				Expect(appConfig.Global.Debug).To(BeTrue())
+				Expect(appConfig.Global.StateDir).To(Equal("some-state-dir"))
+			})
+
+			Context("when --help is passed in after a command", func() {
+				It("returns command help", func() {
+					args := []string{
+						"bbl",
+						"up",
+						"--help",
+					}
+
+					appConfig, err := c.Bootstrap(args)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Command).To(Equal("up"))
+					Expect(appConfig.ShowCommandHelp).To(BeTrue())
+				})
+			})
+
+			Context("when help is passed in before a command", func() {
+				It("returns command help", func() {
+					args := []string{
+						"bbl",
+						"help",
+						"up",
+					}
+
+					appConfig, err := c.Bootstrap(args)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Command).To(Equal("up"))
+					Expect(appConfig.ShowCommandHelp).To(BeTrue())
+				})
+			})
+
+			Context("when debug flag is passed in through environment variables", func() {
+				BeforeEach(func() {
+					os.Setenv("BBL_DEBUG", "true")
+				})
+
+				AfterEach(func() {
+					os.Unsetenv("BBL_DEBUG")
+				})
+
+				It("returns global flags", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Global.Debug).To(BeTrue())
+				})
+			})
+		})
+
+		Describe("reading a previous state file", func() {
+			var getStateArg string
+
+			BeforeEach(func() {
+				getState := func(dir string) (storage.State, error) {
+					getStateArg = dir
+
+					return storage.State{
+						IAAS:  "aws",
+						EnvID: "some-env-id",
+					}, nil
+				}
+				c = config.NewConfig(getState)
+			})
+
+			It("returns the existing state", func() {
+				appConfig, err := c.Bootstrap([]string{
+					"bbl",
+					"create-lbs",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
+			})
+
+			It("uses the working directory", func() {
+				appConfig, err := c.Bootstrap([]string{
+					"bbl",
+					"create-lbs",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				workingDir, err := os.Getwd()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(getStateArg).To(Equal(workingDir))
+				Expect(appConfig.Global.StateDir).To(Equal(workingDir))
+			})
+
+			Context("when state dir is specified", func() {
+				It("returns state from that dir", func() {
+					appConfig, err := c.Bootstrap([]string{
+						"bbl",
+						"create-lbs",
+						"--state-dir", "some-state-dir",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(getStateArg).To(Equal("some-state-dir"))
+					Expect(appConfig.Global.StateDir).To(Equal("some-state-dir"))
+				})
+			})
+
+			Context("when invalid state dir is passed in", func() {
+				BeforeEach(func() {
+					getState := func(string) (storage.State, error) {
+						return storage.State{}, errors.New("some state dir error")
+					}
+					c = config.NewConfig(getState)
+					os.Clearenv()
+				})
+
+				It("returns an error", func() {
+					_, err := c.Bootstrap([]string{
+						"bbl",
+						"create-lbs",
+						"--state-dir", "/this/will/not/work",
+					})
+
+					Expect(err).To(MatchError("some state dir error"))
+				})
+			})
+
+			Context("when state-dir flag is passed without an argument", func() {
+				It("returns an error", func() {
+					_, err := c.Bootstrap([]string{
+						"bbl",
+						"create-lbs",
+						"--state-dir",
+						"--help",
+					})
+
+					Expect(err).To(MatchError("expected argument for flag `-s, --state-dir', but got option `--help'"))
+				})
+			})
+		})
+
 		Context("using AWS", func() {
 			Context("when a previous state does not exist", func() {
 				Context("when configuration is passed in by flag", func() {
-					Context("when configuration is valid", func() {
-						var args []string
+					var args []string
 
-						BeforeEach(func() {
-							args = []string{
-								"bbl",
-								"--iaas", "aws",
-								"--aws-access-key-id", "some-access-key",
-								"--aws-secret-access-key", "some-secret-key",
-								"--aws-region", "some-region",
-								"up",
-								"--name", "some-env-id",
-							}
-						})
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"--iaas", "aws",
+							"--aws-access-key-id", "some-access-key",
+							"--aws-secret-access-key", "some-secret-key",
+							"--aws-region", "some-region",
+							"up",
+							"--name", "some-env-id",
+						}
+					})
 
-						It("returns a state object containing configuration flags", func() {
-							parsedFlags, err := c.Bootstrap(args)
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
 
-							Expect(err).NotTo(HaveOccurred())
+						state := appConfig.State
 
-							state := parsedFlags.State
+						Expect(state.IAAS).To(Equal("aws"))
+						Expect(state.AWS.AccessKeyID).To(Equal("some-access-key"))
+						Expect(state.AWS.SecretAccessKey).To(Equal("some-secret-key"))
+						Expect(state.AWS.Region).To(Equal("some-region"))
+					})
 
-							Expect(state.IAAS).To(Equal("aws"))
-							Expect(state.AWS.AccessKeyID).To(Equal("some-access-key"))
-							Expect(state.AWS.SecretAccessKey).To(Equal("some-secret-key"))
-							Expect(state.AWS.Region).To(Equal("some-region"))
-						})
+					It("returns the remaining arguments", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
 
-						It("returns the remaining arguments", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up", "--name", "some-env-id"}))
-						})
-
-						Context("when configuration includes global flags", func() {
-							BeforeEach(func() {
-								args = append([]string{
-									"bbl",
-									"--help",
-									"--debug",
-									"--version",
-									"--state-dir", "some-state-dir",
-								}, args[1:]...)
-							})
-
-							It("returns global flags", func() {
-								parsedFlags, err := c.Bootstrap(args)
-
-								Expect(err).NotTo(HaveOccurred())
-
-								Expect(parsedFlags.Help).To(BeTrue())
-								Expect(parsedFlags.Debug).To(BeTrue())
-								Expect(parsedFlags.Version).To(BeTrue())
-								Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
-							})
-						})
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
 					})
 				})
 
 				Context("when configuration is passed in by env vars", func() {
-					Context("when configuration is valid", func() {
-						var args []string
+					var args []string
 
-						BeforeEach(func() {
-							args = []string{
-								"bbl",
-								"up",
-							}
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"up",
+						}
 
-							os.Setenv("BBL_IAAS", "aws")
-							os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key-id")
-							os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-secret-key")
-							os.Setenv("BBL_AWS_REGION", "some-region")
-						})
+						os.Setenv("BBL_IAAS", "aws")
+						os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key-id")
+						os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-secret-key")
+						os.Setenv("BBL_AWS_REGION", "some-region")
+					})
 
-						AfterEach(func() {
-							os.Unsetenv("BBL_IAAS")
-							os.Unsetenv("BBL_AWS_ACCESS_KEY_ID")
-							os.Unsetenv("BBL_AWS_SECRET_ACCESS_KEY")
-							os.Unsetenv("BBL_AWS_REGION")
-						})
+					AfterEach(func() {
+						os.Unsetenv("BBL_IAAS")
+						os.Unsetenv("BBL_AWS_ACCESS_KEY_ID")
+						os.Unsetenv("BBL_AWS_SECRET_ACCESS_KEY")
+						os.Unsetenv("BBL_AWS_REGION")
+					})
 
-						It("returns a state object containing configuration flags", func() {
-							parsedFlags, err := c.Bootstrap(args)
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
 
-							Expect(err).NotTo(HaveOccurred())
+						state := appConfig.State
+						Expect(state.IAAS).To(Equal("aws"))
+						Expect(state.AWS.AccessKeyID).To(Equal("some-access-key-id"))
+						Expect(state.AWS.SecretAccessKey).To(Equal("some-secret-key"))
+						Expect(state.AWS.Region).To(Equal("some-region"))
+					})
 
-							state := parsedFlags.State
-							Expect(state.IAAS).To(Equal("aws"))
-							Expect(state.AWS.AccessKeyID).To(Equal("some-access-key-id"))
-							Expect(state.AWS.SecretAccessKey).To(Equal("some-secret-key"))
-							Expect(state.AWS.Region).To(Equal("some-region"))
-						})
+					It("returns the command", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
 
-						It("returns the remaining arguments", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up"}))
-						})
-
-						Context("when configuration includes global flags", func() {
-							BeforeEach(func() {
-								os.Setenv("BBL_DEBUG", "true")
-							})
-
-							AfterEach(func() {
-								os.Unsetenv("BBL_DEBUG")
-							})
-
-							It("returns global flags", func() {
-								parsedFlags, err := c.Bootstrap(args)
-
-								Expect(err).NotTo(HaveOccurred())
-
-								Expect(parsedFlags.Debug).To(BeTrue())
-							})
-						})
+						Expect(appConfig.Command).To(Equal("up"))
 					})
 				})
 			})
@@ -172,39 +322,9 @@ var _ = Describe("LoadState", func() {
 					c = config.NewConfig(getState)
 				})
 
-				Context("when no configuration is passed in", func() {
-					It("returns state with existing configuration", func() {
-						parsedFlags, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
-
-						workingDir, err := os.Getwd()
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(getStateArg).To(Equal(workingDir))
-					})
-
-					Context("when state dir is specified", func() {
-						It("uses that state dir", func() {
-							_, err := c.Bootstrap([]string{
-								"bbl",
-								"create-lbs",
-								"--state-dir", "some-state-dir",
-							})
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(getStateArg).To(Equal("some-state-dir"))
-						})
-					})
-				})
-
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						parsedFlags, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap([]string{
 							"bbl",
 							"create-lbs",
 							"--iaas", "aws",
@@ -214,7 +334,7 @@ var _ = Describe("LoadState", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
+						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
 					})
 				})
 
@@ -229,39 +349,6 @@ var _ = Describe("LoadState", func() {
 					Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--aws-region", "some-other-region"},
 						"The region cannot be changed for an existing environment. The current region is some-region."),
 				)
-
-				Context("when invalid state dir is passed in", func() {
-					BeforeEach(func() {
-						getState := func(string) (storage.State, error) {
-							return storage.State{}, errors.New("some state dir error")
-						}
-						c = config.NewConfig(getState)
-						os.Clearenv()
-					})
-
-					It("returns an error", func() {
-						_, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
-							"--state-dir", "/this/will/not/work",
-						})
-
-						Expect(err).To(MatchError("some state dir error"))
-					})
-				})
-
-				Context("when parser errors", func() {
-					It("returns an error", func() {
-						_, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
-							"--state-dir",
-							"--help",
-						})
-
-						Expect(err).To(MatchError("expected argument for flag `-s, --state-dir', but got option `--help'"))
-					})
-				})
 			})
 		})
 
@@ -283,88 +370,64 @@ var _ = Describe("LoadState", func() {
 
 			Context("when a previous state does not exist", func() {
 				Context("when configuration is passed in by flag", func() {
-					Context("when configuration is valid", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{
+							"bbl", "up", "--name", "some-env-id",
+							"--iaas", "gcp",
+							"--gcp-service-account-key", serviceAccountKeyPath,
+							"--gcp-project-id", "some-project-id",
+							"--gcp-zone", "some-availability-zone",
+							"--gcp-region", "some-region",
+						}
+					})
+
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+						Expect(state.IAAS).To(Equal("gcp"))
+						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+						Expect(state.GCP.Zone).To(Equal("some-availability-zone"))
+						Expect(state.GCP.Region).To(Equal("some-region"))
+					})
+
+					It("returns the command and its flags", func() {
+						appConfig, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+					})
+
+					Context("when service account key is passed inline", func() {
 						var args []string
 
 						BeforeEach(func() {
 							args = []string{
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
-								"--gcp-service-account-key", serviceAccountKeyPath,
+								"--gcp-service-account-key", serviceAccountKey,
 								"--gcp-project-id", "some-project-id",
 								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 						})
 
-						It("returns a state object containing configuration flags", func() {
-							parsedFlags, err := c.Bootstrap(args)
+						It("returns a state object containing service account key", func() {
+							appConfig, err := c.Bootstrap(args)
 
 							Expect(err).NotTo(HaveOccurred())
 
-							state := parsedFlags.State
-							Expect(state.IAAS).To(Equal("gcp"))
-							Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
-							Expect(state.GCP.Zone).To(Equal("some-availability-zone"))
-							Expect(state.GCP.Region).To(Equal("some-region"))
-						})
-
-						It("returns the remaining arguments", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up", "--name", "some-env-id"}))
-						})
-
-						Context("when service account key is passed inline", func() {
-							var args []string
-
-							BeforeEach(func() {
-								args = []string{
-									"bbl", "up", "--name", "some-env-id",
-									"--iaas", "gcp",
-									"--gcp-service-account-key", serviceAccountKey,
-									"--gcp-project-id", "some-project-id",
-									"--gcp-zone", "some-availability-zone",
-									"--gcp-region", "some-region",
-								}
-							})
-
-							It("returns a state object containing service account key", func() {
-								parsedFlags, err := c.Bootstrap(args)
-
-								Expect(err).NotTo(HaveOccurred())
-
-								Expect(parsedFlags.State.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
-							})
-						})
-
-						Context("when configuration includes global flags", func() {
-							BeforeEach(func() {
-								args = append([]string{
-									"bbl",
-									"--help",
-									"--debug",
-									"--version",
-									"--state-dir", "some-state-dir",
-								}, args[1:]...)
-							})
-
-							It("returns global flags", func() {
-								parsedFlags, err := c.Bootstrap(args)
-
-								Expect(err).NotTo(HaveOccurred())
-
-								Expect(parsedFlags.Help).To(BeTrue())
-								Expect(parsedFlags.Debug).To(BeTrue())
-								Expect(parsedFlags.Version).To(BeTrue())
-								Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
-							})
+							Expect(appConfig.State.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 						})
 					})
 
-					Context("when configuration is invalid", func() {
+					Context("when service account key is invalid", func() {
 						var args []string
 
 						Context("when service account key file is missing", func() {
@@ -432,11 +495,11 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state containing configuration", func() {
-						parsedFlags, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(args)
 
 						Expect(err).NotTo(HaveOccurred())
 
-						state := parsedFlags.State
+						state := appConfig.State
 
 						Expect(state.IAAS).To(Equal("gcp"))
 						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
@@ -446,29 +509,12 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the remaining arguments", func() {
-						parsedFlags, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(args)
 
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up"}))
-					})
-
-					Context("when configuration includes global flags", func() {
-						BeforeEach(func() {
-							os.Setenv("BBL_DEBUG", "true")
-						})
-
-						AfterEach(func() {
-							os.Unsetenv("BBL_DEBUG")
-						})
-
-						It("returns global flags", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(parsedFlags.Debug).To(BeTrue())
-						})
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{}))
 					})
 				})
 			})
@@ -494,39 +540,9 @@ var _ = Describe("LoadState", func() {
 					c = config.NewConfig(getState)
 				})
 
-				Context("when no configuration is passed in", func() {
-					It("returns state with existing configuration", func() {
-						parsedFlags, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
-
-						workingDir, err := os.Getwd()
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(getStateArg).To(Equal(workingDir))
-					})
-
-					Context("when state dir is specified", func() {
-						It("uses that state dir", func() {
-							_, err := c.Bootstrap([]string{
-								"bbl",
-								"create-lbs",
-								"--state-dir", "some-state-dir",
-							})
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(getStateArg).To(Equal("some-state-dir"))
-						})
-					})
-				})
-
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						parsedFlags, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap([]string{
 							"bbl",
 							"create-lbs",
 							"--iaas", "gcp",
@@ -537,7 +553,7 @@ var _ = Describe("LoadState", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
+						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
 					})
 				})
 
@@ -553,6 +569,8 @@ var _ = Describe("LoadState", func() {
 						"The region cannot be changed for an existing environment. The current region is some-region."),
 					Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-zone", "some-other-zone"},
 						"The zone cannot be changed for an existing environment. The current zone is some-zone."),
+					// Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-project-id", "some-other-project-id"},
+					// 	"The zone cannot be changed for an existing environment. The current zone is some-zone."),
 				)
 			})
 		})
@@ -560,65 +578,40 @@ var _ = Describe("LoadState", func() {
 		Context("using Azure", func() {
 			Context("when a previous state does not exist", func() {
 				Context("when configuration is passed in by flag", func() {
-					Context("when configuration is valid", func() {
-						var args []string
+					var args []string
 
-						BeforeEach(func() {
-							args = []string{
-								"bbl", "up", "--name", "some-env-id",
-								"--iaas", "azure",
-								"--azure-subscription-id", "subscription-id",
-								"--azure-tenant-id", "tenant-id",
-								"--azure-client-id", "client-id",
-								"--azure-client-secret", "client-secret",
-							}
-						})
-
-						It("returns a state object containing configuration flags", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							state := parsedFlags.State
-							Expect(state.IAAS).To(Equal("azure"))
-							Expect(state.Azure.SubscriptionID).To(Equal("subscription-id"))
-							Expect(state.Azure.TenantID).To(Equal("tenant-id"))
-							Expect(state.Azure.ClientID).To(Equal("client-id"))
-							Expect(state.Azure.ClientSecret).To(Equal("client-secret"))
-						})
-
-						It("returns the remaining arguments", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up", "--name", "some-env-id"}))
-						})
-
-						Context("when configuration includes global flags", func() {
-							BeforeEach(func() {
-								args = append([]string{
-									"bbl",
-									"--help",
-									"--debug",
-									"--version",
-									"--state-dir", "some-state-dir",
-								}, args[1:]...)
-							})
-
-							It("returns global flags", func() {
-								parsedFlags, err := c.Bootstrap(args)
-
-								Expect(err).NotTo(HaveOccurred())
-
-								Expect(parsedFlags.Help).To(BeTrue())
-								Expect(parsedFlags.Debug).To(BeTrue())
-								Expect(parsedFlags.Version).To(BeTrue())
-								Expect(parsedFlags.StateDir).To(Equal("some-state-dir"))
-							})
-						})
+					BeforeEach(func() {
+						args = []string{
+							"bbl", "up", "--name", "some-env-id",
+							"--iaas", "azure",
+							"--azure-subscription-id", "subscription-id",
+							"--azure-tenant-id", "tenant-id",
+							"--azure-client-id", "client-id",
+							"--azure-client-secret", "client-secret",
+						}
 					})
 
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+						Expect(state.IAAS).To(Equal("azure"))
+						Expect(state.Azure.SubscriptionID).To(Equal("subscription-id"))
+						Expect(state.Azure.TenantID).To(Equal("tenant-id"))
+						Expect(state.Azure.ClientID).To(Equal("client-id"))
+						Expect(state.Azure.ClientSecret).To(Equal("client-secret"))
+					})
+
+					It("returns the command and its flags", func() {
+						appConfig, err := c.Bootstrap(args)
+
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+					})
 				})
 
 				Context("when configuration is passed in by env vars", func() {
@@ -635,11 +628,11 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state containing configuration", func() {
-						parsedFlags, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(args)
 
 						Expect(err).NotTo(HaveOccurred())
 
-						state := parsedFlags.State
+						state := appConfig.State
 
 						Expect(state.IAAS).To(Equal("azure"))
 						Expect(state.Azure.SubscriptionID).To(Equal("azure-subscription-id"))
@@ -648,30 +641,13 @@ var _ = Describe("LoadState", func() {
 						Expect(state.Azure.ClientSecret).To(Equal("azure-client-secret"))
 					})
 
-					It("returns the remaining arguments", func() {
-						parsedFlags, err := c.Bootstrap(args)
+					It("returns the command", func() {
+						appConfig, err := c.Bootstrap(args)
 
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(parsedFlags.RemainingArgs).To(Equal([]string{"up"}))
-					})
-
-					Context("when configuration includes global flags", func() {
-						BeforeEach(func() {
-							os.Setenv("BBL_DEBUG", "true")
-						})
-
-						AfterEach(func() {
-							os.Unsetenv("BBL_DEBUG")
-						})
-
-						It("returns global flags", func() {
-							parsedFlags, err := c.Bootstrap(args)
-
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(parsedFlags.Debug).To(BeTrue())
-						})
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{}))
 					})
 				})
 			})
@@ -699,37 +675,24 @@ var _ = Describe("LoadState", func() {
 
 				Context("when no configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						parsedFlags, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap([]string{
 							"bbl",
 							"create-lbs",
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
+						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
 
 						workingDir, err := os.Getwd()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(getStateArg).To(Equal(workingDir))
 					})
-
-					Context("when state dir is specified", func() {
-						It("uses that state dir", func() {
-							_, err := c.Bootstrap([]string{
-								"bbl",
-								"create-lbs",
-								"--state-dir", "some-state-dir",
-							})
-							Expect(err).NotTo(HaveOccurred())
-
-							Expect(getStateArg).To(Equal("some-state-dir"))
-						})
-					})
 				})
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						parsedFlags, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap([]string{
 							"bbl",
 							"create-lbs",
 							"--iaas", "azure",
@@ -740,7 +703,7 @@ var _ = Describe("LoadState", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(parsedFlags.State.EnvID).To(Equal("some-env-id"))
+						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
 					})
 				})
 
@@ -755,24 +718,6 @@ var _ = Describe("LoadState", func() {
 				)
 			})
 		})
-
-		DescribeTable("when IAAS is not set",
-			func(args []string, expectError bool, expected string) {
-				_, err := c.Bootstrap(args)
-
-				if expectError {
-					Expect(err).To(MatchError(expected))
-				} else {
-					Expect(err).NotTo(HaveOccurred())
-				}
-			},
-			Entry("when help flag is set", []string{"bbl", "up", "--help"}, false, ""),
-			Entry("when help command is used", []string{"bbl", "help"}, false, ""),
-			Entry("when no command is used", []string{"bbl"}, false, ""),
-			Entry("when version flag is set", []string{"bbl", "--version"}, false, ""),
-			Entry("when version command is used", []string{"bbl", "version"}, false, ""),
-			// Entry("when invalid flag is passed", []string{"bbl", "--foo", "bar"}, true, "flag provided but not defined: -foo"),
-		)
 	})
 
 	Describe("ValidateIAAS", func() {

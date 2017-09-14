@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	flags "github.com/jessevdk/go-flags"
 )
@@ -33,15 +34,6 @@ type globalFlags struct {
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 }
 
-type ParsedFlags struct {
-	State         storage.State
-	RemainingArgs []string
-	Help          bool
-	Debug         bool
-	Version       bool
-	StateDir      string
-}
-
 func NewConfig(getState func(string) (storage.State, error)) Config {
 	return Config{
 		getState: getState,
@@ -52,46 +44,57 @@ type Config struct {
 	getState func(string) (storage.State, error)
 }
 
-func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
-	var globalFlags globalFlags
+func (c Config) Bootstrap(args []string) (application.Configuration, error) {
+	if len(args) == 1 {
+		return application.Configuration{
+			Command: "help",
+		}, nil
+	}
 
+	var globalFlags globalFlags
 	parser := flags.NewParser(&globalFlags, flags.IgnoreUnknown)
 
 	remainingArgs, err := parser.ParseArgs(args[1:])
 	if err != nil {
-		return ParsedFlags{}, err
+		return application.Configuration{}, err
 	}
 
-	nonStatefulCommand := len(remainingArgs) == 0 || globalFlags.Help || globalFlags.Version
-	nonStatefulCommand = nonStatefulCommand || (remainingArgs[0] == "help" || remainingArgs[0] == "version")
-	if nonStatefulCommand {
-		return ParsedFlags{
-			RemainingArgs: remainingArgs,
-			Help:          globalFlags.Help,
-			Debug:         globalFlags.Debug,
-			Version:       globalFlags.Version,
-			StateDir:      globalFlags.StateDir,
+	if globalFlags.Version || (len(remainingArgs) > 0 && remainingArgs[0] == "version") {
+		return application.Configuration{
+			ShowCommandHelp: globalFlags.Help,
+			Command:         "version",
 		}, nil
 	}
 
-	stateDir := globalFlags.StateDir
-	if stateDir == "" {
-		stateDir, err = os.Getwd()
+	if len(remainingArgs) == 0 || (len(remainingArgs) == 1 && remainingArgs[0] == "help") {
+		return application.Configuration{
+			ShowCommandHelp: globalFlags.Help,
+			Command:         "help",
+		}, nil
+	}
+
+	if remainingArgs[0] == "help" {
+		globalFlags.Help = true
+		remainingArgs = remainingArgs[1:]
+	}
+
+	if globalFlags.StateDir == "" {
+		globalFlags.StateDir, err = os.Getwd()
 		if err != nil {
 			// not tested
-			return ParsedFlags{}, err
+			return application.Configuration{}, err
 		}
 	}
 
-	state, err := c.getState(stateDir)
+	state, err := c.getState(globalFlags.StateDir)
 	if err != nil {
-		return ParsedFlags{}, err
+		return application.Configuration{}, err
 	}
 
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
 			iaasMismatch := fmt.Sprintf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
-			return ParsedFlags{}, errors.New(iaasMismatch)
+			return application.Configuration{}, errors.New(iaasMismatch)
 		}
 		state.IAAS = globalFlags.IAAS
 	}
@@ -105,7 +108,7 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 	if globalFlags.AWSRegion != "" {
 		if state.AWS.Region != "" && globalFlags.AWSRegion != state.AWS.Region {
 			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.AWS.Region)
-			return ParsedFlags{}, errors.New(regionMismatch)
+			return application.Configuration{}, errors.New(regionMismatch)
 		}
 		state.AWS.Region = globalFlags.AWSRegion
 	}
@@ -113,7 +116,7 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 	if globalFlags.GCPServiceAccountKey != "" {
 		serviceAccountKey, err := parseServiceAccountKey(globalFlags.GCPServiceAccountKey)
 		if err != nil {
-			return ParsedFlags{}, err
+			return application.Configuration{}, err
 		}
 		state.GCP.ServiceAccountKey = serviceAccountKey
 	}
@@ -123,14 +126,14 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 	if globalFlags.GCPZone != "" {
 		if state.GCP.Zone != "" && globalFlags.GCPZone != state.GCP.Zone {
 			zoneMismatch := fmt.Sprintf("The zone cannot be changed for an existing environment. The current zone is %s.", state.GCP.Zone)
-			return ParsedFlags{}, errors.New(zoneMismatch)
+			return application.Configuration{}, errors.New(zoneMismatch)
 		}
 		state.GCP.Zone = globalFlags.GCPZone
 	}
 	if globalFlags.GCPRegion != "" {
 		if state.GCP.Region != "" && globalFlags.GCPRegion != state.GCP.Region {
 			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region)
-			return ParsedFlags{}, errors.New(regionMismatch)
+			return application.Configuration{}, errors.New(regionMismatch)
 		}
 		state.GCP.Region = globalFlags.GCPRegion
 	}
@@ -147,7 +150,16 @@ func (c Config) Bootstrap(args []string) (ParsedFlags, error) {
 		state.Azure.ClientSecret = globalFlags.AzureClientSecret
 	}
 
-	return ParsedFlags{State: state, RemainingArgs: remainingArgs, Help: globalFlags.Help, Debug: globalFlags.Debug, Version: globalFlags.Version, StateDir: globalFlags.StateDir}, nil
+	return application.Configuration{
+		Global: application.GlobalConfiguration{
+			Debug:    globalFlags.Debug,
+			StateDir: globalFlags.StateDir,
+		},
+		State:           state,
+		Command:         remainingArgs[0],
+		SubcommandFlags: remainingArgs[1:],
+		ShowCommandHelp: globalFlags.Help,
+	}, nil
 }
 
 func ValidateIAAS(state storage.State, command string) error {

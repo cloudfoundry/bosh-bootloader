@@ -45,34 +45,10 @@ var (
 
 func main() {
 	newConfig := config.NewConfig(storage.GetState)
-	parsedFlags, err := newConfig.Bootstrap(os.Args)
+	appConfig, err := newConfig.Bootstrap(os.Args)
 	log.SetFlags(0)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
-	}
-
-	appConfig := &application.Configuration{
-		Global: application.GlobalConfiguration{
-			StateDir: parsedFlags.StateDir,
-			Debug:    parsedFlags.Debug,
-		},
-		State:           parsedFlags.State,
-		ShowCommandHelp: parsedFlags.Help,
-	}
-	if len(parsedFlags.RemainingArgs) > 0 {
-		appConfig.Command = parsedFlags.RemainingArgs[0]
-		appConfig.SubcommandFlags = parsedFlags.RemainingArgs[1:]
-	} else {
-		appConfig.ShowCommandHelp = false
-		if parsedFlags.Help {
-			appConfig.Command = "help"
-		}
-		if parsedFlags.Version {
-			appConfig.Command = "version"
-		}
-	}
-	if len(os.Args) == 1 {
-		appConfig.Command = "help"
 	}
 
 	needsIAASConfig := config.NeedsIAASConfig(appConfig.Command) && !appConfig.ShowCommandHelp
@@ -93,13 +69,13 @@ func main() {
 
 	storage.GetStateLogger = stderrLogger
 
-	stateStore := storage.NewStore(parsedFlags.StateDir)
-	stateValidator := application.NewStateValidator(parsedFlags.StateDir)
+	stateStore := storage.NewStore(appConfig.Global.StateDir)
+	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
-	terraformExecutor := terraform.NewExecutor(terraformCmd, parsedFlags.Debug)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, appConfig.Global.Debug)
 
 	var (
 		stackMigrator                stack.Migrator
@@ -253,7 +229,7 @@ func main() {
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 
-	app := application.New(commandSet, *appConfig, usage)
+	app := application.New(commandSet, appConfig, usage)
 
 	err = app.Run()
 	if err != nil {
