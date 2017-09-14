@@ -569,8 +569,8 @@ var _ = Describe("LoadState", func() {
 						"The region cannot be changed for an existing environment. The current region is some-region."),
 					Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-zone", "some-other-zone"},
 						"The zone cannot be changed for an existing environment. The current zone is some-zone."),
-					// Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-project-id", "some-other-project-id"},
-					// 	"The zone cannot be changed for an existing environment. The current zone is some-zone."),
+					// Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-project-id", "some-other-project-id"},
+					// 	"The project id cannot be changed for an existing environment. The current project id is some-project-id."),
 				)
 			})
 		})

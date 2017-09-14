@@ -91,14 +91,48 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		return application.Configuration{}, err
 	}
 
+	state, err = updateIAASState(globalFlags, state)
+	if err != nil {
+		return application.Configuration{}, err
+	}
+
+	return application.Configuration{
+		Global: application.GlobalConfiguration{
+			Debug:    globalFlags.Debug,
+			StateDir: globalFlags.StateDir,
+		},
+		State:           state,
+		Command:         remainingArgs[0],
+		SubcommandFlags: remainingArgs[1:],
+		ShowCommandHelp: globalFlags.Help,
+	}, nil
+}
+
+func updateIAASState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
 			iaasMismatch := fmt.Sprintf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
-			return application.Configuration{}, errors.New(iaasMismatch)
+			return storage.State{}, errors.New(iaasMismatch)
 		}
 		state.IAAS = globalFlags.IAAS
 	}
 
+	switch state.IAAS {
+	case "aws":
+		state, err := updateAWSState(globalFlags, state)
+		return state, err
+	case "gcp":
+		state, err := updateGCPState(globalFlags, state)
+		return state, err
+	case "azure":
+		state, err := updateAzureState(globalFlags, state)
+		return state, err
+	}
+
+	return state, nil
+}
+
+func updateAWSState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.AWSAccessKeyID != "" {
 		state.AWS.AccessKeyID = globalFlags.AWSAccessKeyID
 	}
@@ -108,15 +142,19 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	if globalFlags.AWSRegion != "" {
 		if state.AWS.Region != "" && globalFlags.AWSRegion != state.AWS.Region {
 			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.AWS.Region)
-			return application.Configuration{}, errors.New(regionMismatch)
+			return storage.State{}, errors.New(regionMismatch)
 		}
 		state.AWS.Region = globalFlags.AWSRegion
 	}
 
+	return state, nil
+}
+
+func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.GCPServiceAccountKey != "" {
 		serviceAccountKey, err := parseServiceAccountKey(globalFlags.GCPServiceAccountKey)
 		if err != nil {
-			return application.Configuration{}, err
+			return storage.State{}, err
 		}
 		state.GCP.ServiceAccountKey = serviceAccountKey
 	}
@@ -126,17 +164,22 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	if globalFlags.GCPZone != "" {
 		if state.GCP.Zone != "" && globalFlags.GCPZone != state.GCP.Zone {
 			zoneMismatch := fmt.Sprintf("The zone cannot be changed for an existing environment. The current zone is %s.", state.GCP.Zone)
-			return application.Configuration{}, errors.New(zoneMismatch)
+			return storage.State{}, errors.New(zoneMismatch)
 		}
 		state.GCP.Zone = globalFlags.GCPZone
 	}
 	if globalFlags.GCPRegion != "" {
 		if state.GCP.Region != "" && globalFlags.GCPRegion != state.GCP.Region {
 			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region)
-			return application.Configuration{}, errors.New(regionMismatch)
+			return storage.State{}, errors.New(regionMismatch)
 		}
 		state.GCP.Region = globalFlags.GCPRegion
 	}
+
+	return state, nil
+}
+
+func updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.AzureSubscriptionID != "" {
 		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
 	}
@@ -150,16 +193,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		state.Azure.ClientSecret = globalFlags.AzureClientSecret
 	}
 
-	return application.Configuration{
-		Global: application.GlobalConfiguration{
-			Debug:    globalFlags.Debug,
-			StateDir: globalFlags.StateDir,
-		},
-		State:           state,
-		Command:         remainingArgs[0],
-		SubcommandFlags: remainingArgs[1:],
-		ShowCommandHelp: globalFlags.Help,
-	}, nil
+	return state, nil
 }
 
 func ValidateIAAS(state storage.State, command string) error {
