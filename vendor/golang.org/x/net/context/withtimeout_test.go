@@ -11,21 +11,19 @@ import (
 	"golang.org/x/net/context"
 )
 
-// This example passes a context with a timeout to tell a blocking function that
-// it should abandon its work after the timeout elapses.
+var workComplete <-chan int
+
 func ExampleWithTimeout() {
 	// Pass a context with a timeout to tell a blocking function that it
 	// should abandon its work after the timeout elapses.
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancel()
-
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	select {
-	case <-time.After(1 * time.Second):
+	case <-workComplete:
+		cancel()
 		fmt.Println("overslept")
 	case <-ctx.Done():
 		fmt.Println(ctx.Err()) // prints "context deadline exceeded"
 	}
-
 	// Output:
 	// context deadline exceeded
 }

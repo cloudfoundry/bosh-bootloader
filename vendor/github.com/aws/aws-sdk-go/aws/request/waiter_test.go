@@ -100,9 +100,8 @@ func TestWaiterPathAll(t *testing.T) {
 	})
 
 	w := request.Waiter{
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(0),
-		SleepWithContext: aws.SleepWithContext,
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(0),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -165,9 +164,8 @@ func TestWaiterPath(t *testing.T) {
 	})
 
 	w := request.Waiter{
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(0),
-		SleepWithContext: aws.SleepWithContext,
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(0),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -230,9 +228,8 @@ func TestWaiterFailure(t *testing.T) {
 	})
 
 	w := request.Waiter{
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(0),
-		SleepWithContext: aws.SleepWithContext,
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(0),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -324,9 +321,8 @@ func TestWaiterError(t *testing.T) {
 	})
 
 	w := request.Waiter{
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(0),
-		SleepWithContext: aws.SleepWithContext,
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(0),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -393,9 +389,8 @@ func TestWaiterStatus(t *testing.T) {
 	})
 
 	w := request.Waiter{
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(0),
-		SleepWithContext: aws.SleepWithContext,
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(0),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -452,10 +447,9 @@ func TestWaiter_WithContextCanceled(t *testing.T) {
 	reqCount := 0
 
 	w := request.Waiter{
-		Name:             "TestWaiter",
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(1 * time.Millisecond),
-		SleepWithContext: aws.SleepWithContext,
+		Name:        "TestWaiter",
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(1 * time.Millisecond),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -481,16 +475,6 @@ func TestWaiter_WithContextCanceled(t *testing.T) {
 		},
 	}
 
-	w.SleepWithContext = func(c aws.Context, delay time.Duration) error {
-		context := c.(*awstesting.FakeContext)
-		select {
-		case <-context.DoneCh:
-			return context.Err()
-		default:
-			return nil
-		}
-	}
-
 	err := w.WaitWithContext(ctx)
 
 	if err == nil {
@@ -514,10 +498,9 @@ func TestWaiter_WithContext(t *testing.T) {
 	statuses := []int{http.StatusNotFound, http.StatusOK}
 
 	w := request.Waiter{
-		Name:             "TestWaiter",
-		MaxAttempts:      10,
-		Delay:            request.ConstantWaiterDelay(1 * time.Millisecond),
-		SleepWithContext: aws.SleepWithContext,
+		Name:        "TestWaiter",
+		MaxAttempts: 10,
+		Delay:       request.ConstantWaiterDelay(1 * time.Millisecond),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,
@@ -560,10 +543,9 @@ func TestWaiter_AttemptsExpires(t *testing.T) {
 	reqCount := 0
 
 	w := request.Waiter{
-		Name:             "TestWaiter",
-		MaxAttempts:      2,
-		Delay:            request.ConstantWaiterDelay(1 * time.Millisecond),
-		SleepWithContext: aws.SleepWithContext,
+		Name:        "TestWaiter",
+		MaxAttempts: 2,
+		Delay:       request.ConstantWaiterDelay(1 * time.Millisecond),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,

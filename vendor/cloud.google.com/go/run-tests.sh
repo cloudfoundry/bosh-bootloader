@@ -83,6 +83,4 @@ for pkg in $(go list $prefix/...); do      # for each package in the repo
   fi
 done
 run go test -race -v -short $shorts
-if [[ $fulls != "" ]]; then
-  run go test -race -v $fulls
-fi
+run go test -race -v $fulls

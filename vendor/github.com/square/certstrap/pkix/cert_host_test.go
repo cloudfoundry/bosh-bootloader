@@ -18,7 +18,6 @@
 package pkix
 
 import (
-	"bytes"
 	"testing"
 )
 
@@ -45,17 +44,10 @@ func TestCreateCertificateHost(t *testing.T) {
 	if crt.GetExpirationDuration() > crtAuth.GetExpirationDuration() {
 		t.Fatal("Cert expires after issuer")
 	}
+
 	rawCrt, err := crt.GetRawCertificate()
 	if err != nil {
 		t.Fatal("Failed to get x509.Certificate:", err)
-	}
-
-	rawCsr, err := csr.GetRawCertificateSigningRequest()
-	if err != nil {
-		t.Fatal("Failed to get x509.Certificate:", err)
-	}
-	if !bytes.Equal(rawCrt.RawSubject, rawCsr.RawSubject) {
-		t.Fatalf("Failed to preserve subject: %s %s", rawCrt.RawSubject, rawCsr.RawSubject)
 	}
 
 	rawCrtAuth, err := crtAuth.GetRawCertificate()
