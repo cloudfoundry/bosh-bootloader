@@ -18,6 +18,7 @@ type BOSHClientProvider struct {
 		}
 		Returns struct {
 			Client bosh.Client
+			Error  error
 		}
 	}
 }
@@ -29,5 +30,5 @@ func (b *BOSHClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, di
 	b.ClientCall.Receives.DirectorUsername = directorUsername
 	b.ClientCall.Receives.DirectorPassword = directorPassword
 	b.ClientCall.Receives.DirectorCACert = directorCACert
-	return b.ClientCall.Returns.Client, nil
+	return b.ClientCall.Returns.Client, b.ClientCall.Returns.Error
 }

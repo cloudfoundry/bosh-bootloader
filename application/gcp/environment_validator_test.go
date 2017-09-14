@@ -2,6 +2,7 @@ package gcp_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/application/gcp"
@@ -70,11 +71,19 @@ var _ = Describe("EnvironmentValidator", func() {
 			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-password"))
 		})
 
+		Context("when the bosh client provider returns an error", func() {
+			It("returns a helpful error message", func() {
+				boshClientProvider.ClientCall.Returns.Error = errors.New("some error")
+				err := environmentValidator.Validate(state)
+				Expect(err).To(MatchError("bosh client provider: some error"))
+			})
+		})
+
 		Context("when the director cannot be reached", func() {
 			It("returns a helpful error message", func() {
 				boshClient.InfoCall.Returns.Error = errors.New("some error")
 				err := environmentValidator.Validate(state)
-				Expect(err).To(MatchError(application.DirectorNotReachable))
+				Expect(err).To(MatchError(fmt.Sprintf("%s some error", application.DirectorNotReachable)))
 			})
 		})
 	})
@@ -96,7 +105,6 @@ var _ = Describe("EnvironmentValidator", func() {
 				IAAS:    "gcp",
 				TFState: "",
 			})
-
 			Expect(err).To(MatchError(application.BBLNotFound))
 		})
 	})
