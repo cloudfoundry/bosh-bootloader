@@ -104,8 +104,8 @@ func main() {
 		certificateDeleter = iam.NewCertificateDeleter(awsClientProvider)
 		certificateValidator = certs.NewValidator()
 		vpcStatusChecker = ec2.NewVPCStatusChecker(awsClientProvider)
-		infrastructureManager = cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 		stackManager = cloudformation.NewStackManager(awsClientProvider, logger)
+		infrastructureManager = cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 
 		stackMigrator = stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, awsAvailabilityZoneRetriever, awsKeyPairDeleter)
 	}
