@@ -23,10 +23,6 @@ type AWSCreateLBsConfig struct {
 	Domain    string
 }
 
-type environmentValidator interface {
-	Validate(state storage.State) error
-}
-
 func NewAWSCreateLBs(cloudConfigManager cloudConfigManager, stateStore stateStore,
 	terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{

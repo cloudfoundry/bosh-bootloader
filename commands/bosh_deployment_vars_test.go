@@ -64,13 +64,13 @@ var _ = Describe("BOSHDeploymentVars", func() {
 
 	Describe("Execute", func() {
 		It("calls out to bosh manager and prints the resulting information", func() {
-			boshManager.GetDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
+			boshManager.GetDirectorDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
 
 			err := boshDeploymentVars.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshManager.GetDeploymentVarsCall.CallCount).To(Equal(1))
-			Expect(boshManager.GetDeploymentVarsCall.Receives.TerraformOutputs).To(HaveKeyWithValue("some-name", "some-output"))
+			Expect(boshManager.GetDirectorDeploymentVarsCall.CallCount).To(Equal(1))
+			Expect(boshManager.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs).To(HaveKeyWithValue("some-name", "some-output"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
 		})
 

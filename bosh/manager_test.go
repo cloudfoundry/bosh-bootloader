@@ -738,7 +738,7 @@ gcp_credentials_json: some-credential-json
 		})
 	})
 
-	Describe("GetDeploymentVars", func() {
+	Describe("GetDirectorDeploymentVars", func() {
 		Context("gcp", func() {
 			var incomingState storage.State
 			BeforeEach(func() {
@@ -758,7 +758,7 @@ gcp_credentials_json: some-credential-json
 				}
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+				vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{
 					"network_name":           "some-network",
 					"subnetwork_name":        "some-subnetwork",
 					"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -788,7 +788,7 @@ gcp_credentials_json: some-credential-json
 					incomingState.Jumpbox.Enabled = true
 				})
 				It("returns a correct yaml string of bosh deployment variables", func() {
-					vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{
 						"network_name":           "some-network",
 						"subnetwork_name":        "some-subnetwork",
 						"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -818,7 +818,7 @@ gcp_credentials_json: some-credential-json
 						incomingState.Jumpbox.Enabled = true
 					})
 					It("returns valid yaml", func() {
-						vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{})
+						vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{})
 						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
@@ -834,7 +834,7 @@ gcp_credentials_json: some-credential-json
 
 				Context("gcp", func() {
 					It("returns valid yaml", func() {
-						vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{})
+						vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{})
 						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
@@ -872,7 +872,7 @@ gcp_credentials_json: some-credential-json
 
 			Context("when terraform was used to standup infrastructure", func() {
 				It("returns a correct yaml string of bosh deployment variables", func() {
-					vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{
 						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
 						"bosh_security_group":           "some-bosh-security-group",
@@ -908,7 +908,7 @@ kms_key_arn: some-kms-arn
 					})
 
 					It("returns a correct yaml string of bosh deployment variables", func() {
-						vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{
+						vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{
 							"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 							"bosh_subnet_availability_zone": "some-bosh-subnet-az",
 							"bosh_security_group":           "some-bosh-security-group",
@@ -940,7 +940,7 @@ kms_key_arn: some-kms-arn
 
 				Context("when terraform outputs are missing", func() {
 					It("returns valid yaml", func() {
-						vars := boshManager.GetDeploymentVars(incomingState, map[string]interface{}{})
+						vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{})
 						Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6

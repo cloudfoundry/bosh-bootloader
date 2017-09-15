@@ -4,33 +4,10 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
-
-type infrastructureManager interface {
-	Exists(stackName string) (bool, error)
-	Delete(stackName string) error
-	Describe(stackName string) (cloudformation.Stack, error)
-}
-
-type logger interface {
-	Step(string, ...interface{})
-	Printf(string, ...interface{})
-	Println(string)
-	Prompt(string)
-}
-
-type stateStore interface {
-	Set(state storage.State) error
-}
-
-type cloudConfigManager interface {
-	Update(state storage.State) error
-	Generate(state storage.State) (string, error)
-}
 
 type AWSUp struct {
 	boshManager        boshManager

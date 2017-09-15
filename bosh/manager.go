@@ -138,7 +138,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	iaasInputs := InterpolateInput{
 		IAAS: state.IAAS,
 		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
-		DeploymentVars:        m.GetDeploymentVars(state, terraformOutputs),
+		DeploymentVars:        m.GetDirectorDeploymentVars(state, terraformOutputs),
 		Variables:             state.Jumpbox.Variables,
 	}
 
@@ -203,7 +203,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 
 	iaasInputs := InterpolateInput{
 		IAAS:                  state.IAAS,
-		DeploymentVars:        m.GetDeploymentVars(state, terraformOutputs),
+		DeploymentVars:        m.GetDirectorDeploymentVars(state, terraformOutputs),
 		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 		Variables:             state.BOSH.Variables,
 		OpsFile:               state.BOSH.UserOpsFile,
@@ -286,7 +286,7 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 		iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
 	}
 
-	iaasInputs.DeploymentVars = m.GetDeploymentVars(state, terraformOutputs)
+	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
 	if err != nil {
@@ -401,7 +401,7 @@ func getTerraformOutput(key string, outputs map[string]interface{}) string {
 	return ""
 }
 
-func (m *Manager) GetDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) string {
+func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) string {
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
 		InternalGW:   "10.0.0.1",

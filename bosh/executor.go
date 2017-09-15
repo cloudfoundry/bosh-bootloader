@@ -24,6 +24,15 @@ const awsBoshDirectorEphemeralIPOps = `
   value: true
 `
 
+const awsEncryptDiskOps = `---
+- type: replace
+  path: /disk_pools/name=disks/cloud_properties?
+  value:
+    type: gp2
+    encrypted: true
+    kms_key_arn: ((kms_key_arn))
+`
+
 const azureSSHStaticIP = `
 - type: replace
   path: /cloud_provider/ssh_tunnel/host
@@ -141,15 +150,6 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 		Manifest:  buffer.String(),
 	}, nil
 }
-
-const awsEncryptDiskOps = `---
-- type: replace
-  path: /disk_pools/name=disks/cloud_properties?
-  value:
-    type: gp2
-    encrypted: true
-    kms_key_arn: ((kms_key_arn))
-`
 
 func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (InterpolateOutput, error) {
 	tempDir, err := e.tempDir("", "")

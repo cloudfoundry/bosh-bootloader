@@ -31,26 +31,6 @@ type destroyConfig struct {
 	SkipIfMissing bool
 }
 
-type vpcStatusChecker interface {
-	ValidateSafeToDelete(vpcID string, envID string) error
-}
-
-type stackManager interface {
-	Describe(string) (cloudformation.Stack, error)
-}
-
-type certificateDeleter interface {
-	Delete(certificateName string) error
-}
-
-type stateValidator interface {
-	Validate() error
-}
-
-type networkInstancesChecker interface {
-	ValidateSafeToDelete(networkName string) error
-}
-
 func NewDestroy(logger logger, stdin io.Reader,
 	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
 	infrastructureManager infrastructureManager,

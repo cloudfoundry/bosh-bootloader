@@ -44,7 +44,7 @@ func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("get terraform outputs: %s", err)
 	}
 
-	vars := b.boshManager.GetDeploymentVars(state, terraformOutputs)
+	vars := b.boshManager.GetDirectorDeploymentVars(state, terraformOutputs)
 	b.logger.Println(vars)
 	return nil
 }

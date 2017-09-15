@@ -33,10 +33,6 @@ type awsCreateLBs interface {
 	Execute(AWSCreateLBsConfig, storage.State) error
 }
 
-type certificateValidator interface {
-	Validate(command, certPath, keyPath, chainPath string) error
-}
-
 func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, logger logger, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
 	return CreateLBs{
 		boshManager:          boshManager,
