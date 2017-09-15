@@ -87,10 +87,6 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 		state.NoDirector = true
 	}
 
-	if err := u.validateState(state); err != nil {
-		return err
-	}
-
 	state, err = u.envIDManager.Sync(state, upConfig.Name)
 	if err != nil {
 		return err
@@ -158,21 +154,6 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (u GCPUp) validateState(state storage.State) error {
-	switch {
-	case state.GCP.ServiceAccountKey == "":
-		return errors.New("GCP service account key must be provided")
-	case state.GCP.ProjectID == "":
-		return errors.New("GCP project ID must be provided")
-	case state.GCP.Region == "":
-		return errors.New("GCP region must be provided")
-	case state.GCP.Zone == "":
-		return errors.New("GCP zone must be provided")
 	}
 
 	return nil
