@@ -3,21 +3,18 @@ package helpers_test
 import (
 	"errors"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	compute "google.golang.org/api/compute/v1"
 )
 
 var _ = Describe("EnvIDManager", func() {
 	var (
 		envIDGenerator        *fakes.EnvIDGenerator
-		gcpClient             *fakes.GCPClient
+		networkClient         *fakes.NetworkClient
 		infrastructureManager *fakes.InfrastructureManager
-		ec2Client             *fakes.EC2Client
 		envIDManager          helpers.EnvIDManager
 	)
 
@@ -25,12 +22,10 @@ var _ = Describe("EnvIDManager", func() {
 		envIDGenerator = &fakes.EnvIDGenerator{}
 		envIDGenerator.GenerateCall.Returns.EnvID = "some-env-id"
 
-		gcpClient = &fakes.GCPClient{}
-
+		networkClient = &fakes.NetworkClient{}
 		infrastructureManager = &fakes.InfrastructureManager{}
-		ec2Client = &fakes.EC2Client{}
 
-		envIDManager = helpers.NewEnvIDManager(envIDGenerator, gcpClient, infrastructureManager, ec2Client)
+		envIDManager = helpers.NewEnvIDManager(envIDGenerator, infrastructureManager, networkClient)
 	})
 
 	Describe("Sync", func() {
@@ -51,26 +46,20 @@ var _ = Describe("EnvIDManager", func() {
 				Expect(state.EnvID).To(Equal("some-other-env-id"))
 			})
 
-			Context("for gcp", func() {
-				It("fails if a name of a pre-existing environment is passed in", func() {
-					gcpClient.GetNetworksCall.Returns.NetworkList = &compute.NetworkList{
-						Items: []*compute.Network{
-							&compute.Network{},
-						},
-					}
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "gcp",
-					}, "existing")
+			It("fails if a name of a pre-existing environment is passed in", func() {
+				networkClient.CheckExistsCall.Returns.Exists = true
+				_, err := envIDManager.Sync(storage.State{
+					IAAS: "gcp",
+				}, "existing")
 
-					Expect(gcpClient.GetNetworksCall.CallCount).To(Equal(1))
-					Expect(gcpClient.GetNetworksCall.Receives.Name).To(Equal("existing-network"))
+				Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
+				Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-network"))
 
-					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
-				})
+				Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
 			})
 
 			Context("for aws", func() {
-				It("fails if a name of a pre-existing environment is passed in", func() {
+				It("fails if an environment with that name was already created by cloudformation", func() {
 					infrastructureManager.ExistsCall.Returns.Exists = true
 					_, err := envIDManager.Sync(storage.State{
 						IAAS: "aws",
@@ -82,16 +71,15 @@ var _ = Describe("EnvIDManager", func() {
 					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
 				})
 
-				It("fails if a name of a pre-existing environment is passed in", func() {
-					ec2Client.DescribeVpcsCall.Returns.Output = &ec2.DescribeVpcsOutput{
-						Vpcs: []*ec2.Vpc{&ec2.Vpc{}},
-					}
+				It("fails if an environment with that name was already created by terraform", func() {
+					infrastructureManager.ExistsCall.Returns.Exists = false
+					networkClient.CheckExistsCall.Returns.Exists = true
 					_, err := envIDManager.Sync(storage.State{
 						IAAS: "aws",
 					}, "existing-env")
 
-					Expect(*ec2Client.DescribeVpcsCall.Receives.Input.Filters[0].Name).To(Equal("tag:Name"))
-					Expect(*ec2Client.DescribeVpcsCall.Receives.Input.Filters[0].Values[0]).To(Equal("existing-env-vpc"))
+					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
+					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env-vpc"))
 
 					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
 				})
@@ -109,24 +97,14 @@ var _ = Describe("EnvIDManager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the gcpClient cannot get networks", func() {
-				gcpClient.GetNetworksCall.Returns.Error = errors.New("failed to get network list")
+			It("returns an error when the NetworkClient cannot check if a network exists", func() {
+				networkClient.CheckExistsCall.Returns.Error = errors.New("failed to get network list")
 
 				_, err := envIDManager.Sync(storage.State{
 					IAAS: "gcp",
 				}, "existing")
 
 				Expect(err).To(MatchError("failed to get network list"))
-			})
-
-			It("returns an error when the ec2 client cannot verify vpc existence", func() {
-				ec2Client.DescribeVpcsCall.Returns.Error = errors.New("raspberry")
-
-				_, err := envIDManager.Sync(storage.State{
-					IAAS: "aws",
-				}, "existing")
-
-				Expect(err).To(MatchError("Failed to check vpc existence: raspberry"))
 			})
 
 			It("returns an error when the infrastructure manager cannot verify stack existence", func() {

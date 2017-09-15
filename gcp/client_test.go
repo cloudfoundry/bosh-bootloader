@@ -12,16 +12,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("network instances checker", func() {
+var _ = Describe("Client", func() {
 	var (
-		client                  *fakes.GCPClient
-		networkInstancesChecker gcp.NetworkInstancesChecker
+		computeClient *fakes.GCPComputeClient
+		client        gcp.Client
 	)
 
 	Describe("ValidateSafeToDelete", func() {
 		BeforeEach(func() {
-			client = &fakes.GCPClient{}
-			networkInstancesChecker = gcp.NewNetworkInstancesChecker(client)
+			computeClient = &fakes.GCPComputeClient{}
+			client = gcp.NewClientWithInjectedComputeClient(computeClient, "some-project-id", "some-zone")
 		})
 
 		It("does not return an error when the bosh director is the only vm on the network", func() {
@@ -31,7 +31,7 @@ var _ = Describe("network instances checker", func() {
 			boshString := "bosh"
 			boshInitString := "bosh-init"
 
-			client.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
+			computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
 				Items: []*compute.Instance{
 					{
 						Name: directorName,
@@ -70,7 +70,7 @@ var _ = Describe("network instances checker", func() {
 				},
 			}
 
-			err := networkInstancesChecker.ValidateSafeToDelete(networkName)
+			err := client.ValidateSafeToDelete(networkName, "some-env-id")
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -85,7 +85,7 @@ var _ = Describe("network instances checker", func() {
 			boshString := "bosh"
 			boshInitString := "bosh-init"
 
-			client.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
+			computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
 				Items: []*compute.Instance{
 					{
 						Name: directorName,
@@ -161,7 +161,7 @@ var _ = Describe("network instances checker", func() {
 				},
 			}
 
-			err := networkInstancesChecker.ValidateSafeToDelete(networkName)
+			err := client.ValidateSafeToDelete(networkName, "some-env-id")
 
 			Expect(err).To(MatchError(fmt.Sprintf(`bbl environment is not safe to delete; vms still exist in network:
 %s (deployment: %s)
@@ -170,8 +170,8 @@ var _ = Describe("network instances checker", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when gcp client list instances fails", func() {
-				client.ListInstancesCall.Returns.Error = errors.New("fails to list instances")
-				err := networkInstancesChecker.ValidateSafeToDelete("some-network")
+				computeClient.ListInstancesCall.Returns.Error = errors.New("fails to list instances")
+				err := client.ValidateSafeToDelete("some-network", "some-env-id")
 				Expect(err).To(MatchError("fails to list instances"))
 			})
 		})

@@ -13,3 +13,11 @@ func SetGCPHTTPClient(f func(*jwt.Config) *http.Client) {
 func ResetGCPHTTPClient() {
 	gcpHTTPClient = gcpHTTPClientFunc
 }
+
+func NewClientWithInjectedComputeClient(computeClient ComputeClient, projectID, zone string) Client {
+	return Client{
+		computeClient: computeClient,
+		projectID:     projectID,
+		zone:          zone,
+	}
+}

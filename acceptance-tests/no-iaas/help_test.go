@@ -89,8 +89,8 @@ var _ = Describe("bbl", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Eventually(session.Out.Contents()).Should(ContainSubstring(fmt.Sprintf("bbl [GLOBAL OPTIONS] %s [OPTIONS]", command)))
-			Eventually(session.Out.Contents()).Should(ContainSubstring(expectedDescription))
+			Eventually(string(session.Out.Contents())).Should(ContainSubstring(fmt.Sprintf("bbl [GLOBAL OPTIONS] %s [OPTIONS]", command)))
+			Eventually(string(session.Out.Contents())).Should(ContainSubstring(expectedDescription))
 		},
 			Entry("Up", "up", "--aws-access-key-id", []string{"help", "up"}),
 			Entry("Up", "up", "--aws-access-key-id", []string{"up", "--help"}),
@@ -98,8 +98,8 @@ var _ = Describe("bbl", func() {
 			Entry("Destroy", "destroy", "--no-confirm", []string{"destroy", "--help"}),
 			Entry("Create LBs", "create-lbs", "Attaches load balancer(s)", []string{"help", "create-lbs"}),
 			Entry("Create LBs", "create-lbs", "Attaches load balancer(s)", []string{"create-lbs", "--help"}),
-			Entry("Update LBs", "update-lbs", "Updates load balancer(s)", []string{"help", "update-lbs"}),
-			Entry("Update LBs", "update-lbs", "Updates load balancer(s)", []string{"update-lbs", "--help"}),
+			Entry("Update LBs", "update-lbs", "Attaches load balancer(s)", []string{"help", "update-lbs"}),
+			Entry("Update LBs", "update-lbs", "Attaches load balancer(s)", []string{"update-lbs", "--help"}),
 			Entry("Delete LBs", "delete-lbs", "Deletes load balancer(s)", []string{"help", "delete-lbs"}),
 			Entry("Delete LBs", "delete-lbs", "Deletes load balancer(s)", []string{"delete-lbs", "--help"}),
 			Entry("Rotate", "rotate", "Rotates SSH key", []string{"help", "rotate"}),

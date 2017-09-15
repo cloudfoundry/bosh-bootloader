@@ -12,7 +12,7 @@ type AWSCreateLBs struct {
 	stateStore           stateStore
 	stateValidator       stateValidator
 	terraformManager     terraformApplier
-	environmentValidator environmentValidator
+	environmentValidator EnvironmentValidator
 }
 
 type AWSCreateLBsConfig struct {
@@ -23,8 +23,12 @@ type AWSCreateLBsConfig struct {
 	Domain    string
 }
 
+type EnvironmentValidator interface {
+	Validate(state storage.State) error
+}
+
 func NewAWSCreateLBs(cloudConfigManager cloudConfigManager, stateStore stateStore,
-	terraformManager terraformApplier, environmentValidator environmentValidator) AWSCreateLBs {
+	terraformManager terraformApplier, environmentValidator EnvironmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,
@@ -33,7 +37,17 @@ func NewAWSCreateLBs(cloudConfigManager cloudConfigManager, stateStore stateStor
 	}
 }
 
-func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) error {
+func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error {
+	if state.LB.Type != "" {
+		if config.AWS.Domain == "" {
+			config.AWS.Domain = state.LB.Domain
+		}
+
+		if config.AWS.LBType == "" {
+			config.AWS.LBType = state.LB.Type
+		}
+	}
+
 	if lbExists(state.Stack.LBType) {
 		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", state.Stack.LBType)
 	}
@@ -42,12 +56,12 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	certContents, err := ioutil.ReadFile(config.CertPath)
+	certContents, err := ioutil.ReadFile(config.AWS.CertPath)
 	if err != nil {
 		return err
 	}
 
-	keyContents, err := ioutil.ReadFile(config.KeyPath)
+	keyContents, err := ioutil.ReadFile(config.AWS.KeyPath)
 	if err != nil {
 		return err
 	}
@@ -55,8 +69,8 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 	state.LB.Cert = string(certContents)
 	state.LB.Key = string(keyContents)
 
-	if config.ChainPath != "" {
-		chainContents, err := ioutil.ReadFile(config.ChainPath)
+	if config.AWS.ChainPath != "" {
+		chainContents, err := ioutil.ReadFile(config.AWS.ChainPath)
 		if err != nil {
 			return err
 		}
@@ -64,11 +78,11 @@ func (c AWSCreateLBs) Execute(config AWSCreateLBsConfig, state storage.State) er
 		state.LB.Chain = string(chainContents)
 	}
 
-	if config.Domain != "" {
-		state.LB.Domain = config.Domain
+	if config.AWS.Domain != "" {
+		state.LB.Domain = config.AWS.Domain
 	}
 
-	state.LB.Type = config.LBType
+	state.LB.Type = config.AWS.LBType
 
 	err = c.stateStore.Set(state)
 	if err != nil {

@@ -20,26 +20,24 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy                 commands.Destroy
-		boshManager             *fakes.BOSHManager
-		stackManager            *fakes.StackManager
-		infrastructureManager   *fakes.InfrastructureManager
-		vpcStatusChecker        *fakes.VPCStatusChecker
-		logger                  *fakes.Logger
-		certificateDeleter      *fakes.CertificateDeleter
-		stateStore              *fakes.StateStore
-		stateValidator          *fakes.StateValidator
-		terraformManager        *fakes.TerraformManager
-		terraformManagerError   *fakes.TerraformManagerError
-		networkInstancesChecker *fakes.NetworkInstancesChecker
-		stdin                   *bytes.Buffer
+		destroy                  commands.Destroy
+		boshManager              *fakes.BOSHManager
+		stackManager             *fakes.StackManager
+		infrastructureManager    *fakes.InfrastructureManager
+		logger                   *fakes.Logger
+		certificateDeleter       *fakes.CertificateDeleter
+		stateStore               *fakes.StateStore
+		stateValidator           *fakes.StateValidator
+		terraformManager         *fakes.TerraformManager
+		terraformManagerError    *fakes.TerraformManagerError
+		networkDeletionValidator *fakes.NetworkDeletionValidator
+		stdin                    *bytes.Buffer
 	)
 
 	BeforeEach(func() {
 		stdin = bytes.NewBuffer([]byte{})
 		logger = &fakes.Logger{}
 
-		vpcStatusChecker = &fakes.VPCStatusChecker{}
 		stackManager = &fakes.StackManager{}
 		infrastructureManager = &fakes.InfrastructureManager{}
 		boshManager = &fakes.BOSHManager{}
@@ -49,12 +47,12 @@ var _ = Describe("Destroy", func() {
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
 		terraformManagerError = &fakes.TerraformManagerError{}
-		networkInstancesChecker = &fakes.NetworkInstancesChecker{}
+		networkDeletionValidator = &fakes.NetworkDeletionValidator{}
 
 		destroy = commands.NewDestroy(logger, stdin, boshManager,
-			vpcStatusChecker, stackManager, infrastructureManager,
+			stackManager, infrastructureManager,
 			certificateDeleter, stateStore,
-			stateValidator, terraformManager, networkInstancesChecker)
+			stateValidator, terraformManager, networkDeletionValidator)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -158,12 +156,12 @@ var _ = Describe("Destroy", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+					Expect(networkDeletionValidator.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
 				})
 			})
 
 			It("returns an error when instances exist in the gcp network", func() {
-				networkInstancesChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
+				networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
 
 				projectID := "some-project-id"
 				zone := "some-zone"
@@ -180,7 +178,7 @@ var _ = Describe("Destroy", func() {
 					TFState: tfState,
 				})
 
-				Expect(networkInstancesChecker.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
+				Expect(networkDeletionValidator.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-name"))
 				Expect(err).To(MatchError("validation failed"))
 			})
 
@@ -194,7 +192,7 @@ var _ = Describe("Destroy", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(networkInstancesChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+					Expect(networkDeletionValidator.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
 				})
 			})
 		})
@@ -251,13 +249,12 @@ var _ = Describe("Destroy", func() {
 							"VPCID": "some-vpc-id",
 						},
 					}
-					vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
+					networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
 
 					err := destroy.CheckFastFails([]string{}, state)
 					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
 
-					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
-					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal(""))
+					Expect(networkDeletionValidator.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-vpc-id"))
 				})
 
 				Context("when the stack manager cannot describe the stack", func() {
@@ -286,7 +283,7 @@ var _ = Describe("Destroy", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-						Expect(vpcStatusChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+						Expect(networkDeletionValidator.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
 					})
 				})
 
@@ -295,14 +292,14 @@ var _ = Describe("Destroy", func() {
 						"vpc_id": "some-vpc-id",
 					}
 
-					vpcStatusChecker.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
+					networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
 					Expect(state.Stack.Name).To(BeEmpty())
 
 					err := destroy.CheckFastFails([]string{}, state)
 					Expect(err).To(MatchError("vpc some-vpc-id is not safe to delete"))
 
-					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.VPCID).To(Equal("some-vpc-id"))
-					Expect(vpcStatusChecker.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal("some-env-id"))
+					Expect(networkDeletionValidator.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-vpc-id"))
+					Expect(networkDeletionValidator.ValidateSafeToDeleteCall.Receives.EnvID).To(Equal("some-env-id"))
 				})
 			})
 		})
@@ -839,7 +836,7 @@ var _ = Describe("Destroy", func() {
 							err := destroy.Execute([]string{}, state)
 							Expect(err).NotTo(HaveOccurred())
 
-							Expect(vpcStatusChecker.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
+							Expect(networkDeletionValidator.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
 						})
 
 						It("does not attempt to delete the stack", func() {

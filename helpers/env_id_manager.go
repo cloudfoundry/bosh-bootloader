@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"regexp"
 
-	compute "google.golang.org/api/compute/v1"
-
-	awslib "github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -16,9 +12,8 @@ var matchString = regexp.MatchString
 
 type EnvIDManager struct {
 	envIDGenerator        envIDGenerator
-	gcpClient             gcpClient
+	networkClient         NetworkClient
 	infrastructureManager infrastructureManager
-	ec2Client             ec2Client
 }
 
 type envIDGenerator interface {
@@ -29,20 +24,15 @@ type infrastructureManager interface {
 	Exists(stackName string) (bool, error)
 }
 
-type ec2Client interface {
-	DescribeVpcs(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
+type NetworkClient interface {
+	CheckExists(networkName string) (bool, error)
 }
 
-type gcpClient interface {
-	GetNetworks(name string) (*compute.NetworkList, error)
-}
-
-func NewEnvIDManager(envIDGenerator envIDGenerator, gcpClient gcpClient, infrastructureManager infrastructureManager, ec2Client ec2Client) EnvIDManager {
+func NewEnvIDManager(envIDGenerator envIDGenerator, infrastructureManager infrastructureManager, networkClient NetworkClient) EnvIDManager {
 	return EnvIDManager{
 		envIDGenerator:        envIDGenerator,
-		gcpClient:             gcpClient,
 		infrastructureManager: infrastructureManager,
-		ec2Client:             ec2Client,
+		networkClient:         networkClient,
 	}
 }
 
@@ -74,17 +64,7 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 }
 
 func (e EnvIDManager) checkFastFail(iaas, envID string) error {
-	switch iaas {
-	case "gcp":
-		networkName := envID + "-network"
-		networkList, err := e.gcpClient.GetNetworks(networkName)
-		if err != nil {
-			return err
-		}
-		if len(networkList.Items) > 0 {
-			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
-		}
-	case "aws":
+	if iaas == "aws" {
 		stackName := "stack-" + envID
 		stackExists, err := e.infrastructureManager.Exists(stackName)
 		if err != nil {
@@ -93,25 +73,25 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 		if stackExists {
 			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
 		}
-
-		vpcs, err := e.ec2Client.DescribeVpcs(&ec2.DescribeVpcsInput{
-			Filters: []*ec2.Filter{
-				{
-					Name: awslib.String("tag:Name"),
-					Values: []*string{
-						awslib.String(fmt.Sprintf("%s-vpc", envID)),
-					},
-				},
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("Failed to check vpc existence: %s", err)
-		}
-
-		if len(vpcs.Vpcs) > 0 {
-			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
-		}
 	}
+
+	var networkName string
+	switch iaas {
+	case "gcp":
+		networkName = envID + "-network"
+	case "aws":
+		networkName = envID + "-vpc"
+	}
+
+	exists, err := e.networkClient.CheckExists(networkName)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
+	}
+
 	return nil
 }
 

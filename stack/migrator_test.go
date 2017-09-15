@@ -5,8 +5,9 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/stack"
-	"github.com/cloudfoundry/bosh-bootloader/stack/fakes"
+	counterfeits "github.com/cloudfoundry/bosh-bootloader/stack/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
@@ -17,12 +18,12 @@ import (
 
 var _ = Describe("Migrate", func() {
 	var (
-		tf             *fakes.TF
-		infrastructure *fakes.Infrastructure
-		certificate    *fakes.Certificate
-		userPolicy     *fakes.UserPolicy
-		zone           *fakes.Zone
-		keyPair        *fakes.KeyPair
+		tf             *counterfeits.TF
+		infrastructure *counterfeits.Infrastructure
+		certificate    *counterfeits.Certificate
+		userPolicy     *counterfeits.UserPolicy
+		zone           *fakes.AvailabilityZoneRetriever
+		keyPair        *counterfeits.KeyPair
 
 		migrator stack.Migrator
 
@@ -30,16 +31,17 @@ var _ = Describe("Migrate", func() {
 	)
 
 	BeforeEach(func() {
-		tf = &fakes.TF{}
-		infrastructure = &fakes.Infrastructure{}
-		certificate = &fakes.Certificate{}
-		userPolicy = &fakes.UserPolicy{}
-		keyPair = &fakes.KeyPair{}
-		zone = &fakes.Zone{}
+		tf = &counterfeits.TF{}
+		infrastructure = &counterfeits.Infrastructure{}
+		certificate = &counterfeits.Certificate{}
+		userPolicy = &counterfeits.UserPolicy{}
+		keyPair = &counterfeits.KeyPair{}
+		zone = &fakes.AvailabilityZoneRetriever{}
 
 		migrator = stack.NewMigrator(tf, infrastructure, certificate, userPolicy, zone, keyPair)
 
-		zone.RetrieveReturns([]string{"some-az"}, nil)
+		zone.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"some-az"}
+		zone.RetrieveAvailabilityZonesCall.Returns.Error = nil
 
 		infrastructure.UpdateReturns(cloudformation.Stack{
 			Outputs: map[string]string{
@@ -95,8 +97,8 @@ var _ = Describe("Migrate", func() {
 		state, err := migrator.Migrate(incomingState)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(zone.RetrieveCallCount()).To(Equal(1))
-		Expect(zone.RetrieveArgsForCall(0)).To(Equal("some-region"))
+		Expect(zone.RetrieveAvailabilityZonesCall.CallCount).To(Equal(1))
+		Expect(zone.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 		Expect(certificate.DescribeCallCount()).To(Equal(0))
 
@@ -111,8 +113,8 @@ var _ = Describe("Migrate", func() {
 		Expect(certificateARN).To(Equal(""))
 		Expect(envID).To(Equal("some-env-id"))
 
-		Expect(keyPair.DeleteCallCount()).To(Equal(1))
-		Expect(keyPair.DeleteArgsForCall(0)).To(Equal("some-keypair"))
+		Expect(keyPair.DeleteKeyPairCallCount()).To(Equal(1))
+		Expect(keyPair.DeleteKeyPairArgsForCall(0)).To(Equal("some-keypair"))
 
 		Expect(userPolicy.DeleteCallCount()).To(Equal(1))
 		username, policyName := userPolicy.DeleteArgsForCall(0)
@@ -233,7 +235,7 @@ var _ = Describe("Migrate", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(certificate.DescribeCallCount()).To(Equal(0))
-			Expect(zone.RetrieveCallCount()).To(Equal(0))
+			Expect(zone.RetrieveAvailabilityZonesCall.CallCount).To(Equal(0))
 			Expect(infrastructure.UpdateCallCount()).To(Equal(0))
 			Expect(tf.ImportCallCount()).To(Equal(0))
 			Expect(infrastructure.DeleteCallCount()).To(Equal(0))
@@ -283,7 +285,8 @@ var _ = Describe("Migrate", func() {
 	Context("when an error occurs", func() {
 		Context("when the availability zone cannot be retrieved", func() {
 			It("returns an error", func() {
-				zone.RetrieveReturns([]string{}, errors.New("wrong-zone"))
+				zone.RetrieveAvailabilityZonesCall.Returns.AZs = []string{}
+				zone.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("wrong-zone")
 
 				_, err := migrator.Migrate(incomingState)
 				Expect(err).To(MatchError("wrong-zone"))
@@ -338,7 +341,7 @@ var _ = Describe("Migrate", func() {
 
 		Context("when the key pair cannot be deleted", func() {
 			It("returns an error", func() {
-				keyPair.DeleteReturns(errors.New("keypair delete"))
+				keyPair.DeleteKeyPairReturns(errors.New("keypair delete"))
 
 				_, err := migrator.Migrate(incomingState)
 				Expect(err).To(MatchError("keypair delete"))

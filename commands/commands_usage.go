@@ -33,7 +33,7 @@ const (
   --type              Load balancer(s) type. Valid options: "concourse" or "cf"
   [--cert]            Path to SSL certificate (conditionally required; refer to table below)
   [--key]             Path to SSL certificate key (conditionally required; refer to table below)
-  [--chain]           Path to SSL certificate chain (optional; applicable if --cert/--key are required; refer to table below)
+  [--chain]           Path to SSL certificate chain (optional; only supported on aws)
   [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
 
   --cert/--key requirements:
@@ -93,8 +93,6 @@ func (Up) Usage() string { return UpCommandUsage }
 func (Destroy) Usage() string { return DestroyCommandUsage }
 
 func (CreateLBs) Usage() string { return CreateLBsCommandUsage }
-
-func (UpdateLBs) Usage() string { return UpdateLBsCommandUsage }
 
 func (DeleteLBs) Usage() string { return DeleteLBsCommandUsage }
 

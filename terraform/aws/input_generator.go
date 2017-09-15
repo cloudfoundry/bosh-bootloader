@@ -5,29 +5,26 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type InputGenerator struct {
-	availabilityZoneRetriever availabilityZoneRetriever
-}
-
-type availabilityZoneRetriever interface {
-	Retrieve(string) ([]string, error)
+	availabilityZoneRetriever ec2.AvailabilityZoneRetriever
 }
 
 const terraformNameCharLimit = 18
 
 var jsonMarshal = json.Marshal
 
-func NewInputGenerator(availabilityZoneRetriever availabilityZoneRetriever) InputGenerator {
+func NewInputGenerator(availabilityZoneRetriever ec2.AvailabilityZoneRetriever) InputGenerator {
 	return InputGenerator{
 		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
 
 func (i InputGenerator) Generate(state storage.State) (map[string]string, error) {
-	azs, err := i.availabilityZoneRetriever.Retrieve(state.AWS.Region)
+	azs, err := i.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
 	if err != nil {
 		return map[string]string{}, err
 	}

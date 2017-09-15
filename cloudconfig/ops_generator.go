@@ -6,15 +6,15 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type OpsGenerator struct {
-	awsCloudFormationOpsGenerator opsGenerator
-	awsTerraformOpsGenerator      opsGenerator
-	gcpOpsGenerator               opsGenerator
-	azureOpsGenerator             opsGenerator
+type OpsGeneratorWrapper struct {
+	awsCloudFormationOpsGenerator OpsGenerator
+	awsTerraformOpsGenerator      OpsGenerator
+	gcpOpsGenerator               OpsGenerator
+	azureOpsGenerator             OpsGenerator
 }
 
-func NewOpsGenerator(awsCloudFormationOpsGenerator opsGenerator, awsTerraformOpsGenerator opsGenerator, gcpOpsGenerator opsGenerator, azureOpsGenerator opsGenerator) OpsGenerator {
-	return OpsGenerator{
+func NewOpsGenerator(awsCloudFormationOpsGenerator OpsGenerator, awsTerraformOpsGenerator OpsGenerator, gcpOpsGenerator OpsGenerator, azureOpsGenerator OpsGenerator) OpsGeneratorWrapper {
+	return OpsGeneratorWrapper{
 		awsCloudFormationOpsGenerator: awsCloudFormationOpsGenerator,
 		awsTerraformOpsGenerator:      awsTerraformOpsGenerator,
 		gcpOpsGenerator:               gcpOpsGenerator,
@@ -22,7 +22,7 @@ func NewOpsGenerator(awsCloudFormationOpsGenerator opsGenerator, awsTerraformOps
 	}
 }
 
-func (o OpsGenerator) Generate(state storage.State) (string, error) {
+func (o OpsGeneratorWrapper) Generate(state storage.State) (string, error) {
 	switch state.IAAS {
 	case "gcp":
 		return o.gcpOpsGenerator.Generate(state)

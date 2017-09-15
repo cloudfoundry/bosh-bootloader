@@ -7,19 +7,23 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 )
 
+type logger interface {
+	Step(string, ...interface{})
+}
+
 type ClientProvider struct {
 	ec2Client            ec2.Client
 	cloudformationClient cloudformation.Client
 	iamClient            iam.Client
 }
 
-func (c *ClientProvider) SetConfig(config aws.Config) {
-	c.ec2Client = ec2.NewClient(config)
+func (c *ClientProvider) SetConfig(config aws.Config, logger logger) {
+	c.ec2Client = ec2.NewClient(config, logger)
 	c.cloudformationClient = cloudformation.NewClient(config)
 	c.iamClient = iam.NewClient(config)
 }
 
-func (c *ClientProvider) GetEC2Client() ec2.Client {
+func (c *ClientProvider) Client() ec2.Client {
 	return c.ec2Client
 }
 

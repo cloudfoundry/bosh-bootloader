@@ -5,15 +5,12 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type availabilityZoneRetriever interface {
-	Retrieve(string) ([]string, error)
-}
-
 type CloudFormationOpsGenerator struct {
-	availabilityZoneRetriever availabilityZoneRetriever
+	availabilityZoneRetriever ec2.AvailabilityZoneRetriever
 	infrastructureManager     infrastructureManager
 }
 
@@ -21,7 +18,7 @@ type infrastructureManager interface {
 	Describe(stackName string) (cloudformation.Stack, error)
 }
 
-func NewCloudFormationOpsGenerator(availabilityZoneRetriever availabilityZoneRetriever, infrastructureManager infrastructureManager) CloudFormationOpsGenerator {
+func NewCloudFormationOpsGenerator(availabilityZoneRetriever ec2.AvailabilityZoneRetriever, infrastructureManager infrastructureManager) CloudFormationOpsGenerator {
 	return CloudFormationOpsGenerator{
 		availabilityZoneRetriever: availabilityZoneRetriever,
 		infrastructureManager:     infrastructureManager,
@@ -49,7 +46,7 @@ func (a CloudFormationOpsGenerator) Generate(state storage.State) (string, error
 }
 
 func (a CloudFormationOpsGenerator) generateCloudFormationAWSOps(state storage.State) ([]op, error) {
-	azs, err := a.availabilityZoneRetriever.Retrieve(state.AWS.Region)
+	azs, err := a.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
 	if err != nil {
 		return []op{}, err
 	}

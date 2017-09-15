@@ -13,17 +13,16 @@ import (
 )
 
 type Destroy struct {
-	logger                  logger
-	stdin                   io.Reader
-	boshManager             boshManager
-	vpcStatusChecker        vpcStatusChecker
-	stackManager            stackManager
-	infrastructureManager   infrastructureManager
-	certificateDeleter      certificateDeleter
-	stateStore              stateStore
-	stateValidator          stateValidator
-	terraformManager        terraformDestroyer
-	networkInstancesChecker networkInstancesChecker
+	logger                   logger
+	stdin                    io.Reader
+	boshManager              boshManager
+	stackManager             stackManager
+	infrastructureManager    infrastructureManager
+	certificateDeleter       certificateDeleter
+	stateStore               stateStore
+	stateValidator           stateValidator
+	terraformManager         terraformDestroyer
+	networkDeletionValidator NetworkDeletionValidator
 }
 
 type destroyConfig struct {
@@ -31,23 +30,26 @@ type destroyConfig struct {
 	SkipIfMissing bool
 }
 
+type NetworkDeletionValidator interface {
+	ValidateSafeToDelete(networkName string, envID string) error
+}
+
 func NewDestroy(logger logger, stdin io.Reader,
-	boshManager boshManager, vpcStatusChecker vpcStatusChecker, stackManager stackManager,
+	boshManager boshManager, stackManager stackManager,
 	infrastructureManager infrastructureManager,
 	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
-	terraformManager terraformDestroyer, networkInstancesChecker networkInstancesChecker) Destroy {
+	terraformManager terraformDestroyer, networkDeletionValidator NetworkDeletionValidator) Destroy {
 	return Destroy{
-		logger:                  logger,
-		stdin:                   stdin,
-		boshManager:             boshManager,
-		vpcStatusChecker:        vpcStatusChecker,
-		stackManager:            stackManager,
-		infrastructureManager:   infrastructureManager,
-		certificateDeleter:      certificateDeleter,
-		stateStore:              stateStore,
-		stateValidator:          stateValidator,
-		terraformManager:        terraformManager,
-		networkInstancesChecker: networkInstancesChecker,
+		logger:                   logger,
+		stdin:                    stdin,
+		boshManager:              boshManager,
+		stackManager:             stackManager,
+		infrastructureManager:    infrastructureManager,
+		certificateDeleter:       certificateDeleter,
+		stateStore:               stateStore,
+		stateValidator:           stateValidator,
+		terraformManager:         terraformManager,
+		networkDeletionValidator: networkDeletionValidator,
 	}
 }
 
@@ -81,51 +83,48 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		return err
 	}
 
-	var terraformOutputs map[string]interface{}
-	if state.IAAS == "gcp" {
+	var networkName string
+
+	if state.IAAS == "aws" && state.TFState == "" {
+		stackExists := true
+		var err error
+		stack, err := d.stackManager.Describe(state.Stack.Name)
+		switch err {
+		case cloudformation.StackNotFound:
+			stackExists = false
+		case nil:
+			break
+		default:
+			return err
+		}
+
+		if stackExists {
+			networkName = stack.Outputs["VPCID"]
+		}
+	} else {
+		var terraformOutputs map[string]interface{}
+
 		terraformOutputs, err = d.terraformManager.GetOutputs(state)
-		if err == nil {
-			networkName, ok := terraformOutputs["network_name"].(string)
-			if ok {
-				err = d.networkInstancesChecker.ValidateSafeToDelete(networkName)
-				if err != nil {
-					return err
-				}
+		if err != nil {
+			return nil
+		}
+
+		if state.IAAS == "gcp" {
+			networkNameOutput, ok := terraformOutputs["network_name"]
+			if !ok {
+				return nil
 			}
+			networkName = networkNameOutput.(string)
+		}
+
+		if state.IAAS == "aws" {
+			networkName = terraformOutputs["vpc_id"].(string)
 		}
 	}
 
-	if state.IAAS == "aws" {
-		if state.TFState != "" {
-			outputs, err := d.terraformManager.GetOutputs(state)
-			if err == nil {
-				var vpcID = outputs["vpc_id"]
-				if vpcID != nil {
-					if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID.(string), state.EnvID); err != nil {
-						return err
-					}
-				}
-			}
-		} else {
-			stackExists := true
-			var err error
-			stack, err := d.stackManager.Describe(state.Stack.Name)
-			switch err {
-			case cloudformation.StackNotFound:
-				stackExists = false
-			case nil:
-				break
-			default:
-				return err
-			}
-
-			if stackExists {
-				var vpcID = stack.Outputs["VPCID"]
-				if err := d.vpcStatusChecker.ValidateSafeToDelete(vpcID, ""); err != nil {
-					return err
-				}
-			}
-		}
+	err = d.networkDeletionValidator.ValidateSafeToDelete(networkName, state.EnvID)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -6,7 +6,7 @@ type GCPClientProvider struct {
 	ClientCall struct {
 		CallCount int
 		Returns   struct {
-			Client gcp.GCPClient
+			Client gcp.Client
 		}
 	}
 	SetConfigCall struct {
@@ -23,7 +23,7 @@ type GCPClientProvider struct {
 	}
 }
 
-func (g *GCPClientProvider) Client() gcp.GCPClient {
+func (g *GCPClientProvider) Client() gcp.Client {
 	g.ClientCall.CallCount++
 
 	return g.ClientCall.Returns.Client

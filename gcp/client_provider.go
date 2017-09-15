@@ -23,7 +23,7 @@ var gcpHTTPClient = gcpHTTPClientFunc
 
 type ClientProvider struct {
 	basePath string
-	client   GCPClient
+	client   Client
 }
 
 func NewClientProvider(gcpBasePath string) *ClientProvider {
@@ -51,10 +51,10 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone st
 		service.BasePath = p.basePath
 	}
 
-	p.client = GCPClient{
-		service:   service,
-		projectID: projectID,
-		zone:      zone,
+	p.client = Client{
+		computeClient: gcpComputeClient{service: service},
+		projectID:     projectID,
+		zone:          zone,
 	}
 
 	_, err = p.client.GetRegion(region)
@@ -81,6 +81,6 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone st
 	return fmt.Errorf("Zone %s is not in region %s.", zone, region)
 }
 
-func (p *ClientProvider) Client() GCPClient {
+func (p *ClientProvider) Client() Client {
 	return p.client
 }

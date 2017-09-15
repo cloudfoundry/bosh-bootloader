@@ -1,7 +1,7 @@
 package fakes
 
 type AvailabilityZoneRetriever struct {
-	RetrieveCall struct {
+	RetrieveAvailabilityZonesCall struct {
 		Receives struct {
 			Region string
 		}
@@ -9,10 +9,12 @@ type AvailabilityZoneRetriever struct {
 			AZs   []string
 			Error error
 		}
+		CallCount int
 	}
 }
 
-func (a *AvailabilityZoneRetriever) Retrieve(region string) ([]string, error) {
-	a.RetrieveCall.Receives.Region = region
-	return a.RetrieveCall.Returns.AZs, a.RetrieveCall.Returns.Error
+func (a *AvailabilityZoneRetriever) RetrieveAvailabilityZones(region string) ([]string, error) {
+	a.RetrieveAvailabilityZonesCall.Receives.Region = region
+	a.RetrieveAvailabilityZonesCall.CallCount++
+	return a.RetrieveAvailabilityZonesCall.Returns.AZs, a.RetrieveAvailabilityZonesCall.Returns.Error
 }

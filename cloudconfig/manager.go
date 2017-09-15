@@ -23,7 +23,7 @@ var (
 type Manager struct {
 	logger             logger
 	command            command
-	opsGenerator       opsGenerator
+	opsGenerator       OpsGenerator
 	boshClientProvider boshClientProvider
 	socks5Proxy        socks5Proxy
 	terraformManager   terraformManager
@@ -38,7 +38,7 @@ type command interface {
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
-type opsGenerator interface {
+type OpsGenerator interface {
 	Generate(state storage.State) (string, error)
 }
 
@@ -59,7 +59,7 @@ type sshKeyGetter interface {
 	Get(storage.State) (string, error)
 }
 
-func NewManager(logger logger, cmd command, opsGenerator opsGenerator, boshClientProvider boshClientProvider,
+func NewManager(logger logger, cmd command, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
 	socks5Proxy socks5Proxy, terraformManager terraformManager, sshKeyGetter sshKeyGetter) Manager {
 	return Manager{
 		logger:             logger,

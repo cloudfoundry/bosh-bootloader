@@ -15,7 +15,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	awslib "github.com/aws/aws-sdk-go/aws"
-	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -25,7 +24,7 @@ import (
 type AWS struct {
 	stackManager         cloudformation.StackManager
 	certificateDescriber iam.CertificateDescriber
-	ec2Client            ec2.Client
+	client               ec2.Client
 	cloudFormationClient cloudformation.Client
 	elbClient            *elb.ELB
 }
@@ -38,7 +37,7 @@ func NewAWS(configuration acceptance.Config) AWS {
 	}
 
 	clientProvider := &clientmanager.ClientProvider{}
-	clientProvider.SetConfig(awsConfig)
+	clientProvider.SetConfig(awsConfig, application.NewLogger(os.Stdout))
 
 	stackManager := cloudformation.NewStackManager(clientProvider, application.NewLogger(os.Stdout))
 	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
@@ -46,7 +45,7 @@ func NewAWS(configuration acceptance.Config) AWS {
 	return AWS{
 		stackManager:         stackManager,
 		certificateDescriber: certificateDescriber,
-		ec2Client:            clientProvider.GetEC2Client(),
+		client:               clientProvider.Client(),
 		cloudFormationClient: clientProvider.GetCloudFormationClient(),
 		elbClient:            elb.New(session.New(awsConfig.ClientConfig())),
 	}
@@ -64,32 +63,8 @@ func (a AWS) StackExists(stackName string) bool {
 }
 
 func (a AWS) Instances(envID string) []string {
-	var instances []string
-
-	vpcID := a.GetVPC(fmt.Sprintf("%s-vpc", envID))
-
-	output, err := a.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
-		Filters: []*awsec2.Filter{
-			{
-				Name: awslib.String("vpc-id"),
-				Values: []*string{
-					vpcID,
-				},
-			},
-		},
-	})
+	instances, err := a.client.Instances(envID)
 	Expect(err).NotTo(HaveOccurred())
-
-	for _, reservation := range output.Reservations {
-		for _, instance := range reservation.Instances {
-			for _, tag := range instance.Tags {
-				if awslib.StringValue(tag.Key) == "Name" && awslib.StringValue(tag.Value) != "" {
-					instances = append(instances, awslib.StringValue(tag.Value))
-				}
-			}
-		}
-	}
-
 	return instances
 }
 
@@ -153,21 +128,9 @@ retry:
 }
 
 func (a AWS) GetVPC(vpcName string) *string {
-	vpcs, err := a.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
-		Filters: []*awsec2.Filter{
-			{
-				Name: awslib.String("tag:Name"),
-				Values: []*string{
-					awslib.String(vpcName),
-				},
-			},
-		},
-	})
-
+	vpc, err := a.client.GetVPC(vpcName)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(vpcs.Vpcs).To(HaveLen(1))
-
-	return vpcs.Vpcs[0].VpcId
+	return vpc
 }
 
 func (a AWS) NetworkHasBOSHDirector(envID string) bool {

@@ -90,6 +90,11 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 		args = append(args,
 			"--cert", cert,
 			"--key", key,
+		)
+	}
+
+	if b.configuration.IAAS == "aws" {
+		args = append(args,
 			"--chain", chain,
 		)
 	}

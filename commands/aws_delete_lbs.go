@@ -5,7 +5,7 @@ import "github.com/cloudfoundry/bosh-bootloader/storage"
 type AWSDeleteLBs struct {
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
-	environmentValidator environmentValidator
+	environmentValidator EnvironmentValidator
 	terraformManager     terraformApplier
 }
 
@@ -14,7 +14,7 @@ type deleteLBsConfig struct {
 }
 
 func NewAWSDeleteLBs(cloudConfigManager cloudConfigManager, stateStore stateStore,
-	environmentValidator environmentValidator, terraformManager terraformApplier) AWSDeleteLBs {
+	environmentValidator EnvironmentValidator, terraformManager terraformApplier) AWSDeleteLBs {
 	return AWSDeleteLBs{
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,

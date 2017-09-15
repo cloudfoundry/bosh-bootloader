@@ -20,7 +20,7 @@ var _ = Describe("InputGenerator", func() {
 
 	BeforeEach(func() {
 		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
-		availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"z1", "z2", "z3"}
+		availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"z1", "z2", "z3"}
 
 		inputGenerator = aws.NewInputGenerator(availabilityZoneRetriever)
 	})
@@ -46,7 +46,7 @@ var _ = Describe("InputGenerator", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs["env_id"]).To(Equal("some-env-id-that-is-pretty-long"))
 			Expect(inputs["short_env_id"]).To(Equal("some-env-i-1fc794e"))
@@ -74,7 +74,7 @@ var _ = Describe("InputGenerator", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                 "some-env-id",
@@ -120,7 +120,7 @@ var _ = Describe("InputGenerator", func() {
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                      "some-env-id",
@@ -144,7 +144,7 @@ var _ = Describe("InputGenerator", func() {
 				inputs, err := inputGenerator.Generate(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+				Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 				Expect(inputs).To(Equal(map[string]string{
 					"env_id":                      "some-env-id",
@@ -193,7 +193,7 @@ var _ = Describe("InputGenerator", func() {
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("some-region"))
+			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs).To(Equal(map[string]string{
 				"env_id":                      "some-env-id",
@@ -215,7 +215,7 @@ var _ = Describe("InputGenerator", func() {
 	Context("failure cases", func() {
 		Context("when the availability zone retriever fails", func() {
 			It("returns an error", func() {
-				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to get zones")
+				availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("failed to get zones")
 
 				_, err := inputGenerator.Generate(storage.State{})
 				Expect(err).To(MatchError("failed to get zones"))

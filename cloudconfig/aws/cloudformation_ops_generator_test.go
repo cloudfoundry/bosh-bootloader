@@ -42,7 +42,7 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 				},
 			}
 
-			availabilityZoneRetriever.RetrieveCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c"}
+			availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c"}
 
 			infrastructureManager.DescribeCall.Returns.Stack = cloudformation.Stack{
 				Outputs: map[string]string{
@@ -67,7 +67,7 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 			opsYAML, err := opsGenerator.Generate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.RetrieveCall.Receives.Region).To(Equal("us-east-1"))
+			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("us-east-1"))
 			Expect(infrastructureManager.DescribeCall.Receives.StackName).To(Equal("some-stack"))
 
 			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
@@ -105,7 +105,7 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when az retriever fails to retrieve", func() {
-				availabilityZoneRetriever.RetrieveCall.Returns.Error = errors.New("failed to retrieve")
+				availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("failed to retrieve")
 				_, err := opsGenerator.Generate(storage.State{})
 				Expect(err).To(MatchError("failed to retrieve"))
 			})

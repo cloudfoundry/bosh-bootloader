@@ -10,7 +10,7 @@ type GCPCreateLBs struct {
 	terraformManager          terraformApplier
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
-	environmentValidator      environmentValidator
+	environmentValidator      EnvironmentValidator
 	availabilityZoneRetriever availabilityZoneRetriever
 }
 
@@ -27,7 +27,7 @@ type availabilityZoneRetriever interface {
 
 func NewGCPCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
-	stateStore stateStore, environmentValidator environmentValidator,
+	stateStore stateStore, environmentValidator EnvironmentValidator,
 	availabilityZoneRetriever availabilityZoneRetriever) GCPCreateLBs {
 	return GCPCreateLBs{
 		terraformManager:          terraformManager,
@@ -38,7 +38,13 @@ func NewGCPCreateLBs(terraformManager terraformApplier,
 	}
 }
 
-func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) error {
+func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error {
+	if state.LB.Type != "" {
+		if config.GCP.Domain == "" {
+			config.GCP.Domain = state.LB.Domain
+		}
+	}
+
 	err := c.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
@@ -53,20 +59,20 @@ func (c GCPCreateLBs) Execute(config GCPCreateLBsConfig, state storage.State) er
 		return err
 	}
 
-	state.LB.Type = config.LBType
+	state.LB.Type = config.GCP.LBType
 
 	var cert, key []byte
-	if config.LBType == "cf" {
-		state.LB.Domain = config.Domain
+	if config.GCP.LBType == "cf" {
+		state.LB.Domain = config.GCP.Domain
 
-		cert, err = ioutil.ReadFile(config.CertPath)
+		cert, err = ioutil.ReadFile(config.GCP.CertPath)
 		if err != nil {
 			return err
 		}
 
 		state.LB.Cert = string(cert)
 
-		key, err = ioutil.ReadFile(config.KeyPath)
+		key, err = ioutil.ReadFile(config.GCP.KeyPath)
 		if err != nil {
 			return err
 		}

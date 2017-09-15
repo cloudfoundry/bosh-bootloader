@@ -7,11 +7,11 @@ import (
 type GCPDeleteLBs struct {
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
-	environmentValidator environmentValidator
+	environmentValidator EnvironmentValidator
 	terraformManager     terraformApplier
 }
 
-func NewGCPDeleteLBs(stateStore stateStore, environmentValidator environmentValidator,
+func NewGCPDeleteLBs(stateStore stateStore, environmentValidator EnvironmentValidator,
 	terraformManager terraformApplier, cloudConfigManager cloudConfigManager) GCPDeleteLBs {
 	return GCPDeleteLBs{
 		stateStore:           stateStore,

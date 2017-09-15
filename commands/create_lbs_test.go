@@ -14,8 +14,7 @@ import (
 var _ = Describe("create-lbs", func() {
 	var (
 		command              commands.CreateLBs
-		awsCreateLBs         *fakes.AWSCreateLBs
-		gcpCreateLBs         *fakes.GCPCreateLBs
+		createLBsCmd         *fakes.CreateLBsCmd
 		boshManager          *fakes.BOSHManager
 		certificateValidator *fakes.CertificateValidator
 		logger               *fakes.Logger
@@ -23,15 +22,14 @@ var _ = Describe("create-lbs", func() {
 	)
 
 	BeforeEach(func() {
-		awsCreateLBs = &fakes.AWSCreateLBs{}
-		gcpCreateLBs = &fakes.GCPCreateLBs{}
+		createLBsCmd = &fakes.CreateLBsCmd{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 		certificateValidator = &fakes.CertificateValidator{}
 		logger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
 
-		command = commands.NewCreateLBs(awsCreateLBs, gcpCreateLBs, logger, stateValidator, certificateValidator, boshManager)
+		command = commands.NewCreateLBs(createLBsCmd, logger, stateValidator, certificateValidator, boshManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -46,6 +44,16 @@ var _ = Describe("create-lbs", func() {
 		It("returns an error if there is no lb type", func() {
 			err := command.CheckFastFails([]string{}, storage.State{})
 			Expect(err).To(MatchError("--type is required"))
+		})
+
+		It("does not return an error if there is an lb type in the state file", func() {
+			err := command.CheckFastFails([]string{}, storage.State{
+				IAAS: "gcp",
+				LB: storage.LB{
+					Type: "concourse",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
@@ -82,7 +90,9 @@ var _ = Describe("create-lbs", func() {
 					"--cert", "/path/to/cert",
 					"--key", "/path/to/key",
 					"--chain", "/path/to/chain",
-				}, storage.State{})
+				}, storage.State{
+					IAAS: "aws",
+				})
 
 				Expect(err).To(MatchError("Validate certificate: failed to validate"))
 				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
@@ -129,9 +139,9 @@ var _ = Describe("create-lbs", func() {
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
+			Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 				LBType: "concourse",
-			}))
+			}}))
 		})
 
 		It("creates a GCP cf lb type is the iaas if GCP and type is cf", func() {
@@ -144,12 +154,12 @@ var _ = Describe("create-lbs", func() {
 				IAAS: "gcp",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(gcpCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.GCPCreateLBsConfig{
+			Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 				LBType:   "cf",
 				CertPath: "my-cert",
 				KeyPath:  "my-key",
 				Domain:   "some-domain",
-			}))
+			}}))
 		})
 
 		It("creates an AWS lb type if the iaas is AWS", func() {
@@ -164,13 +174,69 @@ var _ = Describe("create-lbs", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(awsCreateLBs.ExecuteCall.Receives.Config).Should(Equal(commands.AWSCreateLBsConfig{
-				LBType:    "concourse",
-				CertPath:  "my-cert",
-				KeyPath:   "my-key",
-				ChainPath: "my-chain",
-				Domain:    "some-domain",
-			}))
+			Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
+				commands.CreateLBsConfig{
+					AWS: commands.AWSCreateLBsConfig{
+						LBType:    "concourse",
+						CertPath:  "my-cert",
+						KeyPath:   "my-key",
+						ChainPath: "my-chain",
+						Domain:    "some-domain",
+					},
+				},
+			))
+		})
+
+		Context("when an LB already exists", func() {
+			Context("using GCP", func() {
+				It("creates a GCP lb using the existing LB type", func() {
+					err := command.Execute([]string{
+						"--cert", "some-new-cert",
+						"--key", "some-new-key",
+					}, storage.State{
+						IAAS: "gcp",
+						LB: storage.LB{
+							Type: "cf",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
+						commands.CreateLBsConfig{
+							GCP: commands.GCPCreateLBsConfig{
+								LBType:   "cf",
+								CertPath: "some-new-cert",
+								KeyPath:  "some-new-key",
+							},
+						},
+					))
+				})
+			})
+
+			Context("using AWS", func() {
+				It("creates an AWS lb using the existing LB type", func() {
+					err := command.Execute([]string{
+						"--cert", "some-new-cert",
+						"--key", "some-new-key",
+					}, storage.State{
+						IAAS: "aws",
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								LBType:   "concourse",
+								CertPath: "some-new-cert",
+								KeyPath:  "some-new-key",
+							},
+						},
+					))
+				})
+			})
 		})
 
 		Context("failure cases", func() {
@@ -180,7 +246,7 @@ var _ = Describe("create-lbs", func() {
 			})
 
 			It("returns an error when the AWSCreateLBs fails", func() {
-				awsCreateLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+				createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
 
 				err := command.Execute([]string{"some-aws-args"}, storage.State{
 					IAAS: "aws",
@@ -189,7 +255,7 @@ var _ = Describe("create-lbs", func() {
 			})
 
 			It("returns an error when the GCPCreateLBs fails", func() {
-				gcpCreateLBs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+				createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
 
 				err := command.Execute([]string{"some-gcp-args"}, storage.State{
 					IAAS: "gcp",

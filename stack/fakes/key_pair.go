@@ -6,65 +6,65 @@ import (
 )
 
 type KeyPair struct {
-	DeleteStub        func(keyPairName string) error
-	deleteMutex       sync.RWMutex
-	deleteArgsForCall []struct {
+	DeleteKeyPairStub        func(keyPairName string) error
+	deleteKeyPairMutex       sync.RWMutex
+	deleteKeyPairArgsForCall []struct {
 		keyPairName string
 	}
-	deleteReturns struct {
+	deleteKeyPairReturns struct {
 		result1 error
 	}
-	deleteReturnsOnCall map[int]struct {
+	deleteKeyPairReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *KeyPair) Delete(keyPairName string) error {
-	fake.deleteMutex.Lock()
-	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
-	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
+func (fake *KeyPair) DeleteKeyPair(keyPairName string) error {
+	fake.deleteKeyPairMutex.Lock()
+	ret, specificReturn := fake.deleteKeyPairReturnsOnCall[len(fake.deleteKeyPairArgsForCall)]
+	fake.deleteKeyPairArgsForCall = append(fake.deleteKeyPairArgsForCall, struct {
 		keyPairName string
 	}{keyPairName})
-	fake.recordInvocation("Delete", []interface{}{keyPairName})
-	fake.deleteMutex.Unlock()
-	if fake.DeleteStub != nil {
-		return fake.DeleteStub(keyPairName)
+	fake.recordInvocation("DeleteKeyPair", []interface{}{keyPairName})
+	fake.deleteKeyPairMutex.Unlock()
+	if fake.DeleteKeyPairStub != nil {
+		return fake.DeleteKeyPairStub(keyPairName)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.deleteReturns.result1
+	return fake.deleteKeyPairReturns.result1
 }
 
-func (fake *KeyPair) DeleteCallCount() int {
-	fake.deleteMutex.RLock()
-	defer fake.deleteMutex.RUnlock()
-	return len(fake.deleteArgsForCall)
+func (fake *KeyPair) DeleteKeyPairCallCount() int {
+	fake.deleteKeyPairMutex.RLock()
+	defer fake.deleteKeyPairMutex.RUnlock()
+	return len(fake.deleteKeyPairArgsForCall)
 }
 
-func (fake *KeyPair) DeleteArgsForCall(i int) string {
-	fake.deleteMutex.RLock()
-	defer fake.deleteMutex.RUnlock()
-	return fake.deleteArgsForCall[i].keyPairName
+func (fake *KeyPair) DeleteKeyPairArgsForCall(i int) string {
+	fake.deleteKeyPairMutex.RLock()
+	defer fake.deleteKeyPairMutex.RUnlock()
+	return fake.deleteKeyPairArgsForCall[i].keyPairName
 }
 
-func (fake *KeyPair) DeleteReturns(result1 error) {
-	fake.DeleteStub = nil
-	fake.deleteReturns = struct {
+func (fake *KeyPair) DeleteKeyPairReturns(result1 error) {
+	fake.DeleteKeyPairStub = nil
+	fake.deleteKeyPairReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *KeyPair) DeleteReturnsOnCall(i int, result1 error) {
-	fake.DeleteStub = nil
-	if fake.deleteReturnsOnCall == nil {
-		fake.deleteReturnsOnCall = make(map[int]struct {
+func (fake *KeyPair) DeleteKeyPairReturnsOnCall(i int, result1 error) {
+	fake.DeleteKeyPairStub = nil
+	if fake.deleteKeyPairReturnsOnCall == nil {
+		fake.deleteKeyPairReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.deleteReturnsOnCall[i] = struct {
+	fake.deleteKeyPairReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -72,8 +72,8 @@ func (fake *KeyPair) DeleteReturnsOnCall(i int, result1 error) {
 func (fake *KeyPair) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.deleteMutex.RLock()
-	defer fake.deleteMutex.RUnlock()
+	fake.deleteKeyPairMutex.RLock()
+	defer fake.deleteKeyPairMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

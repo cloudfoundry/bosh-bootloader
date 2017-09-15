@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
+	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -48,11 +49,6 @@ type infrastructure interface {
 	Delete(stackName string) error
 }
 
-//go:generate counterfeiter -o ./fakes/zone.go --fake-name Zone . zone
-type zone interface {
-	Retrieve(region string) ([]string, error)
-}
-
 //go:generate counterfeiter -o ./fakes/certificate.go --fake-name Certificate . certificate
 type certificate interface {
 	Describe(certificateName string) (iam.Certificate, error)
@@ -65,31 +61,31 @@ type userPolicy interface {
 
 //go:generate counterfeiter -o ./fakes/key_pair.go --fake-name KeyPair . keyPair
 type keyPair interface {
-	Delete(keyPairName string) error
+	DeleteKeyPair(keyPairName string) error
 }
 
 type Migrator struct {
-	terraform      tf
-	infrastructure infrastructure
-	certificate    certificate
-	userPolicy     userPolicy
-	zone           zone
-	keyPair        keyPair
+	terraform                 tf
+	infrastructure            infrastructure
+	certificate               certificate
+	userPolicy                userPolicy
+	availabilityZoneRetriever ec2.AvailabilityZoneRetriever
+	keyPair                   keyPair
 }
 
 func NewMigrator(terraform tf,
 	infrastructure infrastructure,
 	certificate certificate,
 	userPolicy userPolicy,
-	zone zone,
+	availabilityZoneRetriever ec2.AvailabilityZoneRetriever,
 	keyPair keyPair) Migrator {
 	return Migrator{
-		terraform:      terraform,
-		infrastructure: infrastructure,
-		certificate:    certificate,
-		userPolicy:     userPolicy,
-		zone:           zone,
-		keyPair:        keyPair,
+		terraform:                 terraform,
+		infrastructure:            infrastructure,
+		certificate:               certificate,
+		userPolicy:                userPolicy,
+		availabilityZoneRetriever: availabilityZoneRetriever,
+		keyPair:                   keyPair,
 	}
 }
 
@@ -98,7 +94,7 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 		return state, nil
 	}
 
-	availabilityZones, err := m.zone.Retrieve(state.AWS.Region)
+	availabilityZones, err := m.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -168,7 +164,7 @@ func (m Migrator) Migrate(state storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	err = m.keyPair.Delete(state.KeyPair.Name)
+	err = m.keyPair.DeleteKeyPair(state.KeyPair.Name)
 	if err != nil {
 		return storage.State{}, err
 	}

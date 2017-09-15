@@ -49,7 +49,7 @@ var _ = Describe("Commands Usage", func() {
   --type              Load balancer(s) type. Valid options: "concourse" or "cf"
   [--cert]            Path to SSL certificate (conditionally required; refer to table below)
   [--key]             Path to SSL certificate key (conditionally required; refer to table below)
-  [--chain]           Path to SSL certificate chain (optional; applicable if --cert/--key are required; refer to table below)
+  [--chain]           Path to SSL certificate chain (optional; only supported on aws)
   [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
 
   --cert/--key requirements:
@@ -60,22 +60,6 @@ var _ = Describe("Commands Usage", func() {
   ------------------------------
   | gcp | required | n/a       |
   ------------------------------`))
-			})
-		})
-	})
-
-	Describe("Update LBs", func() {
-		Describe("Usage", func() {
-			It("returns string describing usage", func() {
-				command := commands.UpdateLBs{}
-				usageText := command.Usage()
-				Expect(usageText).To(Equal(`Updates load balancer(s) with the supplied certificate, key, and optional chain
-
-  --cert               Path to SSL certificate
-  --key                Path to SSL certificate key
-  [--chain]            Path to SSL certificate chain (optional)
-  [--domain]           Updates domain in the nameserver zone (supported when type="cf", optional)
-  [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`))
 			})
 		})
 	})

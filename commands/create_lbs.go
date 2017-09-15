@@ -9,43 +9,36 @@ import (
 )
 
 type CreateLBs struct {
-	awsCreateLBs         awsCreateLBs
+	createLBsCmd         CreateLBsCmd
 	boshManager          boshManager
 	certificateValidator certificateValidator
-	gcpCreateLBs         gcpCreateLBs
 	logger               logger
 	stateValidator       stateValidator
 }
 
-type lbConfig struct {
-	lbType    string
-	certPath  string
-	keyPath   string
-	chainPath string
-	domain    string
+type CreateLBsCmd interface {
+	Execute(createLBsConfig CreateLBsConfig, state storage.State) error
 }
 
-type gcpCreateLBs interface {
-	Execute(GCPCreateLBsConfig, storage.State) error
+type CreateLBsConfig struct {
+	AWS AWSCreateLBsConfig
+	GCP GCPCreateLBsConfig
 }
 
-type awsCreateLBs interface {
-	Execute(AWSCreateLBsConfig, storage.State) error
-}
+var LBNotFound error = errors.New("no load balancer has been found for this bbl environment")
 
-func NewCreateLBs(awsCreateLBs awsCreateLBs, gcpCreateLBs gcpCreateLBs, logger logger, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
+func NewCreateLBs(createLBsCmd CreateLBsCmd, logger logger, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
 	return CreateLBs{
+		createLBsCmd:         createLBsCmd,
 		boshManager:          boshManager,
 		logger:               logger,
-		awsCreateLBs:         awsCreateLBs,
-		gcpCreateLBs:         gcpCreateLBs,
 		stateValidator:       stateValidator,
 		certificateValidator: certificateValidator,
 	}
 }
 
 func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	config, err := parseFlags(subcommandFlags)
+	config, err := parseFlags(subcommandFlags, state.IAAS, state.LB.Type)
 	if err != nil {
 		return err
 	}
@@ -54,18 +47,18 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 		return fmt.Errorf("Validate state: %s", err)
 	}
 
-	if !lbExists(config.lbType) {
+	if !lbExists(getLBType(config)) {
 		return errors.New("--type is required")
 	}
 
-	if !(state.IAAS == "gcp" && config.lbType == "concourse") {
-		err = c.certificateValidator.Validate("create-lbs", config.certPath, config.keyPath, config.chainPath)
+	if !(state.IAAS == "gcp" && getLBType(config) == "concourse") {
+		err = c.certificateValidator.Validate("create-lbs", getCertPath(config), getKeyPath(config), getChainPath(config))
 		if err != nil {
 			return fmt.Errorf("Validate certificate: %s", err)
 		}
 	}
 
-	if config.lbType == "concourse" && config.domain != "" {
+	if getLBType(config) == "concourse" && getDomain(config) != "" {
 		return errors.New("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
 	}
 
@@ -80,49 +73,87 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 }
 
 func (c CreateLBs) Execute(args []string, state storage.State) error {
-	config, err := parseFlags(args)
+	config, err := parseFlags(args, state.IAAS, state.LB.Type)
 	if err != nil {
 		return err
 	}
 
-	switch state.IAAS {
-	case "gcp":
-		if err := c.gcpCreateLBs.Execute(GCPCreateLBsConfig{
-			LBType:   config.lbType,
-			CertPath: config.certPath,
-			KeyPath:  config.keyPath,
-			Domain:   config.domain,
-		}, state); err != nil {
-			return err
-		}
-	case "aws":
-		if err := c.awsCreateLBs.Execute(AWSCreateLBsConfig{
-			LBType:    config.lbType,
-			CertPath:  config.certPath,
-			KeyPath:   config.keyPath,
-			ChainPath: config.chainPath,
-			Domain:    config.domain,
-		}, state); err != nil {
-			return err
-		}
+	err = c.createLBsCmd.Execute(config, state)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func parseFlags(subcommandFlags []string) (lbConfig, error) {
+func parseFlags(subcommandFlags []string, iaas string, existingLBType string) (CreateLBsConfig, error) {
 	lbFlags := flags.New("create-lbs")
 
-	config := lbConfig{}
-	lbFlags.String(&config.lbType, "type", "")
-	lbFlags.String(&config.certPath, "cert", "")
-	lbFlags.String(&config.keyPath, "key", "")
-	lbFlags.String(&config.chainPath, "chain", "")
-	lbFlags.String(&config.domain, "domain", "")
+	config := CreateLBsConfig{}
+	switch iaas {
+	case "aws":
+		lbFlags.String(&config.AWS.LBType, "type", existingLBType)
+		lbFlags.String(&config.AWS.CertPath, "cert", "")
+		lbFlags.String(&config.AWS.KeyPath, "key", "")
+		lbFlags.String(&config.AWS.ChainPath, "chain", "")
+		lbFlags.String(&config.AWS.Domain, "domain", "")
+	case "gcp":
+		lbFlags.String(&config.GCP.LBType, "type", existingLBType)
+		lbFlags.String(&config.GCP.CertPath, "cert", "")
+		lbFlags.String(&config.GCP.KeyPath, "key", "")
+		lbFlags.String(&config.GCP.Domain, "domain", "")
+	}
 
 	if err := lbFlags.Parse(subcommandFlags); err != nil {
 		return config, err
 	}
 
 	return config, nil
+}
+
+func getLBType(config CreateLBsConfig) string {
+	if config.AWS.LBType != "" {
+		return config.AWS.LBType
+	}
+	if config.GCP.LBType != "" {
+		return config.GCP.LBType
+	}
+	return ""
+}
+
+func getCertPath(config CreateLBsConfig) string {
+	if config.AWS.CertPath != "" {
+		return config.AWS.CertPath
+	}
+	if config.GCP.CertPath != "" {
+		return config.GCP.CertPath
+	}
+	return ""
+}
+
+func getKeyPath(config CreateLBsConfig) string {
+	if config.AWS.KeyPath != "" {
+		return config.AWS.KeyPath
+	}
+	if config.GCP.KeyPath != "" {
+		return config.GCP.KeyPath
+	}
+	return ""
+}
+
+func getChainPath(config CreateLBsConfig) string {
+	if config.AWS.ChainPath != "" {
+		return config.AWS.ChainPath
+	}
+	return ""
+}
+
+func getDomain(config CreateLBsConfig) string {
+	if config.AWS.Domain != "" {
+		return config.AWS.Domain
+	}
+	if config.GCP.Domain != "" {
+		return config.GCP.Domain
+	}
+	return ""
 }
