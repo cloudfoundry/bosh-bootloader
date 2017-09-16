@@ -7,7 +7,6 @@ import (
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam/fakes"
-	awsClientFake "github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,17 +14,13 @@ import (
 
 var _ = Describe("CertificateDeleter", func() {
 	var (
-		iamClient         *fakes.Client
-		awsClientProvider *awsClientFake.AWSClientProvider
-		deleter           iam.CertificateDeleter
+		iamClient *fakes.Client
+		deleter   iam.CertificateDeleter
 	)
 
 	BeforeEach(func() {
 		iamClient = &fakes.Client{}
-		awsClientProvider = &awsClientFake.AWSClientProvider{}
-		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
-
-		deleter = iam.NewCertificateDeleter(awsClientProvider)
+		deleter = iam.NewCertificateDeleter(iamClient)
 	})
 
 	Describe("Delete", func() {

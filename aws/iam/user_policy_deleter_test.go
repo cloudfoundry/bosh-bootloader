@@ -7,7 +7,6 @@ import (
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam/fakes"
-	awsClientFake "github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,17 +14,13 @@ import (
 
 var _ = Describe("UserPolicyDeleter", func() {
 	var (
-		iamClient         *fakes.Client
-		awsClientProvider *awsClientFake.AWSClientProvider
-		deleter           iam.UserPolicyDeleter
+		iamClient *fakes.Client
+		deleter   iam.UserPolicyDeleter
 	)
 
 	BeforeEach(func() {
 		iamClient = &fakes.Client{}
-		awsClientProvider = &awsClientFake.AWSClientProvider{}
-		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
-
-		deleter = iam.NewUserPolicyDeleter(awsClientProvider)
+		deleter = iam.NewUserPolicyDeleter(iamClient)
 	})
 
 	Describe("Delete", func() {

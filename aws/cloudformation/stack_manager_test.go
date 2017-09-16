@@ -22,17 +22,14 @@ import (
 var _ = Describe("StackManager", func() {
 	var (
 		cloudFormationClient *fakes.CloudFormationClient
-		awsClientProvider    *fakes.AWSClientProvider
 		logger               *fakes.Logger
 		manager              cloudformation.StackManager
 	)
 
 	BeforeEach(func() {
-		awsClientProvider = &fakes.AWSClientProvider{}
 		cloudFormationClient = &fakes.CloudFormationClient{}
 		logger = &fakes.Logger{}
-		awsClientProvider.GetCloudFormationClientCall.Returns.CloudFormationClient = cloudFormationClient
-		manager = cloudformation.NewStackManager(awsClientProvider, logger)
+		manager = cloudformation.NewStackManager(cloudFormationClient, logger)
 	})
 
 	Describe("Describe", func() {
@@ -49,8 +46,6 @@ var _ = Describe("StackManager", func() {
 			}
 			stack, err := manager.Describe("some-stack-name")
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(awsClientProvider.GetCloudFormationClientCall.CallCount).To(Equal(1))
 
 			Expect(cloudFormationClient.DescribeStacksCall.Receives.Input).To(Equal(&awscloudformation.DescribeStacksInput{
 				StackName: aws.String("some-stack-name"),

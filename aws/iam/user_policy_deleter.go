@@ -6,17 +6,17 @@ import (
 )
 
 type UserPolicyDeleter struct {
-	iamClientProvider iamClientProvider
+	client Client
 }
 
-func NewUserPolicyDeleter(iamClientProvider iamClientProvider) UserPolicyDeleter {
+func NewUserPolicyDeleter(client Client) UserPolicyDeleter {
 	return UserPolicyDeleter{
-		iamClientProvider: iamClientProvider,
+		client: client,
 	}
 }
 
 func (c UserPolicyDeleter) Delete(username, policyName string) error {
-	_, err := c.iamClientProvider.GetIAMClient().DeleteUserPolicy(&awsiam.DeleteUserPolicyInput{
+	_, err := c.client.DeleteUserPolicy(&awsiam.DeleteUserPolicyInput{
 		UserName:   aws.String(username),
 		PolicyName: aws.String(policyName),
 	})

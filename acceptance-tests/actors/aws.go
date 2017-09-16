@@ -38,15 +38,18 @@ func NewAWS(configuration acceptance.Config) AWS {
 
 	clientProvider := &clientmanager.ClientProvider{}
 	clientProvider.SetConfig(awsConfig, application.NewLogger(os.Stdout))
+	client := clientProvider.Client()
+	cloudFormationClient := clientProvider.GetCloudFormationClient()
+	iamClient := clientProvider.GetIAMClient()
 
-	stackManager := cloudformation.NewStackManager(clientProvider, application.NewLogger(os.Stdout))
-	certificateDescriber := iam.NewCertificateDescriber(clientProvider)
+	stackManager := cloudformation.NewStackManager(cloudFormationClient, application.NewLogger(os.Stdout))
+	certificateDescriber := iam.NewCertificateDescriber(iamClient)
 
 	return AWS{
 		stackManager:         stackManager,
 		certificateDescriber: certificateDescriber,
-		client:               clientProvider.Client(),
-		cloudFormationClient: clientProvider.GetCloudFormationClient(),
+		client:               client,
+		cloudFormationClient: cloudFormationClient,
 		elbClient:            elb.New(session.New(awsConfig.ClientConfig())),
 	}
 }

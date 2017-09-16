@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/aws/iam/fakes"
-	awsClientFake "github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 
@@ -17,17 +16,13 @@ import (
 
 var _ = Describe("CertificateDescriber", func() {
 	var (
-		iamClient         *fakes.Client
-		awsClientProvider *awsClientFake.AWSClientProvider
-		describer         iam.CertificateDescriber
+		iamClient *fakes.Client
+		describer iam.CertificateDescriber
 	)
 
 	BeforeEach(func() {
 		iamClient = &fakes.Client{}
-		awsClientProvider = &awsClientFake.AWSClientProvider{}
-		awsClientProvider.GetIAMClientCall.Returns.IAMClient = iamClient
-
-		describer = iam.NewCertificateDescriber(awsClientProvider)
+		describer = iam.NewCertificateDescriber(iamClient)
 	})
 
 	Describe("Describe", func() {
@@ -47,8 +42,6 @@ var _ = Describe("CertificateDescriber", func() {
 
 			certificate, err := describer.Describe("some-certificate")
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(awsClientProvider.GetIAMClientCall.CallCount).To(Equal(1))
 
 			Expect(iamClient.GetServerCertificateArgsForCall(0).ServerCertificateName).To(Equal(aws.String("some-certificate")))
 

@@ -86,42 +86,47 @@ func main() {
 		stackManager              cloudformation.StackManager
 		networkClient             helpers.NetworkClient
 		networkDeletionValidator  commands.NetworkDeletionValidator
+
+		// this should be replaced by an IAAS agnostic variable, but that needs a common interface. We don't have time right now. AWS clients should also be combined into one struct.
+		gcpClient gcp.Client
 	)
-	awsClientProvider := &clientmanager.ClientProvider{}
 	if appConfig.State.IAAS == "aws" && needsIAASConfig {
+		awsClientProvider := &clientmanager.ClientProvider{}
 		awsConfiguration := aws.Config{
 			AccessKeyID:     appConfig.State.AWS.AccessKeyID,
 			SecretAccessKey: appConfig.State.AWS.SecretAccessKey,
 			Region:          appConfig.State.AWS.Region,
 		}
 		awsClientProvider.SetConfig(awsConfiguration, logger)
-		client := awsClientProvider.Client()
+		awsClient := awsClientProvider.Client()
+		iamClient := awsClientProvider.GetIAMClient()
+		cloudFormationClient := awsClientProvider.GetCloudFormationClient()
 
 		templateBuilder := templates.NewTemplateBuilder(logger)
-		certificateDescriber := iam.NewCertificateDescriber(awsClientProvider)
-		userPolicyDeleter := iam.NewUserPolicyDeleter(awsClientProvider)
-		awsKeyPairDeleter := client
+		certificateDescriber := iam.NewCertificateDescriber(iamClient)
+		userPolicyDeleter := iam.NewUserPolicyDeleter(iamClient)
+		awsKeyPairDeleter := awsClient
 
-		availabilityZoneRetriever = client
-		certificateDeleter = iam.NewCertificateDeleter(awsClientProvider)
+		availabilityZoneRetriever = awsClient
+		certificateDeleter = iam.NewCertificateDeleter(iamClient)
 		certificateValidator = certs.NewValidator()
-		networkDeletionValidator = client
-		stackManager = cloudformation.NewStackManager(awsClientProvider, logger)
+		networkDeletionValidator = awsClient
+		stackManager = cloudformation.NewStackManager(cloudFormationClient, logger)
 		infrastructureManager = cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 
 		stackMigrator = stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, availabilityZoneRetriever, awsKeyPairDeleter)
-		networkClient = client
+		networkClient = awsClient
 	}
 
-	gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
 	if appConfig.State.IAAS == "gcp" && needsIAASConfig {
+		gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
 		err = gcpClientProvider.SetConfig(appConfig.State.GCP.ServiceAccountKey, appConfig.State.GCP.ProjectID, appConfig.State.GCP.Region, appConfig.State.GCP.Zone)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
-		client := gcpClientProvider.Client()
-		networkClient = client
-		networkDeletionValidator = client
+		gcpClient = gcpClientProvider.Client()
+		networkClient = gcpClient
+		networkDeletionValidator = gcpClient
 	}
 
 	var envIDManager helpers.EnvIDManager
@@ -206,8 +211,8 @@ func main() {
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	} else if appConfig.State.IAAS == "gcp" {
-		upCmd = commands.NewGCPUp(stateStore, terraformManager, boshManager, cloudConfigManager, envIDManager, gcpClientProvider.Client())
-		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClientProvider.Client())
+		upCmd = commands.NewGCPUp(stateStore, terraformManager, boshManager, cloudConfigManager, envIDManager, gcpClient)
+		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
 	} else if appConfig.State.IAAS == "azure" {

@@ -19,24 +19,16 @@ type logger interface {
 	Dot()
 }
 
-type cloudFormationClientProvider interface {
-	GetCloudFormationClient() Client
-}
-
 type StackManager struct {
-	cloudFormationClientProvider cloudFormationClientProvider
-	logger                       logger
+	client Client
+	logger logger
 }
 
-func NewStackManager(cloudFormationClientProvider cloudFormationClientProvider, logger logger) StackManager {
+func NewStackManager(client Client, logger logger) StackManager {
 	return StackManager{
-		cloudFormationClientProvider: cloudFormationClientProvider,
+		client: client,
 		logger: logger,
 	}
-}
-
-func (s StackManager) cloudFormationClient() Client {
-	return s.cloudFormationClientProvider.GetCloudFormationClient()
 }
 
 func (s StackManager) Describe(name string) (Stack, error) {
@@ -44,7 +36,7 @@ func (s StackManager) Describe(name string) (Stack, error) {
 		return Stack{}, StackNotFound
 	}
 
-	output, err := s.cloudFormationClient().DescribeStacks(&cloudformation.DescribeStacksInput{
+	output, err := s.client.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(name),
 	})
 	if err != nil {
@@ -133,7 +125,7 @@ and/or open a GitHub issue at https://github.com/cloudfoundry/bosh-bootloader/is
 func (s StackManager) Delete(name string) error {
 	s.logger.Step("deleting cloudformation stack")
 
-	_, err := s.cloudFormationClient().DeleteStack(&cloudformation.DeleteStackInput{
+	_, err := s.client.DeleteStack(&cloudformation.DeleteStackInput{
 		StackName: &name,
 	})
 	if err != nil {
@@ -160,7 +152,7 @@ func (s StackManager) create(name string, template templates.Template, tags Tags
 		Tags:         awsTags,
 	}
 
-	_, err = s.cloudFormationClient().CreateStack(params)
+	_, err = s.client.CreateStack(params)
 	if err != nil {
 		return err
 	}
@@ -185,7 +177,7 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 		Tags:         awsTags,
 	}
 
-	_, err = s.cloudFormationClient().UpdateStack(params)
+	_, err = s.client.UpdateStack(params)
 	if err != nil {
 		switch err.(type) {
 		case awserr.RequestFailure:
@@ -211,7 +203,7 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 }
 
 func (s StackManager) GetPhysicalIDForResource(stackName string, logicalResourceID string) (string, error) {
-	describeStackResourceOutput, err := s.cloudFormationClient().DescribeStackResource(&cloudformation.DescribeStackResourceInput{
+	describeStackResourceOutput, err := s.client.DescribeStackResource(&cloudformation.DescribeStackResourceInput{
 		StackName:         aws.String(stackName),
 		LogicalResourceId: aws.String(logicalResourceID),
 	})
