@@ -36,7 +36,6 @@ func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
 		return nil, fmt.Errorf("get jumpbox ssh key: %s", err)
 	}
 
-	// 	m.logger.Step("starting socks5 proxy")
 	err = c.socks5Proxy.Start(privateKey, jumpbox.URL)
 	if err != nil {
 		return nil, fmt.Errorf("start proxy: %s", err)
@@ -46,6 +45,7 @@ func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create socks5 client: %s", err)
 	}
+
 	return socks5Dialer, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -24,6 +25,11 @@ type Info struct {
 	UUID    string `json:"uuid"`
 	Version string `json:"version"`
 }
+
+var (
+	MAX_RETRIES = 5
+	RETRY_DELAY = 10 * time.Second
+)
 
 type client struct {
 	jumpbox         bool
@@ -51,9 +57,16 @@ func (c client) Info() (Info, error) {
 		return Info{}, err
 	}
 
-	response, err := c.makeRequest(request)
+	var response *http.Response
+	for i := 0; i < MAX_RETRIES; i++ {
+		response, err = c.httpClient.Do(request)
+		if err == nil {
+			break
+		}
+		time.Sleep(RETRY_DELAY)
+	}
 	if err != nil {
-		return Info{}, err
+		return Info{}, fmt.Errorf("made %d attempts, last error: %s", MAX_RETRIES, err)
 	}
 
 	if response.StatusCode != http.StatusOK {

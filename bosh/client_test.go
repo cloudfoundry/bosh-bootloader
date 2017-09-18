@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -33,6 +34,9 @@ var _ = Describe("Client", func() {
 	)
 
 	BeforeEach(func() {
+		bosh.MAX_RETRIES = 1
+		bosh.RETRY_DELAY = 1 * time.Millisecond
+
 		var err error
 		ca, err = ioutil.ReadFile("fixtures/some-fake-ca.crt")
 		Expect(err).NotTo(HaveOccurred())
@@ -110,7 +114,6 @@ var _ = Describe("Client", func() {
 				TLSClientConfig: tlsConfig,
 			},
 		}
-
 	})
 
 	AfterEach(func() {
@@ -155,7 +158,7 @@ var _ = Describe("Client", func() {
 
 				client := bosh.NewClient(httpClient, false, "fake://some-url", "some-username", "some-password", string(ca))
 				_, err := client.Info()
-				Expect(err).To(MatchError(ContainSubstring("unsupported protocol scheme")))
+				Expect(err).To(MatchError("made 1 attempts, last error: Get fake://some-url/info: unsupported protocol scheme \"fake\""))
 			})
 
 			It("returns an error when it cannot parse info json", func() {
