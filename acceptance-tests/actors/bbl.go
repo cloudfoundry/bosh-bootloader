@@ -58,6 +58,7 @@ func (b BBL) Up(additionalArgs ...string) *gexec.Session {
 func (b BBL) Rotate() *gexec.Session {
 	return b.execute([]string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"rotate",
 	}, os.Stdout, os.Stderr)
 }
@@ -65,6 +66,7 @@ func (b BBL) Rotate() *gexec.Session {
 func (b BBL) Destroy() *gexec.Session {
 	return b.execute([]string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"destroy",
 		"--no-confirm",
 	}, os.Stdout, os.Stderr)
@@ -73,6 +75,7 @@ func (b BBL) Destroy() *gexec.Session {
 func (b BBL) Down() *gexec.Session {
 	return b.execute([]string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"down",
 		"--no-confirm",
 	}, os.Stdout, os.Stderr)
@@ -130,6 +133,7 @@ func (b BBL) LBs() *gexec.Session {
 func (b BBL) DeleteLBs() *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
+		"--debug",
 		"delete-lbs",
 	}
 
