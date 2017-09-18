@@ -207,6 +207,7 @@ var _ = Describe("Client", func() {
 						client := bosh.NewClient(httpClient, true, fakeBOSH.URL, "", "", string(ca))
 
 						err := client.UpdateCloudConfig([]byte("cloud: config"))
+						Expect(err).To(MatchError(ContainSubstring("made 1 attempts, last error: Post")))
 						Expect(err).To(MatchError(ContainSubstring("connection refused")))
 					})
 				})

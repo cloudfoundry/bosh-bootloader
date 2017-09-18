@@ -57,16 +57,9 @@ func (c client) Info() (Info, error) {
 		return Info{}, err
 	}
 
-	var response *http.Response
-	for i := 0; i < MAX_RETRIES; i++ {
-		response, err = c.httpClient.Do(request)
-		if err == nil {
-			break
-		}
-		time.Sleep(RETRY_DELAY)
-	}
+	response, err := makeRequests(c.httpClient, request)
 	if err != nil {
-		return Info{}, fmt.Errorf("made %d attempts, last error: %s", MAX_RETRIES, err)
+		return Info{}, err
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -88,28 +81,17 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 	}
 
 	request.Header.Set("Content-Type", "text/yaml")
-	response, err := c.makeRequest(request)
-	if err != nil {
-		return err
-	}
 
-	if response.StatusCode != http.StatusCreated {
-		return fmt.Errorf("unexpected http response %d %s", response.StatusCode, http.StatusText(response.StatusCode))
-	}
-
-	return nil
-}
-
-func (c client) makeRequest(request *http.Request) (*http.Response, error) {
+	var response *http.Response
 	if c.jumpbox {
 		urlParts, err := url.Parse(c.directorAddress)
 		if err != nil {
-			return &http.Response{}, err //not tested
+			return err //not tested
 		}
 
 		boshHost, _, err := net.SplitHostPort(urlParts.Host)
 		if err != nil {
-			return &http.Response{}, err //not tested
+			return err //not tested
 		}
 
 		ctx := context.Background()
@@ -122,9 +104,42 @@ func (c client) makeRequest(request *http.Request) (*http.Response, error) {
 		}
 
 		httpClient := conf.Client(ctx)
-		return httpClient.Do(request)
+
+		response, err = makeRequests(httpClient, request)
+		if err != nil {
+			return err
+		}
 	} else {
 		request.SetBasicAuth(c.username, c.password)
-		return c.httpClient.Do(request)
+		response, err = makeRequests(c.httpClient, request)
+		if err != nil {
+			return err
+		}
 	}
+
+	if response.StatusCode != http.StatusCreated {
+		return fmt.Errorf("unexpected http response %d %s", response.StatusCode, http.StatusText(response.StatusCode))
+	}
+
+	return nil
+}
+
+func makeRequests(httpClient *http.Client, request *http.Request) (*http.Response, error) {
+	var (
+		response *http.Response
+		err      error
+	)
+
+	for i := 0; i < MAX_RETRIES; i++ {
+		response, err = httpClient.Do(request)
+		if err == nil {
+			break
+		}
+		time.Sleep(RETRY_DELAY)
+	}
+	if err != nil {
+		return &http.Response{}, fmt.Errorf("made %d attempts, last error: %s", MAX_RETRIES, err)
+	}
+
+	return response, nil
 }
