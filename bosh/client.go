@@ -51,7 +51,7 @@ func (c client) Info() (Info, error) {
 		return Info{}, err
 	}
 
-	response, err := c.httpClient.Do(request)
+	response, err := c.makeRequest(request)
 	if err != nil {
 		return Info{}, err
 	}
@@ -75,17 +75,28 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 	}
 
 	request.Header.Set("Content-Type", "text/yaml")
+	response, err := c.makeRequest(request)
+	if err != nil {
+		return err
+	}
 
-	var response *http.Response
+	if response.StatusCode != http.StatusCreated {
+		return fmt.Errorf("unexpected http response %d %s", response.StatusCode, http.StatusText(response.StatusCode))
+	}
+
+	return nil
+}
+
+func (c client) makeRequest(request *http.Request) (*http.Response, error) {
 	if c.jumpbox {
 		urlParts, err := url.Parse(c.directorAddress)
 		if err != nil {
-			return err //not tested
+			return &http.Response{}, err //not tested
 		}
 
 		boshHost, _, err := net.SplitHostPort(urlParts.Host)
 		if err != nil {
-			return err //not tested
+			return &http.Response{}, err //not tested
 		}
 
 		ctx := context.Background()
@@ -98,25 +109,9 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 		}
 
 		httpClient := conf.Client(ctx)
-
-		response, err = httpClient.Do(request)
-		if err != nil {
-			return err
-		}
+		return httpClient.Do(request)
 	} else {
 		request.SetBasicAuth(c.username, c.password)
-
-		var err error
-		response, err = c.httpClient.Do(request)
-		if err != nil {
-			return err
-		}
-
+		return c.httpClient.Do(request)
 	}
-
-	if response.StatusCode != http.StatusCreated {
-		return fmt.Errorf("unexpected http response %d %s", response.StatusCode, http.StatusText(response.StatusCode))
-	}
-
-	return nil
 }
