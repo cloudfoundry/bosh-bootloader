@@ -22,9 +22,6 @@ AWS and GCP. Azure support is in progress.
 
 The following should be installed on your local machine
 - [bosh-cli](https://bosh.io/docs/cli-v2.html)
-  ```sh
-  $ brew install cloudfoundry/tap/bosh-cli
-  ```
 - [terraform](https://www.terraform.io/downloads.html) >= 0.10.0
 - ruby
 
@@ -32,10 +29,10 @@ The following should be installed on your local machine
 
 **Mac OS X**
 
-Using [homebrew](http://brew.sh/) and [cloudfoundry tap](https://github.com/cloudfoundry/homebrew-tap):
-
 ```sh
-$ brew install cloudfoundry/tap/bbl
+$ brew tap cloudfoundry/tap
+$ brew install bosh-cli
+$ brew install bbl
 ```
 
 ### IAAS Configuration
