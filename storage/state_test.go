@@ -51,10 +51,11 @@ var _ = Describe("Store", func() {
 						Region:          "some-region",
 					},
 					Azure: storage.Azure{
-						SubscriptionID: "subscription-id",
-						TenantID:       "tenant-id",
 						ClientID:       "client-id",
 						ClientSecret:   "client-secret",
+						Location:       "location",
+						SubscriptionID: "subscription-id",
+						TenantID:       "tenant-id",
 					},
 					GCP: storage.GCP{
 						ServiceAccountKey: "some-service-account-key",
@@ -138,10 +139,11 @@ var _ = Describe("Store", func() {
 					"region": "some-region"
 				},
 				"azure": {
-					"subscriptionId": "subscription-id",
-					"tenantId": "tenant-id",
 					"clientId": "client-id",
-					"clientSecret": "client-secret"
+					"clientSecret": "client-secret",
+					"location": "location",
+					"subscriptionId": "subscription-id",
+					"tenantId": "tenant-id"
 				},
 				"gcp": {
 					"zone": "some-zone",
@@ -229,10 +231,11 @@ var _ = Describe("Store", func() {
 						Region:          "some-region",
 					},
 					Azure: storage.Azure{
-						SubscriptionID: "subscription-id",
-						TenantID:       "tenant-id",
 						ClientID:       "client-id",
 						ClientSecret:   "client-secret",
+						Location:       "location",
+						SubscriptionID: "subscription-id",
+						TenantID:       "tenant-id",
 					},
 					GCP: storage.GCP{
 						ServiceAccountKey: "some-service-account-key",
@@ -312,10 +315,11 @@ var _ = Describe("Store", func() {
 						"region": "some-region"
 					},
 					"azure": {
-						"subscriptionId": "subscription-id",
-						"tenantId": "tenant-id",
 						"clientId": "client-id",
-						"clientSecret": "client-secret"
+						"clientSecret": "client-secret",
+						"location": "location",
+						"subscriptionId": "subscription-id",
+						"tenantId": "tenant-id"
 					},
 					"gcp": {
 						"serviceAccountKey": "some-service-account-key",

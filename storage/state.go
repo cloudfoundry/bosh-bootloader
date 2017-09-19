@@ -35,10 +35,11 @@ type AWS struct {
 }
 
 type Azure struct {
-	SubscriptionID string `json:"subscriptionId"`
-	TenantID       string `json:"tenantId"`
 	ClientID       string `json:"clientId"`
 	ClientSecret   string `json:"clientSecret"`
+	Location       string `json:"location"`
+	SubscriptionID string `json:"subscriptionId"`
+	TenantID       string `json:"tenantId"`
 }
 
 type GCP struct {

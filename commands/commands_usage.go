@@ -21,7 +21,8 @@ const (
   --azure-subscription-id    Azure subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
   --azure-tenant-id          Azure tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
   --azure-client-id          Azure client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure client secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`
+  --azure-client-secret      Azure client secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
+  --azure-location           Azure location to use (Defaults to environment variable BBL_AZURE_LOCATION)`
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
 

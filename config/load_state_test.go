@@ -584,10 +584,11 @@ var _ = Describe("LoadState", func() {
 						args = []string{
 							"bbl", "up", "--name", "some-env-id",
 							"--iaas", "azure",
-							"--azure-subscription-id", "subscription-id",
-							"--azure-tenant-id", "tenant-id",
 							"--azure-client-id", "client-id",
 							"--azure-client-secret", "client-secret",
+							"--azure-location", "location",
+							"--azure-subscription-id", "subscription-id",
+							"--azure-tenant-id", "tenant-id",
 						}
 					})
 
@@ -598,10 +599,11 @@ var _ = Describe("LoadState", func() {
 
 						state := appConfig.State
 						Expect(state.IAAS).To(Equal("azure"))
-						Expect(state.Azure.SubscriptionID).To(Equal("subscription-id"))
-						Expect(state.Azure.TenantID).To(Equal("tenant-id"))
 						Expect(state.Azure.ClientID).To(Equal("client-id"))
 						Expect(state.Azure.ClientSecret).To(Equal("client-secret"))
+						Expect(state.Azure.Location).To(Equal("location"))
+						Expect(state.Azure.SubscriptionID).To(Equal("subscription-id"))
+						Expect(state.Azure.TenantID).To(Equal("tenant-id"))
 					})
 
 					It("returns the command and its flags", func() {
@@ -621,10 +623,11 @@ var _ = Describe("LoadState", func() {
 						args = []string{"bbl", "up"}
 
 						os.Setenv("BBL_IAAS", "azure")
-						os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id")
-						os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")
 						os.Setenv("BBL_AZURE_CLIENT_ID", "azure-client-id")
 						os.Setenv("BBL_AZURE_CLIENT_SECRET", "azure-client-secret")
+						os.Setenv("BBL_AZURE_LOCATION", "azure-location")
+						os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id")
+						os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")
 					})
 
 					It("returns a state containing configuration", func() {
@@ -635,10 +638,11 @@ var _ = Describe("LoadState", func() {
 						state := appConfig.State
 
 						Expect(state.IAAS).To(Equal("azure"))
-						Expect(state.Azure.SubscriptionID).To(Equal("azure-subscription-id"))
-						Expect(state.Azure.TenantID).To(Equal("azure-tenant-id"))
 						Expect(state.Azure.ClientID).To(Equal("azure-client-id"))
 						Expect(state.Azure.ClientSecret).To(Equal("azure-client-secret"))
+						Expect(state.Azure.Location).To(Equal("azure-location"))
+						Expect(state.Azure.SubscriptionID).To(Equal("azure-subscription-id"))
+						Expect(state.Azure.TenantID).To(Equal("azure-tenant-id"))
 					})
 
 					It("returns the command", func() {
@@ -662,10 +666,11 @@ var _ = Describe("LoadState", func() {
 						return storage.State{
 							IAAS: "azure",
 							Azure: storage.Azure{
-								SubscriptionID: "subscription-id",
-								TenantID:       "tenant-id",
 								ClientID:       "client-id",
 								ClientSecret:   "client-secret",
+								Location:       "location",
+								SubscriptionID: "subscription-id",
+								TenantID:       "tenant-id",
 							},
 							EnvID: "some-env-id",
 						}, nil
@@ -696,10 +701,11 @@ var _ = Describe("LoadState", func() {
 							"bbl",
 							"create-lbs",
 							"--iaas", "azure",
-							"--azure-subscription-id", "subscription-id",
-							"--azure-tenant-id", "tenant-id",
 							"--azure-client-id", "client-id",
 							"--azure-client-secret", "client-secret",
+							"--azure-location", "location",
+							"--azure-subscription-id", "subscription-id",
+							"--azure-tenant-id", "tenant-id",
 						})
 						Expect(err).NotTo(HaveOccurred())
 
@@ -812,13 +818,50 @@ var _ = Describe("LoadState", func() {
 				},
 				"up",
 				"GCP zone must be provided"),
+			Entry("when Azure client id is missing",
+				storage.State{
+					IAAS: "azure",
+					Azure: storage.Azure{
+						ClientSecret:   "some-client-secret",
+						Location:       "location",
+						TenantID:       "some-tenant-id",
+						SubscriptionID: "some-subscription-id",
+					},
+				},
+				"up",
+				"Azure client id must be provided"),
+			Entry("when Azure client secret is missing",
+				storage.State{
+					IAAS: "azure",
+					Azure: storage.Azure{
+						ClientID:       "some-client-id",
+						Location:       "location",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tenant-id",
+					},
+				},
+				"up",
+				"Azure client secret must be provided"),
+			Entry("when Azure location is missing",
+				storage.State{
+					IAAS: "azure",
+					Azure: storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tenant-id",
+					},
+				},
+				"up",
+				"Azure location must be provided"),
 			Entry("when Azure subscription is missing",
 				storage.State{
 					IAAS: "azure",
 					Azure: storage.Azure{
-						TenantID:     "some-tenant-id",
 						ClientID:     "some-client-id",
 						ClientSecret: "some-client-secret",
+						Location:     "location",
+						TenantID:     "some-tenant-id",
 					},
 				},
 				"up",
@@ -829,33 +872,12 @@ var _ = Describe("LoadState", func() {
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
 						ClientSecret:   "some-client-secret",
+						Location:       "location",
 						SubscriptionID: "some-subscription-id",
 					},
 				},
 				"up",
 				"Azure tenant id must be provided"),
-			Entry("when Azure client id is missing",
-				storage.State{
-					IAAS: "azure",
-					Azure: storage.Azure{
-						TenantID:       "some-tenant-id",
-						ClientSecret:   "some-client-secret",
-						SubscriptionID: "some-subscription-id",
-					},
-				},
-				"up",
-				"Azure client id must be provided"),
-			Entry("when Azure client secret is missing",
-				storage.State{
-					IAAS: "azure",
-					Azure: storage.Azure{
-						TenantID:       "some-tenant-id",
-						ClientID:       "some-client-id",
-						SubscriptionID: "some-subscription-id",
-					},
-				},
-				"up",
-				"Azure client secret must be provided"),
 		)
 	})
 })

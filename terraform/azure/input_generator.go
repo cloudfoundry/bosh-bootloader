@@ -20,8 +20,8 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 	}
 	input := map[string]string{
 		"env_id":          state.EnvID,
-		"location":        "West US",
 		"simple_env_id":   simpleEnvId,
+		"location":        state.Azure.Location,
 		"subscription_id": state.Azure.SubscriptionID,
 		"tenant_id":       state.Azure.TenantID,
 		"client_id":       state.Azure.ClientID,

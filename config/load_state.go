@@ -23,10 +23,11 @@ type globalFlags struct {
 	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
 	AWSRegion          string `long:"aws-region"              env:"BBL_AWS_REGION"`
 
-	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
-	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
 	AzureClientID       string `long:"azure-client-id"        env:"BBL_AZURE_CLIENT_ID"`
 	AzureClientSecret   string `long:"azure-client-secret"    env:"BBL_AZURE_CLIENT_SECRET"`
+	AzureLocation       string `long:"azure-location"         env:"BBL_AZURE_LOCATION"`
+	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
+	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
 
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
@@ -180,17 +181,20 @@ func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State
 }
 
 func updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
-	if globalFlags.AzureSubscriptionID != "" {
-		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
-	}
-	if globalFlags.AzureTenantID != "" {
-		state.Azure.TenantID = globalFlags.AzureTenantID
-	}
 	if globalFlags.AzureClientID != "" {
 		state.Azure.ClientID = globalFlags.AzureClientID
 	}
 	if globalFlags.AzureClientSecret != "" {
 		state.Azure.ClientSecret = globalFlags.AzureClientSecret
+	}
+	if globalFlags.AzureLocation != "" {
+		state.Azure.Location = globalFlags.AzureLocation
+	}
+	if globalFlags.AzureSubscriptionID != "" {
+		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
+	}
+	if globalFlags.AzureTenantID != "" {
+		state.Azure.TenantID = globalFlags.AzureTenantID
 	}
 
 	return state, nil
@@ -264,17 +268,20 @@ func validateGCP(gcp storage.GCP) error {
 }
 
 func validateAzure(azure storage.Azure) error {
-	if azure.SubscriptionID == "" {
-		return errors.New("Azure subscription id must be provided")
-	}
-	if azure.TenantID == "" {
-		return errors.New("Azure tenant id must be provided")
-	}
 	if azure.ClientID == "" {
 		return errors.New("Azure client id must be provided")
 	}
 	if azure.ClientSecret == "" {
 		return errors.New("Azure client secret must be provided")
+	}
+	if azure.Location == "" {
+		return errors.New("Azure location must be provided")
+	}
+	if azure.SubscriptionID == "" {
+		return errors.New("Azure subscription id must be provided")
+	}
+	if azure.TenantID == "" {
+		return errors.New("Azure tenant id must be provided")
 	}
 	return nil
 }

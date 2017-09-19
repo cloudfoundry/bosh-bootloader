@@ -11,10 +11,11 @@ function unset_env_vars() {
   unset BBL_GCP_REGION
   unset BBL_GCP_ZONE
   unset BBL_GCP_PROJECT_ID
-  unset BBL_AZURE_SUBSCRIPTION_ID
-  unset BBL_AZURE_TENANT_ID
   unset BBL_AZURE_CLIENT_ID
   unset BBL_AZURE_CLIENT_SECRET
+  unset BBL_AZURE_LOCATION
+  unset BBL_AZURE_SUBSCRIPTION_ID
+  unset BBL_AZURE_TENANT_ID
   unset BBL_DEBUG
 }
 
