@@ -96,6 +96,25 @@ var _ = Describe("EnvIDManager", func() {
 			})
 		})
 
+		Context("when the name provided is two characters", func() {
+			It("returns the name provided", func() {
+				state, err := envIDManager.Sync(storage.State{
+					IAAS: "gcp",
+				}, "ci")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(state.EnvID).To(Equal("ci"))
+			})
+
+			Context("when the name ends with a hyphen", func() {
+				It("returns the name", func() {
+					_, err := envIDManager.Sync(storage.State{
+						IAAS: "gcp",
+					}, "c-")
+					Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
+				})
+			})
+		})
+
 		Context("failure cases", func() {
 			It("returns an error when the NetworkClient cannot check if a network exists", func() {
 				networkClient.CheckExistsCall.Returns.Error = errors.New("failed to get network list")

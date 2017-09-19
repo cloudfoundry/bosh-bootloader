@@ -100,7 +100,7 @@ func (e EnvIDManager) validateName(envID string) error {
 		return nil
 	}
 
-	matched, err := matchString("^(?:[a-z](?:[-a-z0-9]+[a-z0-9])?)$", envID)
+	matched, err := matchString("^(?:[a-z](?:[-a-z0-9]*[a-z0-9])?)$", envID)
 	if err != nil {
 		return err
 	}
