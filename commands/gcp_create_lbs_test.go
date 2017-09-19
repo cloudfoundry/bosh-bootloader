@@ -59,14 +59,8 @@ var _ = Describe("GCPCreateLBs", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bblState = storage.State{
-			IAAS: "gcp",
 			GCP: storage.GCP{
 				Region: "some-region",
-			},
-			BOSH: storage.BOSH{
-				DirectorUsername: "some-director-username",
-				DirectorPassword: "some-director-password",
-				DirectorAddress:  "some-director-address",
 			},
 			TFState: "some-tfstate",
 		}
@@ -77,73 +71,36 @@ var _ = Describe("GCPCreateLBs", func() {
 	})
 
 	Describe("Execute", func() {
-		Context("when lb type is cf", func() {
-			BeforeEach(func() {
-				availabilityZoneRetriever.GetZonesCall.Returns.Zones = []string{"z1", "z2", "z3"}
-			})
-			It("calls terraform manager apply", func() {
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-					Domain:   "some-domain",
-				}}, bblState)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("getting the AZs", func() {
-					Expect(availabilityZoneRetriever.GetZonesCall.Receives.Region).To(Equal("some-region"))
-				})
-
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						Zones:  []string{"z1", "z2", "z3"},
-						Region: "some-region",
-					},
-					BOSH: storage.BOSH{
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-						DirectorAddress:  "some-director-address",
-					},
-					TFState: "some-tfstate",
-					LB: storage.LB{
-						Type:   "cf",
-						Cert:   certificate,
-						Key:    key,
-						Domain: "some-domain",
-					},
-				}))
-			})
+		BeforeEach(func() {
+			availabilityZoneRetriever.GetZonesCall.Returns.Zones = []string{"z1", "z2", "z3"}
 		})
+		It("calls terraform manager apply", func() {
+			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+				LBType:   "cf",
+				CertPath: certPath,
+				KeyPath:  keyPath,
+				Domain:   "some-domain",
+			}}, bblState)
+			Expect(err).NotTo(HaveOccurred())
 
-		Context("when lb type is concourse", func() {
-			It("calls terraform manager apply", func() {
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{
-					IAAS:    "gcp",
-					TFState: "some-tfstate",
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-					TFState: "some-tfstate",
-				}))
-			})
+			Expect(availabilityZoneRetriever.GetZonesCall.Receives.Region).To(Equal("some-region"))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
+				GCP: storage.GCP{
+					Zones:  []string{"z1", "z2", "z3"},
+					Region: "some-region",
+				},
+				TFState: "some-tfstate",
+				LB: storage.LB{
+					Type:   "cf",
+					Cert:   certificate,
+					Key:    key,
+					Domain: "some-domain",
+				},
+			}))
 		})
 
 		It("saves the updated tfstate", func() {
 			terraformManager.ApplyCall.Returns.BBLState = storage.State{
-				IAAS: "gcp",
-				BOSH: storage.BOSH{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					DirectorAddress:  "some-director-address",
-				},
 				LB: storage.LB{
 					Type: "concourse",
 				},
@@ -152,25 +109,11 @@ var _ = Describe("GCPCreateLBs", func() {
 
 			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 				LBType: "concourse",
-			}}, storage.State{
-				IAAS:    "gcp",
-				TFState: "some-old-tfstate",
-				BOSH: storage.BOSH{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					DirectorAddress:  "some-director-address",
-				},
-			})
+			}}, storage.State{TFState: "some-old-tfstate"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(1))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-				IAAS: "gcp",
-				BOSH: storage.BOSH{
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-					DirectorAddress:  "some-director-address",
-				},
 				LB: storage.LB{
 					Type: "concourse",
 				},
@@ -191,41 +134,13 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("when there is no BOSH director", func() {
-			It("creates the LBs", func() {
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{
-					IAAS:       "gcp",
-					EnvID:      "some-env-id",
-					TFState:    "some-prev-tf-state",
-					NoDirector: true,
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-			})
-
 			It("does not call the CloudConfigManager", func() {
 				terraformManager.ApplyCall.Returns.BBLState.NoDirector = true
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{
-					IAAS:       "gcp",
-					EnvID:      "some-env-id",
-					TFState:    "some-prev-tf-state",
+				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{
 					NoDirector: true,
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
 				})
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})
 		})
@@ -234,12 +149,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			It("returns an error if terraform manager version validator fails", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{
-					IAAS: "gcp",
-				})
-
+				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
 				Expect(err).To(MatchError("cannot validate version"))
 			})
 
@@ -247,9 +157,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				It("returns a DirectorNotReachable error", func() {
 					environmentValidator.ValidateCall.Returns.Error = application.DirectorNotReachable
 
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-						LBType: "concourse",
-					}}, storage.State{IAAS: "gcp"})
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
 					Expect(err).To(MatchError(application.DirectorNotReachable))
 				})
 			})
@@ -258,7 +166,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				availabilityZoneRetriever.GetZonesCall.Returns.Error = errors.New("failed to get zones")
 				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 					LBType: "concourse",
-				}}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
+				}}, storage.State{TFState: "some-tf-state"})
 				Expect(err).To(MatchError("failed to get zones"))
 			})
 
@@ -273,14 +181,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 					LBType: "concourse",
 				}}, storage.State{
-					IAAS:    "gcp",
-					EnvID:   "some-env-id",
 					TFState: "some-prev-tf-state",
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
 				})
 
 				Expect(err).To(MatchError("failed to apply"))
@@ -295,7 +196,6 @@ var _ = Describe("GCPCreateLBs", func() {
 					CertPath: certPath,
 					KeyPath:  keyPath,
 				}}, storage.State{
-					IAAS:    "gcp",
 					TFState: "some-tf-state",
 				})
 				Expect(err).To(MatchError("failed to apply"))
@@ -320,7 +220,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
 				terraformExecutorError.ErrorCall.Returns = "failed to apply"
 				expectedError := terraform.NewManagerError(storage.State{
-					IAAS: "gcp",
 					LB: storage.LB{
 						Type: "concourse",
 					},
@@ -331,25 +230,22 @@ var _ = Describe("GCPCreateLBs", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
 				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 					LBType: "concourse",
-				}}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
+				}}, storage.State{TFState: "some-tf-state"})
 
 				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
+					LB:      storage.LB{Type: "concourse"},
 					TFState: "some-updated-tf-state",
 				}))
 			})
 
 			It("returns an error when the state store fails to save the state after applying terraform", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
+
 				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 					LBType: "concourse",
-				}}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
-
+				}}, storage.State{TFState: "some-tf-state"})
 				Expect(err).To(MatchError("failed to save state"))
 			})
 
@@ -358,7 +254,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 					LBType: "concourse",
-				}}, storage.State{IAAS: "gcp", TFState: "some-tf-state"})
+				}}, storage.State{TFState: "some-tf-state"})
 				Expect(err).To(MatchError("failed to update cloud config"))
 			})
 		})
