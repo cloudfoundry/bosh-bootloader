@@ -63,12 +63,7 @@ func main() {
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
-
-	// Usage Command
-	usage := commands.NewUsage(logger)
-
 	storage.GetStateLogger = stderrLogger
-
 	stateStore := storage.NewStore(appConfig.Global.StateDir)
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 
@@ -172,18 +167,9 @@ func main() {
 		json.Marshal, ioutil.WriteFile)
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
-
-	// Environment Validators
-	var environmentValidator commands.EnvironmentValidator
-	if appConfig.State.IAAS == "aws" {
-		environmentValidator = awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
-	}
-	if appConfig.State.IAAS == "gcp" {
-		environmentValidator = gcpapplication.NewEnvironmentValidator(boshClientProvider)
-	}
+	sshKeyGetter := bosh.NewSSHKeyGetter()
 
 	// Cloud Config
-	sshKeyGetter := bosh.NewSSHKeyGetter()
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
 	if appConfig.State.IAAS == "aws" {
 		awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
@@ -206,11 +192,15 @@ func main() {
 		deleteLBsCmd commands.DeleteLBsCmd
 	)
 	if appConfig.State.IAAS == "aws" {
+		environmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
+
 		upCmd = commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	} else if appConfig.State.IAAS == "gcp" {
+		environmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
+
 		upCmd = commands.NewGCPUp(stateStore, terraformManager, boshManager, cloudConfigManager, envIDManager, gcpClient)
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
@@ -222,6 +212,9 @@ func main() {
 	}
 
 	up := commands.NewUp(upCmd, boshManager)
+
+	// Usage Command
+	usage := commands.NewUsage(logger)
 
 	// Commands
 	commandSet := application.CommandSet{}
