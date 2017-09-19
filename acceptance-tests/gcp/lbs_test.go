@@ -14,16 +14,14 @@ import (
 
 var _ = Describe("lbs test", func() {
 	var (
-		bbl   actors.BBL
-		gcp   actors.GCP
-		state acceptance.State
+		bbl actors.BBL
+		gcp actors.GCP
 	)
 
 	BeforeEach(func() {
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		state = acceptance.NewState(configuration.StateFileDir)
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		gcp = actors.NewGCP(configuration)
 
@@ -37,9 +35,7 @@ var _ = Describe("lbs test", func() {
 	})
 
 	It("successfully creates, updates, and deletes cf lbs", func() {
-		var urlToSSLCert string
-
-		By("creating a load balancer", func() {
+		By("creating cf load balancers", func() {
 			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -61,12 +57,10 @@ var _ = Describe("lbs test", func() {
 
 			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(bbl.PredefinedEnvID() + "-https-proxy")
 			Expect(err).NotTo(HaveOccurred())
-
 			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
-			urlToSSLCert = targetHTTPSProxy.SslCertificates[0]
 		})
 
-		By("verifying that the bbl lbs output contains the cf lbs", func() {
+		By("verifying the bbl lbs output", func() {
 			session := bbl.LBs()
 			Eventually(session, 2*time.Second).Should(gexec.Exit(0))
 
@@ -75,26 +69,6 @@ var _ = Describe("lbs test", func() {
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
-		})
-
-		By("updating the load balancer", func() {
-			otherCertPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
-			Expect(err).NotTo(HaveOccurred())
-
-			otherKeyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
-			Expect(err).NotTo(HaveOccurred())
-
-			session := bbl.UpdateLB(otherCertPath, otherKeyPath, "")
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-		})
-
-		By("confirming that the cert gets updated", func() {
-			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(bbl.PredefinedEnvID() + "-https-proxy")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
-			Expect(targetHTTPSProxy.SslCertificates[0]).NotTo(BeEmpty())
-			Expect(targetHTTPSProxy.SslCertificates[0]).NotTo(Equal(urlToSSLCert))
 		})
 
 		By("deleting lbs", func() {

@@ -16,9 +16,8 @@ import (
 
 var _ = Describe("lbs test", func() {
 	var (
-		bbl   actors.BBL
-		aws   actors.AWS
-		state acceptance.State
+		bbl actors.BBL
+		aws actors.AWS
 
 		certPath       string
 		chainPath      string
@@ -36,7 +35,6 @@ var _ = Describe("lbs test", func() {
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		aws = actors.NewAWS(configuration)
-		state = acceptance.NewState(configuration.StateFileDir)
 
 		certPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
@@ -96,21 +94,6 @@ var _ = Describe("lbs test", func() {
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
-		})
-
-		By("updating the certs of the cf router lb", func() {
-			session := bbl.UpdateLB(otherCertPath, otherKeyPath, otherChainPath)
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-
-			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(3))
-			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
-				MatchRegexp(".*-cf-router-lb"),
-				MatchRegexp(".*-cf-ssh-lb"),
-				MatchRegexp(".*-cf-tcp-lb"),
-			))
-
-			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
-			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(string(testhelpers.OTHER_BBL_CERT))))
 		})
 
 		By("deleting lbs", func() {
