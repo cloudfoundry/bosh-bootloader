@@ -10,21 +10,6 @@ any instances BOSH deploys.
 1. A copy of the manifest the BOSH director was deployed with
 1. A basic cloud config
 
-### Preparing your environment
-
-To install `bbl` go to the
-[releases page](https://github.com/cloudfoundry/bosh-bootloader/releases/latest)
-and download the latest version for your platform.
-
-To install move bbl into your PATH.
-
-For Mac OS X/Linux machines you can do the following:
-
-```
-$ chmod +x ~/Downloads/bbl-*
-$ sudo mv ~/Downloads/bbl-* /usr/local/bin/bbl
-```
-
 ### Creating an IAM user
 
 In order for `bbl` to interact with AWS, an `IAM` user must be created.

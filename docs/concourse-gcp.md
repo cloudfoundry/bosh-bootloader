@@ -32,10 +32,7 @@ Scale instance types, disks and instance count based on your needs. Other sizes 
 ## Set the bosh environment
 
 ```
-export BOSH_CLIENT=`bbl director-username`
-export BOSH_CLIENT_SECRET=`bbl director-password`
-export BOSH_CA_CERT=`bbl director-ca-cert`
-export BOSH_ENVIRONMENT=`bbl director-address`
+eval "$(bbl print-env)"
 ```
 
 ## Upload releases
