@@ -14,18 +14,14 @@ import (
 var _ = Describe("no director test", func() {
 	var (
 		bbl                 actors.BBL
-		state               acceptance.State
-		configuration       acceptance.Config
 		boshDirectorChecker actors.BOSHDirectorChecker
 	)
 
 	BeforeEach(func() {
-		var err error
-		configuration, err = acceptance.LoadConfig()
+		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "no-director-env")
-		state = acceptance.NewState(configuration.StateFileDir)
 		boshDirectorChecker = actors.NewBOSHDirectorChecker(configuration)
 	})
 

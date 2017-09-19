@@ -19,7 +19,6 @@ const ipRegex = `[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}`
 var _ = Describe("bosh deployment vars", func() {
 	var (
 		bbl           actors.BBL
-		state         acceptance.State
 		configuration acceptance.Config
 	)
 
@@ -29,7 +28,6 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "bosh-deployment-vars-env")
-		state = acceptance.NewState(configuration.StateFileDir)
 	})
 
 	AfterEach(func() {

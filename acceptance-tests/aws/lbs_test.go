@@ -29,7 +29,6 @@ var _ = Describe("lbs test", func() {
 	)
 
 	BeforeEach(func() {
-		var err error
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 

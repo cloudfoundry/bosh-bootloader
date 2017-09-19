@@ -18,12 +18,10 @@ var _ = Describe("up test", func() {
 		azure   actors.Azure
 		bbl     actors.BBL
 		boshcli actors.BOSHCLI
-		config  acceptance.Config
 	)
 
 	BeforeEach(func() {
-		var err error
-		config, err = acceptance.LoadConfig()
+		config, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		azure = actors.NewAzure(config)
