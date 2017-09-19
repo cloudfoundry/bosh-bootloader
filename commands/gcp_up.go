@@ -46,8 +46,6 @@ func NewGCPUp(stateStore stateStore, terraformManager terraformApplier, boshMana
 }
 
 func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
-	state.Jumpbox.Enabled = upConfig.Jumpbox
-
 	err := u.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
@@ -102,15 +100,20 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		state.BOSH.UserOpsFile = string(opsFileContents)
-
 		if upConfig.Jumpbox {
 			state.Jumpbox.Enabled = true
 			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
 			if err != nil {
 				return err
 			}
+
+			err = u.stateStore.Set(state)
+			if err != nil {
+				return err
+			}
 		}
+
+		state.BOSH.UserOpsFile = string(opsFileContents)
 
 		state, err = u.boshManager.CreateDirector(state, terraformOutputs)
 		switch err.(type) {

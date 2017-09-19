@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -29,8 +30,6 @@ func NewAWSUp(boshManager boshManager, cloudConfigManager cloudConfigManager,
 }
 
 func (u AWSUp) Execute(config UpConfig, state storage.State) error {
-	state.IAAS = "aws"
-
 	if config.NoDirector {
 		if !state.BOSH.IsEmpty() {
 			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
@@ -39,13 +38,24 @@ func (u AWSUp) Execute(config UpConfig, state storage.State) error {
 		state.NoDirector = true
 	}
 
-	var err error
+	var (
+		err             error
+		opsFileContents []byte
+	)
+	if config.OpsFile != "" {
+		opsFileContents, err = ioutil.ReadFile(config.OpsFile)
+		if err != nil {
+			return fmt.Errorf("error reading ops-file contents: %v", err)
+		}
+	}
+
 	state, err = u.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return err
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
+	err = u.stateStore.Set(state)
+	if err != nil {
 		return err
 	}
 
@@ -65,22 +75,20 @@ func (u AWSUp) Execute(config UpConfig, state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		opsFile := []byte{}
-		if config.OpsFile != "" {
-			opsFile, err = ioutil.ReadFile(config.OpsFile)
-			if err != nil {
-				return err
-			}
-		}
-		state.BOSH.UserOpsFile = string(opsFile)
-
 		if config.Jumpbox {
 			state.Jumpbox.Enabled = true
 			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
 			if err != nil {
 				return err
 			}
+
+			err = u.stateStore.Set(state)
+			if err != nil {
+				return err
+			}
 		}
+
+		state.BOSH.UserOpsFile = string(opsFileContents)
 
 		state, err = u.boshManager.CreateDirector(state, terraformOutputs)
 		switch err.(type) {

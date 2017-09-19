@@ -250,8 +250,8 @@ var _ = Describe("GCPUp", func() {
 				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
-				Expect(stateStore.SetCall.Receives[0].State.Jumpbox.Enabled).To(Equal(true))
+				Expect(stateStore.SetCall.CallCount).To(Equal(5))
+				Expect(stateStore.SetCall.Receives[3].State.Jumpbox.Enabled).To(Equal(true))
 			})
 		})
 
@@ -380,7 +380,6 @@ var _ = Describe("GCPUp", func() {
 				terraformManager.GetOutputsCall.Returns.Error = errors.New("nope")
 				err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
 				Expect(err).To(MatchError("nope"))
-
 			})
 
 			Context("bosh manager error handling", func() {

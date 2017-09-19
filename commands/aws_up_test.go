@@ -105,7 +105,6 @@ var _ = Describe("AWSUp", func() {
 
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
-				IAAS: "aws",
 				AWS: storage.AWS{
 					Region:          "some-aws-region",
 					SecretAccessKey: "some-secret-access-key",
@@ -419,7 +418,7 @@ var _ = Describe("AWSUp", func() {
 				err := command.Execute(commands.UpConfig{
 					OpsFile: "some/fake/path",
 				}, storage.State{})
-				Expect(err).To(MatchError("open some/fake/path: no such file or directory"))
+				Expect(err).To(MatchError("error reading ops-file contents: open some/fake/path: no such file or directory"))
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
