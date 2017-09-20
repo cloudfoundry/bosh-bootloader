@@ -2,17 +2,20 @@
 
 ## To the BOSH director with a jumpbox
 
+Required:
+* [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment)
+
 1. Start by applying the jumpbox-user ops-file during bbl up:
 
     ```
-    bbl up --credhub --ops-file bosh-deployment/jumpbox-user.yml`
+    bbl up --credhub --ops-file bosh-deployment/jumpbox-user.yml
     eval "$(bbl print-env)"
     ```
 
 1. Retrieve the bosh credentials from the bbl-state:
 
     ```
-    cat bbl-state.json | jq --raw-output .bosh.variables > creds.yml`
+    cat bbl-state.json | jq --raw-output .bosh.variables > creds.yml
     ```
 
 1. Interpolate out the jumpbox user's ssh key for reaching the director:
