@@ -116,6 +116,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
 		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
+		Entry("jumpbox-deployment-vars", commands.JumpboxDeploymentVars{}, "Prints required variables for jumpbox deployment"),
 		Entry("version", commands.Version{}, "Prints version"),
 		Entry("cloud-config", commands.CloudConfig{}, "Prints suggested cloud configuration for BOSH environment"),
 	)

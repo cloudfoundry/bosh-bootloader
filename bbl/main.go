@@ -239,6 +239,7 @@ func main() {
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
+	commandSet["jumpbox-deployment-vars"] = commands.NewJumpboxDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 
 	app := application.New(commandSet, appConfig, usage)
