@@ -16,7 +16,7 @@ var _ = Describe("Commands Usage", func() {
 				usageText := upCmd.Usage()
 				Expect(usageText).To(Equal(`Deploys BOSH director on an IAAS
 
-  --iaas                     IAAS to deploy your BOSH director onto. Valid options: "gcp", "aws" (Defaults to environment variable BBL_IAAS)
+  --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
   [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
   [--ops-file]               Path to BOSH ops file (optional)
   [--no-director]            Skips creating BOSH environment
@@ -31,11 +31,11 @@ var _ = Describe("Commands Usage", func() {
   --gcp-zone                 GCP Zone to use for BOSH director (Defaults to environment variable BBL_GCP_ZONE)
   --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)
 
-  --azure-subscription-id    Azure subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure client secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
-  --azure-location           Azure location to use (Defaults to environment variable BBL_AZURE_LOCATION)`))
+  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
+  --azure-location           Azure Location to use (Defaults to environment variable BBL_AZURE_LOCATION)`))
 			})
 		})
 	})
