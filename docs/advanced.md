@@ -8,16 +8,9 @@
 
 ## <a name='director'></a>Deploy director with bosh create-env
 
-The overall process for deploying a bosh director with custom configuration is as follows:
+**Note:** If you `bbl up --no-director`, future calls to `bbl up` will not create a director.
 
-1. `bbl up` with the `--no-director` flag
-1. Use `bbl bosh-deployment-vars` and [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) to create a director
-1. `bbl create-lbs` to get load balancers
-1. Use `bbl cloud-config` and bosh-cli to upload a cloud config containing VM extensions for your load balancer(s)
-
-**Note:** If you `bbl up --no-director`, future calls to `bbl up` will not create director.
-
-### GCP
+The process for deploying a bosh director with custom configuration on GCP is as follows:
 
 1. Create the network and firewall rules. **Important here is the ``--no-director`` flag.**
 
@@ -31,7 +24,7 @@ The overall process for deploying a bosh director with custom configuration is a
       --no-director
     ```
 
-1. Use `bosh-deployment` to create the director.
+1. Use [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) to create the director.
 **Important here is the ``-o external-ip-not-recommended.yml`` ops-file**
 (unless you set up a tunnel to your IaaS such that you can route to the director at `10.0.0.6`).
 
@@ -66,7 +59,7 @@ The overall process for deploying a bosh director with custom configuration is a
 
 ## <a name='concourse'></a>Deploy concourse with bosh create-env
 
-1. Create the network and firewall rules. **Important here is the ``--no-director`` flag.**
+1. Create the network and firewall rules. **Important here is the `--no-director` flag.**
 
     ```
     bbl up \
