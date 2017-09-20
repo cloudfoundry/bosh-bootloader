@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 )
 
 var (
@@ -21,7 +19,7 @@ func main() {
 		log.Fatal("failed to terraform")
 	}
 
-	if testhelpers.Contains(os.Args, "region=fail-to-terraform") {
+	if contains(os.Args, "region=fail-to-terraform") {
 		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"partial-apply"}`), os.ModePerm)
 		if err != nil {
 			panic(err)
@@ -69,4 +67,13 @@ func checkFastFail() bool {
 	}
 
 	return resp.StatusCode == http.StatusInternalServerError
+}
+
+func contains(slice []string, word string) bool {
+	for _, item := range slice {
+		if item == word {
+			return true
+		}
+	}
+	return false
 }
