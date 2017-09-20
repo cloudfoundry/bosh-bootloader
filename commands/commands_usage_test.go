@@ -51,7 +51,7 @@ var _ = Describe("Commands Usage", func() {
   [--cert]            Path to SSL certificate (conditionally required; refer to table below)
   [--key]             Path to SSL certificate key (conditionally required; refer to table below)
   [--chain]           Path to SSL certificate chain (optional; only supported on aws)
-  [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
+  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
 
   --cert/--key requirements:
   ------------------------------

@@ -35,7 +35,7 @@ const (
   [--cert]            Path to SSL certificate (conditionally required; refer to table below)
   [--key]             Path to SSL certificate key (conditionally required; refer to table below)
   [--chain]           Path to SSL certificate chain (optional; only supported on aws)
-  [--domain]          Creates a nameserver with a zone for given domain (supported when type="cf")
+  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
 
   --cert/--key requirements:
   ------------------------------
@@ -45,14 +45,6 @@ const (
   ------------------------------
   | gcp | required | n/a       |
   ------------------------------`
-
-	UpdateLBsCommandUsage = `Updates load balancer(s) with the supplied certificate, key, and optional chain
-
-  --cert               Path to SSL certificate
-  --key                Path to SSL certificate key
-  [--chain]            Path to SSL certificate chain (optional)
-  [--domain]           Updates domain in the nameserver zone (supported when type="cf", optional)
-  [--skip-if-missing]  Skips updating load balancer(s) if it is not attached (optional)`
 
 	DeleteLBsCommandUsage = `Deletes load balancer(s)
 
