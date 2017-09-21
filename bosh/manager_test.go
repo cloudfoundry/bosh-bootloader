@@ -356,6 +356,7 @@ gcp_credentials_json: some-credential-json
 				"creating jumpbox",
 				"created jumpbox",
 				"starting socks5 proxy to jumpbox",
+				"started proxy",
 			}))
 		})
 

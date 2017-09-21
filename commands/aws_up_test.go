@@ -113,7 +113,7 @@ var _ = Describe("AWSUp", func() {
 				EnvID: "bbl-lake-time-stamp",
 			}))
 
-			Expect(stateStore.SetCall.CallCount).To(Equal(3))
+			Expect(stateStore.SetCall.CallCount).To(Equal(4))
 			Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
 				IAAS: "aws",
 				AWS: storage.AWS{
@@ -340,7 +340,7 @@ var _ = Describe("AWSUp", func() {
 					err := command.Execute(commands.UpConfig{}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
 					Expect(stateStore.SetCall.Receives[2].State.IAAS).To(Equal("aws"))
 				})
 			})
@@ -454,16 +454,16 @@ var _ = Describe("AWSUp", func() {
 				It("returns the error and saves the state", func() {
 					err := command.Execute(commands.UpConfig{}, incomingState)
 					Expect(err).To(MatchError("failed to create"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
 				})
 
 				It("returns a compound error when it fails to save the state", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("state failed to be set")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
 					err := command.Execute(commands.UpConfig{}, incomingState)
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
 				})
 			})
 		})

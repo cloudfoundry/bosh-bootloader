@@ -169,6 +169,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	case error:
 		return storage.State{}, fmt.Errorf("create env: %s", err)
 	}
+	m.logger.Step("created jumpbox")
 
 	state.Jumpbox = storage.Jumpbox{
 		Variables: interpolateOutputs.Variables,
@@ -190,7 +191,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
 
-	m.logger.Step("created jumpbox")
+	m.logger.Step("started proxy")
 	return state, nil
 }
 

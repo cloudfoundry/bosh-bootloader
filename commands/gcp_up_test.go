@@ -387,17 +387,17 @@ var _ = Describe("GCPUp", func() {
 					It("returns the error and saves the state", func() {
 						err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
 						Expect(err).To(MatchError("failed to create"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State.BOSH.State).To(Equal(expectedBOSHState))
 					})
 
 					It("returns a compound error when it fails to save the state", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("state failed to be set")}}
 
 						err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State.BOSH.State).To(Equal(expectedBOSHState))
 					})
 				})
 
