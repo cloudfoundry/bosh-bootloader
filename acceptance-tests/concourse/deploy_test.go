@@ -28,6 +28,7 @@ var _ = Describe("concourse deployment test", func() {
 		lbURL         string
 		configuration acceptance.Config
 		boshClient    bosh.Client
+		sshSession    *gexec.Session
 	)
 
 	BeforeEach(func() {
@@ -65,12 +66,20 @@ var _ = Describe("concourse deployment test", func() {
 	})
 
 	AfterEach(func() {
-		boshClient.DeleteDeployment("concourse")
+		if sshSession != nil {
+			boshClient.DeleteDeployment("concourse")
+			sshSession.Interrupt()
+			Eventually(sshSession, "5s").Should(gexec.Exit())
+		}
 		session := bbl.Destroy()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("is able to deploy concourse and teardown infrastructure", func() {
+		By("creating an ssh tunnel to the director in print-env", func() {
+			sshSession = bbl.StartSSHTunnel()
+		})
+
 		By("uploading releases and stemcells", func() {
 			err := uploadRelease(boshClient, configuration.ConcourseReleasePath)
 			Expect(err).NotTo(HaveOccurred())
