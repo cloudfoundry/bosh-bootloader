@@ -23,8 +23,8 @@ var _ = Describe("Stack Migration", func() {
 		aws          actors.AWS
 		boshcli      actors.BOSHCLI
 		state        acceptance.State
-
-		f *os.File
+		sshSession   *gexec.Session
+		f            *os.File
 	)
 
 	BeforeEach(func() {
@@ -72,6 +72,10 @@ var _ = Describe("Stack Migration", func() {
 		})
 
 		By("destroying with the latest bbl", func() {
+			if sshSession != nil {
+				sshSession.Interrupt()
+				Eventually(sshSession, "5s").Should(gexec.Exit())
+			}
 			session := bblTerraform.Destroy()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit())
 		})
@@ -110,14 +114,21 @@ var _ = Describe("Stack Migration", func() {
 
 			By("migrating to terraform with latest bbl", func() {
 				session := bblTerraform.Up()
-				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("verifying the stack doesn't exists", func() {
 				Expect(aws.StackExists(stackName)).To(BeFalse())
 			})
 
+			By("creating an ssh tunnel to the director in print-env", func() {
+				sshSession = bblTerraform.StartSSHTunnel()
+			})
+
 			By("verifying the director still exists", func() {
+				directorAddress = bblTerraform.DirectorAddress()
+				caCertPath = bblTerraform.SaveDirectorCA()
+
 				exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(exists).To(BeTrue())

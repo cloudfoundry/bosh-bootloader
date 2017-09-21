@@ -2,9 +2,7 @@ package acceptance_test
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -45,7 +43,7 @@ var _ = Describe("up", func() {
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("creating an ssh tunnel to the director in print-env", func() {
-			sshSession = startSSHTunnel(bbl)
+			sshSession = bbl.StartSSHTunnel()
 		})
 
 		By("checking if the bosh director exists", func() {
@@ -101,44 +99,3 @@ var _ = Describe("up", func() {
 		})
 	})
 })
-
-func startSSHTunnel(bbl actors.BBL) *gexec.Session {
-	printEnvLines := strings.Split(bbl.PrintEnv(), "\n")
-	os.Setenv("BOSH_ALL_PROXY", getExport("BOSH_ALL_PROXY", printEnvLines))
-
-	var sshArgs []string
-	for i := 0; i < len(printEnvLines); i++ {
-		if strings.HasPrefix(printEnvLines[i], "ssh ") {
-			sshCmd := strings.TrimPrefix(printEnvLines[i], "ssh ")
-			sshCmd = strings.Replace(sshCmd, "$BOSH_GW_PRIVATE_KEY", getExport("BOSH_GW_PRIVATE_KEY", printEnvLines), -1)
-			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)
-			sshArgs = strings.Split(sshCmd, " ")
-		}
-	}
-
-	cmd := exec.Command("ssh", sshArgs...)
-	sshSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
-
-	return sshSession
-}
-
-func getExport(keyName string, lines []string) string {
-	for _, line := range lines {
-		if strings.HasPrefix(line, "export ") {
-			parts := strings.Split(line, " ")
-			if len(parts) < 2 {
-				Fail(fmt.Sprintf("Unexpected print-env output: %s\n", line))
-			}
-			keyValue := parts[1]
-			keyValueParts := strings.Split(keyValue, "=")
-			key := keyValueParts[0]
-			value := keyValueParts[1]
-
-			if key == keyName {
-				return value
-			}
-		}
-	}
-	return ""
-}

@@ -122,14 +122,37 @@ var _ = Describe("Executor", func() {
 				}
 			})
 
-			It("generates a bosh manifest", func() {
+			It("interpolates the jumpbox and bosh manifests", func() {
+				awsInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
+				awsInterpolateInput.OpsFile = ""
+
+				jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(awsInterpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(1))
+				Expect(tempDirCallCount).To(Equal(1))
+
+				expectedArgs := append([]string{
+					"interpolate", fmt.Sprintf("%s/jumpbox.yml", tempDir),
+					"--var-errs",
+					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", tempDir),
+					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+				})
+
+				_, _, args := cmd.RunArgsForCall(0)
+				Expect(args).To(Equal(expectedArgs))
+
+				Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
+				Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
+
 				interpolateOutput, err := executor.DirectorInterpolate(awsInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(2))
-				Expect(tempDirCallCount).To(Equal(1))
+				Expect(tempDirCallCount).To(Equal(2))
 
-				expectedArgs := append([]string{
+				expectedArgs = append([]string{
 					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
 					"--var-errs",
 					"--var-errs-unused",
@@ -137,80 +160,18 @@ var _ = Describe("Executor", func() {
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-					"-o", fmt.Sprintf("%s/aws-external-ip-not-recommended.yml", tempDir),
+					"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
+					"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
+					"-o", fmt.Sprintf("%s/aws-bosh-director-ephemeral-ip-ops.yml", tempDir),
 					"-o", fmt.Sprintf("%s/iam-instance-profile.yml", tempDir),
 					"-o", fmt.Sprintf("%s/aws-bosh-director-encrypt-disk-ops.yml", tempDir),
-				})
-
-				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(expectedArgs))
-
-				expectedArgs = append([]string{
-					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
-					"--var-errs",
-					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
-					"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
 				})
 
 				_, _, args = cmd.RunArgsForCall(1)
 				Expect(args).To(Equal(expectedArgs))
 
 				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-				Expect(interpolateOutput.Variables).To(Equal("key: value"))
-			})
-
-			Context("when there are jumpbox deployment vars", func() {
-				It("interpolates the jumpbox and bosh manifests", func() {
-					awsInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
-					awsInterpolateInput.OpsFile = ""
-
-					jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(awsInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cmd.RunCallCount()).To(Equal(1))
-					Expect(tempDirCallCount).To(Equal(1))
-
-					expectedArgs := append([]string{
-						"interpolate", fmt.Sprintf("%s/jumpbox.yml", tempDir),
-						"--var-errs",
-						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-						"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-					})
-
-					_, _, args := cmd.RunArgsForCall(0)
-					Expect(args).To(Equal(expectedArgs))
-
-					Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
-					Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
-
-					interpolateOutput, err := executor.DirectorInterpolate(awsInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cmd.RunCallCount()).To(Equal(2))
-					Expect(tempDirCallCount).To(Equal(2))
-
-					expectedArgs = append([]string{
-						"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
-						"--var-errs",
-						"--var-errs-unused",
-						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-						"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-						"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
-						"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
-						"-o", fmt.Sprintf("%s/aws-bosh-director-ephemeral-ip-ops.yml", tempDir),
-						"-o", fmt.Sprintf("%s/iam-instance-profile.yml", tempDir),
-						"-o", fmt.Sprintf("%s/aws-bosh-director-encrypt-disk-ops.yml", tempDir),
-					})
-
-					_, _, args = cmd.RunArgsForCall(1)
-					Expect(args).To(Equal(expectedArgs))
-
-					Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-					Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
-				})
+				Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
 			})
 		})
 
@@ -227,14 +188,37 @@ var _ = Describe("Executor", func() {
 				}
 			})
 
-			It("generates a bosh manifest", func() {
+			It("interpolates the jumpbox and bosh manifests", func() {
+				gcpInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
+				gcpInterpolateInput.OpsFile = ""
+
+				jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(gcpInterpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(1))
+				Expect(tempDirCallCount).To(Equal(1))
+
+				expectedArgs := append([]string{
+					"interpolate", fmt.Sprintf("%s/jumpbox.yml", tempDir),
+					"--var-errs",
+					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", tempDir),
+					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
+				})
+
+				_, _, args := cmd.RunArgsForCall(0)
+				Expect(args).To(Equal(expectedArgs))
+
+				Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
+				Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
+
 				interpolateOutput, err := executor.DirectorInterpolate(gcpInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(2))
-				Expect(tempDirCallCount).To(Equal(1))
+				Expect(tempDirCallCount).To(Equal(2))
 
-				expectedArgs := append([]string{
+				expectedArgs = append([]string{
 					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
 					"--var-errs",
 					"--var-errs-unused",
@@ -242,74 +226,16 @@ var _ = Describe("Executor", func() {
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-					"-o", fmt.Sprintf("%s/gcp-external-ip-not-recommended.yml", tempDir)})
-
-				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(expectedArgs))
-
-				expectedArgs = append([]string{
-					"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
-					"--var-errs",
-					"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
-					"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir)})
+					"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
+					"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
+					"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", tempDir),
+				})
 
 				_, _, args = cmd.RunArgsForCall(1)
 				Expect(args).To(Equal(expectedArgs))
 
 				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-				Expect(interpolateOutput.Variables).To(Equal("key: value"))
-			})
-
-			Context("when there are jumpbox deployment vars", func() {
-				It("interpolates the jumpbox and bosh manifests", func() {
-					gcpInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
-					gcpInterpolateInput.OpsFile = ""
-
-					jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(gcpInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cmd.RunCallCount()).To(Equal(1))
-					Expect(tempDirCallCount).To(Equal(1))
-
-					expectedArgs := append([]string{
-						"interpolate", fmt.Sprintf("%s/jumpbox.yml", tempDir),
-						"--var-errs",
-						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-						"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-					})
-
-					_, _, args := cmd.RunArgsForCall(0)
-					Expect(args).To(Equal(expectedArgs))
-
-					Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
-					Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
-
-					interpolateOutput, err := executor.DirectorInterpolate(gcpInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cmd.RunCallCount()).To(Equal(2))
-					Expect(tempDirCallCount).To(Equal(2))
-
-					expectedArgs = append([]string{
-						"interpolate", fmt.Sprintf("%s/bosh.yml", tempDir),
-						"--var-errs",
-						"--var-errs-unused",
-						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
-						"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
-						"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
-						"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
-						"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", tempDir),
-					})
-
-					_, _, args = cmd.RunArgsForCall(1)
-					Expect(args).To(Equal(expectedArgs))
-
-					Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-					Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
-				})
+				Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
 			})
 
 			Context("when a user opsfile is provided", func() {
@@ -371,7 +297,10 @@ networks
 						"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 						"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 						"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-						"-o", fmt.Sprintf("%s/gcp-external-ip-not-recommended.yml", tempDir)})
+						"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
+						"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
+						"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", tempDir),
+					})
 
 					_, _, args := cmd.RunArgsForCall(0)
 					Expect(args).To(Equal(expectedArgs))
@@ -381,7 +310,8 @@ networks
 						"--var-errs",
 						"--vars-store", fmt.Sprintf("%s/variables.yml", tempDir),
 						"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
-						"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir)})
+						"-o", fmt.Sprintf("%s/user-ops-file.yml", tempDir),
+					})
 
 					_, _, args = cmd.RunArgsForCall(1)
 					Expect(args).To(Equal(expectedArgsWithUserOpsfile))

@@ -49,12 +49,12 @@ type Executor struct {
 }
 
 type InterpolateInput struct {
-	IAAS                  string
+	IAAS                   string
 	DirectorDeploymentVars string
-	JumpboxDeploymentVars string
-	BOSHState             map[string]interface{}
-	Variables             string
-	OpsFile               string
+	JumpboxDeploymentVars  string
+	BOSHState              map[string]interface{}
+	Variables              string
+	OpsFile                string
 }
 
 type InterpolateOutput struct {
@@ -197,37 +197,29 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"-o", filepath.Join(tempDir, "cpi.yml"),
 	}
 
-	if interpolateInput.JumpboxDeploymentVars == "" {
+	switch interpolateInput.IAAS {
+	case "gcp":
 		args = append(args,
 			"-o", filepath.Join(tempDir, "jumpbox-user.yml"),
-		)
-
-		switch interpolateInput.IAAS {
-		case "gcp":
-			args = append(args, "-o", filepath.Join(tempDir, "gcp-external-ip-not-recommended.yml"))
-		case "aws":
-			args = append(args, "-o", filepath.Join(tempDir, "aws-external-ip-not-recommended.yml"))
-		case "azure":
-			args = append(args, "-o", filepath.Join(tempDir, "azure-external-ip-not-recommended.yml"))
-			args = append(args, "-o", filepath.Join(tempDir, "azure-ssh-static-ip.yml"))
-		}
-	} else {
-		args = append(args,
 			"-o", filepath.Join(tempDir, "uaa.yml"),
 			"-o", filepath.Join(tempDir, "credhub.yml"),
+			"-o", filepath.Join(tempDir, "gcp-bosh-director-ephemeral-ip-ops.yml"),
 		)
-		switch interpolateInput.IAAS {
-		case "gcp":
-			args = append(args, "-o", filepath.Join(tempDir, "gcp-bosh-director-ephemeral-ip-ops.yml"))
-		case "aws":
-			args = append(args, "-o", filepath.Join(tempDir, "aws-bosh-director-ephemeral-ip-ops.yml"))
-		}
-	}
-
-	if interpolateInput.IAAS == "aws" {
+	case "aws":
 		args = append(args,
+			"-o", filepath.Join(tempDir, "jumpbox-user.yml"),
+			"-o", filepath.Join(tempDir, "uaa.yml"),
+			"-o", filepath.Join(tempDir, "credhub.yml"),
+			"-o", filepath.Join(tempDir, "aws-bosh-director-ephemeral-ip-ops.yml"),
 			"-o", filepath.Join(tempDir, "iam-instance-profile.yml"),
 			"-o", filepath.Join(tempDir, "aws-bosh-director-encrypt-disk-ops.yml"),
+		)
+	case "azure":
+		// NOTE: azure does not yet support jumpbox
+		args = append(args,
+			"-o", filepath.Join(tempDir, "jumpbox-user.yml"),
+			"-o", filepath.Join(tempDir, "azure-external-ip-not-recommended.yml"),
+			"-o", filepath.Join(tempDir, "azure-ssh-static-ip.yml"),
 		)
 	}
 

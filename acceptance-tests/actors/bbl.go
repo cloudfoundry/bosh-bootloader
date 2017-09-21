@@ -12,6 +12,7 @@ import (
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
+	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -225,4 +226,45 @@ func LBURL(config acceptance.Config, bbl BBL, state acceptance.State) (string, e
 	}
 
 	return fmt.Sprintf("https://%s", url), nil
+}
+
+func (b BBL) StartSSHTunnel() *gexec.Session {
+	printEnvLines := strings.Split(b.PrintEnv(), "\n")
+	os.Setenv("BOSH_ALL_PROXY", getExport("BOSH_ALL_PROXY", printEnvLines))
+
+	var sshArgs []string
+	for i := 0; i < len(printEnvLines); i++ {
+		if strings.HasPrefix(printEnvLines[i], "ssh ") {
+			sshCmd := strings.TrimPrefix(printEnvLines[i], "ssh ")
+			sshCmd = strings.Replace(sshCmd, "$BOSH_GW_PRIVATE_KEY", getExport("BOSH_GW_PRIVATE_KEY", printEnvLines), -1)
+			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)
+			sshArgs = strings.Split(sshCmd, " ")
+		}
+	}
+
+	cmd := exec.Command("ssh", sshArgs...)
+	sshSession, err := gexec.Start(cmd, ginkgo.GinkgoWriter, ginkgo.GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+
+	return sshSession
+}
+
+func getExport(keyName string, lines []string) string {
+	for _, line := range lines {
+		if strings.HasPrefix(line, "export ") {
+			parts := strings.Split(line, " ")
+			if len(parts) < 2 {
+				panic(fmt.Sprintf("Unexpected print-env output: %s\n", line))
+			}
+			keyValue := parts[1]
+			keyValueParts := strings.Split(keyValue, "=")
+			key := keyValueParts[0]
+			value := keyValueParts[1]
+
+			if key == keyName {
+				return value
+			}
+		}
+	}
+	return ""
 }
