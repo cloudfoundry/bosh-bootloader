@@ -2,9 +2,8 @@ package acceptance_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,6 +21,7 @@ var _ = Describe("up", func() {
 		boshcli         actors.BOSHCLI
 		directorAddress string
 		caCertPath      string
+		sshSession      *gexec.Session
 	)
 
 	BeforeEach(func() {
@@ -33,6 +33,8 @@ var _ = Describe("up", func() {
 	})
 
 	AfterEach(func() {
+		sshSession.Interrupt()
+		Eventually(sshSession, "5s").Should(gexec.Exit())
 		session := bbl.Down()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
@@ -43,7 +45,7 @@ var _ = Describe("up", func() {
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("creating an ssh tunnel to the director in print-env", func() {
-			evalBBLPrintEnv(bbl)
+			sshSession = startSSHTunnel(bbl)
 		})
 
 		By("checking if the bosh director exists", func() {
@@ -51,6 +53,9 @@ var _ = Describe("up", func() {
 			caCertPath = bbl.SaveDirectorCA()
 
 			exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
+			if err != nil {
+				fmt.Println(string(err.(*exec.ExitError).Stderr))
+			}
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
@@ -97,38 +102,43 @@ var _ = Describe("up", func() {
 	})
 })
 
-func evalBBLPrintEnv(bbl actors.BBL) {
-	stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
-	Expect(stdout).To(ContainSubstring("ssh -f -N"))
+func startSSHTunnel(bbl actors.BBL) *gexec.Session {
+	printEnvLines := strings.Split(bbl.PrintEnv(), "\n")
+	os.Setenv("BOSH_ALL_PROXY", getExport("BOSH_ALL_PROXY", printEnvLines))
 
-	stdout = strings.Replace(stdout, "-f -N", "", 1)
+	var sshArgs []string
+	for i := 0; i < len(printEnvLines); i++ {
+		if strings.HasPrefix(printEnvLines[i], "ssh ") {
+			sshCmd := strings.TrimPrefix(printEnvLines[i], "ssh ")
+			sshCmd = strings.Replace(sshCmd, "$BOSH_GW_PRIVATE_KEY", getExport("BOSH_GW_PRIVATE_KEY", printEnvLines), -1)
+			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)
+			sshArgs = strings.Split(sshCmd, " ")
+		}
+	}
 
-	dir, err := ioutil.TempDir("", "bosh-print-env-command")
+	cmd := exec.Command("ssh", sshArgs...)
+	sshSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 
-	printEnvCommandPath := filepath.Join(dir, "eval-print-env")
+	return sshSession
+}
 
-	err = ioutil.WriteFile(printEnvCommandPath, []byte(stdout), 0700)
-	Expect(err).NotTo(HaveOccurred())
+func getExport(keyName string, lines []string) string {
+	for _, line := range lines {
+		if strings.HasPrefix(line, "export ") {
+			parts := strings.Split(line, " ")
+			if len(parts) < 2 {
+				Fail(fmt.Sprintf("Unexpected print-env output: %s\n", line))
+			}
+			keyValue := parts[1]
+			keyValueParts := strings.Split(keyValue, "=")
+			key := keyValueParts[0]
+			value := keyValueParts[1]
 
-	cmd := exec.Command(printEnvCommandPath)
-	cmdIn, err := cmd.StdinPipe()
-
-	go func() {
-		defer GinkgoRecover()
-		cmdOut, err := cmd.Output()
-		if err != nil {
-			switch err.(type) {
-			case *exec.ExitError:
-				exitErr := err.(*exec.ExitError)
-				fmt.Println(string(exitErr.Stderr))
+			if key == keyName {
+				return value
 			}
 		}
-		Expect(err).NotTo(HaveOccurred())
-
-		output := string(cmdOut)
-		Expect(output).To(ContainSubstring("Welcome to Ubuntu"))
-	}()
-
-	cmdIn.Close()
+	}
+	return ""
 }
