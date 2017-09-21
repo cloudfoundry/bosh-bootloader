@@ -78,7 +78,7 @@ func (b *BOSHManager) CreateJumpbox(state storage.State, terraformOutputs map[st
 	b.CreateJumpboxCall.CallCount++
 	b.CreateJumpboxCall.Receives.State = state
 	b.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
-	state.BOSH = b.CreateJumpboxCall.Returns.State.BOSH
+	state.Jumpbox = b.CreateJumpboxCall.Returns.State.Jumpbox
 	return state, b.CreateJumpboxCall.Returns.Error
 }
 

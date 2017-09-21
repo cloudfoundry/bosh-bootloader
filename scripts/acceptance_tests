@@ -21,7 +21,7 @@ Example: ./scripts/acceptance_tests bbl gcp"
   fi
 
 	pushd "${root_dir}/acceptance-tests" > /dev/null
-      ginkgo -r ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
+      ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
 	popd > /dev/null
 }
 

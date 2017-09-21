@@ -59,7 +59,6 @@ var _ = Describe("bosh deployment vars", func() {
 			InternalGateway    string   `yaml:"internal_gw"`
 			InternalIP         string   `yaml:"internal_ip"`
 			DirectorName       string   `yaml:"director_name"`
-			ExternalIP         string   `yaml:"external_ip"`
 			Zone               string   `yaml:"zone"`
 			Network            string   `yaml:"network"`
 			Subnetwork         string   `yaml:"subnetwork"`
@@ -79,13 +78,11 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
 		Expect(vars.InternalIP).To(Equal("10.0.0.6"))
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
-		Expect(vars.ExternalIP).To(MatchRegexp(ipRegex))
 		Expect(vars.Zone).To(MatchRegexp(`us-.+\d-\w`))
 		Expect(vars.Network).To(Equal(fmt.Sprintf("%s-network", bbl.PredefinedEnvID())))
 		Expect(vars.Subnetwork).To(Equal(fmt.Sprintf("%s-subnet", bbl.PredefinedEnvID())))
 		Expect(vars.Tags).To(Equal([]string{
 			fmt.Sprintf("%s-bosh-director", bbl.PredefinedEnvID()),
-			fmt.Sprintf("%s-bosh-open", bbl.PredefinedEnvID()),
 		}))
 		Expect(vars.ProjectID).To(Equal(configuration.GCPProjectID))
 		Expect(returnedAccountKey).To(Equal(gcpServiceAccountKey))

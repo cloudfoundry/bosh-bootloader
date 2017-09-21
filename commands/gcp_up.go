@@ -127,6 +127,11 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 			return err
 		}
 
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
+		}
+
 		err := u.cloudConfigManager.Update(state)
 		if err != nil {
 			return err

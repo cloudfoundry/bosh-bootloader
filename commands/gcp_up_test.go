@@ -37,6 +37,7 @@ var _ = Describe("GCPUp", func() {
 		bblState               storage.State
 		expectedZonesState     storage.State
 		expectedTerraformState storage.State
+		expectedJumpboxState   storage.State
 		expectedBOSHState      storage.State
 
 		expectedTerraformTemplate string
@@ -66,7 +67,11 @@ var _ = Describe("GCPUp", func() {
 		expectedTerraformState = expectedZonesState
 		expectedTerraformState.TFState = "some-tf-state"
 
-		expectedBOSHState = expectedTerraformState
+		expectedJumpboxState = expectedTerraformState
+		expectedJumpboxState.Jumpbox = storage.Jumpbox{
+			URL: "some-jumpbox-url",
+		}
+		expectedBOSHState = expectedJumpboxState
 		expectedBOSHState.BOSH = storage.BOSH{
 			DirectorName:           "bosh-some-env-id",
 			DirectorUsername:       "admin",
@@ -87,8 +92,8 @@ var _ = Describe("GCPUp", func() {
 		terraformManager.VersionCall.Returns.Version = "0.8.7"
 		envIDManager.SyncCall.Returns.State = storage.State{EnvID: "some-env-id"}
 		terraformManager.ApplyCall.Returns.BBLState = expectedTerraformState
+		boshManager.CreateJumpboxCall.Returns.State = expectedJumpboxState
 		boshManager.CreateDirectorCall.Returns.State = expectedBOSHState
-		boshManager.CreateJumpboxCall.Returns.State = expectedBOSHState
 		gcpZones.GetZonesCall.Returns.Zones = expectedAvailabilityZones
 
 		gcpUp = commands.NewGCPUp(
@@ -122,7 +127,6 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			By("saving the resulting state with the env ID", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 1))
 				Expect(stateStore.SetCall.Receives[0].State).To(Equal(bblState))
 			})
 
@@ -132,7 +136,6 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			By("saving gcp zones to the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 2))
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(expectedZonesState))
 			})
 
@@ -142,7 +145,6 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			By("saving the terraform state to the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 3))
 				Expect(stateStore.SetCall.Receives[2].State).To(Equal(expectedTerraformState))
 			})
 
@@ -156,14 +158,21 @@ var _ = Describe("GCPUp", func() {
 				Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(expectedTerraformState))
 			})
 
+			By("saving the jumpbox state to the state", func() {
+				Expect(stateStore.SetCall.Receives[3].State).To(Equal(expectedJumpboxState))
+			})
+
 			By("creating a bosh", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(expectedBOSHState))
+				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(expectedJumpboxState))
 			})
 
 			By("saving the bosh state to the state", func() {
-				Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 4))
-				Expect(stateStore.SetCall.Receives[3].State).To(Equal(expectedBOSHState))
+				Expect(stateStore.SetCall.Receives[4].State).To(Equal(expectedBOSHState))
+			})
+
+			By("saving the state after every step", func() {
+				Expect(stateStore.SetCall.CallCount).To(Equal(5))
 			})
 
 			By("updating the cloud config", func() {

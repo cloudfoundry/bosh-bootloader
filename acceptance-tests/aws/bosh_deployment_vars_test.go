@@ -47,7 +47,6 @@ var _ = Describe("bosh deployment vars", func() {
 			InternalGateway       string   `yaml:"internal_gw"`
 			InternalIP            string   `yaml:"internal_ip"`
 			DirectorName          string   `yaml:"director_name"`
-			ExternalIP            string   `yaml:"external_ip"`
 			AZ                    string   `yaml:"az"`
 			SubnetID              string   `yaml:"subnet_id"`
 			AccessKeyID           string   `yaml:"access_key_id"`
@@ -63,7 +62,6 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
 		Expect(vars.InternalIP).To(Equal("10.0.0.6"))
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
-		Expect(vars.ExternalIP).To(MatchRegexp(ipRegex))
 		Expect(vars.AZ).To(MatchRegexp(`us-.+-\d\w`))
 		Expect(vars.SubnetID).To(MatchRegexp("subnet-.+"))
 		Expect(vars.AccessKeyID).To(MatchRegexp(".{20}"))
