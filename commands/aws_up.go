@@ -75,17 +75,14 @@ func (u AWSUp) Execute(config UpConfig, state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		if config.Jumpbox {
-			state.Jumpbox.Enabled = true
-			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
-			if err != nil {
-				return err
-			}
+		state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
+		if err != nil {
+			return err
+		}
 
-			err = u.stateStore.Set(state)
-			if err != nil {
-				return err
-			}
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
 		}
 
 		state.BOSH.UserOpsFile = string(opsFileContents)

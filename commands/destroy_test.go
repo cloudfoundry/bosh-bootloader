@@ -367,6 +367,11 @@ var _ = Describe("Destroy", func() {
 				BOSH: storage.BOSH{
 					DirectorName: "some-director",
 				},
+				Stack: storage.Stack{
+					Name:            "some-stack-name",
+					LBType:          "some-lb-type",
+					CertificateName: "some-certificate-name",
+				},
 			}
 
 			err := destroy.Execute([]string{}, state)
@@ -374,24 +379,11 @@ var _ = Describe("Destroy", func() {
 
 			Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
 			Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
-		})
 
-		It("clears the state", func() {
-			stdin.Write([]byte("yes\n"))
-			err := destroy.Execute([]string{}, storage.State{
-				Stack: storage.Stack{
-					Name:            "some-stack-name",
-					LBType:          "some-lb-type",
-					CertificateName: "some-certificate-name",
-				},
-			})
-
-			Expect(err).NotTo(HaveOccurred())
 			Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
 		})
 
-		Context("when jumpbox is enabled", func() {
 			It("invokes bosh delete jumpbox as well", func() {
 				stdin.Write([]byte("yes\n"))
 				state := storage.State{
@@ -399,14 +391,12 @@ var _ = Describe("Destroy", func() {
 						DirectorName: "some-director",
 					},
 					Jumpbox: storage.Jumpbox{
-						Enabled:  true,
 						Manifest: "some-manifest",
 					},
 				}
 				stateWithoutDirector := storage.State{
 					BOSH: storage.BOSH{},
 					Jumpbox: storage.Jumpbox{
-						Enabled:  true,
 						Manifest: "some-manifest",
 					},
 				}
@@ -418,20 +408,10 @@ var _ = Describe("Destroy", func() {
 				Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
 				Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(1))
 				Expect(boshManager.DeleteJumpboxCall.Receives.State).To(Equal(stateWithoutDirector))
-			})
 
-			It("clears the state", func() {
-				stdin.Write([]byte("yes\n"))
-				err := destroy.Execute([]string{}, storage.State{
-					BOSH:    storage.BOSH{},
-					Jumpbox: storage.Jumpbox{},
-				})
-
-				Expect(err).NotTo(HaveOccurred())
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
 			})
-		})
 
 		Context("failure cases", func() {
 			BeforeEach(func() {

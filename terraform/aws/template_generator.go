@@ -61,12 +61,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		}
 	}
 
-	// if state.Jumpbox.Enabled {
-	// 	t = strings.Join([]string{t, JumpboxTemplate}, "\n")
-	// }
-
 	var ami map[string]string
-
 	err := json.Unmarshal([]byte(AMIs), &ami)
 	if err != nil {
 		panic(err)

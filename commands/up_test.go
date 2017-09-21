@@ -135,32 +135,6 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the --credhub flag is specified", func() {
-			It("executes up with details from args", func() {
-				err := command.Execute([]string{
-					"--credhub",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeUp.ExecuteCall.CallCount).To(Equal(1))
-				Expect(fakeUp.ExecuteCall.Receives.UpConfig.Jumpbox).To(BeTrue())
-			})
-
-			Context("when the --credhub flag was not specified on a subsequent bbl up", func() {
-				It("executes up with jumpbox enabled", func() {
-					err := command.Execute([]string{}, storage.State{
-						Jumpbox: storage.Jumpbox{
-							Enabled: true,
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(fakeUp.ExecuteCall.CallCount).To(Equal(1))
-					Expect(fakeUp.ExecuteCall.Receives.UpConfig.Jumpbox).To(BeTrue())
-				})
-			})
-		})
-
 		Context("when the user provides the name flag", func() {
 			It("passes the name flag in the up config", func() {
 				err := command.Execute([]string{

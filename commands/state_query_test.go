@@ -71,7 +71,6 @@ var _ = Describe("StateQuery", func() {
 			BeforeEach(func() {
 				state = storage.State{
 					Jumpbox: storage.Jumpbox{
-						Enabled: true,
 						URL:     "some-jumpbox-url",
 					},
 				}
@@ -84,49 +83,6 @@ var _ = Describe("StateQuery", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-jumpbox-url"))
-			})
-		})
-
-		Context("jumpbox is not enabled and bbl manages the director", func() {
-			var state storage.State
-
-			BeforeEach(func() {
-				state = storage.State{
-					BOSH: storage.BOSH{
-						DirectorAddress: "some-director-address",
-					},
-				}
-			})
-
-			It("prints out the jumpbox information", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "jumpbox address")
-
-				err := command.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-director-address"))
-			})
-		})
-
-		Context("jumpbox is not enabled and bbl does not manage the director", func() {
-			var state storage.State
-
-			BeforeEach(func() {
-				state = storage.State{
-					NoDirector: true,
-				}
-				fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"external_ip": "some-external-ip",
-				}
-			})
-
-			It("prints out the jumpbox information", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, fakeInfrastructureManager, "jumpbox address")
-
-				err := command.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
 			})
 		})
 

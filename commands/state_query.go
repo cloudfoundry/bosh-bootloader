@@ -63,14 +63,7 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 	)
 	switch s.propertyName {
 	case JumpboxAddressPropertyName:
-		if state.Jumpbox.Enabled {
-			propertyValue = state.Jumpbox.URL
-		} else {
-			propertyValue, err = s.getDirectorAddress(state)
-			if err != nil {
-				return err
-			}
-		}
+		propertyValue = state.Jumpbox.URL
 	case DirectorAddressPropertyName:
 		propertyValue, err = s.getDirectorAddress(state)
 		if err != nil {

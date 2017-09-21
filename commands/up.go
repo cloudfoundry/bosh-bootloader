@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,7 +23,6 @@ type UpConfig struct {
 	Name       string
 	OpsFile    string
 	NoDirector bool
-	Jumpbox    bool
 }
 
 func NewUp(upCmd UpCmd, boshManager boshManager) Up {
@@ -47,10 +45,6 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 		}
 	}
 
-	if config.Jumpbox && !state.Jumpbox.Enabled && state.EnvID != "" {
-		return errors.New(`Environment without credhub already exists, you must recreate your environment to use "--credhub"`)
-	}
-
 	if state.EnvID != "" && config.Name != "" && config.Name != state.EnvID {
 		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
 	}
@@ -68,7 +62,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 		OpsFile:    config.OpsFile,
 		Name:       config.Name,
 		NoDirector: config.NoDirector,
-		Jumpbox:    config.Jumpbox,
 	}, state)
 }
 
@@ -91,7 +84,6 @@ func (u Up) parseArgs(state storage.State, args []string) (UpConfig, error) {
 	upFlags.String(&config.Name, "name", "")
 	upFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
 	upFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
-	upFlags.Bool(&config.Jumpbox, "", "credhub", state.Jumpbox.Enabled)
 
 	err = upFlags.Parse(args)
 	if err != nil {

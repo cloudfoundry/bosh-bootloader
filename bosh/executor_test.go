@@ -43,7 +43,7 @@ var _ = Describe("Executor", func() {
 			}
 
 			interpolateInput = bosh.InterpolateInput{
-				DeploymentVars: "internal_cidr: 10.0.0.0/24",
+				DirectorDeploymentVars: "internal_cidr: 10.0.0.0/24",
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},

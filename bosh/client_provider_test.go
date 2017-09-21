@@ -2,9 +2,7 @@ package bosh_test
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -19,11 +17,10 @@ var _ = Describe("Client Provider", func() {
 	var (
 		clientProvider bosh.ClientProvider
 		jumpbox        storage.Jumpbox
-		noJumpbox      storage.Jumpbox
 		socks5Proxy    *fakes.Socks5Proxy
 	)
+	
 	BeforeEach(func() {
-		noJumpbox = storage.Jumpbox{}
 		socks5Proxy = &fakes.Socks5Proxy{}
 		clientProvider = bosh.NewClientProvider(socks5Proxy)
 	})
@@ -36,6 +33,7 @@ var _ = Describe("Client Provider", func() {
 			socks5Forward    proxy.Dialer
 			fakeSocks5Client *fakes.Socks5Client
 		)
+		
 		BeforeEach(func() {
 			socks5Proxy.AddrCall.Returns.Addr = "some-socks-proxy-addr"
 			bosh.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
@@ -47,46 +45,14 @@ var _ = Describe("Client Provider", func() {
 				return fakeSocks5Client, nil
 			})
 		})
+		
 		AfterEach(func() {
 			bosh.ResetProxySOCKS5()
-		})
-		Context("when not using a jumpbox", func() {
-			var (
-				err      error
-				listener net.Listener
-				addr     string
-			)
-			BeforeEach(func() {
-				listener, err = net.Listen("tcp", ":0")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, port, err := net.SplitHostPort(listener.Addr().String())
-				Expect(err).NotTo(HaveOccurred())
-				addr = fmt.Sprintf(":%s", port)
-			})
-			AfterEach(func() {
-				listener.Close()
-			})
-
-			It("does not start a socks5 proxy", func() {
-				_, err := clientProvider.Dialer(noJumpbox)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
-				Expect(socks5Proxy.AddrCall.CallCount).To(Equal(0))
-			})
-
-			It("returns the default http dialer", func() {
-				socks5Client, err := clientProvider.Dialer(noJumpbox)
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = socks5Client.Dial("tcp", addr)
-				Expect(err).NotTo(HaveOccurred())
-			})
 		})
 
 		Context("when using a jumpbox", func() {
 			BeforeEach(func() {
-				jumpbox = storage.Jumpbox{Enabled: true, URL: "https://some-jumpbox", Variables: "jumpbox_ssh: { private_key: some-private-key }"}
+				jumpbox = storage.Jumpbox{URL: "https://some-jumpbox", Variables: "jumpbox_ssh: { private_key: some-private-key }"}
 				clientProvider = bosh.NewClientProvider(socks5Proxy)
 			})
 
@@ -109,7 +75,7 @@ var _ = Describe("Client Provider", func() {
 
 			Context("when the private key does not exist", func() {
 				BeforeEach(func() {
-					jumpbox = storage.Jumpbox{Enabled: true, URL: "https://some-jumpbox"}
+					jumpbox = storage.Jumpbox{URL: "https://some-jumpbox"}
 					clientProvider = bosh.NewClientProvider(socks5Proxy)
 				})
 				It("returns an error", func() {
@@ -120,7 +86,7 @@ var _ = Describe("Client Provider", func() {
 
 			Context("when the private key cannot be unmarshaled", func() {
 				BeforeEach(func() {
-					jumpbox = storage.Jumpbox{Enabled: true, URL: "https://some-jumpbox", Variables: "%%%%"}
+					jumpbox = storage.Jumpbox{URL: "https://some-jumpbox", Variables: "%%%%"}
 					clientProvider = bosh.NewClientProvider(socks5Proxy)
 				})
 				It("returns an error", func() {

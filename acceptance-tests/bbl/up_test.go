@@ -2,10 +2,11 @@ package acceptance_test
 
 import (
 	"fmt"
-	"net/url"
+	"io/ioutil"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
-
-	"golang.org/x/crypto/ssh"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
@@ -36,10 +37,14 @@ var _ = Describe("up", func() {
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
-	It("bbl's up a new bosh director", func() {
+	It("bbl's up a new bosh director and jumpbox", func() {
 		acceptance.SkipUnless("bbl-up")
 		session := bbl.Up("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+		By("creating an ssh tunnel to the director in print-env", func() {
+			evalBBLPrintEnv(bbl)
+		})
 
 		By("checking if the bosh director exists", func() {
 			directorAddress = bbl.DirectorAddress()
@@ -59,24 +64,6 @@ var _ = Describe("up", func() {
 			Expect(cloudConfig).NotTo(BeEmpty())
 		})
 
-		By("checking if ssh'ing works", func() {
-			privateKey, err := ssh.ParsePrivateKey([]byte(bbl.SSHKey()))
-			Expect(err).NotTo(HaveOccurred())
-
-			directorAddressURL, err := url.Parse(bbl.DirectorAddress())
-			Expect(err).NotTo(HaveOccurred())
-
-			address := fmt.Sprintf("%s:22", directorAddressURL.Hostname())
-			_, err = ssh.Dial("tcp", address, &ssh.ClientConfig{
-				User: "jumpbox",
-				Auth: []ssh.AuthMethod{
-					ssh.PublicKeys(privateKey),
-				},
-				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-			})
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		By("checking if bbl print-env prints the bosh environment variables", func() {
 			stdout := bbl.PrintEnv()
 
@@ -86,14 +73,62 @@ var _ = Describe("up", func() {
 			Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT="))
 		})
 
-		By("checking bbl up with director is idempotent", func() {
+		By("rotating the jumpbox's ssh key", func() {
+			sshKey := bbl.SSHKey()
+			Expect(sshKey).NotTo(BeEmpty())
+
+			session = bbl.Rotate()
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+			rotatedKey := bbl.SSHKey()
+			Expect(rotatedKey).NotTo(BeEmpty())
+			Expect(rotatedKey).NotTo(Equal(sshKey))
+		})
+
+		By("checking bbl up is idempotent", func() {
 			session := bbl.Up()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
-		By("destroying the director", func() {
+		By("destroying the director and the jumpbox", func() {
 			session := bbl.Down()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 		})
 	})
 })
+
+func evalBBLPrintEnv(bbl actors.BBL) {
+	stdout := fmt.Sprintf("#!/bin/bash\n%s", bbl.PrintEnv())
+	Expect(stdout).To(ContainSubstring("ssh -f -N"))
+
+	stdout = strings.Replace(stdout, "-f -N", "", 1)
+
+	dir, err := ioutil.TempDir("", "bosh-print-env-command")
+	Expect(err).NotTo(HaveOccurred())
+
+	printEnvCommandPath := filepath.Join(dir, "eval-print-env")
+
+	err = ioutil.WriteFile(printEnvCommandPath, []byte(stdout), 0700)
+	Expect(err).NotTo(HaveOccurred())
+
+	cmd := exec.Command(printEnvCommandPath)
+	cmdIn, err := cmd.StdinPipe()
+
+	go func() {
+		defer GinkgoRecover()
+		cmdOut, err := cmd.Output()
+		if err != nil {
+			switch err.(type) {
+			case *exec.ExitError:
+				exitErr := err.(*exec.ExitError)
+				fmt.Println(string(exitErr.Stderr))
+			}
+		}
+		Expect(err).NotTo(HaveOccurred())
+
+		output := string(cmdOut)
+		Expect(output).To(ContainSubstring("Welcome to Ubuntu"))
+	}()
+
+	cmdIn.Close()
+}

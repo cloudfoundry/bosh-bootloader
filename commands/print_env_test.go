@@ -33,6 +33,12 @@ var _ = Describe("PrintEnv", func() {
 				DirectorAddress:  "some-director-address",
 				DirectorSSLCA:    "some-director-ca-cert",
 			},
+			Jumpbox: storage.Jumpbox{
+				URL: "some-magical-jumpbox-url",
+				Variables: `jumpbox_ssh:
+  private_key: some-private-key
+`,
+			},
 		}
 
 		printEnv = commands.NewPrintEnv(logger, stateValidator, terraformManager)
@@ -56,59 +62,32 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=some-director-address"))
 
-			Expect(logger.PrintlnCall.Messages).NotTo(ContainElement(MatchRegexp("export BOSH_ALL_PROXY=")))
-			Expect(logger.PrintlnCall.Messages).NotTo(ContainElement(MatchRegexp("export BOSH_GW_PRIVATE_KEY=")))
-			Expect(logger.PrintlnCall.Messages).NotTo(ContainElement(MatchRegexp("ssh -f -N -D")))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=socks5://localhost:\d+`)))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_GW_PRIVATE_KEY=.*\/bosh_jumpbox_private.key`)))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -D \d+ jumpbox@some-magical-jumpbox-url -i \$BOSH_GW_PRIVATE_KEY`)))
 		})
 
-		Context("when a jumpbox exists", func() {
-			BeforeEach(func() {
-				state.Jumpbox = storage.Jumpbox{
-					Enabled: true,
-					URL:     "some-magical-jumpbox-url:22",
-					Variables: `
-jumpbox_ssh:
-  private_key: some-private-key
-`,
+		It("writes private key to file in temp dir", func() {
+			err := printEnv.Execute([]string{}, state)
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, line := range logger.PrintlnCall.Messages {
+				if strings.HasPrefix(line, "export BOSH_GW_PRIVATE_KEY=") {
+					privateKeyFilename := strings.TrimPrefix(line, "export BOSH_GW_PRIVATE_KEY=")
+
+					privateKey, err := ioutil.ReadFile(privateKeyFilename)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(privateKey)).To(Equal("some-private-key"))
 				}
-			})
+			}
+		})
 
-			It("prints magic connection vars", func() {
+		Context("when the jumpbox variables yaml is invalid", func() {
+			It("returns the error", func() {
+				state.Jumpbox.Variables = "%%%"
 				err := printEnv.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
-				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
-				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
-				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=some-director-address"))
-
-				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=socks5://localhost:\d+`)))
-				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_GW_PRIVATE_KEY=.*\/bosh_jumpbox_private.key`)))
-				Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -D \d+ jumpbox@some-magical-jumpbox-url -i \$BOSH_GW_PRIVATE_KEY`)))
-			})
-
-			It("writes private key to file in temp dir", func() {
-				err := printEnv.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				for _, line := range logger.PrintlnCall.Messages {
-					if strings.HasPrefix(line, "export BOSH_GW_PRIVATE_KEY=") {
-						privateKeyFilename := strings.TrimPrefix(line, "export BOSH_GW_PRIVATE_KEY=")
-
-						privateKey, err := ioutil.ReadFile(privateKeyFilename)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(string(privateKey)).To(Equal("some-private-key"))
-					}
-				}
-			})
-
-			Context("when the jumpbox variables yaml is invalid", func() {
-				It("returns the error", func() {
-					state.Jumpbox.Variables = "%%%"
-					err := printEnv.Execute([]string{}, state)
-					Expect(err).To(MatchError("error unmarshalling jumpbox variables: yaml: could not find expected directive name"))
-				})
+				Expect(err).To(MatchError("error unmarshalling jumpbox variables: yaml: could not find expected directive name"))
 			})
 		})
 

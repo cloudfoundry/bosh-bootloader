@@ -32,7 +32,6 @@ var (
 )
 
 type client struct {
-	jumpbox         bool
 	directorAddress string
 	username        string
 	password        string
@@ -40,13 +39,12 @@ type client struct {
 	httpClient      *http.Client
 }
 
-func NewClient(httpClient *http.Client, credhub bool, directorAddress, username, password, caCert string) Client {
+func NewClient(httpClient *http.Client, directorAddress, username, password, caCert string) Client {
 	return client{
 		directorAddress: directorAddress,
 		username:        username,
 		password:        password,
 		caCert:          caCert,
-		jumpbox:         credhub,
 		httpClient:      httpClient,
 	}
 }
@@ -79,42 +77,31 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 	if err != nil {
 		return err
 	}
-
 	request.Header.Set("Content-Type", "text/yaml")
 
-	var response *http.Response
-	if c.jumpbox {
-		urlParts, err := url.Parse(c.directorAddress)
-		if err != nil {
-			return err //not tested
-		}
+	urlParts, err := url.Parse(c.directorAddress)
+	if err != nil {
+		return err //not tested
+	}
 
-		boshHost, _, err := net.SplitHostPort(urlParts.Host)
-		if err != nil {
-			return err //not tested
-		}
+	boshHost, _, err := net.SplitHostPort(urlParts.Host)
+	if err != nil {
+		return err //not tested
+	}
 
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
 
-		conf := &clientcredentials.Config{
-			ClientID:     c.username,
-			ClientSecret: c.password,
-			TokenURL:     fmt.Sprintf("https://%s:8443/oauth/token", boshHost),
-		}
+	conf := &clientcredentials.Config{
+		ClientID:     c.username,
+		ClientSecret: c.password,
+		TokenURL:     fmt.Sprintf("https://%s:8443/oauth/token", boshHost),
+	}
 
-		httpClient := conf.Client(ctx)
-
-		response, err = makeRequests(httpClient, request)
-		if err != nil {
-			return err
-		}
-	} else {
-		request.SetBasicAuth(c.username, c.password)
-		response, err = makeRequests(c.httpClient, request)
-		if err != nil {
-			return err
-		}
+	httpClient := conf.Client(ctx)
+	response, err := makeRequests(httpClient, request)
+	if err != nil {
+		return err
 	}
 
 	if response.StatusCode != http.StatusCreated {

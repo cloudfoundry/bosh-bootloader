@@ -100,17 +100,14 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 	}
 
 	if !state.NoDirector {
-		if upConfig.Jumpbox {
-			state.Jumpbox.Enabled = true
-			state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
-			if err != nil {
-				return err
-			}
+		state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
+		if err != nil {
+			return err
+		}
 
-			err = u.stateStore.Set(state)
-			if err != nil {
-				return err
-			}
+		err = u.stateStore.Set(state)
+		if err != nil {
+			return err
 		}
 
 		state.BOSH.UserOpsFile = string(opsFileContents)
@@ -127,11 +124,6 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 			}
 			return err
 		case error:
-			return err
-		}
-
-		err = u.stateStore.Set(state)
-		if err != nil {
 			return err
 		}
 

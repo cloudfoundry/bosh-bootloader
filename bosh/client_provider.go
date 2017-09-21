@@ -27,10 +27,6 @@ func NewClientProvider(socks5Proxy socks5Proxy) ClientProvider {
 }
 
 func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
-	if !jumpbox.Enabled {
-		return &net.Dialer{}, nil
-	}
-
 	privateKey, err := getJumpboxSSHKey(jumpbox.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("get jumpbox ssh key: %s", err)
@@ -72,7 +68,7 @@ func (c ClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directo
 	}
 
 	httpClient := c.HTTPClient(dialer, []byte(directorCACert))
-	boshClient := NewClient(httpClient, jumpbox.Enabled, directorAddress, directorUsername, directorPassword, directorCACert)
+	boshClient := NewClient(httpClient, directorAddress, directorUsername, directorPassword, directorCACert)
 	return boshClient, nil
 }
 

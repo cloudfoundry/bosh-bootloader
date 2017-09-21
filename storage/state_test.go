@@ -77,7 +77,6 @@ var _ = Describe("Store", func() {
 						Domain: "some-domain",
 					},
 					Jumpbox: storage.Jumpbox{
-						Enabled:   true,
 						URL:       "some-jumpbox-url",
 						Manifest:  "name: jumpbox",
 						Variables: "some-jumpbox-vars",
@@ -134,7 +133,6 @@ var _ = Describe("Store", func() {
 				"iaas": "aws",
 				"noDirector": false,
 				"migratedFromCloudFormation": false,
-				"jumpbox": true,
 				"aws": {
 					"region": "some-region"
 				},
@@ -163,7 +161,6 @@ var _ = Describe("Store", func() {
 					"domain": "some-domain"
 				},
 				"jumpbox":{
-					"enabled": true,
 					"url": "some-jumpbox-url",
 					"variables": "some-jumpbox-vars",
 					"manifest": "name: jumpbox",
@@ -213,181 +210,6 @@ var _ = Describe("Store", func() {
 				"id": "01020304-0506-0708-0910-111213141516",
 				"latestTFOutput": ""
 		    	}`))
-
-				fileInfo, err := os.Stat(filepath.Join(tempDir, "bbl-state.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0644)))
-			})
-		})
-
-		Context("when --credhub is not enabled", func() {
-			It("persists IAAS credentials", func() {
-				err := store.Set(storage.State{
-					IAAS: "aws",
-					ID:   "some-id",
-					AWS: storage.AWS{
-						AccessKeyID:     "some-aws-access-key-id",
-						SecretAccessKey: "some-aws-secret-access-key",
-						Region:          "some-region",
-					},
-					Azure: storage.Azure{
-						ClientID:       "client-id",
-						ClientSecret:   "client-secret",
-						Location:       "location",
-						SubscriptionID: "subscription-id",
-						TenantID:       "tenant-id",
-					},
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-						Zones:             []string{"some-zone", "some-other-zone"},
-					},
-					KeyPair: storage.KeyPair{
-						Name:       "some-name",
-						PrivateKey: "some-private",
-						PublicKey:  "some-public",
-					},
-					LB: storage.LB{
-						Type:   "some-type",
-						Cert:   "some-cert",
-						Key:    "some-key",
-						Chain:  "some-chain",
-						Domain: "some-domain",
-					},
-					Jumpbox: storage.Jumpbox{
-						Enabled: false,
-					},
-					BOSH: storage.BOSH{
-						DirectorName:           "some-director-name",
-						DirectorUsername:       "some-director-username",
-						DirectorPassword:       "some-director-password",
-						DirectorAddress:        "some-director-address",
-						DirectorSSLCA:          "some-bosh-ssl-ca",
-						DirectorSSLCertificate: "some-bosh-ssl-certificate",
-						DirectorSSLPrivateKey:  "some-bosh-ssl-private-key",
-						State: map[string]interface{}{
-							"key": "value",
-						},
-						Variables:   "some-vars",
-						Manifest:    "name: bosh",
-						UserOpsFile: "some-ops-file",
-						Credentials: map[string]string{
-							"mbusUsername":              "some-mbus-username",
-							"natsUsername":              "some-nats-username",
-							"postgresUsername":          "some-postgres-username",
-							"registryUsername":          "some-registry-username",
-							"blobstoreDirectorUsername": "some-blobstore-director-username",
-							"blobstoreAgentUsername":    "some-blobstore-agent-username",
-							"hmUsername":                "some-hm-username",
-							"mbusPassword":              "some-mbus-password",
-							"natsPassword":              "some-nats-password",
-							"postgresPassword":          "some-postgres-password",
-							"registryPassword":          "some-registry-password",
-							"blobstoreDirectorPassword": "some-blobstore-director-password",
-							"blobstoreAgentPassword":    "some-blobstore-agent-password",
-							"hmPassword":                "some-hm-password",
-						},
-					},
-					Stack: storage.Stack{
-						Name:            "some-stack-name",
-						LBType:          "some-lb-type",
-						CertificateName: "some-certificate-name",
-						BOSHAZ:          "some-bosh-az",
-					},
-					EnvID:   "some-env-id",
-					TFState: "some-tf-state",
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(data).To(MatchJSON(`{
-					"version": 10,
-					"iaas": "aws",
-					"id": "some-id",
-					"noDirector": false,
-					"migratedFromCloudFormation": false,
-					"aws": {
-						"accessKeyId": "some-aws-access-key-id",
-						"secretAccessKey": "some-aws-secret-access-key",
-						"region": "some-region"
-					},
-					"azure": {
-						"clientId": "client-id",
-						"clientSecret": "client-secret",
-						"location": "location",
-						"subscriptionId": "subscription-id",
-						"tenantId": "tenant-id"
-					},
-					"gcp": {
-						"serviceAccountKey": "some-service-account-key",
-						"projectID": "some-project-id",
-						"zone": "some-zone",
-						"region": "some-region",
-						"zones": ["some-zone", "some-other-zone"]
-					},
-					"keyPair": {
-						"name": "some-name",
-						"privateKey": "some-private",
-						"publicKey": "some-public"
-					},
-					"lb": {
-						"type": "some-type",
-						"cert": "some-cert",
-						"key": "some-key",
-						"chain": "some-chain",
-						"domain": "some-domain"
-					},
-					"jumpbox":{
-						"enabled": false,
-						"url": "",
-						"variables": "",
-						"manifest": "",
-						"state": null
-					},
-					"bosh":{
-						"directorName": "some-director-name",
-						"directorUsername": "some-director-username",
-						"directorPassword": "some-director-password",
-						"directorAddress": "some-director-address",
-						"directorSSLCA": "some-bosh-ssl-ca",
-						"directorSSLCertificate": "some-bosh-ssl-certificate",
-						"directorSSLPrivateKey": "some-bosh-ssl-private-key",
-						"credentials": {
-							"mbusUsername": "some-mbus-username",
-							"natsUsername": "some-nats-username",
-							"postgresUsername": "some-postgres-username",
-							"registryUsername": "some-registry-username",
-							"blobstoreDirectorUsername": "some-blobstore-director-username",
-							"blobstoreAgentUsername": "some-blobstore-agent-username",
-							"hmUsername": "some-hm-username",
-							"mbusPassword": "some-mbus-password",
-							"natsPassword": "some-nats-password",
-							"postgresPassword": "some-postgres-password",
-							"registryPassword": "some-registry-password",
-							"blobstoreDirectorPassword": "some-blobstore-director-password",
-							"blobstoreAgentPassword": "some-blobstore-agent-password",
-							"hmPassword": "some-hm-password"
-						},
-						"variables":   "some-vars",
-						"manifest": "name: bosh",
-						"userOpsFile": "some-ops-file",
-						"state": {
-							"key": "value"
-						}
-					},
-					"stack": {
-						"name": "some-stack-name",
-						"lbType": "some-lb-type",
-						"certificateName": "some-certificate-name",
-						"boshAZ": "some-bosh-az"
-					},
-					"envID": "some-env-id",
-					"tfState": "some-tf-state",
-					"latestTFOutput": ""
-			    }`))
 
 				fileInfo, err := os.Stat(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())

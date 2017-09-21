@@ -132,14 +132,13 @@ func (m *Manager) Version() (string, error) {
 }
 
 func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
-	var err error
 	m.logger.Step("creating jumpbox")
 
 	iaasInputs := InterpolateInput{
 		IAAS: state.IAAS,
-		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
-		DeploymentVars:        m.GetDirectorDeploymentVars(state, terraformOutputs),
-		Variables:             state.Jumpbox.Variables,
+		JumpboxDeploymentVars:  m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		DirectorDeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
+		Variables:              state.Jumpbox.Variables,
 	}
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
@@ -162,7 +161,6 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	case CreateEnvError:
 		ceErr := err.(CreateEnvError)
 		state.Jumpbox = storage.Jumpbox{
-			Enabled:   true,
 			Variables: interpolateOutputs.Variables,
 			State:     ceErr.BOSHState(),
 			Manifest:  interpolateOutputs.Manifest,
@@ -173,14 +171,11 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	}
 
 	state.Jumpbox = storage.Jumpbox{
-		Enabled:   true,
 		Variables: interpolateOutputs.Variables,
 		State:     createEnvOutputs.State,
 		Manifest:  interpolateOutputs.Manifest,
 		URL:       terraformOutputs["jumpbox_url"].(string),
 	}
-
-	m.logger.Step("created jumpbox")
 
 	m.logger.Step("starting socks5 proxy to jumpbox")
 	jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
@@ -195,6 +190,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
 
+	m.logger.Step("created jumpbox")
 	return state, nil
 }
 
@@ -202,11 +198,11 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 	m.logger.Step("creating bosh director")
 
 	iaasInputs := InterpolateInput{
-		IAAS:                  state.IAAS,
-		DeploymentVars:        m.GetDirectorDeploymentVars(state, terraformOutputs),
-		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
-		Variables:             state.BOSH.Variables,
-		OpsFile:               state.BOSH.UserOpsFile,
+		IAAS: state.IAAS,
+		DirectorDeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
+		JumpboxDeploymentVars:  m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		Variables:              state.BOSH.Variables,
+		OpsFile:                state.BOSH.UserOpsFile,
 	}
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
@@ -238,15 +234,9 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
 	}
 
-	var directorAddress string
-	directorAddress = terraformOutputs["director_address"].(string)
-	if state.Jumpbox.Enabled {
-		directorAddress = fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP)
-	}
-
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
-		DirectorAddress:        directorAddress,
+		DirectorAddress:        fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP),
 		DirectorUsername:       DIRECTOR_USERNAME,
 		DirectorPassword:       directorVars.directorPassword,
 		DirectorSSLCA:          directorVars.directorSSLCA,
@@ -270,23 +260,20 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 		OpsFile:   state.BOSH.UserOpsFile,
 	}
 
-	if state.Jumpbox.Enabled {
-		jumpboxPrivateKey, err := getJumpboxPrivateKey(state.Jumpbox.Variables)
-		if err != nil {
-			return err
-		}
-
-		err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
-		if err != nil {
-			return err
-		}
-
-		osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
-
-		iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+	jumpboxPrivateKey, err := getJumpboxPrivateKey(state.Jumpbox.Variables)
+	if err != nil {
+		return err
 	}
 
-	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
+	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
+	if err != nil {
+		return err
+	}
+
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+
+	iaasInputs.JumpboxDeploymentVars = m.GetJumpboxDeploymentVars(state, terraformOutputs)
+	iaasInputs.DirectorDeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
 	if err != nil {
@@ -311,10 +298,6 @@ func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interf
 }
 
 func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string]interface{}) error {
-	if !state.Jumpbox.Enabled {
-		return nil
-	}
-
 	m.logger.Step("destroying jumpbox")
 
 	iaasInputs := InterpolateInput{
@@ -346,10 +329,6 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 }
 
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs map[string]interface{}) string {
-	if !state.Jumpbox.Enabled {
-		return ""
-	}
-
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
 		InternalGW:   "10.0.0.1",
@@ -407,10 +386,6 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 		InternalGW:   "10.0.0.1",
 		InternalIP:   DIRECTOR_INTERNAL_IP,
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-		ExternalIP:   getTerraformOutput("external_ip", terraformOutputs),
-	}
-	if state.Jumpbox.Enabled {
-		vars.ExternalIP = ""
 	}
 
 	switch state.IAAS {
@@ -419,12 +394,9 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			Zone:           state.GCP.Zone,
 			Network:        getTerraformOutput("network_name", terraformOutputs),
 			Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
-			Tags:           []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs), getTerraformOutput("bosh_open_tag_name", terraformOutputs)},
+			Tags:           []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs)},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
-		}
-		if state.Jumpbox.Enabled {
-			vars.GCPYAML.Tags = []string{getTerraformOutput("bosh_director_tag_name", terraformOutputs)}
 		}
 	case "aws":
 		vars.AWSYAML = AWSYAML{

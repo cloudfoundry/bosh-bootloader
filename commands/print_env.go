@@ -55,38 +55,36 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
 	p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
 
-	if state.Jumpbox.Enabled {
-		portNumber, err := p.getPort()
-		if err != nil {
-			// not tested
-			return err
-		}
-
-		dir, err := ioutil.TempDir("", "bosh-jumpbox")
-		if err != nil {
-			// not tested
-			return err
-		}
-
-		privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
-
-		privateKeyContents, err := p.privateKeyFromJumpboxVariables(state.Jumpbox.Variables)
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
-		if err != nil {
-			// not tested
-			return err
-		}
-
-		jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
-
-		p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=socks5://localhost:%s", portNumber))
-		p.logger.Println(fmt.Sprintf("export BOSH_GW_PRIVATE_KEY=%s", privateKeyPath))
-		p.logger.Println(fmt.Sprintf("ssh -f -N -o StrictHostKeyChecking=no -D %s jumpbox@%s -i $BOSH_GW_PRIVATE_KEY", portNumber, jumpboxURL))
+	portNumber, err := p.getPort()
+	if err != nil {
+		// not tested
+		return err
 	}
+
+	dir, err := ioutil.TempDir("", "bosh-jumpbox")
+	if err != nil {
+		// not tested
+		return err
+	}
+
+	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
+
+	privateKeyContents, err := p.privateKeyFromJumpboxVariables(state.Jumpbox.Variables)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
+	if err != nil {
+		// not tested
+		return err
+	}
+
+	jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
+
+	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=socks5://localhost:%s", portNumber))
+	p.logger.Println(fmt.Sprintf("export BOSH_GW_PRIVATE_KEY=%s", privateKeyPath))
+	p.logger.Println(fmt.Sprintf("ssh -f -N -o StrictHostKeyChecking=no -D %s jumpbox@%s -i $BOSH_GW_PRIVATE_KEY", portNumber, jumpboxURL))
 
 	return nil
 }

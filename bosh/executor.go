@@ -50,7 +50,7 @@ type Executor struct {
 
 type InterpolateInput struct {
 	IAAS                  string
-	DeploymentVars        string
+	DirectorDeploymentVars string
 	JumpboxDeploymentVars string
 	BOSHState             map[string]interface{}
 	Variables             string
@@ -159,7 +159,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 	}
 
 	var directorSetupFiles = map[string][]byte{
-		"deployment-vars.yml":                    []byte(interpolateInput.DeploymentVars),
+		"deployment-vars.yml":                    []byte(interpolateInput.DirectorDeploymentVars),
 		"user-ops-file.yml":                      []byte(interpolateInput.OpsFile),
 		"bosh.yml":                               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
 		"cpi.yml":                                MustAsset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS)),

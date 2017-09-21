@@ -151,9 +151,14 @@ var _ = Describe("GCPUp", func() {
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(expectedTerraformState))
 			})
 
+			By("creating a jumpbox", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(expectedTerraformState))
+			})
+
 			By("creating a bosh", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(expectedTerraformState))
+				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(expectedBOSHState))
 			})
 
 			By("saving the bosh state to the state", func() {
@@ -231,27 +236,6 @@ var _ = Describe("GCPUp", func() {
 					Expect(stateStore.SetCall.CallCount).To(Equal(3))
 					Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(Equal(true))
 				})
-			})
-		})
-
-		Context("when the jumpbox flag is provided", func() {
-			BeforeEach(func() {
-				terraformManager.ApplyCall.Returns.BBLState.Jumpbox.Enabled = true
-			})
-
-			It("creates a jumpbox", func() {
-				err := gcpUp.Execute(commands.UpConfig{
-					NoDirector: false,
-					Jumpbox:    true,
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
-				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
-				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.CallCount).To(Equal(5))
-				Expect(stateStore.SetCall.Receives[3].State.Jumpbox.Enabled).To(Equal(true))
 			})
 		})
 

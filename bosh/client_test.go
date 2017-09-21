@@ -124,7 +124,7 @@ var _ = Describe("Client", func() {
 		It("returns the director info", func() {
 			fakeBOSH.StartTLS()
 
-			client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+			client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
 			info, err := client.Info()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(info).To(Equal(bosh.Info{
@@ -140,7 +140,7 @@ var _ = Describe("Client", func() {
 
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
 				_, err := client.Info()
 				Expect(err).To(MatchError("unexpected http response 404 Not Found"))
 			})
@@ -148,7 +148,7 @@ var _ = Describe("Client", func() {
 			It("returns an error when the url cannot be parsed", func() {
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(httpClient, false, "%%%", "some-username", "some-password", "some-false")
+				client := bosh.NewClient(httpClient, "%%%", "some-username", "some-password", "some-false")
 				_, err := client.Info()
 				Expect(err.(*url.Error).Op).To(Equal("parse"))
 			})
@@ -156,7 +156,7 @@ var _ = Describe("Client", func() {
 			It("returns an error when the request fails", func() {
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(httpClient, false, "fake://some-url", "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, "fake://some-url", "some-username", "some-password", string(ca))
 				_, err := client.Info()
 				Expect(err).To(MatchError("made 1 attempts, last error: Get fake://some-url/info: unsupported protocol scheme \"fake\""))
 			})
@@ -165,7 +165,7 @@ var _ = Describe("Client", func() {
 				failStatus = http.StatusOK
 
 				fakeBOSH.StartTLS()
-				client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
 				_, err := client.Info()
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
 			})
@@ -190,7 +190,7 @@ var _ = Describe("Client", func() {
 
 				fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(httpClient, true, fakeBOSH.URL, "some-username", "some-password", string(ca))
+				client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
 
 				err := client.UpdateCloudConfig([]byte("cloud: config"))
 				Expect(err).NotTo(HaveOccurred())
@@ -204,52 +204,11 @@ var _ = Describe("Client", func() {
 					It("returns an error ", func() {
 						fakeBOSH.StartTLS()
 
-						client := bosh.NewClient(httpClient, true, fakeBOSH.URL, "", "", string(ca))
+						client := bosh.NewClient(httpClient, fakeBOSH.URL, "", "", string(ca))
 
 						err := client.UpdateCloudConfig([]byte("cloud: config"))
 						Expect(err).To(MatchError(ContainSubstring("made 1 attempts, last error: Post")))
 						Expect(err).To(MatchError(ContainSubstring("connection refused")))
-					})
-				})
-			})
-		})
-
-		Context("when a jumpbox is not enabled", func() {
-			It("uploads the cloud-config", func() {
-				fakeBOSH.StartTLS()
-
-				client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "some-username", "some-password", string(ca))
-
-				err := client.UpdateCloudConfig([]byte("cloud: config"))
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cloudConfig).To(Equal([]byte("cloud: config")))
-				Expect(cloudConfigContentType).To(Equal("text/yaml"))
-				Expect(username).To(Equal("some-username"))
-				Expect(password).To(Equal("some-password"))
-			})
-
-			Context("when an error occurs", func() {
-				Context("when a non-201 occurs", func() {
-					It("returns an error ", func() {
-						failStatus = http.StatusInternalServerError
-						fakeBOSH.StartTLS()
-
-						client := bosh.NewClient(httpClient, false, fakeBOSH.URL, "", "", string(ca))
-
-						err := client.UpdateCloudConfig([]byte("cloud: config"))
-						Expect(err).To(MatchError("unexpected http response 500 Internal Server Error"))
-					})
-				})
-
-				Context("when the director address is malformed", func() {
-					It("returns an error", func() {
-						fakeBOSH.StartTLS()
-
-						client := bosh.NewClient(httpClient, false, "%%%%%%%%%%%%%%%", "", "", "")
-
-						err := client.UpdateCloudConfig([]byte("cloud: config"))
-						Expect(err.(*url.Error).Op).To(Equal("parse"))
 					})
 				})
 			})
