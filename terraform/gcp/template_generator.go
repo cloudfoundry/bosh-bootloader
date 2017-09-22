@@ -40,6 +40,8 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 			template = strings.Join([]string{template, CFDNSTemplate}, "\n")
 		}
 	}
+
+	template = strings.Join([]string{template, JumpboxTemplate}, "\n")
 	return template
 }
 

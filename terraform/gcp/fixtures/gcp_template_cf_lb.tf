@@ -24,10 +24,6 @@ provider "google" {
 	region = "${var.region}"
 }
 
-output "external_ip" {
-    value = "${google_compute_address.bosh-external-ip.address}"
-}
-
 output "network_name" {
     value = "${google_compute_network.bbl-network.name}"
 }
@@ -140,10 +136,6 @@ resource "google_compute_firewall" "internal" {
   }
 
   target_tags = ["${var.env_id}-internal"]
-}
-
-output "jumpbox_url" {
-    value = "${google_compute_address.bosh-external-ip.address}:22"
 }
 
 variable "ssl_certificate" {
@@ -430,4 +422,16 @@ resource "google_compute_backend_service" "router-lb-backend-service" {
   }
 
   health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
+}
+
+resource "google_compute_address" "jumpbox-ip" {
+  name = "${var.env_id}-jumpbox-ip"
+}
+
+output "jumpbox_url" {
+    value = "${google_compute_address.jumpbox-ip.address}:22"
+}
+
+output "external_ip" {
+    value = "${google_compute_address.jumpbox-ip.address}"
 }

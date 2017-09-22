@@ -24,10 +24,6 @@ provider "google" {
 	region = "${var.region}"
 }
 
-output "external_ip" {
-    value = "${google_compute_address.bosh-external-ip.address}"
-}
-
 output "network_name" {
     value = "${google_compute_network.bbl-network.name}"
 }
@@ -142,10 +138,6 @@ resource "google_compute_firewall" "internal" {
   target_tags = ["${var.env_id}-internal"]
 }
 
-output "jumpbox_url" {
-    value = "${google_compute_address.bosh-external-ip.address}:22"
-}
-
 output "concourse_target_pool" {
 	value = "${google_compute_target_pool.target-pool.name}"
 }
@@ -190,4 +182,16 @@ resource "google_compute_forwarding_rule" "https-forwarding-rule" {
   port_range  = "443"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
+}
+
+resource "google_compute_address" "jumpbox-ip" {
+  name = "${var.env_id}-jumpbox-ip"
+}
+
+output "jumpbox_url" {
+    value = "${google_compute_address.jumpbox-ip.address}:22"
+}
+
+output "external_ip" {
+    value = "${google_compute_address.jumpbox-ip.address}"
 }

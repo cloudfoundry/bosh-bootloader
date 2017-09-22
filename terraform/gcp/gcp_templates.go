@@ -27,11 +27,7 @@ provider "google" {
 }
 `
 
-const BOSHDirectorTemplate = `output "external_ip" {
-    value = "${google_compute_address.bosh-external-ip.address}"
-}
-
-output "network_name" {
+const BOSHDirectorTemplate = `output "network_name" {
     value = "${google_compute_network.bbl-network.name}"
 }
 
@@ -144,9 +140,18 @@ resource "google_compute_firewall" "internal" {
 
   target_tags = ["${var.env_id}-internal"]
 }
+`
+
+const JumpboxTemplate = `resource "google_compute_address" "jumpbox-ip" {
+  name = "${var.env_id}-jumpbox-ip"
+}
 
 output "jumpbox_url" {
-    value = "${google_compute_address.bosh-external-ip.address}:22"
+    value = "${google_compute_address.jumpbox-ip.address}:22"
+}
+
+output "external_ip" {
+    value = "${google_compute_address.jumpbox-ip.address}"
 }
 `
 
