@@ -27,7 +27,7 @@ output "external_ip" {
 }
 
 output "jumpbox_url" {
-    value = "${aws_eip.bosh_eip.public_ip}:22"
+  value = "${aws_eip.bosh_eip.public_ip}:22"
 }
 
 output "director_address" {
@@ -87,24 +87,24 @@ resource "aws_iam_policy" "bosh" {
         "ec2:TerminateInstances",
         "ec2:RegisterImage",
         "ec2:DeregisterImage"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "*"
-    },
-	{
-	  "Action": [
-	    "iam:PassRole"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "${aws_iam_role.bosh.arn}"
-	},
-	{
-	  "Action": [
-	    "elasticloadbalancing:*"
-	  ],
-	  "Effect": "Allow",
-	  "Resource": "*"
-	}
+  ],
+  "Effect": "Allow",
+  "Resource": "*"
+  },
+  {
+  "Action": [
+    "iam:PassRole"
+  ],
+  "Effect": "Allow",
+  "Resource": "${aws_iam_role.bosh.arn}"
+  },
+  {
+  "Action": [
+    "elasticloadbalancing:*"
+  ],
+  "Effect": "Allow",
+  "Resource": "*"
+  }
   ]
 }
 EOF
@@ -142,66 +142,6 @@ variable "nat_ami_map" {
   }
 }
 
-resource "aws_security_group" "nat_security_group" {
-  description = "NAT"
-  vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "udp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "icmp"
-    from_port   = -1
-    to_port     = -1
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "${var.env_id}-nat-security-group"
-  }
-}
-
-resource "aws_instance" "nat" {
-  private_ip             = "10.0.0.7"
-  instance_type          = "t2.medium"
-  subnet_id              = "${aws_subnet.bosh_subnet.id}"
-  source_dest_check      = false
-  ami                    = "${lookup(var.nat_ami_map, var.region)}"
-  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
-
-  tags {
-    Name = "${var.env_id}-nat",
-    EnvID = "${var.env_id}"
-  }
-}
-
-resource "aws_eip" "nat_eip" {
-  depends_on = ["aws_internet_gateway.ig"]
-  instance = "${aws_instance.nat.id}"
-  vpc      = true
-}
-
-output "nat_eip" {
-  value = "${aws_eip.nat_eip.public_ip}"
-}
 
 variable "access_key" {
   type = "string"
@@ -222,7 +162,7 @@ provider "aws" {
 }
 
 resource "aws_default_security_group" "default_security_group" {
-	vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${aws_vpc.vpc.id}"
 }
 
 resource "aws_security_group" "internal_security_group" {
@@ -481,32 +421,16 @@ resource "aws_subnet" "internal_subnets" {
   }
 }
 
-resource "aws_route_table" "internal_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
-}
-
-resource "aws_route" "internal_route_table" {
-  destination_cidr_block = "0.0.0.0/0"
-  instance_id = "${aws_instance.nat.id}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
-resource "aws_route_table_association" "route_internal_subnets" {
-  count          = "${length(var.availability_zones)}"
-  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
-}
-
 output "internal_az_subnet_id_mapping" {
-	value = "${
-	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
-	}"
+  value = "${
+  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
+  }"
 }
 
 output "internal_az_subnet_cidr_mapping" {
-	value = "${
-	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
-	}"
+  value = "${
+  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
+  }"
 }
 
 variable "env_id" {
@@ -1660,7 +1584,7 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-	ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
+    ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
   }
 }
 
@@ -1714,4 +1638,285 @@ resource "aws_route53_record" "tcp" {
   ttl     = 300
 
   records = ["${aws_elb.cf_tcp_lb.dns_name}"]
+}
+
+# Charles' fault starts here
+
+resource "aws_subnet" "iso1_subnets" {
+  count             = "${length(var.availability_zones)}"
+  vpc_id            = "${aws_vpc.vpc.id}"
+  cidr_block        = "${cidrsubnet("10.0.200.0/24", 4, count.index)}"
+  availability_zone = "${element(var.availability_zones, count.index)}"
+
+  tags {
+    Name = "${var.env_id}-iso1-subnet${count.index}"
+  }
+}
+
+resource "aws_route_table_association" "route_iso1_subnets" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.iso1_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
+}
+
+output "iso1_az_subnet_id_mapping" {
+  value = "${
+  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.id}")
+  }"
+}
+
+output "iso1_az_subnet_cidr_mapping" {
+  value = "${
+  zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.cidr_block}")
+  }"
+}
+
+
+resource "aws_elb" "iso1_router_lb" {
+  name                      = "bbl-iso1-router-lb" #make this more unique later
+  cross_zone_load_balancing = true
+
+  health_check {
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+    interval            = 12
+    target              = "TCP:80"
+    timeout             = 2
+  }
+
+  listener {
+    instance_port     = 80
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+
+  listener {
+    instance_port      = 80
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+  }
+
+  listener {
+    instance_port      = 80
+    instance_protocol  = "tcp"
+    lb_port            = 4443
+    lb_protocol        = "ssl"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+  }
+
+  security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+}
+
+output "cf_iso1_router_lb_name" {
+  value="${aws_elb.iso1_router_lb.name}"
+}
+
+resource "aws_route53_record" "iso1_dns" {
+  zone_id = "${aws_route53_zone.env_dns_zone.id}"
+  name    = "*.iso-seg.${var.system_domain}"
+  type    = "CNAME"
+  ttl     = 300
+
+  records = ["${aws_elb.iso1_router_lb.dns_name}"]
+}
+
+resource "aws_security_group" "iso1_security_group" {
+  description = "iso1"
+  vpc_id      = "${aws_vpc.vpc.id}"
+
+  ingress {
+    self = true
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    to_port = 0
+    from_port = 0
+    protocol = "-1"
+    security_groups = ["${aws_security_group.bosh_security_group.id}"]
+  }
+
+  tags {
+    Name = "${var.env_id}-iso1-security-group"
+  }
+}
+
+output "iso1_security_group_id" {
+  value="${aws_security_group.iso1_security_group.id}"
+}
+
+#iso_shared_security group needs to be attached to primary subnet in the cloud config
+resource "aws_security_group" "iso_shared_security_group" {
+  description = "iso-shared"
+  vpc_id      = "${aws_vpc.vpc.id}"
+}
+
+output "iso_shared_security_group_id" {
+  value="${aws_security_group.iso_shared_security_group.id}"
+}
+
+variable "iso_to_bosh_ports" {
+  type = "list"
+  default = [22,6868,25555,4222,25250]
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
+  count = "${length(var.iso_to_bosh_ports)}"
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type = "ingress"
+  protocol = "tcp"
+  to_port = "${element(var.iso_to_bosh_ports, count.index)}"
+  from_port = "${element(var.iso_to_bosh_ports, count.index)}"
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+## open ports from bosh-director to bosh-agent (look at gcp load balancers?)
+
+variable "iso_to_shared_tcp_ports" {
+  type = "list"
+  default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
+  count = "${length(var.iso_to_shared_tcp_ports)}"
+  security_group_id = "${aws_security_group.iso_shared_security_group.id}"
+  type = "ingress"
+  protocol = "tcp"
+  to_port = "${element(var.iso_to_shared_tcp_ports, count.index)}"
+  from_port = "${element(var.iso_to_shared_tcp_ports, count.index)}"
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+variable "iso_to_shared_udp_ports" {
+  type = "list"
+  default = [8301,8302,8600]
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
+  count = "${length(var.iso_to_shared_udp_ports)}"
+  security_group_id = "${aws_security_group.iso_shared_security_group.id}"
+  type = "ingress"
+  protocol = "udp"
+  to_port = "${element(var.iso_to_shared_udp_ports, count.index)}"
+  from_port = "${element(var.iso_to_shared_udp_ports, count.index)}"
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule" {
+  depends_on = ["aws_security_group.bosh_security_group"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+}
+
+resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
+  depends_on = ["aws_security_group.iso1_security_group"]
+  security_group_id = "${aws_security_group.iso1_security_group.id}"
+  type = "ingress"
+  protocol = "tcp"
+  to_port = 1801
+  from_port = 1801
+  source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
+}
+
+# create NAT after everything else
+
+resource "aws_security_group" "nat_security_group" {
+  description = "NAT"
+  vpc_id      = "${aws_vpc.vpc.id}"
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 65535
+    security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+  ingress {
+    protocol    = "udp"
+    from_port   = 0
+    to_port     = 65535
+    security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+ ingress {
+   protocol    = "icmp"
+   from_port   = -1
+   to_port     = -1
+   security_groups = ["${aws_security_group.internal_security_group.id}"]
+  }
+
+ ingress {
+   protocol    = "-1"
+   from_port   = 0
+   to_port     = 0
+   security_groups = ["${aws_security_group.iso1_security_group.id}"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "${var.env_id}-nat-security-group"
+  }
+}
+
+resource "aws_instance" "nat" {
+  private_ip             = "10.0.0.7"
+  instance_type          = "t2.medium"
+  subnet_id              = "${aws_subnet.bosh_subnet.id}"
+  source_dest_check      = false
+  ami                    = "${lookup(var.nat_ami_map, var.region)}"
+  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
+
+  tags {
+    Name = "${var.env_id}-nat",
+    EnvID = "${var.env_id}"
+  }
+}
+
+resource "aws_eip" "nat_eip" {
+  depends_on = ["aws_internet_gateway.ig"]
+  instance = "${aws_instance.nat.id}"
+  vpc      = true
+}
+
+output "nat_eip" {
+  value = "${aws_eip.nat_eip.public_ip}"
+}
+
+resource "aws_route_table" "internal_route_table" {
+  vpc_id = "${aws_vpc.vpc.id}"
+}
+
+resource "aws_route" "internal_route_table" {
+  destination_cidr_block = "0.0.0.0/0"
+  instance_id = "${aws_instance.nat.id}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
+}
+
+resource "aws_route_table_association" "route_internal_subnets" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.internal_route_table.id}"
 }
