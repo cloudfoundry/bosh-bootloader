@@ -67,39 +67,29 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		panic(err)
 	}
 
-	var templateData TemplateData
+	templateData := TemplateData{
+		AWSNATAMIs:                   ami,
+		BOSHDescription:              "Bosh",
+		ConcourseDescription:         "Concourse",
+		ConcourseInternalDescription: "Concourse Internal",
+		InternalDescription:          "Internal",
+		NATDescription:               "NAT",
+		RouterDescription:            "CF Router",
+		RouterInternalDescription:    "CF Router Internal",
+		SSHLBDescription:             "CF SSH",
+		SSHLBInternalDescription:     "CF SSH Internal",
+		SSLCertificateNameProperty:   `name_prefix       = "${var.ssl_certificate_name_prefix}"`,
+		TCPLBDescription:             "CF TCP",
+		TCPLBInternalDescription:     "CF TCP Internal",
+	}
+
 	if state.MigratedFromCloudFormation {
-		templateData = TemplateData{
-			NATDescription:               "NAT",
-			InternalDescription:          "Internal",
-			BOSHDescription:              "BOSH",
-			ConcourseDescription:         "Concourse",
-			ConcourseInternalDescription: "Concourse Internal",
-			SSHLBDescription:             "CFSSHProxy",
-			SSHLBInternalDescription:     "CFSSHProxyInternal",
-			RouterDescription:            "Router",
-			RouterInternalDescription:    "CFRouterInternal",
-			TCPLBDescription:             "CF TCP",
-			TCPLBInternalDescription:     "CF TCP Internal",
-			SSLCertificateNameProperty:   `name              = "${var.ssl_certificate_name}"`,
-			AWSNATAMIs:                   ami,
-		}
-	} else {
-		templateData = TemplateData{
-			NATDescription:               "NAT",
-			InternalDescription:          "Internal",
-			BOSHDescription:              "Bosh",
-			ConcourseDescription:         "Concourse",
-			ConcourseInternalDescription: "Concourse Internal",
-			SSHLBDescription:             "CF SSH",
-			SSHLBInternalDescription:     "CF SSH Internal",
-			RouterDescription:            "CF Router",
-			RouterInternalDescription:    "CF Router Internal",
-			TCPLBDescription:             "CF TCP",
-			TCPLBInternalDescription:     "CF TCP Internal",
-			SSLCertificateNameProperty:   `name_prefix       = "${var.ssl_certificate_name_prefix}"`,
-			AWSNATAMIs:                   ami,
-		}
+		templateData.BOSHDescription = "BOSH"
+		templateData.RouterDescription = "Router"
+		templateData.RouterInternalDescription = "CFRouterInternal"
+		templateData.SSHLBDescription = "CFSSHProxy"
+		templateData.SSHLBInternalDescription = "CFSSHProxyInternal"
+		templateData.SSLCertificateNameProperty = `name              = "${var.ssl_certificate_name}"`
 	}
 
 	if state.LB.Cert == "" || state.LB.Key == "" {
