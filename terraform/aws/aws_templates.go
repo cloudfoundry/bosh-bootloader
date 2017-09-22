@@ -1,6 +1,6 @@
 package aws
 
-const BaseTemplate = `resource "aws_eip" "bosh_eip" {
+const BaseTemplate = `resource "aws_eip" "jumpbox_eip" {
   depends_on = ["aws_internet_gateway.ig"]
   vpc      = true
 }
@@ -25,15 +25,15 @@ output "bosh_vms_private_key" {
 }
 
 output "external_ip" {
-  value = "${aws_eip.bosh_eip.public_ip}"
+  value = "${aws_eip.jumpbox_eip.public_ip}"
 }
 
 output "jumpbox_url" {
-    value = "${aws_eip.bosh_eip.public_ip}:22"
+    value = "${aws_eip.jumpbox_eip.public_ip}:22"
 }
 
 output "director_address" {
-  value = "https://${aws_eip.bosh_eip.public_ip}:25555"
+  value = "https://${aws_eip.jumpbox_eip.public_ip}:25555"
 }
 
 resource "aws_iam_role" "bosh" {
@@ -1817,7 +1817,7 @@ resource "aws_route53_record" "bosh" {
   type    = "A"
   ttl     = 300
 
-  records = ["${aws_eip.bosh_eip.public_ip}"]
+  records = ["${aws_eip.jumpbox_eip.public_ip}"]
 }
 
 resource "aws_route53_record" "tcp" {
