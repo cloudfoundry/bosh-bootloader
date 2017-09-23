@@ -83,8 +83,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
 
 	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=socks5://localhost:%s", portNumber))
-	p.logger.Println(fmt.Sprintf("export BOSH_GW_PRIVATE_KEY=%s", privateKeyPath))
-	p.logger.Println(fmt.Sprintf("ssh -f -N -o StrictHostKeyChecking=no -D %s jumpbox@%s -i $BOSH_GW_PRIVATE_KEY", portNumber, jumpboxURL))
+	p.logger.Println(fmt.Sprintf("export JUMPBOX_PRIVATE_KEY=%s", privateKeyPath))
+	p.logger.Println(fmt.Sprintf("ssh -f -N -o StrictHostKeyChecking=no -D %s jumpbox@%s -i $JUMPBOX_PRIVATE_KEY", portNumber, jumpboxURL))
 
 	return nil
 }
