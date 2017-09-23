@@ -344,7 +344,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			Zone:           state.GCP.Zone,
 			Network:        getTerraformOutput("network_name", terraformOutputs),
 			Subnetwork:     getTerraformOutput("subnetwork_name", terraformOutputs),
-			Tags:           []string{getTerraformOutput("bosh_open_tag_name", terraformOutputs)},
+			Tags:           []string{getTerraformOutput("bosh_open_tag_name", terraformOutputs), getTerraformOutput("jumpbox_tag_name", terraformOutputs)},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}

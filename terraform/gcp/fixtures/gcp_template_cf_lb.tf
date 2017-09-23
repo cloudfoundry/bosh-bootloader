@@ -40,6 +40,10 @@ output "bosh_director_tag_name" {
 	value = "${google_compute_firewall.bosh-director.name}"
 }
 
+output "jumpbox_tag_name" {
+	value = "${var.env_id}-jumpbox"
+}
+
 output "internal_tag_name" {
     value = "${google_compute_firewall.internal.name}"
 }
@@ -115,6 +119,20 @@ resource "google_compute_firewall" "internal-to-director" {
   }
 
   target_tags = ["${var.env_id}-bosh-director"]
+}
+
+resource "google_compute_firewall" "jumpbox-to-all" {
+  name    = "${var.env_id}-jumpbox-to-all"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_tags = ["${var.env_id}-jumpbox"]
+
+  allow {
+    ports = ["22"]
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-internal", "${var.env_id}-bosh-director"]
 }
 
 resource "google_compute_firewall" "internal" {

@@ -261,6 +261,15 @@ resource "aws_security_group_rule" "internal_security_group_rule_allow_internet"
   cidr_blocks              = ["0.0.0.0/0"]
 }
 
+resource "aws_security_group_rule" "internal_security_group_rule_ssh" {
+  security_group_id        = "${aws_security_group.internal_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "TCP"
+  from_port                = 22
+  to_port                  = 22
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
+}
+
 output "internal_security_group" {
   value="${aws_security_group.internal_security_group.id}"
 }

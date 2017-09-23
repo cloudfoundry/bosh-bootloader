@@ -75,6 +75,7 @@ director_ssl:
 					"network_name":           "some-network",
 					"subnetwork_name":        "some-subnetwork",
 					"bosh_open_tag_name":     "some-jumpbox-tag",
+					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
 					"bosh_director_tag_name": "some-director-tag",
 					"internal_tag_name":      "some-internal-tag",
 					"external_ip":            "some-external-ip",
@@ -267,6 +268,7 @@ kms_key_arn: some-kms-arn
 				"network_name":           "some-network",
 				"subnetwork_name":        "some-subnetwork",
 				"bosh_open_tag_name":     "some-jumpbox-tag",
+				"jumpbox_tag_name":       "some-jumpbox-fw-tag",
 				"bosh_director_tag_name": "some-director-tag",
 				"internal_tag_name":      "some-internal-tag",
 				"external_ip":            "some-external-ip",
@@ -306,6 +308,7 @@ network: some-network
 subnetwork: some-subnetwork
 tags:
 - some-jumpbox-tag
+- some-jumpbox-fw-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `
@@ -685,6 +688,7 @@ private_key: some-private-key
 					"network_name":       "some-network",
 					"subnetwork_name":    "some-subnetwork",
 					"bosh_open_tag_name": "some-jumpbox-tag",
+					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
 					"external_ip":        "some-external-ip",
 				})
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
@@ -697,6 +701,7 @@ network: some-network
 subnetwork: some-subnetwork
 tags:
 - some-jumpbox-tag
+- some-jumpbox-fw-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))
@@ -728,6 +733,7 @@ gcp_credentials_json: some-credential-json
 					"network_name":           "some-network",
 					"subnetwork_name":        "some-subnetwork",
 					"bosh_open_tag_name":     "some-jumpbox-tag",
+					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
 					"bosh_director_tag_name": "some-director-tag",
 					"internal_tag_name":      "some-internal-tag",
 					"external_ip":            "some-external-ip",
