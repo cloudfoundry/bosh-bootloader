@@ -236,7 +236,7 @@ func (b BBL) StartSSHTunnel() *gexec.Session {
 	for i := 0; i < len(printEnvLines); i++ {
 		if strings.HasPrefix(printEnvLines[i], "ssh ") {
 			sshCmd := strings.TrimPrefix(printEnvLines[i], "ssh ")
-			sshCmd = strings.Replace(sshCmd, "$BOSH_GW_PRIVATE_KEY", getExport("BOSH_GW_PRIVATE_KEY", printEnvLines), -1)
+			sshCmd = strings.Replace(sshCmd, "$JUMPBOX_PRIVATE_KEY", getExport("JUMPBOX_PRIVATE_KEY", printEnvLines), -1)
 			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)
 			sshArgs = strings.Split(sshCmd, " ")
 		}

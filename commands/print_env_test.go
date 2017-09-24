@@ -72,8 +72,8 @@ var _ = Describe("PrintEnv", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			for _, line := range logger.PrintlnCall.Messages {
-				if strings.HasPrefix(line, "export BOSH_GW_PRIVATE_KEY=") {
-					privateKeyFilename := strings.TrimPrefix(line, "export BOSH_GW_PRIVATE_KEY=")
+				if strings.HasPrefix(line, "export JUMPBOX_PRIVATE_KEY=") {
+					privateKeyFilename := strings.TrimPrefix(line, "export JUMPBOX_PRIVATE_KEY=")
 
 					privateKey, err := ioutil.ReadFile(privateKeyFilename)
 					Expect(err).NotTo(HaveOccurred())
