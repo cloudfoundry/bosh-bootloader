@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -45,21 +45,23 @@ func NewGCPUp(stateStore stateStore, terraformManager terraformApplier, boshMana
 	}
 }
 
-func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
-	err := u.terraformManager.ValidateVersion()
+func (u GCPUp) Execute(config UpConfig, state storage.State) error {
+	var err error
+	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
+	if err != nil {
+		return fmt.Errorf("Retrieving availability zones: %s", err)
+	}
+
+	if err := u.stateStore.Set(state); err != nil {
+		return fmt.Errorf("Save state after retrieving azs: %s", err)
+	}
+
+	err = u.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
 	}
 
-	var opsFileContents []byte
-	if upConfig.OpsFile != "" {
-		opsFileContents, err = ioutil.ReadFile(upConfig.OpsFile)
-		if err != nil {
-			return fmt.Errorf("error reading ops-file contents: %v", err)
-		}
-	}
-
-	if upConfig.NoDirector {
+	if config.NoDirector {
 		if !state.BOSH.IsEmpty() {
 			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
 		}
@@ -67,21 +69,21 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 		state.NoDirector = true
 	}
 
-	state, err = u.envIDManager.Sync(state, upConfig.Name)
+	var opsFileContents []byte
+	if config.OpsFile != "" {
+		opsFileContents, err = ioutil.ReadFile(config.OpsFile)
+		if err != nil {
+			return fmt.Errorf("error reading ops-file contents: %v", err)
+		}
+	}
+
+	state, err = u.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return err
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
-		return err
-	}
-
-	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
+	err = u.stateStore.Set(state)
 	if err != nil {
-		return err
-	}
-
-	if err := u.stateStore.Set(state); err != nil {
 		return err
 	}
 
@@ -90,7 +92,8 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 		return handleTerraformError(err, u.stateStore)
 	}
 
-	if err := u.stateStore.Set(state); err != nil {
+	err = u.stateStore.Set(state)
+	if err != nil {
 		return err
 	}
 
@@ -132,7 +135,7 @@ func (u GCPUp) Execute(upConfig UpConfig, state storage.State) error {
 			return err
 		}
 
-		err := u.cloudConfigManager.Update(state)
+		err = u.cloudConfigManager.Update(state)
 		if err != nil {
 			return err
 		}

@@ -66,8 +66,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 }
 
 func (u Up) parseArgs(state storage.State, args []string) (UpConfig, error) {
-	var config UpConfig
-
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return UpConfig{}, err //not tested
@@ -79,8 +77,8 @@ func (u Up) parseArgs(state storage.State, args []string) (UpConfig, error) {
 		return UpConfig{}, err //not tested
 	}
 
+	var config UpConfig
 	upFlags := flags.New("up")
-
 	upFlags.String(&config.Name, "name", "")
 	upFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
 	upFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)

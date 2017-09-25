@@ -77,17 +77,11 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
-		It("fast fails on gcp if the terraform installed is less than v0.8.5", func() {
+		It("fast fails if validating terraform version returns an error", func() {
 			terraformManager.ValidateVersionCall.Returns.Error = errors.New("failed to validate version")
 
-			err := destroy.CheckFastFails([]string{}, storage.State{IAAS: "gcp"})
+			err := destroy.CheckFastFails([]string{}, storage.State{})
 			Expect(err).To(MatchError("failed to validate version"))
-		})
-
-		It("does not fast fail on aws if the terraform installed is less than v0.8.5", func() {
-			err := destroy.CheckFastFails([]string{}, storage.State{IAAS: "aws"})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(0))
 		})
 
 		It("returns when there is no state and --skip-if-missing flag is provided", func() {
@@ -384,34 +378,34 @@ var _ = Describe("Destroy", func() {
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
 		})
 
-			It("invokes bosh delete jumpbox as well", func() {
-				stdin.Write([]byte("yes\n"))
-				state := storage.State{
-					BOSH: storage.BOSH{
-						DirectorName: "some-director",
-					},
-					Jumpbox: storage.Jumpbox{
-						Manifest: "some-manifest",
-					},
-				}
-				stateWithoutDirector := storage.State{
-					BOSH: storage.BOSH{},
-					Jumpbox: storage.Jumpbox{
-						Manifest: "some-manifest",
-					},
-				}
+		It("invokes bosh delete jumpbox as well", func() {
+			stdin.Write([]byte("yes\n"))
+			state := storage.State{
+				BOSH: storage.BOSH{
+					DirectorName: "some-director",
+				},
+				Jumpbox: storage.Jumpbox{
+					Manifest: "some-manifest",
+				},
+			}
+			stateWithoutDirector := storage.State{
+				BOSH: storage.BOSH{},
+				Jumpbox: storage.Jumpbox{
+					Manifest: "some-manifest",
+				},
+			}
 
-				err := destroy.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
+			err := destroy.Execute([]string{}, state)
+			Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
-				Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
-				Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(1))
-				Expect(boshManager.DeleteJumpboxCall.Receives.State).To(Equal(stateWithoutDirector))
+			Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
+			Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
+			Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(1))
+			Expect(boshManager.DeleteJumpboxCall.Receives.State).To(Equal(stateWithoutDirector))
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(3))
-				Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
-			})
+			Expect(stateStore.SetCall.CallCount).To(Equal(3))
+			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
+		})
 
 		Context("failure cases", func() {
 			BeforeEach(func() {

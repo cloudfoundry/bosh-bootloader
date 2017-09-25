@@ -61,11 +61,9 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		}
 	}
 
-	if state.IAAS == "gcp" {
-		err := d.terraformManager.ValidateVersion()
-		if err != nil {
-			return err
-		}
+	err := d.terraformManager.ValidateVersion()
+	if err != nil {
+		return err
 	}
 
 	config, err := d.parseFlags(subcommandFlags)

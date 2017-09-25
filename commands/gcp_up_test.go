@@ -31,6 +31,7 @@ var _ = Describe("GCPUp", func() {
 		terraformManagerError *fakes.TerraformManagerError
 		gcpZones              *fakes.GCPClient
 
+		incomingState      storage.State
 		expectedZonesState storage.State
 	)
 
@@ -43,17 +44,9 @@ var _ = Describe("GCPUp", func() {
 		terraformManager = &fakes.TerraformManager{}
 		terraformManagerError = &fakes.TerraformManagerError{}
 
-		expectedAvailabilityZones := []string{"some-zone", "some-other-zone"}
-		expectedZonesState = storage.State{
-			GCP: storage.GCP{
-				Region: "some-region",
-				Zones:  expectedAvailabilityZones,
-			},
-		}
-		expectedZonesState.GCP.Zones = expectedAvailabilityZones
-		gcpZones.GetZonesCall.Returns.Zones = expectedAvailabilityZones
-
-		envIDManager.SyncCall.Returns.State = storage.State{GCP: storage.GCP{Region: "some-region"}}
+		incomingState = storage.State{GCP: storage.GCP{Region: "some-region"}}
+		expectedZonesState = storage.State{GCP: storage.GCP{Region: "some-region", Zones: []string{"zone-1"}}}
+		gcpZones.GetZonesCall.Returns.Zones = []string{"zone-1"}
 
 		gcpUp = commands.NewGCPUp(
 			stateStore,
@@ -67,7 +60,7 @@ var _ = Describe("GCPUp", func() {
 
 	Describe("Execute", func() {
 		It("retrieves zones for a region", func() {
-			err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
+			err := gcpUp.Execute(commands.UpConfig{}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("getting gcp availability zones", func() {
@@ -76,21 +69,22 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			By("saving gcp zones to the state", func() {
-				Expect(stateStore.SetCall.Receives[1].State).To(Equal(expectedZonesState))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(expectedZonesState))
 			})
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when GCP AZs cannot be retrieved", func() {
-				gcpZones.GetZonesCall.Returns.Error = errors.New("can't get gcp availability zones")
+				gcpZones.GetZonesCall.Returns.Error = errors.New("canteloupe")
+
 				err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("can't get gcp availability zones"))
+				Expect(err).To(MatchError("Retrieving availability zones: canteloupe"))
 			})
 
 			It("returns an error when the state fails to be set after retrieving GCP zones", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("state failed to be set")}}
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("watermelon")}}
 				err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("state failed to be set"))
+				Expect(err).To(MatchError("Save state after retrieving azs: watermelon"))
 			})
 		})
 	})

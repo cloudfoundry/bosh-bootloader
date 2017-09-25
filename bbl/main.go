@@ -207,7 +207,7 @@ func main() {
 		deleteLBsCmd = commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
 	} else if appConfig.State.IAAS == "azure" {
 		azureClient := azure.NewClient()
-		upCmd = commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, logger, stateStore, terraformManager)
+		upCmd = commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, stateStore, terraformManager)
 		deleteLBsCmd = commands.NewAzureDeleteLBs(cloudConfigManager, stateStore, terraformManager)
 	}
 
