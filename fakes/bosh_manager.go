@@ -78,16 +78,14 @@ func (b *BOSHManager) CreateJumpbox(state storage.State, terraformOutputs map[st
 	b.CreateJumpboxCall.CallCount++
 	b.CreateJumpboxCall.Receives.State = state
 	b.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
-	state.Jumpbox = b.CreateJumpboxCall.Returns.State.Jumpbox
-	return state, b.CreateJumpboxCall.Returns.Error
+	return b.CreateJumpboxCall.Returns.State, b.CreateJumpboxCall.Returns.Error
 }
 
 func (b *BOSHManager) CreateDirector(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	b.CreateDirectorCall.CallCount++
 	b.CreateDirectorCall.Receives.State = state
 	b.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
-	state.BOSH = b.CreateDirectorCall.Returns.State.BOSH
-	return state, b.CreateDirectorCall.Returns.Error
+	return b.CreateDirectorCall.Returns.State, b.CreateDirectorCall.Returns.Error
 }
 
 func (b *BOSHManager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {

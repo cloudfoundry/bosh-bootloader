@@ -21,6 +21,5 @@ func (e *EnvIDManager) Sync(state storage.State, name string) (storage.State, er
 
 	e.SyncCall.Receives.State = state
 	e.SyncCall.Receives.Name = name
-	state.EnvID = e.SyncCall.Returns.State.EnvID
-	return state, e.SyncCall.Returns.Error
+	return e.SyncCall.Returns.State, e.SyncCall.Returns.Error
 }

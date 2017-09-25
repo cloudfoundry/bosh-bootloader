@@ -306,7 +306,7 @@ var _ = Describe("AzureUp", func() {
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				Expect(stateStore.SetCall.Receives[0].State.NoDirector).To(Equal(true))
+				Expect(stateStore.SetCall.Receives[1].State.NoDirector).To(Equal(true))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})

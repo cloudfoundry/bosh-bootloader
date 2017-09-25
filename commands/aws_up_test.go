@@ -23,208 +23,99 @@ var _ = Describe("AWSUp", func() {
 			cloudConfigManager *fakes.CloudConfigManager
 			stateStore         *fakes.StateStore
 			envIDManager       *fakes.EnvIDManager
+
+			upConfig      commands.UpConfig
+			incomingState storage.State
+
+			envIDManagerState   storage.State
+			terraformApplyState storage.State
+			createJumpboxState  storage.State
+			createDirectorState storage.State
 		)
 
 		BeforeEach(func() {
+			upConfig = commands.UpConfig{Name: "some-name"}
+			incomingState = storage.State{TFState: "incoming-state"}
+
+			envIDManager = &fakes.EnvIDManager{}
+			envIDManagerState = storage.State{TFState: "env-id-sync-call"}
+			envIDManager.SyncCall.Returns.State = envIDManagerState
+
 			terraformManager = &fakes.TerraformManager{}
-			terraformManager.ApplyCall.Returns.BBLState = storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID:   "bbl-lake-time-stamp",
-				TFState: "some-tf-state",
-			}
+			terraformApplyState = storage.State{TFState: "terraform-apply-call"}
+			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
 
 			boshManager = &fakes.BOSHManager{}
-			boshManager.CreateDirectorCall.Returns.State = storage.State{
-				BOSH: storage.BOSH{
-					DirectorName:           "bosh-bbl-lake-time:stamp",
-					DirectorUsername:       "admin",
-					DirectorPassword:       "some-admin-password",
-					DirectorAddress:        "some-director-address",
-					DirectorSSLCA:          "some-ca",
-					DirectorSSLCertificate: "some-certificate",
-					DirectorSSLPrivateKey:  "some-private-key",
-					State: map[string]interface{}{
-						"new-key": "new-value",
-					},
-					Variables: variablesYAML,
-					Manifest:  "some-bosh-manifest",
-				},
-			}
+			createJumpboxState = storage.State{TFState: "create-jumpbox-call"}
+			boshManager.CreateJumpboxCall.Returns.State = createJumpboxState
+
+			createDirectorState = storage.State{TFState: "create-director-call"}
+			boshManager.CreateDirectorCall.Returns.State = createDirectorState
 
 			cloudConfigManager = &fakes.CloudConfigManager{}
 			stateStore = &fakes.StateStore{}
-
-			envIDManager = &fakes.EnvIDManager{}
-			envIDManager.SyncCall.Returns.State = storage.State{
-				EnvID: "bbl-lake-time-stamp",
-			}
 
 			command = commands.NewAWSUp(boshManager,
 				cloudConfigManager, stateStore,
 				envIDManager, terraformManager)
 		})
 
-		It("calls the env id manager and saves the env id", func() {
-			err := command.Execute(commands.UpConfig{}, storage.State{})
+		It("creates infrastructure", func() {
+			err := command.Execute(upConfig, incomingState)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(1))
 
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-			Expect(stateStore.SetCall.CallCount).To(BeNumerically(">=", 2))
-			Expect(stateStore.SetCall.Receives[1].State.EnvID).To(Equal("bbl-lake-time-stamp"))
-		})
-
-		Context("when a name is passed in for env-id", func() {
-			It("passes that name in for the env id manager to use", func() {
-				err := command.Execute(commands.UpConfig{
-					Name: "some-other-env-id",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-other-env-id"))
-			})
-		})
-
-		It("creates infrastructure", func() {
-			incomingState := storage.State{
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID: "bbl-lake-time-stamp",
-			}
-
-			err := command.Execute(commands.UpConfig{}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
+			Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
+			Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
 
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID: "bbl-lake-time-stamp",
-			}))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
+			Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
 
-			Expect(stateStore.SetCall.CallCount).To(Equal(4))
-			Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID:   "bbl-lake-time-stamp",
-				TFState: "some-tf-state",
-			}))
+			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
 
 			Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
-			Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					SecretAccessKey: "some-secret-access-key",
-					AccessKeyID:     "some-access-key-id",
-				},
-				EnvID:   "bbl-lake-time-stamp",
-				TFState: "some-tf-state",
-				Jumpbox: storage.Jumpbox{},
-			}))
+			Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
+			Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
+
+			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
+			Expect(stateStore.SetCall.Receives[3].State).To(Equal(createDirectorState))
+
+			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
+
+			Expect(stateStore.SetCall.CallCount).To(Equal(4))
 		})
 
-		Context("failure cases", func() {
-			Context("when the terraform manager fails with terraformManagerError", func() {
-				var (
-					managerError *fakes.TerraformManagerError
-				)
+		Context("when the config has ops files", func() {
+			BeforeEach(func() {
+				opsFile, err := ioutil.TempFile("", "ops-file")
+				Expect(err).NotTo(HaveOccurred())
 
-				BeforeEach(func() {
-					managerError = &fakes.TerraformManagerError{}
-					managerError.BBLStateCall.Returns.BBLState = storage.State{
-						TFState: "some-partial-tf-state",
-					}
-					managerError.ErrorCall.Returns = "cannot apply"
-					terraformManager.ApplyCall.Returns.Error = managerError
-				})
-
-				It("saves the bbl state and returns the error", func() {
-					err := command.Execute(commands.UpConfig{}, storage.State{})
-					Expect(err).To(MatchError("cannot apply"))
-
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
-						TFState: "some-partial-tf-state",
-					}))
-				})
-
-				Context("when the terraform manager error fails to return a bbl state", func() {
-					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
-					})
-
-					It("saves the bbl state and returns the error", func() {
-						err := command.Execute(commands.UpConfig{}, storage.State{})
-						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
-					})
-				})
-
-				Context("when we fail to set the bbl state", func() {
-					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.BBLState = storage.State{
-							TFState: "some-partial-tf-state",
-						}
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{
-							{},
-							{errors.New("failed to set bbl state")},
-						}
-					})
-
-					It("saves the bbl state and returns the error", func() {
-						err := command.Execute(commands.UpConfig{}, storage.State{})
-						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to set bbl state"))
-					})
-				})
+				opsFilePath := opsFile.Name()
+				opsFileContents := "some-ops-file-contents"
+				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+				upConfig = commands.UpConfig{OpsFile: opsFilePath}
 			})
 
-			Context("when the terraform manager fails with non terraformManagerError", func() {
-				It("returns the error", func() {
-					terraformManager.ApplyCall.Returns.Error = errors.New("cannot apply")
+			It("passes the ops file contents to the bosh manager", func() {
+				err := command.Execute(upConfig, incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute(commands.UpConfig{}, storage.State{})
-					Expect(err).To(MatchError("cannot apply"))
-				})
-			})
-
-			Context("when the state cannot be set", func() {
-				It("returns the error", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{
-						{},
-						{},
-						{errors.New("failed to set the state")},
-					}
-
-					err := command.Execute(commands.UpConfig{}, storage.State{})
-					Expect(err).To(MatchError("failed to set the state"))
-				})
+				Expect(boshManager.CreateDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
 			})
 		})
 
-		Context("when the no-director flag is provided", func() {
+		Context("when the config or state has the no-director flag set", func() {
 			BeforeEach(func() {
 				terraformManager.ApplyCall.Returns.BBLState.NoDirector = true
 			})
 
 			It("does not create a bosh or cloud config", func() {
-				err := command.Execute(commands.UpConfig{
-					NoDirector: true,
-				}, storage.State{})
+				err := command.Execute(upConfig, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
@@ -234,236 +125,170 @@ var _ = Describe("AWSUp", func() {
 				Expect(stateStore.SetCall.CallCount).To(Equal(2))
 			})
 
-			Context("when a bbl environment exists with no bosh director", func() {
-				It("does not create a bosh director on subsequent runs", func() {
-					err := command.Execute(commands.UpConfig{}, storage.State{
-						NoDirector: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-					Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
-					Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				})
-			})
-
-			Context("when a bbl environment exists with a bosh director", func() {
-				It("fast fails before creating any infrastructure", func() {
-					err := command.Execute(commands.UpConfig{
-						NoDirector: true,
-					}, storage.State{
-						BOSH: storage.BOSH{
-							DirectorName: "some-director",
-						},
-					})
-
-					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
-				})
-			})
 		})
 
-		It("deploys bosh", func() {
-			incomingState := storage.State{
-				IAAS: "aws",
-				AWS: storage.AWS{
-					Region:          "some-aws-region",
-					AccessKeyID:     "some-access-key-id",
-					SecretAccessKey: "some-secret-access-key",
-				},
-				EnvID:   "bbl-lake-time-stamp",
-				TFState: "some-tf-state",
-			}
-
-			err := command.Execute(commands.UpConfig{}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
-			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(incomingState))
-		})
-
-		Context("when ops file are passed in via --ops-file flag", func() {
-			It("passes the ops file contents to the bosh manager", func() {
-				opsFile, err := ioutil.TempFile("", "ops-file")
-				Expect(err).NotTo(HaveOccurred())
-
-				opsFilePath := opsFile.Name()
-				opsFileContents := "some-ops-file-contents"
-				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = command.Execute(commands.UpConfig{
-					OpsFile: opsFilePath,
-				}, storage.State{
-					EnvID: "bbl-lake-time-stamp",
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshManager.CreateDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
-			})
-		})
-
-		Describe("cloud config", func() {
-			It("updates the bosh director with a cloud config provided an up-to-date state", func() {
+		Describe("failure cases", func() {
+			It("returns an error if terraform manager version validator fails", func() {
+				terraformManager.ValidateVersionCall.Returns.Error = errors.New("grape")
 				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(storage.State{
-					EnvID: "bbl-lake-time-stamp",
-					IAAS:  "aws",
-					BOSH: storage.BOSH{
-						DirectorName:           "bosh-bbl-lake-time:stamp",
-						DirectorUsername:       "admin",
-						DirectorPassword:       "some-admin-password",
-						DirectorAddress:        "some-director-address",
-						DirectorSSLCA:          "some-ca",
-						DirectorSSLCertificate: "some-certificate",
-						DirectorSSLPrivateKey:  "some-private-key",
-						Variables:              variablesYAML,
-						State: map[string]interface{}{
-							"new-key": "new-value",
-						},
-						Manifest: "some-bosh-manifest",
-					},
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-aws-region",
-					},
-					TFState: "some-tf-state",
-				}))
-			})
-		})
 
-		Describe("state manipulation", func() {
-			Context("iaas", func() {
-				It("writes iaas aws to state", func() {
-					err := command.Execute(commands.UpConfig{}, storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[2].State.IAAS).To(Equal("aws"))
-				})
+				Expect(err).To(MatchError("Terraform validate version: grape"))
 			})
 
-			Context("aws credentials", func() {
-				It("does not override the credentials when they're not passed in", func() {
-					err := command.Execute(commands.UpConfig{}, storage.State{
-						AWS: storage.AWS{
-							AccessKeyID:     "aws-access-key-id",
-							SecretAccessKey: "aws-secret-access-key",
-							Region:          "aws-region",
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
+			It("fast fails when the config has the no-director flag set and the bbl state has a bosh director", func() {
+				upConfig = commands.UpConfig{NoDirector: true}
+				incomingState = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
 
-					Expect(stateStore.SetCall.Receives[0].State.AWS).To(Equal(storage.AWS{
-						AccessKeyID:     "aws-access-key-id",
-						SecretAccessKey: "aws-secret-access-key",
-						Region:          "aws-region",
-					}))
-				})
-			})
-		})
-
-		Context("failure cases", func() {
-			It("returns an error when the env id manager fails", func() {
-				envIDManager.SyncCall.Returns.Error = errors.New("env id manager failed")
-
-				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("env id manager failed"))
-
-			})
-
-			It("returns an error when saving the state fails", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{
-					{
-						Error: errors.New("saving the state failed"),
-					},
-				}
-				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("saving the state failed"))
-			})
-
-			It("returns an error when the cloud config cannot be uploaded", func() {
-				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update")
-				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("failed to update"))
-			})
-
-			It("returns an error when the terraform manager cannot get terraform outputs", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("cannot parse terraform output")
-
-				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("cannot parse terraform output"))
+				err := command.Execute(upConfig, incomingState)
+				Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
 			})
 
 			It("returns an error when the ops file cannot be read", func() {
-				err := command.Execute(commands.UpConfig{
-					OpsFile: "some/fake/path",
-				}, storage.State{})
-				Expect(err).To(MatchError("error reading ops-file contents: open some/fake/path: no such file or directory"))
+				err := command.Execute(commands.UpConfig{OpsFile: "some/fake/path"}, storage.State{})
+				Expect(err).To(MatchError("Reading ops-file contents: open some/fake/path: no such file or directory"))
+			})
+
+			It("returns an error when the env id manager fails", func() {
+				envIDManager.SyncCall.Returns.Error = errors.New("apple")
+
+				err := command.Execute(upConfig, incomingState)
+				Expect(err).To(MatchError("Env id manager sync: apple"))
+			})
+
+			It("returns an error when saving the state fails after env id sync", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
+
+				err := command.Execute(commands.UpConfig{}, storage.State{})
+				Expect(err).To(MatchError("Save state after sync: kiwi"))
+			})
+
+			It("returns the error when the terraform manager fails with non terraformManagerError", func() {
+				terraformManager.ApplyCall.Returns.Error = errors.New("passionfruit")
+
+				err := command.Execute(commands.UpConfig{}, storage.State{})
+				// Expect(err).To(MatchError("Terraform Manager Apply: passionfruit"))
+				Expect(err).To(MatchError("passionfruit"))
+			})
+
+			It("returns an error when saving the state fails after terraform apply", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
+
+				err := command.Execute(commands.UpConfig{}, storage.State{})
+				Expect(err).To(MatchError("Save state after terraform apply: kiwi"))
+			})
+
+			It("returns an error when the terraform manager cannot get terraform outputs", func() {
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("raspberry")
+
+				err := command.Execute(commands.UpConfig{}, storage.State{})
+				Expect(err).To(MatchError("Parse terraform outputs: raspberry"))
+			})
+
+			It("returns an error when the jumpbox cannot be deployed", func() {
+				boshManager.CreateJumpboxCall.Returns.Error = errors.New("pineapple")
+
+				err := command.Execute(commands.UpConfig{}, storage.State{})
+				Expect(err).To(MatchError("Create jumpbox: pineapple"))
+			})
+
+			It("returns an error when saving the state fails after create jumpbox", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
+
+				err := command.Execute(commands.UpConfig{}, storage.State{})
+				Expect(err).To(MatchError("Save state after create jumpbox: kiwi"))
 			})
 
 			It("returns an error when bosh cannot be deployed", func() {
-				boshManager.CreateDirectorCall.Returns.Error = errors.New("cannot deploy bosh")
+				boshManager.CreateDirectorCall.Returns.Error = errors.New("pineapple")
 
 				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("cannot deploy bosh"))
+				Expect(err).To(MatchError("Create bosh director: pineapple"))
 			})
 
-			It("returns an error when state store fails to set the state before retrieving availability zones", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+			It("returns an error when saving the state fails after create director", func() {
+				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {Error: errors.New("kiwi")}}
 
 				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("failed to set state"))
+				Expect(err).To(MatchError("Save state after create director: kiwi"))
 			})
 
-			It("returns an error when state store fails to set the state before updating the cloud config", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set state")}}
+			It("returns an error when the cloud config cannot be uploaded", func() {
+				cloudConfigManager.UpdateCall.Returns.Error = errors.New("coconut")
 
 				err := command.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("failed to set state"))
+				Expect(err).To(MatchError("Update cloud config: coconut"))
 			})
 
-			Context("when the bosh manager fails with BOSHManagerCreate error", func() {
+			Context("when the terraform manager fails with terraformManagerError", func() {
 				var (
-					incomingState     storage.State
-					expectedBOSHState map[string]interface{}
+					managerError *fakes.TerraformManagerError
+					partialState storage.State
 				)
 
 				BeforeEach(func() {
-					incomingState = storage.State{
-						IAAS: "aws",
-						AWS: storage.AWS{
-							Region:          "some-aws-region",
-							SecretAccessKey: "some-secret-access-key",
-							AccessKeyID:     "some-access-key-id",
-						},
-						EnvID: "bbl-lake-time:stamp",
+					managerError = &fakes.TerraformManagerError{}
+					partialState = storage.State{
+						TFState: "some-partial-tf-state",
 					}
-					expectedBOSHState = map[string]interface{}{
-						"partial": "bosh-state",
-					}
+					managerError.BBLStateCall.Returns.BBLState = partialState
+					managerError.ErrorCall.Returns = "grapefruit"
+					terraformManager.ApplyCall.Returns.Error = managerError
+				})
 
-					newState := incomingState
-					newState.BOSH.State = expectedBOSHState
-					expectedError := bosh.NewManagerCreateError(newState, errors.New("failed to create"))
+				It("saves the bbl state and returns the error", func() {
+					err := command.Execute(commands.UpConfig{}, storage.State{})
+					Expect(err).To(MatchError("grapefruit"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(partialState))
+				})
+
+				It("returns an error when the applier fails and we cannot retrieve the updated bbl state", func() {
+					managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
+
+					err := command.Execute(commands.UpConfig{}, storage.State{})
+					Expect(err).To(MatchError("the following errors occurred:\ngrapefruit,\nfailed to retrieve bbl state"))
+				})
+
+				Context("when we fail to set the bbl state", func() {
+					BeforeEach(func() {
+						managerError.BBLStateCall.Returns.BBLState = partialState
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set bbl state")}}
+					})
+
+					It("saves the bbl state and returns the error", func() {
+						err := command.Execute(commands.UpConfig{}, storage.State{})
+						Expect(err).To(MatchError("the following errors occurred:\ngrapefruit,\nfailed to set bbl state"))
+					})
+				})
+			})
+
+			Context("when the bosh manager fails with BOSHManagerCreate error", func() {
+				var partialState storage.State
+
+				BeforeEach(func() {
+					partialState = storage.State{TFState: "some-partial-tf-state"}
+
+					expectedError := bosh.NewManagerCreateError(partialState, errors.New("rambutan"))
 					boshManager.CreateDirectorCall.Returns.Error = expectedError
 				})
 
 				It("returns the error and saves the state", func() {
 					err := command.Execute(commands.UpConfig{}, incomingState)
-					Expect(err).To(MatchError("failed to create"))
+					Expect(err).To(MatchError("Create bosh director: rambutan"))
+
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.Receives[3].State).To(Equal(partialState))
 				})
 
 				It("returns a compound error when it fails to save the state", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("state failed to be set")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("lychee")}}
+
 					err := command.Execute(commands.UpConfig{}, incomingState)
-					Expect(err).To(MatchError("the following errors occurred:\nfailed to create,\nstate failed to be set"))
+					Expect(err).To(MatchError("Save state after bosh director create error: rambutan, lychee"))
+
 					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[3].State.BOSH.State).To(Equal(expectedBOSHState))
+					Expect(stateStore.SetCall.Receives[3].State).To(Equal(partialState))
 				})
 			})
 		})
