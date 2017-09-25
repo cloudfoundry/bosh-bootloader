@@ -29,8 +29,6 @@ type Config struct {
 
 	StateFileDir            string
 	StemcellPath            string
-	GardenReleasePath       string
-	ConcourseReleasePath    string
 	ConcourseDeploymentPath string
 }
 
@@ -161,8 +159,6 @@ func loadConfigFromEnvVars() Config {
 
 		StateFileDir:            os.Getenv("BBL_STATE_DIR"),
 		StemcellPath:            os.Getenv("STEMCELL_PATH"),
-		GardenReleasePath:       os.Getenv("GARDEN_RELEASE_PATH"),
-		ConcourseReleasePath:    os.Getenv("CONCOURSE_RELEASE_PATH"),
 		ConcourseDeploymentPath: os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
 	}
 }

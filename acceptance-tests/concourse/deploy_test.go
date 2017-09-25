@@ -78,14 +78,8 @@ var _ = Describe("concourse deployment test", func() {
 			sshSession = bbl.StartSSHTunnel()
 		})
 
-		By("uploading releases and stemcells", func() {
-			err := boshCLI.UploadRelease(address, caCertPath, username, password, configuration.ConcourseReleasePath)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = boshCLI.UploadRelease(address, caCertPath, username, password, configuration.GardenReleasePath)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = boshCLI.UploadStemcell(address, caCertPath, username, password, configuration.StemcellPath)
+		By("uploading stemcell", func() {
+			err := boshCLI.UploadStemcell(address, caCertPath, username, password, configuration.StemcellPath)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
