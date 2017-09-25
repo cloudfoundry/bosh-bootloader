@@ -303,7 +303,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 
 	iaasInputs := InterpolateInput{
 		IAAS:                  state.IAAS,
-		Variables:             state.BOSH.Variables,
+		Variables:             state.Jumpbox.Variables,
 		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 	}
 

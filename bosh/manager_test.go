@@ -457,18 +457,26 @@ gcp_credentials_json: some-credential-json
 		var (
 			vars          string
 			incomingState storage.State
+			jumpboxState  map[string]interface{}
 		)
 		BeforeEach(func() {
 			vars = `jumpbox_ssh:
   private_key: some-private-key
   public_key: some-private-key
 `
+
+			jumpboxState = map[string]interface{}{
+				"key": "value",
+			}
+
 			incomingState = storage.State{
+				IAAS: "some-iaas",
+				BOSH: storage.BOSH{
+					Variables: "some-bosh-vars",
+				},
 				Jumpbox: storage.Jumpbox{
-					Manifest: "some-manifest",
-					State: map[string]interface{}{
-						"key": "value",
-					},
+					Manifest:  "some-manifest",
+					State:     jumpboxState,
 					Variables: vars,
 				},
 			}
@@ -477,12 +485,16 @@ gcp_credentials_json: some-credential-json
 		It("calls delete env", func() {
 			boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
 				Manifest:  "some-manifest",
-				Variables: vars,
+				Variables: "some-new-jumpbox-vars",
 			}
 
 			err := boshManager.DeleteJumpbox(incomingState, map[string]interface{}{"jumpbox_ssh": "nick-da-quick"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Variables).To(Equal(vars))
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.Variables).To(Equal(vars))
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.IAAS).To(Equal("some-iaas"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Manifest).To(Equal("some-manifest"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.State).To(Equal(jumpboxState))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Variables).To(Equal("some-new-jumpbox-vars"))
 		})
 
 		Context("when an error occurs", func() {
