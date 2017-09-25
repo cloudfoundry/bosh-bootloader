@@ -82,24 +82,13 @@ func (m Manager) ValidateVersion() error {
 		return err
 	}
 
-	// This shouldn't fail, so there is no test for capturing the error.
-	minimumVersion, err := semver.NewVersion("0.8.5")
+	minimumVersion, err := semver.NewVersion("0.10.0")
 	if err != nil {
 		return err
 	}
 
 	if currentVersion.LessThan(*minimumVersion) {
-		return errors.New("Terraform version must be at least v0.8.5")
-	}
-
-	// This shouldn't fail, so there is no test for capturing the error.
-	blacklistedVersion, err := semver.NewVersion("0.9.0")
-	if err != nil {
-		return err
-	}
-
-	if currentVersion.Equal(*blacklistedVersion) {
-		return errors.New("Version 0.9.0 of terraform is incompatible with bbl, please try a later version.")
+		return errors.New("Terraform version must be at least v0.10.0")
 	}
 
 	return nil

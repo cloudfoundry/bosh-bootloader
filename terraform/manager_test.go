@@ -449,9 +449,9 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe("ValidateVersion", func() {
-		Context("when terraform version is greater than v0.8.5", func() {
+		Context("when terraform version is greater than the minimum", func() {
 			BeforeEach(func() {
-				executor.VersionCall.Returns.Version = "0.9.1"
+				executor.VersionCall.Returns.Version = "9.0.0"
 			})
 
 			It("validates the version of terraform and returns no error", func() {
@@ -460,23 +460,12 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		Context("when terraform version is v0.9.0", func() {
-			BeforeEach(func() {
-				executor.VersionCall.Returns.Version = "0.9.0"
-			})
-
-			It("returns a helpful error message", func() {
-				err := manager.ValidateVersion()
-				Expect(err).To(MatchError("Version 0.9.0 of terraform is incompatible with bbl, please try a later version."))
-			})
-		})
-
 		Context("failure cases", func() {
-			It("returns an error when the terraform installed is less than v0.8.5", func() {
-				executor.VersionCall.Returns.Version = "0.8.4"
+			It("returns an error when the terraform installed is less than the minimum", func() {
+				executor.VersionCall.Returns.Version = "0.0.1"
 
 				err := manager.ValidateVersion()
-				Expect(err).To(MatchError("Terraform version must be at least v0.8.5"))
+				Expect(err).To(MatchError("Terraform version must be at least v0.10.0"))
 			})
 
 			It("fast fails if the terraform executor fails to get the version", func() {
