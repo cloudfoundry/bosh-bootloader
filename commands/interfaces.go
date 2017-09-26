@@ -25,7 +25,7 @@ type terraformOutputter interface {
 type boshManager interface {
 	CreateDirector(bblState storage.State, terraformOutputs map[string]interface{}) (storage.State, error)
 	CreateJumpbox(bblState storage.State, terraformOutputs map[string]interface{}) (storage.State, error)
-	Delete(bblState storage.State, terraformOutputs map[string]interface{}) error
+	DeleteDirector(bblState storage.State, terraformOutputs map[string]interface{}) error
 	DeleteJumpbox(bblState storage.State, terraformOutputs map[string]interface{}) error
 	GetDirectorDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) string
 	GetJumpboxDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) string

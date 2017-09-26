@@ -253,7 +253,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 	return state, nil
 }
 
-func (m *Manager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
+func (m *Manager) DeleteDirector(state storage.State, terraformOutputs map[string]interface{}) error {
 	iaasInputs := InterpolateInput{
 		IAAS:      state.IAAS,
 		BOSHState: state.BOSH.State,

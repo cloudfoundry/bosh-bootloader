@@ -32,7 +32,7 @@ type BOSHManager struct {
 			Error   error
 		}
 	}
-	DeleteCall struct {
+	DeleteDirectorCall struct {
 		CallCount int
 		Receives  struct {
 			State            storage.State
@@ -88,11 +88,11 @@ func (b *BOSHManager) CreateDirector(state storage.State, terraformOutputs map[s
 	return b.CreateDirectorCall.Returns.State, b.CreateDirectorCall.Returns.Error
 }
 
-func (b *BOSHManager) Delete(state storage.State, terraformOutputs map[string]interface{}) error {
-	b.DeleteCall.CallCount++
-	b.DeleteCall.Receives.State = state
+func (b *BOSHManager) DeleteDirector(state storage.State, terraformOutputs map[string]interface{}) error {
+	b.DeleteDirectorCall.CallCount++
+	b.DeleteDirectorCall.Receives.State = state
 	b.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
-	return b.DeleteCall.Returns.Error
+	return b.DeleteDirectorCall.Returns.Error
 }
 
 func (b *BOSHManager) DeleteJumpbox(state storage.State, terraformOutputs map[string]interface{}) error {

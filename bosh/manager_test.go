@@ -546,7 +546,7 @@ gcp_credentials_json: some-credential-json
 			socks5ProxyAddr := "localhost:1234"
 			socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
 
-			err := boshManager.Delete(storage.State{
+			err := boshManager.DeleteDirector(storage.State{
 				Jumpbox: storage.Jumpbox{
 					Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 					Manifest:  "name: jumpbox",
@@ -611,7 +611,7 @@ gcp_credentials_json: some-credential-json
 						Variables: boshVars,
 					}
 					expectedError := bosh.NewManagerDeleteError(expectedState, deleteEnvError)
-					err := boshManager.Delete(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
+					err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
@@ -619,7 +619,7 @@ gcp_credentials_json: some-credential-json
 			It("returns an error when the delete env fails", func() {
 				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
 
-				err := boshManager.Delete(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
+				err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
 				Expect(err).To(MatchError("failed to delete"))
 			})
 
@@ -627,7 +627,7 @@ gcp_credentials_json: some-credential-json
 				It("returns an error when the socks5Proxy fails to start", func() {
 					socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
 
-					err := boshManager.Delete(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
+					err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
 					Expect(err).To(MatchError("failed to start socks5Proxy"))
 				})
 			})

@@ -251,7 +251,7 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 	if !state.BOSH.IsEmpty() {
 		d.logger.Step("destroying bosh director")
 
-		err := d.boshManager.Delete(state, terraformOutputs)
+		err := d.boshManager.DeleteDirector(state, terraformOutputs)
 		if err != nil {
 			return state, err
 		}

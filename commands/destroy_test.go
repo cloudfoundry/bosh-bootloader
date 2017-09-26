@@ -322,10 +322,10 @@ var _ = Describe("Destroy", func() {
 				Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
 
 				if proceed {
-					Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
+					Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
 				} else {
 					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
-					Expect(boshManager.DeleteCall.CallCount).To(Equal(0))
+					Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
 				}
 			},
 			Entry("responding with 'yes'", "yes", true),
@@ -348,7 +348,7 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
+				Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
 			},
 				Entry("--no-confirm", "--no-confirm"),
 				Entry("-n", "-n"),
@@ -371,8 +371,8 @@ var _ = Describe("Destroy", func() {
 			err := destroy.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
-			Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
+			Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
+			Expect(boshManager.DeleteDirectorCall.Receives.State).To(Equal(state))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(storage.State{}))
@@ -398,8 +398,8 @@ var _ = Describe("Destroy", func() {
 			err := destroy.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
-			Expect(boshManager.DeleteCall.Receives.State).To(Equal(state))
+			Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
+			Expect(boshManager.DeleteDirectorCall.Receives.State).To(Equal(state))
 			Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(1))
 			Expect(boshManager.DeleteJumpboxCall.Receives.State).To(Equal(stateWithoutDirector))
 
@@ -430,7 +430,7 @@ var _ = Describe("Destroy", func() {
 
 			Context("when bosh delete fails", func() {
 				It("returns an error", func() {
-					boshManager.DeleteCall.Returns.Error = errors.New("bosh delete-env failed")
+					boshManager.DeleteDirectorCall.Returns.Error = errors.New("bosh delete-env failed")
 
 					err := destroy.Execute([]string{}, storage.State{
 						BOSH: storage.BOSH{
@@ -740,7 +740,7 @@ var _ = Describe("Destroy", func() {
 
 							Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
 							Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
-							Expect(boshManager.DeleteCall.CallCount).To(Equal(0))
+							Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
 						})
 					})
 
@@ -752,7 +752,7 @@ var _ = Describe("Destroy", func() {
 
 							Expect(logger.PrintlnCall.Receives.Message).NotTo(Equal("no BOSH director, skipping..."))
 							Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
-							Expect(boshManager.DeleteCall.CallCount).To(Equal(0))
+							Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
 						})
 					})
 
@@ -764,7 +764,7 @@ var _ = Describe("Destroy", func() {
 
 							Expect(logger.StepCall.Messages).To(ContainElement("destroying bosh director"))
 							Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying jumpbox"))
-							Expect(boshManager.DeleteCall.CallCount).To(Equal(1))
+							Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
 							Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(0))
 						})
 					})
@@ -897,7 +897,7 @@ var _ = Describe("Destroy", func() {
 									CertificateName: "some-certificate-name",
 								},
 							}
-							boshManager.DeleteCall.Returns.Error = bosh.NewManagerDeleteError(errState, errors.New("deletion failed"))
+							boshManager.DeleteDirectorCall.Returns.Error = bosh.NewManagerDeleteError(errState, errors.New("deletion failed"))
 						})
 
 						It("saves the bosh state and returns an error", func() {
@@ -917,7 +917,7 @@ var _ = Describe("Destroy", func() {
 					})
 
 					It("returns an error", func() {
-						boshManager.DeleteCall.Returns.Error = errors.New("deletion failed")
+						boshManager.DeleteDirectorCall.Returns.Error = errors.New("deletion failed")
 						err := destroy.Execute([]string{}, state)
 						Expect(err).To(MatchError("deletion failed"))
 					})
