@@ -3,7 +3,13 @@ package commands
 import (
 	"io/ioutil"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
+
+var (
+	marshal = yaml.Marshal
 )
 
 type GCPCreateLBs struct {

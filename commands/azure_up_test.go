@@ -13,32 +13,19 @@ import (
 
 var _ = Describe("AzureUp", func() {
 	var (
-		azureUp commands.AzureUp
-
-		azureClient        *fakes.AzureClient
-		boshManager        *fakes.BOSHManager
-		cloudConfigManager *fakes.CloudConfigManager
-		envIDManager       *fakes.EnvIDManager
-		stateStore         *fakes.StateStore
-		terraformManager   *fakes.TerraformManager
+		azureUp     commands.AzureUp
+		azureClient *fakes.AzureClient
 	)
 
 	BeforeEach(func() {
 		azureClient = &fakes.AzureClient{}
-		boshManager = &fakes.BOSHManager{}
-		cloudConfigManager = &fakes.CloudConfigManager{}
-		envIDManager = &fakes.EnvIDManager{}
-		stateStore = &fakes.StateStore{}
-		terraformManager = &fakes.TerraformManager{}
-
-		azureUp = commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, stateStore, terraformManager)
+		azureUp = commands.NewAzureUp(azureClient)
 	})
 
 	Describe("Execute", func() {
-		var state storage.State
-
+		var incomingState storage.State
 		BeforeEach(func() {
-			state = storage.State{
+			incomingState = storage.State{
 				Azure: storage.Azure{
 					SubscriptionID: "subscription-id",
 					TenantID:       "tenant-id",
@@ -49,17 +36,17 @@ var _ = Describe("AzureUp", func() {
 		})
 
 		It("creates the environment", func() {
-			err := azureUp.Execute(commands.UpConfig{}, state)
+			returnedState, err := azureUp.Execute(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("validating credentials", func() {
-				Expect(azureClient.ValidateCredentialsCall.CallCount).To(Equal(1))
+			Expect(azureClient.ValidateCredentialsCall.CallCount).To(Equal(1))
 
-				Expect(azureClient.ValidateCredentialsCall.Receives.SubscriptionID).To(Equal("subscription-id"))
-				Expect(azureClient.ValidateCredentialsCall.Receives.TenantID).To(Equal("tenant-id"))
-				Expect(azureClient.ValidateCredentialsCall.Receives.ClientID).To(Equal("client-id"))
-				Expect(azureClient.ValidateCredentialsCall.Receives.ClientSecret).To(Equal("client-secret"))
-			})
+			Expect(azureClient.ValidateCredentialsCall.Receives.SubscriptionID).To(Equal("subscription-id"))
+			Expect(azureClient.ValidateCredentialsCall.Receives.TenantID).To(Equal("tenant-id"))
+			Expect(azureClient.ValidateCredentialsCall.Receives.ClientID).To(Equal("client-id"))
+			Expect(azureClient.ValidateCredentialsCall.Receives.ClientSecret).To(Equal("client-secret"))
+
+			Expect(returnedState).To(Equal(incomingState))
 		})
 
 		Context("given invalid credentials", func() {
@@ -68,7 +55,7 @@ var _ = Describe("AzureUp", func() {
 			})
 
 			It("returns the error", func() {
-				err := azureUp.Execute(commands.UpConfig{}, storage.State{})
+				_, err := azureUp.Execute(storage.State{})
 				Expect(err).To(MatchError("Validate credentials: fig"))
 				Expect(azureClient.ValidateCredentialsCall.CallCount).To(Equal(1))
 			})

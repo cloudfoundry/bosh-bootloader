@@ -193,30 +193,26 @@ func main() {
 	)
 	if appConfig.State.IAAS == "aws" {
 		environmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
-
-		upCmd = commands.NewAWSUp(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+		upCmd = commands.NewAWSUp()
 		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	} else if appConfig.State.IAAS == "gcp" {
 		environmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
-
-		upCmd = commands.NewGCPUp(stateStore, terraformManager, boshManager, cloudConfigManager, envIDManager, gcpClient)
+		upCmd = commands.NewGCPUp(gcpClient)
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
 	} else if appConfig.State.IAAS == "azure" {
 		azureClient := azure.NewClient()
-		upCmd = commands.NewAzureUp(azureClient, boshManager, cloudConfigManager, envIDManager, stateStore, terraformManager)
+		upCmd = commands.NewAzureUp(azureClient)
 		deleteLBsCmd = commands.NewAzureDeleteLBs(cloudConfigManager, stateStore, terraformManager)
 	}
 
-	up := commands.NewUp(upCmd, boshManager)
-
-	// Usage Command
+	// Commands
+	up := commands.NewUp(upCmd, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	usage := commands.NewUsage(logger)
 
-	// Commands
 	commandSet := application.CommandSet{}
 	commandSet["help"] = usage
 	commandSet["version"] = commands.NewVersion(Version, logger)

@@ -11,80 +11,41 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	variablesYAML = `admin_password: some-admin-password
-director_ssl:
-  ca: some-ca
-  certificate: some-certificate
-  private_key: some-private-key
-`
-)
-
 var _ = Describe("GCPUp", func() {
 	var (
-		gcpUp                 commands.GCPUp
-		stateStore            *fakes.StateStore
-		terraformManager      *fakes.TerraformManager
-		boshManager           *fakes.BOSHManager
-		cloudConfigManager    *fakes.CloudConfigManager
-		envIDManager          *fakes.EnvIDManager
-		terraformManagerError *fakes.TerraformManagerError
-		gcpZones              *fakes.GCPClient
+		gcpUp    commands.GCPUp
+		gcpZones *fakes.GCPClient
 
 		incomingState      storage.State
 		expectedZonesState storage.State
 	)
 
 	BeforeEach(func() {
-		boshManager = &fakes.BOSHManager{}
-		cloudConfigManager = &fakes.CloudConfigManager{}
-		envIDManager = &fakes.EnvIDManager{}
 		gcpZones = &fakes.GCPClient{}
-		stateStore = &fakes.StateStore{}
-		terraformManager = &fakes.TerraformManager{}
-		terraformManagerError = &fakes.TerraformManagerError{}
 
 		incomingState = storage.State{GCP: storage.GCP{Region: "some-region"}}
 		expectedZonesState = storage.State{GCP: storage.GCP{Region: "some-region", Zones: []string{"zone-1"}}}
 		gcpZones.GetZonesCall.Returns.Zones = []string{"zone-1"}
 
-		gcpUp = commands.NewGCPUp(
-			stateStore,
-			terraformManager,
-			boshManager,
-			cloudConfigManager,
-			envIDManager,
-			gcpZones,
-		)
+		gcpUp = commands.NewGCPUp(gcpZones)
 	})
 
 	Describe("Execute", func() {
 		It("retrieves zones for a region", func() {
-			err := gcpUp.Execute(commands.UpConfig{}, incomingState)
+			returnedState, err := gcpUp.Execute(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("getting gcp availability zones", func() {
-				Expect(gcpZones.GetZonesCall.CallCount).To(Equal(1))
-				Expect(gcpZones.GetZonesCall.Receives.Region).To(Equal("some-region"))
-			})
+			Expect(gcpZones.GetZonesCall.CallCount).To(Equal(1))
+			Expect(gcpZones.GetZonesCall.Receives.Region).To(Equal("some-region"))
 
-			By("saving gcp zones to the state", func() {
-				Expect(stateStore.SetCall.Receives[0].State).To(Equal(expectedZonesState))
-			})
+			Expect(returnedState).To(Equal(expectedZonesState))
 		})
 
 		Context("failure cases", func() {
 			It("returns an error when GCP AZs cannot be retrieved", func() {
 				gcpZones.GetZonesCall.Returns.Error = errors.New("canteloupe")
-
-				err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
+				_, err := gcpUp.Execute(storage.State{})
 				Expect(err).To(MatchError("Retrieving availability zones: canteloupe"))
-			})
-
-			It("returns an error when the state fails to be set after retrieving GCP zones", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("watermelon")}}
-				err := gcpUp.Execute(commands.UpConfig{}, storage.State{})
-				Expect(err).To(MatchError("Save state after retrieving azs: watermelon"))
 			})
 		})
 	})
