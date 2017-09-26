@@ -24,157 +24,178 @@ var _ = Describe("Client", func() {
 			client = gcp.NewClientWithInjectedComputeClient(computeClient, "some-project-id", "some-zone")
 		})
 
-		It("does not return an error when the bosh director is the only vm on the network", func() {
-			networkName := "some-network"
-			directorName := "some-bosh-director"
+		Context("when the bosh director is the only vm on the network", func() {
+			var networkName string
 
-			boshString := "bosh"
-			boshInitString := "bosh-init"
+			BeforeEach(func() {
+				networkName = "some-network"
+				directorName := "some-bosh-director"
 
-			computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
-				Items: []*compute.Instance{
-					{
-						Name: directorName,
-						NetworkInterfaces: []*compute.NetworkInterface{
-							{
-								Network: "some-other-network",
+				boshString := "bosh"
+				boshInitString := "bosh-init"
+
+				computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
+					Items: []*compute.Instance{
+						{
+							Name: directorName,
+							NetworkInterfaces: []*compute.NetworkInterface{
+								{
+									Network: "some-other-network",
+								},
+								{
+									Network: fmt.Sprintf("http://some-host/%s", networkName),
+								},
 							},
-							{
-								Network: fmt.Sprintf("http://some-host/%s", networkName),
+							Metadata: &compute.Metadata{
+								Items: []*compute.MetadataItems{
+									{
+										Key:   "deployment",
+										Value: &boshString,
+									},
+									{
+										Key:   "director",
+										Value: &boshInitString,
+									},
+								},
 							},
 						},
-						Metadata: &compute.Metadata{
-							Items: []*compute.MetadataItems{
+						{
+							Name: "other-network-vm",
+							NetworkInterfaces: []*compute.NetworkInterface{
 								{
-									Key:   "deployment",
-									Value: &boshString,
+									Network: "some-other-network",
 								},
-								{
-									Key:   "director",
-									Value: &boshInitString,
-								},
+							},
+							Metadata: &compute.Metadata{
+								Items: []*compute.MetadataItems{},
 							},
 						},
 					},
-					{
-						Name: "other-network-vm",
-						NetworkInterfaces: []*compute.NetworkInterface{
-							{
-								Network: "some-other-network",
-							},
-						},
-						Metadata: &compute.Metadata{
-							Items: []*compute.MetadataItems{},
-						},
-					},
-				},
-			}
+				}
+			})
 
-			err := client.ValidateSafeToDelete(networkName, "some-env-id")
+			It("does not return an error ", func() {
+				err := client.ValidateSafeToDelete(networkName, "some-env-id")
 
-			Expect(err).NotTo(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
-		It("returns helpful error message when instances other than bosh director exist in network", func() {
-			networkName := "some-network"
-			directorName := "some-bosh-director"
-			deploymentName := "some-deployment"
-			vmName := "some-vm"
-			nonBOSHVMName := "some-non-bosh-vm"
+		Context("when instances other than bosh director exist in network", func() {
+			var (
+				networkName    string
+				vmName         string
+				deploymentName string
+				nonBOSHVMName  string
+			)
 
-			boshString := "bosh"
-			boshInitString := "bosh-init"
+			BeforeEach(func() {
+				networkName = "some-network"
+				directorName := "some-bosh-director"
+				deploymentName = "some-deployment"
+				vmName = "some-vm"
+				nonBOSHVMName = "some-non-bosh-vm"
 
-			computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
-				Items: []*compute.Instance{
-					{
-						Name: directorName,
-						NetworkInterfaces: []*compute.NetworkInterface{
-							{
-								Network: "some-other-network",
-							},
-							{
-								Network: fmt.Sprintf("http://some-host/%s", networkName),
-							},
-						},
-						Metadata: &compute.Metadata{
-							Items: []*compute.MetadataItems{
+				boshString := "bosh"
+				boshInitString := "bosh-init"
+
+				computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
+					Items: []*compute.Instance{
+						{
+							Name: directorName,
+							NetworkInterfaces: []*compute.NetworkInterface{
 								{
-									Key:   "deployment",
-									Value: &boshString,
+									Network: "some-other-network",
 								},
 								{
-									Key:   "director",
-									Value: &boshInitString,
+									Network: fmt.Sprintf("http://some-host/%s", networkName),
 								},
 							},
-						},
-					},
-					{
-						Name: vmName,
-						NetworkInterfaces: []*compute.NetworkInterface{
-							{
-								Network: "some-other-network",
-							},
-							{
-								Network: fmt.Sprintf("http://some-host/%s", networkName),
-							},
-						},
-						Metadata: &compute.Metadata{
-							Items: []*compute.MetadataItems{
-								{
-									Key:   "deployment",
-									Value: &deploymentName,
-								},
-								{
-									Key:   "director",
-									Value: &directorName,
+							Metadata: &compute.Metadata{
+								Items: []*compute.MetadataItems{
+									{
+										Key:   "deployment",
+										Value: &boshString,
+									},
+									{
+										Key:   "director",
+										Value: &boshInitString,
+									},
 								},
 							},
 						},
-					},
-					{
-						Name: nonBOSHVMName,
-						NetworkInterfaces: []*compute.NetworkInterface{
-							{
-								Network: "some-other-network",
+						{
+							Name: vmName,
+							NetworkInterfaces: []*compute.NetworkInterface{
+								{
+									Network: "some-other-network",
+								},
+								{
+									Network: fmt.Sprintf("http://some-host/%s", networkName),
+								},
 							},
-							{
-								Network: fmt.Sprintf("http://some-host/%s", networkName),
+							Metadata: &compute.Metadata{
+								Items: []*compute.MetadataItems{
+									{
+										Key:   "deployment",
+										Value: &deploymentName,
+									},
+									{
+										Key:   "director",
+										Value: &directorName,
+									},
+								},
 							},
 						},
-						Metadata: &compute.Metadata{
-							Items: []*compute.MetadataItems{},
-						},
-					},
-					{
-						Name: "other-network-vm",
-						NetworkInterfaces: []*compute.NetworkInterface{
-							{
-								Network: "some-other-network",
+						{
+							Name: nonBOSHVMName,
+							NetworkInterfaces: []*compute.NetworkInterface{
+								{
+									Network: "some-other-network",
+								},
+								{
+									Network: fmt.Sprintf("http://some-host/%s", networkName),
+								},
+							},
+							Metadata: &compute.Metadata{
+								Items: []*compute.MetadataItems{},
 							},
 						},
-						Metadata: &compute.Metadata{
-							Items: []*compute.MetadataItems{},
+						{
+							Name: "other-network-vm",
+							NetworkInterfaces: []*compute.NetworkInterface{
+								{
+									Network: "some-other-network",
+								},
+							},
+							Metadata: &compute.Metadata{
+								Items: []*compute.MetadataItems{},
+							},
 						},
 					},
-				},
-			}
+				}
+			})
 
-			err := client.ValidateSafeToDelete(networkName, "some-env-id")
+			It("returns a helpful error message", func() {
+				err := client.ValidateSafeToDelete(networkName, "some-env-id")
 
-			Expect(err).To(MatchError(fmt.Sprintf(`bbl environment is not safe to delete; vms still exist in network:
+				Expect(err).To(MatchError(fmt.Sprintf(`bbl environment is not safe to delete; vms still exist in network:
 %s (deployment: %s)
 %s (not managed by bosh)`, vmName, deploymentName, nonBOSHVMName)))
+			})
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when gcp client list instances fails", func() {
-				computeClient.ListInstancesCall.Returns.Error = errors.New("fails to list instances")
-				err := client.ValidateSafeToDelete("some-network", "some-env-id")
-				Expect(err).To(MatchError("fails to list instances"))
+			Context("when gcp client list instances fails", func() {
+				BeforeEach(func() {
+					computeClient.ListInstancesCall.Returns.Error = errors.New("fails to list instances")
+				})
+
+				It("returns an error", func() {
+					err := client.ValidateSafeToDelete("some-network", "some-env-id")
+					Expect(err).To(MatchError("fails to list instances"))
+				})
 			})
 		})
 	})
-
 })

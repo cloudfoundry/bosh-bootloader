@@ -12,18 +12,22 @@ import (
 
 var _ = Describe("ExecutorError", func() {
 	Describe("Error", func() {
-		It("returns just the internal error message when debug is true", func() {
-			err := errors.New("some-error")
-			executorError := terraform.NewExecutorError("", err, true)
+		Context("when debug is true", func() {
+			It("returns just the internal error message", func() {
+				err := errors.New("some-error")
+				executorError := terraform.NewExecutorError("", err, true)
 
-			Expect(executorError.Error()).To(Equal(err.Error()))
+				Expect(executorError.Error()).To(Equal(err.Error()))
+			})
 		})
 
-		It("returns the internal error message and mentions the --debug flag when debug is false", func() {
-			err := errors.New("some-error")
-			executorError := terraform.NewExecutorError("", err, false)
+		Context("when debug is false", func() {
+			It("returns the internal error message and mentions the --debug flag", func() {
+				err := errors.New("some-error")
+				executorError := terraform.NewExecutorError("", err, false)
 
-			Expect(executorError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output")))
+				Expect(executorError.Error()).To(Equal(fmt.Sprintf("%s\n%s", err.Error(), "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output")))
+			})
 		})
 	})
 
@@ -54,11 +58,12 @@ var _ = Describe("ExecutorError", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when tf state file does not exist", func() {
-				executorError := terraform.NewExecutorError("/fake/file/name", nil, true)
-
-				_, err := executorError.TFState()
-				Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+			Context("when tf state file does not exist", func() {
+				It("returns an error", func() {
+					executorError := terraform.NewExecutorError("/fake/file/name", nil, true)
+					_, err := executorError.TFState()
+					Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+				})
 			})
 		})
 	})

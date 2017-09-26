@@ -265,48 +265,76 @@ var _ = Describe("Store", func() {
 		})
 
 		Context("failure cases", func() {
-			It("fails when json marshalling doesn't work", func() {
-				storage.SetMarshalIndent(func(state interface{}, prefix string, indent string) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal JSON")
+			Context("when json marshalling fails", func() {
+				BeforeEach(func() {
+					storage.SetMarshalIndent(func(state interface{}, prefix string, indent string) ([]byte, error) {
+						return []byte{}, errors.New("failed to marshal JSON")
+					})
 				})
-				err := store.Set(storage.State{
-					IAAS: "aws",
+
+				It("returns an error", func() {
+					err := store.Set(storage.State{
+						IAAS: "aws",
+					})
+					Expect(err).To(MatchError("failed to marshal JSON"))
 				})
-				Expect(err).To(MatchError("failed to marshal JSON"))
 			})
 
-			It("fails when the directory does not exist", func() {
-				store = storage.NewStore("non-valid-dir")
-				err := store.Set(storage.State{})
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			Context("when the directory does not exist", func() {
+				BeforeEach(func() {
+					storage.SetMarshalIndent(func(state interface{}, prefix string, indent string) ([]byte, error) {
+						return []byte{}, errors.New("failed to marshal JSON")
+					})
+				})
+
+				It("returns an error", func() {
+					store = storage.NewStore("non-valid-dir")
+					err := store.Set(storage.State{})
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
 			})
 
-			It("fails to open the bbl-state.json file", func() {
-				err := os.Chmod(tempDir, 0000)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = store.Set(storage.State{
-					Stack: storage.Stack{
-						Name: "some-stack-name",
-					},
+			Context("when it fails to open the bbl-state.json file", func() {
+				BeforeEach(func() {
+					err := os.Chmod(tempDir, 0000)
+					Expect(err).NotTo(HaveOccurred())
 				})
-				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+
+				It("returns an error", func() {
+					err := store.Set(storage.State{
+						Stack: storage.Stack{
+							Name: "some-stack-name",
+						},
+					})
+					Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				})
 			})
 		})
 	})
 
 	Describe("GCP", func() {
 		Describe("Empty", func() {
-			It("returns true when all fields are blank", func() {
-				gcp := storage.GCP{}
-				empty := gcp.Empty()
-				Expect(empty).To(BeTrue())
+			var gcp storage.GCP
+			Context("when all fields are blank", func() {
+				BeforeEach(func() {
+					gcp = storage.GCP{}
+				})
+
+				It("returns true", func() {
+					empty := gcp.Empty()
+					Expect(empty).To(BeTrue())
+				})
 			})
 
-			It("returns false when at least one field is present", func() {
-				gcp := storage.GCP{ServiceAccountKey: "some-account-key"}
-				empty := gcp.Empty()
-				Expect(empty).To(BeFalse())
+			Context("when at least one field is present", func() {
+				BeforeEach(func() {
+					gcp = storage.GCP{ServiceAccountKey: "some-account-key"}
+				})
+
+				It("returns false", func() {
+					empty := gcp.Empty()
+					Expect(empty).To(BeFalse())
+				})
 			})
 		})
 	})
@@ -452,25 +480,31 @@ var _ = Describe("Store", func() {
 		})
 
 		Context("failure cases", func() {
-			It("fails when the directory does not exist", func() {
-				_, err := storage.GetState("some-fake-directory")
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			Context("when the directory does not exist", func() {
+				It("returns an error", func() {
+					_, err := storage.GetState("some-fake-directory")
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
 			})
 
-			It("fails to open the bbl-state.json file", func() {
-				err := os.Chmod(tempDir, 0000)
-				Expect(err).NotTo(HaveOccurred())
+			Context("when it fails to open the bbl-state.json file", func() {
+				It("returns an error", func() {
+					err := os.Chmod(tempDir, 0000)
+					Expect(err).NotTo(HaveOccurred())
 
-				_, err = storage.GetState(tempDir)
-				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+					_, err = storage.GetState(tempDir)
+					Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				})
 			})
 
-			It("fails to decode the bbl-state.json file", func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
+			Context("when it fails to decode the bbl-state.json file", func() {
+				It("returns an error", func() {
+					err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
 
-				_, err = storage.GetState(tempDir)
-				Expect(err).To(MatchError(ContainSubstring("invalid character")))
+					_, err = storage.GetState(tempDir)
+					Expect(err).To(MatchError(ContainSubstring("invalid character")))
+				})
 			})
 		})
 	})

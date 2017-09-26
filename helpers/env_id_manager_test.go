@@ -116,49 +116,68 @@ var _ = Describe("EnvIDManager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the NetworkClient cannot check if a network exists", func() {
-				networkClient.CheckExistsCall.Returns.Error = errors.New("failed to get network list")
-
-				_, err := envIDManager.Sync(storage.State{
-					IAAS: "gcp",
-				}, "existing")
-
-				Expect(err).To(MatchError("failed to get network list"))
-			})
-
-			It("returns an error when the infrastructure manager cannot verify stack existence", func() {
-				infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check stack existence")
-
-				_, err := envIDManager.Sync(storage.State{
-					IAAS: "aws",
-				}, "existing")
-
-				Expect(err).To(MatchError("failed to check stack existence"))
-			})
-
-			It("returns an error with a helpful message when an invalid name is provided", func() {
-				_, err := envIDManager.Sync(storage.State{}, "some_bad_name")
-
-				Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
-			})
-
-			It("returns an error when the env id generator fails", func() {
-				envIDGenerator.GenerateCall.Returns.Error = errors.New("failed to generate")
-				_, err := envIDManager.Sync(storage.State{}, "")
-
-				Expect(err).To(MatchError("failed to generate"))
-			})
-
-			It("returns an error when regex match string fails", func() {
-				helpers.SetMatchString(func(string, string) (bool, error) {
-					return false, errors.New("failed to match string")
+			Context("when the NetworkClient cannot check if a network exists", func() {
+				BeforeEach(func() {
+					networkClient.CheckExistsCall.Returns.Error = errors.New("failed to get network list")
 				})
 
-				_, err := envIDManager.Sync(storage.State{}, "some-name")
+				It("returns an error", func() {
+					_, err := envIDManager.Sync(storage.State{
+						IAAS: "gcp",
+					}, "existing")
 
-				Expect(err).To(MatchError("failed to match string"))
+					Expect(err).To(MatchError("failed to get network list"))
+				})
+			})
 
-				helpers.ResetMatchString()
+			Context("when the infrastructure manager cannot verify stack existence", func() {
+				BeforeEach(func() {
+					infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check stack existence")
+				})
+
+				It("returns an error", func() {
+					_, err := envIDManager.Sync(storage.State{
+						IAAS: "aws",
+					}, "existing")
+
+					Expect(err).To(MatchError("failed to check stack existence"))
+				})
+			})
+
+			Context("when an invalid name is provided", func() {
+				It("returns an error with a helpful message", func() {
+					_, err := envIDManager.Sync(storage.State{}, "some_bad_name")
+
+					Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
+				})
+			})
+
+			Context("when the env id generator fails", func() {
+				BeforeEach(func() {
+					envIDGenerator.GenerateCall.Returns.Error = errors.New("failed to generate")
+				})
+
+				It("returns an error", func() {
+					_, err := envIDManager.Sync(storage.State{}, "")
+
+					Expect(err).To(MatchError("failed to generate"))
+				})
+			})
+
+			Context("when regex match string fails", func() {
+				BeforeEach(func() {
+					helpers.SetMatchString(func(string, string) (bool, error) {
+						return false, errors.New("failed to match string")
+					})
+				})
+
+				It("returns an error", func() {
+					_, err := envIDManager.Sync(storage.State{}, "some-name")
+
+					Expect(err).To(MatchError("failed to match string"))
+
+					helpers.ResetMatchString()
+				})
 			})
 		})
 	})

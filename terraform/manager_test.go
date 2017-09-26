@@ -461,25 +461,31 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the terraform installed is less than the minimum", func() {
-				executor.VersionCall.Returns.Version = "0.0.1"
+			Context("when terraform version is less than the minimum", func() {
+				It("returns an error", func() {
+					executor.VersionCall.Returns.Version = "0.0.1"
 
-				err := manager.ValidateVersion()
-				Expect(err).To(MatchError("Terraform version must be at least v0.10.0"))
+					err := manager.ValidateVersion()
+					Expect(err).To(MatchError("Terraform version must be at least v0.10.0"))
+				})
 			})
 
-			It("fast fails if the terraform executor fails to get the version", func() {
-				executor.VersionCall.Returns.Error = errors.New("cannot get version")
+			Context("when terraform executor fails to get the version", func() {
+				It("fast fails", func() {
+					executor.VersionCall.Returns.Error = errors.New("cannot get version")
 
-				err := manager.ValidateVersion()
-				Expect(err).To(MatchError("cannot get version"))
+					err := manager.ValidateVersion()
+					Expect(err).To(MatchError("cannot get version"))
+				})
 			})
 
-			It("fast fails when the version cannot be parsed by go-semver", func() {
-				executor.VersionCall.Returns.Version = "lol.5.2"
+			Context("when terraform version cannot be parsed by go-semver", func() {
+				It("fast fails", func() {
+					executor.VersionCall.Returns.Version = "lol.5.2"
 
-				err := manager.ValidateVersion()
-				Expect(err.Error()).To(ContainSubstring("invalid syntax"))
+					err := manager.ValidateVersion()
+					Expect(err.Error()).To(ContainSubstring("invalid syntax"))
+				})
 			})
 		})
 	})

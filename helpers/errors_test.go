@@ -10,14 +10,18 @@ import (
 
 var _ = Describe("Errors", func() {
 	Describe("Error", func() {
-		It("returns the error string when there is one error", func() {
-			errors := helpers.NewErrors("this is an error")
-			Expect(errors.Error()).To(Equal("this is an error"))
+		Context("when there is one error", func() {
+			It("returns the error string", func() {
+				errors := helpers.NewErrors("this is an error")
+				Expect(errors.Error()).To(Equal("this is an error"))
+			})
 		})
 
-		It("returns a string representation of the errors when there are multiple errors", func() {
-			errors := helpers.NewErrors("this is an error", "this is also an error")
-			Expect(errors.Error()).To(Equal("the following errors occurred:\nthis is an error,\nthis is also an error"))
+		Context("when there are multiple errors", func() {
+			It("returns a string representation of the errors ", func() {
+				errors := helpers.NewErrors("this is an error", "this is also an error")
+				Expect(errors.Error()).To(Equal("the following errors occurred:\nthis is an error,\nthis is also an error"))
+			})
 		})
 	})
 

@@ -112,15 +112,17 @@ var _ = Describe("Run", func() {
 		Expect(outputBufferContents).To(ContainSubstring("apply some-arg"))
 	})
 
-	It("redirects command stdout to provided stdout when debug is true", func() {
-		err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"}, true)
-		Expect(err).NotTo(HaveOccurred())
+	Context("when debug is true", func() {
+		It("redirects command stdout to provided stdout", func() {
+			err := cmd.Run(stdout, "/tmp", []string{"apply", "some-arg"}, true)
+			Expect(err).NotTo(HaveOccurred())
 
-		Expect(stdout).To(MatchRegexp("working directory: (.*)/tmp"))
-		Expect(stdout).To(ContainSubstring("apply some-arg"))
+			Expect(stdout).To(MatchRegexp("working directory: (.*)/tmp"))
+			Expect(stdout).To(ContainSubstring("apply some-arg"))
+		})
 	})
 
-	Context("failure case", func() {
+	Context("when terraform fails", func() {
 		BeforeEach(func() {
 			setFastFailTerraform(true)
 		})
@@ -129,7 +131,7 @@ var _ = Describe("Run", func() {
 			setFastFailTerraform(false)
 		})
 
-		It("returns an error and redirects command stderr to the provided buffer when terraform fails", func() {
+		It("returns an error and redirects command stderr to the provided buffer", func() {
 			err := cmd.Run(stdout, "", []string{"fast-fail"}, false)
 			Expect(err).To(MatchError("exit status 1"))
 
@@ -137,12 +139,14 @@ var _ = Describe("Run", func() {
 			Expect(outputBufferContents).To(ContainSubstring("failed to terraform"))
 		})
 
-		It("redirects command stderr to provided stderr and buffer when debug is true", func() {
-			_ = cmd.Run(stdout, "", []string{"fast-fail"}, true)
-			Expect(stderr).To(ContainSubstring("failed to terraform"))
+		Context("when debug is true", func() {
+			It("redirects command stderr to provided stderr and buffer", func() {
+				_ = cmd.Run(stdout, "", []string{"fast-fail"}, true)
+				Expect(stderr).To(ContainSubstring("failed to terraform"))
 
-			outputBufferContents := string(outputBuffer.Bytes())
-			Expect(outputBufferContents).To(ContainSubstring("failed to terraform"))
+				outputBufferContents := string(outputBuffer.Bytes())
+				Expect(outputBufferContents).To(ContainSubstring("failed to terraform"))
+			})
 		})
 	})
 })

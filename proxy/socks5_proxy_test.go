@@ -107,20 +107,29 @@ var _ = Describe("Socks5Proxy", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when it cannot parse the private key", func() {
-				err := socks5Proxy.Start("some-bad-private-key", sshServerURL)
-				Expect(err).To(MatchError("ssh: no key found"))
+			Context("when it cannot parse the private key", func() {
+				It("returns an error", func() {
+					err := socks5Proxy.Start("some-bad-private-key", sshServerURL)
+					Expect(err).To(MatchError("ssh: no key found"))
+				})
 			})
 
-			It("returns an error when it cannot get the host key", func() {
-				hostKeyGetter.GetCall.Returns.Error = errors.New("failed to get host key")
-				err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
-				Expect(err).To(MatchError("failed to get host key"))
+			Context("when it cannot get the host key", func() {
+				BeforeEach(func() {
+					hostKeyGetter.GetCall.Returns.Error = errors.New("failed to get host key")
+				})
+
+				It("returns an error", func() {
+					err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
+					Expect(err).To(MatchError("failed to get host key"))
+				})
 			})
 
-			It("returns an error when it cannot dial the jumpbox url", func() {
-				err := socks5Proxy.Start(sshPrivateKey, "some-bad-url")
-				Expect(err).To(MatchError("dial tcp: address some-bad-url: missing port in address"))
+			Context("when it cannot dial the jumpbox url", func() {
+				It("returns an error", func() {
+					err := socks5Proxy.Start(sshPrivateKey, "some-bad-url")
+					Expect(err).To(MatchError("dial tcp: address some-bad-url: missing port in address"))
+				})
 			})
 
 			Context("when it cannot start a socks5 proxy server", func() {
@@ -149,13 +158,15 @@ var _ = Describe("Socks5Proxy", func() {
 				})
 			})
 
-			It("returns an error when netListen fails", func() {
-				proxy.SetNetListen(func(string, string) (net.Listener, error) {
-					return nil, errors.New("failed to listen")
-				})
+			Context("when netListen fails", func() {
+				It("returns an error", func() {
+					proxy.SetNetListen(func(string, string) (net.Listener, error) {
+						return nil, errors.New("failed to listen")
+					})
 
-				err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
-				Expect(err).To(MatchError("failed to listen"))
+					err := socks5Proxy.Start(sshPrivateKey, sshServerURL)
+					Expect(err).To(MatchError("failed to listen"))
+				})
 			})
 		})
 	})

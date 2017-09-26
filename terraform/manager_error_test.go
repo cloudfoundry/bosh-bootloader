@@ -45,14 +45,19 @@ var _ = Describe("ManagerError", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when ExecutorError.TFState returns an error", func() {
-				executorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
-				managerError := terraform.NewManagerError(storage.State{
-					IAAS: "gcp",
-				}, executorError)
+			Context("when tfstate call returns an error", func() {
+				BeforeEach(func() {
+					executorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
+				})
 
-				_, err := managerError.BBLState()
-				Expect(err).To(MatchError("failed to get tf state"))
+				It("returns an error", func() {
+					managerError := terraform.NewManagerError(storage.State{
+						IAAS: "gcp",
+					}, executorError)
+
+					_, err := managerError.BBLState()
+					Expect(err).To(MatchError("failed to get tf state"))
+				})
 			})
 		})
 	})

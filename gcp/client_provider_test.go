@@ -51,51 +51,60 @@ var _ = Describe("ClientProvider", func() {
 	})
 
 	Describe("SetConfig", func() {
+		var serviceAccountKey string
+
+		BeforeEach(func() {
+			serviceAccountKey = fmt.Sprintf(`{
+				"type": "service_account",
+				"private_key": %q
+			}`, privateKey)
+		})
+
 		AfterEach(func() {
 			gcp.ResetGCPHTTPClient()
 		})
 
-		It("returns an error when the service account key is not valid json", func() {
-			err := clientProvider.SetConfig("1231:123", "proj-id", "some-region", "some-zone")
-			Expect(err).To(MatchError("invalid character ':' after top-level value"))
-		})
-
-		It("returns an error when a service could not be created", func() {
-			gcp.SetGCPHTTPClient(func(*jwt.Config) *http.Client {
-				return nil
+		Context("when the service account key is not valid json", func() {
+			It("returns an error", func() {
+				err := clientProvider.SetConfig("1231:123", "proj-id", "some-region", "some-zone")
+				Expect(err).To(MatchError("invalid character ':' after top-level value"))
 			})
-			err := clientProvider.SetConfig(`{"type": "service_account"}`, "proj-id", "some-region", "some-zone")
-			Expect(err).To(MatchError("client is nil"))
 		})
 
-		It("returns an error when the zone is invalid", func() {
-			serviceAccountKey := fmt.Sprintf(`{
-				"type": "service_account",
-				"private_key": %q
-			}`, privateKey)
+		Context("when a service could not be created", func() {
+			BeforeEach(func() {
+				gcp.SetGCPHTTPClient(func(*jwt.Config) *http.Client {
+					return nil
+				})
+			})
 
-			err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "region-1", "bad-zone")
-			Expect(err).To(MatchError(ContainSubstring("googleapi")))
-			Expect(err).To(MatchError(ContainSubstring("404")))
+			It("returns an error", func() {
+				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "some-region", "some-zone")
+				Expect(err).To(MatchError("client is nil"))
+			})
 		})
 
-		It("returns an error when the region is invalid", func() {
-			serviceAccountKey := fmt.Sprintf(`{
-				"type": "service_account",
-				"private_key": %q
-			}`, privateKey)
-			err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "bad-region", "zone-2b")
-			Expect(err).To(MatchError(ContainSubstring("googleapi")))
-			Expect(err).To(MatchError(ContainSubstring("404")))
+		Context("when the zone is invalid", func() {
+			It("returns an error", func() {
+				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "region-1", "bad-zone")
+				Expect(err).To(MatchError(ContainSubstring("googleapi")))
+				Expect(err).To(MatchError(ContainSubstring("404")))
+			})
 		})
 
-		It("returns an error when the zone does not belong to the region", func() {
-			serviceAccountKey := fmt.Sprintf(`{
-				"type": "service_account",
-				"private_key": %q
-			}`, privateKey)
-			err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "region-1", "zone-2b")
-			Expect(err).To(MatchError(ContainSubstring("Zone zone-2b is not in region region-1.")))
+		Context("when the region is invalid", func() {
+			It("returns an error ", func() {
+				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "bad-region", "zone-2b")
+				Expect(err).To(MatchError(ContainSubstring("googleapi")))
+				Expect(err).To(MatchError(ContainSubstring("404")))
+			})
+		})
+
+		Context("when the zone does not belong to the region", func() {
+			It("returns an error", func() {
+				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "region-1", "zone-2b")
+				Expect(err).To(MatchError(ContainSubstring("Zone zone-2b is not in region region-1.")))
+			})
 		})
 	})
 })

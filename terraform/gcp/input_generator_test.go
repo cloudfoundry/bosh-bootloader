@@ -72,31 +72,35 @@ var _ = Describe("InputGenerator", func() {
 		Expect(string(credentials)).To(Equal("some-service-account-key"))
 	})
 
-	It("returns a map containing cert and key variables when cert/key are provided", func() {
-		state.LB.Cert = "some-cert"
-		state.LB.Key = "some-key"
+	Context("when cert and key are provided", func() {
+		BeforeEach(func() {
+			state.LB.Cert = "some-cert"
+			state.LB.Key = "some-key"
+		})
 
-		inputs, err := inputGenerator.Generate(state)
-		Expect(err).NotTo(HaveOccurred())
+		It("returns a map containing cert and key variables", func() {
+			inputs, err := inputGenerator.Generate(state)
+			Expect(err).NotTo(HaveOccurred())
 
-		Expect(inputs).To(Equal(map[string]string{
-			"env_id":                      state.EnvID,
-			"project_id":                  state.GCP.ProjectID,
-			"region":                      state.GCP.Region,
-			"zone":                        state.GCP.Zone,
-			"credentials":                 filepath.Join(tempDir, "credentials.json"),
-			"ssl_certificate":             filepath.Join(tempDir, "cert"),
-			"ssl_certificate_private_key": filepath.Join(tempDir, "key"),
-			"system_domain":               state.LB.Domain,
-		}))
+			Expect(inputs).To(Equal(map[string]string{
+				"env_id":                      state.EnvID,
+				"project_id":                  state.GCP.ProjectID,
+				"region":                      state.GCP.Region,
+				"zone":                        state.GCP.Zone,
+				"credentials":                 filepath.Join(tempDir, "credentials.json"),
+				"ssl_certificate":             filepath.Join(tempDir, "cert"),
+				"ssl_certificate_private_key": filepath.Join(tempDir, "key"),
+				"system_domain":               state.LB.Domain,
+			}))
 
-		sslCertificate, err := ioutil.ReadFile(inputs["ssl_certificate"])
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(sslCertificate)).To(Equal("some-cert"))
+			sslCertificate, err := ioutil.ReadFile(inputs["ssl_certificate"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(sslCertificate)).To(Equal("some-cert"))
 
-		sslCertificatePrivateKey, err := ioutil.ReadFile(inputs["ssl_certificate_private_key"])
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(sslCertificatePrivateKey)).To(Equal("some-key"))
+			sslCertificatePrivateKey, err := ioutil.ReadFile(inputs["ssl_certificate_private_key"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(sslCertificatePrivateKey)).To(Equal("some-key"))
+		})
 	})
 
 	Context("failure cases", func() {
