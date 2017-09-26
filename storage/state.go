@@ -28,28 +28,6 @@ type logger interface {
 	Println(message string)
 }
 
-type AWS struct {
-	AccessKeyID     string `json:"accessKeyId,omitempty"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty"`
-	Region          string `json:"region"`
-}
-
-type Azure struct {
-	ClientID       string `json:"clientId"`
-	ClientSecret   string `json:"clientSecret"`
-	Location       string `json:"location"`
-	SubscriptionID string `json:"subscriptionId"`
-	TenantID       string `json:"tenantId"`
-}
-
-type GCP struct {
-	ServiceAccountKey string   `json:"serviceAccountKey,omitempty"`
-	ProjectID         string   `json:"projectID,omitempty"`
-	Zone              string   `json:"zone"`
-	Region            string   `json:"region"`
-	Zones             []string `json:"zones"`
-}
-
 type Stack struct {
 	Name            string `json:"name"`
 	LBType          string `json:"lbType"`
@@ -137,10 +115,6 @@ func (s Store) Set(state State) error {
 	}
 
 	return nil
-}
-
-func (g GCP) Empty() bool {
-	return g.ServiceAccountKey == "" && g.ProjectID == "" && g.Region == "" && g.Zone == ""
 }
 
 var GetStateLogger logger
