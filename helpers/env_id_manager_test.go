@@ -63,12 +63,12 @@ var _ = Describe("EnvIDManager", func() {
 					infrastructureManager.ExistsCall.Returns.Exists = true
 					_, err := envIDManager.Sync(storage.State{
 						IAAS: "aws",
-					}, "existing")
+					}, "existing-env")
 
 					Expect(infrastructureManager.ExistsCall.CallCount).To(Equal(1))
-					Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("stack-existing"))
+					Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("stack-existing-env"))
 
-					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
+					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
 				})
 
 				It("fails if an environment with that name was already created by terraform", func() {
@@ -82,6 +82,32 @@ var _ = Describe("EnvIDManager", func() {
 					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env-vpc"))
 
 					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
+				})
+			})
+
+			Context("for azure", func() {
+				PIt("fails if an environment with that name was already created", func() {
+					//The Azure client requires a Check Exists
+					//This should replace the test below with the same description
+					//once CheckExists is implemented.
+					networkClient.CheckExistsCall.Returns.Exists = true
+					_, err := envIDManager.Sync(storage.State{
+						IAAS: "azure",
+					}, "existing-env")
+
+					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
+					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env-bosh-vn"))
+
+					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
+				})
+
+				It("fails if an environment with that name was already created", func() {
+					_, err := envIDManager.Sync(storage.State{
+						IAAS: "azure",
+					}, "existing-env")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(0))
 				})
 			})
 		})
