@@ -15,7 +15,7 @@ type templateBuilder interface {
 }
 
 type stackManager interface {
-	Update(stackName string, template templates.Template, tags Tags) error
+	Update(stackName string, template templates.Template) error
 	WaitForCompletion(stackName string, sleepInterval time.Duration, action string) error
 	Describe(stackName string) (Stack, error)
 	Delete(stackName string) error
@@ -44,7 +44,7 @@ func (m InfrastructureManager) Update(keyPairName string, azs []string, stackNam
 
 	template := m.templateBuilder.Build(keyPairName, azs, lbType, lbCertificateARN, iamUserName, envID, boshAZ)
 
-	if err := m.stackManager.Update(stackName, template, Tags{{Key: bblTagKey, Value: envID}}); err != nil {
+	if err := m.stackManager.Update(stackName, template); err != nil {
 		return Stack{}, err
 	}
 

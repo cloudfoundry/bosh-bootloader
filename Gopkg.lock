@@ -27,15 +27,9 @@
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
-  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/ec2query","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/cloudformation","service/ec2","service/elb","service/iam","service/sts"]
-  revision = "124a6dabcd822d9b88383d8e2186e696a12d791d"
-  version = "v1.10.44"
-
-[[projects]]
-  name = "github.com/blang/semver"
-  packages = ["."]
-  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
-  version = "v3.5.1"
+  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/defaults","aws/ec2metadata","aws/request","aws/session","private/endpoints","private/protocol/ec2query","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","private/signer/v4","private/waiter","service/cloudformation","service/ec2","service/elb","service/iam"]
+  revision = "c4c1a1a2a076858fe18b2be674d833c796c45b09"
+  version = "v1.0.9"
 
 [[projects]]
   branch = "master"
@@ -65,7 +59,7 @@
   branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "17ce1425424ab154092bbb43af630bd647f3bb0d"
+  revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
 
 [[projects]]
   name = "github.com/jessevdk/go-flags"
@@ -99,33 +93,21 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/pivotal-cf-experimental/bosh-test"
-  packages = ["bosh"]
-  revision = "0b91b5ae384879ea6f42069cab59ca858b5fc425"
-
-[[projects]]
-  branch = "master"
   name = "github.com/pivotal-cf-experimental/gomegamatchers"
   packages = [".","internal/deepequal","internal/diff","internal/prettyprint"]
   revision = "0f378b26330f63917a0b0a09bec871e9b594b212"
 
 [[projects]]
-  name = "github.com/square/certstrap"
-  packages = ["pkix"]
-  revision = "25e0caa16bbb614597a4de836537084a16b28ca0"
-  version = "v1.1.0"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["curve25519","ed25519","ed25519/internal/edwards25519","ssh"]
-  revision = "faadfbdc035307d901e69eea569f5dda451a3ee3"
+  revision = "847319b7fc94cab682988f93da778204da164588"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","html","html/atom","html/charset","proxy"]
-  revision = "859d1a86bb617c0c20d154590c3c5d3fcb670b07"
+  revision = "0744d001aa8470aaa53df28d32e5ceeb8af9bd70"
 
 [[projects]]
   branch = "master"
@@ -137,19 +119,19 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "062cd7e4e68206d8bab9b18396626e855c992658"
+  revision = "429f518978ab01db8bb6f44b66785088e7fba58b"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["encoding","encoding/charmap","encoding/htmlindex","encoding/internal","encoding/internal/identifier","encoding/japanese","encoding/korean","encoding/simplifiedchinese","encoding/traditionalchinese","encoding/unicode","internal/gen","internal/tag","internal/utf8internal","language","runes","transform","unicode/cldr"]
-  revision = "ab5ac5f9a8deb4855a60fab02bc61a4ec770bd49"
+  revision = "1cbadb444a806fd9430d14ad08967ed91da4fa0a"
 
 [[projects]]
   branch = "master"
   name = "google.golang.org/api"
   packages = ["compute/v1","gensupport","googleapi","googleapi/internal/uritemplates"]
-  revision = "654f863362977d69086620b5f72f13e911da2410"
+  revision = "cec5cc05d57604ba2d2eaaf5381d3248fac4814d"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -166,6 +148,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "64e40f4a07ac9788633724bae92532c99db3a4a709f9a6749344165bd2708a8c"
+  inputs-digest = "3abc5a813c7c80c40b082893d3001363cee18797159d960015592ec2a152e229"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -35,7 +35,6 @@ type StackManager struct {
 		Receives struct {
 			StackName string
 			Template  templates.Template
-			Tags      cloudformation.Tags
 		}
 		Returns struct {
 			Error error
@@ -82,10 +81,9 @@ func (m *StackManager) CreateOrUpdate(stackName string, template templates.Templ
 	return m.CreateOrUpdateCall.Returns.Error
 }
 
-func (m *StackManager) Update(stackName string, template templates.Template, tags cloudformation.Tags) error {
+func (m *StackManager) Update(stackName string, template templates.Template) error {
 	m.UpdateCall.Receives.StackName = stackName
 	m.UpdateCall.Receives.Template = template
-	m.UpdateCall.Receives.Tags = tags
 
 	return m.UpdateCall.Returns.Error
 }

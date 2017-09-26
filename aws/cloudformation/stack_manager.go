@@ -160,7 +160,7 @@ func (s StackManager) create(name string, template templates.Template, tags Tags
 	return nil
 }
 
-func (s StackManager) Update(name string, template templates.Template, tags Tags) error {
+func (s StackManager) Update(name string, template templates.Template) error {
 	s.logger.Step("updating cloudformation stack")
 
 	templateJson, err := json.Marshal(&template)
@@ -168,13 +168,10 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 		return err
 	}
 
-	awsTags := tags.toAWSTags()
-
 	params := &cloudformation.UpdateStackInput{
 		StackName:    aws.String(name),
 		Capabilities: []*string{aws.String("CAPABILITY_IAM"), aws.String("CAPABILITY_NAMED_IAM")},
 		TemplateBody: aws.String(string(templateJson)),
-		Tags:         awsTags,
 	}
 
 	_, err = s.client.UpdateStack(params)
@@ -182,7 +179,6 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 		switch err.(type) {
 		case awserr.RequestFailure:
 			requestFailure := err.(awserr.RequestFailure)
-
 			if requestFailure.StatusCode() == 400 && requestFailure.Code() == "ValidationError" {
 				switch requestFailure.Message() {
 				case "No updates are to be performed.":
@@ -192,7 +188,6 @@ func (s StackManager) Update(name string, template templates.Template, tags Tags
 				default:
 				}
 			}
-
 			return err
 		default:
 			return err
