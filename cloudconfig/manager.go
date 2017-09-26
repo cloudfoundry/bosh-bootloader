@@ -2,7 +2,6 @@ package cloudconfig
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -95,8 +94,8 @@ func (m Manager) Generate(state storage.State) (string, error) {
 	}
 
 	args := []string{
-		"interpolate", fmt.Sprintf("%s/cloud-config.yml", workingDir),
-		"-o", fmt.Sprintf("%s/ops.yml", workingDir),
+		"interpolate", filepath.Join(workingDir, "cloud-config.yml"),
+		"-o", filepath.Join(workingDir, "ops.yml"),
 	}
 
 	err = m.command.Run(buf, workingDir, args)

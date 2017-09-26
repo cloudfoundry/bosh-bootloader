@@ -111,7 +111,7 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 	var jumpboxSetupFiles = map[string][]byte{
 		"jumpbox-deployment-vars.yml": []byte(interpolateInput.JumpboxDeploymentVars),
 		"jumpbox.yml":                 MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml"),
-		"cpi.yml":                     MustAsset(fmt.Sprintf("vendor/github.com/cppforlife/jumpbox-deployment/%s/cpi.yml", interpolateInput.IAAS)),
+		"cpi.yml":                     MustAsset(filepath.Join("vendor/github.com/cppforlife/jumpbox-deployment", interpolateInput.IAAS, "cpi.yml")),
 	}
 
 	if interpolateInput.Variables != "" {
@@ -162,7 +162,7 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 		"deployment-vars.yml":                    []byte(interpolateInput.DirectorDeploymentVars),
 		"user-ops-file.yml":                      []byte(interpolateInput.OpsFile),
 		"bosh.yml":                               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
-		"cpi.yml":                                MustAsset(fmt.Sprintf("vendor/github.com/cloudfoundry/bosh-deployment/%s/cpi.yml", interpolateInput.IAAS)),
+		"cpi.yml":                                MustAsset(filepath.Join("vendor/github.com/cloudfoundry/bosh-deployment", interpolateInput.IAAS, "cpi.yml")),
 		"iam-instance-profile.yml":               MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
 		"gcp-bosh-director-ephemeral-ip-ops.yml": []byte(gcpBoshDirectorEphemeralIPOps),
 		"aws-bosh-director-ephemeral-ip-ops.yml": []byte(awsBoshDirectorEphemeralIPOps),
@@ -268,8 +268,8 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, err
 		return CreateEnvOutput{}, err
 	}
 
-	statePath := fmt.Sprintf("%s/state.json", tempDir)
-	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
+	statePath := filepath.Join(tempDir, "state.json")
+	variablesPath := filepath.Join(tempDir, "variables.yml")
 	manifestPath := filepath.Join(tempDir, "manifest.yml")
 
 	args := []string{
@@ -322,8 +322,8 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 		return err
 	}
 
-	statePath := fmt.Sprintf("%s/state.json", tempDir)
-	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
+	statePath := filepath.Join(tempDir, "state.json")
+	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "manifest.yml")
 
 	args := []string{
@@ -378,8 +378,8 @@ func (e Executor) writePreviousFiles(state map[string]interface{}, variables, ma
 		return "", err
 	}
 
-	statePath := fmt.Sprintf("%s/state.json", tempDir)
-	variablesPath := fmt.Sprintf("%s/variables.yml", tempDir)
+	statePath := filepath.Join(tempDir, "state.json")
+	variablesPath := filepath.Join(tempDir, "variables.yml")
 	boshManifestPath := filepath.Join(tempDir, "manifest.yml")
 
 	if state != nil {
