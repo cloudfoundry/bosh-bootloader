@@ -7,9 +7,45 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
+type templates struct {
+	vars         string
+	jumpbox      string
+	boshDirector string
+	cfLB         string
+	cfDNS        string
+	concourseLB  string
+}
+
 type TemplateGenerator struct{}
 
-const backendBase = `resource "google_compute_backend_service" "router-lb-backend-service" {
+func NewTemplateGenerator() TemplateGenerator {
+	return TemplateGenerator{}
+}
+
+func (t TemplateGenerator) Generate(state storage.State) string {
+	tmpls := readTemplates()
+
+	template := strings.Join([]string{tmpls.vars, tmpls.boshDirector, tmpls.jumpbox}, "\n")
+
+	switch state.LB.Type {
+	case "concourse":
+		template = strings.Join([]string{template, tmpls.concourseLB}, "\n")
+	case "cf":
+		instanceGroups := t.GenerateInstanceGroups(state.GCP.Zones)
+		backendService := t.GenerateBackendService(state.GCP.Zones)
+
+		template = strings.Join([]string{template, tmpls.cfLB, instanceGroups, backendService}, "\n")
+
+		if state.LB.Domain != "" {
+			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
+		}
+	}
+
+	return template
+}
+
+func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
+	backendBase := `resource "google_compute_backend_service" "router-lb-backend-service" {
   name        = "${var.env_id}-router-lb"
   port_name   = "https"
   protocol    = "HTTPS"
@@ -19,33 +55,6 @@ const backendBase = `resource "google_compute_backend_service" "router-lb-backen
   health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
 }
 `
-
-func NewTemplateGenerator() TemplateGenerator {
-	return TemplateGenerator{}
-}
-
-func (t TemplateGenerator) Generate(state storage.State) string {
-	template := strings.Join([]string{VarsTemplate, BOSHDirectorTemplate}, "\n")
-
-	switch state.LB.Type {
-	case "concourse":
-		template = strings.Join([]string{template, ConcourseLBTemplate}, "\n")
-	case "cf":
-		instanceGroups := t.GenerateInstanceGroups(state.GCP.Zones)
-		backendService := t.GenerateBackendService(state.GCP.Zones)
-
-		template = strings.Join([]string{template, CFLBTemplate, instanceGroups, backendService}, "\n")
-
-		if state.LB.Domain != "" {
-			template = strings.Join([]string{template, CFDNSTemplate}, "\n")
-		}
-	}
-
-	template = strings.Join([]string{template, JumpboxTemplate}, "\n")
-	return template
-}
-
-func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
 	var backends string
 	for i := 0; i < len(zoneList); i++ {
 		backends = fmt.Sprintf(`%s
@@ -75,4 +84,16 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 	}
 
 	return strings.Join(groups, "\n")
+}
+
+func readTemplates() templates {
+	tmpls := templates{}
+	tmpls.vars = string(MustAsset("templates/vars_template.tf"))
+	tmpls.jumpbox = string(MustAsset("templates/jumpbox_template.tf"))
+	tmpls.boshDirector = string(MustAsset("templates/bosh_director_template.tf"))
+	tmpls.cfLB = string(MustAsset("templates/cf_lb_template.tf"))
+	tmpls.cfDNS = string(MustAsset("templates/cf_dns_template.tf"))
+	tmpls.concourseLB = string(MustAsset("templates/concourse_lb_template.tf"))
+
+	return tmpls
 }

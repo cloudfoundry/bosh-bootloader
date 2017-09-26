@@ -156,6 +156,18 @@ resource "google_compute_firewall" "internal" {
   target_tags = ["${var.env_id}-internal"]
 }
 
+resource "google_compute_address" "jumpbox-ip" {
+  name = "${var.env_id}-jumpbox-ip"
+}
+
+output "jumpbox_url" {
+    value = "${google_compute_address.jumpbox-ip.address}:22"
+}
+
+output "external_ip" {
+    value = "${google_compute_address.jumpbox-ip.address}"
+}
+
 variable "ssl_certificate" {
   type = "string"
 }
@@ -531,16 +543,4 @@ resource "google_dns_record_set" "wildcard-ws-dns" {
   managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
 
   rrdatas = ["${google_compute_address.cf-ws.address}"]
-}
-
-resource "google_compute_address" "jumpbox-ip" {
-  name = "${var.env_id}-jumpbox-ip"
-}
-
-output "jumpbox_url" {
-    value = "${google_compute_address.jumpbox-ip.address}:22"
-}
-
-output "external_ip" {
-    value = "${google_compute_address.jumpbox-ip.address}"
 }

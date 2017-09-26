@@ -43,21 +43,31 @@ type TemplateData struct {
 	AWSNATAMIs                     map[string]string
 }
 
+type templates struct {
+	base           string
+	lbSubnet       string
+	cfLB           string
+	cfDNS          string
+	concourseLB    string
+	sslCertificate string
+}
+
 func NewTemplateGenerator() TemplateGenerator {
 	return TemplateGenerator{}
 }
 
 func (tg TemplateGenerator) Generate(state storage.State) string {
-	t := BaseTemplate
+	tmpls := readTemplates()
+	tmpl := tmpls.base
 
 	switch state.LB.Type {
 	case "concourse":
-		t = strings.Join([]string{t, LBSubnetTemplate, ConcourseLBTemplate, SSLCertificateTemplate}, "\n")
+		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.concourseLB, tmpls.sslCertificate}, "\n")
 	case "cf":
-		t = strings.Join([]string{t, LBSubnetTemplate, CFLBTemplate, SSLCertificateTemplate}, "\n")
+		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate}, "\n")
 
 		if state.LB.Domain != "" {
-			t = strings.Join([]string{t, CFDNSTemplate}, "\n")
+			tmpl = strings.Join([]string{tmpl, tmpls.cfDNS}, "\n")
 		}
 	}
 
@@ -96,18 +106,30 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		templateData.IgnoreSSLCertificateProperties = `ignore_changes = ["certificate_body", "certificate_chain", "private_key"]`
 	}
 
-	tmpl := template.New("descriptions")
-	tmpl, err = tmpl.Parse(t)
+	t := template.New("descriptions")
+	t, err = t.Parse(tmpl)
 	if err != nil {
 		panic(err)
 	}
 
 	finalTemplate := bytes.Buffer{}
 
-	err = tmpl.Execute(&finalTemplate, templateData)
+	err = t.Execute(&finalTemplate, templateData)
 	if err != nil {
 		panic(err)
 	}
 
 	return finalTemplate.String()
+}
+
+func readTemplates() templates {
+	tmpls := templates{}
+	tmpls.base = string(MustAsset("templates/base_template.tf"))
+	tmpls.lbSubnet = string(MustAsset("templates/lb_subnet_template.tf"))
+	tmpls.concourseLB = string(MustAsset("templates/concourse_lb_template.tf"))
+	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate_template.tf"))
+	tmpls.cfLB = string(MustAsset("templates/cf_lb_template.tf"))
+	tmpls.cfDNS = string(MustAsset("templates/cf_dns_template.tf"))
+
+	return tmpls
 }
