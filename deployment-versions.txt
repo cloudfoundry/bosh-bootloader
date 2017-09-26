@@ -1,2 +1,2 @@
 - *Current jumpbox-deployment: cppforlife/jumpbox-deployment@8c7c9495c5f8f81f1a48ba662900a98e6c9a2453*
-- *Current bosh-deployment: cloudfoundry/bosh-deployment@ec0f998451512ca67fb6a883604bc2c6726c63ab*
+- *Current bosh-deployment: cloudfoundry/bosh-deployment@096b55060b77d438af385c010841cf8608c63dfb*
