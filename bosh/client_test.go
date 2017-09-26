@@ -135,46 +135,55 @@ var _ = Describe("Client", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the response is not StatusOK", func() {
-				failStatus = http.StatusNotFound
+			Context("when the response is not StatusOK", func() {
+				BeforeEach(func() {
+					failStatus = http.StatusNotFound
+				})
 
-				fakeBOSH.StartTLS()
-
-				client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
-				_, err := client.Info()
-				Expect(err).To(MatchError("unexpected http response 404 Not Found"))
+				It("returns an error", func() {
+					fakeBOSH.StartTLS()
+					client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
+					_, err := client.Info()
+					Expect(err).To(MatchError("unexpected http response 404 Not Found"))
+				})
 			})
 
-			It("returns an error when the url cannot be parsed", func() {
-				fakeBOSH.StartTLS()
+			Context("when the url cannot be parsed", func() {
+				It("returns an error", func() {
+					fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(httpClient, "%%%", "some-username", "some-password", "some-false")
-				_, err := client.Info()
-				Expect(err.(*url.Error).Op).To(Equal("parse"))
+					client := bosh.NewClient(httpClient, "%%%", "some-username", "some-password", "some-false")
+					_, err := client.Info()
+					Expect(err.(*url.Error).Op).To(Equal("parse"))
+				})
 			})
 
-			It("returns an error when the request fails", func() {
-				fakeBOSH.StartTLS()
+			Context("when the request fails", func() {
+				It("returns an error", func() {
+					fakeBOSH.StartTLS()
 
-				client := bosh.NewClient(httpClient, "fake://some-url", "some-username", "some-password", string(ca))
-				_, err := client.Info()
-				Expect(err).To(MatchError("made 1 attempts, last error: Get fake://some-url/info: unsupported protocol scheme \"fake\""))
+					client := bosh.NewClient(httpClient, "fake://some-url", "some-username", "some-password", string(ca))
+					_, err := client.Info()
+					Expect(err).To(MatchError("made 1 attempts, last error: Get fake://some-url/info: unsupported protocol scheme \"fake\""))
+				})
 			})
 
-			It("returns an error when it cannot parse info json", func() {
-				failStatus = http.StatusOK
+			Context("when it cannot parse info json", func() {
+				It("returns an error", func() {
+					failStatus = http.StatusOK
 
-				fakeBOSH.StartTLS()
-				client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
-				_, err := client.Info()
-				Expect(err).To(MatchError(ContainSubstring("invalid character")))
+					fakeBOSH.StartTLS()
+					client := bosh.NewClient(httpClient, fakeBOSH.URL, "some-username", "some-password", string(ca))
+					_, err := client.Info()
+					Expect(err).To(MatchError(ContainSubstring("invalid character")))
+				})
 			})
 		})
 	})
 
 	Describe("UpdateCloudConfig", func() {
 		Context("when a jumpbox is enabled", func() {
-			It("uses UAA to get a token when it uploads the cloud-config", func() {
+			It("uses UAA to get a token in order to upload the cloud-config", func() {
 				dialer := &fakes.Socks5Client{}
 				dialer.DialCall.Stub = func(network, addr string) (net.Conn, error) {
 					u, _ := url.Parse(fakeBOSH.URL)
@@ -201,7 +210,7 @@ var _ = Describe("Client", func() {
 
 			Context("when an error occurs", func() {
 				Context("when a non-201 occurs", func() {
-					It("returns an error ", func() {
+					It("returns an error", func() {
 						fakeBOSH.StartTLS()
 
 						client := bosh.NewClient(httpClient, fakeBOSH.URL, "", "", string(ca))

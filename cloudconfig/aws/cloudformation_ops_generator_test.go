@@ -104,31 +104,51 @@ var _ = Describe("CloudFormationOpsGenerator", func() {
 		)
 
 		Context("failure cases", func() {
-			It("returns an error when az retriever fails to retrieve", func() {
-				availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("failed to retrieve")
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to retrieve"))
-			})
-
-			It("returns an error when the infrastructure manager fails to describe stack", func() {
-				infrastructureManager.DescribeCall.Returns.Error = errors.New("failed to describe")
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to describe"))
-			})
-
-			It("returns an error when it fails to parse a cidr block", func() {
-				infrastructureManager.DescribeCall.Returns.Stack.Outputs["InternalSubnet1CIDR"] = "****"
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError(`"****" cannot parse CIDR block`))
-			})
-
-			It("returns an error when ops fails to marshal", func() {
-				aws.SetMarshal(func(interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal")
+			Context("when az retriever fails to retrieve", func() {
+				BeforeEach(func() {
+					availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("failed to retrieve")
 				})
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to marshal"))
-				aws.ResetMarshal()
+
+				It("returns an error", func() {
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to retrieve"))
+				})
+			})
+
+			Context("when the infrastructure manager fails to describe stack", func() {
+				BeforeEach(func() {
+					infrastructureManager.DescribeCall.Returns.Error = errors.New("failed to describe")
+				})
+
+				It("returns an error", func() {
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to describe"))
+				})
+			})
+
+			Context("when it fails to parse a cidr block", func() {
+				BeforeEach(func() {
+					infrastructureManager.DescribeCall.Returns.Stack.Outputs["InternalSubnet1CIDR"] = "****"
+				})
+
+				It("returns an error", func() {
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError(`"****" cannot parse CIDR block`))
+				})
+			})
+
+			Context("when ops fails to marshal", func() {
+				BeforeEach(func() {
+					aws.SetMarshal(func(interface{}) ([]byte, error) {
+						return []byte{}, errors.New("failed to marshal")
+					})
+				})
+
+				It("returns an error", func() {
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to marshal"))
+					aws.ResetMarshal()
+				})
 			})
 		})
 	})

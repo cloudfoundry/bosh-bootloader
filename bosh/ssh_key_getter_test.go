@@ -31,10 +31,15 @@ var _ = Describe("SSHKeyGetter", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the Jumpbox variables yaml cannot be unmarshaled", func() {
-				state.Jumpbox.Variables = "invalid yaml"
-				_, err := sshKeyGetter.Get(state)
-				Expect(err).To(MatchError(ContainSubstring("line 1: cannot unmarshal !!str `invalid...`")))
+			Context("when the Jumpbox variables yaml cannot be unmarshaled", func() {
+				BeforeEach(func() {
+					state.Jumpbox.Variables = "invalid yaml"
+				})
+
+				It("returns an error", func() {
+					_, err := sshKeyGetter.Get(state)
+					Expect(err).To(MatchError(ContainSubstring("line 1: cannot unmarshal !!str `invalid...`")))
+				})
 			})
 		})
 	})

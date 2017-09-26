@@ -37,11 +37,15 @@ var _ = Describe("UserPolicyDeleter", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when it fails to delete", func() {
-				iamClient.DeleteUserPolicyReturns(nil, errors.New("failed to delete user policy"))
+			Context("when it fails to delete", func() {
+				BeforeEach(func() {
+					iamClient.DeleteUserPolicyReturns(nil, errors.New("failed to delete user policy"))
+				})
 
-				err := deleter.Delete("some-username", "some-policy-name")
-				Expect(err).To(MatchError("failed to delete user policy"))
+				It("returns an error", func() {
+					err := deleter.Delete("some-username", "some-policy-name")
+					Expect(err).To(MatchError("failed to delete user policy"))
+				})
 			})
 		})
 	})

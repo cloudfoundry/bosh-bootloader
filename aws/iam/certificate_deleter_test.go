@@ -34,11 +34,15 @@ var _ = Describe("CertificateDeleter", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when it fails to delete", func() {
-				iamClient.DeleteServerCertificateReturns(nil, errors.New("failed to delete certificate"))
+			Context("when it fails to delete", func() {
+				BeforeEach(func() {
+					iamClient.DeleteServerCertificateReturns(nil, errors.New("failed to delete certificate"))
+				})
 
-				err := deleter.Delete("some-certificate")
-				Expect(err).To(MatchError("failed to delete certificate"))
+				It("returns an error", func() {
+					err := deleter.Delete("some-certificate")
+					Expect(err).To(MatchError("failed to delete certificate"))
+				})
 			})
 		})
 	})

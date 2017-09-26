@@ -53,19 +53,29 @@ var _ = Describe("AzureOpsGenerator", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when terraform output provider fails to retrieve", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to output"))
+			Context("when terraform output provider fails to retrieve", func() {
+				BeforeEach(func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
+				})
+
+				It("returns an error", func() {
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to output"))
+				})
 			})
 
-			It("returns an error when ops fail to marshal", func() {
-				azure.SetMarshal(func(interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal")
+			Context("when ops fail to marshal", func() {
+				BeforeEach(func() {
+					azure.SetMarshal(func(interface{}) ([]byte, error) {
+						return []byte{}, errors.New("failed to marshal")
+					})
 				})
-				_, err := opsGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to marshal"))
-				azure.ResetMarshal()
+
+				It("returns an error", func() {
+					_, err := opsGenerator.Generate(storage.State{})
+					Expect(err).To(MatchError("failed to marshal"))
+					azure.ResetMarshal()
+				})
 			})
 		})
 	})

@@ -32,14 +32,18 @@ var _ = Describe("HostKeyGetter", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when parse private key fails", func() {
-				_, err := hostKeyGetter.Get("%%%", sshServerAddr)
-				Expect(err).To(MatchError("ssh: no key found"))
+			Context("when parse private key fails", func() {
+				It("returns an error", func() {
+					_, err := hostKeyGetter.Get("%%%", sshServerAddr)
+					Expect(err).To(MatchError("ssh: no key found"))
+				})
 			})
 
-			It("returns an error when dial fails", func() {
-				_, err := hostKeyGetter.Get(sshPrivateKey, "some-bad-url")
-				Expect(err).To(MatchError("dial tcp: address some-bad-url: missing port in address"))
+			Context("when dial fails", func() {
+				It("returns an error", func() {
+					_, err := hostKeyGetter.Get(sshPrivateKey, "some-bad-url")
+					Expect(err).To(MatchError("dial tcp: address some-bad-url: missing port in address"))
+				})
 			})
 		})
 	})

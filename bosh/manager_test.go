@@ -233,25 +233,37 @@ kms_key_arn: some-kms-arn
 		})
 
 		Context("when an error occurs", func() {
-			It("returns an error when the executor's interpolate call fails", func() {
-				boshExecutor.DirectorInterpolateCall.Returns.Error = errors.New("failed to interpolate")
+			Context("when the executor's interpolate call fails", func() {
+				BeforeEach(func() {
+					boshExecutor.DirectorInterpolateCall.Returns.Error = errors.New("failed to interpolate")
+				})
 
-				_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
-				Expect(err).To(MatchError("failed to interpolate"))
+				It("returns an error", func() {
+					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
+					Expect(err).To(MatchError("failed to interpolate"))
+				})
 			})
 
-			It("returns an error when the executor's create env call fails with non create env error", func() {
-				boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
+			Context("when the executor's create env call fails with non create env error", func() {
+				BeforeEach(func() {
+					boshExecutor.CreateEnvCall.Returns.Error = errors.New("failed to create")
+				})
 
-				_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
-				Expect(err).To(MatchError("failed to create"))
+				It("returns an error", func() {
+					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
+					Expect(err).To(MatchError("failed to create"))
+				})
 			})
 
-			It("returns an error when interpolate outputs invalid yaml", func() {
-				boshExecutor.DirectorInterpolateCall.Returns.Output.Variables = "%%%"
+			Context("when interpolate outputs invalid yaml", func() {
+				BeforeEach(func() {
+					boshExecutor.DirectorInterpolateCall.Returns.Output.Variables = "%%%"
+				})
 
-				_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
-				Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
+				It("returns an error", func() {
+					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
+					Expect(err).To(MatchError("failed to get director outputs:\nyaml: could not find expected directive name"))
+				})
 			})
 		})
 	})
@@ -524,13 +536,17 @@ gcp_credentials_json: some-credential-json
 				})
 			})
 
-			It("returns an error when the delete env fails", func() {
-				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+			Context("when the delete env fails", func() {
+				BeforeEach(func() {
+					boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+				})
 
-				err := boshManager.DeleteJumpbox(storage.State{
-					Jumpbox: storage.Jumpbox{},
-				}, map[string]interface{}{"director_address": "nick-da-quick"})
-				Expect(err).To(MatchError("failed to delete"))
+				It("returns an error", func() {
+					err := boshManager.DeleteJumpbox(storage.State{
+						Jumpbox: storage.Jumpbox{},
+					}, map[string]interface{}{"director_address": "nick-da-quick"})
+					Expect(err).To(MatchError("failed to delete"))
+				})
 			})
 		})
 	})
@@ -616,19 +632,27 @@ gcp_credentials_json: some-credential-json
 				})
 			})
 
-			It("returns an error when the delete env fails", func() {
-				boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+			Context("when the delete env fails", func() {
+				BeforeEach(func() {
+					boshExecutor.DeleteEnvCall.Returns.Error = errors.New("failed to delete")
+				})
 
-				err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
-				Expect(err).To(MatchError("failed to delete"))
+				It("returns an error", func() {
+					err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
+					Expect(err).To(MatchError("failed to delete"))
+				})
 			})
 
 			Context("when a jumpbox deployment exists", func() {
-				It("returns an error when the socks5Proxy fails to start", func() {
-					socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
+				Context("when the socks5Proxy fails to start", func() {
+					BeforeEach(func() {
+						socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
+					})
 
-					err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
-					Expect(err).To(MatchError("failed to start socks5Proxy"))
+					It("returns an error", func() {
+						err := boshManager.DeleteDirector(incomingState, map[string]interface{}{"director_address": "nick-da-quick"})
+						Expect(err).To(MatchError("failed to start socks5Proxy"))
+					})
 				})
 			})
 		})
@@ -880,10 +904,15 @@ region: some-region
 			})
 		})
 
-		It("returns an error when executor fails", func() {
-			boshExecutor.VersionCall.Returns.Error = errors.New("failed to execute")
-			_, err := boshManager.Version()
-			Expect(err).To(MatchError("failed to execute"))
+		Context("when executor fails", func() {
+			BeforeEach(func() {
+				boshExecutor.VersionCall.Returns.Error = errors.New("failed to execute")
+			})
+
+			It("returns an error", func() {
+				_, err := boshManager.Version()
+				Expect(err).To(MatchError("failed to execute"))
+			})
 		})
 	})
 })

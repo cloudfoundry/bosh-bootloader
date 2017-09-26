@@ -73,209 +73,260 @@ var _ = Describe("CertificateValidator", func() {
 				})
 			})
 
-			It("does not return an error when cert, key, and chain are valid", func() {
-				err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainFilePath)
+			Context("when cert, key, and chain are valid", func() {
+				It("does not return an error", func() {
+					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainFilePath)
 
-				Expect(err).NotTo(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 
-			It("returns an error if cert and key are not provided", func() {
-				err := certificateValidator.Validate("some-command-name", "", "", "")
-				expectedErr := multierror.NewMultiError("some-command-name")
-				expectedErr.Add(errors.New("--cert is required"))
-				expectedErr.Add(errors.New("--key is required"))
+			Context("if cert and key are not provided", func() {
+				It("returns an error", func() {
+					err := certificateValidator.Validate("some-command-name", "", "", "")
+					expectedErr := multierror.NewMultiError("some-command-name")
+					expectedErr.Add(errors.New("--cert is required"))
+					expectedErr.Add(errors.New("--key is required"))
 
-				Expect(err).To(Equal(expectedErr))
+					Expect(err).To(Equal(expectedErr))
+				})
 			})
 
-			It("returns an error if the cert key file does not exist", func() {
-				err := certificateValidator.Validate("some-command-name", "/some/fake/cert/path", "/some/fake/key/path", "")
-				expectedErr := multierror.NewMultiError("some-command-name")
-				expectedErr.Add(errors.New(`certificate file not found: "/some/fake/cert/path"`))
-				expectedErr.Add(errors.New(`key file not found: "/some/fake/key/path"`))
+			Context("if the cert key file does not exist", func() {
+				It("returns an error", func() {
+					err := certificateValidator.Validate("some-command-name", "/some/fake/cert/path", "/some/fake/key/path", "")
+					expectedErr := multierror.NewMultiError("some-command-name")
+					expectedErr.Add(errors.New(`certificate file not found: "/some/fake/cert/path"`))
+					expectedErr.Add(errors.New(`key file not found: "/some/fake/key/path"`))
 
-				Expect(err).To(Equal(expectedErr))
+					Expect(err).To(Equal(expectedErr))
+				})
 			})
 
-			It("returns an error if the cert and key are not regular files", func() {
-				err := certificateValidator.Validate("some-command-name", "/dev/null", "/dev/null", "")
-				expectedErr := multierror.NewMultiError("some-command-name")
-				expectedErr.Add(errors.New(`certificate is not a regular file: "/dev/null"`))
-				expectedErr.Add(errors.New(`key is not a regular file: "/dev/null"`))
+			Context("if the cert and key are not regular files", func() {
+				It("returns an error", func() {
+					err := certificateValidator.Validate("some-command-name", "/dev/null", "/dev/null", "")
+					expectedErr := multierror.NewMultiError("some-command-name")
+					expectedErr.Add(errors.New(`certificate is not a regular file: "/dev/null"`))
+					expectedErr.Add(errors.New(`key is not a regular file: "/dev/null"`))
 
-				Expect(err).To(Equal(expectedErr))
+					Expect(err).To(Equal(expectedErr))
+				})
 			})
 
-			It("returns an error if the cert and key are not PEM encoded", func() {
-				err := certificateValidator.Validate("some-command-name", certNonPEMFilePath, keyNonPEMFilePath, "")
+			Context("if the cert and key are not PEM encoded", func() {
+				It("returns an error", func() {
+					err := certificateValidator.Validate("some-command-name", certNonPEMFilePath, keyNonPEMFilePath, "")
 
-				expectedErr := multierror.NewMultiError("some-command-name")
-				expectedErr.Add(fmt.Errorf(`certificate is not PEM encoded: %q`, certNonPEMFilePath))
-				expectedErr.Add(fmt.Errorf(`key is not PEM encoded: %q`, keyNonPEMFilePath))
+					expectedErr := multierror.NewMultiError("some-command-name")
+					expectedErr.Add(fmt.Errorf(`certificate is not PEM encoded: %q`, certNonPEMFilePath))
+					expectedErr.Add(fmt.Errorf(`key is not PEM encoded: %q`, keyNonPEMFilePath))
 
-				Expect(err).To(Equal(expectedErr))
+					Expect(err).To(Equal(expectedErr))
+				})
 			})
 
-			It("returns an error if the key and cert are not compatible", func() {
-				err := certificateValidator.Validate("some-command-name", certFilePath, otherKeyFilePath, "")
+			Context("if the key and cert are not compatible", func() {
+				It("returns an error", func() {
+					err := certificateValidator.Validate("some-command-name", certFilePath, otherKeyFilePath, "")
 
-				expectedErr := multierror.NewMultiError("some-command-name")
-				expectedErr.Add(errors.New("tls: private key does not match public key"))
-				Expect(err).To(Equal(expectedErr))
+					expectedErr := multierror.NewMultiError("some-command-name")
+					expectedErr.Add(errors.New("tls: private key does not match public key"))
+					Expect(err).To(Equal(expectedErr))
+				})
 			})
 
 			Context("chain is provided", func() {
-				It("returns an error when chain file does not exist", func() {
-					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, "/some/fake/chain/path")
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New(`chain file not found: "/some/fake/chain/path"`))
+				Context("when chain file does not exist", func() {
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, "/some/fake/chain/path")
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(errors.New(`chain file not found: "/some/fake/chain/path"`))
 
-					Expect(err).To(Equal(expectedErr))
+						Expect(err).To(Equal(expectedErr))
+					})
 				})
 
-				It("returns an error when chain file is not a regular file", func() {
-					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, "/dev/null")
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New(`chain is not a regular file: "/dev/null"`))
+				Context("when chain file is not a regular file", func() {
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, "/dev/null")
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(errors.New(`chain is not a regular file: "/dev/null"`))
 
-					Expect(err).To(Equal(expectedErr))
+						Expect(err).To(Equal(expectedErr))
+					})
 				})
 
-				It("returns an error if the chain is not PEM encoded", func() {
-					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainNonPEMFilePath)
+				Context("if the chain is not PEM encoded", func() {
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainNonPEMFilePath)
 
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(fmt.Errorf(`chain is not PEM encoded: %q`, chainNonPEMFilePath))
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(fmt.Errorf(`chain is not PEM encoded: %q`, chainNonPEMFilePath))
 
-					Expect(err).To(Equal(expectedErr))
+						Expect(err).To(Equal(expectedErr))
+					})
 				})
 
-				It("returns an error if the chain and cert are not compatible", func() {
-					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, otherChainFilePath)
+				Context("if the chain and cert are not compatible", func() {
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, otherChainFilePath)
 
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New("certificate and chain mismatch: x509: certificate signed by unknown authority"))
-					Expect(err).To(Equal(expectedErr))
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(errors.New("certificate and chain mismatch: x509: certificate signed by unknown authority"))
+						Expect(err).To(Equal(expectedErr))
+					})
 				})
 
-				It("returns multiple errors if the cert, key and chain are incompatiable", func() {
-					err := certificateValidator.Validate("some-command-name", certFilePath, otherKeyFilePath, otherChainFilePath)
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New("tls: private key does not match public key"))
-					expectedErr.Add(errors.New("certificate and chain mismatch: x509: certificate signed by unknown authority"))
+				Context("if the cert, key and chain are incompatible", func() {
+					It("returns multiple errors", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, otherKeyFilePath, otherChainFilePath)
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(errors.New("tls: private key does not match public key"))
+						expectedErr.Add(errors.New("certificate and chain mismatch: x509: certificate signed by unknown authority"))
 
-					Expect(err).To(Equal(expectedErr))
+						Expect(err).To(Equal(expectedErr))
+					})
 				})
 			})
 
 			Context("failure cases", func() {
-				It("returns an error when the certificate, key, and chain cannot be read", func() {
-					createTempFile := func() string {
-						file, err := ioutil.TempFile("", "")
+				Context("when the certificate, key, and chain cannot be read", func() {
+					var (
+						certFile  string
+						keyFile   string
+						chainFile string
+					)
+
+					BeforeEach(func() {
+						createTempFile := func() string {
+							file, err := ioutil.TempFile("", "")
+							Expect(err).NotTo(HaveOccurred())
+							defer file.Close()
+
+							err = os.Chmod(file.Name(), 0100)
+							Expect(err).NotTo(HaveOccurred())
+
+							return file.Name()
+						}
+
+						certFile = createTempFile()
+						keyFile = createTempFile()
+						chainFile = createTempFile()
+					})
+
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFile, keyFile, chainFile)
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(fmt.Errorf("open %s: permission denied", certFile))
+						expectedErr.Add(fmt.Errorf("open %s: permission denied", keyFile))
+						expectedErr.Add(fmt.Errorf("open %s: permission denied", chainFile))
+
+						Expect(err).To(Equal(expectedErr))
+					})
+				})
+
+				Context("when file info cannot be retrieved", func() {
+					BeforeEach(func() {
+						certs.SetStat(func(string) (os.FileInfo, error) {
+							return nil, errors.New("failed to retrieve file info")
+						})
+					})
+
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainFilePath)
+
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(fmt.Errorf("failed to retrieve file info: %s", certFilePath))
+						expectedErr.Add(fmt.Errorf("failed to retrieve file info: %s", keyFilePath))
+						expectedErr.Add(fmt.Errorf("failed to retrieve file info: %s", chainFilePath))
+
+						Expect(err).To(Equal(expectedErr))
+					})
+				})
+
+				Context("when the file cannot be read", func() {
+					BeforeEach(func() {
+						certs.SetReadAll(func(io.Reader) ([]byte, error) {
+							return []byte{}, errors.New("bad read")
+						})
+					})
+
+					It("returns an error", func() {
+						err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainFilePath)
+
+						expectedErr := multierror.NewMultiError("some-command-name")
+						expectedErr.Add(fmt.Errorf("bad read: %s", certFilePath))
+						expectedErr.Add(fmt.Errorf("bad read: %s", keyFilePath))
+						expectedErr.Add(fmt.Errorf("bad read: %s", chainFilePath))
+
+						Expect(err).To(Equal(expectedErr))
+					})
+				})
+
+				Context("when provided files are not valid", func() {
+					var file *os.File
+
+					BeforeEach(func() {
+						var err error
+						file, err = ioutil.TempFile("", "")
 						Expect(err).NotTo(HaveOccurred())
 						defer file.Close()
-
-						err = os.Chmod(file.Name(), 0100)
-						Expect(err).NotTo(HaveOccurred())
-
-						return file.Name()
-					}
-
-					certFile := createTempFile()
-					keyFile := createTempFile()
-					chainFile := createTempFile()
-
-					err := certificateValidator.Validate("some-command-name", certFile, keyFile, chainFile)
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(fmt.Errorf("open %s: permission denied", certFile))
-					expectedErr.Add(fmt.Errorf("open %s: permission denied", keyFile))
-					expectedErr.Add(fmt.Errorf("open %s: permission denied", chainFile))
-
-					Expect(err).To(Equal(expectedErr))
-				})
-
-				It("returns an error when file info cannot be retrieved", func() {
-					certs.SetStat(func(string) (os.FileInfo, error) {
-						return nil, errors.New("failed to retrieve file info")
 					})
 
-					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainFilePath)
-
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(fmt.Errorf("failed to retrieve file info: %s", certFilePath))
-					expectedErr.Add(fmt.Errorf("failed to retrieve file info: %s", keyFilePath))
-					expectedErr.Add(fmt.Errorf("failed to retrieve file info: %s", chainFilePath))
-
-					Expect(err).To(Equal(expectedErr))
-				})
-
-				It("returns an error when the file cannot be read", func() {
-					certs.SetReadAll(func(io.Reader) ([]byte, error) {
-						return []byte{}, errors.New("bad read")
-					})
-
-					err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, chainFilePath)
-
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(fmt.Errorf("bad read: %s", certFilePath))
-					expectedErr.Add(fmt.Errorf("bad read: %s", keyFilePath))
-					expectedErr.Add(fmt.Errorf("bad read: %s", chainFilePath))
-
-					Expect(err).To(Equal(expectedErr))
-				})
-
-				It("returns an error when the private key is not valid rsa", func() {
-					file, err := ioutil.TempFile("", "")
-					Expect(err).NotTo(HaveOccurred())
-					defer file.Close()
-
-					err = ioutil.WriteFile(file.Name(), []byte(`
+					Context("when the private key is not valid rsa", func() {
+						BeforeEach(func() {
+							err := ioutil.WriteFile(file.Name(), []byte(`
 -----BEGIN RSA PRIVATE KEY-----
 -----END RSA PRIVATE KEY-----
 				`), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
+							Expect(err).NotTo(HaveOccurred())
+						})
 
-					err = certificateValidator.Validate("some-command-name", certFilePath, file.Name(), chainFilePath)
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New("tls: failed to parse private key"))
+						It("returns an error", func() {
+							err := certificateValidator.Validate("some-command-name", certFilePath, file.Name(), chainFilePath)
+							expectedErr := multierror.NewMultiError("some-command-name")
+							expectedErr.Add(errors.New("tls: failed to parse private key"))
 
-					Expect(err).To(Equal(expectedErr))
-				})
+							Expect(err).To(Equal(expectedErr))
+						})
+					})
 
-				It("returns an error when the certificate is not valid", func() {
-					file, err := ioutil.TempFile("", "")
-					Expect(err).NotTo(HaveOccurred())
-					defer file.Close()
-
-					err = ioutil.WriteFile(file.Name(), []byte(`
+					Context("when the certificate is not valid", func() {
+						BeforeEach(func() {
+							err := ioutil.WriteFile(file.Name(), []byte(`
 -----BEGIN CERTIFICATE-----
 -----END CERTIFICATE-----
 				`), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
+							Expect(err).NotTo(HaveOccurred())
+						})
 
-					err = certificateValidator.Validate("some-command-name", file.Name(), keyFilePath, chainFilePath)
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New("asn1: syntax error: sequence truncated"))
+						It("returns an error", func() {
+							err := certificateValidator.Validate("some-command-name", file.Name(), keyFilePath, chainFilePath)
+							expectedErr := multierror.NewMultiError("some-command-name")
+							expectedErr.Add(errors.New("asn1: syntax error: sequence truncated"))
 
-					Expect(err).To(Equal(expectedErr))
-				})
+							Expect(err).To(Equal(expectedErr))
+						})
+					})
 
-				It("returns an error when the chain is not valid", func() {
-					file, err := ioutil.TempFile("", "")
-					Expect(err).NotTo(HaveOccurred())
-					defer file.Close()
-
-					err = ioutil.WriteFile(file.Name(), []byte(`
+					Context("when the chain is not valid", func() {
+						BeforeEach(func() {
+							err := ioutil.WriteFile(file.Name(), []byte(`
 -----BEGIN CERTIFICATE-----
 -----END CERTIFICATE-----
 				`), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
+							Expect(err).NotTo(HaveOccurred())
+						})
 
-					err = certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, file.Name())
-					expectedErr := multierror.NewMultiError("some-command-name")
-					expectedErr.Add(errors.New("failed to parse chain"))
+						It("returns an error", func() {
+							err := certificateValidator.Validate("some-command-name", certFilePath, keyFilePath, file.Name())
+							expectedErr := multierror.NewMultiError("some-command-name")
+							expectedErr.Add(errors.New("failed to parse chain"))
 
-					Expect(err).To(Equal(expectedErr))
+							Expect(err).To(Equal(expectedErr))
+						})
+					})
 				})
 			})
 		})

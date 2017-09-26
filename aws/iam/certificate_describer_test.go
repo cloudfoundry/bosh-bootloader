@@ -52,48 +52,64 @@ var _ = Describe("CertificateDescriber", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the ServerCertificate is nil", func() {
-				iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
-					ServerCertificate: nil,
-				}, nil)
+			Context("when the ServerCertificate is nil", func() {
+				BeforeEach(func() {
+					iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
+						ServerCertificate: nil,
+					}, nil)
+				})
 
-				_, err := describer.Describe("some-certificate")
-				Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
+				It("returns an error", func() {
+					_, err := describer.Describe("some-certificate")
+					Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
+				})
 			})
 
-			It("returns an error when the ServerCertificateMetadata is nil", func() {
-				iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
-					ServerCertificate: &awsiam.ServerCertificate{
-						ServerCertificateMetadata: nil,
-					},
-				}, nil)
+			Context("when the ServerCertificateMetadata is nil", func() {
+				BeforeEach(func() {
+					iamClient.GetServerCertificateReturns(&awsiam.GetServerCertificateOutput{
+						ServerCertificate: &awsiam.ServerCertificate{
+							ServerCertificateMetadata: nil,
+						},
+					}, nil)
+				})
 
-				_, err := describer.Describe("some-certificate")
-				Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
+				It("returns an error", func() {
+					_, err := describer.Describe("some-certificate")
+					Expect(err).To(MatchError(iam.CertificateDescriptionFailure))
+				})
 			})
 
-			It("returns an error when the certificate cannot be described", func() {
-				iamClient.GetServerCertificateReturns(nil, awserr.NewRequestFailure(
-					awserr.New("boom",
-						"something bad happened",
-						errors.New(""),
-					), 404, "0",
-				))
+			Context("when the certificate cannot be described", func() {
+				BeforeEach(func() {
+					iamClient.GetServerCertificateReturns(nil, awserr.NewRequestFailure(
+						awserr.New("boom",
+							"something bad happened",
+							errors.New(""),
+						), 404, "0",
+					))
+				})
 
-				_, err := describer.Describe("some-certificate")
-				Expect(err).To(MatchError(ContainSubstring("something bad happened")))
+				It("returns an error", func() {
+					_, err := describer.Describe("some-certificate")
+					Expect(err).To(MatchError(ContainSubstring("something bad happened")))
+				})
 			})
 
-			It("returns a CertificateNotFound error when the certificate does not exist", func() {
-				iamClient.GetServerCertificateReturns(nil, awserr.NewRequestFailure(
-					awserr.New("NoSuchEntity",
-						"The Server Certificate with name some-certificate cannot be found.",
-						errors.New(""),
-					), 404, "0",
-				))
+			Context("when the certificate does not exist", func() {
+				BeforeEach(func() {
+					iamClient.GetServerCertificateReturns(nil, awserr.NewRequestFailure(
+						awserr.New("NoSuchEntity",
+							"The Server Certificate with name some-certificate cannot be found.",
+							errors.New(""),
+						), 404, "0",
+					))
+				})
 
-				_, err := describer.Describe("some-certificate")
-				Expect(err).To(MatchError(iam.CertificateNotFound))
+				It("returns a CertificateNotFound error ", func() {
+					_, err := describer.Describe("some-certificate")
+					Expect(err).To(MatchError(iam.CertificateNotFound))
+				})
 			})
 		})
 	})

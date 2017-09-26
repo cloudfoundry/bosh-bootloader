@@ -767,7 +767,7 @@ resource "some-resource-type" "some-addr" {
 					cmd.RunCall.Returns.Errors = []error{errors.New("failed to initialize terraform")}
 				})
 
-				It("returns an error ", func() {
+				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
 					Expect(err).To(MatchError("failed to initialize terraform"))
 				})

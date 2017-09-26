@@ -328,37 +328,47 @@ networks
 		})
 
 		Describe("failure cases", func() {
-			It("fails when trying to run command", func() {
-				cmd.RunReturnsOnCall(0, errors.New("failed to run command"))
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS: "aws",
+			Context("when trying to run a command fails", func() {
+				BeforeEach(func() {
+					cmd.RunReturnsOnCall(0, errors.New("failed to run command"))
 				})
-				Expect(err).To(MatchError("failed to run command"))
+
+				It("returns an error", func() {
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+					_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
+						IAAS: "aws",
+					})
+					Expect(err).To(MatchError("failed to run command"))
+				})
 			})
 
-			It("fails when trying to run the command to interpolate with the user opsfile", func() {
-				cmd.RunReturnsOnCall(1, errors.New("failed to run command"))
-
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS:    "aws",
-					OpsFile: "some-ops-file",
+			Context("when trying to run the command to interpolate with the user opsfile fails", func() {
+				BeforeEach(func() {
+					cmd.RunReturnsOnCall(1, errors.New("failed to run command"))
 				})
-				Expect(err).To(MatchError("failed to run command"))
+
+				It("returns an error", func() {
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+					_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
+						IAAS:    "aws",
+						OpsFile: "some-ops-file",
+					})
+					Expect(err).To(MatchError("failed to run command"))
+				})
 			})
 
-			It("fails when the variables file fails to be read", func() {
-				readFileFunc := func(path string) ([]byte, error) {
-					return []byte{}, errors.New("failed to read variables file")
-				}
+			Context("when the variables file fails to be read", func() {
+				It("returns an error", func() {
+					readFileFunc := func(path string) ([]byte, error) {
+						return []byte{}, errors.New("failed to read variables file")
+					}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-					IAAS: "aws",
+					executor = bosh.NewExecutor(cmd, tempDirFunc, readFileFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+					_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
+						IAAS: "aws",
+					})
+					Expect(err).To(MatchError("failed to read variables file"))
 				})
-				Expect(err).To(MatchError("failed to read variables file"))
 			})
 		})
 	})
@@ -389,40 +399,51 @@ networks
 			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
-		It("fails when the temporary directory cannot be created", func() {
-			tempDirFunc = func(prefix, dir string) (string, error) {
-				return "", errors.New("failed to create temp dir")
-			}
+		Context("when the temporary directory cannot be created", func() {
+			It("returns an error", func() {
+				tempDirFunc = func(prefix, dir string) (string, error) {
+					return "", errors.New("failed to create temp dir")
+				}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-			err := callback(executor)
-			Expect(err).To(MatchError("failed to create temp dir"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+				err := callback(executor)
+				Expect(err).To(MatchError("failed to create temp dir"))
+			})
 		})
 
-		It("fails when the state fails to marshal", func() {
-			marshalFunc := func(input interface{}) ([]byte, error) {
-				return []byte{}, errors.New("failed to marshal state")
-			}
+		Context("when the state fails to marshal", func() {
+			It("returns an error", func() {
+				marshalFunc := func(input interface{}) ([]byte, error) {
+					return []byte{}, errors.New("failed to marshal state")
+				}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, marshalFunc, ioutil.WriteFile)
-			err := callback(executor)
-			Expect(err).To(MatchError("failed to marshal state"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, marshalFunc, ioutil.WriteFile)
+				err := callback(executor)
+				Expect(err).To(MatchError("failed to marshal state"))
+			})
 		})
 
-		It("fails when the state cannot be written to a file", func() {
-			writeFile := func(filename string, contents []byte, mode os.FileMode) error {
-				return errors.New("failed to write file")
-			}
+		Context("when the state cannot be written to a file", func() {
+			It("returns an error", func() {
+				writeFile := func(filename string, contents []byte, mode os.FileMode) error {
+					return errors.New("failed to write file")
+				}
 
-			executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFile)
-			err := callback(executor)
-			Expect(err).To(MatchError("failed to write file"))
+				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFile)
+				err := callback(executor)
+				Expect(err).To(MatchError("failed to write file"))
+			})
 		})
 
-		It("fails when the run command returns an error", func() {
-			cmd.RunReturnsOnCall(0, errors.New("failed to run"))
-			err := callback(executor)
-			Expect(err).To(MatchError("failed to run"))
+		Context("when the run command returns an error", func() {
+			BeforeEach(func() {
+				cmd.RunReturnsOnCall(0, errors.New("failed to run"))
+			})
+
+			It("returns an error", func() {
+				err := callback(executor)
+				Expect(err).To(MatchError("failed to run"))
+			})
 		})
 	}
 
@@ -564,24 +585,28 @@ networks
 				})
 			})
 
-			It("fails when the state cannot be read", func() {
-				readFile := func(filename string) ([]byte, error) {
-					return []byte{}, errors.New("failed to read file")
-				}
+			Context("when the state cannot be read", func() {
+				It("returns an error", func() {
+					readFile := func(filename string) ([]byte, error) {
+						return []byte{}, errors.New("failed to read file")
+					}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("failed to read file"))
+					executor = bosh.NewExecutor(cmd, tempDirFunc, readFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+					_, err := executor.CreateEnv(createEnvInput)
+					Expect(err).To(MatchError("failed to read file"))
+				})
 			})
 
-			It("fails when the state cannot be unmarshaled", func() {
-				unmarshalFunc := func(contents []byte, output interface{}) error {
-					return errors.New("failed to unmarshal")
-				}
+			Context("when the state cannot be unmarshaled", func() {
+				It("returns an error", func() {
+					unmarshalFunc := func(contents []byte, output interface{}) error {
+						return errors.New("failed to unmarshal")
+					}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, unmarshalFunc, json.Marshal, ioutil.WriteFile)
-				_, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("failed to unmarshal"))
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, unmarshalFunc, json.Marshal, ioutil.WriteFile)
+					_, err := executor.CreateEnv(createEnvInput)
+					Expect(err).To(MatchError("failed to unmarshal"))
+				})
 			})
 		})
 	})
@@ -749,30 +774,44 @@ networks
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the temporary directory cannot be created", func() {
-				tempDirFunc = func(prefix, dir string) (string, error) {
-					return "", errors.New("failed to create temp dir")
-				}
+			Context("when the temporary directory cannot be created", func() {
+				It("returns an error", func() {
+					tempDirFunc = func(prefix, dir string) (string, error) {
+						return "", errors.New("failed to create temp dir")
+					}
 
-				executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-				_, err := executor.Version()
-				Expect(err).To(MatchError("failed to create temp dir"))
+					executor = bosh.NewExecutor(cmd, tempDirFunc, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+					_, err := executor.Version()
+					Expect(err).To(MatchError("failed to create temp dir"))
+				})
 			})
 
-			It("returns an error when the run cmd fails", func() {
-				cmd.RunReturns(errors.New("failed to run cmd"))
-				_, err := executor.Version()
-				Expect(err).To(MatchError("failed to run cmd"))
+			Context("when the run cmd fails", func() {
+				BeforeEach(func() {
+					cmd.RunReturns(errors.New("failed to run cmd"))
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Version()
+					Expect(err).To(MatchError("failed to run cmd"))
+				})
 			})
 
-			It("returns a bosh version error when the version cannot be parsed", func() {
-				expectedError := bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
-				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-					stdout.Write([]byte(""))
-					return nil
-				}
-				_, err := executor.Version()
-				Expect(err).To(Equal(expectedError))
+			Context("when the version cannot be parsed", func() {
+				var expectedError error
+
+				BeforeEach(func() {
+					expectedError = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
+					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+						stdout.Write([]byte(""))
+						return nil
+					}
+				})
+
+				It("returns a bosh version error", func() {
+					_, err := executor.Version()
+					Expect(err).To(Equal(expectedError))
+				})
 			})
 		})
 	})

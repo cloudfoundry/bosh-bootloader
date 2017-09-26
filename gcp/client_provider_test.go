@@ -93,7 +93,7 @@ var _ = Describe("ClientProvider", func() {
 		})
 
 		Context("when the region is invalid", func() {
-			It("returns an error ", func() {
+			It("returns an error", func() {
 				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "bad-region", "zone-2b")
 				Expect(err).To(MatchError(ContainSubstring("googleapi")))
 				Expect(err).To(MatchError(ContainSubstring("404")))

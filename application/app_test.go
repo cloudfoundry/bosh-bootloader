@@ -139,16 +139,20 @@ var _ = Describe("App", func() {
 			})
 
 			Context("failure cases", func() {
-				It("prints the usage when a invalid subcommand is passed", func() {
-					app = NewAppWithConfiguration(application.Configuration{
-						Command:         "help",
-						SubcommandFlags: []string{"invalid-command"},
+				Context("when a invalid subcommand is passed", func() {
+					BeforeEach(func() {
+						app = NewAppWithConfiguration(application.Configuration{
+							Command:         "help",
+							SubcommandFlags: []string{"invalid-command"},
+						})
 					})
 
-					err := app.Run()
-					Expect(err).To(MatchError("unknown command: invalid-command"))
-					Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
-					Expect(usage.PrintCall.CallCount).To(Equal(1))
+					It("prints the usage", func() {
+						err := app.Run()
+						Expect(err).To(MatchError("unknown command: invalid-command"))
+						Expect(someCmd.ExecuteCall.CallCount).To(Equal(0))
+						Expect(usage.PrintCall.CallCount).To(Equal(1))
+					})
 				})
 			})
 		})
@@ -188,16 +192,20 @@ var _ = Describe("App", func() {
 			)
 
 			Context("error cases", func() {
-				It("returns an error when version command is not part of the command set", func() {
-					app = application.New(application.CommandSet{
-						"some": someCmd,
-					}, application.Configuration{
-						Command:         "some",
-						SubcommandFlags: []string{"-v"},
-					}, usage)
+				Context("when version command is not part of the command set", func() {
+					BeforeEach(func() {
+						app = application.New(application.CommandSet{
+							"some": someCmd,
+						}, application.Configuration{
+							Command:         "some",
+							SubcommandFlags: []string{"-v"},
+						}, usage)
+					})
 
-					err := app.Run()
-					Expect(err).To(MatchError("unknown command: version"))
+					It("returns an error", func() {
+						err := app.Run()
+						Expect(err).To(MatchError("unknown command: version"))
+					})
 				})
 			})
 		})
@@ -231,27 +239,37 @@ var _ = Describe("App", func() {
 			})
 
 			Context("when the command fails for aws error", func() {
-				It("returns an error and link to bbl README when error is AccessDenied", func() {
-					awsError := awserr.New("UnauthorizedOperation", "User is not authorized to perform: action:SubCommand", nil)
-					errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 403, "some-request-id")
-					app = NewAppWithConfiguration(application.Configuration{
-						Command: "error",
+				Context("when error is AccessDenied", func() {
+					BeforeEach(func() {
+						awsError := awserr.New("UnauthorizedOperation", "User is not authorized to perform: action:SubCommand", nil)
+						errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 403, "some-request-id")
+						app = NewAppWithConfiguration(application.Configuration{
+							Command: "error",
+						})
 					})
-					err := app.Run()
 
-					Expect(err).To(MatchError("The AWS credentials provided have insufficient permissions to perform the operation `bbl error`.\nPlease refer to the bbl README:\nhttps://github.com/cloudfoundry/bosh-bootloader#configure-aws.\nOriginal error message from AWS:\n\nUser is not authorized to perform: action:SubCommand"))
+					It("returns an error and link to bbl README", func() {
+						err := app.Run()
+
+						Expect(err).To(MatchError("The AWS credentials provided have insufficient permissions to perform the operation `bbl error`.\nPlease refer to the bbl README:\nhttps://github.com/cloudfoundry/bosh-bootloader#configure-aws.\nOriginal error message from AWS:\n\nUser is not authorized to perform: action:SubCommand"))
+					})
 				})
 
-				It("returns an error when the error is not AccessDenied", func() {
-					awsError := awserr.New("InternalServerError", "Some message", nil)
-					errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 500, "some-request-id")
-					app = NewAppWithConfiguration(application.Configuration{
-						Command: "error",
+				Context("when the error is not AccessDenied", func() {
+					BeforeEach(func() {
+						awsError := awserr.New("InternalServerError", "Some message", nil)
+						errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 500, "some-request-id")
+						app = NewAppWithConfiguration(application.Configuration{
+							Command: "error",
+						})
 					})
-					err := app.Run()
 
-					Expect(err).To(ContainSubstring("InternalServerError"))
-					Expect(err).NotTo(ContainSubstring("README"))
+					It("returns an error", func() {
+						err := app.Run()
+
+						Expect(err).To(ContainSubstring("InternalServerError"))
+						Expect(err).NotTo(ContainSubstring("README"))
+					})
 				})
 			})
 

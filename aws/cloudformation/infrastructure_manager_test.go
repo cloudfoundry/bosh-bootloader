@@ -79,53 +79,78 @@ var _ = Describe("InfrastructureManager", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when it cannot get physical id for BOSHUser", func() {
-				stackManager.GetPhysicalIDForResourceCall.Returns.Error = errors.New("failed to get physical id for resource")
+			Context("when it cannot get physical id for BOSHUser", func() {
+				BeforeEach(func() {
+					stackManager.GetPhysicalIDForResourceCall.Returns.Error = errors.New("failed to get physical id for resource")
+				})
 
-				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
-				Expect(err).To(MatchError("failed to get physical id for resource"))
+				It("returns an error", func() {
+					_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+					Expect(err).To(MatchError("failed to get physical id for resource"))
+				})
 			})
 
-			It("returns an error when the update stack call fails", func() {
-				stackManager.UpdateCall.Returns.Error = errors.New("stack update call failed")
+			Context("when the update stack call fails", func() {
+				BeforeEach(func() {
+					stackManager.UpdateCall.Returns.Error = errors.New("stack update call failed")
+				})
 
-				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
-				Expect(err).To(MatchError("stack update call failed"))
+				It("returns an error", func() {
+					_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+					Expect(err).To(MatchError("stack update call failed"))
+				})
 			})
 
-			It("returns an error when the wait for completion call fails", func() {
-				stackManager.WaitForCompletionCall.Returns.Error = errors.New("failed to wait for completion")
+			Context("when the wait for completion call fails", func() {
+				BeforeEach(func() {
+					stackManager.WaitForCompletionCall.Returns.Error = errors.New("failed to wait for completion")
+				})
 
-				_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
-				Expect(err).To(MatchError("failed to wait for completion"))
+				It("returns an error", func() {
+					_, err := infrastructureManager.Update("some-key-pair-name", azs, "some-stack-name", "some-bosh-az", "some-lb-type", "some-lb-certificate-arn", "some-env-id-time:stamp")
+					Expect(err).To(MatchError("failed to wait for completion"))
+				})
 			})
 		})
 	})
 
 	Describe("Exists", func() {
-		It("returns true when the stack exists", func() {
-			stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{}
+		Context("when the stack exists", func() {
+			BeforeEach(func() {
+				stackManager.DescribeCall.Returns.Stack = cloudformation.Stack{}
+			})
 
-			exists, err := infrastructureManager.Exists("some-stack-name")
+			It("returns true", func() {
+				exists, err := infrastructureManager.Exists("some-stack-name")
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(exists).To(BeTrue())
+			})
 		})
 
-		It("returns false when the stack does not exist", func() {
-			stackManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
+		Context("when the stack does not exist", func() {
+			BeforeEach(func() {
+				stackManager.DescribeCall.Returns.Error = cloudformation.StackNotFound
+			})
 
-			exists, err := infrastructureManager.Exists("some-stack-name")
+			It("returns false ", func() {
+				exists, err := infrastructureManager.Exists("some-stack-name")
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeFalse())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(exists).To(BeFalse())
+			})
 		})
 
 		Describe("failure cases", func() {
-			It("returns an error when the stack manager returns a different error", func() {
-				stackManager.DescribeCall.Returns.Error = errors.New("some other error")
-				_, err := infrastructureManager.Exists("some-stack-name")
-				Expect(err).To(MatchError("some other error"))
+			Context("when the stack manager returns a different error", func() {
+				BeforeEach(func() {
+					stackManager.DescribeCall.Returns.Error = errors.New("some other error")
+				})
+
+				It("returns an error", func() {
+					_, err := infrastructureManager.Exists("some-stack-name")
+					Expect(err).To(MatchError("some other error"))
+				})
 			})
 		})
 	})

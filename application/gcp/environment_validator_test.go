@@ -60,15 +60,17 @@ var _ = Describe("EnvironmentValidator", func() {
 			}
 		})
 
-		It("returns no errors when bosh director exists", func() {
-			err := environmentValidator.Validate(state)
-			Expect(err).NotTo(HaveOccurred())
+		Context("when bosh director is reachable", func() {
+			It("returns no errors ", func() {
+				err := environmentValidator.Validate(state)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshClientProvider.ClientCall.CallCount).To(Equal(1))
-			Expect(boshClient.InfoCall.CallCount).To(Equal(1))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-password"))
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(1))
+				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-password"))
+			})
 		})
 
 		Context("when the bosh client provider returns an error", func() {
@@ -100,7 +102,7 @@ var _ = Describe("EnvironmentValidator", func() {
 	})
 
 	Context("when tf state is empty", func() {
-		It("returns a BBLNotFound error when tf state is empty", func() {
+		It("returns a BBLNotFound error", func() {
 			err := environmentValidator.Validate(storage.State{
 				IAAS:    "gcp",
 				TFState: "",

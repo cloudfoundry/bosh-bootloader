@@ -34,24 +34,32 @@ var _ = Describe("CIDRBlock", func() {
 
 	Describe("ParseCIDRBlock", func() {
 		Context("failure cases", func() {
-			It("returns an error when input string is not a valid CIDR block", func() {
-				_, err := bosh.ParseCIDRBlock("whatever")
-				Expect(err).To(MatchError(ContainSubstring("cannot parse CIDR block")))
+			Context("when input string is not a valid CIDR block", func() {
+				It("returns an error", func() {
+					_, err := bosh.ParseCIDRBlock("whatever")
+					Expect(err).To(MatchError(ContainSubstring("cannot parse CIDR block")))
+				})
 			})
 
-			It("returns an error when input string contains an invalid ip", func() {
-				_, err := bosh.ParseCIDRBlock("not-an-ip/20")
-				Expect(err).To(MatchError(ContainSubstring("not a valid ip address")))
+			Context("when input string contains an invalid ip", func() {
+				It("returns an error", func() {
+					_, err := bosh.ParseCIDRBlock("not-an-ip/20")
+					Expect(err).To(MatchError(ContainSubstring("not a valid ip address")))
+				})
 			})
 
-			It("returns an error when input string contains mask bits which are not an integer", func() {
-				_, err := bosh.ParseCIDRBlock("0.0.0.0/not-mask-bits")
-				Expect(err).To(MatchError(ContainSubstring("invalid syntax")))
+			Context("when input string contains mask bits which are not an integer", func() {
+				It("returns an error", func() {
+					_, err := bosh.ParseCIDRBlock("0.0.0.0/not-mask-bits")
+					Expect(err).To(MatchError(ContainSubstring("invalid syntax")))
+				})
 			})
 
-			It("returns an error when input string contains mask bits which are out of range", func() {
-				_, err := bosh.ParseCIDRBlock("0.0.0.0/243")
-				Expect(err).To(MatchError(ContainSubstring("mask bits out of range")))
+			Context("when input string contains mask bits which are out of range", func() {
+				It("returns an error", func() {
+					_, err := bosh.ParseCIDRBlock("0.0.0.0/243")
+					Expect(err).To(MatchError(ContainSubstring("mask bits out of range")))
+				})
 			})
 		})
 	})
