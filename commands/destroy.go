@@ -120,6 +120,10 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		}
 	}
 
+	if state.IAAS == "azure" {
+		return nil
+	}
+
 	err = d.networkDeletionValidator.ValidateSafeToDelete(networkName, state.EnvID)
 	if err != nil {
 		return err

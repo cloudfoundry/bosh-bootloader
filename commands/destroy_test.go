@@ -297,6 +297,52 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 		})
+
+		Context("when iaas is azure", func() {
+			// Replace this test with the pended test below when Azure supports ValidateSafeToDelete
+			It("returns an error when instances exist in the azure network", func() {
+				networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
+
+				err := destroy.CheckFastFails([]string{}, storage.State{
+					IAAS:  "azure",
+					EnvID: "some-env-id",
+					Azure: storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						Location:       "some-location",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tenant-id",
+					},
+					TFState: "some-tf-state",
+				})
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			PIt("returns an error when instances exist in the azure network", func() {
+				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"whatever it ends being": "some-network-id",
+				}
+
+				networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
+
+				err := destroy.CheckFastFails([]string{}, storage.State{
+					IAAS:  "azure",
+					EnvID: "some-env-id",
+					Azure: storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						Location:       "some-location",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tenant-id",
+					},
+					TFState: "some-tf-state",
+				})
+
+				Expect(networkDeletionValidator.ValidateSafeToDeleteCall.Receives.NetworkName).To(Equal("some-network-id"))
+				Expect(err).To(MatchError("validation failed"))
+			})
+		})
 	})
 
 	Describe("Execute", func() {
