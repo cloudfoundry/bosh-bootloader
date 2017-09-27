@@ -13,7 +13,7 @@ AWS and GCP. Azure support is in progress.
 - [AWS - Getting Started](docs/getting-started-aws.md)
 - [AWS - Deploying Concourse](docs/concourse-aws.md)
 - [GCP - Deploying Concourse](docs/concourse-gcp.md)
-- [GCP - Deploying Cloud Foundry](https://github.com/cloudfoundry/cf-deployment/blob/master/gcp-deployment-guide.md)
+- [GCP - Deploying Cloud Foundry](https://github.com/cloudfoundry/cf-deployment/blob/master/deployment-guide.md)
 - [Advanced BOSH Configuration](docs/advanced.md)
 
 ## Prerequisites
