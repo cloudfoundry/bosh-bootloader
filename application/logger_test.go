@@ -24,9 +24,9 @@ var _ = Describe("Logger", func() {
 
 	Describe("Step", func() {
 		It("prints the step message", func() {
-			logger.Step("creating key pair")
+			logger.Step("creating key")
 
-			Expect(buffer.String()).To(Equal("step: creating key pair\n"))
+			Expect(buffer.String()).To(Equal("step: creating key\n"))
 		})
 
 		It("prints the step message with dynamic values", func() {
@@ -64,12 +64,12 @@ var _ = Describe("Logger", func() {
 
 	Describe("mixing steps, dots and printlns", func() {
 		It("prints out a coherent set of lines", func() {
-			logger.Step("creating keypair")
-			logger.Step("generating cloudformation template")
-			logger.Step("applying cloudformation template")
+			logger.Step("creating key")
+			logger.Step("generating template")
+			logger.Step("applying template")
 			logger.Dot()
 			logger.Dot()
-			logger.Step("completed applying cloudformation template")
+			logger.Step("completed applying template")
 			logger.Dot()
 			logger.Dot()
 			logger.Prompt("do you like turtles?")
@@ -79,11 +79,11 @@ var _ = Describe("Logger", func() {
 			logger.Dot()
 			logger.Println("SUCCESS!")
 
-			Expect(buffer.String()).To(Equal(`step: creating keypair
-step: generating cloudformation template
-step: applying cloudformation template
+			Expect(buffer.String()).To(Equal(`step: creating key
+step: generating template
+step: applying template
 ••
-step: completed applying cloudformation template
+step: completed applying template
 ••
 do you like turtles? (y/N): **bosh manifest**
 step: doing more stuff

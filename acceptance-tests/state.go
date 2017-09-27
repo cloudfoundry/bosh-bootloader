@@ -16,11 +16,6 @@ type State struct {
 	stateFilePath string
 }
 
-type stack struct {
-	Name            string `json:"name"`
-	CertificateName string `json:"certificateName"`
-}
-
 type keyPair struct {
 	PublicKey string `json:"publicKey"`
 }

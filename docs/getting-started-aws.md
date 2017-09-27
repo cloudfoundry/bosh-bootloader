@@ -81,29 +81,27 @@ the "State management" section.
 ### State management
 
 The `bbl-state.json` is an important file that contains confidential
-information about your infrastructure. 
+information about your infrastructure.
 
-The state file allows you to easily upgrade to the newest BOSH director 
+The state file allows you to easily upgrade to the newest BOSH director
 and stemcell versions when new versions of bbl are released. It will
-allow you to issue a `bbl destroy` to destroy the many resources that 
+allow you to issue a `bbl destroy` to destroy the many resources that
 `bbl` creates in AWS which is much easier and less error prone
-than manually finding the resources in the AWS console or CLI. 
+than manually finding the resources in the AWS console or CLI.
 
-Backing up this file into a safe place is highly recommended. The file 
+Backing up this file into a safe place is highly recommended. The file
 should never be modified by hand.
 
 `bbl-state.json` contains the following:
 
 - AWS access key ID, secret access key, region
-- CloudFormation stack name
-- Private key (for accessing EC2 instances BOSH deploys)
 - Environment ID (unique ID for tag on all resources bbl deploys)
 - BOSH director username and password
 - BOSH director IP
 - BOSH director SSL CA, certificate, private key
 - bosh-init state and manifest (for the currently deployed director)
 
-The best way to extract this info is by issuing commands like 
+The best way to extract this info is by issuing commands like
 
 ```
 $ bbl director-username
