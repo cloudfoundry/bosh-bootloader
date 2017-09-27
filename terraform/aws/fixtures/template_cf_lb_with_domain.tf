@@ -129,6 +129,7 @@ variable "nat_ami_map" {
   default = {
     ap-northeast-1 = "ami-10dfc877"
     ap-northeast-2 = "ami-1a1bc474"
+    ap-south-1 = "ami-74c1861b"
     ap-southeast-1 = "ami-36af2055"
     ap-southeast-2 = "ami-1e91817d"
     eu-central-1 = "ami-9ebe18f1"
