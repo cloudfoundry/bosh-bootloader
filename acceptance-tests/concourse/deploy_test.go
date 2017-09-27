@@ -67,7 +67,7 @@ var _ = Describe("concourse deployment test", func() {
 		if sshSession != nil {
 			boshCLI.DeleteDeployment(address, caCertPath, username, password, "concourse")
 			sshSession.Interrupt()
-			Eventually(sshSession, "5s").Should(gexec.Exit())
+			Eventually(sshSession, "10s").Should(gexec.Exit())
 		}
 		session := bbl.Destroy()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
