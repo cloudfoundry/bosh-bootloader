@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -49,10 +48,6 @@ type vpcStatusChecker interface {
 	ValidateSafeToDelete(vpcID string, envID string) error
 }
 
-type stackManager interface {
-	Describe(string) (cloudformation.Stack, error)
-}
-
 type certificateDeleter interface {
 	Delete(certificateName string) error
 }
@@ -67,12 +62,6 @@ type networkInstancesChecker interface {
 
 type certificateValidator interface {
 	Validate(command, certPath, keyPath, chainPath string) error
-}
-
-type infrastructureManager interface {
-	Exists(stackName string) (bool, error)
-	Delete(stackName string) error
-	Describe(stackName string) (cloudformation.Stack, error)
 }
 
 type logger interface {

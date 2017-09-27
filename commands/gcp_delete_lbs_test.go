@@ -118,14 +118,13 @@ var _ = Describe("GCPDeleteLBs", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State.Stack.LBType).To(Equal(""))
+				Expect(stateStore.SetCall.Receives[0].State.LB.Type).To(Equal(""))
 			})
 
 			It("saves the tf state", func() {
 				terraformManager.ApplyCall.Returns.BBLState = storage.State{
 					IAAS: "gcp",
 				}
-
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
 					LB: storage.LB{
@@ -150,8 +149,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).To(MatchError(expectedError))
@@ -176,8 +175,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).To(MatchError("invalid"))
@@ -188,8 +187,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).To(MatchError("failed to apply"))
@@ -215,8 +214,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 					err := command.Execute(storage.State{
 						IAAS: "gcp",
-						Stack: storage.Stack{
-							LBType: "concourse",
+						LB: storage.LB{
+							Type: "concourse",
 						},
 					})
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to set state"))
@@ -241,8 +240,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 					err := command.Execute(storage.State{
 						IAAS: "gcp",
-						Stack: storage.Stack{
-							LBType: "concourse",
+						LB: storage.LB{
+							Type: "concourse",
 						},
 					})
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to get tf state"))
@@ -254,8 +253,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).To(MatchError("updating cloud config failed"))
@@ -268,8 +267,8 @@ var _ = Describe("GCPDeleteLBs", func() {
 
 				err := command.Execute(storage.State{
 					IAAS: "gcp",
-					Stack: storage.Stack{
-						LBType: "concourse",
+					LB: storage.LB{
+						Type: "concourse",
 					},
 				})
 				Expect(err).To(MatchError("failed to set state"))

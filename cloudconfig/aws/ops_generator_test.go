@@ -17,11 +17,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("TerraformOpsGenerator", func() {
+var _ = Describe("OpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
 			terraformManager *fakes.TerraformManager
-			opsGenerator     aws.TerraformOpsGenerator
+			opsGenerator     aws.OpsGenerator
 
 			incomingState   storage.State
 			expectedOpsYAML string
@@ -60,7 +60,7 @@ var _ = Describe("TerraformOpsGenerator", func() {
 				},
 			}
 
-			opsGenerator = aws.NewTerraformOpsGenerator(terraformManager)
+			opsGenerator = aws.NewOpsGenerator(terraformManager)
 		})
 
 		Context("when there are no lbs", func() {

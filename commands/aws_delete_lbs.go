@@ -29,19 +29,8 @@ func (c AWSDeleteLBs) Execute(state storage.State) error {
 		return err
 	}
 
-	if state.Stack.LBType != "" {
-		state.LB.Type = state.Stack.LBType
-
-		state, err = c.terraformManager.Apply(state)
-		if err != nil {
-			return handleTerraformError(err, c.stateStore)
-		}
-	}
-
 	if !lbExists(state.LB.Type) {
-		if !lbExists(state.Stack.LBType) {
-			return LBNotFound
-		}
+		return LBNotFound
 	}
 
 	state.LB = storage.LB{}

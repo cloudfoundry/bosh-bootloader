@@ -40,22 +40,5 @@ var _ = Describe("TemplateGenerator", func() {
 			Entry("when a cf lb type is provided", "fixtures/template_cf_lb.tf", "cf", ""),
 			Entry("when a cf lb type is provided with a system domain", "fixtures/template_cf_lb_with_domain.tf", "cf", "some-domain"),
 		)
-
-		Context("when migrated from CloudFormation", func() {
-			It("changes the security group descriptions", func() {
-				template := templateGenerator.Generate(storage.State{
-					MigratedFromCloudFormation: true,
-					LB: storage.LB{
-						Type:   "cf",
-						Domain: "some-domain",
-					},
-				})
-				Expect(template).To(ContainSubstring("CFSSHProxy"))
-				Expect(template).To(ContainSubstring("CFSSHProxyInternal"))
-				Expect(template).To(ContainSubstring("Router"))
-				Expect(template).To(ContainSubstring("CFRouterInternal"))
-				Expect(template).To(ContainSubstring("BOSH"))
-			})
-		})
 	})
 })

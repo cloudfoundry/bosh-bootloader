@@ -95,11 +95,6 @@ var _ = Describe("DeleteLBs", func() {
 				Expect(deleteLBs.ExecuteCall.CallCount).To(Equal(0))
 				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
 			},
-				Entry("no-ops when LB type does not exist in state stack", storage.State{
-					Stack: storage.Stack{
-						LBType: "",
-					},
-				}),
 				Entry("no-ops when LB type does not exist in state LB", storage.State{
 					LB: storage.LB{
 						Type: "",

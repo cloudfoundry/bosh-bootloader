@@ -15,144 +15,49 @@ import (
 
 var _ = Describe("EnvironmentValidator", func() {
 	var (
-		infrastructureManager *fakes.InfrastructureManager
-		boshClientProvider    *fakes.BOSHClientProvider
-		boshClient            *fakes.BOSHClient
-
-		state                storage.State
+		boshClientProvider   *fakes.BOSHClientProvider
+		boshClient           *fakes.BOSHClient
 		environmentValidator aws.EnvironmentValidator
 	)
 
 	BeforeEach(func() {
-		infrastructureManager = &fakes.InfrastructureManager{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		boshClient = &fakes.BOSHClient{}
-
-		infrastructureManager.ExistsCall.Returns.Exists = true
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
-		environmentValidator = aws.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
-	})
-
-	Context("when tf state and stack name are empty", func() {
-		It("returns a helpful error message", func() {
-			err := environmentValidator.Validate(storage.State{})
-
-			Expect(infrastructureManager.ExistsCall.CallCount).To(Equal(0))
-			Expect(err).To(MatchError(application.BBLNotFound))
-		})
+		environmentValidator = aws.NewEnvironmentValidator(boshClientProvider)
 	})
 
 	Context("when there is no director", func() {
-		BeforeEach(func() {
-			state = storage.State{
-				Stack: storage.Stack{
-					Name: "some-stack-name",
-				},
-				NoDirector: true,
-			}
-		})
-
 		It("returns no error", func() {
-			err := environmentValidator.Validate(state)
+			err := environmentValidator.Validate(storage.State{NoDirector: true})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(infrastructureManager.ExistsCall.CallCount).To(Equal(1))
 			Expect(boshClient.InfoCall.CallCount).To(Equal(0))
 		})
 	})
 
-	Context("when cloudformation was used to create infrastructure", func() {
+	Context("when the director is unavailable", func() {
 		BeforeEach(func() {
-			state = storage.State{
-				Stack: storage.Stack{
-					Name: "some-stack-name",
-				},
-				BOSH: storage.BOSH{
-					DirectorAddress:  "some-director-address",
-					DirectorUsername: "some-director-username",
-					DirectorPassword: "some-director-password",
-				},
-			}
+			boshClient.InfoCall.Returns.Error = errors.New("bosh is not available")
 		})
 
-		Context("when stack does not exist", func() {
-			BeforeEach(func() {
-				infrastructureManager.ExistsCall.Returns.Exists = false
-			})
-
-			It("returns a helpful error message", func() {
-				err := environmentValidator.Validate(state)
-
-				Expect(infrastructureManager.ExistsCall.CallCount).To(Equal(1))
-				Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("some-stack-name"))
-				Expect(err).To(MatchError(application.BBLNotFound))
-			})
-		})
-
-		Context("when bosh does not exist", func() {
-			BeforeEach(func() {
-				boshClient.InfoCall.Returns.Error = errors.New("bosh is not available")
-			})
-
-			It("returns a helpful error message", func() {
-				err := environmentValidator.Validate(state)
-
-				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(1))
-				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-				Expect(err).To(MatchError(fmt.Sprintf("%s %s", application.DirectorNotReachable, "bosh is not available")))
-			})
-		})
-
-		Context("failure cases", func() {
-			Context("if Exists call on InfrastructureManager fails", func() {
-				BeforeEach(func() {
-					infrastructureManager.ExistsCall.Returns.Error = errors.New("exists call failed")
-				})
-
-				It("returns an error", func() {
-					err := environmentValidator.Validate(state)
-					Expect(err).To(MatchError("exists call failed"))
-				})
-			})
-		})
-	})
-
-	Context("when terraform was used to create infrastruture", func() {
-		var (
-			state storage.State
-		)
-
-		BeforeEach(func() {
-			state = storage.State{
+		It("returns a helpful error message", func() {
+			err := environmentValidator.Validate(storage.State{
 				TFState: "some-tf-state",
 				BOSH: storage.BOSH{
 					DirectorAddress:  "some-director-address",
 					DirectorUsername: "some-director-username",
 					DirectorPassword: "some-director-password",
 				},
-			}
-		})
-
-		Context("when bosh does not exist", func() {
-			BeforeEach(func() {
-				boshClient.InfoCall.Returns.Error = errors.New("bosh is not available")
 			})
 
-			It("returns a helpful error message", func() {
-				err := environmentValidator.Validate(state)
-
-				Expect(infrastructureManager.ExistsCall.CallCount).To(Equal(0))
-				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(1))
-				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-				Expect(err).To(MatchError(fmt.Sprintf("%s %s", application.DirectorNotReachable, "bosh is not available")))
-			})
+			Expect(boshClientProvider.ClientCall.CallCount).To(Equal(1))
+			Expect(boshClient.InfoCall.CallCount).To(Equal(1))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+			Expect(err).To(MatchError(fmt.Sprintf("%s %s", application.DirectorNotReachable, "bosh is not available")))
 		})
 	})
 })

@@ -11,28 +11,22 @@ import (
 var matchString = regexp.MatchString
 
 type EnvIDManager struct {
-	envIDGenerator        envIDGenerator
-	networkClient         NetworkClient
-	infrastructureManager infrastructureManager
+	envIDGenerator envIDGenerator
+	networkClient  NetworkClient
 }
 
 type envIDGenerator interface {
 	Generate() (string, error)
 }
 
-type infrastructureManager interface {
-	Exists(stackName string) (bool, error)
-}
-
 type NetworkClient interface {
 	CheckExists(networkName string) (bool, error)
 }
 
-func NewEnvIDManager(envIDGenerator envIDGenerator, infrastructureManager infrastructureManager, networkClient NetworkClient) EnvIDManager {
+func NewEnvIDManager(envIDGenerator envIDGenerator, networkClient NetworkClient) EnvIDManager {
 	return EnvIDManager{
-		envIDGenerator:        envIDGenerator,
-		infrastructureManager: infrastructureManager,
-		networkClient:         networkClient,
+		envIDGenerator: envIDGenerator,
+		networkClient:  networkClient,
 	}
 }
 
@@ -64,17 +58,6 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 }
 
 func (e EnvIDManager) checkFastFail(iaas, envID string) error {
-	if iaas == "aws" {
-		stackName := "stack-" + envID
-		stackExists, err := e.infrastructureManager.Exists(stackName)
-		if err != nil {
-			return err
-		}
-		if stackExists {
-			return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
-		}
-	}
-
 	var networkName string
 	switch iaas {
 	case "aws":

@@ -28,8 +28,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 	if err != nil {
 		return map[string]string{}, err
 	}
-
-	azsString, err := jsonMarshal(azs)
+	zones, err := jsonMarshal(azs)
 	if err != nil {
 		return map[string]string{}, err
 	}
@@ -46,19 +45,14 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 		"access_key":             state.AWS.AccessKeyID,
 		"secret_key":             state.AWS.SecretAccessKey,
 		"region":                 state.AWS.Region,
-		"bosh_availability_zone": state.Stack.BOSHAZ,
-		"availability_zones":     string(azsString),
+		"bosh_availability_zone": "",
+		"availability_zones":     string(zones),
 	}
 
 	if state.LB.Type == "cf" || state.LB.Type == "concourse" {
-		inputs["ssl_certificate_name_prefix"] = ""
-		inputs["ssl_certificate_name"] = state.Stack.CertificateName
-		if state.Stack.CertificateName == "" {
-			inputs["ssl_certificate_name_prefix"] = shortEnvID
-			inputs["ssl_certificate"] = state.LB.Cert
-			inputs["ssl_certificate_private_key"] = state.LB.Key
-			inputs["ssl_certificate_chain"] = state.LB.Chain
-		}
+		inputs["ssl_certificate"] = state.LB.Cert
+		inputs["ssl_certificate_private_key"] = state.LB.Key
+		inputs["ssl_certificate_chain"] = state.LB.Chain
 
 		if state.LB.Domain != "" {
 			inputs["system_domain"] = state.LB.Domain

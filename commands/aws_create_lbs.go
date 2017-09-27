@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -46,10 +45,6 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 		if config.AWS.LBType == "" {
 			config.AWS.LBType = state.LB.Type
 		}
-	}
-
-	if lbExists(state.Stack.LBType) {
-		return fmt.Errorf("bbl already has a %s load balancer attached, please remove the previous load balancer before attaching a new one", state.Stack.LBType)
 	}
 
 	if err := c.environmentValidator.Validate(state); err != nil {

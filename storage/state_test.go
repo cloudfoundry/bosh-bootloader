@@ -115,12 +115,6 @@ var _ = Describe("Store", func() {
 							"hmPassword":                "some-hm-password",
 						},
 					},
-					Stack: storage.Stack{
-						Name:            "some-stack-name",
-						LBType:          "some-lb-type",
-						CertificateName: "some-certificate-name",
-						BOSHAZ:          "some-bosh-az",
-					},
 					EnvID:   "some-env-id",
 					TFState: "some-tf-state",
 				})
@@ -132,7 +126,6 @@ var _ = Describe("Store", func() {
 				"version": 10,
 				"iaas": "aws",
 				"noDirector": false,
-				"migratedFromCloudFormation": false,
 				"aws": {
 					"region": "some-region"
 				},
@@ -198,12 +191,6 @@ var _ = Describe("Store", func() {
 					"state": {
 						"key": "value"
 					}
-				},
-				"stack": {
-					"name": "some-stack-name",
-					"lbType": "some-lb-type",
-					"certificateName": "some-certificate-name",
-					"boshAZ": "some-bosh-az"
 				},
 				"envID": "some-env-id",
 				"tfState": "some-tf-state",
@@ -301,11 +288,7 @@ var _ = Describe("Store", func() {
 				})
 
 				It("returns an error", func() {
-					err := store.Set(storage.State{
-						Stack: storage.Stack{
-							Name: "some-stack-name",
-						},
-					})
+					err := store.Set(storage.State{})
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})

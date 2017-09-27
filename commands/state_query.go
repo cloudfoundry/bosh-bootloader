@@ -24,22 +24,20 @@ const (
 )
 
 type StateQuery struct {
-	logger                logger
-	stateValidator        stateValidator
-	terraformManager      terraformOutputter
-	infrastructureManager infrastructureManager
-	propertyName          string
+	logger           logger
+	stateValidator   stateValidator
+	terraformManager terraformOutputter
+	propertyName     string
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformOutputter, infrastructureManager infrastructureManager, propertyName string) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformOutputter, propertyName string) StateQuery {
 	return StateQuery{
-		logger:                logger,
-		stateValidator:        stateValidator,
-		terraformManager:      terraformManager,
-		infrastructureManager: infrastructureManager,
-		propertyName:          propertyName,
+		logger:           logger,
+		stateValidator:   stateValidator,
+		terraformManager: terraformManager,
+		propertyName:     propertyName,
 	}
 }
 
@@ -102,14 +100,6 @@ func (s StateQuery) getDirectorAddress(state storage.State) (string, error) {
 }
 
 func (s StateQuery) getEIP(state storage.State) (string, error) {
-	if state.Stack.Name != "" {
-		stack, err := s.infrastructureManager.Describe(state.Stack.Name)
-		if err != nil {
-			return "", err
-		}
-		return stack.Outputs["BOSHEIP"], nil
-	}
-
 	terraformOutputs, err := s.terraformManager.GetOutputs(state)
 	if err != nil {
 		return "", err

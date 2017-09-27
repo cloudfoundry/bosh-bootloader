@@ -12,20 +12,17 @@ import (
 
 var _ = Describe("EnvIDManager", func() {
 	var (
-		envIDGenerator        *fakes.EnvIDGenerator
-		networkClient         *fakes.NetworkClient
-		infrastructureManager *fakes.InfrastructureManager
-		envIDManager          helpers.EnvIDManager
+		envIDGenerator *fakes.EnvIDGenerator
+		networkClient  *fakes.NetworkClient
+		envIDManager   helpers.EnvIDManager
 	)
 
 	BeforeEach(func() {
 		envIDGenerator = &fakes.EnvIDGenerator{}
 		envIDGenerator.GenerateCall.Returns.EnvID = "some-env-id"
-
 		networkClient = &fakes.NetworkClient{}
-		infrastructureManager = &fakes.InfrastructureManager{}
 
-		envIDManager = helpers.NewEnvIDManager(envIDGenerator, infrastructureManager, networkClient)
+		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	})
 
 	Describe("Sync", func() {
@@ -59,20 +56,7 @@ var _ = Describe("EnvIDManager", func() {
 			})
 
 			Context("for aws", func() {
-				It("fails if an environment with that name was already created by cloudformation", func() {
-					infrastructureManager.ExistsCall.Returns.Exists = true
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "aws",
-					}, "existing-env")
-
-					Expect(infrastructureManager.ExistsCall.CallCount).To(Equal(1))
-					Expect(infrastructureManager.ExistsCall.Receives.StackName).To(Equal("stack-existing-env"))
-
-					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
-				})
-
-				It("fails if an environment with that name was already created by terraform", func() {
-					infrastructureManager.ExistsCall.Returns.Exists = false
+				It("fails if an environment with that name was already created", func() {
 					networkClient.CheckExistsCall.Returns.Exists = true
 					_, err := envIDManager.Sync(storage.State{
 						IAAS: "aws",
@@ -153,20 +137,6 @@ var _ = Describe("EnvIDManager", func() {
 					}, "existing")
 
 					Expect(err).To(MatchError("failed to get network list"))
-				})
-			})
-
-			Context("when the infrastructure manager cannot verify stack existence", func() {
-				BeforeEach(func() {
-					infrastructureManager.ExistsCall.Returns.Error = errors.New("failed to check stack existence")
-				})
-
-				It("returns an error", func() {
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "aws",
-					}, "existing")
-
-					Expect(err).To(MatchError("failed to check stack existence"))
 				})
 			})
 

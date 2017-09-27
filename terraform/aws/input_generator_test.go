@@ -28,20 +28,9 @@ var _ = Describe("InputGenerator", func() {
 	Context("when env-id is greater than 18 characters", func() {
 		It("creates a short env-id with truncated env_id and sha1sum[0:7]", func() {
 			inputs, err := inputGenerator.Generate(storage.State{
-				IAAS:    "aws",
-				EnvID:   "some-env-id-that-is-pretty-long",
-				TFState: "some-tf-state",
+				EnvID: "some-env-id-that-is-pretty-long",
 				AWS: storage.AWS{
-					AccessKeyID:     "some-access-key-id",
-					SecretAccessKey: "some-secret-access-key",
-					Region:          "some-region",
-				},
-				Stack: storage.Stack{
-					BOSHAZ: "some-zone",
-				},
-				LB: storage.LB{
-					Type:   "",
-					Domain: "",
+					Region: "some-region",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -56,20 +45,11 @@ var _ = Describe("InputGenerator", func() {
 	Context("when no lbs exist", func() {
 		It("receives BBL state and returns a map of terraform variables", func() {
 			inputs, err := inputGenerator.Generate(storage.State{
-				IAAS:    "aws",
-				EnvID:   "some-env-id",
-				TFState: "some-tf-state",
+				EnvID: "some-env-id",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
-				},
-				Stack: storage.Stack{
-					BOSHAZ: "some-zone",
-				},
-				LB: storage.LB{
-					Type:   "",
-					Domain: "",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -82,16 +62,14 @@ var _ = Describe("InputGenerator", func() {
 				"access_key":             "some-access-key-id",
 				"secret_key":             "some-secret-access-key",
 				"region":                 "some-region",
-				"bosh_availability_zone": "some-zone",
+				"bosh_availability_zone": "",
 				"availability_zones":     `["z1","z2","z3"]`,
 			}))
 		})
 	})
 
 	Context("when a cf lb exists", func() {
-		var (
-			state storage.State
-		)
+		var state storage.State
 
 		BeforeEach(func() {
 			state = storage.State{
@@ -102,10 +80,6 @@ var _ = Describe("InputGenerator", func() {
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
-				},
-				Stack: storage.Stack{
-					BOSHAZ:          "some-zone",
-					CertificateName: "some-certificate-name",
 				},
 				LB: storage.LB{
 					Type:  "cf",
@@ -128,10 +102,11 @@ var _ = Describe("InputGenerator", func() {
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
-				"bosh_availability_zone":      "some-zone",
+				"bosh_availability_zone":      "",
 				"availability_zones":          `["z1","z2","z3"]`,
-				"ssl_certificate_name_prefix": "",
-				"ssl_certificate_name":        "some-certificate-name",
+				"ssl_certificate":             "some-cert",
+				"ssl_certificate_chain":       "some-chain",
+				"ssl_certificate_private_key": "some-key",
 			}))
 		})
 
@@ -152,10 +127,11 @@ var _ = Describe("InputGenerator", func() {
 					"access_key":                  "some-access-key-id",
 					"secret_key":                  "some-secret-access-key",
 					"region":                      "some-region",
-					"bosh_availability_zone":      "some-zone",
+					"bosh_availability_zone":      "",
 					"availability_zones":          `["z1","z2","z3"]`,
-					"ssl_certificate_name":        "some-certificate-name",
-					"ssl_certificate_name_prefix": "",
+					"ssl_certificate":             "some-cert",
+					"ssl_certificate_chain":       "some-chain",
+					"ssl_certificate_private_key": "some-key",
 					"system_domain":               "some-domain",
 				}))
 			})
@@ -163,22 +139,16 @@ var _ = Describe("InputGenerator", func() {
 	})
 
 	Context("when a concourse lb exists", func() {
-		var (
-			state storage.State
-		)
+		var state storage.State
 
 		BeforeEach(func() {
 			state = storage.State{
-				IAAS:    "aws",
 				EnvID:   "some-env-id",
 				TFState: "some-tf-state",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
-				},
-				Stack: storage.Stack{
-					BOSHAZ: "some-zone",
 				},
 				LB: storage.LB{
 					Type:  "concourse",
@@ -201,13 +171,11 @@ var _ = Describe("InputGenerator", func() {
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
-				"bosh_availability_zone":      "some-zone",
+				"bosh_availability_zone":      "",
 				"availability_zones":          `["z1","z2","z3"]`,
 				"ssl_certificate":             "some-cert",
 				"ssl_certificate_chain":       "some-chain",
 				"ssl_certificate_private_key": "some-key",
-				"ssl_certificate_name":        "",
-				"ssl_certificate_name_prefix": "some-env-id",
 			}))
 		})
 	})

@@ -5,7 +5,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
@@ -16,9 +15,6 @@ type Destroy struct {
 	logger                   logger
 	stdin                    io.Reader
 	boshManager              boshManager
-	stackManager             stackManager
-	infrastructureManager    infrastructureManager
-	certificateDeleter       certificateDeleter
 	stateStore               stateStore
 	stateValidator           stateValidator
 	terraformManager         terraformDestroyer
@@ -35,17 +31,12 @@ type NetworkDeletionValidator interface {
 }
 
 func NewDestroy(logger logger, stdin io.Reader,
-	boshManager boshManager, stackManager stackManager,
-	infrastructureManager infrastructureManager,
-	certificateDeleter certificateDeleter, stateStore stateStore, stateValidator stateValidator,
+	boshManager boshManager, stateStore stateStore, stateValidator stateValidator,
 	terraformManager terraformDestroyer, networkDeletionValidator NetworkDeletionValidator) Destroy {
 	return Destroy{
 		logger:                   logger,
 		stdin:                    stdin,
 		boshManager:              boshManager,
-		stackManager:             stackManager,
-		infrastructureManager:    infrastructureManager,
-		certificateDeleter:       certificateDeleter,
 		stateStore:               stateStore,
 		stateValidator:           stateValidator,
 		terraformManager:         terraformManager,
@@ -81,46 +72,25 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		return err
 	}
 
-	var networkName string
-
-	if state.IAAS == "aws" && state.TFState == "" {
-		stackExists := true
-		var err error
-		stack, err := d.stackManager.Describe(state.Stack.Name)
-		switch err {
-		case cloudformation.StackNotFound:
-			stackExists = false
-		case nil:
-			break
-		default:
-			return err
-		}
-
-		if stackExists {
-			networkName = stack.Outputs["VPCID"]
-		}
-	} else {
-		var terraformOutputs map[string]interface{}
-
-		terraformOutputs, err = d.terraformManager.GetOutputs(state)
-		if err != nil {
-			return nil
-		}
-
-		if state.IAAS == "gcp" {
-			networkNameOutput, ok := terraformOutputs["network_name"]
-			if !ok {
-				return nil
-			}
-			networkName = networkNameOutput.(string)
-		}
-
-		if state.IAAS == "aws" {
-			networkName = terraformOutputs["vpc_id"].(string)
-		}
+	terraformOutputs, err := d.terraformManager.GetOutputs(state)
+	if err != nil {
+		return nil
 	}
 
-	if state.IAAS == "azure" {
+	var networkName string
+	if state.IAAS == "gcp" {
+		output, ok := terraformOutputs["network_name"]
+		if !ok {
+			return nil
+		}
+		networkName = output.(string)
+	} else if state.IAAS == "aws" {
+		output, ok := terraformOutputs["vpc_id"]
+		if !ok {
+			return nil
+		}
+		networkName = output.(string)
+	} else if state.IAAS == "azure" {
 		return nil
 	}
 
@@ -138,11 +108,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	if config.SkipIfMissing && state.EnvID == "" {
-		d.logger.Step("state file not found, and --skip-if-missing flag provided, exiting")
-		return nil
-	}
-
 	if !config.NoConfirm {
 		d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
 
@@ -156,22 +121,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	stack, err := d.stackManager.Describe(state.Stack.Name)
-	switch err {
-	case cloudformation.StackNotFound:
-		break
-	case nil:
-		break
-	default:
-		return err
-	}
-
 	terraformOutputs, err := d.terraformManager.GetOutputs(state)
 	if err != nil {
 		return err
 	}
 
-	state, err = d.deleteBOSH(state, stack, terraformOutputs)
+	state, err = d.deleteBOSH(state, terraformOutputs)
 	switch err.(type) {
 	case bosh.ManagerDeleteError:
 		mdErr := err.(bosh.ManagerDeleteError)
@@ -191,40 +146,12 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	if state.IAAS == "aws" && state.TFState == "" {
-		state, err = d.deleteStack(stack, state)
-		if err != nil {
-			return err
-		}
-	} else {
-		state, err = d.terraformManager.Destroy(state)
-		if err != nil {
-			return handleTerraformError(err, d.stateStore)
-		}
+	state, err = d.terraformManager.Destroy(state)
+	if err != nil {
+		return handleTerraformError(err, d.stateStore)
 	}
 
 	if err := d.stateStore.Set(state); err != nil {
-		return err
-	}
-
-	if state.IAAS == "aws" {
-		if state.Stack.CertificateName != "" {
-			d.logger.Step("deleting certificate")
-			err = d.certificateDeleter.Delete(state.Stack.CertificateName)
-			if err != nil {
-				return err
-			}
-
-			state.Stack.CertificateName = ""
-
-			if err := d.stateStore.Set(state); err != nil {
-				return err
-			}
-		}
-	}
-
-	err = d.stateStore.Set(storage.State{})
-	if err != nil {
 		return err
 	}
 
@@ -246,7 +173,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
 	if state.NoDirector {
 		d.logger.Println("no BOSH director, skipping...")
 		return state, nil
@@ -271,23 +198,6 @@ func (d Destroy) deleteBOSH(state storage.State, stack cloudformation.Stack, ter
 
 		state.Jumpbox = storage.Jumpbox{}
 	}
-
-	return state, nil
-}
-
-func (d Destroy) deleteStack(stack cloudformation.Stack, state storage.State) (storage.State, error) {
-	if state.Stack.Name == "" {
-		d.logger.Println("No infrastructure found, skipping...")
-		return state, nil
-	}
-
-	d.logger.Step("destroying AWS stack")
-	if err := d.infrastructureManager.Delete(state.Stack.Name); err != nil {
-		return state, err
-	}
-
-	state.Stack.Name = ""
-	state.Stack.LBType = ""
 
 	return state, nil
 }

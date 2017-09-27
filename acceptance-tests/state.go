@@ -26,7 +26,6 @@ type keyPair struct {
 }
 
 type state struct {
-	Stack   stack  `json:"stack"`
 	EnvID   string `json:"envID"`
 	TFState string `json:"tfState"`
 	BOSH    struct {
@@ -45,16 +44,6 @@ func (s State) Checksum() string {
 	buf, err := ioutil.ReadFile(s.stateFilePath)
 	Expect(err).NotTo(HaveOccurred())
 	return fmt.Sprintf("%x", md5.Sum(buf))
-}
-
-func (s State) StackName() string {
-	state := s.readStateFile()
-	return state.Stack.Name
-}
-
-func (s State) CertificateName() string {
-	state := s.readStateFile()
-	return state.Stack.CertificateName
 }
 
 func (s State) EnvID() string {

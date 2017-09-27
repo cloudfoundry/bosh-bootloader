@@ -15,27 +15,24 @@ import (
 var _ = Describe("OpsGenerator", func() {
 	Describe("Generate", func() {
 		var (
-			awsCloudFormationOpsGenerator *fakes.CloudConfigOpsGenerator
-			awsTerraformOpsGenerator      *fakes.CloudConfigOpsGenerator
-			gcpOpsGenerator               *fakes.CloudConfigOpsGenerator
-			azureOpsGenerator             *fakes.CloudConfigOpsGenerator
-			opsGenerator                  cloudconfig.OpsGenerator
+			awsOpsGenerator   *fakes.CloudConfigOpsGenerator
+			gcpOpsGenerator   *fakes.CloudConfigOpsGenerator
+			azureOpsGenerator *fakes.CloudConfigOpsGenerator
+			opsGenerator      cloudconfig.OpsGenerator
 
 			incomingState storage.State
 		)
 
 		BeforeEach(func() {
-			awsCloudFormationOpsGenerator = &fakes.CloudConfigOpsGenerator{}
-			awsTerraformOpsGenerator = &fakes.CloudConfigOpsGenerator{}
+			awsOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 			gcpOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 			azureOpsGenerator = &fakes.CloudConfigOpsGenerator{}
 
-			awsCloudFormationOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-cloudformation-ops"
-			awsTerraformOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-terraform-ops"
+			awsOpsGenerator.GenerateCall.Returns.OpsYAML = "some-aws-ops"
 			gcpOpsGenerator.GenerateCall.Returns.OpsYAML = "some-gcp-ops"
 			azureOpsGenerator.GenerateCall.Returns.OpsYAML = "some-azure-ops"
 
-			opsGenerator = cloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator, gcpOpsGenerator, azureOpsGenerator)
+			opsGenerator = cloudconfig.NewOpsGenerator(awsOpsGenerator, gcpOpsGenerator, azureOpsGenerator)
 		})
 
 		DescribeTable("returns an ops file to transform base cloud config to iaas specific cloud config", func(incomingState storage.State, expectedOpsYAML string) {
@@ -49,11 +46,7 @@ var _ = Describe("OpsGenerator", func() {
 			Entry("when iaas is aws and terraform was used to create infrastructure", storage.State{
 				IAAS:    "aws",
 				TFState: "some-tf-state",
-			}, "some-aws-terraform-ops"),
-			Entry("when iaas is aws and cloudformation was used to create infrastructure", storage.State{
-				IAAS:    "aws",
-				TFState: "",
-			}, "some-aws-cloudformation-ops"),
+			}, "some-aws-ops"),
 			Entry("when iaas is azure", storage.State{
 				IAAS: "azure",
 			}, "some-azure-ops"),
@@ -79,17 +72,11 @@ var _ = Describe("OpsGenerator", func() {
 				}, func() *fakes.CloudConfigOpsGenerator {
 					return gcpOpsGenerator
 				}),
-				Entry("when iaas is aws and terraform was used to create infrastructure", storage.State{
+				Entry("when iaas is aws", storage.State{
 					IAAS:    "aws",
 					TFState: "some-tf-state",
 				}, func() *fakes.CloudConfigOpsGenerator {
-					return awsTerraformOpsGenerator
-				}),
-				Entry("when iaas is aws and cloudformation was used to create infrastructure", storage.State{
-					IAAS:    "aws",
-					TFState: "",
-				}, func() *fakes.CloudConfigOpsGenerator {
-					return awsCloudFormationOpsGenerator
+					return awsOpsGenerator
 				}),
 				Entry("when iaas is azure", storage.State{
 					IAAS: "azure",

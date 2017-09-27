@@ -2,7 +2,6 @@ package acceptance_test
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -80,9 +79,6 @@ var _ = Describe("lbs test", func() {
 				MatchRegexp(".*-cf-ssh-lb"),
 				MatchRegexp(".*-cf-tcp-lb"),
 			))
-
-			certificateName := aws.GetSSLCertificateNameFromLBs(bbl.PredefinedEnvID())
-			Expect(strings.TrimSpace(aws.DescribeCertificate(certificateName).Body)).To(Equal(strings.TrimSpace(testhelpers.BBL_CERT)))
 		})
 
 		By("verifying that the bbl lbs output contains the cf lbs", func() {

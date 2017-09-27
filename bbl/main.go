@@ -11,10 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation/templates"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
-	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/certs"
@@ -24,7 +21,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/proxy"
-	"github.com/cloudfoundry/bosh-bootloader/stack"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
@@ -73,12 +69,8 @@ func main() {
 	terraformExecutor := terraform.NewExecutor(terraformCmd, appConfig.Global.Debug)
 
 	var (
-		stackMigrator             stack.Migrator
 		availabilityZoneRetriever ec2.AvailabilityZoneRetriever
-		certificateDeleter        iam.CertificateDeleter
 		certificateValidator      certs.Validator
-		infrastructureManager     cloudformation.InfrastructureManager
-		stackManager              cloudformation.StackManager
 		networkClient             helpers.NetworkClient
 		networkDeletionValidator  commands.NetworkDeletionValidator
 
@@ -94,22 +86,11 @@ func main() {
 		}
 		awsClientProvider.SetConfig(awsConfiguration, logger)
 		awsClient := awsClientProvider.Client()
-		iamClient := awsClientProvider.GetIAMClient()
-		cloudFormationClient := awsClientProvider.GetCloudFormationClient()
-
-		templateBuilder := templates.NewTemplateBuilder(logger)
-		certificateDescriber := iam.NewCertificateDescriber(iamClient)
-		userPolicyDeleter := iam.NewUserPolicyDeleter(iamClient)
-		awsKeyPairDeleter := awsClient
 
 		availabilityZoneRetriever = awsClient
-		certificateDeleter = iam.NewCertificateDeleter(iamClient)
 		certificateValidator = certs.NewValidator()
 		networkDeletionValidator = awsClient
-		stackManager = cloudformation.NewStackManager(cloudFormationClient, logger)
-		infrastructureManager = cloudformation.NewInfrastructureManager(templateBuilder, stackManager)
 
-		stackMigrator = stack.NewMigrator(terraformExecutor, infrastructureManager, certificateDescriber, userPolicyDeleter, availabilityZoneRetriever, awsKeyPairDeleter)
 		networkClient = awsClient
 	}
 
@@ -126,7 +107,7 @@ func main() {
 
 	var envIDManager helpers.EnvIDManager
 	if appConfig.State.IAAS != "" {
-		envIDManager = helpers.NewEnvIDManager(envIDGenerator, infrastructureManager, networkClient)
+		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
 
 	var (
@@ -134,16 +115,16 @@ func main() {
 		outputGenerator   terraform.OutputGenerator
 		templateGenerator terraform.TemplateGenerator
 	)
-
-	if appConfig.State.IAAS == "aws" {
+	switch appConfig.State.IAAS {
+	case "aws":
 		templateGenerator = awsterraform.NewTemplateGenerator()
 		inputGenerator = awsterraform.NewInputGenerator(availabilityZoneRetriever)
 		outputGenerator = awsterraform.NewOutputGenerator(terraformExecutor)
-	} else if appConfig.State.IAAS == "azure" {
+	case "azure":
 		templateGenerator = azureterraform.NewTemplateGenerator()
 		inputGenerator = azureterraform.NewInputGenerator()
 		outputGenerator = azureterraform.NewOutputGenerator(terraformExecutor)
-	} else if appConfig.State.IAAS == "gcp" {
+	case "gcp":
 		outputGenerator = gcpterraform.NewOutputGenerator(terraformExecutor)
 		templateGenerator = gcpterraform.NewTemplateGenerator()
 		inputGenerator = gcpterraform.NewInputGenerator()
@@ -156,7 +137,6 @@ func main() {
 		OutputGenerator:       outputGenerator,
 		TerraformOutputBuffer: terraformOutputBuffer,
 		Logger:                logger,
-		StackMigrator:         stackMigrator,
 	})
 
 	// BOSH
@@ -169,17 +149,13 @@ func main() {
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
 	sshKeyGetter := bosh.NewSSHKeyGetter()
 
-	// Cloud Config
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
-	if appConfig.State.IAAS == "aws" {
-		awsCloudFormationOpsGenerator := awscloudconfig.NewCloudFormationOpsGenerator(availabilityZoneRetriever, infrastructureManager)
-		awsTerraformOpsGenerator := awscloudconfig.NewTerraformOpsGenerator(terraformManager)
-		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(awsCloudFormationOpsGenerator, awsTerraformOpsGenerator)
-	}
-	if appConfig.State.IAAS == "gcp" {
+	switch appConfig.State.IAAS {
+	case "aws":
+		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager)
+	case "gcp":
 		cloudConfigOpsGenerator = gcpcloudconfig.NewOpsGenerator(terraformManager)
-	}
-	if appConfig.State.IAAS == "azure" {
+	case "azure":
 		cloudConfigOpsGenerator = azurecloudconfig.NewOpsGenerator(terraformManager)
 	}
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
@@ -191,19 +167,20 @@ func main() {
 		lbsCmd       commands.LBsCmd
 		deleteLBsCmd commands.DeleteLBsCmd
 	)
-	if appConfig.State.IAAS == "aws" {
-		environmentValidator := awsapplication.NewEnvironmentValidator(infrastructureManager, boshClientProvider)
+	switch appConfig.State.IAAS {
+	case "aws":
+		environmentValidator := awsapplication.NewEnvironmentValidator(boshClientProvider)
 		upCmd = commands.NewAWSUp()
 		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, environmentValidator, terraformManager)
-	} else if appConfig.State.IAAS == "gcp" {
+	case "gcp":
 		environmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 		upCmd = commands.NewGCPUp(gcpClient)
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
-	} else if appConfig.State.IAAS == "azure" {
+	case "azure":
 		azureClient := azure.NewClient()
 		upCmd = commands.NewAzureUp(azureClient)
 		deleteLBsCmd = commands.NewAzureDeleteLBs(cloudConfigManager, stateStore, terraformManager)
@@ -219,19 +196,19 @@ func main() {
 	commandSet["up"] = up
 	sshKeyDeleter := bosh.NewSSHKeyDeleter()
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
-	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, stackManager, infrastructureManager, certificateDeleter, stateStore, stateValidator, terraformManager, networkDeletionValidator)
+	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
 	commandSet["create-lbs"] = commands.NewCreateLBs(createLBsCmd, logger, stateValidator, certificateValidator, boshManager)
 	commandSet["update-lbs"] = commandSet["create-lbs"]
 	commandSet["delete-lbs"] = commands.NewDeleteLBs(deleteLBsCmd, logger, stateValidator, boshManager)
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)
-	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.JumpboxAddressPropertyName)
-	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorAddressPropertyName)
-	commandSet["director-username"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorUsernamePropertyName)
-	commandSet["director-password"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorPasswordPropertyName)
-	commandSet["director-ca-cert"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.DirectorCACertPropertyName)
+	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.JumpboxAddressPropertyName)
+	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorAddressPropertyName)
+	commandSet["director-username"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorUsernamePropertyName)
+	commandSet["director-password"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorPasswordPropertyName)
+	commandSet["director-ca-cert"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorCACertPropertyName)
 	commandSet["ssh-key"] = commands.NewSSHKey(logger, stateValidator, sshKeyGetter)
-	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, infrastructureManager, commands.EnvIDPropertyName)
+	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)

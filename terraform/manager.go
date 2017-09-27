@@ -15,18 +15,12 @@ type Manager struct {
 	outputGenerator       OutputGenerator
 	terraformOutputBuffer *bytes.Buffer
 	logger                logger
-	stackMigrator         stackMigrator
 }
 
 type executor interface {
 	Version() (string, error)
 	Destroy(inputs map[string]string, terraformTemplate, tfState string) (string, error)
 	Apply(inputs map[string]string, terraformTemplate, tfState string) (string, error)
-}
-
-//go:generate counterfeiter -o ./fakes/stack_migrator.go --fake-name StackMigrator . stackMigrator
-type stackMigrator interface {
-	Migrate(state storage.State) (storage.State, error)
 }
 
 type InputGenerator interface {
@@ -52,7 +46,6 @@ type NewManagerArgs struct {
 	OutputGenerator       OutputGenerator
 	TerraformOutputBuffer *bytes.Buffer
 	Logger                logger
-	StackMigrator         stackMigrator
 }
 
 func NewManager(args NewManagerArgs) Manager {
@@ -63,7 +56,6 @@ func NewManager(args NewManagerArgs) Manager {
 		outputGenerator:       args.OutputGenerator,
 		terraformOutputBuffer: args.TerraformOutputBuffer,
 		logger:                args.Logger,
-		stackMigrator:         args.StackMigrator,
 	}
 }
 
@@ -95,20 +87,6 @@ func (m Manager) ValidateVersion() error {
 }
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
-	var err error
-
-	if bblState.IAAS == "aws" {
-		m.logger.Step("validating whether stack needs to be migrated")
-		bblState, err = m.stackMigrator.Migrate(bblState)
-
-		switch err.(type) {
-		case executorError:
-			return storage.State{}, NewManagerError(bblState, err.(executorError))
-		case error:
-			return storage.State{}, err
-		}
-	}
-
 	m.logger.Step("generating terraform template")
 	template := m.templateGenerator.Generate(bblState)
 

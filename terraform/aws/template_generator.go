@@ -93,19 +93,6 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		TCPLBInternalDescription:     "CF TCP Internal",
 	}
 
-	if state.MigratedFromCloudFormation {
-		templateData.BOSHDescription = "BOSH"
-		templateData.RouterDescription = "Router"
-		templateData.RouterInternalDescription = "CFRouterInternal"
-		templateData.SSHLBDescription = "CFSSHProxy"
-		templateData.SSHLBInternalDescription = "CFSSHProxyInternal"
-		templateData.SSLCertificateNameProperty = `name              = "${var.ssl_certificate_name}"`
-	}
-
-	if state.LB.Cert == "" || state.LB.Key == "" {
-		templateData.IgnoreSSLCertificateProperties = `ignore_changes = ["certificate_body", "certificate_chain", "private_key"]`
-	}
-
 	t := template.New("descriptions")
 	t, err = t.Parse(tmpl)
 	if err != nil {

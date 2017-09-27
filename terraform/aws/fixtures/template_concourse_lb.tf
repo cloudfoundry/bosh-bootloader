@@ -784,16 +784,8 @@ variable "ssl_certificate_private_key" {
   type = "string"
 }
 
-variable "ssl_certificate_name" {
-  type = "string"
-}
-
-variable "ssl_certificate_name_prefix" {
-  type = "string"
-}
-
 resource "aws_iam_server_certificate" "lb_cert" {
-  name_prefix       = "${var.ssl_certificate_name_prefix}"
+  name_prefix = "${var.short_env_id}"
 
   certificate_body  = "${var.ssl_certificate}"
   certificate_chain = "${var.ssl_certificate_chain}"
@@ -801,6 +793,5 @@ resource "aws_iam_server_certificate" "lb_cert" {
 
   lifecycle {
     create_before_destroy = true
-	ignore_changes = ["certificate_body", "certificate_chain", "private_key"]
   }
 }

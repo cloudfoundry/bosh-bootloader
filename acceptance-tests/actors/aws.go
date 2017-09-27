@@ -8,9 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
-	"github.com/cloudfoundry/bosh-bootloader/aws/cloudformation"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
-	"github.com/cloudfoundry/bosh-bootloader/aws/iam"
 
 	. "github.com/onsi/gomega"
 
@@ -22,11 +20,8 @@ import (
 )
 
 type AWS struct {
-	stackManager         cloudformation.StackManager
-	certificateDescriber iam.CertificateDescriber
-	client               ec2.Client
-	cloudFormationClient cloudformation.Client
-	elbClient            *elb.ELB
+	client    ec2.Client
+	elbClient *elb.ELB
 }
 
 func NewAWS(configuration acceptance.Config) AWS {
@@ -39,30 +34,11 @@ func NewAWS(configuration acceptance.Config) AWS {
 	clientProvider := &clientmanager.ClientProvider{}
 	clientProvider.SetConfig(awsConfig, application.NewLogger(os.Stdout))
 	client := clientProvider.Client()
-	cloudFormationClient := clientProvider.GetCloudFormationClient()
-	iamClient := clientProvider.GetIAMClient()
-
-	stackManager := cloudformation.NewStackManager(cloudFormationClient, application.NewLogger(os.Stdout))
-	certificateDescriber := iam.NewCertificateDescriber(iamClient)
 
 	return AWS{
-		stackManager:         stackManager,
-		certificateDescriber: certificateDescriber,
-		client:               client,
-		cloudFormationClient: cloudFormationClient,
-		elbClient:            elb.New(session.New(awsConfig.ClientConfig())),
+		client:    client,
+		elbClient: elb.New(session.New(awsConfig.ClientConfig())),
 	}
-}
-
-func (a AWS) StackExists(stackName string) bool {
-	_, err := a.stackManager.Describe(stackName)
-
-	if err == cloudformation.StackNotFound {
-		return false
-	}
-
-	Expect(err).NotTo(HaveOccurred())
-	return true
 }
 
 func (a AWS) Instances(envID string) []string {
@@ -86,15 +62,6 @@ func (a AWS) LoadBalancers(vpcName string) []string {
 	}
 
 	return loadBalancerNames
-}
-
-func (a AWS) DescribeCertificate(certificateName string) iam.Certificate {
-	certificate, err := a.certificateDescriber.Describe(certificateName)
-	if err != nil && err != iam.CertificateNotFound {
-		Expect(err).NotTo(HaveOccurred())
-	}
-
-	return certificate
 }
 
 func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {

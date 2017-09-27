@@ -7,18 +7,16 @@ import (
 )
 
 type OpsGeneratorWrapper struct {
-	awsCloudFormationOpsGenerator OpsGenerator
-	awsTerraformOpsGenerator      OpsGenerator
-	gcpOpsGenerator               OpsGenerator
-	azureOpsGenerator             OpsGenerator
+	awsOpsGenerator   OpsGenerator
+	gcpOpsGenerator   OpsGenerator
+	azureOpsGenerator OpsGenerator
 }
 
-func NewOpsGenerator(awsCloudFormationOpsGenerator OpsGenerator, awsTerraformOpsGenerator OpsGenerator, gcpOpsGenerator OpsGenerator, azureOpsGenerator OpsGenerator) OpsGeneratorWrapper {
+func NewOpsGenerator(awsOpsGenerator OpsGenerator, gcpOpsGenerator OpsGenerator, azureOpsGenerator OpsGenerator) OpsGeneratorWrapper {
 	return OpsGeneratorWrapper{
-		awsCloudFormationOpsGenerator: awsCloudFormationOpsGenerator,
-		awsTerraformOpsGenerator:      awsTerraformOpsGenerator,
-		gcpOpsGenerator:               gcpOpsGenerator,
-		azureOpsGenerator:             azureOpsGenerator,
+		awsOpsGenerator:   awsOpsGenerator,
+		gcpOpsGenerator:   gcpOpsGenerator,
+		azureOpsGenerator: azureOpsGenerator,
 	}
 }
 
@@ -27,11 +25,7 @@ func (o OpsGeneratorWrapper) Generate(state storage.State) (string, error) {
 	case "gcp":
 		return o.gcpOpsGenerator.Generate(state)
 	case "aws":
-		if state.TFState != "" {
-			return o.awsTerraformOpsGenerator.Generate(state)
-		} else {
-			return o.awsCloudFormationOpsGenerator.Generate(state)
-		}
+		return o.awsOpsGenerator.Generate(state)
 	case "azure":
 		return o.azureOpsGenerator.Generate(state)
 	default:

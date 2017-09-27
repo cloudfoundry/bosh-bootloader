@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	newFakes "github.com/cloudfoundry/bosh-bootloader/terraform/fakes"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
@@ -24,7 +23,6 @@ var _ = Describe("Manager", func() {
 		inputGenerator        *fakes.InputGenerator
 		outputGenerator       *fakes.OutputGenerator
 		logger                *fakes.Logger
-		migrator              *newFakes.StackMigrator
 		manager               terraform.Manager
 		terraformOutputBuffer bytes.Buffer
 		expectedTFState       string
@@ -37,7 +35,6 @@ var _ = Describe("Manager", func() {
 		inputGenerator = &fakes.InputGenerator{}
 		outputGenerator = &fakes.OutputGenerator{}
 		logger = &fakes.Logger{}
-		migrator = &newFakes.StackMigrator{}
 
 		expectedTFOutput = "some terraform output"
 		expectedTFState = "some-updated-tf-state"
@@ -49,7 +46,6 @@ var _ = Describe("Manager", func() {
 			OutputGenerator:       outputGenerator,
 			TerraformOutputBuffer: &terraformOutputBuffer,
 			Logger:                logger,
-			StackMigrator:         migrator,
 		})
 	})
 
@@ -91,8 +87,6 @@ var _ = Describe("Manager", func() {
 				"credentials":   "some-path",
 				"system_domain": incomingState.LB.Domain,
 			}
-
-			migrator.MigrateReturns(incomingState, nil)
 		})
 
 		It("logs steps", func() {
@@ -114,7 +108,6 @@ var _ = Describe("Manager", func() {
 					EnvID:   "some-env-id",
 					TFState: "some-tf-state",
 				}
-				migrator.MigrateReturns(awsState, nil)
 				inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
 					"env_id": incomingState.EnvID,
 				}
@@ -126,7 +119,6 @@ var _ = Describe("Manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-					"validating whether stack needs to be migrated",
 					"generating terraform template",
 					"generating terraform variables",
 					"applying terraform template",
@@ -142,9 +134,6 @@ var _ = Describe("Manager", func() {
 				state, err := manager.Apply(awsState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(migrator.MigrateCallCount()).To(Equal(1))
-				Expect(migrator.MigrateArgsForCall(0)).To(Equal(awsState))
-
 				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(awsState))
 				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(awsState))
 
@@ -153,15 +142,6 @@ var _ = Describe("Manager", func() {
 				Expect(executor.ApplyCall.Receives.Template).To(Equal(string("some-terraform-template")))
 				Expect(state).To(Equal(expectedAWSState))
 			})
-
-			Context("when the stack cannot be migrated", func() {
-				It("returns an error", func() {
-					migrator.MigrateReturns(storage.State{}, errors.New("failed to migrate"))
-
-					_, err := manager.Apply(awsState)
-					Expect(err).To(MatchError("failed to migrate"))
-				})
-			})
 		})
 
 		It("returns a state with new tfState and output from executor apply", func() {
@@ -169,8 +149,6 @@ var _ = Describe("Manager", func() {
 
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(migrator.MigrateCallCount()).To(Equal(0))
 
 			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))

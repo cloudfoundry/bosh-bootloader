@@ -86,73 +86,14 @@ var _ = Describe("Delete LBs", func() {
 			})
 		})
 
-		Context("when migrating a stack", func() {
-			var state storage.State
-			BeforeEach(func() {
-				state = storage.State{
-					AWS: storage.AWS{
-						Region: "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-keypair",
-					},
-					EnvID: "some-env-id",
-					Stack: storage.Stack{
-						LBType:          "concourse",
-						CertificateName: "some-certificate",
-						Name:            "some-stack-name",
-						BOSHAZ:          "some-bosh-az",
-					},
-				}
-
-				stateWithLB := state
-				state.LB.Type = "concourse"
-				terraformManager.ApplyReturnsOnCall(0, stateWithLB, nil)
-			})
-
-			It("terraform applies twice", func() {
-				err := command.Execute(state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.ApplyCallCount()).To(Equal(2))
-				Expect(terraformManager.ApplyArgsForCall(0)).To(Equal(state))
-
-				expectedTerraformState := state
-				expectedTerraformState.LB = storage.LB{}
-				Expect(terraformManager.ApplyArgsForCall(1)).To(Equal(expectedTerraformState))
-			})
-
-			Context("when terraform manager fails to apply the first time with terraformManagerError", func() {
-				It("return an error", func() {
-					terraformManager.ApplyReturnsOnCall(0, storage.State{}, errors.New("apply failed"))
-
-					err := command.Execute(state)
-					Expect(err).To(MatchError("apply failed"))
-				})
-			})
-		})
-
 		Context("when the bbl env was created without a bosh director", func() {
 			It("does not try to update the cloud config", func() {
 				state := storage.State{
 					NoDirector: true,
-					AWS: storage.AWS{
-						Region: "some-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name: "some-keypair",
-					},
-					EnvID: "some-env-id",
-					Stack: storage.Stack{
-						CertificateName: "some-certificate",
-						Name:            "some-stack-name",
-						BOSHAZ:          "some-bosh-az",
-					},
 					LB: storage.LB{
 						Type: "concourse",
 					},
 				}
-
 				terraformManager.ApplyReturns(state, nil)
 
 				err := command.Execute(state)

@@ -28,13 +28,6 @@ type logger interface {
 	Println(message string)
 }
 
-type Stack struct {
-	Name            string `json:"name"`
-	LBType          string `json:"lbType"`
-	CertificateName string `json:"certificateName"`
-	BOSHAZ          string `json:"boshAZ"`
-}
-
 type LB struct {
 	Type   string `json:"type"`
 	Cert   string `json:"cert"`
@@ -44,22 +37,20 @@ type LB struct {
 }
 
 type State struct {
-	Version                    int     `json:"version"`
-	IAAS                       string  `json:"iaas"`
-	ID                         string  `json:"id"`
-	NoDirector                 bool    `json:"noDirector"`
-	MigratedFromCloudFormation bool    `json:"migratedFromCloudFormation"`
-	AWS                        AWS     `json:"aws,omitempty"`
-	Azure                      Azure   `json:"azure,omitempty"`
-	GCP                        GCP     `json:"gcp,omitempty"`
-	KeyPair                    KeyPair `json:"keyPair,omitempty"`
-	Jumpbox                    Jumpbox `json:"jumpbox,omitempty"`
-	BOSH                       BOSH    `json:"bosh,omitempty"`
-	Stack                      Stack   `json:"stack"`
-	EnvID                      string  `json:"envID"`
-	TFState                    string  `json:"tfState"`
-	LB                         LB      `json:"lb"`
-	LatestTFOutput             string  `json:"latestTFOutput"`
+	Version        int     `json:"version"`
+	IAAS           string  `json:"iaas"`
+	ID             string  `json:"id"`
+	NoDirector     bool    `json:"noDirector"`
+	AWS            AWS     `json:"aws,omitempty"`
+	Azure          Azure   `json:"azure,omitempty"`
+	GCP            GCP     `json:"gcp,omitempty"`
+	KeyPair        KeyPair `json:"keyPair,omitempty"`
+	Jumpbox        Jumpbox `json:"jumpbox,omitempty"`
+	BOSH           BOSH    `json:"bosh,omitempty"`
+	EnvID          string  `json:"envID"`
+	TFState        string  `json:"tfState"`
+	LB             LB      `json:"lb"`
+	LatestTFOutput string  `json:"latestTFOutput"`
 }
 
 type Store struct {
@@ -98,7 +89,6 @@ func (s Store) Set(state State) error {
 		}
 		state.ID = uuid.String()
 	}
-
 
 	state.AWS.AccessKeyID = ""
 	state.AWS.SecretAccessKey = ""

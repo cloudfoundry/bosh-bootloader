@@ -316,7 +316,7 @@ var _ = Describe("AWS Create LBs", func() {
 		})
 
 		Context("failure cases", func() {
-			DescribeTable("returns an error when an lb already exists",
+			PDescribeTable("returns an error when an lb already exists",
 				func(newLbType, oldLbType string) {
 					err := command.Execute(
 						commands.CreateLBsConfig{
@@ -327,8 +327,8 @@ var _ = Describe("AWS Create LBs", func() {
 							},
 						},
 						storage.State{
-							Stack: storage.Stack{
-								LBType: oldLbType,
+							LB: storage.LB{
+								Type: oldLbType,
 							},
 						},
 					)
