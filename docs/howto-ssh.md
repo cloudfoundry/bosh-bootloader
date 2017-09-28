@@ -27,7 +27,7 @@ Required:
 1. Add the key to the SSH agent:
 
     ```
-    ssh-add jumpbox.key
+    ssh-add jumpbox-user.key
     ```
 
 1. SSH to the jumpbox:
