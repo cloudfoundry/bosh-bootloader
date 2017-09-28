@@ -1,0 +1,13 @@
+#!/bin/bash -exu
+
+pushd terraform/aws
+  go-bindata -pkg aws -o templates.go templates
+popd
+
+pushd terraform/azure
+  go-bindata -pkg azure -o templates.go templates
+popd
+
+pushd terraform/gcp
+  go-bindata -pkg gcp -o templates.go templates
+popd

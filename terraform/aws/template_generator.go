@@ -112,12 +112,12 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 
 func readTemplates() templates {
 	tmpls := templates{}
-	tmpls.base = string(MustAsset("templates/base_template.tf"))
-	tmpls.lbSubnet = string(MustAsset("templates/lb_subnet_template.tf"))
-	tmpls.concourseLB = string(MustAsset("templates/concourse_lb_template.tf"))
-	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate_template.tf"))
-	tmpls.cfLB = string(MustAsset("templates/cf_lb_template.tf"))
-	tmpls.cfDNS = string(MustAsset("templates/cf_dns_template.tf"))
+	tmpls.base = string(MustAsset("templates/base.tf"))
+	tmpls.lbSubnet = string(MustAsset("templates/lb_subnet.tf"))
+	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
+	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate.tf"))
+	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
+	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
 
 	return tmpls
 }

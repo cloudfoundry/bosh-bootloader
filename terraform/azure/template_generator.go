@@ -28,12 +28,12 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 
 func readTemplates() templates {
 	tmpls := templates{}
-	tmpls.vars = string(MustAsset("templates/vars_template.tf"))
-	tmpls.resourceGroup = string(MustAsset("templates/resource_group_template.tf"))
-	tmpls.network = string(MustAsset("templates/network_template.tf"))
-	tmpls.storage = string(MustAsset("templates/storage_template.tf"))
-	tmpls.networkSecurityGroup = string(MustAsset("templates/network_security_group_template.tf"))
-	tmpls.output = string(MustAsset("templates/output_template.tf"))
+	tmpls.vars = string(MustAsset("templates/vars.tf"))
+	tmpls.resourceGroup = string(MustAsset("templates/resource_group.tf"))
+	tmpls.network = string(MustAsset("templates/network.tf"))
+	tmpls.storage = string(MustAsset("templates/storage.tf"))
+	tmpls.networkSecurityGroup = string(MustAsset("templates/network_security_group.tf"))
+	tmpls.output = string(MustAsset("templates/output.tf"))
 
 	return tmpls
 }

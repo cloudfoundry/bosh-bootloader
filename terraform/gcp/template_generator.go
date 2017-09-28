@@ -88,12 +88,12 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 
 func readTemplates() templates {
 	tmpls := templates{}
-	tmpls.vars = string(MustAsset("templates/vars_template.tf"))
-	tmpls.jumpbox = string(MustAsset("templates/jumpbox_template.tf"))
-	tmpls.boshDirector = string(MustAsset("templates/bosh_director_template.tf"))
-	tmpls.cfLB = string(MustAsset("templates/cf_lb_template.tf"))
-	tmpls.cfDNS = string(MustAsset("templates/cf_dns_template.tf"))
-	tmpls.concourseLB = string(MustAsset("templates/concourse_lb_template.tf"))
+	tmpls.vars = string(MustAsset("templates/vars.tf"))
+	tmpls.jumpbox = string(MustAsset("templates/jumpbox.tf"))
+	tmpls.boshDirector = string(MustAsset("templates/bosh_director.tf"))
+	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
+	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
+	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
 
 	return tmpls
 }
