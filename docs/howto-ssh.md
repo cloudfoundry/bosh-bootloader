@@ -1,14 +1,13 @@
 # How-To SSH
 
-## To the BOSH director with a jumpbox
+## To the BOSH director if you have a jumpbox (v5.0.0+)
 
 Required:
 * [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment)
 
-1. Start by applying the jumpbox-user ops-file during bbl up:
+1. Set JUMPBOX_PRIVATE_KEY by running:
 
     ```
-    bbl up --credhub --ops-file bosh-deployment/jumpbox-user.yml
     eval "$(bbl print-env)"
     ```
 
@@ -34,7 +33,7 @@ Required:
 1. SSH to the jumpbox:
 
     ```
-    ssh -A jumpbox@<INSERT JUMPBOX EXTERNAL IP> -i $BOSH_GW_PRIVATE_KEY
+    ssh -A jumpbox@`bbl jumpbox-address|sed 's/:22//'` -i $JUMPBOX_PRIVATE_KEY
     ```
 
 1. From the jumpbox, ssh to the director:
