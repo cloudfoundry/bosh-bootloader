@@ -61,7 +61,7 @@ resource "google_compute_firewall" "bosh-open" {
   source_tags = ["${var.env_id}-bosh-open"]
 
   allow {
-    ports = ["22", "6868", "8443", "25555"]
+    ports = ["22", "6868", "8443", "8844", "25555"]
     protocol = "tcp"
   }
 
