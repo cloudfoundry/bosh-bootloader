@@ -39,10 +39,15 @@ var _ = Describe("CloudConfig", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when the state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
-			err := cloudConfig.CheckFastFails([]string{}, storage.State{})
-			Expect(err).To(MatchError("failed to validate state"))
+		Context("when the state validator fails", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
+			})
+
+			It("returns an error", func() {
+				err := cloudConfig.CheckFastFails([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to validate state"))
+			})
 		})
 	})
 
@@ -56,10 +61,15 @@ var _ = Describe("CloudConfig", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the cloud config manager fails to generate", func() {
-				cloudConfigManager.GenerateCall.Returns.Error = errors.New("failed to generate cloud configuration")
-				err := cloudConfig.Execute([]string{}, state)
-				Expect(err).To(MatchError("failed to generate cloud configuration"))
+			Context("when the cloud config manager fails to generate", func() {
+				BeforeEach(func() {
+					cloudConfigManager.GenerateCall.Returns.Error = errors.New("failed to generate cloud configuration")
+				})
+
+				It("returns an error", func() {
+					err := cloudConfig.Execute([]string{}, state)
+					Expect(err).To(MatchError("failed to generate cloud configuration"))
+				})
 			})
 		})
 	})

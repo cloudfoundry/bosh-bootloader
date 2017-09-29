@@ -27,15 +27,18 @@ var _ = Describe("LBs", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+		Context("when state validator fails", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			})
 
-			err := lbsCommand.CheckFastFails([]string{}, storage.State{})
+			It("returns an error", func() {
+				err := lbsCommand.CheckFastFails([]string{}, storage.State{})
 
-			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-			Expect(err).To(MatchError("state validator failed"))
+				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(err).To(MatchError("state validator failed"))
+			})
 		})
-
 	})
 
 	Describe("Execute", func() {
@@ -51,11 +54,15 @@ var _ = Describe("LBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when LBs fails", func() {
-				lbs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+			Context("when LBs fails", func() {
+				BeforeEach(func() {
+					lbs.ExecuteCall.Returns.Error = errors.New("something bad happened")
+				})
 
-				err := lbsCommand.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("something bad happened"))
+				It("returns an error", func() {
+					err := lbsCommand.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("something bad happened"))
+				})
 			})
 		})
 	})

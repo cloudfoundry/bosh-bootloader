@@ -51,11 +51,16 @@ var _ = Describe("Up", func() {
 		})
 
 		Context("when the version of BOSH is lower than 2.0.24", func() {
-			It("returns a helpful error message when bbling up with a director", func() {
-				boshManager.VersionCall.Returns.Version = "1.9.1"
-				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
+			Context("when bbling up with a director", func() {
+				BeforeEach(func() {
+					boshManager.VersionCall.Returns.Version = "1.9.1"
+				})
 
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
+				It("returns a helpful error message", func() {
+					err := command.CheckFastFails([]string{}, storage.State{Version: 999})
+
+					Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
+				})
 			})
 
 			Context("when the no-director flag is specified", func() {
@@ -228,104 +233,161 @@ var _ = Describe("Up", func() {
 				Expect(err).To(MatchError("Terraform validate version: grape"))
 			})
 
-			It("returns an error as-is when the iaas up command fails", func() {
-				iaasUp.ExecuteCall.Returns.Error = errors.New("tomato")
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("tomato"))
+			Context("when the iaas up command fails", func() {
+				BeforeEach(func() {
+					iaasUp.ExecuteCall.Returns.Error = errors.New("tomato")
+				})
+
+				It("returns an error as-is", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("tomato"))
+				})
 			})
 
-			It("returns an error when saving the state fails after env id sync", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
+			Context("when saving the state fails after env id sync", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Save state after IAAS up: kiwi"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Save state after IAAS up: kiwi"))
+				})
 			})
 
-			It("returns an error when parse args fails", func() {
-				err := command.Execute([]string{"--foo"}, storage.State{})
-				Expect(err).To(MatchError("flag provided but not defined: -foo"))
+			Context("when parse args fails", func() {
+				It("returns an error", func() {
+					err := command.Execute([]string{"--foo"}, storage.State{})
+					Expect(err).To(MatchError("flag provided but not defined: -foo"))
+				})
 			})
 
-			It("fast fails when the config has the no-director flag set and the bbl state has a bosh director", func() {
-				iaasUp.ExecuteCall.Returns.State = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
+			Context("when the config has the no-director flag set and the bbl state has a bosh director", func() {
+				BeforeEach(func() {
+					iaasUp.ExecuteCall.Returns.State = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
+				})
 
-				err := command.Execute([]string{"--no-director"}, incomingState)
-				Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
+				It("fast fails", func() {
+					err := command.Execute([]string{"--no-director"}, incomingState)
+					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
+				})
 			})
 
-			It("returns an error when the ops file cannot be read", func() {
-				err := command.Execute([]string{"--ops-file", "some/fake/path"}, storage.State{})
-				Expect(err).To(MatchError("Reading ops-file contents: open some/fake/path: no such file or directory"))
+			Context("when the ops file cannot be read", func() {
+				It("returns an error", func() {
+					err := command.Execute([]string{"--ops-file", "some/fake/path"}, storage.State{})
+					Expect(err).To(MatchError("Reading ops-file contents: open some/fake/path: no such file or directory"))
+				})
 			})
 
-			It("returns an error when the env id manager fails", func() {
-				envIDManager.SyncCall.Returns.Error = errors.New("apple")
+			Context("when the env id manager fails", func() {
+				BeforeEach(func() {
+					envIDManager.SyncCall.Returns.Error = errors.New("apple")
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Env id manager sync: apple"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Env id manager sync: apple"))
+				})
 			})
 
-			It("returns an error when saving the state fails after env id sync", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
+			Context("when saving the state fails after env id sync", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Save state after sync: kiwi"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Save state after sync: kiwi"))
+				})
 			})
 
-			It("returns the error when the terraform manager fails with non terraformManagerError", func() {
-				terraformManager.ApplyCall.Returns.Error = errors.New("passionfruit")
+			Context("when the terraform manager fails with non terraformManagerError", func() {
+				BeforeEach(func() {
+					terraformManager.ApplyCall.Returns.Error = errors.New("passionfruit")
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("passionfruit"))
+				It("returns the error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("passionfruit"))
+				})
 			})
 
-			It("returns an error when saving the state fails after terraform apply", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
+			Context("when saving the state fails after terraform apply", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Save state after terraform apply: kiwi"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Save state after terraform apply: kiwi"))
+				})
 			})
 
-			It("returns an error when the terraform manager cannot get terraform outputs", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("raspberry")
+			Context("when the terraform manager cannot get terraform outputs", func() {
+				BeforeEach(func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("raspberry")
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Parse terraform outputs: raspberry"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Parse terraform outputs: raspberry"))
+				})
 			})
 
-			It("returns an error when the jumpbox cannot be deployed", func() {
-				boshManager.CreateJumpboxCall.Returns.Error = errors.New("pineapple")
+			Context("when the jumpbox cannot be deployed", func() {
+				BeforeEach(func() {
+					boshManager.CreateJumpboxCall.Returns.Error = errors.New("pineapple")
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Create jumpbox: pineapple"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Create jumpbox: pineapple"))
+				})
 			})
 
-			It("returns an error when saving the state fails after create jumpbox", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {Error: errors.New("kiwi")}}
+			Context("when saving the state fails after create jumpbox", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {Error: errors.New("kiwi")}}
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Save state after create jumpbox: kiwi"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Save state after create jumpbox: kiwi"))
+				})
 			})
 
-			It("returns an error when bosh cannot be deployed", func() {
-				boshManager.CreateDirectorCall.Returns.Error = errors.New("pineapple")
+			Context("when bosh cannot be deployed", func() {
+				BeforeEach(func() {
+					boshManager.CreateDirectorCall.Returns.Error = errors.New("pineapple")
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Create bosh director: pineapple"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Create bosh director: pineapple"))
+				})
 			})
 
-			It("returns an error when saving the state fails after create director", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {Error: errors.New("kiwi")}}
+			Context("when saving the state fails after create director", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {Error: errors.New("kiwi")}}
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Save state after create director: kiwi"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Save state after create director: kiwi"))
+				})
 			})
 
-			It("returns an error when the cloud config cannot be uploaded", func() {
-				cloudConfigManager.UpdateCall.Returns.Error = errors.New("coconut")
+			Context("when the cloud config cannot be uploaded", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("coconut")
+				})
 
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Update cloud config: coconut"))
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Update cloud config: coconut"))
+				})
 			})
 
 			Context("when the terraform manager fails with terraformManagerError", func() {
@@ -352,11 +414,15 @@ var _ = Describe("Up", func() {
 					Expect(stateStore.SetCall.Receives[2].State).To(Equal(partialState))
 				})
 
-				It("returns an error when the applier fails and we cannot retrieve the updated bbl state", func() {
-					managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
+				Context("when the applier fails and we cannot retrieve the updated bbl state", func() {
+					BeforeEach(func() {
+						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
+					})
 
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("the following errors occurred:\ngrapefruit,\nfailed to retrieve bbl state"))
+					It("returns an error", func() {
+						err := command.Execute([]string{}, storage.State{})
+						Expect(err).To(MatchError("the following errors occurred:\ngrapefruit,\nfailed to retrieve bbl state"))
+					})
 				})
 
 				Context("when we fail to set the bbl state", func() {
@@ -389,14 +455,18 @@ var _ = Describe("Up", func() {
 					Expect(stateStore.SetCall.Receives[4].State).To(Equal(partialState))
 				})
 
-				It("returns a compound error when it fails to save the state", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("lychee")}}
+				Context("when it fails to save the state", func() {
+					BeforeEach(func() {
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("lychee")}}
+					})
 
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Save state after bosh director create error: rambutan, lychee"))
+					It("returns a compound error", func() {
+						err := command.Execute([]string{}, storage.State{})
+						Expect(err).To(MatchError("Save state after bosh director create error: rambutan, lychee"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(5))
-					Expect(stateStore.SetCall.Receives[4].State).To(Equal(partialState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(5))
+						Expect(stateStore.SetCall.Receives[4].State).To(Equal(partialState))
+					})
 				})
 			})
 		})
@@ -464,9 +534,11 @@ var _ = Describe("Up", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when undefined flags are passed", func() {
-				_, err := command.ParseArgs([]string{"--foo", "bar"}, storage.State{})
-				Expect(err).To(MatchError("flag provided but not defined: -foo"))
+			Context("when undefined flags are passed", func() {
+				It("returns an error", func() {
+					_, err := command.ParseArgs([]string{"--foo", "bar"}, storage.State{})
+					Expect(err).To(MatchError("flag provided but not defined: -foo"))
+				})
 			})
 		})
 	})

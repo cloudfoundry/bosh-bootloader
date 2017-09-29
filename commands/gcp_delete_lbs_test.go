@@ -139,61 +139,77 @@ var _ = Describe("GCPDeleteLBs", func() {
 				}))
 			})
 
-			It("saves the tf state even if the applier failed", func() {
-				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-				terraformExecutorError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerError(storage.State{
-					TFState: "some-tf-state",
-				}, terraformExecutorError)
-				terraformManager.ApplyCall.Returns.Error = expectedError
+			Context("even if the applier failed", func() {
+				var expectedError error
 
-				err := command.Execute(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
+				BeforeEach(func() {
+					terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+					terraformExecutorError.ErrorCall.Returns = "failed to apply"
+					expectedError = terraform.NewManagerError(storage.State{
+						TFState: "some-tf-state",
+					}, terraformExecutorError)
+					terraformManager.ApplyCall.Returns.Error = expectedError
 				})
-				Expect(err).To(MatchError(expectedError))
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-					TFState: "some-updated-tf-state",
-				}))
+				It("saves the tf state", func() {
+					err := command.Execute(storage.State{
+						IAAS: "gcp",
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					})
+					Expect(err).To(MatchError(expectedError))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+						TFState: "some-updated-tf-state",
+					}))
+				})
 			})
 		})
 
 		Context("failure cases", func() {
-			It("fast fails if the environment validator fails", func() {
-				environmentValidator.ValidateCall.Returns.Error = errors.New("invalid")
+			Context("if the environment validator fails", func() {
+				It("fast fails", func() {
+					environmentValidator.ValidateCall.Returns.Error = errors.New("invalid")
 
-				err := command.Execute(storage.State{})
-				Expect(err).To(MatchError("invalid"))
+					err := command.Execute(storage.State{})
+					Expect(err).To(MatchError("invalid"))
+				})
 			})
 
-			It("fast fails if the terraform version is invalid", func() {
-				terraformManager.ValidateVersionCall.Returns.Error = errors.New("invalid")
-
-				err := command.Execute(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
+			Context("if the terraform version is invalid", func() {
+				BeforeEach(func() {
+					terraformManager.ValidateVersionCall.Returns.Error = errors.New("invalid")
 				})
-				Expect(err).To(MatchError("invalid"))
+
+				It("fast fails", func() {
+					err := command.Execute(storage.State{
+						IAAS: "gcp",
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					})
+					Expect(err).To(MatchError("invalid"))
+				})
 			})
 
-			It("returns an error if applier fails with non terraform apply error", func() {
-				terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
-
-				err := command.Execute(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
+			Context("if applier fails with non terraform apply error", func() {
+				BeforeEach(func() {
+					terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
 				})
-				Expect(err).To(MatchError("failed to apply"))
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+				It("returns an error", func() {
+					err := command.Execute(storage.State{
+						IAAS: "gcp",
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					})
+					Expect(err).To(MatchError("failed to apply"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(0))
+				})
 			})
 
 			Context("when terraform applier fails and it fails to save the state", func() {
@@ -248,30 +264,38 @@ var _ = Describe("GCPDeleteLBs", func() {
 				})
 			})
 
-			It("returns an error when updating cloud config fails", func() {
-				cloudConfigManager.UpdateCall.Returns.Error = errors.New("updating cloud config failed")
-
-				err := command.Execute(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
+			Context("when updating cloud config fails", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("updating cloud config failed")
 				})
-				Expect(err).To(MatchError("updating cloud config failed"))
+
+				It("returns an error", func() {
+					err := command.Execute(storage.State{
+						IAAS: "gcp",
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					})
+					Expect(err).To(MatchError("updating cloud config failed"))
+				})
 			})
 
-			It("returns an error when setting the state store fails", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{
-					{errors.New("failed to set state")},
-				}
-
-				err := command.Execute(storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
+			Context("when setting the state store fails", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{
+						{errors.New("failed to set state")},
+					}
 				})
-				Expect(err).To(MatchError("failed to set state"))
+
+				It("returns an error", func() {
+					err := command.Execute(storage.State{
+						IAAS: "gcp",
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					})
+					Expect(err).To(MatchError("failed to set state"))
+				})
 			})
 		})
 	})

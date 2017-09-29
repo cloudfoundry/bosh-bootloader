@@ -140,17 +140,22 @@ var _ = Describe("AWSLBs", func() {
 			})
 		})
 
-		It("returns error when lb type is not cf or concourse", func() {
-			incomingState = storage.State{
-				IAAS:    "aws",
-				TFState: "some-tf-state",
-				LB: storage.LB{
-					Type: "other",
-				},
-			}
-			err := command.Execute([]string{}, incomingState)
+		Context("when lb type is not cf or concourse", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:    "aws",
+					TFState: "some-tf-state",
+					LB: storage.LB{
+						Type: "other",
+					},
+				}
+			})
 
-			Expect(err).To(MatchError("no lbs found"))
+			It("returns error", func() {
+				err := command.Execute([]string{}, incomingState)
+
+				Expect(err).To(MatchError("no lbs found"))
+			})
 		})
 
 		Context("failure cases", func() {

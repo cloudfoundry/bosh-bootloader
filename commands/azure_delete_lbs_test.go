@@ -131,16 +131,26 @@ var _ = Describe("Delete LBs", func() {
 				})
 			})
 
-			It("return an error when cloud config manager fails to update", func() {
-				cloudConfigManager.UpdateCall.Returns.Error = errors.New("update failed")
-				err := command.Execute(incomingState)
-				Expect(err).To(MatchError("update failed"))
+			Context("when cloud config manager fails to update", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("update failed")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(incomingState)
+					Expect(err).To(MatchError("update failed"))
+				})
 			})
 
-			It("returns an error when the state fails to save lb type", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
-				err := command.Execute(incomingState)
-				Expect(err).To(MatchError("failed to save state"))
+			Context("when the state fails to save lb type", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
+				})
+				It("returns an error", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
+					err := command.Execute(incomingState)
+					Expect(err).To(MatchError("failed to save state"))
+				})
 			})
 		})
 	})

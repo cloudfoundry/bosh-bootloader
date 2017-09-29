@@ -45,10 +45,15 @@ var _ = Describe("PrintEnv", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when the state does not exist", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
-			err := printEnv.CheckFastFails([]string{}, storage.State{})
-			Expect(err).To(MatchError("failed to validate state"))
+		Context("when the state does not exist", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
+			})
+
+			It("returns an error", func() {
+				err := printEnv.CheckFastFails([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to validate state"))
+			})
 		})
 	})
 

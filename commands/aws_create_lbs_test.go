@@ -275,22 +275,26 @@ var _ = Describe("AWS Create LBs", func() {
 			})
 		})
 
-		It("returns an error when the environment validator fails", func() {
-			environmentValidator.ValidateCall.Returns.Error = errors.New("environment not found")
+		Context("when the environment validator fails", func() {
+			BeforeEach(func() {
+				environmentValidator.ValidateCall.Returns.Error = errors.New("environment not found")
+			})
 
-			err := command.Execute(
-				commands.CreateLBsConfig{
-					AWS: commands.AWSCreateLBsConfig{
-						LBType:   "concourse",
-						CertPath: certPath,
-						KeyPath:  keyPath,
+			It("returns an error", func() {
+				err := command.Execute(
+					commands.CreateLBsConfig{
+						AWS: commands.AWSCreateLBsConfig{
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
+						},
 					},
-				},
-				incomingState,
-			)
+					incomingState,
+				)
 
-			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
-			Expect(err).To(MatchError("environment not found"))
+				Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(incomingState))
+				Expect(err).To(MatchError("environment not found"))
+			})
 		})
 
 		Context("state manipulation", func() {
@@ -338,44 +342,50 @@ var _ = Describe("AWS Create LBs", func() {
 				Entry("when the previous lb type is cf", "cf", "concourse"),
 			)
 
-			It("returns an error when cert path is invalid", func() {
-				err := command.Execute(
-					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							CertPath: "/fake/cert/path",
-							KeyPath:  keyPath,
+			Context("when cert path is invalid", func() {
+				It("returns an error", func() {
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								CertPath: "/fake/cert/path",
+								KeyPath:  keyPath,
+							},
 						},
-					},
-					storage.State{},
-				)
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+						storage.State{},
+					)
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
 			})
 
-			It("returns an error when key path is invalid", func() {
-				err := command.Execute(
-					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							CertPath: certPath,
-							KeyPath:  "/fake/key/path",
+			Context("when key path is invalid", func() {
+				It("returns an error", func() {
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								CertPath: certPath,
+								KeyPath:  "/fake/key/path",
+							},
 						},
-					},
-					storage.State{},
-				)
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+						storage.State{},
+					)
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
 			})
 
-			It("returns an error when chain path is invalid", func() {
-				err := command.Execute(
-					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							CertPath:  certPath,
-							KeyPath:   keyPath,
-							ChainPath: "/fake/chain/path",
+			Context("when chain path is invalid", func() {
+				It("returns an error", func() {
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								CertPath:  certPath,
+								KeyPath:   keyPath,
+								ChainPath: "/fake/chain/path",
+							},
 						},
-					},
-					storage.State{},
-				)
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+						storage.State{},
+					)
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
 			})
 
 			Context("when terraform manager fails to apply", func() {
@@ -473,34 +483,43 @@ var _ = Describe("AWS Create LBs", func() {
 				})
 			})
 
-			It("returns an error when cloud config manager update fails", func() {
-				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
+			Context("when cloud config manager update fails", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
+				})
 
-				err := command.Execute(
-					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							LBType:   "concourse",
-							CertPath: certPath,
-							KeyPath:  keyPath,
+				It("returns an error", func() {
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								LBType:   "concourse",
+								CertPath: certPath,
+								KeyPath:  keyPath,
+							},
 						},
-					},
-					storage.State{},
-				)
-				Expect(err).To(MatchError("failed to update cloud config"))
+						storage.State{},
+					)
+					Expect(err).To(MatchError("failed to update cloud config"))
+				})
 			})
 
-			It("returns an error when the state fails to save", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
-				err := command.Execute(
-					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							CertPath: certPath,
-							KeyPath:  keyPath,
+			Context("when the state fails to save", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to save state")}}
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								CertPath: certPath,
+								KeyPath:  keyPath,
+							},
 						},
-					},
-					storage.State{},
-				)
-				Expect(err).To(MatchError("failed to save state"))
+						storage.State{},
+					)
+					Expect(err).To(MatchError("failed to save state"))
+				})
 			})
 		})
 	})

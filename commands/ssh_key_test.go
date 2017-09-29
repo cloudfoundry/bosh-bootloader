@@ -35,10 +35,15 @@ var _ = Describe("SSHKey", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-			err := sshKeyCommand.CheckFastFails([]string{}, incomingState)
-			Expect(err).To(MatchError("state validator failed"))
+		Context("when state validator fails", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			})
+
+			It("returns an error", func() {
+				err := sshKeyCommand.CheckFastFails([]string{}, incomingState)
+				Expect(err).To(MatchError("state validator failed"))
+			})
 		})
 	})
 
@@ -53,16 +58,26 @@ var _ = Describe("SSHKey", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the ssh key getter fails", func() {
-				sshKeyGetter.GetCall.Returns.Error = errors.New("jumpbox ssh key getter failed")
-				err := sshKeyCommand.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("jumpbox ssh key getter failed"))
+			Context("when the ssh key getter fails", func() {
+				BeforeEach(func() {
+					sshKeyGetter.GetCall.Returns.Error = errors.New("jumpbox ssh key getter failed")
+				})
+
+				It("returns an error", func() {
+					err := sshKeyCommand.Execute([]string{}, incomingState)
+					Expect(err).To(MatchError("jumpbox ssh key getter failed"))
+				})
 			})
 
-			It("returns an error when the ssh private key is empty", func() {
-				sshKeyGetter.GetCall.Returns.PrivateKey = ""
-				err := sshKeyCommand.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("Could not retrieve the ssh key, please make sure you are targeting the proper state dir."))
+			Context("when the ssh private key is empty", func() {
+				BeforeEach(func() {
+					sshKeyGetter.GetCall.Returns.PrivateKey = ""
+				})
+
+				It("returns an error", func() {
+					err := sshKeyCommand.Execute([]string{}, incomingState)
+					Expect(err).To(MatchError("Could not retrieve the ssh key, please make sure you are targeting the proper state dir."))
+				})
 			})
 		})
 	})

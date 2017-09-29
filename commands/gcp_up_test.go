@@ -42,10 +42,15 @@ var _ = Describe("GCPUp", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when GCP AZs cannot be retrieved", func() {
-				gcpZones.GetZonesCall.Returns.Error = errors.New("canteloupe")
-				_, err := gcpUp.Execute(storage.State{})
-				Expect(err).To(MatchError("Retrieving availability zones: canteloupe"))
+			Context("when GCP AZs cannot be retrieved", func() {
+				BeforeEach(func() {
+					gcpZones.GetZonesCall.Returns.Error = errors.New("canteloupe")
+				})
+
+				It("returns an error", func() {
+					_, err := gcpUp.Execute(storage.State{})
+					Expect(err).To(MatchError("Retrieving availability zones: canteloupe"))
+				})
 			})
 		})
 	})

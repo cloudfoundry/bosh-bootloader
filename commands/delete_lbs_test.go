@@ -33,12 +33,17 @@ var _ = Describe("DeleteLBs", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-			err := command.CheckFastFails([]string{}, storage.State{})
+		Context("when state validator fails", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			})
 
-			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-			Expect(err).To(MatchError("state validator failed"))
+			It("returns an error", func() {
+				err := command.CheckFastFails([]string{}, storage.State{})
+
+				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(err).To(MatchError("state validator failed"))
+			})
 		})
 
 		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
@@ -104,11 +109,13 @@ var _ = Describe("DeleteLBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when an unknown flag is provided", func() {
-				err := command.Execute([]string{"--unknown-flag"}, storage.State{})
-				Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
+			Context("when an unknown flag is provided", func() {
+				It("returns an error", func() {
+					err := command.Execute([]string{"--unknown-flag"}, storage.State{})
+					Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
 
-				Expect(deleteLBs.ExecuteCall.CallCount).To(Equal(0))
+					Expect(deleteLBs.ExecuteCall.CallCount).To(Equal(0))
+				})
 			})
 		})
 	})

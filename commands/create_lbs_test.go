@@ -33,27 +33,36 @@ var _ = Describe("create-lbs", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("raspberry")
-			err := command.CheckFastFails([]string{}, storage.State{})
-
-			Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
-			Expect(err).To(MatchError("Validate state: raspberry"))
-		})
-
-		It("returns an error if there is no lb type", func() {
-			err := command.CheckFastFails([]string{}, storage.State{})
-			Expect(err).To(MatchError("--type is required"))
-		})
-
-		It("does not return an error if there is an lb type in the state file", func() {
-			err := command.CheckFastFails([]string{}, storage.State{
-				IAAS: "gcp",
-				LB: storage.LB{
-					Type: "concourse",
-				},
+		Context("when state validator fails", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("raspberry")
 			})
-			Expect(err).NotTo(HaveOccurred())
+
+			It("returns an error", func() {
+				err := command.CheckFastFails([]string{}, storage.State{})
+
+				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
+				Expect(err).To(MatchError("Validate state: raspberry"))
+			})
+		})
+
+		Context("if there is no lb type", func() {
+			It("returns an error", func() {
+				err := command.CheckFastFails([]string{}, storage.State{})
+				Expect(err).To(MatchError("--type is required"))
+			})
+		})
+
+		Context("if there is an lb type in the state file", func() {
+			It("does not return an error", func() {
+				err := command.CheckFastFails([]string{}, storage.State{
+					IAAS: "gcp",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
 		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
@@ -132,59 +141,65 @@ var _ = Describe("create-lbs", func() {
 	})
 
 	Describe("Execute", func() {
-		It("creates a GCP lb type if the iaas if GCP", func() {
-			err := command.Execute([]string{
-				"--type", "concourse",
-			}, storage.State{
-				IAAS: "gcp",
+		Context("if the iaas if GCP", func() {
+			It("creates a GCP lb type", func() {
+				err := command.Execute([]string{
+					"--type", "concourse",
+				}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					LBType: "concourse",
+				}}))
 			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-				LBType: "concourse",
-			}}))
 		})
 
-		It("creates a GCP cf lb type is the iaas if GCP and type is cf", func() {
-			err := command.Execute([]string{
-				"--type", "cf",
-				"--cert", "my-cert",
-				"--key", "my-key",
-				"--domain", "some-domain",
-			}, storage.State{
-				IAAS: "gcp",
+		Context("if GCP and type is cf", func() {
+			It("creates a GCP cf lb type is the iaas", func() {
+				err := command.Execute([]string{
+					"--type", "cf",
+					"--cert", "my-cert",
+					"--key", "my-key",
+					"--domain", "some-domain",
+				}, storage.State{
+					IAAS: "gcp",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					LBType:   "cf",
+					CertPath: "my-cert",
+					KeyPath:  "my-key",
+					Domain:   "some-domain",
+				}}))
 			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-				LBType:   "cf",
-				CertPath: "my-cert",
-				KeyPath:  "my-key",
-				Domain:   "some-domain",
-			}}))
 		})
 
-		It("creates an AWS lb type if the iaas is AWS", func() {
-			err := command.Execute([]string{
-				"--type", "concourse",
-				"--cert", "my-cert",
-				"--key", "my-key",
-				"--chain", "my-chain",
-				"--domain", "some-domain",
-			}, storage.State{
-				IAAS: "aws",
-			})
-			Expect(err).NotTo(HaveOccurred())
+		Context("if the iaas is AWS", func() {
+			It("creates an AWS lb type", func() {
+				err := command.Execute([]string{
+					"--type", "concourse",
+					"--cert", "my-cert",
+					"--key", "my-key",
+					"--chain", "my-chain",
+					"--domain", "some-domain",
+				}, storage.State{
+					IAAS: "aws",
+				})
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
-				commands.CreateLBsConfig{
-					AWS: commands.AWSCreateLBsConfig{
-						LBType:    "concourse",
-						CertPath:  "my-cert",
-						KeyPath:   "my-key",
-						ChainPath: "my-chain",
-						Domain:    "some-domain",
+				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
+					commands.CreateLBsConfig{
+						AWS: commands.AWSCreateLBsConfig{
+							LBType:    "concourse",
+							CertPath:  "my-cert",
+							KeyPath:   "my-key",
+							ChainPath: "my-chain",
+							Domain:    "some-domain",
+						},
 					},
-				},
-			))
+				))
+			})
 		})
 
 		Context("when an LB already exists", func() {
@@ -240,27 +255,37 @@ var _ = Describe("create-lbs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when an invalid command line flag is supplied", func() {
-				err := command.Execute([]string{"--invalid-flag"}, storage.State{})
-				Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+			Context("when an invalid command line flag is supplied", func() {
+				It("returns an error", func() {
+					err := command.Execute([]string{"--invalid-flag"}, storage.State{})
+					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+				})
 			})
 
-			It("returns an error when the AWSCreateLBs fails", func() {
-				createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
-
-				err := command.Execute([]string{"some-aws-args"}, storage.State{
-					IAAS: "aws",
+			Context("when the AWSCreateLBs fails", func() {
+				BeforeEach(func() {
+					createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
 				})
-				Expect(err).To(MatchError("something bad happened"))
+
+				It("returns an error", func() {
+					err := command.Execute([]string{"some-aws-args"}, storage.State{
+						IAAS: "aws",
+					})
+					Expect(err).To(MatchError("something bad happened"))
+				})
 			})
 
-			It("returns an error when the GCPCreateLBs fails", func() {
-				createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
-
-				err := command.Execute([]string{"some-gcp-args"}, storage.State{
-					IAAS: "gcp",
+			Context("when the GCPCreateLBs fails", func() {
+				BeforeEach(func() {
+					createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
 				})
-				Expect(err).To(MatchError("something bad happened"))
+
+				It("returns an error", func() {
+					err := command.Execute([]string{"some-gcp-args"}, storage.State{
+						IAAS: "gcp",
+					})
+					Expect(err).To(MatchError("something bad happened"))
+				})
 			})
 		})
 	})

@@ -146,116 +146,153 @@ var _ = Describe("GCPCreateLBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error if terraform manager version validator fails", func() {
-				terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
+			Context("if terraform manager version validator fails", func() {
+				BeforeEach(func() {
+					terraformManager.ValidateVersionCall.Returns.Error = errors.New("cannot validate version")
+				})
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
-				Expect(err).To(MatchError("cannot validate version"))
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
+					Expect(err).To(MatchError("cannot validate version"))
+				})
 			})
 
 			Context("when environment validator validate returns an error", func() {
-				It("returns a DirectorNotReachable error", func() {
+				BeforeEach(func() {
 					environmentValidator.ValidateCall.Returns.Error = application.DirectorNotReachable
+				})
 
+				It("returns a DirectorNotReachable error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
 					Expect(err).To(MatchError(application.DirectorNotReachable))
 				})
 			})
 
-			It("returns an error when the availability zone retriever fails to get zones", func() {
-				availabilityZoneRetriever.GetZonesCall.Returns.Error = errors.New("failed to get zones")
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{TFState: "some-tf-state"})
-				Expect(err).To(MatchError("failed to get zones"))
-			})
-
-			It("saves the tf state even if the applier fails", func() {
-				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-				terraformExecutorError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerError(storage.State{
-					TFState: "some-tf-state",
-				}, terraformExecutorError)
-				terraformManager.ApplyCall.Returns.Error = expectedError
-
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{
-					TFState: "some-prev-tf-state",
+			Context("when the availability zone retriever fails to get zones", func() {
+				BeforeEach(func() {
+					availabilityZoneRetriever.GetZonesCall.Returns.Error = errors.New("failed to get zones")
 				})
 
-				Expect(err).To(MatchError("failed to apply"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-updated-tf-state"))
-			})
-
-			It("returns an error if terraform manager apply fails with non terraform manager apply error", func() {
-				terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType:   "cf",
-					CertPath: certPath,
-					KeyPath:  keyPath,
-				}}, storage.State{
-					TFState: "some-tf-state",
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{TFState: "some-tf-state"})
+					Expect(err).To(MatchError("failed to get zones"))
 				})
-				Expect(err).To(MatchError("failed to apply"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
 			})
 
-			It("returns an error when both the applier fails and terraformManagerError.BBLState fails", func() {
-				terraformExecutorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
-				terraformExecutorError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerError(bblState, terraformExecutorError)
-				terraformManager.ApplyCall.Returns.Error = expectedError
+			Context("even if the applier fails", func() {
+				BeforeEach(func() {
+					terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+					terraformExecutorError.ErrorCall.Returns = "failed to apply"
+					expectedError := terraform.NewManagerError(storage.State{
+						TFState: "some-tf-state",
+					}, terraformExecutorError)
+					terraformManager.ApplyCall.Returns.Error = expectedError
+				})
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, bblState)
+				It("saves the tf state", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{
+						TFState: "some-prev-tf-state",
+					})
 
-				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to get tf state"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(0))
+					Expect(err).To(MatchError("failed to apply"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-updated-tf-state"))
+				})
 			})
 
-			It("returns an error when both the applier fails and state fails to be set", func() {
-				terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-				terraformExecutorError.ErrorCall.Returns = "failed to apply"
-				expectedError := terraform.NewManagerError(storage.State{
-					LB: storage.LB{
-						Type: "concourse",
-					},
-					TFState: "some-tf-state",
-				}, terraformExecutorError)
-				terraformManager.ApplyCall.Returns.Error = expectedError
+			Context("if terraform manager apply fails with non terraform manager apply error", func() {
+				BeforeEach(func() {
+					terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
+				})
 
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{TFState: "some-tf-state"})
-
-				Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-					LB:      storage.LB{Type: "concourse"},
-					TFState: "some-updated-tf-state",
-				}))
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType:   "cf",
+						CertPath: certPath,
+						KeyPath:  keyPath,
+					}}, storage.State{
+						TFState: "some-tf-state",
+					})
+					Expect(err).To(MatchError("failed to apply"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(0))
+				})
 			})
 
-			It("returns an error when the state store fails to save the state after applying terraform", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
+			Context("when both the applier fails and terraformManagerError.BBLState fails", func() {
+				BeforeEach(func() {
+					terraformExecutorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
+					terraformExecutorError.ErrorCall.Returns = "failed to apply"
+					expectedError := terraform.NewManagerError(bblState, terraformExecutorError)
+					terraformManager.ApplyCall.Returns.Error = expectedError
+				})
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{TFState: "some-tf-state"})
-				Expect(err).To(MatchError("failed to save state"))
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, bblState)
+
+					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to get tf state"))
+					Expect(stateStore.SetCall.CallCount).To(Equal(0))
+				})
 			})
 
-			It("returns an error when the cloud config fails to be updated", func() {
-				cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
+			Context("when both the applier fails and state fails to be set", func() {
+				BeforeEach(func() {
+					terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
+					terraformExecutorError.ErrorCall.Returns = "failed to apply"
+					expectedError := terraform.NewManagerError(storage.State{
+						LB: storage.LB{
+							Type: "concourse",
+						},
+						TFState: "some-tf-state",
+					}, terraformExecutorError)
+					terraformManager.ApplyCall.Returns.Error = expectedError
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-					LBType: "concourse",
-				}}, storage.State{TFState: "some-tf-state"})
-				Expect(err).To(MatchError("failed to update cloud config"))
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{TFState: "some-tf-state"})
+					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
+						LB:      storage.LB{Type: "concourse"},
+						TFState: "some-updated-tf-state",
+					}))
+				})
+			})
+
+			Context("when the state store fails to save the state after applying terraform", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("failed to save state")}}
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{TFState: "some-tf-state"})
+					Expect(err).To(MatchError("failed to save state"))
+				})
+			})
+
+			Context("when the cloud config fails to be updated", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{TFState: "some-tf-state"})
+					Expect(err).To(MatchError("failed to update cloud config"))
+				})
 			})
 		})
 	})

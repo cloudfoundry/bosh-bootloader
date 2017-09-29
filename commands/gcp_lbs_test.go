@@ -120,18 +120,28 @@ var _ = Describe("GCPLBs", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when terraform output provider fails", func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to return terraform output")
-				err := command.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("failed to return terraform output"))
+			Context("when terraform output provider fails", func() {
+				BeforeEach(func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to return terraform output")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, incomingState)
+					Expect(err).To(MatchError("failed to return terraform output"))
+				})
 			})
 
-			It("returns an nice error message when no lb type is found", func() {
-				incomingState.LB = storage.LB{
-					Type: "",
-				}
-				err := command.Execute([]string{}, incomingState)
-				Expect(err).To(MatchError("no lbs found"))
+			Context("when no lb type is found", func() {
+				BeforeEach(func() {
+					incomingState.LB = storage.LB{
+						Type: "",
+					}
+				})
+
+				It("returns an nice error message", func() {
+					err := command.Execute([]string{}, incomingState)
+					Expect(err).To(MatchError("no lbs found"))
+				})
 			})
 		})
 	})

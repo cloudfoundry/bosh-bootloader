@@ -35,10 +35,15 @@ var _ = Describe("JumpboxDeploymentVars", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when the state validator fails", func() {
-			stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
-			err := jumpboxDeploymentVars.CheckFastFails([]string{}, storage.State{})
-			Expect(err).To(MatchError("failed to validate state"))
+		Context("when the state validator fails", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
+			})
+
+			It("returns an error", func() {
+				err := jumpboxDeploymentVars.CheckFastFails([]string{}, storage.State{})
+				Expect(err).To(MatchError("failed to validate state"))
+			})
 		})
 
 		Context("when the bosh installed has a version less than v2.0.24", func() {
@@ -75,12 +80,15 @@ var _ = Describe("JumpboxDeploymentVars", func() {
 		})
 
 		Context("failure cases", func() {
-			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Error = errors.New("coconut")
-			})
-			It("returns an error when we fail to get deployment vars", func() {
-				err := jumpboxDeploymentVars.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("get terraform outputs: coconut"))
+			Context("when we fail to get deployment vars", func() {
+				BeforeEach(func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("coconut")
+				})
+
+				It("returns an error", func() {
+					err := jumpboxDeploymentVars.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("get terraform outputs: coconut"))
+				})
 			})
 		})
 	})

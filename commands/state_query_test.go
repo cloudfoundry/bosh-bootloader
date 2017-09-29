@@ -28,13 +28,18 @@ var _ = Describe("StateQuery", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		It("returns an error when the state validator fails", func() {
-			fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
-			command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "")
+		Context("when the state validator fails", func() {
+			BeforeEach(func() {
+				fakeStateValidator.ValidateCall.Returns.Error = errors.New("state validator failed")
+			})
 
-			err := command.CheckFastFails([]string{}, storage.State{})
+			It("returns an error", func() {
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "")
 
-			Expect(err).To(MatchError("state validator failed"))
+				err := command.CheckFastFails([]string{}, storage.State{})
+
+				Expect(err).To(MatchError("state validator failed"))
+			})
 		})
 
 		Context("bbl does not manage the bosh director", func() {
@@ -145,27 +150,34 @@ var _ = Describe("StateQuery", func() {
 		})
 
 		Context("failure cases", func() {
-			It("returns an error when the terraform output provider fails", func() {
-				fakeTerraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "director address")
-
-				err := command.Execute([]string{}, storage.State{
-					IAAS:       "gcp",
-					NoDirector: true,
+			Context("when the terraform output provider fails", func() {
+				BeforeEach(func() {
+					fakeTerraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 				})
 
-				Expect(err).To(MatchError("failed to get terraform output"))
+				It("returns an error", func() {
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "director address")
+
+					err := command.Execute([]string{}, storage.State{
+						IAAS:       "gcp",
+						NoDirector: true,
+					})
+
+					Expect(err).To(MatchError("failed to get terraform output"))
+				})
 			})
 
-			It("returns an error when the state value is empty", func() {
-				propertyName := fmt.Sprintf("%s-%d", "some-name", rand.Int())
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, propertyName)
-				err := command.Execute([]string{}, storage.State{
-					BOSH: storage.BOSH{},
-				})
-				Expect(err).To(MatchError(fmt.Sprintf("Could not retrieve %s, please make sure you are targeting the proper state dir.", propertyName)))
+			Context("when the state value is empty", func() {
+				It("returns an error", func() {
+					propertyName := fmt.Sprintf("%s-%d", "some-name", rand.Int())
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, propertyName)
+					err := command.Execute([]string{}, storage.State{
+						BOSH: storage.BOSH{},
+					})
+					Expect(err).To(MatchError(fmt.Sprintf("Could not retrieve %s, please make sure you are targeting the proper state dir.", propertyName)))
 
-				Expect(fakeLogger.PrintlnCall.CallCount).To(Equal(0))
+					Expect(fakeLogger.PrintlnCall.CallCount).To(Equal(0))
+				})
 			})
 		})
 	})
