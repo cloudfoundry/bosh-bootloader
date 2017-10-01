@@ -679,9 +679,6 @@ var _ = Describe("Destroy", func() {
 						Region:            "some-region",
 					},
 					TFState: "some-tf-state",
-					KeyPair: storage.KeyPair{
-						PublicKey: "some-public-key",
-					},
 				}
 				terraformManager.DestroyCall.Returns.BBLState = bblState
 			})

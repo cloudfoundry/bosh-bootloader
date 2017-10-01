@@ -33,9 +33,6 @@ var _ = Describe("Delete LBs", func() {
 			AWS: storage.AWS{
 				Region: "some-region",
 			},
-			KeyPair: storage.KeyPair{
-				Name: "some-keypair",
-			},
 			EnvID: "some-env-id",
 			LB: storage.LB{
 				Type: "concourse",

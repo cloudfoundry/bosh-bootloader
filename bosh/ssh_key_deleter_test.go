@@ -25,10 +25,6 @@ var _ = Describe("SSHKeyDeleter", func() {
 				Jumpbox: storage.Jumpbox{
 					Variables: "foo: bar\njumpbox_ssh:\n  private_key: some-private-key",
 				},
-				KeyPair: storage.KeyPair{
-					PrivateKey: "some-old-private-key",
-					PublicKey:  "some-old-public-key",
-				},
 			}
 			expectedState = storage.State{
 				BOSH: storage.BOSH{

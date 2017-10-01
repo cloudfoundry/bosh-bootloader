@@ -64,11 +64,6 @@ var _ = Describe("Store", func() {
 						Region:            "some-region",
 						Zones:             []string{"some-zone", "some-other-zone"},
 					},
-					KeyPair: storage.KeyPair{
-						Name:       "some-name",
-						PrivateKey: "some-private",
-						PublicKey:  "some-public",
-					},
 					LB: storage.LB{
 						Type:   "some-type",
 						Cert:   "some-cert",
@@ -107,7 +102,7 @@ var _ = Describe("Store", func() {
 				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).To(MatchJSON(`{
-				"version": 11,
+				"version": 12,
 				"iaas": "aws",
 				"noDirector": false,
 				"aws": {
@@ -124,11 +119,6 @@ var _ = Describe("Store", func() {
 					"zone": "some-zone",
 					"region": "some-region",
 					"zones": ["some-zone", "some-other-zone"]
-				},
-				"keyPair": {
-					"name": "some-name",
-					"privateKey": "some-private",
-					"publicKey": "some-public"
 				},
 				"lb": {
 					"type": "some-type",
@@ -308,7 +298,7 @@ var _ = Describe("Store", func() {
 				state, err := storage.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{
-					Version: 11,
+					Version: 12,
 				}))
 			})
 		})
@@ -330,17 +320,12 @@ var _ = Describe("Store", func() {
 		Context("when there is a v11 state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 11,
+					"version": 12,
 					"iaas": "aws",
 					"aws": {
 						"accessKeyId": "some-aws-access-key-id",
 						"secretAccessKey": "some-aws-secret-access-key",
 						"region": "some-aws-region"
-					},
-					"keyPair": {
-						"name": "some-name",
-						"privateKey": "some-private-key",
-						"publicKey": "some-public-key"
 					},
 					"bosh": {
 						"directorAddress": "some-director-address",
@@ -358,17 +343,12 @@ var _ = Describe("Store", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version: 11,
+					Version: 12,
 					IAAS:    "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",
 						SecretAccessKey: "some-aws-secret-access-key",
 						Region:          "some-aws-region",
-					},
-					KeyPair: storage.KeyPair{
-						Name:       "some-name",
-						PrivateKey: "some-private-key",
-						PublicKey:  "some-public-key",
 					},
 					BOSH: storage.BOSH{
 						DirectorAddress:        "some-director-address",

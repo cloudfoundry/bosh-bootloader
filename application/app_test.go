@@ -13,24 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type setNewKeyPairName struct{}
-
-func (snkp setNewKeyPairName) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	return nil
-}
-
-func (snkp setNewKeyPairName) Execute(subcommandFlags []string, state storage.State) error {
-	state.KeyPair = storage.KeyPair{
-		Name:       "some-new-keypair-name",
-		PublicKey:  state.KeyPair.PublicKey,
-		PrivateKey: state.KeyPair.PrivateKey,
-	}
-
-	return nil
-}
-
-func (snkp setNewKeyPairName) Usage() string { return "" }
-
 var _ = Describe("App", func() {
 	var (
 		app        application.App
@@ -43,12 +25,11 @@ var _ = Describe("App", func() {
 
 	var NewAppWithConfiguration = func(configuration application.Configuration) application.App {
 		return application.New(application.CommandSet{
-			"help":                 helpCmd,
-			"version":              versionCmd,
-			"--version":            versionCmd,
-			"some":                 someCmd,
-			"error":                errorCmd,
-			"set-new-keypair-name": setNewKeyPairName{},
+			"help":      helpCmd,
+			"version":   versionCmd,
+			"--version": versionCmd,
+			"some":      someCmd,
+			"error":     errorCmd,
 		},
 			configuration,
 			usage,

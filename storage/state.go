@@ -18,7 +18,7 @@ var (
 )
 
 const (
-	STATE_VERSION = 11
+	STATE_VERSION = 12
 
 	OS_READ_WRITE_MODE = os.FileMode(0644)
 	StateFileName      = "bbl-state.json"
@@ -44,7 +44,6 @@ type State struct {
 	AWS            AWS     `json:"aws,omitempty"`
 	Azure          Azure   `json:"azure,omitempty"`
 	GCP            GCP     `json:"gcp,omitempty"`
-	KeyPair        KeyPair `json:"keyPair,omitempty"`
 	Jumpbox        Jumpbox `json:"jumpbox,omitempty"`
 	BOSH           BOSH    `json:"bosh,omitempty"`
 	EnvID          string  `json:"envID"`

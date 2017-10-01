@@ -24,7 +24,6 @@ func (SSHKeyDeleter) Delete(state storage.State) (storage.State, error) {
 	if err != nil {
 		return storage.State{}, fmt.Errorf("BOSH variables: %s", err)
 	}
-	state.KeyPair = storage.KeyPair{}
 	return state, nil
 }
 
