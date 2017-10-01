@@ -13,12 +13,9 @@ import (
 )
 
 type EC2Client interface {
-	ImportKeyPair(*awsec2.ImportKeyPairInput) (*awsec2.ImportKeyPairOutput, error)
-	DescribeKeyPairs(*awsec2.DescribeKeyPairsInput) (*awsec2.DescribeKeyPairsOutput, error)
 	DescribeAvailabilityZones(*awsec2.DescribeAvailabilityZonesInput) (*awsec2.DescribeAvailabilityZonesOutput, error)
 	DescribeInstances(*awsec2.DescribeInstancesInput) (*awsec2.DescribeInstancesOutput, error)
 	DescribeVpcs(*awsec2.DescribeVpcsInput) (*awsec2.DescribeVpcsOutput, error)
-	DeleteKeyPair(*awsec2.DeleteKeyPairInput) (*awsec2.DeleteKeyPairOutput, error)
 }
 
 type logger interface {
@@ -39,15 +36,6 @@ func NewClient(config aws.Config, logger logger) Client {
 		ec2Client: awsec2.New(session.New(config.ClientConfig())),
 		logger:    logger,
 	}
-}
-
-func (c Client) DeleteKeyPair(name string) error {
-	c.logger.Step("deleting keypair")
-
-	_, err := c.ec2Client.DeleteKeyPair(&awsec2.DeleteKeyPairInput{
-		KeyName: awslib.String(name),
-	})
-	return err
 }
 
 func (c Client) RetrieveAvailabilityZones(region string) ([]string, error) {

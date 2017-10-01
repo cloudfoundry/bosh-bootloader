@@ -108,40 +108,6 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("DeleteKeyPair", func() {
-		var (
-			client    ec2.Client
-			ec2Client *fakes.AWSEC2Client
-			logger    *fakes.Logger
-		)
-
-		BeforeEach(func() {
-			ec2Client = &fakes.AWSEC2Client{}
-			logger = &fakes.Logger{}
-			client = ec2.NewClientWithInjectedEC2Client(ec2Client, logger)
-		})
-
-		It("deletes the ec2 keypair", func() {
-			err := client.DeleteKeyPair("some-key-pair-name")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(ec2Client.DeleteKeyPairCall.Receives.Input).To(Equal(&awsec2.DeleteKeyPairInput{
-				KeyName: awslib.String("some-key-pair-name"),
-			}))
-
-			Expect(logger.StepCall.Receives.Message).To(Equal("deleting keypair"))
-		})
-
-		Context("when the keypair cannot be deleted", func() {
-			It("returns an error", func() {
-				ec2Client.DeleteKeyPairCall.Returns.Error = errors.New("failed to delete keypair")
-
-				err := client.DeleteKeyPair("some-key-pair-name")
-				Expect(err).To(MatchError("failed to delete keypair"))
-			})
-		})
-	})
-
 	Describe("ValidateSafeToDelete", func() {
 		var (
 			client    ec2.Client
