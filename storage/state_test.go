@@ -98,22 +98,6 @@ var _ = Describe("Store", func() {
 						Variables:   "some-vars",
 						Manifest:    "name: bosh",
 						UserOpsFile: "some-ops-file",
-						Credentials: map[string]string{
-							"mbusUsername":              "some-mbus-username",
-							"natsUsername":              "some-nats-username",
-							"postgresUsername":          "some-postgres-username",
-							"registryUsername":          "some-registry-username",
-							"blobstoreDirectorUsername": "some-blobstore-director-username",
-							"blobstoreAgentUsername":    "some-blobstore-agent-username",
-							"hmUsername":                "some-hm-username",
-							"mbusPassword":              "some-mbus-password",
-							"natsPassword":              "some-nats-password",
-							"postgresPassword":          "some-postgres-password",
-							"registryPassword":          "some-registry-password",
-							"blobstoreDirectorPassword": "some-blobstore-director-password",
-							"blobstoreAgentPassword":    "some-blobstore-agent-password",
-							"hmPassword":                "some-hm-password",
-						},
 					},
 					EnvID:   "some-env-id",
 					TFState: "some-tf-state",
@@ -123,7 +107,7 @@ var _ = Describe("Store", func() {
 				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).To(MatchJSON(`{
-				"version": 10,
+				"version": 11,
 				"iaas": "aws",
 				"noDirector": false,
 				"aws": {
@@ -169,22 +153,6 @@ var _ = Describe("Store", func() {
 					"directorSSLCA": "some-bosh-ssl-ca",
 					"directorSSLCertificate": "some-bosh-ssl-certificate",
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
-					"credentials": {
-						"mbusUsername": "some-mbus-username",
-						"natsUsername": "some-nats-username",
-						"postgresUsername": "some-postgres-username",
-						"registryUsername": "some-registry-username",
-						"blobstoreDirectorUsername": "some-blobstore-director-username",
-						"blobstoreAgentUsername": "some-blobstore-agent-username",
-						"hmUsername": "some-hm-username",
-						"mbusPassword": "some-mbus-password",
-						"natsPassword": "some-nats-password",
-						"postgresPassword": "some-postgres-password",
-						"registryPassword": "some-registry-password",
-						"blobstoreDirectorPassword": "some-blobstore-director-password",
-						"blobstoreAgentPassword": "some-blobstore-agent-password",
-						"hmPassword": "some-hm-password"
-					},
 					"variables":   "some-vars",
 					"manifest": "name: bosh",
 					"userOpsFile": "some-ops-file",
@@ -340,7 +308,7 @@ var _ = Describe("Store", func() {
 				state, err := storage.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{
-					Version: 10,
+					Version: 11,
 				}))
 			})
 		})
@@ -359,10 +327,10 @@ var _ = Describe("Store", func() {
 			})
 		})
 
-		Context("when there is a v10 state file", func() {
+		Context("when there is a v11 state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 10,
+					"version": 11,
 					"iaas": "aws",
 					"aws": {
 						"accessKeyId": "some-aws-access-key-id",
@@ -390,7 +358,7 @@ var _ = Describe("Store", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version: 10,
+					Version: 11,
 					IAAS:    "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",

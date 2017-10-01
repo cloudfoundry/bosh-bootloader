@@ -18,7 +18,7 @@ var (
 )
 
 const (
-	STATE_VERSION = 10
+	STATE_VERSION = 11
 
 	OS_READ_WRITE_MODE = os.FileMode(0644)
 	StateFileName      = "bbl-state.json"

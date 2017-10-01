@@ -463,9 +463,6 @@ var _ = Describe("Destroy", func() {
 						State: map[string]interface{}{
 							"key": "value",
 						},
-						Credentials: map[string]string{
-							"some-username": "some-password",
-						},
 						DirectorSSLCertificate: "some-certificate",
 						DirectorSSLPrivateKey:  "some-private-key",
 					},
