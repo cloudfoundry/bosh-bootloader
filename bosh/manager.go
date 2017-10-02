@@ -440,6 +440,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			StorageAccountName:   getTerraformOutput("bosh_storage_account_name", terraformOutputs),
 			DefaultSecurityGroup: getTerraformOutput("bosh_default_security_group", terraformOutputs),
 		}
+		vars.PrivateKey = getTerraformOutput("bosh_vms_private_key", terraformOutputs)
 	}
 
 	return string(mustMarshal(vars))

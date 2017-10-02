@@ -48,6 +48,7 @@ var _ = Describe("bosh deployment vars", func() {
 			InternalGateway      string `yaml:"internal_gw"`
 			InternalIP           string `yaml:"internal_ip"`
 			ExternalIP           string `yaml:"external_ip"`
+			PrivateKey           string `yaml:"private_key,flow,omitempty"`
 			DirectorName         string `yaml:"director_name"`
 			VNetName             string `yaml:"vnet_name"`
 			SubnetName           string `yaml:"subnet_name"`
@@ -66,17 +67,15 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.InternalGateway).To(Equal("10.0.0.1"))
 		Expect(vars.InternalIP).To(Equal("10.0.0.6"))
 		Expect(vars.DirectorName).To(Equal(fmt.Sprintf("bosh-%s", bbl.PredefinedEnvID())))
-		Expect(vars.ExternalIP).To(MatchRegexp(ipRegex))
-
 		Expect(vars.SubscriptionID).To(Equal(configuration.AzureSubscriptionID))
 		Expect(vars.TenantID).To(Equal(configuration.AzureTenantID))
 		Expect(vars.ClientID).To(Equal(configuration.AzureClientID))
 		Expect(vars.ClientSecret).To(Equal(configuration.AzureClientSecret))
-
 		Expect(vars.VNetName).To(Equal(fmt.Sprintf("%s-bosh-vn", bbl.PredefinedEnvID())))
 		Expect(vars.SubnetName).To(Equal(fmt.Sprintf("%s-bosh-sn", bbl.PredefinedEnvID())))
 		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
 		Expect(vars.StorageAccountName).To(ContainSubstring("boshdeploy"))
 		Expect(vars.DefaultSecurityGroup).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
+		Expect(vars.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----(.*\n)*-----END RSA PRIVATE KEY-----`))
 	})
 })
