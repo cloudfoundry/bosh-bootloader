@@ -4,8 +4,8 @@ function main() {
   local packages
   packages=${@}
 
-	local root_dir
-	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+  local root_dir
+  root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
   if [ -z "${packages}" ]; then
     echo "Usage: ./scripts/acceptance_tests packages...
@@ -20,9 +20,9 @@ Example: ./scripts/acceptance_tests bbl gcp"
     parallelFlag="-p"
   fi
 
-	pushd "${root_dir}/acceptance-tests" > /dev/null
-      ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
-	popd > /dev/null
+  pushd "${root_dir}/acceptance-tests" > /dev/null
+    ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
+  popd > /dev/null
 }
 
 main "${@:-""}"

@@ -57,6 +57,7 @@ type sharedDeploymentVarsYAML struct {
 	InternalIP   string    `yaml:"internal_ip,omitempty"`
 	DirectorName string    `yaml:"director_name,omitempty"`
 	ExternalIP   string    `yaml:"external_ip,omitempty"`
+	PrivateKey   string    `yaml:"private_key,flow,omitempty"`
 	AWSYAML      AWSYAML   `yaml:",inline"`
 	GCPYAML      GCPYAML   `yaml:",inline"`
 	AzureYAML    AzureYAML `yaml:",inline"`
@@ -71,7 +72,6 @@ type AWSYAML struct {
 	DefaultKeyName        string   `yaml:"default_key_name,omitempty"`
 	DefaultSecurityGroups []string `yaml:"default_security_groups,omitempty"`
 	Region                string   `yaml:"region,omitempty"`
-	PrivateKey            string   `yaml:"private_key,flow,omitempty"`
 	KMSKeyARN             string   `yaml:"kms_key_arn,omitempty"`
 }
 
@@ -94,6 +94,7 @@ type AzureYAML struct {
 	ResourceGroupName    string `yaml:"resource_group_name,omitempty"`
 	StorageAccountName   string `yaml:"storage_account_name,omitempty"`
 	DefaultSecurityGroup string `yaml:"default_security_group,omitempty"`
+	PublicKey            string `yaml:"public_key,flow,omitempty"`
 }
 
 type executor interface {
@@ -358,8 +359,23 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
 			DefaultSecurityGroups: []string{getTerraformOutput("jumpbox_security_group", terraformOutputs)},
 			Region:                state.AWS.Region,
-			PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
 		}
+		vars.PrivateKey = getTerraformOutput("bosh_vms_private_key", terraformOutputs)
+	case "azure":
+		vars.AzureYAML = AzureYAML{
+			VNetName:             getTerraformOutput("bosh_network_name", terraformOutputs),
+			SubnetName:           getTerraformOutput("bosh_subnet_name", terraformOutputs),
+			SubscriptionID:       state.Azure.SubscriptionID,
+			TenantID:             state.Azure.TenantID,
+			ClientID:             state.Azure.ClientID,
+			ClientSecret:         state.Azure.ClientSecret,
+			ResourceGroupName:    getTerraformOutput("bosh_resource_group_name", terraformOutputs),
+			StorageAccountName:   getTerraformOutput("bosh_storage_account_name", terraformOutputs),
+			DefaultSecurityGroup: getTerraformOutput("bosh_default_security_group", terraformOutputs),
+			PublicKey:            getTerraformOutput("bosh_vms_public_key", terraformOutputs),
+		}
+		// TODO: this struct is gross
+		vars.PrivateKey = getTerraformOutput("bosh_vms_private_key", terraformOutputs)
 	}
 
 	return string(mustMarshal(vars))
@@ -409,9 +425,9 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			DefaultKeyName:        getTerraformOutput("bosh_vms_key_name", terraformOutputs),
 			DefaultSecurityGroups: []string{getTerraformOutput("bosh_security_group", terraformOutputs)},
 			Region:                state.AWS.Region,
-			PrivateKey:            getTerraformOutput("bosh_vms_private_key", terraformOutputs),
 			KMSKeyARN:             getTerraformOutput("kms_key_arn", terraformOutputs),
 		}
+		vars.PrivateKey = getTerraformOutput("bosh_vms_private_key", terraformOutputs)
 	case "azure":
 		vars.AzureYAML = AzureYAML{
 			VNetName:             getTerraformOutput("bosh_network_name", terraformOutputs),

@@ -13,6 +13,7 @@ type templates struct {
 	storage              string
 	networkSecurityGroup string
 	output               string
+	tls                  string
 }
 
 type TemplateGenerator struct{}
@@ -23,7 +24,7 @@ func NewTemplateGenerator() TemplateGenerator {
 
 func (t TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
-	return strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output}, "\n")
+	return strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output, tmpls.tls}, "\n")
 }
 
 func readTemplates() templates {
@@ -34,6 +35,7 @@ func readTemplates() templates {
 	tmpls.storage = string(MustAsset("templates/storage.tf"))
 	tmpls.networkSecurityGroup = string(MustAsset("templates/network_security_group.tf"))
 	tmpls.output = string(MustAsset("templates/output.tf"))
+	tmpls.tls = string(MustAsset("templates/tls.tf"))
 
 	return tmpls
 }

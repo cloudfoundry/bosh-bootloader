@@ -177,6 +177,7 @@ gcp_credentials_json: some-credential-json
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
+private_key: some-private-key
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
 access_key_id: some-access-key-id
@@ -186,7 +187,6 @@ default_key_name: some-keypair-name
 default_security_groups:
 - some-bosh-security-group
 region: some-region
-private_key: some-private-key
 kms_key_arn: some-kms-arn
 `))
 				Expect(stateWithDirector.BOSH).To(Equal(storage.BOSH{
@@ -681,6 +681,7 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
 director_name: bosh-some-env-id
 external_ip: some-external-ip
+private_key: some-private-key
 az: some-zone
 subnet_id: some-subnetwork
 access_key_id: some-access-key-id
@@ -690,7 +691,6 @@ default_key_name: some-key-name
 default_security_groups:
 - some-security-group
 region: some-region
-private_key: some-private-key
 `))
 			})
 		})
@@ -832,6 +832,7 @@ gcp_credentials_json: some-credential-json
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
+private_key: some-private-key
 az: some-bosh-subnet-az
 subnet_id: some-bosh-subnet
 access_key_id: some-access-key-id
@@ -841,7 +842,6 @@ default_key_name: some-keypair-name
 default_security_groups:
 - some-bosh-security-group
 region: some-region
-private_key: some-private-key
 kms_key_arn: some-kms-arn
 `))
 				})

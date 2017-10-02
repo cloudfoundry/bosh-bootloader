@@ -86,8 +86,8 @@ var _ = Describe("Executor", func() {
 					"--vars-file", fmt.Sprintf("%s/deployment-vars.yml", tempDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", tempDir),
 					"-o", fmt.Sprintf("%s/jumpbox-user.yml", tempDir),
-					"-o", fmt.Sprintf("%s/azure-external-ip-not-recommended.yml", tempDir),
-					"-o", fmt.Sprintf("%s/azure-ssh-static-ip.yml", tempDir),
+					"-o", fmt.Sprintf("%s/uaa.yml", tempDir),
+					"-o", fmt.Sprintf("%s/credhub.yml", tempDir),
 				})
 
 				_, _, args := cmd.RunArgsForCall(0)

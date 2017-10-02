@@ -39,6 +39,73 @@ const azureSSHStaticIP = `
   value: ((external_ip))
 `
 
+const azureJumpboxCpi = `
+- type: replace
+  path: /releases/-
+  value:
+    name: bosh-azure-cpi
+    url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-azure-cpi-release?v=29
+    sha1: 630901d22de58597ef8d5a23be9a5b7107d9ecb4
+
+- type: replace
+  path: /resource_pools/name=vms/stemcell?
+  value:
+    url: https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-trusty-go_agent?v=3445.11
+    sha1: c70b6854ce1551fbeecfebabfcd6df5215513cad
+
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties?
+  value:
+    instance_type: Standard_D1_v2
+
+- type: replace
+  path: /networks/name=private/subnets/0/cloud_properties?
+  value:
+    resource_group_name: ((resource_group_name))
+    virtual_network_name: ((vnet_name))
+    subnet_name: ((subnet_name))
+
+- type: replace
+  path: /networks/name=public/subnets?/-
+  value:
+    cloud_properties:
+      resource_group_name: ((resource_group_name))
+
+- type: replace
+  path: /cloud_provider/template?
+  value:
+    name: azure_cpi
+    release: bosh-azure-cpi
+
+- type: replace
+  path: /cloud_provider/ssh_tunnel?
+  value:
+    host: ((external_ip))
+    port: 22
+    user: vcap
+    private_key: ((private_key))
+
+- type: replace
+  path: /cloud_provider/properties/azure?
+  value:
+    environment: AzureCloud
+    subscription_id: ((subscription_id))
+    tenant_id: ((tenant_id))
+    client_id: ((client_id))
+    client_secret: ((client_secret))
+    resource_group_name: ((resource_group_name))
+    storage_account_name: ((storage_account_name))
+    default_security_group: ((default_security_group))
+    ssh_user: vcap
+    ssh_public_key: ((public_key))
+
+- type: replace
+  path: /variables/-
+  value:
+    name: ssh
+    type: ssh
+`
+
 type Executor struct {
 	command       command
 	tempDir       func(string, string) (string, error)
@@ -111,7 +178,12 @@ func (e Executor) JumpboxInterpolate(interpolateInput InterpolateInput) (Jumpbox
 	var jumpboxSetupFiles = map[string][]byte{
 		"jumpbox-deployment-vars.yml": []byte(interpolateInput.JumpboxDeploymentVars),
 		"jumpbox.yml":                 MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml"),
-		"cpi.yml":                     MustAsset(filepath.Join("vendor/github.com/cppforlife/jumpbox-deployment", interpolateInput.IAAS, "cpi.yml")),
+	}
+
+	if interpolateInput.IAAS == "azure" {
+		jumpboxSetupFiles["cpi.yml"] = []byte(azureJumpboxCpi)
+	} else {
+		jumpboxSetupFiles["cpi.yml"] = MustAsset(filepath.Join("vendor/github.com/cppforlife/jumpbox-deployment", interpolateInput.IAAS, "cpi.yml"))
 	}
 
 	if interpolateInput.Variables != "" {
@@ -215,11 +287,10 @@ func (e Executor) DirectorInterpolate(interpolateInput InterpolateInput) (Interp
 			"-o", filepath.Join(tempDir, "aws-bosh-director-encrypt-disk-ops.yml"),
 		)
 	case "azure":
-		// NOTE: azure does not yet support jumpbox
 		args = append(args,
 			"-o", filepath.Join(tempDir, "jumpbox-user.yml"),
-			"-o", filepath.Join(tempDir, "azure-external-ip-not-recommended.yml"),
-			"-o", filepath.Join(tempDir, "azure-ssh-static-ip.yml"),
+			"-o", filepath.Join(tempDir, "uaa.yml"),
+			"-o", filepath.Join(tempDir, "credhub.yml"),
 		)
 	}
 

@@ -50,12 +50,14 @@ var _ = Describe("up", func() {
 			directorAddress = bbl.DirectorAddress()
 			caCertPath = bbl.SaveDirectorCA()
 
-			exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
-			if err != nil {
-				fmt.Println(string(err.(*exec.ExitError).Stderr))
+			directorExists := func() bool {
+				exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
+				if err != nil {
+					fmt.Println(string(err.(*exec.ExitError).Stderr))
+				}
+				return exists
 			}
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeTrue())
+			Eventually(directorExists, "1m", "10s").Should(BeTrue())
 		})
 
 		By("checking that the cloud config exists", func() {

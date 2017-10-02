@@ -224,3 +224,22 @@ output "external_ip" {
 output "director_address" {
 	value = "https://${azurerm_public_ip.bosh.ip_address}:25555"
 }
+
+output "bosh_vms_private_key" {
+  value = "${tls_private_key.bosh_vms.private_key_pem}"
+  sensitive = true
+}
+
+output "bosh_vms_public_key" {
+  value = "${tls_private_key.bosh_vms.public_key_openssh}"
+  sensitive = false
+}
+
+output "jumpbox_url" {
+	value = "${azurerm_public_ip.bosh.ip_address}:22"
+}
+
+resource "tls_private_key" "bosh_vms" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
