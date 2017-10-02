@@ -76,6 +76,5 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.ResourceGroupName).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
 		Expect(vars.StorageAccountName).To(ContainSubstring("boshdeploy"))
 		Expect(vars.DefaultSecurityGroup).To(Equal(fmt.Sprintf("%s-bosh", bbl.PredefinedEnvID())))
-		Expect(vars.PrivateKey).To(MatchRegexp(`-----BEGIN RSA PRIVATE KEY-----(.*\n)*-----END RSA PRIVATE KEY-----`))
 	})
 })

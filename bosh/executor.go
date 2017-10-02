@@ -98,12 +98,6 @@ const azureJumpboxCpi = `
     default_security_group: ((default_security_group))
     ssh_user: vcap
     ssh_public_key: ((public_key))
-
-- type: replace
-  path: /variables/-
-  value:
-    name: ssh
-    type: ssh
 `
 
 type Executor struct {
