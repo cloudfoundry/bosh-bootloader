@@ -251,14 +251,10 @@ var _ = Describe("AWS Create LBs", func() {
 		})
 
 		Context("when the bbl environment does not have a BOSH director", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
+			It("does not call cloudConfigManager", func() {
+				terraformManager.ApplyCall.Returns.BBLState = storage.State{
 					NoDirector: true,
 				}
-			})
-
-			It("does not call cloudConfigManager", func() {
-				terraformManager.ApplyCall.Returns.BBLState = incomingState
 
 				err := command.Execute(
 					commands.CreateLBsConfig{

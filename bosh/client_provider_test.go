@@ -19,7 +19,7 @@ var _ = Describe("Client Provider", func() {
 		jumpbox        storage.Jumpbox
 		socks5Proxy    *fakes.Socks5Proxy
 	)
-	
+
 	BeforeEach(func() {
 		socks5Proxy = &fakes.Socks5Proxy{}
 		clientProvider = bosh.NewClientProvider(socks5Proxy)
@@ -33,7 +33,7 @@ var _ = Describe("Client Provider", func() {
 			socks5Forward    proxy.Dialer
 			fakeSocks5Client *fakes.Socks5Client
 		)
-		
+
 		BeforeEach(func() {
 			socks5Proxy.AddrCall.Returns.Addr = "some-socks-proxy-addr"
 			bosh.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {
@@ -45,7 +45,7 @@ var _ = Describe("Client Provider", func() {
 				return fakeSocks5Client, nil
 			})
 		})
-		
+
 		AfterEach(func() {
 			bosh.ResetProxySOCKS5()
 		})
@@ -121,12 +121,12 @@ var _ = Describe("Client Provider", func() {
 
 	Describe("HttpClient", func() {
 		var (
-			err    error
 			ca     []byte
 			dialer *fakes.Socks5Client
 		)
 
 		BeforeEach(func() {
+			var err error
 			ca, err = ioutil.ReadFile("fixtures/some-fake-ca.crt")
 			Expect(err).NotTo(HaveOccurred())
 

@@ -143,12 +143,12 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("jumpbox interpolate: %s", err)
+		return storage.State{}, fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
 
 	variables, err := yaml.Marshal(interpolateOutputs.Variables)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("marshal yaml: %s", err)
+		return storage.State{}, fmt.Errorf("Marshal yaml: %s", err)
 	}
 
 	osUnsetenv("BOSH_ALL_PROXY")
@@ -165,9 +165,9 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 			State:     ceErr.BOSHState(),
 			Manifest:  interpolateOutputs.Manifest,
 		}
-		return storage.State{}, fmt.Errorf("create env error: %s", NewManagerCreateError(state, err))
+		return storage.State{}, fmt.Errorf("Create jumpbox env: %s", NewManagerCreateError(state, err))
 	case error:
-		return storage.State{}, fmt.Errorf("create env: %s", err)
+		return storage.State{}, fmt.Errorf("Create jumpbox env: %s", err)
 	}
 	m.logger.Step("created jumpbox")
 
@@ -186,7 +186,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 
 	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("start proxy: %s", err)
+		return storage.State{}, fmt.Errorf("Start proxy: %s", err)
 	}
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
@@ -227,12 +227,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 		}
 		return storage.State{}, NewManagerCreateError(state, err)
 	case error:
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("Create director env: %s", err)
 	}
 
 	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("failed to get director outputs:\n%s", err.Error())
+		return storage.State{}, fmt.Errorf("Get director vars: %s", err)
 	}
 
 	state.BOSH = storage.BOSH{
@@ -292,7 +292,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs map[strin
 		state.BOSH.State = deErr.BOSHState()
 		return NewManagerDeleteError(state, err)
 	case error:
-		return err
+		return fmt.Errorf("Delete director env: %s", err)
 	}
 
 	return nil
@@ -323,7 +323,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 		state.Jumpbox.State = deErr.BOSHState()
 		return NewManagerDeleteError(state, err)
 	case error:
-		return err
+		return fmt.Errorf("Delete jumpbox env: %s", err)
 	}
 
 	return nil
