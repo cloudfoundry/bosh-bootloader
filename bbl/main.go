@@ -109,6 +109,12 @@ func main() {
 		inputGenerator = gcpterraform.NewInputGenerator()
 
 	} else if appConfig.State.IAAS == "azure" && needsIAASCreds {
+		azureClientProvider := azure.NewClientProvider()
+		err = azureClientProvider.SetConfig(appConfig.State.Azure.SubscriptionID, appConfig.State.Azure.TenantID, appConfig.State.Azure.ClientID, appConfig.State.Azure.ClientSecret)
+		if err != nil {
+			log.Fatalf("\n\n%s\n", err)
+		}
+
 		templateGenerator = azureterraform.NewTemplateGenerator()
 		inputGenerator = azureterraform.NewInputGenerator()
 		outputGenerator = azureterraform.NewOutputGenerator(terraformExecutor)
@@ -161,8 +167,7 @@ func main() {
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 	case "azure":
-		azureClient := azure.NewClient()
-		upCmd = commands.NewAzureUp(azureClient)
+		upCmd = commands.NewAzureUp()
 	}
 
 	// Commands
