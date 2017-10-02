@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -11,28 +12,30 @@ var BBLNotFound error = errors.New("A bbl environment could not be found, please
 var DirectorNotReachable error = errors.New("We couldn't communicate to the director in your state file. You may need to run `bbl up`.")
 
 type EnvironmentValidator struct {
-	awsEnvironmentValidator environmentValidator
-	gcpEnvironmentValidator environmentValidator
+	boshClientProvider boshClientProvider
 }
 
-type environmentValidator interface {
-	Validate(storage.State) error
+type boshClientProvider interface {
+	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, directorCACert string) (bosh.Client, error)
 }
 
-func NewEnvironmentValidator(awsEnvironmentValidator environmentValidator, gcpEnvironmentValidator environmentValidator) EnvironmentValidator {
+func NewEnvironmentValidator(boshClientProvider boshClientProvider) EnvironmentValidator {
 	return EnvironmentValidator{
-		awsEnvironmentValidator: awsEnvironmentValidator,
-		gcpEnvironmentValidator: gcpEnvironmentValidator,
+		boshClientProvider: boshClientProvider,
 	}
 }
 
 func (e EnvironmentValidator) Validate(state storage.State) error {
-	switch state.IAAS {
-	case "gcp":
-		return e.gcpEnvironmentValidator.Validate(state)
-	case "aws":
-		return e.awsEnvironmentValidator.Validate(state)
-	default:
-		return fmt.Errorf("invalid IAAS specified: %s", state.IAAS)
+	if !state.NoDirector {
+		boshClient, err := e.boshClientProvider.Client(state.Jumpbox, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
+		if err != nil {
+			return fmt.Errorf("bosh client provider: %s", err)
+		}
+		_, err = boshClient.Info()
+		if err != nil {
+			return fmt.Errorf("%s %s", DirectorNotReachable, err)
+		}
 	}
+
+	return nil
 }

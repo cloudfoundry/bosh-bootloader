@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -13,59 +14,41 @@ import (
 var _ = Describe("EnvironmentValidator", func() {
 	Describe("Validate", func() {
 		var (
-			gcpEnvironmentValidator *fakes.EnvironmentValidator
-			awsEnvironmentValidator *fakes.EnvironmentValidator
+			boshClientProvider *fakes.BOSHClientProvider
+			boshClient         *fakes.BOSHClient
 
 			environmentValidator application.EnvironmentValidator
-			state                storage.State
 		)
 
 		BeforeEach(func() {
-			gcpEnvironmentValidator = &fakes.EnvironmentValidator{}
-			awsEnvironmentValidator = &fakes.EnvironmentValidator{}
+			boshClientProvider = &fakes.BOSHClientProvider{}
+			boshClient = &fakes.BOSHClient{}
+			boshClientProvider.ClientCall.Returns.Client = boshClient
 
-			gcpEnvironmentValidator.ValidateCall.Returns.Error = errors.New("gcp environment validation failed")
-			awsEnvironmentValidator.ValidateCall.Returns.Error = errors.New("aws environment validation failed")
-
-			environmentValidator = application.NewEnvironmentValidator(awsEnvironmentValidator, gcpEnvironmentValidator)
+			environmentValidator = application.NewEnvironmentValidator(boshClientProvider)
 		})
 
-		Context("when the IAAS is gcp", func() {
+		Context("when the director is unavailable", func() {
 			BeforeEach(func() {
-				state = storage.State{
-					IAAS: "gcp",
-				}
+				boshClient.InfoCall.Returns.Error = errors.New("bosh is not available")
 			})
 
-			It("calls the validate function of gcpEnvironmentValidator", func() {
-				err := environmentValidator.Validate(state)
-				Expect(err).To(MatchError("gcp environment validation failed"))
-			})
-		})
+			It("returns a helpful error message", func() {
+				err := environmentValidator.Validate(storage.State{
+					TFState: "some-tf-state",
+					BOSH: storage.BOSH{
+						DirectorAddress:  "some-director-address",
+						DirectorUsername: "some-director-username",
+						DirectorPassword: "some-director-password",
+					},
+				})
 
-		Context("when the IAAS is aws", func() {
-			BeforeEach(func() {
-				state = storage.State{
-					IAAS: "aws",
-				}
-			})
-
-			It("calls the validate function of awsEnvironmentValidator", func() {
-				err := environmentValidator.Validate(state)
-				Expect(err).To(MatchError("aws environment validation failed"))
-			})
-		})
-
-		Context("when the IAAS is invalid", func() {
-			BeforeEach(func() {
-				state = storage.State{
-					IAAS: "invalid",
-				}
-			})
-
-			It("returns an error", func() {
-				err := environmentValidator.Validate(state)
-				Expect(err).To(MatchError("invalid IAAS specified: invalid"))
+				Expect(boshClientProvider.ClientCall.CallCount).To(Equal(1))
+				Expect(boshClient.InfoCall.CallCount).To(Equal(1))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
+				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+				Expect(err).To(MatchError(fmt.Sprintf("%s %s", application.DirectorNotReachable, "bosh is not available")))
 			})
 		})
 	})

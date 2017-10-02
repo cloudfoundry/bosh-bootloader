@@ -24,8 +24,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
-	awsapplication "github.com/cloudfoundry/bosh-bootloader/application/aws"
-	gcpapplication "github.com/cloudfoundry/bosh-bootloader/application/gcp"
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
@@ -148,6 +146,7 @@ func main() {
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
 	sshKeyGetter := bosh.NewSSHKeyGetter()
+	environmentValidator := application.NewEnvironmentValidator(boshClientProvider)
 
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
 	switch appConfig.State.IAAS {
@@ -169,13 +168,11 @@ func main() {
 	)
 	switch appConfig.State.IAAS {
 	case "aws":
-		environmentValidator := awsapplication.NewEnvironmentValidator(boshClientProvider)
 		upCmd = commands.NewAWSUp()
 		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 		deleteLBsCmd = commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	case "gcp":
-		environmentValidator := gcpapplication.NewEnvironmentValidator(boshClientProvider)
 		upCmd = commands.NewGCPUp(gcpClient)
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
