@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/certs"
@@ -45,8 +44,8 @@ func main() {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
-	needsIAASConfig := config.NeedsIAASConfig(appConfig.Command) && !appConfig.ShowCommandHelp
-	if needsIAASConfig {
+	needsIAASCreds := config.NeedsIAASCreds(appConfig.Command) && !appConfig.ShowCommandHelp
+	if needsIAASCreds {
 		err = config.ValidateIAAS(appConfig.State, appConfig.Command)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
@@ -60,6 +59,7 @@ func main() {
 	storage.GetStateLogger = stderrLogger
 	stateStore := storage.NewStore(appConfig.Global.StateDir)
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
+	certificateValidator := certs.NewValidator()
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
@@ -67,15 +67,16 @@ func main() {
 	terraformExecutor := terraform.NewExecutor(terraformCmd, appConfig.Global.Debug)
 
 	var (
-		availabilityZoneRetriever ec2.AvailabilityZoneRetriever
-		certificateValidator      certs.Validator
-		networkClient             helpers.NetworkClient
-		networkDeletionValidator  commands.NetworkDeletionValidator
+		networkClient            helpers.NetworkClient
+		networkDeletionValidator commands.NetworkDeletionValidator
 
-		// this should be replaced by an IAAS agnostic variable, but that needs a common interface. We don't have time right now. AWS clients should also be combined into one struct.
 		gcpClient gcp.Client
+
+		inputGenerator    terraform.InputGenerator
+		outputGenerator   terraform.OutputGenerator
+		templateGenerator terraform.TemplateGenerator
 	)
-	if appConfig.State.IAAS == "aws" && needsIAASConfig {
+	if appConfig.State.IAAS == "aws" && needsIAASCreds {
 		awsClientProvider := &clientmanager.ClientProvider{}
 		awsConfiguration := aws.Config{
 			AccessKeyID:     appConfig.State.AWS.AccessKeyID,
@@ -83,49 +84,34 @@ func main() {
 			Region:          appConfig.State.AWS.Region,
 		}
 		awsClientProvider.SetConfig(awsConfiguration, logger)
+
 		awsClient := awsClientProvider.Client()
-
-		availabilityZoneRetriever = awsClient
-		certificateValidator = certs.NewValidator()
 		networkDeletionValidator = awsClient
-
 		networkClient = awsClient
-	}
 
-	if appConfig.State.IAAS == "gcp" && needsIAASConfig {
+		templateGenerator = awsterraform.NewTemplateGenerator()
+		inputGenerator = awsterraform.NewInputGenerator(awsClient)
+		outputGenerator = awsterraform.NewOutputGenerator(terraformExecutor)
+
+	} else if appConfig.State.IAAS == "gcp" && needsIAASCreds {
 		gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
 		err = gcpClientProvider.SetConfig(appConfig.State.GCP.ServiceAccountKey, appConfig.State.GCP.ProjectID, appConfig.State.GCP.Region, appConfig.State.GCP.Zone)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
+
 		gcpClient = gcpClientProvider.Client()
-		networkClient = gcpClient
 		networkDeletionValidator = gcpClient
-	}
+		networkClient = gcpClient
 
-	var envIDManager helpers.EnvIDManager
-	if appConfig.State.IAAS != "" {
-		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
-	}
-
-	var (
-		inputGenerator    terraform.InputGenerator
-		outputGenerator   terraform.OutputGenerator
-		templateGenerator terraform.TemplateGenerator
-	)
-	switch appConfig.State.IAAS {
-	case "aws":
-		templateGenerator = awsterraform.NewTemplateGenerator()
-		inputGenerator = awsterraform.NewInputGenerator(availabilityZoneRetriever)
-		outputGenerator = awsterraform.NewOutputGenerator(terraformExecutor)
-	case "azure":
-		templateGenerator = azureterraform.NewTemplateGenerator()
-		inputGenerator = azureterraform.NewInputGenerator()
-		outputGenerator = azureterraform.NewOutputGenerator(terraformExecutor)
-	case "gcp":
 		outputGenerator = gcpterraform.NewOutputGenerator(terraformExecutor)
 		templateGenerator = gcpterraform.NewTemplateGenerator()
 		inputGenerator = gcpterraform.NewInputGenerator()
+
+	} else if appConfig.State.IAAS == "azure" && needsIAASCreds {
+		templateGenerator = azureterraform.NewTemplateGenerator()
+		inputGenerator = azureterraform.NewInputGenerator()
+		outputGenerator = azureterraform.NewOutputGenerator(terraformExecutor)
 	}
 
 	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
@@ -180,6 +166,10 @@ func main() {
 	}
 
 	// Commands
+	var envIDManager helpers.EnvIDManager
+	if appConfig.State.IAAS != "" {
+		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
+	}
 	up := commands.NewUp(upCmd, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	usage := commands.NewUsage(logger)
 

@@ -225,7 +225,7 @@ func ValidateIAAS(state storage.State, command string) error {
 	return nil
 }
 
-func NeedsIAASConfig(command string) bool {
+func NeedsIAASCreds(command string) bool {
 	_, ok := map[string]struct{}{
 		"up":         struct{}{},
 		"down":       struct{}{},
