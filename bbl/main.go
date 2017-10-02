@@ -164,23 +164,19 @@ func main() {
 		upCmd        commands.UpCmd
 		createLBsCmd commands.CreateLBsCmd
 		lbsCmd       commands.LBsCmd
-		deleteLBsCmd commands.DeleteLBsCmd
 	)
 	switch appConfig.State.IAAS {
 	case "aws":
 		upCmd = commands.NewAWSUp()
 		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
-		deleteLBsCmd = commands.NewAWSDeleteLBs(cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	case "gcp":
 		upCmd = commands.NewGCPUp(gcpClient)
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
-		deleteLBsCmd = commands.NewGCPDeleteLBs(stateStore, environmentValidator, terraformManager, cloudConfigManager)
 	case "azure":
 		azureClient := azure.NewClient()
 		upCmd = commands.NewAzureUp(azureClient)
-		deleteLBsCmd = commands.NewAzureDeleteLBs(cloudConfigManager, stateStore, terraformManager)
 	}
 
 	// Commands
@@ -197,7 +193,7 @@ func main() {
 	commandSet["down"] = commandSet["destroy"]
 	commandSet["create-lbs"] = commands.NewCreateLBs(createLBsCmd, logger, stateValidator, certificateValidator, boshManager)
 	commandSet["update-lbs"] = commandSet["create-lbs"]
-	commandSet["delete-lbs"] = commands.NewDeleteLBs(deleteLBsCmd, logger, stateValidator, boshManager)
+	commandSet["delete-lbs"] = commands.NewDeleteLBs(logger, stateValidator, boshManager, cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)
 	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.JumpboxAddressPropertyName)
 	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorAddressPropertyName)
