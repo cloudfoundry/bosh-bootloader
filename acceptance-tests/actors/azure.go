@@ -1,6 +1,9 @@
 package actors
 
 import (
+	"fmt"
+
+	"github.com/Azure/azure-sdk-for-go/arm/compute"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -9,11 +12,12 @@ import (
 )
 
 type Azure struct {
-	groupsClient   *resources.GroupsClient
-	subscriptionID string
-	tenantID       string
-	clientID       string
-	clientSecret   string
+	groupsClient          *resources.GroupsClient
+	virtualMachinesClient *compute.VirtualMachinesClient
+	subscriptionID        string
+	tenantID              string
+	clientID              string
+	clientSecret          string
 }
 
 func NewAzure(config acceptance.Config) Azure {
@@ -31,12 +35,18 @@ func NewAzure(config acceptance.Config) Azure {
 	gc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	gc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
 
+	// blindly copied from groupsClient above
+	vmc := compute.NewVirtualMachinesClient(config.AzureSubscriptionID)
+	vmc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	vmc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
+
 	return Azure{
-		groupsClient:   &gc,
-		subscriptionID: config.AzureSubscriptionID,
-		tenantID:       config.AzureTenantID,
-		clientID:       config.AzureClientID,
-		clientSecret:   config.AzureClientSecret,
+		groupsClient:          &gc,
+		virtualMachinesClient: &vmc,
+		subscriptionID:        config.AzureSubscriptionID,
+		tenantID:              config.AzureTenantID,
+		clientID:              config.AzureClientID,
+		clientSecret:          config.AzureClientSecret,
 	}
 }
 
@@ -47,4 +57,20 @@ func (a Azure) GetResourceGroup(resourceGroupName string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (a Azure) NetworkHasBOSHDirector(envID string) bool {
+	resourceGroupName := fmt.Sprintf("%s-bosh", envID)
+	result, err := a.virtualMachinesClient.List(resourceGroupName)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, vm := range *result.Value {
+		if *(*vm.Tags)["deployment"] == "bosh" {
+			return true
+		}
+	}
+
+	return false
 }
