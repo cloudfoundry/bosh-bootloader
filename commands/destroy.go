@@ -151,7 +151,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return handleTerraformError(err, d.stateStore)
 	}
 
-	if err := d.stateStore.Set(state); err != nil {
+	if err := d.stateStore.Set(storage.State{}); err != nil {
 		return err
 	}
 

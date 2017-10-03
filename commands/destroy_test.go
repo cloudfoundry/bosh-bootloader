@@ -42,6 +42,9 @@ var _ = Describe("Destroy", func() {
 		terraformManagerError = &fakes.TerraformManagerError{}
 		networkDeletionValidator = &fakes.NetworkDeletionValidator{}
 
+		// Returning a fully empty State is unrealistic.
+		terraformManager.DestroyCall.Returns.BBLState = storage.State{ID: "some-state-id"}
+
 		destroy = commands.NewDestroy(logger, stdin, boshManager, stateStore,
 			stateValidator, terraformManager, networkDeletionValidator)
 	})
@@ -290,7 +293,7 @@ var _ = Describe("Destroy", func() {
 			Expect(boshManager.DeleteDirectorCall.Receives.State).To(Equal(state))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(2))
-			Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
+			Expect(stateStore.SetCall.Receives[0].State.BOSH).To(Equal(storage.BOSH{}))
 		})
 
 		It("invokes bosh delete jumpbox as well", func() {
@@ -319,7 +322,7 @@ var _ = Describe("Destroy", func() {
 			Expect(boshManager.DeleteJumpboxCall.Receives.State).To(Equal(stateWithoutDirector))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(2))
-			Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
+			Expect(stateStore.SetCall.Receives[0].State.BOSH).To(Equal(storage.BOSH{}))
 		})
 
 		Context("failure cases", func() {
@@ -385,12 +388,13 @@ var _ = Describe("Destroy", func() {
 				terraformManager.DestroyCall.Returns.BBLState = updatedState
 			})
 
-			It("deletes infrastructure with terraform", func() {
+			It("calls terraform destroy and deletes the state file", func() {
 				err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
 			})
 
 			Context("when terraform destroy fails", func() {
@@ -470,7 +474,7 @@ var _ = Describe("Destroy", func() {
 				}
 			})
 
-			It("deletes infrastructure with terraform", func() {
+			It("calls terraform destroy and deletes the state file", func() {
 				err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -478,6 +482,7 @@ var _ = Describe("Destroy", func() {
 				expectedState := state
 				expectedState.BOSH = storage.BOSH{}
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
 			})
 
 			Context("when terraform destroy fails", func() {
@@ -683,7 +688,7 @@ var _ = Describe("Destroy", func() {
 				terraformManager.DestroyCall.Returns.BBLState = bblState
 			})
 
-			It("calls terraform destroy", func() {
+			It("calls terraform destroy and deletes the state file", func() {
 				stdin.Write([]byte("yes\n"))
 				err := destroy.Execute([]string{}, bblState)
 				Expect(err).NotTo(HaveOccurred())
@@ -692,6 +697,7 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(bblState))
 				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
 			})
 
 			Context("when terraform destroy fails", func() {
