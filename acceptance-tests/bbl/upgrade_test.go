@@ -33,9 +33,9 @@ var _ = Describe("Upgrade", func() {
 
 		var bblBinaryLocation string
 		if runtime.GOOS == "darwin" {
-			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v4.9.2/bbl-v4.9.2_osx"
+			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v4.10.3/bbl-v4.10.3_osx"
 		} else {
-			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v4.9.2/bbl-v4.9.2_linux_x86-64"
+			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v4.10.3/bbl-v4.10.3_linux_x86-64"
 		}
 
 		resp, err := http.Get(bblBinaryLocation)
