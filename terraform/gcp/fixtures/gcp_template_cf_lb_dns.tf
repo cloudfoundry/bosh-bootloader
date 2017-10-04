@@ -515,17 +515,6 @@ resource "google_dns_record_set" "wildcard-dns" {
   rrdatas = ["${google_compute_global_address.cf-address.address}"]
 }
 
-resource "google_dns_record_set" "bosh-dns" {
-  name       = "bosh.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.bosh-external-ip"]
-  type       = "A"
-  ttl        = 300
-
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
-
-  rrdatas = ["${google_compute_address.bosh-external-ip.address}"]
-}
-
 resource "google_dns_record_set" "cf-ssh-proxy" {
   name       = "ssh.${google_dns_managed_zone.env_dns_zone.dns_name}"
   depends_on = ["google_compute_address.cf-ssh-proxy"]
