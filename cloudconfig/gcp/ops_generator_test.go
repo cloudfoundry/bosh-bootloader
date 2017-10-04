@@ -90,6 +90,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 					"ws_target_pool":         "ws-target-pool",
 					"ssh_proxy_target_pool":  "ssh-proxy-target-pool",
 					"tcp_router_target_pool": "tcp-router-target-pool",
+					"credhub_target_pool":    "credhub-target-pool",
 				}),
 			Entry("concourse load balancer exists", "concourse",
 				map[string]interface{}{

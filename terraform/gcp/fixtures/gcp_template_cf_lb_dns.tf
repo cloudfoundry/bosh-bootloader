@@ -197,6 +197,10 @@ output "ws_lb_ip" {
     value = "${google_compute_address.cf-ws.address}"
 }
 
+output "credhub_lb_ip" {
+    value = "${google_compute_address.credhub.address}"
+}
+
 resource "google_compute_firewall" "firewall-cf" {
   name       = "${var.env_id}-cf-open"
   depends_on = ["google_compute_network.bbl-network"]
@@ -400,6 +404,41 @@ resource "google_compute_forwarding_rule" "cf-ws-http" {
   ip_address  = "${google_compute_address.cf-ws.address}"
 }
 
+output "credhub_target_pool" {
+  value = "${google_compute_target_pool.credhub.name}"
+}
+
+output "credhub_target_tags" {
+  value = "${google_compute_firewall.credhub.target_tags}"
+}
+
+resource "google_compute_firewall" "credhub" {
+  name    = "${var.env_id}-credhub-open"
+  network = "${google_compute_network.bbl-network.name}"
+  allow {
+    protocol = "tcp"
+    ports    = ["8844"]
+  }
+  target_tags = ["${google_compute_target_pool.credhub.name}"]
+}
+
+resource "google_compute_address" "credhub" {
+  name = "${var.env_id}-credhub"
+}
+
+resource "google_compute_target_pool" "credhub" {
+  name = "${var.env_id}-credhub"
+  session_affinity = "NONE"
+}
+
+resource "google_compute_forwarding_rule" "credhub" {
+  name        = "${var.env_id}-credhub"
+  target      = "${google_compute_target_pool.credhub.self_link}"
+  port_range  = "8844"
+  ip_protocol = "TCP"
+  ip_address  = "${google_compute_address.credhub.address}"
+}
+
 resource "google_compute_instance_group" "router-lb-0" {
   name        = "${var.env_id}-router-lb-0-z1"
   description = "terraform generated instance group that is multi-zone for https loadbalancing"
@@ -544,4 +583,15 @@ resource "google_dns_record_set" "wildcard-ws-dns" {
   managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
 
   rrdatas = ["${google_compute_address.cf-ws.address}"]
+}
+
+resource "google_dns_record_set" "credhub" {
+  name = "credhub.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  depends_on = ["google_compute_address.credhub"]
+  type = "A"
+  ttl = 300
+
+  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+
+  rrdatas = ["${google_compute_address.credhub.address}"]
 }

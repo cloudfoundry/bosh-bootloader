@@ -188,6 +188,16 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 				},
 			},
 		}))
+
+		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
+			Name: "credhub-network-properties",
+			CloudProperties: lbCloudProperties{
+				TargetPool: terraformOutputs["credhub_target_pool"].(string),
+				Tags: []string{
+					terraformOutputs["credhub_target_pool"].(string),
+				},
+			},
+		}))
 	}
 
 	return ops, nil
