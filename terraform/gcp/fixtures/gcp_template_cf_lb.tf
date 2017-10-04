@@ -48,10 +48,6 @@ output "internal_tag_name" {
     value = "${google_compute_firewall.internal.name}"
 }
 
-output "director_address" {
-	value = "https://${google_compute_address.bosh-external-ip.address}:25555"
-}
-
 resource "google_compute_network" "bbl-network" {
   name		 = "${var.env_id}-network"
   auto_create_subnetworks = false
@@ -61,10 +57,6 @@ resource "google_compute_subnetwork" "bbl-subnet" {
   name			= "${var.env_id}-subnet"
   ip_cidr_range = "10.0.0.0/16"
   network		= "${google_compute_network.bbl-network.self_link}"
-}
-
-resource "google_compute_address" "bosh-external-ip" {
-  name = "${var.env_id}-bosh-external-ip"
 }
 
 resource "google_compute_firewall" "external" {
@@ -167,6 +159,10 @@ output "jumpbox_url" {
 
 output "external_ip" {
     value = "${google_compute_address.jumpbox-ip.address}"
+}
+
+output "director_address" {
+	value = "https://${google_compute_address.jumpbox-ip.address}:25555"
 }
 
 variable "ssl_certificate" {

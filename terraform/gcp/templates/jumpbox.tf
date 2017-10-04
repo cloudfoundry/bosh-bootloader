@@ -9,3 +9,7 @@ output "jumpbox_url" {
 output "external_ip" {
     value = "${google_compute_address.jumpbox-ip.address}"
 }
+
+output "director_address" {
+	value = "https://${google_compute_address.jumpbox-ip.address}:25555"
+}
