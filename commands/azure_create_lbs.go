@@ -13,7 +13,6 @@ type AzureCreateLBs struct {
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
 	environmentValidator      EnvironmentValidator
-	availabilityZoneRetriever availabilityZoneRetriever
 }
 
 type AzureCreateLBsConfig struct {
@@ -25,14 +24,12 @@ type AzureCreateLBsConfig struct {
 
 func NewAzureCreateLBs(terraformManager terraformApplier,
 	cloudConfigManager cloudConfigManager,
-	stateStore stateStore, environmentValidator EnvironmentValidator,
-	availabilityZoneRetriever availabilityZoneRetriever) AzureCreateLBs {
+	stateStore stateStore, environmentValidator EnvironmentValidator) AzureCreateLBs {
 	return AzureCreateLBs{
 		terraformManager:          terraformManager,
 		cloudConfigManager:        cloudConfigManager,
 		stateStore:                stateStore,
 		environmentValidator:      environmentValidator,
-		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
 
