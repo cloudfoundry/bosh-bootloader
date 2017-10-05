@@ -96,7 +96,7 @@ resource "aws_iam_policy" "bosh" {
 	    "iam:PassRole"
 	  ],
 	  "Effect": "Allow",
-	  "Resource": "${aws_iam_role.bosh.arn}"
+	  "Resource": "*"
 	},
 	{
 	  "Action": [
