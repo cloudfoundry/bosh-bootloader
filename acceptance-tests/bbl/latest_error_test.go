@@ -45,7 +45,7 @@ var _ = Describe("bbl latest-error", func() {
 		cmd := exec.Command(pathToBBL, args...)
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
-		Eventually(session, 10*time.Second).Should(gexec.Exit(1))
+		Eventually(session, 10*time.Second).Should(gexec.Exit(0))
 
 		Expect(string(session.Out.Contents())).To(ContainSubstring("some terraform output"))
 	})
