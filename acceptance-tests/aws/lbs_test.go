@@ -28,6 +28,8 @@ var _ = Describe("lbs test", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("load-balancers")
+
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -61,7 +63,6 @@ var _ = Describe("lbs test", func() {
 	})
 
 	It("creates, updates and deletes cf LBs with the specified cert and key", func() {
-		acceptance.SkipUnless("load-balancers")
 		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 

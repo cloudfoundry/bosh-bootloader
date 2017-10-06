@@ -23,6 +23,8 @@ var _ = Describe("bosh deployment vars", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("bosh-deployment-vars")
+
 		var err error
 		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
@@ -36,7 +38,6 @@ var _ = Describe("bosh deployment vars", func() {
 	})
 
 	It("prints the bosh deployment vars for bosh create-env", func() {
-		acceptance.SkipUnless("bosh-deployment-vars")
 		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
