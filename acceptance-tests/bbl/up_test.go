@@ -25,31 +25,25 @@ var _ = Describe("up", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("bbl-up")
+
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
 		boshcli = actors.NewBOSHCLI()
-
 		boshDirectorChecker = actors.NewBOSHDirectorChecker(configuration)
 	})
 
 	AfterEach(func() {
-		fmt.Println("********************************************************************************")
-		fmt.Println("Entering AfterEach...")
 		sshSession.Interrupt()
-		fmt.Println("Called sshSession.Interrupt...")
 		Eventually(sshSession, "5s").Should(gexec.Exit())
-		fmt.Println("sshSession exited...")
+
 		session := bbl.Down()
-		fmt.Println("Called bbl.Down()...")
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
-		fmt.Println("Exiting AfterEach...")
-		fmt.Println("********************************************************************************")
 	})
 
 	It("bbl's up a new bosh director and jumpbox", func() {
-		acceptance.SkipUnless("bbl-up")
 		session := bbl.Up("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 

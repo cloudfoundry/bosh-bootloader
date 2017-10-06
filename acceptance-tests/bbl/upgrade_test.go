@@ -28,6 +28,8 @@ var _ = Describe("Upgrade", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("upgrade")
+
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -86,8 +88,6 @@ var _ = Describe("Upgrade", func() {
 
 	Describe("Up", func() {
 		It("is able to bbl up idempotently with a director", func() {
-			acceptance.SkipUnless("upgrade")
-
 			By("bbl'ing up with old bbl", func() {
 				session := oldBBL.Up("--name", oldBBL.PredefinedEnvID())
 				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))

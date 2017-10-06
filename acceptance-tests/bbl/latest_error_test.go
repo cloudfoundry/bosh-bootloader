@@ -20,8 +20,9 @@ var _ = Describe("bbl latest-error", func() {
 	)
 
 	BeforeEach(func() {
-		var err error
+		acceptance.SkipUnless("latest-error")
 
+		var err error
 		tempDirectory, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -36,23 +37,16 @@ var _ = Describe("bbl latest-error", func() {
 	})
 
 	It("prints the terraform output from the last command", func() {
-		acceptance.SkipUnless("latest-error")
 		args := []string{
 			"--state-dir", tempDirectory,
 			"latest-error",
 		}
 
-		session := executeCommand(args, 0)
+		cmd := exec.Command(pathToBBL, args...)
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session, 10*time.Second).Should(gexec.Exit(1))
 
 		Expect(string(session.Out.Contents())).To(ContainSubstring("some terraform output"))
 	})
 })
-
-func executeCommand(args []string, exitCode int) *gexec.Session {
-	cmd := exec.Command(pathToBBL, args...)
-	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
-	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
-
-	return session
-}

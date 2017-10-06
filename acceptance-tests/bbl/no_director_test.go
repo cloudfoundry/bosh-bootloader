@@ -18,6 +18,8 @@ var _ = Describe("no director test", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("no-director")
+
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -31,7 +33,6 @@ var _ = Describe("no director test", func() {
 	})
 
 	It("successfully standups up a no director infrastructure", func() {
-		acceptance.SkipUnless("no-director")
 		By("calling bbl up with the no-director flag", func() {
 			session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
