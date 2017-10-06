@@ -26,7 +26,7 @@ type globalFlags struct {
 
 	AzureClientID       string `long:"azure-client-id"        env:"BBL_AZURE_CLIENT_ID"`
 	AzureClientSecret   string `long:"azure-client-secret"    env:"BBL_AZURE_CLIENT_SECRET"`
-	AzureLocation       string `long:"azure-location"         env:"BBL_AZURE_LOCATION"`
+	AzureRegion         string `long:"azure-region"           env:"BBL_AZURE_REGION"`
 	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
 	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
 
@@ -246,8 +246,8 @@ func updateAzureState(globalFlags globalFlags, state storage.State) (storage.Sta
 	if globalFlags.AzureClientSecret != "" {
 		state.Azure.ClientSecret = globalFlags.AzureClientSecret
 	}
-	if globalFlags.AzureLocation != "" {
-		state.Azure.Location = globalFlags.AzureLocation
+	if globalFlags.AzureRegion != "" {
+		state.Azure.Region = globalFlags.AzureRegion
 	}
 	if globalFlags.AzureSubscriptionID != "" {
 		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
@@ -390,8 +390,8 @@ func validateAzure(azure storage.Azure) error {
 	if azure.ClientSecret == "" {
 		return errors.New("Azure client secret must be provided (--azure-client-secret or BBL_AZURE_CLIENT_SECRET)")
 	}
-	if azure.Location == "" {
-		return errors.New("Azure location must be provided (--azure-location or BBL_AZURE_LOCATION)")
+	if azure.Region == "" {
+		return errors.New("Azure region must be provided (--azure-region or BBL_AZURE_REGION)")
 	}
 	if azure.SubscriptionID == "" {
 		return errors.New("Azure subscription id must be provided (--azure-subscription-id or BBL_AZURE_SUBSCRIPTION_ID)")

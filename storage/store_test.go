@@ -54,7 +54,7 @@ var _ = Describe("Store", func() {
 					Azure: storage.Azure{
 						ClientID:       "client-id",
 						ClientSecret:   "client-secret",
-						Location:       "location",
+						Region:         "some-azure-region",
 						SubscriptionID: "subscription-id",
 						TenantID:       "tenant-id",
 					},
@@ -122,7 +122,11 @@ var _ = Describe("Store", func() {
 					"region": "some-region"
 				},
 				"azure": {
-					"location": "location"
+					"clientId": "client-id",
+					"clientSecret": "client-secret",
+					"region": "some-azure-region",
+					"subscriptionId": "subscription-id",
+					"tenantId": "tenant-id"
 				},
 				"gcp": {
 					"zone": "some-zone",

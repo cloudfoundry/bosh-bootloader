@@ -21,7 +21,7 @@ var _ = Describe("InputGenerator", func() {
 			Azure: storage.Azure{
 				ClientID:       "client-id",
 				ClientSecret:   "client-secret",
-				Location:       "location",
+				Region:       "region",
 				SubscriptionID: "subscription-id",
 				TenantID:       "tenant-id",
 			},
@@ -37,7 +37,7 @@ var _ = Describe("InputGenerator", func() {
 		Expect(inputs).To(Equal(map[string]interface{}{
 			"simple_env_id":   "envid",
 			"env_id":          state.EnvID,
-			"location":        state.Azure.Location,
+			"region":        state.Azure.Region,
 			"subscription_id": state.Azure.SubscriptionID,
 			"tenant_id":       state.Azure.TenantID,
 			"client_id":       state.Azure.ClientID,
@@ -54,7 +54,7 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"simple_env_id":   "superlongenvironment",
 				"env_id":          state.EnvID,
-				"location":        state.Azure.Location,
+				"region":        state.Azure.Region,
 				"subscription_id": state.Azure.SubscriptionID,
 				"tenant_id":       state.Azure.TenantID,
 				"client_id":       state.Azure.ClientID,

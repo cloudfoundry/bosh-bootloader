@@ -887,7 +887,7 @@ var _ = Describe("LoadState", func() {
 							"--iaas", "azure",
 							"--azure-client-id", "client-id",
 							"--azure-client-secret", "client-secret",
-							"--azure-location", "location",
+							"--azure-region", "region",
 							"--azure-subscription-id", "subscription-id",
 							"--azure-tenant-id", "tenant-id",
 						}
@@ -902,7 +902,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.IAAS).To(Equal("azure"))
 						Expect(state.Azure.ClientID).To(Equal("client-id"))
 						Expect(state.Azure.ClientSecret).To(Equal("client-secret"))
-						Expect(state.Azure.Location).To(Equal("location"))
+						Expect(state.Azure.Region).To(Equal("region"))
 						Expect(state.Azure.SubscriptionID).To(Equal("subscription-id"))
 						Expect(state.Azure.TenantID).To(Equal("tenant-id"))
 					})
@@ -926,7 +926,7 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_IAAS", "azure")
 						os.Setenv("BBL_AZURE_CLIENT_ID", "azure-client-id")
 						os.Setenv("BBL_AZURE_CLIENT_SECRET", "azure-client-secret")
-						os.Setenv("BBL_AZURE_LOCATION", "azure-location")
+						os.Setenv("BBL_AZURE_REGION", "azure-region")
 						os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id")
 						os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")
 					})
@@ -941,7 +941,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.IAAS).To(Equal("azure"))
 						Expect(state.Azure.ClientID).To(Equal("azure-client-id"))
 						Expect(state.Azure.ClientSecret).To(Equal("azure-client-secret"))
-						Expect(state.Azure.Location).To(Equal("azure-location"))
+						Expect(state.Azure.Region).To(Equal("azure-region"))
 						Expect(state.Azure.SubscriptionID).To(Equal("azure-subscription-id"))
 						Expect(state.Azure.TenantID).To(Equal("azure-tenant-id"))
 					})
@@ -964,7 +964,7 @@ var _ = Describe("LoadState", func() {
 						Azure: storage.Azure{
 							ClientID:       "client-id",
 							ClientSecret:   "client-secret",
-							Location:       "location",
+								Region:         "region",
 							SubscriptionID: "subscription-id",
 							TenantID:       "tenant-id",
 						},
@@ -997,7 +997,7 @@ var _ = Describe("LoadState", func() {
 							"--iaas", "azure",
 							"--azure-client-id", "client-id",
 							"--azure-client-secret", "client-secret",
-							"--azure-location", "location",
+							"--azure-region", "region",
 							"--azure-subscription-id", "subscription-id",
 							"--azure-tenant-id", "tenant-id",
 						})
@@ -1082,7 +1082,7 @@ var _ = Describe("LoadState", func() {
 					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientSecret:   "some-client-secret",
-						Location:       "location",
+						Region:       "region",
 						TenantID:       "some-tenant-id",
 						SubscriptionID: "some-subscription-id",
 					},
@@ -1093,13 +1093,13 @@ var _ = Describe("LoadState", func() {
 					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
-						Location:       "location",
+						Region:       "region",
 						SubscriptionID: "some-subscription-id",
 						TenantID:       "some-tenant-id",
 					},
 				},
 				"Azure client secret must be provided (--azure-client-secret or BBL_AZURE_CLIENT_SECRET)"),
-			Entry("when Azure location is missing",
+			Entry("when Azure region is missing",
 				storage.State{
 					IAAS: "azure",
 					Azure: storage.Azure{
@@ -1108,15 +1108,14 @@ var _ = Describe("LoadState", func() {
 						SubscriptionID: "some-subscription-id",
 						TenantID:       "some-tenant-id",
 					},
-				},
-				"Azure location must be provided (--azure-location or BBL_AZURE_LOCATION)"),
+				},				"Azure region must be provided (--azure-region or BBL_AZURE_REGION)"),
 			Entry("when Azure subscription is missing",
 				storage.State{
 					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientID:     "some-client-id",
 						ClientSecret: "some-client-secret",
-						Location:     "location",
+						Region:     "region",
 						TenantID:     "some-tenant-id",
 					},
 				},
@@ -1127,7 +1126,7 @@ var _ = Describe("LoadState", func() {
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
 						ClientSecret:   "some-client-secret",
-						Location:       "location",
+						Region:       "region",
 						SubscriptionID: "some-subscription-id",
 					},
 				},
