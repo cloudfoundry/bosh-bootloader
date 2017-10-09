@@ -65,7 +65,7 @@ func main() {
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
-	terraformExecutor := terraform.NewExecutor(terraformCmd, appConfig.Global.Debug)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, appConfig.Global.Debug)
 
 	var (
 		networkClient            helpers.NetworkClient
@@ -140,7 +140,7 @@ func main() {
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.TempDir, ioutil.ReadFile, json.Unmarshal,
 		json.Marshal, ioutil.WriteFile)
-	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy)
+	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
 	sshKeyGetter := bosh.NewSSHKeyGetter()
 	environmentValidator := application.NewEnvironmentValidator(boshClientProvider)
@@ -154,7 +154,7 @@ func main() {
 	case "azure":
 		cloudConfigOpsGenerator = azurecloudconfig.NewOpsGenerator(terraformManager)
 	}
-	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 
 	// Subcommands
 	var (

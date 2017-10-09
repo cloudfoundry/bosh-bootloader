@@ -20,6 +20,7 @@ var _ = Describe("Manager", func() {
 	var (
 		logger             *fakes.Logger
 		cmd                *fakes.BOSHCommand
+		stateStore         *fakes.StateStore
 		opsGenerator       *fakes.CloudConfigOpsGenerator
 		boshClientProvider *fakes.BOSHClientProvider
 		boshClient         *fakes.BOSHClient
@@ -37,6 +38,7 @@ var _ = Describe("Manager", func() {
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		cmd = &fakes.BOSHCommand{}
+		stateStore = &fakes.StateStore{}
 		opsGenerator = &fakes.CloudConfigOpsGenerator{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
@@ -50,9 +52,7 @@ var _ = Describe("Manager", func() {
 		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		cloudconfig.SetTempDir(func(string, string) (string, error) {
-			return tempDir, nil
-		})
+		stateStore.GetCloudConfigDirCall.Returns.Directory = tempDir
 
 		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-cloud-config"))
@@ -73,22 +73,15 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, opsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
-	})
-
-	AfterEach(func() {
-		cloudconfig.ResetTempDir()
+		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
 	})
 
 	Describe("Generate", func() {
 		It("returns a cloud config yaml provided a valid bbl state", func() {
-			expectedArgs := []string{
-				"interpolate", fmt.Sprintf("%s/cloud-config.yml", tempDir),
-				"-o", fmt.Sprintf("%s/ops.yml", tempDir),
-			}
-
 			cloudConfigYAML, err := manager.Generate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(stateStore.GetCloudConfigDirCall.CallCount).To(Equal(1))
 
 			cloudConfig, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config.yml", tempDir))
 			Expect(err).NotTo(HaveOccurred())
@@ -103,21 +96,18 @@ var _ = Describe("Manager", func() {
 			Expect(cmd.RunCallCount()).To(Equal(1))
 			_, workingDirectory, args := cmd.RunArgsForCall(0)
 			Expect(workingDirectory).To(Equal(tempDir))
-			Expect(args).To(Equal(expectedArgs))
+			Expect(args).To(Equal([]string{
+				"interpolate", fmt.Sprintf("%s/cloud-config.yml", tempDir),
+				"-o", fmt.Sprintf("%s/ops.yml", tempDir),
+			}))
 
 			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
 		})
 
 		Context("failure cases", func() {
-			Context("when temp dir fails", func() {
+			Context("when getting cloud config dir fails", func() {
 				BeforeEach(func() {
-					cloudconfig.SetTempDir(func(string, string) (string, error) {
-						return "", errors.New("failed to create temp dir")
-					})
-				})
-
-				AfterEach(func() {
-					cloudconfig.ResetTempDir()
+					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("failed to create temp dir")
 				})
 
 				It("returns an error", func() {

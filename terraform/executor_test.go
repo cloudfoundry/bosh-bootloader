@@ -19,29 +19,41 @@ import (
 
 var _ = Describe("Executor", func() {
 	var (
-		cmd      *fakes.TerraformCmd
-		executor terraform.Executor
+		cmd        *fakes.TerraformCmd
+		stateStore *fakes.StateStore
+		executor   terraform.Executor
 
-		tempDir string
-		input   map[string]string
+		tempDir      string
+		terraformDir string
+		varsDir      string
+		input        map[string]string
+
+		tfStatePath string
 	)
 
 	BeforeEach(func() {
 		cmd = &fakes.TerraformCmd{}
+		stateStore = &fakes.StateStore{}
 
-		executor = terraform.NewExecutor(cmd, true)
+		executor = terraform.NewExecutor(cmd, stateStore, true)
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		terraform.SetTempDir(func(dir, prefix string) (string, error) {
-			return tempDir, nil
-		})
-
 		terraform.SetReadFile(func(filename string) ([]byte, error) {
 			return []byte{}, nil
 		})
+
+		terraformDir, err = ioutil.TempDir("", "terraform")
+		Expect(err).NotTo(HaveOccurred())
+		stateStore.GetTerraformDirCall.Returns.Directory = terraformDir
+
+		varsDir, err = ioutil.TempDir("", "vars")
+		Expect(err).NotTo(HaveOccurred())
+		stateStore.GetVarsDirCall.Returns.Directory = varsDir
+
+		tfStatePath = filepath.Join(varsDir, "terraform.tfstate")
 
 		input = map[string]string{
 			"env_id":                      "some-env-id",
@@ -56,7 +68,6 @@ var _ = Describe("Executor", func() {
 	})
 
 	AfterEach(func() {
-		terraform.ResetTempDir()
 		terraform.ResetReadFile()
 		terraform.ResetWriteFile()
 	})
@@ -66,7 +77,9 @@ var _ = Describe("Executor", func() {
 			_, err := executor.Apply(input, "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
+			Expect(stateStore.GetTerraformDirCall.CallCount).To(Equal(1))
+
+			fileContents, err := ioutil.ReadFile(filepath.Join(terraformDir, "template.tf"))
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(fileContents)).To(Equal("some-template"))
@@ -76,9 +89,10 @@ var _ = Describe("Executor", func() {
 			_, err := executor.Apply(input, "some-template", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"apply",
+				"-state", tfStatePath,
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
@@ -93,7 +107,6 @@ var _ = Describe("Executor", func() {
 
 		It("reads and returns the terraform state written by the command", func() {
 			var actualFilename string
-
 			terraform.SetReadFile(func(filename string) ([]byte, error) {
 				actualFilename = filename
 				return []byte("some-terraform-state"), nil
@@ -107,13 +120,11 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("when previous tf state is blank", func() {
-			var (
-				writeTFStateFileCallCount int
-			)
+			var writeTFStateFileCallCount int
 
 			BeforeEach(func() {
 				cmd.RunCall.Stub = func(stdout io.Writer) {
-					err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tfstate"), os.ModePerm)
+					err := ioutil.WriteFile(tfStatePath, []byte("some-tfstate"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 				}
 
@@ -142,7 +153,7 @@ var _ = Describe("Executor", func() {
 				_, err := executor.Apply(input, "some-template", "some-tf-state")
 				Expect(err).NotTo(HaveOccurred())
 
-				fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
+				fileContents, err := ioutil.ReadFile(tfStatePath)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(string(fileContents)).To(Equal("some-tf-state"))
@@ -150,23 +161,21 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("when an error occurs", func() {
-			Context("when creating a temp dir fails", func() {
+			Context("when getting terraform dir fails", func() {
 				BeforeEach(func() {
-					terraform.SetTempDir(func(dir, prefix string) (string, error) {
-						return "", errors.New("failed to make temp dir")
-					})
+					stateStore.GetTerraformDirCall.Returns.Error = errors.New("canteloupe")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Apply(input, "some-template", "")
-					Expect(err).To(MatchError("failed to make temp dir"))
+					Expect(err).To(MatchError("canteloupe"))
 				})
 			})
 
 			Context("when writing the template file fails", func() {
 				BeforeEach(func() {
 					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-						if file == filepath.Join(tempDir, "template.tf") {
+						if file == filepath.Join(terraformDir, "template.tf") {
 							return errors.New("failed to write template file")
 						}
 
@@ -183,7 +192,7 @@ var _ = Describe("Executor", func() {
 			Context("when writing the previous tfstate file fails", func() {
 				BeforeEach(func() {
 					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-						if file == filepath.Join(tempDir, "terraform.tfstate") {
+						if file == tfStatePath {
 							return errors.New("failed to write tf state file")
 						}
 
@@ -210,7 +219,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when terraform command run fails", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 
 					cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
@@ -242,12 +251,12 @@ var _ = Describe("Executor", func() {
 
 			Context("when --debug is false", func() {
 				BeforeEach(func() {
-					executor = terraform.NewExecutor(cmd, false)
+					executor = terraform.NewExecutor(cmd, stateStore, false)
 				})
 
 				Context("when terraform command run fails", func() {
 					BeforeEach(func() {
-						err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
@@ -271,11 +280,11 @@ var _ = Describe("Executor", func() {
 			_, err := executor.Destroy(input, "some-template", "some-tf-state")
 			Expect(err).NotTo(HaveOccurred())
 
-			templateContents, err := ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
+			templateContents, err := ioutil.ReadFile(filepath.Join(terraformDir, "template.tf"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(templateContents)).To(Equal("some-template"))
 
-			tfStateContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
+			tfStateContents, err := ioutil.ReadFile(tfStatePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(tfStateContents)).To(Equal("some-tf-state"))
 		})
@@ -284,10 +293,11 @@ var _ = Describe("Executor", func() {
 			_, err := executor.Destroy(input, "some-template", "some-tf-state")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"destroy",
 				"-force",
+				"-state", tfStatePath,
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
@@ -312,16 +322,25 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("when an error occurs", func() {
-			Context("when creating a temp dir fails", func() {
+			Context("when getting terraform dir fails", func() {
 				BeforeEach(func() {
-					terraform.SetTempDir(func(dir, prefix string) (string, error) {
-						return "", errors.New("failed to make temp dir")
-					})
+					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed to get terraform dir")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Destroy(input, "some-template", "")
-					Expect(err).To(MatchError("failed to make temp dir"))
+					Expect(err).To(MatchError("failed to get terraform dir"))
+				})
+			})
+
+			Context("when getting vars dir fails", func() {
+				BeforeEach(func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed to get vars dir")
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Destroy(input, "some-template", "")
+					Expect(err).To(MatchError("failed to get vars dir"))
 				})
 			})
 
@@ -372,7 +391,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when it fails to call terraform command run", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 					cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
 				})
@@ -403,12 +422,12 @@ var _ = Describe("Executor", func() {
 
 			Context("when --debug is false", func() {
 				BeforeEach(func() {
-					executor = terraform.NewExecutor(cmd, false)
+					executor = terraform.NewExecutor(cmd, stateStore, false)
 				})
 
 				Context("when it fails to call terraform command run", func() {
 					BeforeEach(func() {
-						err := ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-tf-state"), os.ModePerm)
+						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
@@ -434,15 +453,15 @@ var _ = Describe("Executor", func() {
 
 		BeforeEach(func() {
 			cmd.RunCall.Stub = func(stdout io.Writer) {
-				fileContents, err := ioutil.ReadFile(filepath.Join(tempDir, "terraform.tfstate"))
+				fileContents, err := ioutil.ReadFile(tfStatePath)
 				Expect(err).NotTo(HaveOccurred())
 				receivedTFState = string(fileContents)
 
-				fileContents, err = ioutil.ReadFile(filepath.Join(tempDir, "template.tf"))
+				fileContents, err = ioutil.ReadFile(filepath.Join(terraformDir, "template.tf"))
 				Expect(err).NotTo(HaveOccurred())
 				receivedTFTemplate = string(fileContents)
 
-				err = ioutil.WriteFile(filepath.Join(tempDir, "terraform.tfstate"), []byte("some-other-tfstate"), os.ModePerm)
+				err = ioutil.WriteFile(tfStatePath, []byte("some-other-tfstate"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -494,24 +513,44 @@ resource "some-resource-type" "some-addr" {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"import", "some-resource-type.some-addr", "some-id"}))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
+				"import", "some-resource-type.some-addr", "some-id",
+				"-state", tfStatePath,
+			}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 			Expect(tfState).To(Equal("some-other-tfstate"))
 		})
 
 		Context("when an error occurs", func() {
-			Context("when it fails to create a temp dir", func() {
+			Context("when it fails to get terraform dir", func() {
+				BeforeEach(func() {
+					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed to get terraform dir")
+				})
+
 				It("returns an error", func() {
-					terraform.SetTempDir(func(dir, prefix string) (string, error) {
-						return "", errors.New("failed to make temp dir")
-					})
 					_, err := executor.Import(terraform.ImportInput{
 						TerraformAddr: "some-resource-type.some-addr",
 						AWSResourceID: "some-id",
 						TFState:       "some-tf-state",
 						Creds:         storage.AWS{},
 					})
-					Expect(err).To(MatchError("failed to make temp dir"))
+					Expect(err).To(MatchError("failed to get terraform dir"))
+				})
+			})
+
+			Context("when it fails to get vars dir", func() {
+				BeforeEach(func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed to get vars dir")
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Import(terraform.ImportInput{
+						TerraformAddr: "some-resource-type.some-addr",
+						AWSResourceID: "some-id",
+						TFState:       "some-tf-state",
+						Creds:         storage.AWS{},
+					})
+					Expect(err).To(MatchError("failed to get vars dir"))
 				})
 			})
 
@@ -642,22 +681,31 @@ resource "some-resource-type" "some-addr" {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(Equal("some-external-ip"))
 
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip"}))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
 		Context("when an error occurs", func() {
-			Context("when it fails to create a temp dir", func() {
+			Context("when it fails to get terraform dir", func() {
 				BeforeEach(func() {
-					terraform.SetTempDir(func(dir, prefix string) (string, error) {
-						return "", errors.New("failed to make temp dir")
-					})
+					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed to get terraform dir")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Output("some-tf-state", "external_ip")
-					Expect(err).To(MatchError("failed to make temp dir"))
+					Expect(err).To(MatchError("failed to get terraform dir"))
+				})
+			})
+
+			Context("when it fails to get vars dir", func() {
+				BeforeEach(func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed to get vars dir")
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Output("some-tf-state", "external_ip")
+					Expect(err).To(MatchError("failed to get vars dir"))
 				})
 			})
 
@@ -726,22 +774,20 @@ resource "some-resource-type" "some-addr" {
 				"external_ip":      "some-external-ip",
 			}))
 
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(varsDir))
 			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "--json"}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
 		Context("when an error occurs", func() {
-			Context("when it fails to create a temp dir", func() {
+			Context("when it fails to get vars dir", func() {
 				BeforeEach(func() {
-					terraform.SetTempDir(func(dir, prefix string) (string, error) {
-						return "", errors.New("failed to make temp dir")
-					})
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed to get vars dir")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
-					Expect(err).To(MatchError("failed to make temp dir"))
+					Expect(err).To(MatchError("failed to get vars dir"))
 				})
 			})
 

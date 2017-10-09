@@ -22,6 +22,7 @@ var (
 type Manager struct {
 	logger             logger
 	command            command
+	stateStore         stateStore
 	opsGenerator       OpsGenerator
 	boshClientProvider boshClientProvider
 	socks5Proxy        socks5Proxy
@@ -34,7 +35,7 @@ type logger interface {
 }
 
 type command interface {
-	Run(stdout io.Writer, workingDirectory string, args []string) error
+	Run(stdout io.Writer, cloudConfigDirectory string, args []string) error
 }
 
 type OpsGenerator interface {
@@ -58,11 +59,16 @@ type sshKeyGetter interface {
 	Get(storage.State) (string, error)
 }
 
-func NewManager(logger logger, cmd command, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
+type stateStore interface {
+	GetCloudConfigDir() (string, error)
+}
+
+func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
 	socks5Proxy socks5Proxy, terraformManager terraformManager, sshKeyGetter sshKeyGetter) Manager {
 	return Manager{
 		logger:             logger,
 		command:            cmd,
+		stateStore:         stateStore,
 		opsGenerator:       opsGenerator,
 		boshClientProvider: boshClientProvider,
 		socks5Proxy:        socks5Proxy,
@@ -72,13 +78,12 @@ func NewManager(logger logger, cmd command, opsGenerator OpsGenerator, boshClien
 }
 
 func (m Manager) Generate(state storage.State) (string, error) {
-	buf := bytes.NewBuffer([]byte{})
-	workingDir, err := tempDir("", "")
+	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(workingDir, "cloud-config.yml"), []byte(BaseCloudConfig), os.ModePerm)
+	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -88,17 +93,18 @@ func (m Manager) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(workingDir, "ops.yml"), []byte(ops), os.ModePerm)
+	err = writeFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
 	args := []string{
-		"interpolate", filepath.Join(workingDir, "cloud-config.yml"),
-		"-o", filepath.Join(workingDir, "ops.yml"),
+		"interpolate", filepath.Join(cloudConfigDir, "cloud-config.yml"),
+		"-o", filepath.Join(cloudConfigDir, "ops.yml"),
 	}
 
-	err = m.command.Run(buf, workingDir, args)
+	buf := bytes.NewBuffer([]byte{})
+	err = m.command.Run(buf, cloudConfigDir, args)
 	if err != nil {
 		return "", err
 	}

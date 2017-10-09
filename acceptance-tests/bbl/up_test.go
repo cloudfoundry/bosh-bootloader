@@ -2,7 +2,9 @@ package acceptance_test
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -13,13 +15,14 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("up", func() {
+var _ = FDescribe("up", func() {
 	var (
 		bbl             actors.BBL
 		boshcli         actors.BOSHCLI
 		directorAddress string
 		caCertPath      string
 		sshSession      *gexec.Session
+		stateDir        string
 
 		boshDirectorChecker actors.BOSHDirectorChecker
 	)
@@ -30,15 +33,18 @@ var _ = Describe("up", func() {
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "up-env")
+		stateDir = configuration.StateFileDir
+
+		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-env")
 		boshcli = actors.NewBOSHCLI()
 		boshDirectorChecker = actors.NewBOSHDirectorChecker(configuration)
 	})
 
 	AfterEach(func() {
-		sshSession.Interrupt()
-		Eventually(sshSession, "5s").Should(gexec.Exit())
-
+		if sshSession != nil {
+			sshSession.Interrupt()
+			Eventually(sshSession, "5s").Should(gexec.Exit())
+		}
 		session := bbl.Down()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
@@ -46,6 +52,49 @@ var _ = Describe("up", func() {
 	It("bbl's up a new bosh director and jumpbox", func() {
 		session := bbl.Up("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+		By("verifying that artifacts are created in state dir", func() {
+			checkExists := func(dir string, filenames []string) {
+				for _, f := range filenames {
+					_, err := os.Stat(filepath.Join(dir, f))
+					Expect(err).NotTo(HaveOccurred())
+				}
+			}
+
+			checkExists(stateDir, []string{"bbl-state.json"})
+			checkExists(filepath.Join(stateDir, ".bbl", "cloudconfig"), []string{
+				"cloud-config.yml",
+				"ops.yml",
+			})
+			checkExists(filepath.Join(stateDir, ".bbl"), []string{
+				"previous-user-ops-file.yml",
+			})
+			checkExists(filepath.Join(stateDir, "bosh-deployment"), []string{
+				"bosh.yml",
+				"cpi.yml",
+				"credhub.yml",
+				"jumpbox-user.yml",
+				"uaa.yml",
+				// and some iaas-specific files tested in unit tests...
+			})
+			checkExists(filepath.Join(stateDir, "jumpbox-deployment"), []string{
+				"cpi.yml",
+				"jumpbox.yml",
+			})
+			checkExists(filepath.Join(stateDir, "terraform"), []string{
+				"template.tf",
+			})
+			checkExists(filepath.Join(stateDir, "vars"), []string{
+				"director-manifest.yml",
+				"director-state.json",
+				"director-variables.yml",
+				"jumpbox-manifest.yml",
+				"jumpbox-state.json",
+				"jumpbox-variables.yml",
+				"terraform.tfstate",
+				"user-ops-file.yml",
+			})
+		})
 
 		By("creating an ssh tunnel to the director in print-env", func() {
 			sshSession = bbl.StartSSHTunnel()
@@ -103,6 +152,15 @@ var _ = Describe("up", func() {
 		By("destroying the director and the jumpbox", func() {
 			session := bbl.Down()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("verifying that artifacts are removed from state dir", func() {
+			f, err := os.Open(stateDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			filenames, err := f.Readdirnames(0)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(filenames).To(BeEmpty())
 		})
 	})
 })

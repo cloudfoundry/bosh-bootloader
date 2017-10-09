@@ -73,6 +73,7 @@ type logger interface {
 
 type stateStore interface {
 	Set(state storage.State) error
+	GetBblDir() (string, error)
 }
 
 type cloudConfigManager interface {

@@ -16,9 +16,11 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		boshExecutor     *fakes.BOSHExecutor
-		logger           *fakes.Logger
-		socks5Proxy      *fakes.Socks5Proxy
+		boshExecutor *fakes.BOSHExecutor
+		logger       *fakes.Logger
+		socks5Proxy  *fakes.Socks5Proxy
+		stateStore   *fakes.StateStore
+
 		boshManager      *bosh.Manager
 		terraformOutputs map[string]interface{}
 		jumpboxVars      string
@@ -33,7 +35,13 @@ var _ = Describe("Manager", func() {
 		boshExecutor = &fakes.BOSHExecutor{}
 		logger = &fakes.Logger{}
 		socks5Proxy = &fakes.Socks5Proxy{}
-		boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy)
+
+		stateStore = &fakes.StateStore{}
+		stateStore.GetVarsDirCall.Returns.Directory = "some-bbl-vars-dir"
+		stateStore.GetDirectorDeploymentDirCall.Returns.Directory = "some-director-deployment-dir"
+		stateStore.GetJumpboxDeploymentDirCall.Returns.Directory = "some-jumpbox-deployment-dir"
+
+		boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore)
 
 		boshVars = `admin_password: some-admin-password
 director_ssl:
@@ -68,46 +76,48 @@ director_ssl:
 				State: map[string]interface{}{"some-new-key": "some-new-value"}}
 		})
 
-		Context("gcp", func() {
-			var incomingGCPState storage.State
-			BeforeEach(func() {
-				terraformOutputs = map[string]interface{}{
-					"network_name":           "some-network",
-					"subnetwork_name":        "some-subnetwork",
-					"bosh_open_tag_name":     "some-jumpbox-tag",
-					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-					"bosh_director_tag_name": "some-director-tag",
-					"internal_tag_name":      "some-internal-tag",
-					"external_ip":            "some-external-ip",
-					"director_address":       "some-director-address",
-					"jumpbox_url":            "some-jumpbox-url",
-				}
+		var state storage.State
+		BeforeEach(func() {
+			terraformOutputs = map[string]interface{}{
+				"network_name":           "some-network",
+				"subnetwork_name":        "some-subnetwork",
+				"bosh_open_tag_name":     "some-jumpbox-tag",
+				"jumpbox_tag_name":       "some-jumpbox-fw-tag",
+				"bosh_director_tag_name": "some-director-tag",
+				"internal_tag_name":      "some-internal-tag",
+				"external_ip":            "some-external-ip",
+				"director_address":       "some-director-address",
+				"jumpbox_url":            "some-jumpbox-url",
+			}
 
-				incomingGCPState = storage.State{
-					IAAS:  "gcp",
-					EnvID: "some-env-id",
-					GCP: storage.GCP{
-						Zone:              "some-zone",
-						ProjectID:         "some-project-id",
-						ServiceAccountKey: "some-credential-json",
+			state = storage.State{
+				IAAS:  "gcp",
+				EnvID: "some-env-id",
+				GCP: storage.GCP{
+					Zone:              "some-zone",
+					ProjectID:         "some-project-id",
+					ServiceAccountKey: "some-credential-json",
+				},
+				BOSH: storage.BOSH{
+					State: map[string]interface{}{
+						"some-key": "some-value",
 					},
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{
-							"some-key": "some-value",
-						},
-						UserOpsFile: "some-ops-file",
-					},
-				}
-			})
+					UserOpsFile: "some-ops-file",
+				},
+			}
+		})
 
-			It("generates a bosh manifest", func() {
-				stateWithDirector, err := boshManager.CreateDirector(incomingGCPState, terraformOutputs)
-				Expect(err).NotTo(HaveOccurred())
+		It("generates a bosh manifest", func() {
+			stateWithDirector, err := boshManager.CreateDirector(state, terraformOutputs)
+			Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
 
-				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
-				Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DirectorDeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
+			Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
+
+			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DirectorDeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -119,115 +129,27 @@ tags:
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))
+			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-director-deployment-dir"))
 
-				Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
-				Expect(boshExecutor.JumpboxInterpolateCall.CallCount).To(Equal(0))
-				Expect(stateWithDirector.BOSH).To(Equal(storage.BOSH{
-					State: map[string]interface{}{
-						"some-new-key": "some-new-value",
-					},
-					Variables:              boshVars,
-					Manifest:               "some-manifest",
-					DirectorName:           "bosh-some-env-id",
-					DirectorAddress:        "https://10.0.0.6:25555",
-					DirectorUsername:       "admin",
-					DirectorPassword:       "some-admin-password",
-					DirectorSSLCA:          "some-ca",
-					DirectorSSLCertificate: "some-certificate",
-					DirectorSSLPrivateKey:  "some-private-key",
-					UserOpsFile:            "some-ops-file",
-				}))
-			})
-		})
+			Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
+			Expect(boshExecutor.JumpboxInterpolateCall.CallCount).To(Equal(0))
 
-		Context("aws", func() {
-			var incomingAWSState storage.State
-			BeforeEach(func() {
-				incomingAWSState = storage.State{
-					IAAS:  "aws",
-					EnvID: "some-env-id",
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-					BOSH: storage.BOSH{
-						State:       map[string]interface{}{"some-key": "some-value"},
-						UserOpsFile: "some-yaml",
-					},
-				}
-				terraformOutputs = map[string]interface{}{
-					"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
-					"bosh_subnet_availability_zone": "some-bosh-subnet-az",
-					"bosh_security_group":           "some-bosh-security-group",
-					"bosh_subnet_id":                "some-bosh-subnet",
-					"external_ip":                   "some-bosh-external-ip",
-					"director_address":              "some-director-address",
-					"bosh_vms_key_name":             "some-keypair-name",
-					"bosh_vms_private_key":          "some-private-key",
-					"kms_key_arn":                   "some-kms-arn",
-				}
-			})
-
-			It("generates a bosh manifest", func() {
-				stateWithDirector, err := boshManager.CreateDirector(incomingAWSState, terraformOutputs)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DirectorDeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-some-env-id
-private_key: some-private-key
-az: some-bosh-subnet-az
-subnet_id: some-bosh-subnet
-access_key_id: some-access-key-id
-secret_access_key: some-secret-access-key
-iam_instance_profile: some-bosh-iam-instance-profile
-default_key_name: some-keypair-name
-default_security_groups:
-- some-bosh-security-group
-region: some-region
-kms_key_arn: some-kms-arn
-`))
-				Expect(stateWithDirector.BOSH).To(Equal(storage.BOSH{
-					State: map[string]interface{}{
-						"some-new-key": "some-new-value",
-					},
-					Variables:              boshVars,
-					Manifest:               "some-manifest",
-					DirectorName:           "bosh-some-env-id",
-					DirectorAddress:        "https://10.0.0.6:25555",
-					DirectorUsername:       "admin",
-					DirectorPassword:       "some-admin-password",
-					DirectorSSLCA:          "some-ca",
-					DirectorSSLCertificate: "some-certificate",
-					DirectorSSLPrivateKey:  "some-private-key",
-					UserOpsFile:            "some-yaml",
-				}))
-			})
-
-			Context("when the executor's create env call fails with create env error", func() {
-				var expectedError bosh.ManagerCreateError
-
-				BeforeEach(func() {
-					boshState := map[string]interface{}{"partial": "bosh-state"}
-					createEnvError := bosh.NewCreateEnvError(boshState, errors.New("failed to create env"))
-					boshExecutor.CreateEnvCall.Returns.Error = createEnvError
-
-					expectedState := storage.State{}
-					expectedState.BOSH = storage.BOSH{
-						Manifest:  "some-manifest",
-						State:     boshState,
-						Variables: boshVars,
-					}
-					expectedError = bosh.NewManagerCreateError(expectedState, createEnvError)
-				})
-
-				It("returns a bosh manager create error with a valid state", func() {
-					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
-					Expect(err).To(MatchError(expectedError))
-				})
-			})
+			Expect(stateWithDirector.BOSH).To(Equal(storage.BOSH{
+				State: map[string]interface{}{
+					"some-new-key": "some-new-value",
+				},
+				Variables:              boshVars,
+				Manifest:               "some-manifest",
+				DirectorName:           "bosh-some-env-id",
+				DirectorAddress:        "https://10.0.0.6:25555",
+				DirectorUsername:       "admin",
+				DirectorPassword:       "some-admin-password",
+				DirectorSSLCA:          "some-ca",
+				DirectorSSLCertificate: "some-certificate",
+				DirectorSSLPrivateKey:  "some-private-key",
+				UserOpsFile:            "some-ops-file",
+			}))
 		})
 
 		Context("when an error occurs", func() {
@@ -239,6 +161,24 @@ kms_key_arn: some-kms-arn
 				It("returns an error", func() {
 					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
 					Expect(err).To(MatchError("failed to interpolate"))
+				})
+			})
+
+			Context("when get vars dir fails", func() {
+				It("returns an error", func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("pineapple")
+
+					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
+					Expect(err).To(MatchError("Get vars dir: pineapple"))
+				})
+			})
+
+			Context("when get deployment dir fails", func() {
+				It("returns an error", func() {
+					stateStore.GetDirectorDeploymentDirCall.Returns.Error = errors.New("pineapple")
+
+					_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
+					Expect(err).To(MatchError("Get deployment dir: pineapple"))
 				})
 			})
 
@@ -269,8 +209,7 @@ kms_key_arn: some-kms-arn
 	Describe("CreateJumpbox", func() {
 		var (
 			jumpboxDeploymentVars string
-			deploymentVars        string
-			incomingGCPState      storage.State
+			state                 storage.State
 		)
 
 		BeforeEach(func() {
@@ -286,7 +225,7 @@ kms_key_arn: some-kms-arn
 				"jumpbox_url":            "some-jumpbox-url",
 			}
 
-			incomingGCPState = storage.State{
+			state = storage.State{
 				IAAS:  "gcp",
 				EnvID: "some-env-id",
 				GCP: storage.GCP{
@@ -297,11 +236,6 @@ kms_key_arn: some-kms-arn
 				Jumpbox: storage.Jumpbox{
 					Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 					Manifest:  "name: jumpbox",
-					State: map[string]interface{}{
-						"some-key": "some-value",
-					},
-				},
-				BOSH: storage.BOSH{
 					State: map[string]interface{}{
 						"some-key": "some-value",
 					},
@@ -323,27 +257,9 @@ project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `
 
-			deploymentVars = `internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-some-env-id
-zone: some-zone
-network: some-network
-subnetwork: some-subnetwork
-tags:
-- some-director-tag
-project_id: some-project-id
-gcp_credentials_json: some-credential-json
-`
-
 			boshExecutor.JumpboxInterpolateCall.Returns.Output = bosh.JumpboxInterpolateOutput{
 				Manifest:  "name: jumpbox",
 				Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
-			}
-
-			boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
-				Manifest:  "some-manifest",
-				Variables: boshVars,
 			}
 		})
 
@@ -355,7 +271,7 @@ gcp_credentials_json: some-credential-json
 			socks5ProxyAddr := "localhost:1234"
 			socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
 
-			_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+			_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(osUnsetenvKey).To(Equal("BOSH_ALL_PROXY"))
@@ -381,14 +297,16 @@ gcp_credentials_json: some-credential-json
 					},
 				}
 
-				afterJumpboxState, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+				state, err := boshManager.CreateJumpbox(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
-				state, err := boshManager.CreateDirector(afterJumpboxState, terraformOutputs)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(stateStore.GetVarsDirCall.CallCount).To(Equal(1))
+				Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
+				Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.IAAS).To(Equal("gcp"))
 
-				Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.JumpboxDeploymentVars).To(Equal(jumpboxDeploymentVars))
-				Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DirectorDeploymentVars).To(Equal(deploymentVars))
+				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
+				Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
 
 				Expect(state).To(Equal(storage.State{
 					IAAS:  "gcp",
@@ -406,20 +324,6 @@ gcp_credentials_json: some-credential-json
 							"some-new-key": "some-new-value",
 						},
 					},
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{
-							"some-new-key": "some-new-value",
-						},
-						Variables:              boshVars,
-						Manifest:               "some-manifest",
-						DirectorName:           "bosh-some-env-id",
-						DirectorAddress:        "https://10.0.0.6:25555",
-						DirectorUsername:       "admin",
-						DirectorPassword:       "some-admin-password",
-						DirectorSSLCA:          "some-ca",
-						DirectorSSLCertificate: "some-certificate",
-						DirectorSSLPrivateKey:  "some-private-key",
-					},
 				}))
 			})
 		})
@@ -429,8 +333,26 @@ gcp_credentials_json: some-credential-json
 				It("returns an error", func() {
 					boshExecutor.JumpboxInterpolateCall.Returns.Output.Variables = "%%%"
 
-					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+					_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 					Expect(err).To(MatchError("jumpbox key: yaml: could not find expected directive name"))
+				})
+			})
+
+			Context("when get vars dir fails", func() {
+				It("returns an error", func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("kiwi")
+
+					_, err := boshManager.CreateJumpbox(state, terraformOutputs)
+					Expect(err).To(MatchError("Get vars dir: kiwi"))
+				})
+			})
+
+			Context("when get deployment dir fails", func() {
+				It("returns an error", func() {
+					stateStore.GetJumpboxDeploymentDirCall.Returns.Error = errors.New("kiwi")
+
+					_, err := boshManager.CreateJumpbox(state, terraformOutputs)
+					Expect(err).To(MatchError("Get deployment dir: kiwi"))
 				})
 			})
 
@@ -438,7 +360,7 @@ gcp_credentials_json: some-credential-json
 				It("returns an error", func() {
 					boshExecutor.CreateEnvCall.Returns.Error = bosh.NewCreateEnvError(map[string]interface{}{"foo": "bar"}, errors.New("apple"))
 
-					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+					_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 					Expect(err).To(MatchError("Create jumpbox env: apple"))
 				})
 			})
@@ -447,7 +369,7 @@ gcp_credentials_json: some-credential-json
 				It("returns an error", func() {
 					boshExecutor.CreateEnvCall.Returns.Error = errors.New("banana")
 
-					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+					_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 					Expect(err).To(MatchError("Create jumpbox env: banana"))
 				})
 			})
@@ -456,7 +378,7 @@ gcp_credentials_json: some-credential-json
 				It("returns an error", func() {
 					socks5Proxy.StartCall.Returns.Error = errors.New("coconut")
 
-					_, err := boshManager.CreateJumpbox(incomingGCPState, terraformOutputs)
+					_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 					Expect(err).To(MatchError("Start proxy: coconut"))
 				})
 			})
@@ -502,6 +424,10 @@ gcp_credentials_json: some-credential-json
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.Variables).To(Equal(vars))
 			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.IAAS).To(Equal("some-iaas"))
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Manifest).To(Equal("some-manifest"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.State).To(Equal(jumpboxState))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Variables).To(Equal("some-new-jumpbox-vars"))
@@ -542,13 +468,14 @@ gcp_credentials_json: some-credential-json
 		})
 	})
 
-	Describe("Delete", func() {
+	Describe("DeleteDirector", func() {
 		BeforeEach(func() {
 			boshExecutor.DirectorInterpolateCall.Returns.Output = bosh.InterpolateOutput{
 				Manifest:  "some-manifest",
 				Variables: boshVars,
 			}
 		})
+
 		It("calls delete env", func() {
 			socks5ProxyAddr := "localhost:1234"
 			socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
@@ -556,18 +483,15 @@ gcp_credentials_json: some-credential-json
 			err := boshManager.DeleteDirector(storage.State{
 				Jumpbox: storage.Jumpbox{
 					Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
-					Manifest:  "name: jumpbox",
-					State: map[string]interface{}{
-						"some-key": "some-value",
-					},
-					URL: "some-jumpbox-url",
+					URL:       "some-jumpbox-url",
 				},
 				BOSH: storage.BOSH{
 					Manifest: "some-manifest",
 					State: map[string]interface{}{
 						"key": "value",
 					},
-					Variables: boshVars,
+					Variables:   boshVars,
+					UserOpsFile: "some-ops-file",
 				},
 			}, map[string]interface{}{})
 			Expect(err).NotTo(HaveOccurred())
@@ -579,8 +503,18 @@ gcp_credentials_json: some-credential-json
 			Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
 			Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 
+			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
+				BOSHState:              map[string]interface{}{"key": "value"},
+				Variables:              boshVars,
+				OpsFile:                "some-ops-file",
+				DeploymentDir:          "some-director-deployment-dir",
+				VarsDir:                "some-bbl-vars-dir",
+				DirectorDeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
+			}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
-				Manifest: "some-manifest",
+				Deployment: "director",
+				Directory:  "some-bbl-vars-dir",
+				Manifest:   "some-manifest",
 				State: map[string]interface{}{
 					"key": "value",
 				},

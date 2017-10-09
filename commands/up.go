@@ -166,12 +166,12 @@ func (u Up) Execute(args []string, state storage.State) error {
 }
 
 func (u Up) ParseArgs(args []string, state storage.State) (UpConfig, error) {
-	tempDir, err := ioutil.TempDir("", "")
+	opsFileDir, err := u.stateStore.GetBblDir()
 	if err != nil {
 		return UpConfig{}, err //not tested
 	}
 
-	prevOpsFilePath := filepath.Join(tempDir, "user-ops-file")
+	prevOpsFilePath := filepath.Join(opsFileDir, "previous-user-ops-file.yml")
 	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
 	if err != nil {
 		return UpConfig{}, err //not tested

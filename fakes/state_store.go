@@ -19,6 +19,54 @@ type StateStore struct {
 			Error error
 		}
 	}
+
+	GetCloudConfigDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+			Error     error
+		}
+	}
+
+	GetBblDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+			Error     error
+		}
+	}
+
+	GetTerraformDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+			Error     error
+		}
+	}
+
+	GetVarsDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+			Error     error
+		}
+	}
+
+	GetDirectorDeploymentDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+			Error     error
+		}
+	}
+
+	GetJumpboxDeploymentDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+			Error     error
+		}
+	}
 }
 
 type SetCallReceive struct {
@@ -39,4 +87,40 @@ func (s *StateStore) Set(state storage.State) error {
 	}
 
 	return s.SetCall.Returns[s.SetCall.CallCount-1].Error
+}
+
+func (s *StateStore) GetCloudConfigDir() (string, error) {
+	s.GetCloudConfigDirCall.CallCount++
+
+	return s.GetCloudConfigDirCall.Returns.Directory, s.GetCloudConfigDirCall.Returns.Error
+}
+
+func (s *StateStore) GetBblDir() (string, error) {
+	s.GetBblDirCall.CallCount++
+
+	return s.GetBblDirCall.Returns.Directory, s.GetBblDirCall.Returns.Error
+}
+
+func (s *StateStore) GetTerraformDir() (string, error) {
+	s.GetTerraformDirCall.CallCount++
+
+	return s.GetTerraformDirCall.Returns.Directory, s.GetTerraformDirCall.Returns.Error
+}
+
+func (s *StateStore) GetVarsDir() (string, error) {
+	s.GetVarsDirCall.CallCount++
+
+	return s.GetVarsDirCall.Returns.Directory, s.GetVarsDirCall.Returns.Error
+}
+
+func (s *StateStore) GetDirectorDeploymentDir() (string, error) {
+	s.GetDirectorDeploymentDirCall.CallCount++
+
+	return s.GetDirectorDeploymentDirCall.Returns.Directory, s.GetDirectorDeploymentDirCall.Returns.Error
+}
+
+func (s *StateStore) GetJumpboxDeploymentDir() (string, error) {
+	s.GetJumpboxDeploymentDirCall.CallCount++
+
+	return s.GetJumpboxDeploymentDirCall.Returns.Directory, s.GetJumpboxDeploymentDirCall.Returns.Error
 }

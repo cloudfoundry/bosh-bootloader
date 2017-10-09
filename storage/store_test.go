@@ -11,6 +11,7 @@ import (
 	uuid "github.com/nu7hatch/gouuid"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -253,33 +254,6 @@ var _ = Describe("Store", func() {
 		})
 	})
 
-	Describe("GCP", func() {
-		Describe("Empty", func() {
-			var gcp storage.GCP
-			Context("when all fields are blank", func() {
-				BeforeEach(func() {
-					gcp = storage.GCP{}
-				})
-
-				It("returns true", func() {
-					empty := gcp.Empty()
-					Expect(empty).To(BeTrue())
-				})
-			})
-
-			Context("when at least one field is present", func() {
-				BeforeEach(func() {
-					gcp = storage.GCP{ServiceAccountKey: "some-account-key"}
-				})
-
-				It("returns false", func() {
-					empty := gcp.Empty()
-					Expect(empty).To(BeFalse())
-				})
-			})
-		})
-	})
-
 	Describe("GetState", func() {
 		var logger *fakes.Logger
 
@@ -439,4 +413,105 @@ var _ = Describe("Store", func() {
 			})
 		})
 	})
+
+	DescribeTable("get dirs returns the path to an existing directory",
+		func(subdirectory string, getDirsFunc func() (string, error)) {
+			expectedDir := filepath.Join(tempDir, subdirectory)
+
+			os.MkdirAll(expectedDir, os.ModePerm)
+
+			actualDir, err := getDirsFunc()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualDir).To(Equal(expectedDir))
+
+			os.RemoveAll(expectedDir)
+		},
+		Entry("cloudconfig", filepath.Join(".bbl", "cloudconfig"), func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
+		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
+		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
+		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
+		Entry("jumpbox-deployment", "jumpbox-deployment", func() (string, error) { return store.GetJumpboxDeploymentDir() }),
+	)
+
+	DescribeTable("get dirs creates a directory that does not already exist",
+		func(subdirectory string, getDirsFunc func() (string, error)) {
+			expectedDir := filepath.Join(tempDir, subdirectory)
+
+			actualDir, err := getDirsFunc()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualDir).To(Equal(expectedDir))
+
+			_, err = os.Stat(actualDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.RemoveAll(expectedDir)
+		},
+		Entry("cloudconfig", filepath.Join(".bbl", "cloudconfig"), func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
+		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
+		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
+		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
+		Entry("jumpbox-deployment", "jumpbox-deployment", func() (string, error) { return store.GetJumpboxDeploymentDir() }),
+	)
+
+	DescribeTable("get dirs returns an error when the subdirectory cannot be created",
+		func(subdirectory string, getDirsFunc func() (string, error)) {
+			expectedDir := filepath.Join(tempDir, subdirectory)
+			_, err := os.Create(expectedDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = getDirsFunc()
+			Expect(err).To(MatchError(ContainSubstring("not a directory")))
+
+			os.RemoveAll(expectedDir)
+		},
+		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
+		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
+		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
+		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
+		Entry("jumpbox-deployment", "jumpbox-deployment", func() (string, error) { return store.GetJumpboxDeploymentDir() }),
+	)
+
+	Describe("GetCloudConfigDir", func() {
+		var expectedDir string
+
+		BeforeEach(func() {
+			expectedDir = filepath.Join(tempDir, ".bbl", "cloudconfig")
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(expectedDir)
+		})
+
+		Context("if the .bbl subdirectory exists", func() {
+			BeforeEach(func() {
+				os.MkdirAll(filepath.Join(tempDir, ".bbl"), os.ModePerm)
+			})
+
+			It("returns the path to the .bbl/cloudconfig directory", func() {
+				cloudConfigDir, err := store.GetCloudConfigDir()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cloudConfigDir).To(Equal(expectedDir))
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when the .bbl/cloudconfig subdirectory does not exist and cannot be created", func() {
+				BeforeEach(func() {
+					os.Mkdir(filepath.Join(tempDir, ".bbl"), os.ModePerm)
+					// create a file called .bbl/cloudconfig to cause name collision with the directory to be created
+					_, err := os.Create(expectedDir)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("returns an error", func() {
+					cloudConfigDir, err := store.GetCloudConfigDir()
+					Expect(err).To(MatchError(ContainSubstring("not a directory")))
+					Expect(cloudConfigDir).To(Equal(""))
+				})
+			})
+		})
+	})
+
 })

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -24,6 +25,8 @@ var _ = Describe("Up", func() {
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
 		envIDManager       *fakes.EnvIDManager
+
+		tempDir string
 	)
 
 	BeforeEach(func() {
@@ -35,6 +38,12 @@ var _ = Describe("Up", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		envIDManager = &fakes.EnvIDManager{}
+
+		var err error
+		tempDir, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+
+		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
 		command = commands.NewUp(iaasUp, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	})
@@ -474,30 +483,57 @@ var _ = Describe("Up", func() {
 
 	Describe("ParseArgs", func() {
 		Context("when the --ops-file flag is specified", func() {
+			var providedOpsFilePath string
+			BeforeEach(func() {
+				opsFileDir, err := ioutil.TempDir("", "")
+				Expect(err).NotTo(HaveOccurred())
+
+				providedOpsFilePath = filepath.Join(opsFileDir, "some-ops-file")
+
+				err = ioutil.WriteFile(providedOpsFilePath, []byte("some-ops-file-contents"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
 			It("returns a config with the ops-file path", func() {
 				config, err := command.ParseArgs([]string{
-					"--ops-file", "some-ops-file-path",
+					"--ops-file", providedOpsFilePath,
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(config.OpsFile).To(Equal("some-ops-file-path"))
+				Expect(config.OpsFile).To(Equal(providedOpsFilePath))
+			})
+		})
+
+		Context("when the --ops-file flag is not specified", func() {
+			It("creates a default ops-file with the contents of state.BOSH.UserOpsFile", func() {
+				config, err := command.ParseArgs([]string{}, storage.State{
+					BOSH: storage.BOSH{
+						UserOpsFile: "some-ops-file-contents",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				filePath := config.OpsFile
+				fileContents, err := ioutil.ReadFile(filePath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
 			})
 
-			Context("when the --ops-file flag is not specified", func() {
-				It("creates a default ops-file with the contents of state.BOSH.UserOpsFile", func() {
-					config, err := command.ParseArgs([]string{}, storage.State{
-						BOSH: storage.BOSH{
-							UserOpsFile: "some-ops-file-contents",
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					filePath := config.OpsFile
-					fileContents, err := ioutil.ReadFile(filePath)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
+			It("writes the previous user ops file to the .bbl directory", func() {
+				config, err := command.ParseArgs([]string{}, storage.State{
+					BOSH: storage.BOSH{
+						UserOpsFile: "some-ops-file-contents",
+					},
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				filePath := config.OpsFile
+				fileContents, err := ioutil.ReadFile(filePath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(filePath).To(Equal(filepath.Join(tempDir, "previous-user-ops-file.yml")))
+				Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
 			})
 		})
 

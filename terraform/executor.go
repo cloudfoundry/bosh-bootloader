@@ -15,13 +15,13 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-var tempDir func(dir, prefix string) (string, error) = ioutil.TempDir
 var writeFile func(file string, data []byte, perm os.FileMode) error = ioutil.WriteFile
 var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
 
 type Executor struct {
-	cmd   terraformCmd
-	debug bool
+	cmd        terraformCmd
+	stateStore stateStore
+	debug      bool
 }
 
 type ImportInput struct {
@@ -41,43 +41,62 @@ type terraformCmd interface {
 	Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error
 }
 
-func NewExecutor(cmd terraformCmd, debug bool) Executor {
-	return Executor{cmd: cmd, debug: debug}
+type stateStore interface {
+	GetTerraformDir() (string, error)
+	GetVarsDir() (string, error)
+}
+
+func NewExecutor(cmd terraformCmd, stateStore stateStore, debug bool) Executor {
+	return Executor{
+		cmd:        cmd,
+		stateStore: stateStore,
+		debug:      debug,
+	}
 }
 
 func (e Executor) Apply(input map[string]string, template, prevTFState string) (string, error) {
-	tempDir, err := tempDir("", "")
+	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
+	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
+
+	varsDir, err := e.stateStore.GetVarsDir()
+	if err != nil {
+		panic(err)
+	}
+
+	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
 
 	if prevTFState != "" {
-		err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
+		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	err = e.cmd.Run(os.Stdout, tempDir, []string{"init"}, e.debug)
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
 	if err != nil {
 		return "", err
 	}
 
-	args := []string{"apply"}
+	args := []string{
+		"apply",
+		"-state", tfStatePath,
+	}
 	for k, v := range input {
 		args = append(args, makeVar(k, v)...)
 	}
-	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
+	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
-		return "", NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
+		return "", NewExecutorError(tfStatePath, err, e.debug)
 	}
 
-	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+	tfState, err := readFile(tfStatePath)
 	if err != nil {
 		return "", err
 	}
@@ -86,38 +105,49 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 }
 
 func (e Executor) Destroy(input map[string]string, template, prevTFState string) (string, error) {
-	tempDir, err := tempDir("", "")
+	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
+	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
+
+	varsDir, err := e.stateStore.GetVarsDir()
+	if err != nil {
+		return "", err
+	}
+
+	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
 
 	if prevTFState != "" {
-		err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(prevTFState), os.ModePerm)
+		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	err = e.cmd.Run(os.Stdout, tempDir, []string{"init"}, e.debug)
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
 	if err != nil {
 		return "", err
 	}
 
-	args := []string{"destroy", "-force"}
+	args := []string{
+		"destroy",
+		"-force",
+		"-state", tfStatePath,
+	}
 	for k, v := range input {
 		args = append(args, makeVar(k, v)...)
 	}
-	err = e.cmd.Run(os.Stdout, tempDir, args, e.debug)
+	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
-		return "", NewExecutorError(filepath.Join(tempDir, "terraform.tfstate"), err, e.debug)
+		return "", NewExecutorError(tfStatePath, err, e.debug)
 	}
 
-	tfState, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+	tfState, err := readFile(tfStatePath)
 	if err != nil {
 		return "", err
 	}
@@ -126,7 +156,7 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 }
 
 func (e Executor) Import(input ImportInput) (string, error) {
-	tempDir, err := tempDir("", "")
+	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", err
 	}
@@ -145,27 +175,34 @@ provider "aws" {
 resource %q %q {
 }`, input.Creds.Region, input.Creds.AccessKeyID, input.Creds.SecretAccessKey, resourceType, resourceName)
 
-	err = writeFile(filepath.Join(tempDir, "template.tf"), []byte(template), os.ModePerm)
+	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(tempDir, "terraform.tfstate"), []byte(input.TFState), os.ModePerm)
+	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return "", err
 	}
 
-	err = e.cmd.Run(os.Stdout, tempDir, []string{"init"}, e.debug)
+	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
+
+	err = writeFile(tfStatePath, []byte(input.TFState), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	err = e.cmd.Run(os.Stdout, tempDir, []string{"import", input.TerraformAddr, input.AWSResourceID}, e.debug)
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
+	if err != nil {
+		return "", err
+	}
+
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"import", input.TerraformAddr, input.AWSResourceID, "-state", tfStatePath}, e.debug)
 	if err != nil {
 		return "", fmt.Errorf("failed to import: %s", err)
 	}
 
-	tfStateContents, err := readFile(filepath.Join(tempDir, "terraform.tfstate"))
+	tfStateContents, err := readFile(tfStatePath)
 	if err != nil {
 		return "", err
 	}
@@ -191,24 +228,29 @@ func (e Executor) Version() (string, error) {
 }
 
 func (e Executor) Output(tfState, outputName string) (string, error) {
-	templateDir, err := tempDir("", "")
+	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", err
 	}
 
-	err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	err = writeFile(filepath.Join(terraformDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	err = e.cmd.Run(os.Stdout, templateDir, []string{"init"}, e.debug)
+	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return "", err
 	}
 
-	args := []string{"output", outputName}
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
+	if err != nil {
+		return "", err
+	}
+
+	args := []string{"output", outputName, "-state", filepath.Join(varsDir, "terraform.tfstate")}
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.cmd.Run(buffer, templateDir, args, true)
+	err = e.cmd.Run(buffer, terraformDir, args, true)
 	if err != nil {
 		return "", err
 	}
@@ -217,24 +259,24 @@ func (e Executor) Output(tfState, outputName string) (string, error) {
 }
 
 func (e Executor) Outputs(tfState string) (map[string]interface{}, error) {
-	templateDir, err := tempDir("", "")
+	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
 
-	err = writeFile(filepath.Join(templateDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
+	err = writeFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
 
-	err = e.cmd.Run(os.Stdout, templateDir, []string{"init"}, false)
+	err = e.cmd.Run(os.Stdout, varsDir, []string{"init"}, false)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
 
 	args := []string{"output", "--json"}
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.cmd.Run(buffer, templateDir, args, true)
+	err = e.cmd.Run(buffer, varsDir, args, true)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
