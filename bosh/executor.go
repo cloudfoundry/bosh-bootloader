@@ -14,7 +14,6 @@ import (
 
 type Executor struct {
 	command       command
-	tempDir       func(string, string) (string, error)
 	readFile      func(string) ([]byte, error)
 	unmarshalJSON func([]byte, interface{}) error
 	marshalJSON   func(interface{}) ([]byte, error)
@@ -68,12 +67,11 @@ type command interface {
 
 const VERSION_DEV_BUILD = "[DEV BUILD]"
 
-func NewExecutor(cmd command, tempDir func(string, string) (string, error), readFile func(string) ([]byte, error),
+func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	unmarshalJSON func([]byte, interface{}) error,
 	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error) Executor {
 	return Executor{
 		command:       cmd,
-		tempDir:       tempDir,
 		readFile:      readFile,
 		unmarshalJSON: unmarshalJSON,
 		marshalJSON:   marshalJSON,
@@ -363,15 +361,9 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 }
 
 func (e Executor) Version() (string, error) {
-	tempDir, err := e.tempDir("", "")
-	if err != nil {
-		return "", err
-	}
-
 	args := []string{"-v"}
-
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.command.Run(buffer, tempDir, args)
+	err := e.command.Run(buffer, "", args)
 	if err != nil {
 		return "", err
 	}
