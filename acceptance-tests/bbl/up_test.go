@@ -75,7 +75,6 @@ var _ = FDescribe("up", func() {
 				"credhub.yml",
 				"jumpbox-user.yml",
 				"uaa.yml",
-				// and some iaas-specific files tested in unit tests...
 			})
 			checkExists(filepath.Join(stateDir, "jumpbox-deployment"), []string{
 				"cpi.yml",
