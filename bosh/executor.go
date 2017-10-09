@@ -79,20 +79,12 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 }
 
 func (e Executor) JumpboxInterpolate(input InterpolateInput) (JumpboxInterpolateOutput, error) {
-	// azure cpi is not yet in jumpbox-deployment repo
-	var cpiContents []byte
-	if input.IAAS == "azure" {
-		cpiContents = []byte(AzureJumpboxCpi)
-	} else {
-		cpiContents = MustAsset(filepath.Join("vendor/github.com/cppforlife/jumpbox-deployment", input.IAAS, "cpi.yml"))
-	}
-
 	type setupFile struct {
 		path     string
 		contents []byte
 	}
 
-	var setupFiles = map[string]setupFile{
+	setupFiles := map[string]setupFile{
 		"manifest": setupFile{
 			path:     filepath.Join(input.DeploymentDir, "jumpbox.yml"),
 			contents: MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml"),
@@ -103,7 +95,7 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (JumpboxInterpolate
 		},
 		"cpi": setupFile{
 			path:     filepath.Join(input.DeploymentDir, "cpi.yml"),
-			contents: cpiContents,
+			contents: MustAsset(filepath.Join("vendor/github.com/cppforlife/jumpbox-deployment", input.IAAS, "cpi.yml")),
 		},
 		"vars-store": setupFile{
 			path:     filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
@@ -149,7 +141,7 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		contents []byte
 	}
 
-	var setupFiles = map[string]setupFile{
+	setupFiles := map[string]setupFile{
 		"manifest": setupFile{
 			path:     filepath.Join(input.DeploymentDir, "bosh.yml"),
 			contents: MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
