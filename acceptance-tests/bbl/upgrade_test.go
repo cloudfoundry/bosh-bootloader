@@ -86,41 +86,39 @@ var _ = Describe("Upgrade", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Describe("Up", func() {
-		It("is able to bbl up idempotently with a director", func() {
-			By("bbl'ing up with old bbl", func() {
-				session := oldBBL.Up("--name", oldBBL.PredefinedEnvID())
-				Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
-			})
+	It("is able to upgrade from an environment bbl'd up with an older version of bbl", func() {
+		By("bbl'ing up with old bbl", func() {
+			session := oldBBL.Up("--name", oldBBL.PredefinedEnvID())
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
 
-			By("verifying the director has a public ip", func() {
-				Expect(oldBBL.DirectorAddress()).NotTo(Equal("https://10.0.0.6:25555"))
-			})
+		By("verifying the director has a public ip", func() {
+			Expect(oldBBL.DirectorAddress()).NotTo(Equal("https://10.0.0.6:25555"))
+		})
 
-			By("verifying the director exists", func() {
-				exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.SaveDirectorCA())
-				Expect(err).NotTo(HaveOccurred())
-				Expect(exists).To(BeTrue())
-			})
+		By("verifying the director exists", func() {
+			exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.SaveDirectorCA())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+		})
 
-			By("upgrading to the latest bbl", func() {
-				session := newBBL.Up()
-				Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
-			})
+		By("upgrading to the latest bbl", func() {
+			session := newBBL.Up()
+			Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
+		})
 
-			By("creating an ssh tunnel to the director in print-env", func() {
-				sshSession = newBBL.StartSSHTunnel()
-			})
+		By("creating an ssh tunnel to the director in print-env", func() {
+			sshSession = newBBL.StartSSHTunnel()
+		})
 
-			By("verifying the director has a non-public ip", func() {
-				Expect(newBBL.DirectorAddress()).To(Equal("https://10.0.0.6:25555"))
-			})
+		By("verifying the director has a non-public ip", func() {
+			Expect(newBBL.DirectorAddress()).To(Equal("https://10.0.0.6:25555"))
+		})
 
-			By("verifying the director still exists", func() {
-				exists, err := boshcli.DirectorExists(newBBL.DirectorAddress(), newBBL.SaveDirectorCA())
-				Expect(err).NotTo(HaveOccurred())
-				Expect(exists).To(BeTrue())
-			})
+		By("verifying the director still exists", func() {
+			exists, err := boshcli.DirectorExists(newBBL.DirectorAddress(), newBBL.SaveDirectorCA())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
 		})
 	})
 })
