@@ -175,6 +175,28 @@ var _ = Describe("Store", func() {
 				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 
+			DescribeTable("removing bbl-created directories",
+				func(directory string, expectToBeDeleted bool) {
+					err := os.Mkdir(filepath.Join(tempDir, directory), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = ioutil.WriteFile(filepath.Join(tempDir, directory, "foo.txt"), []byte("{}"), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = store.Set(storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = os.Stat(filepath.Join(tempDir, directory))
+					Expect(os.IsNotExist(err)).To(Equal(expectToBeDeleted))
+				},
+				Entry(".bbl", ".bbl", true),
+				Entry("terraform", "terraform", true),
+				Entry("bosh-deployment", "bosh-deployment", true),
+				Entry("jumpbox-deployment", "jumpbox-deployment", true),
+				Entry("vars", "vars", true),
+				Entry("non-bbl directory", "foo", false),
+			)
+
 			Context("when the bbl-state.json file does not exist", func() {
 				It("does nothing", func() {
 					err := store.Set(storage.State{})

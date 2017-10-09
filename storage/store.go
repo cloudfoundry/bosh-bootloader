@@ -53,6 +53,26 @@ func (s Store) Set(state State) error {
 			return err
 		}
 
+		rmdir := func(getDirFunc func() (string, error)) error {
+			d, _ := getDirFunc()
+			return os.RemoveAll(d)
+		}
+		if err := rmdir(s.GetBblDir); err != nil {
+			return err
+		}
+		if err := rmdir(s.GetDirectorDeploymentDir); err != nil {
+			return err
+		}
+		if err := rmdir(s.GetJumpboxDeploymentDir); err != nil {
+			return err
+		}
+		if err := rmdir(s.GetVarsDir); err != nil {
+			return err
+		}
+		if err := rmdir(s.GetTerraformDir); err != nil {
+			return err
+		}
+
 		return nil
 	}
 
