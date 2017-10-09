@@ -57,7 +57,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("interpolates the jumpbox and bosh manifests", func() {
-			interpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
+			interpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 			interpolateInput.OpsFile = ""
 
 			jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(interpolateInput)
@@ -124,7 +124,7 @@ var _ = Describe("Executor", func() {
 			deploymentDir string
 			varsDir       string
 
-			executor bosh.Executor
+			executor         bosh.Executor
 			interpolateInput bosh.InterpolateInput
 		)
 
@@ -139,9 +139,9 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			interpolateInput = bosh.InterpolateInput{
-				DeploymentDir:          deploymentDir,
-				VarsDir:                varsDir,
-				DirectorDeploymentVars: "internal_cidr: 10.0.0.0/24",
+				DeploymentDir:  deploymentDir,
+				VarsDir:        varsDir,
+				DeploymentVars: "internal_cidr: 10.0.0.0/24",
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
@@ -216,7 +216,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("interpolates the jumpbox and bosh manifests", func() {
-				awsInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
+				awsInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 				awsInterpolateInput.OpsFile = ""
 
 				interpolateOutput, err := executor.DirectorInterpolate(awsInterpolateInput)
@@ -260,7 +260,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("interpolates the jumpbox and bosh manifests", func() {
-				gcpInterpolateInput.JumpboxDeploymentVars = "internal_cidr: 10.0.0.0/24"
+				gcpInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 				gcpInterpolateInput.OpsFile = ""
 
 				interpolateOutput, err := executor.DirectorInterpolate(gcpInterpolateInput)

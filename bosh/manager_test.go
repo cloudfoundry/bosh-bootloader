@@ -117,7 +117,7 @@ director_ssl:
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
 
-			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DirectorDeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
+			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -208,8 +208,8 @@ gcp_credentials_json: some-credential-json
 
 	Describe("CreateJumpbox", func() {
 		var (
-			jumpboxDeploymentVars string
-			state                 storage.State
+			deploymentVars string
+			state          storage.State
 		)
 
 		BeforeEach(func() {
@@ -242,7 +242,7 @@ gcp_credentials_json: some-credential-json
 				},
 			}
 
-			jumpboxDeploymentVars = `internal_cidr: 10.0.0.0/24
+			deploymentVars = `internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
 director_name: bosh-some-env-id
@@ -504,12 +504,12 @@ gcp_credentials_json: some-credential-json
 			Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 
 			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
-				BOSHState:              map[string]interface{}{"key": "value"},
-				Variables:              boshVars,
-				OpsFile:                "some-ops-file",
-				DeploymentDir:          "some-director-deployment-dir",
-				VarsDir:                "some-bbl-vars-dir",
-				DirectorDeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
+				BOSHState:      map[string]interface{}{"key": "value"},
+				Variables:      boshVars,
+				OpsFile:        "some-ops-file",
+				DeploymentDir:  "some-director-deployment-dir",
+				VarsDir:        "some-bbl-vars-dir",
+				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
 			}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
 				Deployment: "director",

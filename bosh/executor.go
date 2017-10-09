@@ -21,14 +21,13 @@ type Executor struct {
 }
 
 type InterpolateInput struct {
-	DeploymentDir          string
-	VarsDir                string
-	IAAS                   string
-	DirectorDeploymentVars string
-	JumpboxDeploymentVars  string
-	BOSHState              map[string]interface{}
-	Variables              string
-	OpsFile                string
+	DeploymentDir  string
+	VarsDir        string
+	IAAS           string
+	DeploymentVars string
+	BOSHState      map[string]interface{}
+	Variables      string
+	OpsFile        string
 }
 
 type InterpolateOutput struct {
@@ -100,7 +99,7 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (JumpboxInterpolate
 		},
 		"vars-file": setupFile{
 			path:     filepath.Join(input.VarsDir, "jumpbox-deployment-vars.yml"),
-			contents: []byte(input.JumpboxDeploymentVars),
+			contents: []byte(input.DeploymentVars),
 		},
 		"cpi": setupFile{
 			path:     filepath.Join(input.DeploymentDir, "cpi.yml"),
@@ -157,7 +156,7 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		},
 		"vars-file": setupFile{
 			path:     filepath.Join(input.VarsDir, "director-deployment-vars.yml"),
-			contents: []byte(input.DirectorDeploymentVars),
+			contents: []byte(input.DeploymentVars),
 		},
 		"vars-store": setupFile{
 			path:     filepath.Join(input.VarsDir, "director-variables.yml"),

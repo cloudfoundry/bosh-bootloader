@@ -154,11 +154,11 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs map[string
 	}
 
 	iaasInputs := InterpolateInput{
-		DeploymentDir: deploymentDir,
-		VarsDir:       varsDir,
-		IAAS:          state.IAAS,
-		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
-		Variables:             state.Jumpbox.Variables,
+		DeploymentDir:  deploymentDir,
+		VarsDir:        varsDir,
+		IAAS:           state.IAAS,
+		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		Variables:      state.Jumpbox.Variables,
 	}
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
@@ -231,12 +231,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs map[strin
 	}
 
 	iaasInputs := InterpolateInput{
-		DeploymentDir: directorDeploymentDir,
-		VarsDir:       varsDir,
-		IAAS:          state.IAAS,
-		DirectorDeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
-		Variables:              state.BOSH.Variables,
-		OpsFile:                state.BOSH.UserOpsFile,
+		DeploymentDir:  directorDeploymentDir,
+		VarsDir:        varsDir,
+		IAAS:           state.IAAS,
+		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
+		Variables:      state.BOSH.Variables,
+		OpsFile:        state.BOSH.UserOpsFile,
 	}
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
@@ -320,7 +320,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs map[strin
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
 
-	iaasInputs.DirectorDeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
+	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
 	if err != nil {
@@ -360,11 +360,11 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs map[string
 	}
 
 	iaasInputs := InterpolateInput{
-		DeploymentDir:         deploymentDir,
-		VarsDir:               varsDir,
-		IAAS:                  state.IAAS,
-		Variables:             state.Jumpbox.Variables,
-		JumpboxDeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		DeploymentDir:  deploymentDir,
+		VarsDir:        varsDir,
+		IAAS:           state.IAAS,
+		Variables:      state.Jumpbox.Variables,
+		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 	}
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
