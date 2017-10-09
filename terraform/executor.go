@@ -57,17 +57,17 @@ func NewExecutor(cmd terraformCmd, stateStore stateStore, debug bool) Executor {
 func (e Executor) Apply(input map[string]string, template, prevTFState string) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Get terraform dir: %s", err)
 	}
 
 	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Write terraform template: %s", err)
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
@@ -75,13 +75,13 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 	if prevTFState != "" {
 		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("Write previous terraform state: %s", err)
 		}
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Run terraform init: %s", err)
 	}
 
 	args := []string{
@@ -98,7 +98,7 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 
 	tfState, err := readFile(tfStatePath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Read terraform state: %s", err)
 	}
 
 	return string(tfState), nil
@@ -107,17 +107,17 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 func (e Executor) Destroy(input map[string]string, template, prevTFState string) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Get terraform dir: %s", err)
 	}
 
 	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Write terraform template: %s", err)
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
@@ -125,13 +125,13 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 	if prevTFState != "" {
 		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("Write previous terraform state: %s", err)
 		}
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Run terraform init: %s", err)
 	}
 
 	args := []string{
@@ -149,7 +149,7 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 
 	tfState, err := readFile(tfStatePath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Read terraform state: %s", err)
 	}
 
 	return string(tfState), nil
