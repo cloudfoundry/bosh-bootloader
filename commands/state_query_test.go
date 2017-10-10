@@ -37,7 +37,6 @@ var _ = Describe("StateQuery", func() {
 				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "")
 
 				err := command.CheckFastFails([]string{}, storage.State{})
-
 				Expect(err).To(MatchError("state validator failed"))
 			})
 		})
@@ -68,23 +67,19 @@ var _ = Describe("StateQuery", func() {
 
 	Describe("Execute", func() {
 		Context("bbl manages the jumpbox", func() {
-			var state storage.State
-
 			BeforeEach(func() {
-				state = storage.State{
-					Jumpbox: storage.Jumpbox{
-						URL: "some-jumpbox-url",
-					},
+				fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					"external_ip": "some-external-ip",
 				}
 			})
 
 			It("prints out the jumpbox information", func() {
 				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "jumpbox address")
 
-				err := command.Execute([]string{}, state)
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-jumpbox-url"))
+				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-external-ip"))
 			})
 		})
 
@@ -155,14 +150,20 @@ var _ = Describe("StateQuery", func() {
 					fakeTerraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 				})
 
-				It("returns an error", func() {
+				It("director-address returns an error for no-director environment", func() {
 					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "director address")
 
 					err := command.Execute([]string{}, storage.State{
 						IAAS:       "gcp",
 						NoDirector: true,
 					})
+					Expect(err).To(MatchError("failed to get terraform output"))
+				})
 
+				It("jumpbox-address returns an error", func() {
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "jumpbox address")
+
+					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to get terraform output"))
 				})
 			})
