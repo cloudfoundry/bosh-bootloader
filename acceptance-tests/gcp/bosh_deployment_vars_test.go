@@ -84,7 +84,6 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.Tags).To(Equal([]string{
 			fmt.Sprintf("%s-bosh-director", bbl.PredefinedEnvID()),
 		}))
-		Expect(vars.ProjectID).To(Equal(configuration.GCPProjectID))
 		Expect(returnedAccountKey).To(Equal(gcpServiceAccountKey))
 	})
 })
