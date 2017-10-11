@@ -23,7 +23,6 @@ type Config struct {
 	AzureTenantID       string
 
 	GCPServiceAccountKey string
-	GCPProjectID         string
 	GCPRegion            string
 	GCPZone              string
 
@@ -123,10 +122,6 @@ func validateGCPCreds(config Config) error {
 		return errors.New("gcp service account key is missing")
 	}
 
-	if config.GCPProjectID == "" {
-		return errors.New("gcp project id is missing")
-	}
-
 	if config.GCPRegion == "" {
 		return errors.New("gcp region is missing")
 	}
@@ -153,7 +148,6 @@ func loadConfigFromEnvVars() Config {
 		AzureTenantID:       os.Getenv("BBL_AZURE_TENANT_ID"),
 
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
-		GCPProjectID:         os.Getenv("BBL_GCP_PROJECT_ID"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
 		GCPZone:              os.Getenv("BBL_GCP_ZONE"),
 

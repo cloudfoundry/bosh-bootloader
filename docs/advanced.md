@@ -19,7 +19,6 @@ The process for deploying a bosh director with custom configuration on GCP is as
       --gcp-zone <INSERT ZONE> \
       --gcp-region <INSERT REGION> \
       --gcp-service-account-key <INSERT SERVICE ACCOUNT KEY> \
-      --gcp-project-id <INSERT PROJECT ID> \
       --iaas gcp \
       --no-director
     ```
@@ -66,7 +65,6 @@ The process for deploying a bosh director with custom configuration on GCP is as
       --gcp-zone <INSERT ZONE> \
       --gcp-region <INSERT REGION> \
       --gcp-service-account-key <INSERT SERVICE ACCOUNT KEY> \
-      --gcp-project-id <INSERT PROJECT ID> \
       --iaas gcp \
       --no-director
     ```

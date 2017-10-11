@@ -14,7 +14,6 @@ const (
   [--aws-bosh-az]            AWS Availability Zone to use for BOSH director (Defaults to environment variable BBL_AWS_BOSH_AZ)
 
   --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-  --gcp-project-id           GCP Project ID to use (Defaults to environment variable BBL_GCP_PROJECT_ID)
   --gcp-zone                 GCP Zone to use for BOSH director (Defaults to environment variable BBL_GCP_ZONE)
   --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)
 

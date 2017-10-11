@@ -25,8 +25,7 @@ var _ = Describe("bbl", func() {
 			cmd := exec.Command(
 				pathToBBL, "up",
 				"--iaas", "gcp",
-				"--gcp-service-account-key", `{"real": "json"}`,
-				"--gcp-project-id", "not-a-real-project-id",
+				"--gcp-service-account-key", `{"project_id": "idk"}`,
 				"--gcp-zone", "us-central1-a",
 				"--gcp-region", "us-central1",
 			)

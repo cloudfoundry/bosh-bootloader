@@ -38,7 +38,10 @@ var (
 )
 
 func main() {
-	newConfig := config.NewConfig(storage.GetState)
+	logger := application.NewLogger(os.Stdout)
+	stderrLogger := application.NewLogger(os.Stderr)
+
+	newConfig := config.NewConfig(storage.GetState, logger)
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	log.SetFlags(0)
 	if err != nil {
@@ -55,8 +58,6 @@ func main() {
 
 	// Utilities
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
-	logger := application.NewLogger(os.Stdout)
-	stderrLogger := application.NewLogger(os.Stderr)
 	storage.GetStateLogger = stderrLogger
 	stateStore := storage.NewStore(appConfig.Global.StateDir)
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)

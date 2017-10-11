@@ -2,6 +2,7 @@ package actors
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"strings"
 
@@ -31,6 +32,14 @@ func NewGCP(config acceptance.Config) GCP {
 		panic(err)
 	}
 
+	p := struct {
+		ProjectID string `json:"project_id"`
+	}{}
+	err = json.Unmarshal(rawServiceAccountKey, &p)
+	if err != nil {
+		panic(err)
+	}
+
 	service, err := compute.New(googleConfig.Client(context.Background()))
 	if err != nil {
 		panic(err)
@@ -38,7 +47,7 @@ func NewGCP(config acceptance.Config) GCP {
 
 	return GCP{
 		service:   service,
-		projectID: config.GCPProjectID,
+		projectID: p.ProjectID,
 		region:    config.GCPRegion,
 		zone:      config.GCPZone,
 	}

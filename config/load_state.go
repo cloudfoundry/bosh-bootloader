@@ -35,14 +35,20 @@ type globalFlags struct {
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 }
 
-func NewConfig(getState func(string) (storage.State, error)) Config {
+type logger interface {
+	Println(string)
+}
+
+func NewConfig(getState func(string) (storage.State, error), logger logger) Config {
 	return Config{
 		getState: getState,
+		logger:   logger,
 	}
 }
 
 type Config struct {
 	getState func(string) (storage.State, error)
+	logger   logger
 }
 
 func (c Config) Bootstrap(args []string) (application.Configuration, error) {
@@ -85,6 +91,10 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 			// not tested
 			return application.Configuration{}, err
 		}
+	}
+
+	if globalFlags.GCPProjectID != "" {
+		c.logger.Println("Deprecation warning: the --gcp-project-id (BBL_GCP_PROJECT_ID) flag is now ignored.")
 	}
 
 	state, err := c.getState(globalFlags.StateDir)
@@ -153,14 +163,16 @@ func updateAWSState(globalFlags globalFlags, state storage.State) (storage.State
 
 func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.GCPServiceAccountKey != "" {
-		serviceAccountKey, err := parseServiceAccountKey(globalFlags.GCPServiceAccountKey)
+		serviceAccountKey, projectID, err := parseServiceAccountKey(globalFlags.GCPServiceAccountKey)
 		if err != nil {
 			return storage.State{}, err
 		}
 		state.GCP.ServiceAccountKey = serviceAccountKey
-	}
-	if globalFlags.GCPProjectID != "" {
-		state.GCP.ProjectID = globalFlags.GCPProjectID
+		if state.GCP.ProjectID != "" && projectID != state.GCP.ProjectID {
+			projectIDMismatch := fmt.Sprintf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID)
+			return storage.State{}, errors.New(projectIDMismatch)
+		}
+		state.GCP.ProjectID = projectID
 	}
 	if globalFlags.GCPZone != "" {
 		if state.GCP.Zone != "" && globalFlags.GCPZone != state.GCP.Zone {
@@ -286,7 +298,7 @@ func validateAzure(azure storage.Azure) error {
 	return nil
 }
 
-func parseServiceAccountKey(serviceAccountKey string) (string, error) {
+func parseServiceAccountKey(serviceAccountKey string) (string, string, error) {
 	var key string
 
 	if _, err := os.Stat(serviceAccountKey); err != nil {
@@ -294,17 +306,22 @@ func parseServiceAccountKey(serviceAccountKey string) (string, error) {
 	} else {
 		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
 		if err != nil {
-			return "", fmt.Errorf("error reading service account key from file: %v", err)
+			return "", "", fmt.Errorf("error reading service account key from file: %v", err)
 		}
 
 		key = string(rawServiceAccountKey)
 	}
 
-	var tmp interface{}
-	err := json.Unmarshal([]byte(key), &tmp)
+	p := struct {
+		ProjectID string `json:"project_id"`
+	}{}
+	err := json.Unmarshal([]byte(key), &p)
 	if err != nil {
-		return "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
+		return "", "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
+	}
+	if p.ProjectID == "" {
+		return "", "", errors.New("service account key is missing field `project_id`")
 	}
 
-	return key, err
+	return key, p.ProjectID, err
 }

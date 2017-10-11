@@ -7,6 +7,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/config"
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -14,13 +15,17 @@ import (
 )
 
 var _ = Describe("LoadState", func() {
-	var c config.Config
+	var (
+		fakeLogger *fakes.Logger
+		c          config.Config
+	)
 
 	BeforeEach(func() {
+		fakeLogger = &fakes.Logger{}
 		getState := func(string) (storage.State, error) {
 			return storage.State{}, nil
 		}
-		c = config.NewConfig(getState)
+		c = config.NewConfig(getState, fakeLogger)
 		os.Clearenv()
 	})
 
@@ -147,7 +152,7 @@ var _ = Describe("LoadState", func() {
 						EnvID: "some-env-id",
 					}, nil
 				}
-				c = config.NewConfig(getState)
+				c = config.NewConfig(getState, fakeLogger)
 			})
 
 			It("returns the existing state", func() {
@@ -193,7 +198,7 @@ var _ = Describe("LoadState", func() {
 					getState := func(string) (storage.State, error) {
 						return storage.State{}, errors.New("some state dir error")
 					}
-					c = config.NewConfig(getState)
+					c = config.NewConfig(getState, fakeLogger)
 					os.Clearenv()
 				})
 
@@ -319,7 +324,7 @@ var _ = Describe("LoadState", func() {
 							EnvID: "some-env-id",
 						}, nil
 					}
-					c = config.NewConfig(getState)
+					c = config.NewConfig(getState, fakeLogger)
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -362,7 +367,7 @@ var _ = Describe("LoadState", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				serviceAccountKeyPath = tempFile.Name()
-				serviceAccountKey = `{"real": "json"}`
+				serviceAccountKey = `{"project_id": "some-project-id"}`
 
 				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
@@ -377,7 +382,6 @@ var _ = Describe("LoadState", func() {
 							"bbl", "up", "--name", "some-env-id",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKeyPath,
-							"--gcp-project-id", "some-project-id",
 							"--gcp-zone", "some-availability-zone",
 							"--gcp-region", "some-region",
 						}
@@ -391,6 +395,7 @@ var _ = Describe("LoadState", func() {
 						state := appConfig.State
 						Expect(state.IAAS).To(Equal("gcp"))
 						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 						Expect(state.GCP.Zone).To(Equal("some-availability-zone"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
@@ -412,7 +417,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", serviceAccountKey,
-								"--gcp-project-id", "some-project-id",
 								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
@@ -420,10 +424,10 @@ var _ = Describe("LoadState", func() {
 
 						It("returns a state object containing service account key", func() {
 							appConfig, err := c.Bootstrap(args)
-
 							Expect(err).NotTo(HaveOccurred())
 
 							Expect(appConfig.State.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+							Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
 						})
 					})
 
@@ -437,7 +441,6 @@ var _ = Describe("LoadState", func() {
 									"up",
 									"--iaas", "gcp",
 									"--gcp-service-account-key", "/this/file/isn't/real",
-									"--gcp-project-id", "some-project-id",
 									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
@@ -452,20 +455,11 @@ var _ = Describe("LoadState", func() {
 
 						Context("when service account key is invalid json", func() {
 							BeforeEach(func() {
-								tempFile, err := ioutil.TempFile("", "invalidGcpServiceAccountKey")
-								Expect(err).NotTo(HaveOccurred())
-
-								serviceAccountKeyPath = tempFile.Name()
 								serviceAccountKey = `this isn't real json`
-
-								err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
-								Expect(err).NotTo(HaveOccurred())
-
 								args = []string{
 									"bbl", "up", "--name", "some-env-id",
 									"--iaas", "gcp",
-									"--gcp-service-account-key", serviceAccountKeyPath,
-									"--gcp-project-id", "some-project-id",
+									"--gcp-service-account-key", serviceAccountKey,
 									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
@@ -473,11 +467,27 @@ var _ = Describe("LoadState", func() {
 
 							It("returns an error", func() {
 								_, err := c.Bootstrap(args)
-
 								Expect(err).To(MatchError(ContainSubstring("error unmarshalling service account key (must be valid json):")))
 							})
 						})
+					})
 
+					Context("when service account key is missing project ID field", func() {
+						BeforeEach(func() {
+							serviceAccountKey = `{"missing": "project_id"}`
+							args = []string{
+								"bbl", "up", "--name", "some-env-id",
+								"--iaas", "gcp",
+								"--gcp-service-account-key", serviceAccountKey,
+								"--gcp-zone", "some-availability-zone",
+								"--gcp-region", "some-region",
+							}
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+							Expect(err).To(MatchError("service account key is missing field `project_id`"))
+						})
 					})
 				})
 
@@ -489,7 +499,6 @@ var _ = Describe("LoadState", func() {
 
 						os.Setenv("BBL_IAAS", "gcp")
 						os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKey)
-						os.Setenv("BBL_GCP_PROJECT_ID", "some-project-id")
 						os.Setenv("BBL_GCP_ZONE", "some-zone")
 						os.Setenv("BBL_GCP_REGION", "some-region")
 					})
@@ -510,7 +519,6 @@ var _ = Describe("LoadState", func() {
 
 					It("returns the remaining arguments", func() {
 						appConfig, err := c.Bootstrap(args)
-
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
@@ -537,7 +545,7 @@ var _ = Describe("LoadState", func() {
 							EnvID: "some-env-id",
 						}, nil
 					}
-					c = config.NewConfig(getState)
+					c = config.NewConfig(getState, fakeLogger)
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -547,7 +555,6 @@ var _ = Describe("LoadState", func() {
 							"create-lbs",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKey,
-							"--gcp-project-id", "some-project-id",
 							"--gcp-zone", "some-zone",
 							"--gcp-region", "some-region",
 						})
@@ -569,9 +576,30 @@ var _ = Describe("LoadState", func() {
 						"The region cannot be changed for an existing environment. The current region is some-region."),
 					Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-zone", "some-other-zone"},
 						"The zone cannot be changed for an existing environment. The current zone is some-zone."),
-					// Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-project-id", "some-other-project-id"},
-					// 	"The project id cannot be changed for an existing environment. The current project id is some-project-id."),
+					Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
+						"The project ID cannot be changed for an existing environment. The current project ID is some-project-id."),
 				)
+			})
+
+			Describe("deprecated flags", func() {
+				var args []string
+				Context("when the deprecated --gcp-project-id is passed in", func() {
+					BeforeEach(func() {
+						args = []string{
+							"bbl", "up",
+							"--iaas", "gcp",
+							"--gcp-project-id", "ignored-project-id",
+							"--gcp-service-account-key", serviceAccountKey,
+						}
+					})
+					It("ignores the flag and prints a warning", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-project-id (BBL_GCP_PROJECT_ID) flag is now ignored."))
+					})
+				})
 			})
 		})
 
@@ -675,7 +703,7 @@ var _ = Describe("LoadState", func() {
 							EnvID: "some-env-id",
 						}, nil
 					}
-					c = config.NewConfig(getState)
+					c = config.NewConfig(getState, fakeLogger)
 				})
 
 				Context("when no configuration is passed in", func() {
@@ -785,17 +813,6 @@ var _ = Describe("LoadState", func() {
 				},
 				"up",
 				"GCP service account key must be provided"),
-			Entry("when GCP project id is missing",
-				storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						Region:            "some-region",
-						Zone:              "some-availability-zone",
-					},
-				},
-				"up",
-				"GCP project ID must be provided"),
 			Entry("when GCP region is missing",
 				storage.State{
 					IAAS: "gcp",

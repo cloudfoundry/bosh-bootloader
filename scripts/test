@@ -10,7 +10,6 @@ function unset_env_vars() {
   unset BBL_GCP_SERVICE_ACCOUNT_KEY
   unset BBL_GCP_REGION
   unset BBL_GCP_ZONE
-  unset BBL_GCP_PROJECT_ID
   unset BBL_AZURE_CLIENT_ID
   unset BBL_AZURE_CLIENT_SECRET
   unset BBL_AZURE_LOCATION
