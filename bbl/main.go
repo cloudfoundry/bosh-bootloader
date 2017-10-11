@@ -41,7 +41,7 @@ func main() {
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
 
-	newConfig := config.NewConfig(storage.GetState, logger)
+	newConfig := config.NewConfig(storage.GetState, stderrLogger)
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	log.SetFlags(0)
 	if err != nil {
