@@ -1,4 +1,4 @@
-### Summary
+### Getting Started - AWS
 
 This guide is a walkthrough for deploying a BOSH director with `bbl`
 on AWS. Upon completion, you will have the following:
@@ -132,7 +132,7 @@ Separate commands are available for the `bbl print-env` fields:
 
 ```
 $ bbl director-address
-https://23.248.87.5:25555
+https://10.0.0.6:25555
 $ bbl director-username
 user-d3783rk
 $ bbl director-password
