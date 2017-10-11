@@ -93,3 +93,16 @@ Commands:
 
   Use "bbl [command] --help" for more information about a command.
 ```
+
+### Generic steps to a Cloud Foundry deployment
+
+Step 1: Create the necessary IAAS user/account for bbl.
+Step 2: `bbl up` with IAAS credentials as flags or environment variables.
+Step 3: `bbl create-lbs --type cf` with a certificate and key as flags or environment variables. (Continue to provide IAAS credentials as flags or environment variables.)
+Step 4: `eval "$(bbl print-env)"` to create an SSH tunnel to the BOSH director for Step 5.
+Step 5: `bosh deploy` with the path to the manifest you intend to deploy!
+
+To tear down load balancers, run `bbl delete-lbs`.
+To tear it all down, run `bbl destroy`.
+
+Note: You must delete your BOSH deployments before running `bbl destroy`.
