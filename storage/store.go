@@ -141,6 +141,10 @@ func GetState(dir string) (State, error) {
 		return state, fmt.Errorf("Existing bbl environment was created with a newer version of bbl. Please upgrade to a version of bbl compatible with schema version %d.\n", state.Version)
 	}
 
+	if state.Version < STATE_VERSION {
+		GetStateLogger.Println(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d). Some things may not work as expected until you bbl up again.", STATE_VERSION, state.Version))
+	}
+
 	return state, nil
 }
 

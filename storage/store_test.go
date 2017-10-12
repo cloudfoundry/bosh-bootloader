@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -368,6 +369,23 @@ var _ = Describe("Store", func() {
 			It("returns an error", func() {
 				_, err := storage.GetState(tempDir)
 				Expect(err).To(MatchError("Existing bbl environment was created with a newer version of bbl. Please upgrade to a version of bbl compatible with schema version 9999.\n"))
+			})
+		})
+
+		Context("when there is a state file with an older version than internal version", func() {
+			var existingVersion int
+			BeforeEach(func() {
+				existingVersion = storage.STATE_VERSION - 1
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(fmt.Sprintf(`{
+					"version": %d
+				}`, existingVersion)), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("logs a warning to stderr", func() {
+				_, err := storage.GetState(tempDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d). Some things may not work as expected until you bbl up again.", storage.STATE_VERSION, existingVersion)))
 			})
 		})
 
