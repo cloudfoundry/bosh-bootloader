@@ -227,32 +227,14 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		args = append(args, "-o", f.path)
 	}
 
+	if input.OpsFile != "" {
+		args = append(args, "-o", filepath.Join(input.VarsDir, "user-ops-file.yml"))
+	}
+
 	buffer := bytes.NewBuffer([]byte{})
 	err := e.command.Run(buffer, input.VarsDir, args)
 	if err != nil {
 		return InterpolateOutput{}, err
-	}
-
-	if input.OpsFile != "" {
-		err = e.writeFile(setupFiles["manifest"].path, buffer.Bytes(), os.ModePerm)
-		if err != nil {
-			//not tested
-			return InterpolateOutput{}, err
-		}
-
-		args = []string{
-			"interpolate", setupFiles["manifest"].path,
-			"--var-errs",
-			"--vars-store", setupFiles["vars-store"].path,
-			"--vars-file", setupFiles["vars-file"].path,
-			"-o", filepath.Join(input.VarsDir, "user-ops-file.yml"),
-		}
-
-		buffer = bytes.NewBuffer([]byte{})
-		err = e.command.Run(buffer, input.VarsDir, args)
-		if err != nil {
-			return InterpolateOutput{}, err
-		}
 	}
 
 	varsStore, err := e.readFile(setupFiles["vars-store"].path)
