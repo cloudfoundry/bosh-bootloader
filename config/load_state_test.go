@@ -16,16 +16,15 @@ import (
 
 var _ = Describe("LoadState", func() {
 	var (
-		fakeLogger *fakes.Logger
-		c          config.Config
+		fakeLogger         *fakes.Logger
+		fakeStateBootstrap *fakes.StateBootstrap
+		c                  config.Config
 	)
 
 	BeforeEach(func() {
 		fakeLogger = &fakes.Logger{}
-		getState := func(string) (storage.State, error) {
-			return storage.State{}, nil
-		}
-		c = config.NewConfig(getState, fakeLogger)
+		fakeStateBootstrap = &fakes.StateBootstrap{}
+		c = config.NewConfig(fakeStateBootstrap, fakeLogger)
 		os.Clearenv()
 	})
 
@@ -141,18 +140,11 @@ var _ = Describe("LoadState", func() {
 		})
 
 		Describe("reading a previous state file", func() {
-			var getStateArg string
-
 			BeforeEach(func() {
-				getState := func(dir string) (storage.State, error) {
-					getStateArg = dir
-
-					return storage.State{
-						IAAS:  "aws",
-						EnvID: "some-env-id",
-					}, nil
+				fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+					IAAS:  "aws",
+					EnvID: "some-env-id",
 				}
-				c = config.NewConfig(getState, fakeLogger)
 			})
 
 			It("returns the existing state", func() {
@@ -175,7 +167,7 @@ var _ = Describe("LoadState", func() {
 				workingDir, err := os.Getwd()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(getStateArg).To(Equal(workingDir))
+				Expect(fakeStateBootstrap.GetStateCall.Receives.Dir).To(Equal(workingDir))
 				Expect(appConfig.Global.StateDir).To(Equal(workingDir))
 			})
 
@@ -188,17 +180,14 @@ var _ = Describe("LoadState", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(getStateArg).To(Equal("some-state-dir"))
+					Expect(fakeStateBootstrap.GetStateCall.Receives.Dir).To(Equal("some-state-dir"))
 					Expect(appConfig.Global.StateDir).To(Equal("some-state-dir"))
 				})
 			})
 
 			Context("when invalid state dir is passed in", func() {
 				BeforeEach(func() {
-					getState := func(string) (storage.State, error) {
-						return storage.State{}, errors.New("some state dir error")
-					}
-					c = config.NewConfig(getState, fakeLogger)
+					fakeStateBootstrap.GetStateCall.Returns.Error = errors.New("some state dir error")
 					os.Clearenv()
 				})
 
@@ -308,23 +297,16 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Context("when a previous state exists", func() {
-				var getStateArg string
-
 				BeforeEach(func() {
-					getState := func(dir string) (storage.State, error) {
-						getStateArg = dir
-
-						return storage.State{
-							IAAS: "aws",
-							AWS: storage.AWS{
-								AccessKeyID:     "some-access-key-id",
-								SecretAccessKey: "some-secret-access-key",
-								Region:          "some-region",
-							},
-							EnvID: "some-env-id",
-						}, nil
+					fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+						IAAS: "aws",
+						AWS: storage.AWS{
+							AccessKeyID:     "some-access-key-id",
+							SecretAccessKey: "some-secret-access-key",
+							Region:          "some-region",
+						},
+						EnvID: "some-env-id",
 					}
-					c = config.NewConfig(getState, fakeLogger)
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -528,24 +510,17 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Context("when a previous state exists", func() {
-				var getStateArg string
-
 				BeforeEach(func() {
-					getState := func(dir string) (storage.State, error) {
-						getStateArg = dir
-
-						return storage.State{
-							IAAS: "gcp",
-							GCP: storage.GCP{
-								ServiceAccountKey: serviceAccountKey,
-								ProjectID:         "some-project-id",
-								Zone:              "some-zone",
-								Region:            "some-region",
-							},
-							EnvID: "some-env-id",
-						}, nil
+					fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+						IAAS: "gcp",
+						GCP: storage.GCP{
+							ServiceAccountKey: serviceAccountKey,
+							ProjectID:         "some-project-id",
+							Zone:              "some-zone",
+							Region:            "some-region",
+						},
+						EnvID: "some-env-id",
 					}
-					c = config.NewConfig(getState, fakeLogger)
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -685,25 +660,18 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Context("when a previous state exists", func() {
-				var getStateArg string
-
 				BeforeEach(func() {
-					getState := func(dir string) (storage.State, error) {
-						getStateArg = dir
-
-						return storage.State{
-							IAAS: "azure",
-							Azure: storage.Azure{
-								ClientID:       "client-id",
-								ClientSecret:   "client-secret",
-								Location:       "location",
-								SubscriptionID: "subscription-id",
-								TenantID:       "tenant-id",
-							},
-							EnvID: "some-env-id",
-						}, nil
+					fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+						IAAS: "azure",
+						Azure: storage.Azure{
+							ClientID:       "client-id",
+							ClientSecret:   "client-secret",
+							Location:       "location",
+							SubscriptionID: "subscription-id",
+							TenantID:       "tenant-id",
+						},
+						EnvID: "some-env-id",
 					}
-					c = config.NewConfig(getState, fakeLogger)
 				})
 
 				Context("when no configuration is passed in", func() {
@@ -719,7 +687,7 @@ var _ = Describe("LoadState", func() {
 						workingDir, err := os.Getwd()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(getStateArg).To(Equal(workingDir))
+						Expect(fakeStateBootstrap.GetStateCall.Receives.Dir).To(Equal(workingDir))
 					})
 				})
 

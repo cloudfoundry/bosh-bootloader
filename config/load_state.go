@@ -39,16 +39,20 @@ type logger interface {
 	Println(string)
 }
 
-func NewConfig(getState func(string) (storage.State, error), logger logger) Config {
+type StateBootstrap interface {
+	GetState(string) (storage.State, error)
+}
+
+func NewConfig(bootstrap StateBootstrap, logger logger) Config {
 	return Config{
-		getState: getState,
-		logger:   logger,
+		stateBootstrap: bootstrap,
+		logger:         logger,
 	}
 }
 
 type Config struct {
-	getState func(string) (storage.State, error)
-	logger   logger
+	stateBootstrap StateBootstrap
+	logger         logger
 }
 
 func (c Config) Bootstrap(args []string) (application.Configuration, error) {
@@ -97,7 +101,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		c.logger.Println("Deprecation warning: the --gcp-project-id (BBL_GCP_PROJECT_ID) flag is now ignored.")
 	}
 
-	state, err := c.getState(globalFlags.StateDir)
+	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
 	if err != nil {
 		return application.Configuration{}, err
 	}

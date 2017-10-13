@@ -40,9 +40,9 @@ var (
 func main() {
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
-	storage.GetStateLogger = stderrLogger
+	stateBootstrap := storage.NewStateBootstrap(stderrLogger)
 
-	newConfig := config.NewConfig(storage.GetState, stderrLogger)
+	newConfig := config.NewConfig(stateBootstrap, stderrLogger)
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	log.SetFlags(0)
 	if err != nil {
