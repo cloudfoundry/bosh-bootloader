@@ -40,6 +40,7 @@ var (
 func main() {
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
+	storage.GetStateLogger = stderrLogger
 
 	newConfig := config.NewConfig(storage.GetState, stderrLogger)
 	appConfig, err := newConfig.Bootstrap(os.Args)
@@ -58,7 +59,6 @@ func main() {
 
 	// Utilities
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
-	storage.GetStateLogger = stderrLogger
 	stateStore := storage.NewStore(appConfig.Global.StateDir)
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 	certificateValidator := certs.NewValidator()
