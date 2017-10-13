@@ -84,9 +84,14 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 		return "", fmt.Errorf("Run terraform init: %s", err)
 	}
 
+	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
+	if err != nil {
+		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
+	}
+
 	args := []string{
 		"apply",
-		"-state", tfStatePath,
+		"-state", relativeStatePath,
 	}
 	for k, v := range input {
 		args = append(args, makeVar(k, v)...)
@@ -134,10 +139,15 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 		return "", fmt.Errorf("Run terraform init: %s", err)
 	}
 
+	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
+	if err != nil {
+		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
+	}
+
 	args := []string{
 		"destroy",
 		"-force",
-		"-state", tfStatePath,
+		"-state", relativeStatePath,
 	}
 	for k, v := range input {
 		args = append(args, makeVar(k, v)...)
@@ -197,7 +207,12 @@ resource %q %q {
 		return "", err
 	}
 
-	err = e.cmd.Run(os.Stdout, terraformDir, []string{"import", input.TerraformAddr, input.AWSResourceID, "-state", tfStatePath}, e.debug)
+	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
+	if err != nil {
+		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
+	}
+
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"import", input.TerraformAddr, input.AWSResourceID, "-state", relativeStatePath}, e.debug)
 	if err != nil {
 		return "", fmt.Errorf("failed to import: %s", err)
 	}

@@ -28,7 +28,8 @@ var _ = Describe("Executor", func() {
 		varsDir      string
 		input        map[string]string
 
-		tfStatePath string
+		tfStatePath       string
+		relativeStatePath string
 	)
 
 	BeforeEach(func() {
@@ -54,6 +55,8 @@ var _ = Describe("Executor", func() {
 		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
 		tfStatePath = filepath.Join(varsDir, "terraform.tfstate")
+		relativeStatePath, err = filepath.Rel(terraformDir, tfStatePath)
+		Expect(err).NotTo(HaveOccurred())
 
 		input = map[string]string{
 			"env_id":                      "some-env-id",
@@ -92,7 +95,7 @@ var _ = Describe("Executor", func() {
 			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"apply",
-				"-state", tfStatePath,
+				"-state", relativeStatePath,
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
@@ -306,7 +309,7 @@ var _ = Describe("Executor", func() {
 			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"destroy",
 				"-force",
-				"-state", tfStatePath,
+				"-state", relativeStatePath,
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",
@@ -522,7 +525,7 @@ resource "some-resource-type" "some-addr" {
 
 			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
 				"import", "some-resource-type.some-addr", "some-id",
-				"-state", tfStatePath,
+				"-state", relativeStatePath,
 			}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 			Expect(tfState).To(Equal("some-other-tfstate"))
