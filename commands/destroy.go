@@ -9,6 +9,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type Destroy struct {
@@ -79,17 +80,15 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 
 	var networkName string
 	if state.IAAS == "gcp" {
-		output, ok := terraformOutputs["network_name"]
-		if !ok {
+		networkName = terraformOutputs.GetString("network_name")
+		if networkName == "" {
 			return nil
 		}
-		networkName = output.(string)
 	} else if state.IAAS == "aws" {
-		output, ok := terraformOutputs["vpc_id"]
-		if !ok {
+		networkName = terraformOutputs.GetString("vpc_id")
+		if networkName == "" {
 			return nil
 		}
-		networkName = output.(string)
 	} else if state.IAAS == "azure" {
 		return nil
 	}
@@ -173,7 +172,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 	return config, nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State, terraformOutputs map[string]interface{}) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	if state.NoDirector {
 		d.logger.Println("no BOSH director, skipping...")
 		return state, nil

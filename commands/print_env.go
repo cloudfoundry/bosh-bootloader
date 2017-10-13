@@ -95,7 +95,7 @@ func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
 		return "", err
 	}
 
-	return terraformOutputs["external_ip"].(string), nil
+	return terraformOutputs.GetString("external_ip"), nil
 }
 
 func (p PrintEnv) getPort() (string, error) {

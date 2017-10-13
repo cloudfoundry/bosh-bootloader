@@ -108,20 +108,17 @@ func main() {
 
 	var (
 		inputGenerator    terraform.InputGenerator
-		outputGenerator   terraform.OutputGenerator
 		templateGenerator terraform.TemplateGenerator
 	)
+	outputGenerator := terraform.NewOutputGenerator(terraformExecutor)
 	switch appConfig.State.IAAS {
 	case "aws":
 		templateGenerator = awsterraform.NewTemplateGenerator()
 		inputGenerator = awsterraform.NewInputGenerator(availabilityZoneRetriever)
-		outputGenerator = awsterraform.NewOutputGenerator(terraformExecutor)
 	case "azure":
 		templateGenerator = azureterraform.NewTemplateGenerator()
 		inputGenerator = azureterraform.NewInputGenerator()
-		outputGenerator = azureterraform.NewOutputGenerator(terraformExecutor)
 	case "gcp":
-		outputGenerator = gcpterraform.NewOutputGenerator(terraformExecutor)
 		templateGenerator = gcpterraform.NewTemplateGenerator()
 		inputGenerator = gcpterraform.NewInputGenerator()
 	}

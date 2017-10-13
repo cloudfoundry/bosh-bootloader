@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
@@ -38,7 +39,7 @@ var _ = Describe("OpsGenerator", func() {
 				TFState: "some-tf-state",
 			}
 
-			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 				"internal_security_group":              "some-internal-security-group",
 				"cf_router_lb_name":                    "some-cf-router-lb-name",
 				"cf_router_lb_internal_security_group": "some-cf-router-lb-internal-security-group",
@@ -58,7 +59,7 @@ var _ = Describe("OpsGenerator", func() {
 					"us-east-1c": "10.0.48.0/20",
 					"us-east-1b": "10.0.32.0/20",
 				},
-			}
+			}}
 
 			opsGenerator = aws.NewOpsGenerator(terraformManager)
 		})
@@ -132,7 +133,7 @@ var _ = Describe("OpsGenerator", func() {
 
 			Context("when cidr block parsing fails", func() {
 				It("returns an error", func() {
-					terraformManager.GetOutputsCall.Returns.Outputs["internal_az_subnet_cidr_mapping"] = map[string]interface{}{
+					terraformManager.GetOutputsCall.Returns.Outputs.Map["internal_az_subnet_cidr_mapping"] = map[string]interface{}{
 						"us-east-1a": "****",
 					}
 					_, err := opsGenerator.Generate(storage.State{})
@@ -152,7 +153,7 @@ var _ = Describe("OpsGenerator", func() {
 			})
 
 			DescribeTable("when a terraform output is missing", func(outputKey, lbType string) {
-				delete(terraformManager.GetOutputsCall.Returns.Outputs, outputKey)
+				delete(terraformManager.GetOutputsCall.Returns.Outputs.Map, outputKey)
 				_, err := opsGenerator.Generate(storage.State{
 					LB: storage.LB{
 						Type: lbType,

@@ -11,6 +11,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 var (
@@ -52,7 +53,7 @@ type socks5Proxy interface {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 }
 
 type sshKeyGetter interface {

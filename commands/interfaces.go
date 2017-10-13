@@ -2,32 +2,33 @@ package commands
 
 import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 //go:generate counterfeiter -o ./fakes/terraform_applier.go --fake-name TerraformApplier . terraformApplier
 type terraformApplier interface {
 	ValidateVersion() error
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 	Apply(storage.State) (storage.State, error)
 }
 
 type terraformDestroyer interface {
 	ValidateVersion() error
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 	Destroy(storage.State) (storage.State, error)
 }
 
 type terraformOutputter interface {
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 }
 
 type boshManager interface {
-	CreateDirector(bblState storage.State, terraformOutputs map[string]interface{}) (storage.State, error)
-	CreateJumpbox(bblState storage.State, terraformOutputs map[string]interface{}) (storage.State, error)
-	DeleteDirector(bblState storage.State, terraformOutputs map[string]interface{}) error
-	DeleteJumpbox(bblState storage.State, terraformOutputs map[string]interface{}) error
-	GetDirectorDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) string
-	GetJumpboxDeploymentVars(bblState storage.State, terraformOutputs map[string]interface{}) string
+	CreateDirector(bblState storage.State, terraformOutputs terraform.Outputs) (storage.State, error)
+	CreateJumpbox(bblState storage.State, terraformOutputs terraform.Outputs) (storage.State, error)
+	DeleteDirector(bblState storage.State, terraformOutputs terraform.Outputs) error
+	DeleteJumpbox(bblState storage.State, terraformOutputs terraform.Outputs) error
+	GetDirectorDeploymentVars(bblState storage.State, terraformOutputs terraform.Outputs) string
+	GetJumpboxDeploymentVars(bblState storage.State, terraformOutputs terraform.Outputs) string
 	Version() (string, error)
 }
 

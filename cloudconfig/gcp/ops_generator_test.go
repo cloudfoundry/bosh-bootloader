@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
@@ -39,12 +40,12 @@ var _ = Describe("GCPOpsGenerator", func() {
 				},
 			}
 
-			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 				"network_name":       "some-network-name",
 				"subnetwork_name":    "some-subnetwork-name",
 				"bosh_open_tag_name": "some-bosh-tag",
 				"internal_tag_name":  "some-internal-tag",
-			}
+			}}
 
 			var err error
 			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "gcp-ops.yml"))
@@ -71,7 +72,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 
 				expectedOps := strings.Join([]string{string(expectedOpsFile), string(expectedLBOpsFile)}, "\n")
 
-				terraformManager.GetOutputsCall.Returns.Outputs = lbOutputs
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: lbOutputs}
 
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())

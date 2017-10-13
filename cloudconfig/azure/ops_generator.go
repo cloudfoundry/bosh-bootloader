@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type OpsGenerator struct {
@@ -15,7 +16,7 @@ type OpsGenerator struct {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 }
 
 type op struct {
@@ -66,9 +67,9 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
 			cidr,
-			terraformOutputs["bosh_network_name"].(string),
-			terraformOutputs["bosh_subnet_name"].(string),
-			terraformOutputs["bosh_default_security_group"].(string),
+			terraformOutputs.GetString("bosh_network_name"),
+			terraformOutputs.GetString("bosh_subnet_name"),
+			terraformOutputs.GetString("bosh_default_security_group"),
 		)
 		if err != nil {
 			panic(err)

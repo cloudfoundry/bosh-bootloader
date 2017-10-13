@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,14 +25,14 @@ var _ = Describe("GCPLBs", func() {
 
 	BeforeEach(func() {
 		terraformManager = &fakes.TerraformManager{}
-		terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 			"router_lb_ip":     "some-router-lb-ip",
 			"ssh_proxy_lb_ip":  "some-ssh-proxy-lb-ip",
 			"tcp_router_lb_ip": "some-tcp-router-lb-ip",
 			"ws_lb_ip":         "some-ws-lb-ip",
 			"credhub_lb_ip":    "some-credhub-lb-ip",
 			"concourse_lb_ip":  "some-concourse-lb-ip",
-		}
+		}}
 		logger = &fakes.Logger{}
 
 		command = commands.NewGCPLBs(terraformManager, logger)
@@ -57,7 +58,7 @@ var _ = Describe("GCPLBs", func() {
 
 		Context("when the domain is specified", func() {
 			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 					"router_lb_ip":              "some-router-lb-ip",
 					"ssh_proxy_lb_ip":           "some-ssh-proxy-lb-ip",
 					"tcp_router_lb_ip":          "some-tcp-router-lb-ip",
@@ -65,7 +66,7 @@ var _ = Describe("GCPLBs", func() {
 					"credhub_lb_ip":             "some-credhub-lb-ip",
 					"concourse_lb_ip":           "some-concourse-lb-ip",
 					"system_domain_dns_servers": []string{"name-server-1.", "name-server-2."},
-				}
+				}}
 			})
 
 			It("prints LB ips for lb type cf in human readable format", func() {

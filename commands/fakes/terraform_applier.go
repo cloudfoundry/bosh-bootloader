@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type TerraformApplier struct {
@@ -17,17 +18,17 @@ type TerraformApplier struct {
 	validateVersionReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetOutputsStub        func(storage.State) (map[string]interface{}, error)
+	GetOutputsStub        func(storage.State) (terraform.Outputs, error)
 	getOutputsMutex       sync.RWMutex
 	getOutputsArgsForCall []struct {
 		arg1 storage.State
 	}
 	getOutputsReturns struct {
-		result1 map[string]interface{}
+		result1 terraform.Outputs
 		result2 error
 	}
 	getOutputsReturnsOnCall map[int]struct {
-		result1 map[string]interface{}
+		result1 terraform.Outputs
 		result2 error
 	}
 	ApplyStub        func(storage.State) (storage.State, error)
@@ -87,7 +88,7 @@ func (fake *TerraformApplier) ValidateVersionReturnsOnCall(i int, result1 error)
 	}{result1}
 }
 
-func (fake *TerraformApplier) GetOutputs(arg1 storage.State) (map[string]interface{}, error) {
+func (fake *TerraformApplier) GetOutputs(arg1 storage.State) (terraform.Outputs, error) {
 	fake.getOutputsMutex.Lock()
 	ret, specificReturn := fake.getOutputsReturnsOnCall[len(fake.getOutputsArgsForCall)]
 	fake.getOutputsArgsForCall = append(fake.getOutputsArgsForCall, struct {
@@ -116,24 +117,24 @@ func (fake *TerraformApplier) GetOutputsArgsForCall(i int) storage.State {
 	return fake.getOutputsArgsForCall[i].arg1
 }
 
-func (fake *TerraformApplier) GetOutputsReturns(result1 map[string]interface{}, result2 error) {
+func (fake *TerraformApplier) GetOutputsReturns(result1 terraform.Outputs, result2 error) {
 	fake.GetOutputsStub = nil
 	fake.getOutputsReturns = struct {
-		result1 map[string]interface{}
+		result1 terraform.Outputs
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *TerraformApplier) GetOutputsReturnsOnCall(i int, result1 map[string]interface{}, result2 error) {
+func (fake *TerraformApplier) GetOutputsReturnsOnCall(i int, result1 terraform.Outputs, result2 error) {
 	fake.GetOutputsStub = nil
 	if fake.getOutputsReturnsOnCall == nil {
 		fake.getOutputsReturnsOnCall = make(map[int]struct {
-			result1 map[string]interface{}
+			result1 terraform.Outputs
 			result2 error
 		})
 	}
 	fake.getOutputsReturnsOnCall[i] = struct {
-		result1 map[string]interface{}
+		result1 terraform.Outputs
 		result2 error
 	}{result1, result2}
 }
@@ -198,11 +199,7 @@ func (fake *TerraformApplier) Invocations() map[string][][]interface{} {
 	defer fake.getOutputsMutex.RUnlock()
 	fake.applyMutex.RLock()
 	defer fake.applyMutex.RUnlock()
-	copiedInvocations := map[string][][]interface{}{}
-	for key, value := range fake.invocations {
-		copiedInvocations[key] = value
-	}
-	return copiedInvocations
+	return fake.invocations
 }
 
 func (fake *TerraformApplier) recordInvocation(key string, args []interface{}) {

@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -108,14 +109,14 @@ var _ = Describe("Destroy", func() {
 			var bblState storage.State
 
 			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 					"external_ip":        "some-external-ip",
 					"network_name":       "some-network-name",
 					"subnetwork_name":    "some-subnetwork-name",
 					"bosh_open_tag_name": "some-bosh-tag",
 					"internal_tag_name":  "some-internal-tag",
 					"director_address":   "some-director-address",
-				}
+				}}
 
 				bblState = storage.State{
 					IAAS:  "gcp",
@@ -127,7 +128,7 @@ var _ = Describe("Destroy", func() {
 			Context("when there is no network name in the state", func() {
 				It("does not attempt to validate whether it is safe to delete the network", func() {
 					stdin.Write([]byte("yes\n"))
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{}
+					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{}
 
 					err := destroy.CheckFastFails([]string{}, bblState)
 					Expect(err).NotTo(HaveOccurred())
@@ -173,7 +174,9 @@ var _ = Describe("Destroy", func() {
 
 			Context("if BOSH deployed VMs still exist in the VPC", func() {
 				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{"vpc_id": "some-vpc-id"}
+					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+						Map: map[string]interface{}{"vpc_id": "some-vpc-id"},
+					}
 					networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("vpc some-vpc-id is not safe to delete")
 				})
 
@@ -211,8 +214,8 @@ var _ = Describe("Destroy", func() {
 
 			PContext("when instances exist in the azure network", func() {
 				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-						"virtual_network_name": "some-network-id",
+					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+						Map: map[string]interface{}{"virtual_network_name": "some-network-id"},
 					}
 					networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
 				})
@@ -658,14 +661,14 @@ var _ = Describe("Destroy", func() {
 			var bblState storage.State
 
 			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 					"external_ip":        "some-external-ip",
 					"network_name":       "some-network-name",
 					"subnetwork_name":    "some-subnetwork-name",
 					"bosh_open_tag_name": "some-bosh-tag",
 					"internal_tag_name":  "some-internal-tag",
 					"director_address":   "some-director-address",
-				}
+				}}
 
 				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
 				Expect(err).NotTo(HaveOccurred())

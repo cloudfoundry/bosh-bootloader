@@ -12,7 +12,7 @@ type Manager struct {
 	executor              executor
 	templateGenerator     TemplateGenerator
 	inputGenerator        InputGenerator
-	outputGenerator       OutputGenerator
+	outputGenerator       outputGenerator
 	terraformOutputBuffer *bytes.Buffer
 	logger                logger
 }
@@ -21,14 +21,16 @@ type executor interface {
 	Version() (string, error)
 	Destroy(inputs map[string]string, terraformTemplate, tfState string) (string, error)
 	Apply(inputs map[string]string, terraformTemplate, tfState string) (string, error)
+	Outputs(string) (map[string]interface{}, error)
+	Output(string, string) (string, error)
 }
 
 type InputGenerator interface {
 	Generate(storage.State) (map[string]string, error)
 }
 
-type OutputGenerator interface {
-	Generate(tfState string) (map[string]interface{}, error)
+type outputGenerator interface {
+	Generate(string) (Outputs, error)
 }
 
 type TemplateGenerator interface {
@@ -43,7 +45,7 @@ type NewManagerArgs struct {
 	Executor              executor
 	TemplateGenerator     TemplateGenerator
 	InputGenerator        InputGenerator
-	OutputGenerator       OutputGenerator
+	OutputGenerator       outputGenerator
 	TerraformOutputBuffer *bytes.Buffer
 	Logger                logger
 }
@@ -148,7 +150,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	return bblState, nil
 }
 
-func (m Manager) GetOutputs(state storage.State) (map[string]interface{}, error) {
+func (m Manager) GetOutputs(state storage.State) (Outputs, error) {
 	return m.outputGenerator.Generate(state.TFState)
 }
 

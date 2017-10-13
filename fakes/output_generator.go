@@ -1,5 +1,7 @@
 package fakes
 
+import "github.com/cloudfoundry/bosh-bootloader/terraform"
+
 type OutputGenerator struct {
 	GenerateCall struct {
 		CallCount int
@@ -7,13 +9,13 @@ type OutputGenerator struct {
 			TFState string
 		}
 		Returns struct {
-			Outputs map[string]interface{}
+			Outputs terraform.Outputs
 			Error   error
 		}
 	}
 }
 
-func (o *OutputGenerator) Generate(tfState string) (map[string]interface{}, error) {
+func (o *OutputGenerator) Generate(tfState string) (terraform.Outputs, error) {
 	o.GenerateCall.CallCount++
 	o.GenerateCall.Receives.TFState = tfState
 	return o.GenerateCall.Returns.Outputs, o.GenerateCall.Returns.Error

@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type OpsGenerator struct {
@@ -17,7 +18,7 @@ type OpsGenerator struct {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 }
 
 type op struct {
@@ -110,18 +111,18 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		return []op{}, err
 	}
 
-	internalAZSubnetIDMap, ok := terraformOutputs["internal_az_subnet_id_mapping"].(map[string]interface{})
-	if !ok {
+	internalAZSubnetIDMap := terraformOutputs.GetStringMap("internal_az_subnet_id_mapping")
+	if len(internalAZSubnetIDMap) == 0 {
 		return []op{}, errors.New("missing internal_az_subnet_id_mapping terraform output")
 	}
 
-	internalAZSubnetCIDRMap, ok := terraformOutputs["internal_az_subnet_cidr_mapping"].(map[string]interface{})
-	if !ok {
+	internalAZSubnetCIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_cidr_mapping")
+	if len(internalAZSubnetCIDRMap) == 0 {
 		return []op{}, errors.New("missing internal_az_subnet_cidr_mapping terraform output")
 	}
 
-	internalSecurityGroup, ok := terraformOutputs["internal_security_group"].(string)
-	if !ok {
+	internalSecurityGroup := terraformOutputs.GetString("internal_security_group")
+	if internalSecurityGroup == "" {
 		return []op{}, errors.New("missing internal_security_group terraform output")
 	}
 
@@ -142,8 +143,8 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
-			internalAZSubnetCIDRMap[myAZ].(string),
-			internalAZSubnetIDMap[myAZ].(string),
+			internalAZSubnetCIDRMap[myAZ],
+			internalAZSubnetIDMap[myAZ],
 			internalSecurityGroup,
 		)
 		if err != nil {
@@ -167,7 +168,7 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 
 	switch state.LB.Type {
 	case "cf":
-		tfOutputs := []map[string]string{
+		lbSecurityGroups := []map[string]string{
 			map[string]string{"name": "cf-router-network-properties", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
 			map[string]string{"name": "diego-ssh-proxy-network-properties", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
 			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_lb_name", "group": "cf_tcp_lb_internal_security_group"},
@@ -175,14 +176,14 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 			map[string]string{"name": "ssh-proxy-lb", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
 		}
 
-		for _, details := range tfOutputs {
-			elb, ok := terraformOutputs[details["lb"]].(string)
-			if !ok {
+		for _, details := range lbSecurityGroups {
+			elb := terraformOutputs.GetString(details["lb"])
+			if elb == "" {
 				return []op{}, fmt.Errorf("missing %s terraform output", details["lb"])
 			}
 
-			grp, ok := terraformOutputs[details["group"]].(string)
-			if !ok {
+			grp := terraformOutputs.GetString(details["group"])
+			if grp == "" {
 				return []op{}, fmt.Errorf("missing %s terraform output", details["group"])
 			}
 
@@ -198,13 +199,13 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 			}))
 		}
 	case "concourse":
-		concourseLoadBalancer, ok := terraformOutputs["concourse_lb_name"].(string)
-		if !ok {
+		concourseLoadBalancer := terraformOutputs.GetString("concourse_lb_name")
+		if concourseLoadBalancer == "" {
 			return []op{}, errors.New("missing concourse_lb_name terraform output")
 		}
 
-		concourseInternalSecurityGroup, ok := terraformOutputs["concourse_lb_internal_security_group"].(string)
-		if !ok {
+		concourseInternalSecurityGroup := terraformOutputs.GetString("concourse_lb_internal_security_group")
+		if concourseInternalSecurityGroup == "" {
 			return []op{}, errors.New("missing concourse_lb_internal_security_group terraform output")
 		}
 

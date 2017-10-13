@@ -37,12 +37,12 @@ func (l GCPLBs) Execute(subcommandFlags []string, state storage.State) error {
 				CredhubLBIP            string   `json:"cf_credhub_lb,omitempty"`
 				SystemDomainDNSServers []string `json:"cf_system_domain_dns_servers,omitempty"`
 			}{
-				RouterLBIP:             terraformOutputs["router_lb_ip"].(string),
-				SSHProxyLBIP:           terraformOutputs["ssh_proxy_lb_ip"].(string),
-				TCPRouterLBIP:          terraformOutputs["tcp_router_lb_ip"].(string),
-				WebSocketLBIP:          terraformOutputs["ws_lb_ip"].(string),
-				CredhubLBIP:            terraformOutputs["credhub_lb_ip"].(string),
-				SystemDomainDNSServers: terraformOutputs["system_domain_dns_servers"].([]string),
+				RouterLBIP:             terraformOutputs.GetString("router_lb_ip"),
+				SSHProxyLBIP:           terraformOutputs.GetString("ssh_proxy_lb_ip"),
+				TCPRouterLBIP:          terraformOutputs.GetString("tcp_router_lb_ip"),
+				WebSocketLBIP:          terraformOutputs.GetString("ws_lb_ip"),
+				CredhubLBIP:            terraformOutputs.GetString("credhub_lb_ip"),
+				SystemDomainDNSServers: terraformOutputs.GetStringSlice("system_domain_dns_servers"),
 			})
 			if err != nil {
 				// not tested
@@ -51,18 +51,18 @@ func (l GCPLBs) Execute(subcommandFlags []string, state storage.State) error {
 
 			l.logger.Println(string(lbOutput))
 		} else {
-			l.logger.Printf("CF Router LB: %s\n", terraformOutputs["router_lb_ip"])
-			l.logger.Printf("CF SSH Proxy LB: %s\n", terraformOutputs["ssh_proxy_lb_ip"])
-			l.logger.Printf("CF TCP Router LB: %s\n", terraformOutputs["tcp_router_lb_ip"])
-			l.logger.Printf("CF WebSocket LB: %s\n", terraformOutputs["ws_lb_ip"])
-			l.logger.Printf("CF Credhub LB: %s\n", terraformOutputs["credhub_lb_ip"])
-
-			if dnsServers, ok := terraformOutputs["system_domain_dns_servers"]; ok {
-				l.logger.Printf("CF System Domain DNS servers: %s\n", strings.Join(dnsServers.([]string), " "))
+			l.logger.Printf("CF Router LB: %s\n", terraformOutputs.GetString("router_lb_ip"))
+			l.logger.Printf("CF SSH Proxy LB: %s\n", terraformOutputs.GetString("ssh_proxy_lb_ip"))
+			l.logger.Printf("CF TCP Router LB: %s\n", terraformOutputs.GetString("tcp_router_lb_ip"))
+			l.logger.Printf("CF WebSocket LB: %s\n", terraformOutputs.GetString("ws_lb_ip"))
+			l.logger.Printf("CF Credhub LB: %s\n", terraformOutputs.GetString("credhub_lb_ip"))
+			dnsServers := terraformOutputs.GetStringSlice("system_domain_dns_servers")
+			if len(dnsServers) > 0 {
+				l.logger.Printf("CF System Domain DNS servers: %s\n", strings.Join(dnsServers, " "))
 			}
 		}
 	case "concourse":
-		l.logger.Printf("Concourse LB: %s\n", terraformOutputs["concourse_lb_ip"])
+		l.logger.Printf("Concourse LB: %s\n", terraformOutputs.GetString("concourse_lb_ip"))
 	default:
 		return errors.New("no lbs found")
 	}

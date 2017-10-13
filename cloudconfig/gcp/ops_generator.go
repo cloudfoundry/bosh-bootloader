@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type OpsGenerator struct {
@@ -15,7 +16,7 @@ type OpsGenerator struct {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (map[string]interface{}, error)
+	GetOutputs(storage.State) (terraform.Outputs, error)
 }
 
 type op struct {
@@ -124,9 +125,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
 			cidr,
-			terraformOutputs["network_name"].(string),
-			terraformOutputs["subnetwork_name"].(string),
-			terraformOutputs["internal_tag_name"].(string),
+			terraformOutputs.GetString("network_name"),
+			terraformOutputs.GetString("subnetwork_name"),
+			terraformOutputs.GetString("internal_tag_name"),
 		)
 		if err != nil {
 			return []op{}, err
@@ -151,7 +152,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "lb",
 			CloudProperties: lbCloudProperties{
-				TargetPool: terraformOutputs["concourse_target_pool"].(string),
+				TargetPool: terraformOutputs.GetString("concourse_target_pool"),
 			},
 		}))
 	}
@@ -160,11 +161,11 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-router-network-properties",
 			CloudProperties: lbCloudProperties{
-				BackendService: terraformOutputs["router_backend_service"].(string),
-				TargetPool:     terraformOutputs["ws_target_pool"].(string),
+				BackendService: terraformOutputs.GetString("router_backend_service"),
+				TargetPool:     terraformOutputs.GetString("ws_target_pool"),
 				Tags: []string{
-					terraformOutputs["router_backend_service"].(string),
-					terraformOutputs["ws_target_pool"].(string),
+					terraformOutputs.GetString("router_backend_service"),
+					terraformOutputs.GetString("ws_target_pool"),
 				},
 			},
 		}))
@@ -172,9 +173,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "diego-ssh-proxy-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: terraformOutputs["ssh_proxy_target_pool"].(string),
+				TargetPool: terraformOutputs.GetString("ssh_proxy_target_pool"),
 				Tags: []string{
-					terraformOutputs["ssh_proxy_target_pool"].(string),
+					terraformOutputs.GetString("ssh_proxy_target_pool"),
 				},
 			},
 		}))
@@ -182,9 +183,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "cf-tcp-router-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: terraformOutputs["tcp_router_target_pool"].(string),
+				TargetPool: terraformOutputs.GetString("tcp_router_target_pool"),
 				Tags: []string{
-					terraformOutputs["tcp_router_target_pool"].(string),
+					terraformOutputs.GetString("tcp_router_target_pool"),
 				},
 			},
 		}))
@@ -192,9 +193,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "credhub-network-properties",
 			CloudProperties: lbCloudProperties{
-				TargetPool: terraformOutputs["credhub_target_pool"].(string),
+				TargetPool: terraformOutputs.GetString("credhub_target_pool"),
 				Tags: []string{
-					terraformOutputs["credhub_target_pool"].(string),
+					terraformOutputs.GetString("credhub_target_pool"),
 				},
 			},
 		}))

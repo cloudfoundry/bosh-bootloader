@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 
@@ -22,7 +23,7 @@ var _ = Describe("Manager", func() {
 		stateStore   *fakes.StateStore
 
 		boshManager      *bosh.Manager
-		terraformOutputs map[string]interface{}
+		terraformOutputs terraform.Outputs
 		jumpboxVars      string
 		boshVars         string
 
@@ -78,7 +79,7 @@ director_ssl:
 
 		var state storage.State
 		BeforeEach(func() {
-			terraformOutputs = map[string]interface{}{
+			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
 				"network_name":           "some-network",
 				"subnetwork_name":        "some-subnetwork",
 				"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -88,7 +89,7 @@ director_ssl:
 				"external_ip":            "some-external-ip",
 				"director_address":       "some-director-address",
 				"jumpbox_url":            "some-jumpbox-url",
-			}
+			}}
 
 			state = storage.State{
 				IAAS:  "gcp",
@@ -213,7 +214,7 @@ gcp_credentials_json: some-credential-json
 		)
 
 		BeforeEach(func() {
-			terraformOutputs = map[string]interface{}{
+			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
 				"network_name":           "some-network",
 				"subnetwork_name":        "some-subnetwork",
 				"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -223,7 +224,7 @@ gcp_credentials_json: some-credential-json
 				"external_ip":            "some-external-ip",
 				"director_address":       "some-director-address",
 				"jumpbox_url":            "some-jumpbox-url",
-			}
+			}}
 
 			state = storage.State{
 				IAAS:  "gcp",
@@ -420,7 +421,7 @@ gcp_credentials_json: some-credential-json
 				Variables: "some-new-jumpbox-vars",
 			}
 
-			err := boshManager.DeleteJumpbox(incomingState, map[string]interface{}{})
+			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.Variables).To(Equal(vars))
 			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.IAAS).To(Equal("some-iaas"))
@@ -450,7 +451,7 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns a bosh manager delete error with a valid state", func() {
-					err := boshManager.DeleteJumpbox(incomingState, map[string]interface{}{})
+					err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
@@ -461,7 +462,7 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					err := boshManager.DeleteJumpbox(storage.State{}, map[string]interface{}{})
+					err := boshManager.DeleteJumpbox(storage.State{}, terraform.Outputs{})
 					Expect(err).To(MatchError("Delete jumpbox env: passionfruit"))
 				})
 			})
@@ -493,7 +494,7 @@ gcp_credentials_json: some-credential-json
 					Variables:   boshVars,
 					UserOpsFile: "some-ops-file",
 				},
-			}, map[string]interface{}{})
+			}, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
@@ -552,7 +553,7 @@ gcp_credentials_json: some-credential-json
 						Variables: boshVars,
 					}
 					expectedError := bosh.NewManagerDeleteError(expectedState, deleteEnvError)
-					err := boshManager.DeleteDirector(incomingState, map[string]interface{}{})
+					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError(expectedError))
 				})
 			})
@@ -563,7 +564,7 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					err := boshManager.DeleteDirector(incomingState, map[string]interface{}{})
+					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError("Delete director env: coconut"))
 				})
 			})
@@ -575,7 +576,7 @@ gcp_credentials_json: some-credential-json
 					})
 
 					It("returns an error", func() {
-						err := boshManager.DeleteDirector(incomingState, map[string]interface{}{})
+						err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
 						Expect(err).To(MatchError("failed to start socks5Proxy"))
 					})
 				})
@@ -600,7 +601,7 @@ gcp_credentials_json: some-credential-json
 			})
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, map[string]interface{}{
+				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 					"network_name":                  "some-network",
 					"bosh_subnet_id":                "some-subnetwork",
 					"bosh_subnet_availability_zone": "some-zone",
@@ -609,7 +610,7 @@ gcp_credentials_json: some-credential-json
 					"bosh_vms_private_key":          "some-private-key",
 					"jumpbox_security_group":        "some-security-group",
 					"external_ip":                   "some-external-ip",
-				})
+				}})
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
@@ -645,13 +646,13 @@ region: some-region
 			})
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, map[string]interface{}{
+				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 					"network_name":       "some-network",
 					"subnetwork_name":    "some-subnetwork",
 					"bosh_open_tag_name": "some-jumpbox-tag",
 					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
 					"external_ip":        "some-external-ip",
-				})
+				}})
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
@@ -690,7 +691,7 @@ gcp_credentials_json: some-credential-json
 				}
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{
+				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 					"network_name":           "some-network",
 					"subnetwork_name":        "some-subnetwork",
 					"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -699,7 +700,7 @@ gcp_credentials_json: some-credential-json
 					"internal_tag_name":      "some-internal-tag",
 					"external_ip":            "some-external-ip",
 					"director_address":       "some-director-address",
-				})
+				}})
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
@@ -716,7 +717,7 @@ gcp_credentials_json: some-credential-json
 
 			Context("when terraform outputs are missing", func() {
 				It("returns valid yaml", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{})
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
@@ -751,7 +752,7 @@ gcp_credentials_json: some-credential-json
 
 			Context("when terraform was used to standup infrastructure", func() {
 				It("returns a correct yaml string of bosh deployment variables", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
 						"bosh_security_group":           "some-bosh-security-group",
@@ -761,7 +762,7 @@ gcp_credentials_json: some-credential-json
 						"external_ip":                   "some-bosh-external-ip",
 						"director_address":              "some-director-address",
 						"kms_key_arn":                   "some-kms-arn",
-					})
+					}})
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
@@ -783,7 +784,7 @@ kms_key_arn: some-kms-arn
 
 			Context("when terraform outputs are missing", func() {
 				It("returns valid yaml", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, map[string]interface{}{})
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
 					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6

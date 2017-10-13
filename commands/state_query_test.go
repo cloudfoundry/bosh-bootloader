@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -68,8 +69,8 @@ var _ = Describe("StateQuery", func() {
 	Describe("Execute", func() {
 		Context("bbl manages the jumpbox", func() {
 			BeforeEach(func() {
-				fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"external_ip": "some-external-ip",
+				fakeTerraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+					Map: map[string]interface{}{"external_ip": "some-external-ip"},
 				}
 			})
 
@@ -133,8 +134,8 @@ var _ = Describe("StateQuery", func() {
 			})
 
 			It("prints the eip as the director-address", func() {
-				fakeTerraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
-					"external_ip": "some-external-ip",
+				fakeTerraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+					Map: map[string]interface{}{"external_ip": "some-external-ip"},
 				}
 
 				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "director address")

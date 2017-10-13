@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
@@ -30,11 +31,11 @@ var _ = Describe("AzureOpsGenerator", func() {
 				IAAS: "azure",
 			}
 
-			terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 				"bosh_network_name":           "some-virtual-network-name",
 				"bosh_subnet_name":            "some-subnet-name",
 				"bosh_default_security_group": "some-security-group",
-			}
+			}}
 
 			var err error
 			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "azure-ops.yml"))

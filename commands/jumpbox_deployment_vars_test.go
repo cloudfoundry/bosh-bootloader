@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -19,6 +20,8 @@ var _ = Describe("JumpboxDeploymentVars", func() {
 		terraformManager *fakes.TerraformManager
 
 		jumpboxDeploymentVars commands.JumpboxDeploymentVars
+
+		terraformOutputs terraform.Outputs
 	)
 
 	BeforeEach(func() {
@@ -29,7 +32,10 @@ var _ = Describe("JumpboxDeploymentVars", func() {
 
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 
-		terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{"some-name": "some-output"}
+		terraformOutputs = terraform.Outputs{
+			Map: map[string]interface{}{"some-name": "some-output"},
+		}
+		terraformManager.GetOutputsCall.Returns.Outputs = terraformOutputs
 
 		jumpboxDeploymentVars = commands.NewJumpboxDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 	})
@@ -75,7 +81,7 @@ var _ = Describe("JumpboxDeploymentVars", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshManager.GetJumpboxDeploymentVarsCall.CallCount).To(Equal(1))
-			Expect(boshManager.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs).To(HaveKeyWithValue("some-name", "some-output"))
+			Expect(boshManager.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
 		})
 

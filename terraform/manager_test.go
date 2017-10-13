@@ -370,8 +370,8 @@ var _ = Describe("Manager", func() {
 
 	Describe("GetOutputs", func() {
 		BeforeEach(func() {
-			outputGenerator.GenerateCall.Returns.Outputs = map[string]interface{}{
-				"external_ip": "some-external-ip",
+			outputGenerator.GenerateCall.Returns.Outputs = terraform.Outputs{
+				Map: map[string]interface{}{"external_ip": "some-external-ip"},
 			}
 		})
 
@@ -385,7 +385,7 @@ var _ = Describe("Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(outputGenerator.GenerateCall.Receives.TFState).To(Equal("some-tf-state"))
-			Expect(terraformOutputs).To(Equal(map[string]interface{}{
+			Expect(terraformOutputs.Map).To(Equal(map[string]interface{}{
 				"external_ip": "some-external-ip",
 			}))
 		})

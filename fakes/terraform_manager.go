@@ -2,6 +2,7 @@ package fakes
 
 import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type TerraformManager struct {
@@ -42,7 +43,7 @@ type TerraformManager struct {
 			BBLState storage.State
 		}
 		Returns struct {
-			Outputs map[string]interface{}
+			Outputs terraform.Outputs
 			Error   error
 		}
 	}
@@ -83,7 +84,7 @@ func (t *TerraformManager) Import(bblState storage.State, outputs map[string]str
 	return t.ImportCall.Returns.BBLState, t.ImportCall.Returns.Error
 }
 
-func (t *TerraformManager) GetOutputs(bblState storage.State) (map[string]interface{}, error) {
+func (t *TerraformManager) GetOutputs(bblState storage.State) (terraform.Outputs, error) {
 	t.GetOutputsCall.CallCount++
 	t.GetOutputsCall.Receives.BBLState = bblState
 

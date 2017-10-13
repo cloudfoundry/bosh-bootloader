@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,14 +39,14 @@ var _ = Describe("AWSLBs", func() {
 						Type: "cf",
 					},
 				}
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 					"cf_router_lb_name": "some-router-lb-name",
 					"cf_router_lb_url":  "some-router-lb-url",
 					"cf_ssh_lb_name":    "some-ssh-lb-name",
 					"cf_ssh_lb_url":     "some-ssh-lb-url",
 					"cf_tcp_lb_name":    "some-tcp-lb-name",
 					"cf_tcp_lb_url":     "some-tcp-lb-url",
-				}
+				}}
 			})
 
 			It("prints LB names and URLs for router and ssh proxy", func() {
@@ -64,7 +65,7 @@ var _ = Describe("AWSLBs", func() {
 				BeforeEach(func() {
 					incomingState.LB.Domain = "some-domain"
 
-					terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 						"cf_router_lb_name":         "some-router-lb-name",
 						"cf_router_lb_url":          "some-router-lb-url",
 						"cf_ssh_lb_name":            "some-ssh-lb-name",
@@ -72,7 +73,7 @@ var _ = Describe("AWSLBs", func() {
 						"cf_tcp_lb_name":            "some-tcp-lb-name",
 						"cf_tcp_lb_url":             "some-tcp-lb-url",
 						"env_dns_zone_name_servers": []string{"name-server-1.", "name-server-2."},
-					}
+					}}
 				})
 
 				It("prints LB names, URLs, and DNS servers", func() {
@@ -123,10 +124,10 @@ var _ = Describe("AWSLBs", func() {
 						Type: "concourse",
 					},
 				}
-				terraformManager.GetOutputsCall.Returns.Outputs = map[string]interface{}{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 					"concourse_lb_name": "some-concourse-lb-name",
 					"concourse_lb_url":  "some-concourse-lb-url",
-				}
+				}}
 			})
 
 			It("prints LB name and URL", func() {
