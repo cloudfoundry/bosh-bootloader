@@ -117,6 +117,7 @@ director_ssl:
 			Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.Variables).To(Equal(boshVars))
 
 			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -308,6 +309,7 @@ gcp_credentials_json: some-credential-json
 
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.CreateEnvCall.Receives.Input.Variables).To(Equal("jumpbox_ssh:\n  private_key: some-jumpbox-private-key"))
 
 				Expect(state).To(Equal(storage.State{
 					IAAS:  "gcp",

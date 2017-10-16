@@ -167,18 +167,13 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		return storage.State{}, fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
 
-	variables, err := yaml.Marshal(interpolateOutputs.Variables)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("Marshal yaml: %s", err)
-	}
-
 	osUnsetenv("BOSH_ALL_PROXY")
 	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
 		Deployment: "jumpbox",
 		Directory:  varsDir,
 		Manifest:   interpolateOutputs.Manifest,
 		State:      state.Jumpbox.State,
-		Variables:  string(variables),
+		Variables:  interpolateOutputs.Variables,
 	})
 	switch err.(type) {
 	case CreateEnvError:
