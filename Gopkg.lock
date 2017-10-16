@@ -95,7 +95,7 @@
   branch = "master"
   name = "github.com/pivotal-cf-experimental/gomegamatchers"
   packages = [".","internal/deepequal","internal/diff","internal/prettyprint"]
-  revision = "0f378b26330f63917a0b0a09bec871e9b594b212"
+  revision = "760f4795167808cf328330c2765e97973a4e8fdd"
 
 [[projects]]
   branch = "master"
