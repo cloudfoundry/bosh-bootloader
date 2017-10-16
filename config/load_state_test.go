@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/config"
@@ -73,6 +74,14 @@ var _ = Describe("LoadState", func() {
 		})
 
 		Describe("global flags", func() {
+			var fullStateDirPath string
+			BeforeEach(func() {
+				workingDir, err := os.Getwd()
+				Expect(err).NotTo(HaveOccurred())
+
+				fullStateDirPath = filepath.Join(workingDir, "some-state-dir")
+			})
+
 			It("returns global flags", func() {
 				args := []string{
 					"bbl",
@@ -86,7 +95,7 @@ var _ = Describe("LoadState", func() {
 
 				Expect(appConfig.Command).To(Equal("up"))
 				Expect(appConfig.Global.Debug).To(BeTrue())
-				Expect(appConfig.Global.StateDir).To(Equal("some-state-dir"))
+				Expect(appConfig.Global.StateDir).To(Equal(fullStateDirPath))
 			})
 
 			Context("when --help is passed in after a command", func() {
@@ -171,8 +180,16 @@ var _ = Describe("LoadState", func() {
 				Expect(appConfig.Global.StateDir).To(Equal(workingDir))
 			})
 
-			Context("when state dir is specified", func() {
-				It("returns state from that dir", func() {
+			Context("when state dir is specified as a relative path", func() {
+				var expectedDir string
+				BeforeEach(func() {
+					workingDir, err := os.Getwd()
+					Expect(err).NotTo(HaveOccurred())
+
+					expectedDir = filepath.Join(workingDir, "some-state-dir")
+				})
+
+				It("uses the absolute path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
 						"create-lbs",
@@ -180,8 +197,39 @@ var _ = Describe("LoadState", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(fakeStateBootstrap.GetStateCall.Receives.Dir).To(Equal("some-state-dir"))
-					Expect(appConfig.Global.StateDir).To(Equal("some-state-dir"))
+					By("loading state from the specified state dir", func() {
+						Expect(fakeStateBootstrap.GetStateCall.Receives.Dir).To(Equal(expectedDir))
+					})
+
+					By("setting the specified state dir on global config", func() {
+						Expect(appConfig.Global.StateDir).To(Equal(expectedDir))
+					})
+				})
+			})
+
+			Context("when state dir is specified as an absolute path", func() {
+				var stateDir string
+				BeforeEach(func() {
+					var err error
+					stateDir, err = ioutil.TempDir("", "my-state-dir-")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("does not modify the path of the state dir", func() {
+					appConfig, err := c.Bootstrap([]string{
+						"bbl",
+						"create-lbs",
+						"--state-dir", stateDir,
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("loading state from the specified state dir", func() {
+						Expect(fakeStateBootstrap.GetStateCall.Receives.Dir).To(Equal(stateDir))
+					})
+
+					By("setting the specified state dir on global config", func() {
+						Expect(appConfig.Global.StateDir).To(Equal(stateDir))
+					})
 				})
 			})
 
