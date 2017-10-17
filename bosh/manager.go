@@ -1,6 +1,7 @@
 package bosh
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -298,7 +299,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	jumpboxPrivateKey, err := getJumpboxPrivateKey(state.Jumpbox.Variables)
 	if err != nil {
-		return err
+		return fmt.Errorf("Delete bosh director: %s", err)
 	}
 
 	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
@@ -497,7 +498,14 @@ func getJumpboxPrivateKey(v string) (string, error) {
 		return "", err
 	}
 
-	jumpboxMap := variables["jumpbox_ssh"].(map[interface{}]interface{})
+	var (
+		jumpboxMap map[interface{}]interface{}
+		ok         bool
+	)
+	if jumpboxMap, ok = variables["jumpbox_ssh"].(map[interface{}]interface{}); !ok {
+		return "", errors.New("cannot start proxy due to missing jumpbox private key")
+	}
+
 	jumpboxSSH := map[string]string{}
 	for k, v := range jumpboxMap {
 		jumpboxSSH[k.(string)] = v.(string)

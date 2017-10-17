@@ -519,6 +519,22 @@ gcp_credentials_json: some-credential-json
 					},
 				}
 			})
+
+			Context("when jumpbox private key is not in the vars file", func() {
+				BeforeEach(func() {
+					incomingState.Jumpbox.Variables = ""
+				})
+
+				It("returns an error", func() {
+					boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = bosh.InterpolateOutput{
+						Args: []string{"some", "command", "args"},
+					}
+
+					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
+					Expect(err).To(MatchError("Delete bosh director: cannot start proxy due to missing jumpbox private key"))
+				})
+			})
+
 			Context("when the executor's delete env call fails with delete env error", func() {
 				It("returns a bosh manager delete error with a valid state", func() {
 					boshState := map[string]interface{}{"partial": "bosh-state"}
