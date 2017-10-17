@@ -110,7 +110,7 @@ var _ = Describe("Executor", func() {
 						VarsDir:       varsDir,
 						IAAS:          "aws",
 					})
-					Expect(err).To(MatchError("Jumpbox read file: kiwi"))
+					Expect(err).To(MatchError("Jumpbox read vars-store: kiwi"))
 				})
 			})
 		})
@@ -518,7 +518,6 @@ func interpolateArgs(sharedArgs []string, deploymentDir string) []string {
 		[]string{
 			"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
 			"--var-errs",
-			"--var-errs-unused",
 		},
 		sharedArgs...,
 	)

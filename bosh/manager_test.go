@@ -132,6 +132,7 @@ gcp_credentials_json: some-credential-json
 `))
 			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-director-deployment-dir"))
+			Expect(boshExecutor.DirectorInterpolateCall.Receives.InterpolateInput.BOSHState).To(Equal(map[string]interface{}{"some-key": "some-value"}))
 
 			Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
 			Expect(boshExecutor.JumpboxInterpolateCall.CallCount).To(Equal(0))
@@ -147,6 +148,7 @@ gcp_credentials_json: some-credential-json
 				DirectorSSLCertificate: "some-certificate",
 				DirectorSSLPrivateKey:  "some-private-key",
 				UserOpsFile:            "some-ops-file",
+				State:                  nil,
 			}))
 		})
 
@@ -294,6 +296,9 @@ gcp_credentials_json: some-credential-json
 			state, err := boshManager.CreateJumpbox(state, terraformOutputs)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.JumpboxInterpolateCall.Receives.InterpolateInput.BOSHState).To(Equal(map[string]interface{}{"some-key": "some-value"}))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Args).To(Equal(createEnvArgs))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
@@ -310,6 +315,7 @@ gcp_credentials_json: some-credential-json
 					URL:       "some-jumpbox-url",
 					Variables: "jumpbox_ssh:\n  private_key: some-jumpbox-private-key",
 					Manifest:  "name: jumpbox",
+					State:     nil,
 				},
 			}))
 		})

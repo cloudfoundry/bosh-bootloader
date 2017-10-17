@@ -160,6 +160,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		IAAS:           state.IAAS,
 		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 		Variables:      state.Jumpbox.Variables,
+		BOSHState:      state.Jumpbox.State,
 	}
 
 	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
@@ -230,6 +231,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
 		Variables:      state.BOSH.Variables,
 		OpsFile:        state.BOSH.UserOpsFile,
+		BOSHState:      state.BOSH.State,
 	}
 
 	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
@@ -421,7 +423,6 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			DefaultSecurityGroup: terraformOutputs.GetString("bosh_default_security_group"),
 			PublicKey:            terraformOutputs.GetString("bosh_vms_public_key"),
 		}
-		// TODO: this struct is gross
 		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
 	}
 

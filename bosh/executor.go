@@ -92,7 +92,7 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (InterpolateOutput,
 	for _, f := range setupFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
+			return InterpolateOutput{}, fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
 		}
 	}
 
@@ -115,12 +115,25 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (InterpolateOutput,
 
 	varsStore, err := e.readFile(setupFiles["vars-store"].path)
 	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("Jumpbox read file: %s", err)
+		return InterpolateOutput{}, fmt.Errorf("Jumpbox read vars-store: %s", err)
+	}
+
+	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
+	if input.BOSHState != nil {
+		stateJSON, err := e.marshalJSON(input.BOSHState)
+		if err != nil {
+			return InterpolateOutput{}, fmt.Errorf("Jumpbox marshal state json: %s", err) //not tested
+		}
+
+		err = e.writeFile(jumpboxState, stateJSON, os.ModePerm)
+		if err != nil {
+			return InterpolateOutput{}, fmt.Errorf("Jumpbox write state json: %s", err) //not tested
+		}
 	}
 
 	createEnvArgs := append([]string{
 		"create-env", setupFiles["manifest"].path,
-		"--state", filepath.Join(input.VarsDir, "jumpbox-state.json"),
+		"--state", jumpboxState,
 	}, sharedArgs...)
 	return InterpolateOutput{
 		Args:      createEnvArgs,
@@ -225,8 +238,8 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 	interpolateArgs := append([]string{
 		"interpolate", setupFiles["manifest"].path,
 		"--var-errs",
-		"--var-errs-unused",
 	}, sharedArgs...)
+
 	buffer := bytes.NewBuffer([]byte{})
 	err := e.command.Run(buffer, input.VarsDir, interpolateArgs)
 	if err != nil {
@@ -238,9 +251,22 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		return InterpolateOutput{}, err
 	}
 
+	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
+	if input.BOSHState != nil {
+		stateJSON, err := e.marshalJSON(input.BOSHState)
+		if err != nil {
+			return InterpolateOutput{}, fmt.Errorf("marshal JSON: %s", err) //not tested
+		}
+
+		err = e.writeFile(boshState, stateJSON, os.ModePerm)
+		if err != nil {
+			return InterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
+		}
+	}
+
 	createEnvArgs := append([]string{
 		"create-env", setupFiles["manifest"].path,
-		"--state", filepath.Join(input.VarsDir, "bosh-state.json"),
+		"--state", boshState,
 	}, sharedArgs...)
 	return InterpolateOutput{
 		Args:      createEnvArgs,
