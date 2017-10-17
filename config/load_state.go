@@ -257,48 +257,45 @@ func NeedsIAASCreds(command string) bool {
 
 func validateAWS(aws storage.AWS) error {
 	if aws.AccessKeyID == "" {
-		return errors.New("AWS access key ID must be provided")
+		return errors.New("AWS access key ID must be provided (--aws-access-key-id or BBL_AWS_ACCESS_KEY_ID)")
 	}
 	if aws.SecretAccessKey == "" {
-		return errors.New("AWS secret access key must be provided")
+		return errors.New("AWS secret access key must be provided (--aws-secret-access-key or BBL_AWS_SECRET_ACCESS_KEY)")
 	}
 	if aws.Region == "" {
-		return errors.New("AWS region must be provided")
+		return errors.New("AWS region must be provided (--aws-region or BBL_AWS_REGION)")
 	}
 	return nil
 }
 
 func validateGCP(gcp storage.GCP) error {
 	if gcp.ServiceAccountKey == "" {
-		return errors.New("GCP service account key must be provided")
-	}
-	if gcp.ProjectID == "" {
-		return errors.New("GCP project ID must be provided")
+		return errors.New("GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)")
 	}
 	if gcp.Zone == "" {
-		return errors.New("GCP zone must be provided")
+		return errors.New("GCP zone must be provided (--gcp-zone or BBL_GCP_ZONE)")
 	}
 	if gcp.Region == "" {
-		return errors.New("GCP region must be provided")
+		return errors.New("GCP region must be provided (--gcp-region or BBL_GCP_REGION)")
 	}
 	return nil
 }
 
 func validateAzure(azure storage.Azure) error {
 	if azure.ClientID == "" {
-		return errors.New("Azure client id must be provided")
+		return errors.New("Azure client id must be provided (--azure-client-id or BBL_AZURE_CLIENT_ID)")
 	}
 	if azure.ClientSecret == "" {
-		return errors.New("Azure client secret must be provided")
+		return errors.New("Azure client secret must be provided (--azure-client-secret or BBL_AZURE_CLIENT_SECRET)")
 	}
 	if azure.Location == "" {
-		return errors.New("Azure location must be provided")
+		return errors.New("Azure location must be provided (--azure-location or BBL_AZURE_LOCATION)")
 	}
 	if azure.SubscriptionID == "" {
-		return errors.New("Azure subscription id must be provided")
+		return errors.New("Azure subscription id must be provided (--azure-subscription-id or BBL_AZURE_SUBSCRIPTION_ID)")
 	}
 	if azure.TenantID == "" {
-		return errors.New("Azure tenant id must be provided")
+		return errors.New("Azure tenant id must be provided (--azure-tenant-id or BBL_AZURE_TENANT_ID)")
 	}
 	return nil
 }

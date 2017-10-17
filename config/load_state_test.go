@@ -797,7 +797,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"AWS access key ID must be provided"),
+				"AWS access key ID must be provided (--aws-access-key-id or BBL_AWS_ACCESS_KEY_ID)"),
 			Entry("when AWS key is missing",
 				storage.State{
 					IAAS: "aws",
@@ -807,7 +807,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"AWS secret access key must be provided"),
+				"AWS secret access key must be provided (--aws-secret-access-key or BBL_AWS_SECRET_ACCESS_KEY)"),
 			Entry("when AWS region is missing",
 				storage.State{
 					IAAS: "aws",
@@ -817,7 +817,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"AWS region must be provided"),
+				"AWS region must be provided (--aws-region or BBL_AWS_REGION)"),
 			Entry("when GCP service account key is missing",
 				storage.State{
 					IAAS: "gcp",
@@ -828,7 +828,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"GCP service account key must be provided"),
+				"GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)"),
 			Entry("when GCP region is missing",
 				storage.State{
 					IAAS: "gcp",
@@ -839,7 +839,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"GCP region must be provided"),
+				"GCP region must be provided (--gcp-region or BBL_GCP_REGION)"),
 			Entry("when GCP zone is missing",
 				storage.State{
 					IAAS: "gcp",
@@ -850,7 +850,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"GCP zone must be provided"),
+				"GCP zone must be provided (--gcp-zone or BBL_GCP_ZONE)"),
 			Entry("when Azure client id is missing",
 				storage.State{
 					IAAS: "azure",
@@ -862,7 +862,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"Azure client id must be provided"),
+				"Azure client id must be provided (--azure-client-id or BBL_AZURE_CLIENT_ID)"),
 			Entry("when Azure client secret is missing",
 				storage.State{
 					IAAS: "azure",
@@ -874,7 +874,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"Azure client secret must be provided"),
+				"Azure client secret must be provided (--azure-client-secret or BBL_AZURE_CLIENT_SECRET)"),
 			Entry("when Azure location is missing",
 				storage.State{
 					IAAS: "azure",
@@ -886,7 +886,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"Azure location must be provided"),
+				"Azure location must be provided (--azure-location or BBL_AZURE_LOCATION)"),
 			Entry("when Azure subscription is missing",
 				storage.State{
 					IAAS: "azure",
@@ -898,7 +898,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"Azure subscription id must be provided"),
+				"Azure subscription id must be provided (--azure-subscription-id or BBL_AZURE_SUBSCRIPTION_ID)"),
 			Entry("when Azure tenant id is missing",
 				storage.State{
 					IAAS: "azure",
@@ -910,7 +910,7 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"up",
-				"Azure tenant id must be provided"),
+				"Azure tenant id must be provided (--azure-tenant-id or BBL_AZURE_TENANT_ID)"),
 		)
 	})
 })
