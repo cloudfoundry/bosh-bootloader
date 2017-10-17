@@ -9,7 +9,8 @@ type BOSHExecutor struct {
 			Input bosh.CreateEnvInput
 		}
 		Returns struct {
-			Error error
+			Variables string
+			Error     error
 		}
 	}
 
@@ -23,7 +24,7 @@ type BOSHExecutor struct {
 		}
 	}
 
-	JumpboxInterpolateCall struct {
+	JumpboxCreateEnvArgsCall struct {
 		CallCount int
 		Receives  struct {
 			InterpolateInput bosh.InterpolateInput
@@ -34,7 +35,7 @@ type BOSHExecutor struct {
 		}
 	}
 
-	DirectorInterpolateCall struct {
+	DirectorCreateEnvArgsCall struct {
 		CallCount int
 		Receives  struct {
 			InterpolateInput bosh.InterpolateInput
@@ -54,11 +55,11 @@ type BOSHExecutor struct {
 	}
 }
 
-func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) error {
+func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) (string, error) {
 	e.CreateEnvCall.CallCount++
 	e.CreateEnvCall.Receives.Input = input
 
-	return e.CreateEnvCall.Returns.Error
+	return e.CreateEnvCall.Returns.Variables, e.CreateEnvCall.Returns.Error
 }
 
 func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
@@ -68,18 +69,18 @@ func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
 	return e.DeleteEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) JumpboxInterpolate(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
-	e.JumpboxInterpolateCall.CallCount++
-	e.JumpboxInterpolateCall.Receives.InterpolateInput = input
+func (e *BOSHExecutor) JumpboxCreateEnvArgs(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
+	e.JumpboxCreateEnvArgsCall.CallCount++
+	e.JumpboxCreateEnvArgsCall.Receives.InterpolateInput = input
 
-	return e.JumpboxInterpolateCall.Returns.Output, e.JumpboxInterpolateCall.Returns.Error
+	return e.JumpboxCreateEnvArgsCall.Returns.Output, e.JumpboxCreateEnvArgsCall.Returns.Error
 }
 
-func (e *BOSHExecutor) DirectorInterpolate(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
-	e.DirectorInterpolateCall.CallCount++
-	e.DirectorInterpolateCall.Receives.InterpolateInput = input
+func (e *BOSHExecutor) DirectorCreateEnvArgs(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
+	e.DirectorCreateEnvArgsCall.CallCount++
+	e.DirectorCreateEnvArgsCall.Receives.InterpolateInput = input
 
-	return e.DirectorInterpolateCall.Returns.Output, e.DirectorInterpolateCall.Returns.Error
+	return e.DirectorCreateEnvArgsCall.Returns.Output, e.DirectorCreateEnvArgsCall.Returns.Error
 }
 
 func (e *BOSHExecutor) Version() (string, error) {

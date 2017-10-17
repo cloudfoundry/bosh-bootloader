@@ -7,17 +7,17 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Executor", func() {
-	Describe("JumpboxInterpolate", func() {
+	Describe("JumpboxCreateEnvArgs", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -56,13 +56,13 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
-		It("interpolates the jumpbox and bosh manifests", func() {
+		It("generates create-env args for jumpbox", func() {
 			interpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 			interpolateInput.OpsFile = ""
 
-			jumpboxInterpolateOutput, err := executor.JumpboxInterpolate(interpolateInput)
+			jumpboxInterpolateOutput, err := executor.JumpboxCreateEnvArgs(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmd.RunCallCount()).To(Equal(1))
+			Expect(cmd.RunCallCount()).To(Equal(0))
 
 			sharedArgs := append([]string{
 				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", varsDir),
@@ -70,53 +70,11 @@ var _ = Describe("Executor", func() {
 				"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
 			})
 
-			By("running with the expected args in the vars directory", func() {
-				_, workingDir, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(jumpboxInterpolateArgs(sharedArgs, deploymentDir)))
-				Expect(workingDir).To(Equal(varsDir))
-			})
-
 			Expect(jumpboxInterpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "jumpbox")))
-			Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
-			Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
-		})
-
-		Describe("failure cases", func() {
-			Context("when trying to run a command fails", func() {
-				BeforeEach(func() {
-					cmd.RunReturnsOnCall(0, errors.New("kiwi"))
-				})
-
-				It("returns an error", func() {
-					executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					_, err := executor.JumpboxInterpolate(bosh.InterpolateInput{
-						DeploymentDir: deploymentDir,
-						VarsDir:       varsDir,
-						IAAS:          "aws",
-					})
-					Expect(err).To(MatchError("Jumpbox interpolate: kiwi: "))
-				})
-			})
-
-			Context("when the variables file fails to be read", func() {
-				It("returns an error", func() {
-					readFileFunc := func(path string) ([]byte, error) {
-						return []byte{}, errors.New("kiwi")
-					}
-
-					executor = bosh.NewExecutor(cmd, readFileFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					_, err := executor.JumpboxInterpolate(bosh.InterpolateInput{
-						DeploymentDir: deploymentDir,
-						VarsDir:       varsDir,
-						IAAS:          "aws",
-					})
-					Expect(err).To(MatchError("Jumpbox read vars-store: kiwi"))
-				})
-			})
 		})
 	})
 
-	Describe("DirectorInterpolate", func() {
+	Describe("DirectorCreateEnvArgs", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -165,10 +123,10 @@ var _ = Describe("Executor", func() {
 					return nil
 				}
 
-				interpolateOutput, err := executor.DirectorInterpolate(azureInterpolateInput)
+				interpolateOutput, err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCallCount()).To(Equal(1))
+				Expect(cmd.RunCallCount()).To(Equal(0))
 
 				sharedArgs := []string{
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
@@ -180,12 +138,7 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 				}
 
-				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
-
 				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
-				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-				Expect(interpolateOutput.Variables).To(Equal("key: value"))
 			})
 		})
 
@@ -202,13 +155,13 @@ var _ = Describe("Executor", func() {
 				}
 			})
 
-			It("interpolates the jumpbox and bosh manifests", func() {
+			It("generates create-env args for director", func() {
 				awsInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 
-				interpolateOutput, err := executor.DirectorInterpolate(awsInterpolateInput)
+				interpolateOutput, err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCallCount()).To(Equal(1))
+				Expect(cmd.RunCallCount()).To(Equal(0))
 
 				sharedArgs := append([]string{
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
@@ -223,12 +176,7 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 				})
 
-				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
-
 				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
-
-				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 			})
 		})
 
@@ -245,14 +193,14 @@ var _ = Describe("Executor", func() {
 				}
 			})
 
-			It("interpolates the jumpbox and bosh manifests", func() {
+			It("generates create-env args for director", func() {
 				gcpInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 				gcpInterpolateInput.OpsFile = ""
 
-				interpolateOutput, err := executor.DirectorInterpolate(gcpInterpolateInput)
+				interpolateOutput, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCallCount()).To(Equal(1))
+				Expect(cmd.RunCallCount()).To(Equal(0))
 
 				sharedArgs := append([]string{
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
@@ -264,21 +212,15 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
 				})
 
-				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
-
 				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
-
-				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-				Expect(interpolateOutput.Variables).To(Equal("key: value"))
 			})
 
 			Context("when a user opsfile is provided", func() {
-				It("interpolates the bosh manifest once", func() {
-					interpolateOutput, err := executor.DirectorInterpolate(gcpInterpolateInput)
+				It("puts the user-provided opsfile in create-env args", func() {
+					interpolateOutput, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cmd.RunCallCount()).To(Equal(1))
+					Expect(cmd.RunCallCount()).To(Equal(0))
 
 					sharedArgs := append([]string{
 						"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
@@ -291,46 +233,7 @@ var _ = Describe("Executor", func() {
 						"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 					})
 
-					_, _, args := cmd.RunArgsForCall(0)
-					Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
-
 					Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
-					Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
-					Expect(interpolateOutput.Variables).To(Equal("key: value"))
-				})
-			})
-		})
-
-		Describe("failure cases", func() {
-			Context("when trying to run a command fails", func() {
-				BeforeEach(func() {
-					cmd.RunReturnsOnCall(0, errors.New("failed to run command"))
-				})
-
-				It("returns an error", func() {
-					executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-						DeploymentDir: deploymentDir,
-						VarsDir:       varsDir,
-						IAAS:          "aws",
-						OpsFile:       "some-ops-file",
-					})
-					Expect(err).To(MatchError("failed to run command"))
-				})
-			})
-			Context("when the variables file fails to be read", func() {
-				It("returns an error", func() {
-					readFileFunc := func(path string) ([]byte, error) {
-						return []byte{}, errors.New("failed to read variables file")
-					}
-
-					executor = bosh.NewExecutor(cmd, readFileFunc, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					_, err := executor.DirectorInterpolate(bosh.InterpolateInput{
-						DeploymentDir: deploymentDir,
-						VarsDir:       varsDir,
-						IAAS:          "aws",
-					})
-					Expect(err).To(MatchError("failed to read variables file"))
 				})
 			})
 		})
@@ -360,16 +263,30 @@ var _ = Describe("Executor", func() {
 				Deployment: "some-deployment",
 				Directory:  varsDir,
 			}
+
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+				varsStore := filepath.Join(varsDir, "some-deployment-variables.yml")
+				ioutil.WriteFile(varsStore, []byte("some-vars-store-contents"), os.ModePerm)
+				return nil
+			}
+		})
+
+		AfterEach(func() {
+			os.Remove(filepath.Join(varsDir, "some-deployment-variables.yml"))
 		})
 
 		It("creates a bosh environment", func() {
-			err := executor.CreateEnv(createEnvInput)
+			vars, err := executor.CreateEnv(createEnvInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			writer, dir, args := cmd.RunArgsForCall(0)
 			Expect(writer).To(Equal(os.Stdout))
 			Expect(dir).To(Equal(varsDir))
 			Expect(args).To(Equal([]string{"some", "command", "args"}))
+
+			By("returning the contents of the vars store", func() {
+				Expect(vars).To(Equal("some-vars-store-contents"))
+			})
 		})
 
 		Context("when the run command returns an error", func() {
@@ -383,8 +300,9 @@ var _ = Describe("Executor", func() {
 					Deployment: "some-deployment",
 					Directory:  varsDir,
 				}
-				err := executor.CreateEnv(createEnvInput)
+				vars, err := executor.CreateEnv(createEnvInput)
 				Expect(err).To(MatchError("Create env: apricot"))
+				Expect(vars).To(Equal(""))
 			})
 		})
 	})
@@ -502,26 +420,6 @@ var _ = Describe("Executor", func() {
 		})
 	})
 })
-
-func jumpboxInterpolateArgs(sharedArgs []string, deploymentDir string) []string {
-	return append(
-		[]string{
-			"interpolate", fmt.Sprintf("%s/jumpbox.yml", deploymentDir),
-			"--var-errs",
-		},
-		sharedArgs...,
-	)
-}
-
-func interpolateArgs(sharedArgs []string, deploymentDir string) []string {
-	return append(
-		[]string{
-			"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
-			"--var-errs",
-		},
-		sharedArgs...,
-	)
-}
 
 func createEnvArgs(sharedArgs []string, deploymentDir, varsDir, deployment string) []string {
 	return append(

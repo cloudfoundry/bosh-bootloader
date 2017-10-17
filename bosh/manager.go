@@ -100,9 +100,9 @@ type AzureYAML struct {
 }
 
 type executor interface {
-	DirectorInterpolate(InterpolateInput) (InterpolateOutput, error)
-	JumpboxInterpolate(InterpolateInput) (InterpolateOutput, error)
-	CreateEnv(CreateEnvInput) error
+	DirectorCreateEnvArgs(InterpolateInput) (InterpolateOutput, error)
+	JumpboxCreateEnvArgs(InterpolateInput) (InterpolateOutput, error)
+	CreateEnv(CreateEnvInput) (string, error)
 	DeleteEnv(DeleteEnvInput) error
 	Version() (string, error)
 }
@@ -163,13 +163,13 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		BOSHState:      state.Jumpbox.State,
 	}
 
-	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
+	interpolateOutputs, err := m.executor.JumpboxCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
 
 	osUnsetenv("BOSH_ALL_PROXY")
-	err = m.executor.CreateEnv(CreateEnvInput{
+	variables, err := m.executor.CreateEnv(CreateEnvInput{
 		Args:       interpolateOutputs.Args,
 		Deployment: "jumpbox",
 		Directory:  varsDir,
@@ -178,9 +178,8 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	case CreateEnvError:
 		ceErr := err.(CreateEnvError)
 		state.Jumpbox = storage.Jumpbox{
-			Variables: interpolateOutputs.Variables,
+			Variables: variables,
 			State:     ceErr.BOSHState(),
-			Manifest:  interpolateOutputs.Manifest,
 		}
 		return storage.State{}, fmt.Errorf("Create jumpbox env: %s", NewManagerCreateError(state, err))
 	case error:
@@ -189,13 +188,12 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	m.logger.Step("created jumpbox")
 
 	state.Jumpbox = storage.Jumpbox{
-		Variables: interpolateOutputs.Variables,
-		Manifest:  interpolateOutputs.Manifest,
+		Variables: variables,
 		URL:       terraformOutputs.GetString("jumpbox_url"),
 	}
 
 	m.logger.Step("starting socks5 proxy to jumpbox")
-	jumpboxPrivateKey, err := getJumpboxPrivateKey(interpolateOutputs.Variables)
+	jumpboxPrivateKey, err := getJumpboxPrivateKey(variables)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("jumpbox key: %s", err)
 	}
@@ -234,12 +232,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		BOSHState:      state.BOSH.State,
 	}
 
-	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
+	interpolateOutputs, err := m.executor.DirectorCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
 
-	err = m.executor.CreateEnv(CreateEnvInput{
+	variables, err := m.executor.CreateEnv(CreateEnvInput{
 		Args:       interpolateOutputs.Args,
 		Deployment: "director",
 		Directory:  varsDir,
@@ -249,16 +247,15 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	case CreateEnvError:
 		ceErr := err.(CreateEnvError)
 		state.BOSH = storage.BOSH{
-			Variables: interpolateOutputs.Variables,
+			Variables: variables,
 			State:     ceErr.BOSHState(),
-			Manifest:  interpolateOutputs.Manifest,
 		}
 		return storage.State{}, NewManagerCreateError(state, err)
 	case error:
 		return storage.State{}, fmt.Errorf("Create director env: %s", err)
 	}
 
-	directorVars, err := getDirectorVars(interpolateOutputs.Variables)
+	directorVars, err := getDirectorVars(variables)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Get director vars: %s", err)
 	}
@@ -271,8 +268,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DirectorSSLCA:          directorVars.directorSSLCA,
 		DirectorSSLCertificate: directorVars.directorSSLCertificate,
 		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
-		Variables:              interpolateOutputs.Variables,
-		Manifest:               interpolateOutputs.Manifest,
+		Variables:              variables,
 		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
 
@@ -314,7 +310,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
 
-	interpolateOutputs, err := m.executor.DirectorInterpolate(iaasInputs)
+	interpolateOutputs, err := m.executor.DirectorCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return err
 	}
@@ -357,7 +353,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 	}
 
-	interpolateOutputs, err := m.executor.JumpboxInterpolate(iaasInputs)
+	interpolateOutputs, err := m.executor.JumpboxCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return err
 	}

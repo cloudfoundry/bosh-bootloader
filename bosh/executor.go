@@ -29,9 +29,7 @@ type InterpolateInput struct {
 }
 
 type InterpolateOutput struct {
-	Args      []string
-	Variables string
-	Manifest  string
+	Args []string
 }
 
 type CreateEnvInput struct {
@@ -64,7 +62,7 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	}
 }
 
-func (e Executor) JumpboxInterpolate(input InterpolateInput) (InterpolateOutput, error) {
+func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutput, error) {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -102,22 +100,6 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (InterpolateOutput,
 		"-o", setupFiles["cpi"].path,
 	}
 
-	interpolateArgs := append([]string{
-		"interpolate", setupFiles["manifest"].path,
-		"--var-errs",
-	}, sharedArgs...)
-
-	buffer := bytes.NewBuffer([]byte{})
-	err := e.command.Run(buffer, input.VarsDir, interpolateArgs)
-	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("Jumpbox interpolate: %s: %s", err, buffer)
-	}
-
-	varsStore, err := e.readFile(setupFiles["vars-store"].path)
-	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("Jumpbox read vars-store: %s", err)
-	}
-
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 	if input.BOSHState != nil {
 		stateJSON, err := e.marshalJSON(input.BOSHState)
@@ -136,13 +118,11 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (InterpolateOutput,
 		"--state", jumpboxState,
 	}, sharedArgs...)
 	return InterpolateOutput{
-		Args:      createEnvArgs,
-		Variables: string(varsStore),
-		Manifest:  buffer.String(),
+		Args: createEnvArgs,
 	}, nil
 }
 
-func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput, error) {
+func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutput, error) {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -235,22 +215,6 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.VarsDir, "user-ops-file.yml"))
 	}
 
-	interpolateArgs := append([]string{
-		"interpolate", setupFiles["manifest"].path,
-		"--var-errs",
-	}, sharedArgs...)
-
-	buffer := bytes.NewBuffer([]byte{})
-	err := e.command.Run(buffer, input.VarsDir, interpolateArgs)
-	if err != nil {
-		return InterpolateOutput{}, err
-	}
-
-	varsStore, err := e.readFile(setupFiles["vars-store"].path)
-	if err != nil {
-		return InterpolateOutput{}, err
-	}
-
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
 	if input.BOSHState != nil {
 		stateJSON, err := e.marshalJSON(input.BOSHState)
@@ -269,19 +233,23 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		"--state", boshState,
 	}, sharedArgs...)
 	return InterpolateOutput{
-		Args:      createEnvArgs,
-		Variables: string(varsStore),
-		Manifest:  buffer.String(),
+		Args: createEnvArgs,
 	}, nil
 }
 
-func (e Executor) CreateEnv(createEnvInput CreateEnvInput) error {
+func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	err := e.command.Run(os.Stdout, createEnvInput.Directory, createEnvInput.Args)
 	if err != nil {
-		return fmt.Errorf("Create env: %s", err)
+		return "", fmt.Errorf("Create env: %s", err)
 	}
 
-	return nil
+	varsStoreFileName := fmt.Sprintf("%s-variables.yml", createEnvInput.Deployment)
+	varsStoreContents, err := e.readFile(filepath.Join(createEnvInput.Directory, varsStoreFileName))
+	if err != nil {
+		return "", fmt.Errorf("Reading vars file for %s deployment: %s", createEnvInput.Deployment, err) // not tested
+	}
+
+	return string(varsStoreContents), nil
 }
 
 func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
