@@ -217,7 +217,7 @@ func updateAzureState(globalFlags globalFlags, state storage.State) (storage.Sta
 	return state, nil
 }
 
-func ValidateIAAS(state storage.State, command string) error {
+func ValidateIAAS(state storage.State) error {
 	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws" && state.IAAS != "azure") {
 		return errors.New("--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set")
 	}

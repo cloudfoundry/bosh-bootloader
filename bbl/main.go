@@ -51,7 +51,7 @@ func main() {
 
 	needsIAASCreds := config.NeedsIAASCreds(appConfig.Command) && !appConfig.ShowCommandHelp
 	if needsIAASCreds {
-		err = config.ValidateIAAS(appConfig.State, appConfig.Command)
+		err = config.ValidateIAAS(appConfig.State)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
