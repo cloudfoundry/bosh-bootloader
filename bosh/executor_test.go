@@ -64,20 +64,19 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmd.RunCallCount()).To(Equal(1))
 
-			By("running with the expected args in the vars directory", func() {
-				expectedArgs := append([]string{
-					"interpolate", fmt.Sprintf("%s/jumpbox.yml", deploymentDir),
-					"--var-errs",
-					"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", varsDir),
-					"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", varsDir),
-					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
-				})
+			sharedArgs := append([]string{
+				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", varsDir),
+				"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", varsDir),
+				"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
+			})
 
+			By("running with the expected args in the vars directory", func() {
 				_, workingDir, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(expectedArgs))
+				Expect(args).To(Equal(jumpboxInterpolateArgs(sharedArgs, deploymentDir)))
 				Expect(workingDir).To(Equal(varsDir))
 			})
 
+			Expect(jumpboxInterpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "jumpbox")))
 			Expect(jumpboxInterpolateOutput.Manifest).To(Equal("some-manifest"))
 			Expect(jumpboxInterpolateOutput.Variables).To(gomegamatchers.MatchYAML("key: value"))
 		})
@@ -171,10 +170,7 @@ var _ = Describe("Executor", func() {
 
 				Expect(cmd.RunCallCount()).To(Equal(1))
 
-				expectedArgs := append([]string{
-					"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
-					"--var-errs",
-					"--var-errs-unused",
+				sharedArgs := []string{
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -182,11 +178,12 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/uaa.yml", deploymentDir),
 					"-o", fmt.Sprintf("%s/credhub.yml", deploymentDir),
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
-				})
+				}
 
 				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(expectedArgs))
+				Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
 
+				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 				Expect(interpolateOutput.Variables).To(Equal("key: value"))
 			})
@@ -213,10 +210,7 @@ var _ = Describe("Executor", func() {
 
 				Expect(cmd.RunCallCount()).To(Equal(1))
 
-				expectedArgs := append([]string{
-					"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
-					"--var-errs",
-					"--var-errs-unused",
+				sharedArgs := append([]string{
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -230,7 +224,9 @@ var _ = Describe("Executor", func() {
 				})
 
 				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(expectedArgs))
+				Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
+
+				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 
 				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 			})
@@ -258,10 +254,7 @@ var _ = Describe("Executor", func() {
 
 				Expect(cmd.RunCallCount()).To(Equal(1))
 
-				expectedArgs := append([]string{
-					"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
-					"--var-errs",
-					"--var-errs-unused",
+				sharedArgs := append([]string{
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -272,7 +265,9 @@ var _ = Describe("Executor", func() {
 				})
 
 				_, _, args := cmd.RunArgsForCall(0)
-				Expect(args).To(Equal(expectedArgs))
+				Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
+
+				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 
 				Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 				Expect(interpolateOutput.Variables).To(Equal("key: value"))
@@ -285,10 +280,7 @@ var _ = Describe("Executor", func() {
 
 					Expect(cmd.RunCallCount()).To(Equal(1))
 
-					expectedArgs := append([]string{
-						"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
-						"--var-errs",
-						"--var-errs-unused",
+					sharedArgs := append([]string{
 						"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 						"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 						"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -300,8 +292,9 @@ var _ = Describe("Executor", func() {
 					})
 
 					_, _, args := cmd.RunArgsForCall(0)
-					Expect(args).To(Equal(expectedArgs))
+					Expect(args).To(Equal(interpolateArgs(sharedArgs, deploymentDir)))
 
+					Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 					Expect(interpolateOutput.Manifest).To(Equal("some-manifest"))
 					Expect(interpolateOutput.Variables).To(Equal("key: value"))
 				})
@@ -343,54 +336,6 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
-	var createEnvDeleteEnvFailureCases = func(callback func(executor bosh.Executor) error) {
-		var (
-			cmd *fakes.BOSHCommand
-
-			executor bosh.Executor
-		)
-
-		BeforeEach(func() {
-			cmd = &fakes.BOSHCommand{}
-			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-		})
-
-		Context("when the state fails to marshal", func() {
-			It("returns an error", func() {
-				marshalFunc := func(input interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal state")
-				}
-
-				executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, marshalFunc, ioutil.WriteFile)
-				err := callback(executor)
-				Expect(err).To(MatchError("failed to marshal state"))
-			})
-		})
-
-		Context("when the state cannot be written to a file", func() {
-			It("returns an error", func() {
-				writeFile := func(filename string, contents []byte, mode os.FileMode) error {
-					return errors.New("failed to write file")
-				}
-
-				executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, writeFile)
-				err := callback(executor)
-				Expect(err).To(MatchError("failed to write file"))
-			})
-		})
-
-		Context("when the run command returns an error", func() {
-			BeforeEach(func() {
-				cmd.RunReturnsOnCall(0, errors.New("failed to run"))
-			})
-
-			It("returns an error", func() {
-				err := callback(executor)
-				Expect(err).To(MatchError("failed to run"))
-			})
-		})
-	}
-
 	Describe("CreateEnv", func() {
 		var (
 			cmd      *fakes.BOSHCommand
@@ -399,9 +344,6 @@ var _ = Describe("Executor", func() {
 			varsDir string
 
 			createEnvInput bosh.CreateEnvInput
-			manifestPath   string
-			variablesPath  string
-			statePath      string
 		)
 
 		BeforeEach(func() {
@@ -414,133 +356,35 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			createEnvInput = bosh.CreateEnvInput{
+				Args:       []string{"some", "command", "args"},
 				Deployment: "some-deployment",
 				Directory:  varsDir,
-				Manifest:   "some-manifest",
-				Variables:  "some-variables",
-				State:      map[string]interface{}{},
-			}
-
-			manifestPath = fmt.Sprintf("%s/some-deployment-manifest.yml", varsDir)
-			variablesPath = fmt.Sprintf("%s/some-deployment-variables.yml", varsDir)
-			statePath = fmt.Sprintf("%s/some-deployment-state.json", varsDir)
-
-			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-				return ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
 			}
 		})
 
 		It("creates a bosh environment", func() {
-			createEnvOutput, err := executor.CreateEnv(createEnvInput)
+			err := executor.CreateEnv(createEnvInput)
 			Expect(err).NotTo(HaveOccurred())
-
-			manifestContents, err := ioutil.ReadFile(manifestPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(manifestContents)).To(Equal("some-manifest"))
-
-			variablesContents, err := ioutil.ReadFile(variablesPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(variablesContents)).To(Equal("some-variables"))
 
 			writer, dir, args := cmd.RunArgsForCall(0)
 			Expect(writer).To(Equal(os.Stdout))
 			Expect(dir).To(Equal(varsDir))
-			Expect(args).To(Equal([]string{
-				"create-env", manifestPath,
-				"--vars-store", variablesPath,
-				"--state", statePath,
-			}))
-
-			Expect(createEnvOutput.State).To(Equal(map[string]interface{}{
-				"key": "value",
-			}))
+			Expect(args).To(Equal([]string{"some", "command", "args"}))
 		})
 
-		Context("failure cases", func() {
-			createEnvDeleteEnvFailureCases(func(executor bosh.Executor) error {
+		Context("when the run command returns an error", func() {
+			BeforeEach(func() {
+				cmd.RunReturns(errors.New("apricot"))
+			})
+
+			It("returns an error", func() {
 				createEnvInput := bosh.CreateEnvInput{
+					Args:       []string{"some", "command", "args"},
 					Deployment: "some-deployment",
 					Directory:  varsDir,
-					Manifest:   "some-manifest",
-					Variables:  "some-variables",
-					State:      map[string]interface{}{},
 				}
-				_, err := executor.CreateEnv(createEnvInput)
-				return err
-			})
-
-			Context("when command run fails", func() {
-				BeforeEach(func() {
-					cmd.RunReturns(errors.New("failed to run"))
-					executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-
-					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-						ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
-						return errors.New("failed to run")
-					}
-				})
-
-				It("returns a create env error with a valid bosh state", func() {
-					expectedError := bosh.NewCreateEnvError(map[string]interface{}{
-						"key": "value",
-					}, errors.New("failed to run"))
-					_, err := executor.CreateEnv(createEnvInput)
-					Expect(err).To(MatchError(expectedError))
-				})
-
-				Context("when the state cannot be read", func() {
-					BeforeEach(func() {
-						readFile := func(filename string) ([]byte, error) {
-							return []byte{}, errors.New("failed to read file")
-						}
-
-						executor = bosh.NewExecutor(cmd, readFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					})
-
-					It("returns an error", func() {
-						_, err := executor.CreateEnv(createEnvInput)
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to run,\nfailed to read file"))
-					})
-				})
-
-				Context("when the state cannot be unmarshaled", func() {
-					BeforeEach(func() {
-						unmarshalFunc := func(contents []byte, output interface{}) error {
-							return errors.New("failed to unmarshal")
-						}
-
-						executor = bosh.NewExecutor(cmd, ioutil.ReadFile, unmarshalFunc, json.Marshal, ioutil.WriteFile)
-					})
-
-					It("returns an error", func() {
-						_, err := executor.CreateEnv(createEnvInput)
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to run,\nfailed to unmarshal"))
-					})
-				})
-			})
-
-			Context("when the state cannot be read", func() {
-				It("returns an error", func() {
-					readFile := func(filename string) ([]byte, error) {
-						return []byte{}, errors.New("failed to read file")
-					}
-
-					executor = bosh.NewExecutor(cmd, readFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					_, err := executor.CreateEnv(createEnvInput)
-					Expect(err).To(MatchError("failed to read file"))
-				})
-			})
-
-			Context("when the state cannot be unmarshaled", func() {
-				It("returns an error", func() {
-					unmarshalFunc := func(contents []byte, output interface{}) error {
-						return errors.New("failed to unmarshal")
-					}
-
-					executor = bosh.NewExecutor(cmd, ioutil.ReadFile, unmarshalFunc, json.Marshal, ioutil.WriteFile)
-					_, err := executor.CreateEnv(createEnvInput)
-					Expect(err).To(MatchError("failed to unmarshal"))
-				})
+				err := executor.CreateEnv(createEnvInput)
+				Expect(err).To(MatchError("Create env: apricot"))
 			})
 		})
 	})
@@ -553,33 +397,21 @@ var _ = Describe("Executor", func() {
 			varsDir string
 
 			deleteEnvInput bosh.DeleteEnvInput
-			manifestPath   string
-			variablesPath  string
-			statePath      string
 		)
 
 		BeforeEach(func() {
-			cmd = &fakes.BOSHCommand{}
 			var err error
+
+			cmd = &fakes.BOSHCommand{}
 			varsDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			deleteEnvInput = bosh.DeleteEnvInput{
+				Args:       []string{"create-env", "command", "args"},
 				Deployment: "some-deployment",
 				Directory:  varsDir,
-				Manifest:   "some-manifest",
-				Variables:  "some-variables",
-				State:      map[string]interface{}{},
-			}
-
-			manifestPath = fmt.Sprintf("%s/some-deployment-manifest.yml", varsDir)
-			variablesPath = fmt.Sprintf("%s/some-deployment-variables.yml", varsDir)
-			statePath = fmt.Sprintf("%s/some-deployment-state.json", varsDir)
-
-			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-				return ioutil.WriteFile(statePath, []byte(`{"key": "value"}`), os.ModePerm)
 			}
 		})
 
@@ -587,69 +419,25 @@ var _ = Describe("Executor", func() {
 			err := executor.DeleteEnv(deleteEnvInput)
 			Expect(err).NotTo(HaveOccurred())
 
-			manifestContents, err := ioutil.ReadFile(manifestPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(manifestContents)).To(Equal("some-manifest"))
-
-			variablesContents, err := ioutil.ReadFile(variablesPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(variablesContents)).To(Equal("some-variables"))
-
 			writer, dir, args := cmd.RunArgsForCall(0)
 			Expect(writer).To(Equal(os.Stdout))
 			Expect(dir).To(Equal(varsDir))
-			Expect(args).To(Equal([]string{
-				"delete-env", manifestPath,
-				"--vars-store", variablesPath,
-				"--state", statePath,
-			}))
+			Expect(args).To(Equal([]string{"delete-env", "command", "args"}))
 		})
 
-		Context("failure cases", func() {
-			createEnvDeleteEnvFailureCases(func(executor bosh.Executor) error {
-				deleteEnvInput := bosh.DeleteEnvInput{
-					Deployment: "some-deployment",
-					Directory:  varsDir,
-					Manifest:   "some-manifest",
-					Variables:  "some-variables",
-					State:      map[string]interface{}{},
-				}
-				return executor.DeleteEnv(deleteEnvInput)
+		Context("when the run command returns an error", func() {
+			BeforeEach(func() {
+				cmd.RunReturns(errors.New("tangerine"))
 			})
 
-			Context("when command run fails", func() {
-				BeforeEach(func() {
-					cmd.RunReturnsOnCall(0, errors.New("failed to run"))
-					executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-
-					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-						ioutil.WriteFile(statePath, []byte(`{"partial": "state"}`), os.ModePerm)
-						return errors.New("failed to run")
-					}
-				})
-
-				It("returns a create env error with a valid bosh state", func() {
-					expectedError := bosh.NewDeleteEnvError(map[string]interface{}{
-						"partial": "state",
-					}, errors.New("failed to run"))
-					err := executor.DeleteEnv(deleteEnvInput)
-					Expect(err).To(MatchError(expectedError))
-				})
-
-				Context("when the state cannot be read", func() {
-					BeforeEach(func() {
-						readFile := func(filename string) ([]byte, error) {
-							return []byte{}, errors.New("failed to read file")
-						}
-
-						executor = bosh.NewExecutor(cmd, readFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-					})
-
-					It("returns an error", func() {
-						err := executor.DeleteEnv(deleteEnvInput)
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to run,\nfailed to read file"))
-					})
-				})
+			It("returns an error", func() {
+				deleteEnvInput := bosh.DeleteEnvInput{
+					Args:       []string{"some", "command", "args"},
+					Deployment: "some-deployment",
+					Directory:  varsDir,
+				}
+				err := executor.DeleteEnv(deleteEnvInput)
+				Expect(err).To(MatchError("Delete env: tangerine"))
 			})
 		})
 	})
@@ -714,3 +502,35 @@ var _ = Describe("Executor", func() {
 		})
 	})
 })
+
+func jumpboxInterpolateArgs(sharedArgs []string, deploymentDir string) []string {
+	return append(
+		[]string{
+			"interpolate", fmt.Sprintf("%s/jumpbox.yml", deploymentDir),
+			"--var-errs",
+		},
+		sharedArgs...,
+	)
+}
+
+func interpolateArgs(sharedArgs []string, deploymentDir string) []string {
+	return append(
+		[]string{
+			"interpolate", fmt.Sprintf("%s/bosh.yml", deploymentDir),
+			"--var-errs",
+			"--var-errs-unused",
+		},
+		sharedArgs...,
+	)
+}
+
+func createEnvArgs(sharedArgs []string, deploymentDir, varsDir, deployment string) []string {
+	return append(
+		[]string{
+			"create-env",
+			fmt.Sprintf("%s/%s.yml", deploymentDir, deployment),
+			"--state", fmt.Sprintf("%s/%s-state.json", varsDir, deployment),
+		},
+		sharedArgs...,
+	)
+}

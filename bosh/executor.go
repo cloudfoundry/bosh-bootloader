@@ -8,8 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-
-	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
 type Executor struct {
@@ -31,33 +29,21 @@ type InterpolateInput struct {
 }
 
 type InterpolateOutput struct {
-	Variables string
-	Manifest  string
-}
-
-type JumpboxInterpolateOutput struct {
+	Args      []string
 	Variables string
 	Manifest  string
 }
 
 type CreateEnvInput struct {
-	Deployment string
+	Args       []string
 	Directory  string
-	Manifest   string
-	Variables  string
-	State      map[string]interface{}
-}
-
-type CreateEnvOutput struct {
-	State map[string]interface{}
+	Deployment string
 }
 
 type DeleteEnvInput struct {
+	Args       []string
 	Deployment string
 	Directory  string
-	Manifest   string
-	Variables  string
-	State      map[string]interface{}
 }
 
 type command interface {
@@ -78,7 +64,7 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	}
 }
 
-func (e Executor) JumpboxInterpolate(input InterpolateInput) (JumpboxInterpolateOutput, error) {
+func (e Executor) JumpboxInterpolate(input InterpolateInput) (InterpolateOutput, error) {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -106,30 +92,38 @@ func (e Executor) JumpboxInterpolate(input InterpolateInput) (JumpboxInterpolate
 	for _, f := range setupFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return JumpboxInterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
+			return InterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
-	args := []string{
-		"interpolate", setupFiles["manifest"].path,
-		"--var-errs",
+	sharedArgs := []string{
 		"--vars-store", setupFiles["vars-store"].path,
 		"--vars-file", setupFiles["vars-file"].path,
 		"-o", setupFiles["cpi"].path,
 	}
 
+	interpolateArgs := append([]string{
+		"interpolate", setupFiles["manifest"].path,
+		"--var-errs",
+	}, sharedArgs...)
+
 	buffer := bytes.NewBuffer([]byte{})
-	err := e.command.Run(buffer, input.VarsDir, args)
+	err := e.command.Run(buffer, input.VarsDir, interpolateArgs)
 	if err != nil {
-		return JumpboxInterpolateOutput{}, fmt.Errorf("Jumpbox interpolate: %s: %s", err, buffer)
+		return InterpolateOutput{}, fmt.Errorf("Jumpbox interpolate: %s: %s", err, buffer)
 	}
 
 	varsStore, err := e.readFile(setupFiles["vars-store"].path)
 	if err != nil {
-		return JumpboxInterpolateOutput{}, fmt.Errorf("Jumpbox read file: %s", err)
+		return InterpolateOutput{}, fmt.Errorf("Jumpbox read file: %s", err)
 	}
 
-	return JumpboxInterpolateOutput{
+	createEnvArgs := append([]string{
+		"create-env", setupFiles["manifest"].path,
+		"--state", filepath.Join(input.VarsDir, "jumpbox-state.json"),
+	}, sharedArgs...)
+	return InterpolateOutput{
+		Args:      createEnvArgs,
 		Variables: string(varsStore),
 		Manifest:  buffer.String(),
 	}, nil
@@ -215,24 +209,26 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		}
 	}
 
-	var args = []string{
-		"interpolate", setupFiles["manifest"].path,
-		"--var-errs",
-		"--var-errs-unused",
+	sharedArgs := []string{
 		"--vars-store", setupFiles["vars-store"].path,
 		"--vars-file", setupFiles["vars-file"].path,
 	}
 
 	for _, f := range opsFiles {
-		args = append(args, "-o", f.path)
+		sharedArgs = append(sharedArgs, "-o", f.path)
 	}
 
 	if input.OpsFile != "" {
-		args = append(args, "-o", filepath.Join(input.VarsDir, "user-ops-file.yml"))
+		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.VarsDir, "user-ops-file.yml"))
 	}
 
+	interpolateArgs := append([]string{
+		"interpolate", setupFiles["manifest"].path,
+		"--var-errs",
+		"--var-errs-unused",
+	}, sharedArgs...)
 	buffer := bytes.NewBuffer([]byte{})
-	err := e.command.Run(buffer, input.VarsDir, args)
+	err := e.command.Run(buffer, input.VarsDir, interpolateArgs)
 	if err != nil {
 		return InterpolateOutput{}, err
 	}
@@ -242,92 +238,39 @@ func (e Executor) DirectorInterpolate(input InterpolateInput) (InterpolateOutput
 		return InterpolateOutput{}, err
 	}
 
+	createEnvArgs := append([]string{
+		"create-env", setupFiles["manifest"].path,
+		"--state", filepath.Join(input.VarsDir, "bosh-state.json"),
+	}, sharedArgs...)
 	return InterpolateOutput{
+		Args:      createEnvArgs,
 		Variables: string(varsStore),
 		Manifest:  buffer.String(),
 	}, nil
 }
 
-func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (CreateEnvOutput, error) {
-	err := e.writePreviousFiles(createEnvInput.State, createEnvInput.Variables, createEnvInput.Manifest, createEnvInput.Directory, createEnvInput.Deployment)
+func (e Executor) CreateEnv(createEnvInput CreateEnvInput) error {
+	err := e.command.Run(os.Stdout, createEnvInput.Directory, createEnvInput.Args)
 	if err != nil {
-		return CreateEnvOutput{}, err
+		return fmt.Errorf("Create env: %s", err)
 	}
 
-	statePath := filepath.Join(createEnvInput.Directory, fmt.Sprintf("%s-state.json", createEnvInput.Deployment))
-	variablesPath := filepath.Join(createEnvInput.Directory, fmt.Sprintf("%s-variables.yml", createEnvInput.Deployment))
-	manifestPath := filepath.Join(createEnvInput.Directory, fmt.Sprintf("%s-manifest.yml", createEnvInput.Deployment))
-
-	args := []string{
-		"create-env", manifestPath,
-		"--vars-store", variablesPath,
-		"--state", statePath,
-	}
-
-	err = e.command.Run(os.Stdout, createEnvInput.Directory, args)
-	if err != nil {
-		state, readErr := e.readBOSHState(statePath)
-		if readErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(readErr)
-			return CreateEnvOutput{}, errorList
-		}
-
-		return CreateEnvOutput{}, NewCreateEnvError(state, err)
-	}
-
-	state, err := e.readBOSHState(statePath)
-	if err != nil {
-		return CreateEnvOutput{}, err
-	}
-
-	return CreateEnvOutput{
-		State: state,
-	}, nil
-}
-
-func (e Executor) readBOSHState(statePath string) (map[string]interface{}, error) {
-	stateContents, err := e.readFile(statePath)
-	if err != nil {
-		return map[string]interface{}{}, err
-	}
-
-	var state map[string]interface{}
-	err = e.unmarshalJSON(stateContents, &state)
-	if err != nil {
-		return map[string]interface{}{}, err
-	}
-
-	return state, nil
+	return nil
 }
 
 func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
-	err := e.writePreviousFiles(deleteEnvInput.State, deleteEnvInput.Variables, deleteEnvInput.Manifest, deleteEnvInput.Directory, deleteEnvInput.Deployment)
-	if err != nil {
-		return err
-	}
+	deleteEnvArgs := []string{}
 
-	statePath := filepath.Join(deleteEnvInput.Directory, fmt.Sprintf("%s-state.json", deleteEnvInput.Deployment))
-	variablesPath := filepath.Join(deleteEnvInput.Directory, fmt.Sprintf("%s-variables.yml", deleteEnvInput.Deployment))
-	manifestPath := filepath.Join(deleteEnvInput.Directory, fmt.Sprintf("%s-manifest.yml", deleteEnvInput.Deployment))
-
-	args := []string{
-		"delete-env", manifestPath,
-		"--vars-store", variablesPath,
-		"--state", statePath,
-	}
-
-	err = e.command.Run(os.Stdout, deleteEnvInput.Directory, args)
-	if err != nil {
-		state, readErr := e.readBOSHState(statePath)
-		if readErr != nil {
-			errorList := helpers.Errors{}
-			errorList.Add(err)
-			errorList.Add(readErr)
-			return errorList
+	for _, arg := range deleteEnvInput.Args {
+		if arg == "create-env" {
+			arg = "delete-env"
 		}
-		return NewDeleteEnvError(state, err)
+		deleteEnvArgs = append(deleteEnvArgs, arg)
+	}
+
+	err := e.command.Run(os.Stdout, deleteEnvInput.Directory, deleteEnvArgs)
+	if err != nil {
+		return fmt.Errorf("Delete env: %s", err)
 	}
 
 	return nil
@@ -350,35 +293,4 @@ func (e Executor) Version() (string, error) {
 	}
 
 	return version, nil
-}
-
-func (e Executor) writePreviousFiles(state map[string]interface{}, variables, manifest, directory, deployment string) error {
-	statePath := filepath.Join(directory, fmt.Sprintf("%s-state.json", deployment))
-	variablesPath := filepath.Join(directory, fmt.Sprintf("%s-variables.yml", deployment))
-	manifestPath := filepath.Join(directory, fmt.Sprintf("%s-manifest.yml", deployment))
-
-	if state != nil {
-		stateContents, err := e.marshalJSON(state)
-		if err != nil {
-			return err
-		}
-		err = e.writeFile(statePath, stateContents, os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-
-	err := e.writeFile(variablesPath, []byte(variables), os.ModePerm)
-	if err != nil {
-		// not tested
-		return err
-	}
-
-	err = e.writeFile(manifestPath, []byte(manifest), os.ModePerm)
-	if err != nil {
-		// not tested
-		return err
-	}
-
-	return nil
 }

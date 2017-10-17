@@ -9,8 +9,7 @@ type BOSHExecutor struct {
 			Input bosh.CreateEnvInput
 		}
 		Returns struct {
-			Output bosh.CreateEnvOutput
-			Error  error
+			Error error
 		}
 	}
 
@@ -30,7 +29,7 @@ type BOSHExecutor struct {
 			InterpolateInput bosh.InterpolateInput
 		}
 		Returns struct {
-			Output bosh.JumpboxInterpolateOutput
+			Output bosh.InterpolateOutput
 			Error  error
 		}
 	}
@@ -55,11 +54,11 @@ type BOSHExecutor struct {
 	}
 }
 
-func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) (bosh.CreateEnvOutput, error) {
+func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) error {
 	e.CreateEnvCall.CallCount++
 	e.CreateEnvCall.Receives.Input = input
 
-	return e.CreateEnvCall.Returns.Output, e.CreateEnvCall.Returns.Error
+	return e.CreateEnvCall.Returns.Error
 }
 
 func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
@@ -69,7 +68,7 @@ func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
 	return e.DeleteEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) JumpboxInterpolate(input bosh.InterpolateInput) (bosh.JumpboxInterpolateOutput, error) {
+func (e *BOSHExecutor) JumpboxInterpolate(input bosh.InterpolateInput) (bosh.InterpolateOutput, error) {
 	e.JumpboxInterpolateCall.CallCount++
 	e.JumpboxInterpolateCall.Receives.InterpolateInput = input
 

@@ -101,8 +101,8 @@ type AzureYAML struct {
 
 type executor interface {
 	DirectorInterpolate(InterpolateInput) (InterpolateOutput, error)
-	JumpboxInterpolate(InterpolateInput) (JumpboxInterpolateOutput, error)
-	CreateEnv(CreateEnvInput) (CreateEnvOutput, error)
+	JumpboxInterpolate(InterpolateInput) (InterpolateOutput, error)
+	CreateEnv(CreateEnvInput) error
 	DeleteEnv(DeleteEnvInput) error
 	Version() (string, error)
 }
@@ -168,12 +168,10 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	osUnsetenv("BOSH_ALL_PROXY")
-	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
+	err = m.executor.CreateEnv(CreateEnvInput{
+		Args:       interpolateOutputs.Args,
 		Deployment: "jumpbox",
 		Directory:  varsDir,
-		Manifest:   interpolateOutputs.Manifest,
-		State:      state.Jumpbox.State,
-		Variables:  interpolateOutputs.Variables,
 	})
 	switch err.(type) {
 	case CreateEnvError:
@@ -191,7 +189,6 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	state.Jumpbox = storage.Jumpbox{
 		Variables: interpolateOutputs.Variables,
-		State:     createEnvOutputs.State,
 		Manifest:  interpolateOutputs.Manifest,
 		URL:       terraformOutputs.GetString("jumpbox_url"),
 	}
@@ -240,12 +237,10 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		return storage.State{}, err
 	}
 
-	createEnvOutputs, err := m.executor.CreateEnv(CreateEnvInput{
+	err = m.executor.CreateEnv(CreateEnvInput{
+		Args:       interpolateOutputs.Args,
 		Deployment: "director",
 		Directory:  varsDir,
-		Manifest:   interpolateOutputs.Manifest,
-		State:      state.BOSH.State,
-		Variables:  interpolateOutputs.Variables,
 	})
 
 	switch err.(type) {
@@ -275,7 +270,6 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DirectorSSLCertificate: directorVars.directorSSLCertificate,
 		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
 		Variables:              interpolateOutputs.Variables,
-		State:                  createEnvOutputs.State,
 		Manifest:               interpolateOutputs.Manifest,
 		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
@@ -324,11 +318,9 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 	}
 
 	err = m.executor.DeleteEnv(DeleteEnvInput{
+		Args:       interpolateOutputs.Args,
 		Deployment: "director",
 		Directory:  varsDir,
-		Manifest:   interpolateOutputs.Manifest,
-		State:      state.BOSH.State,
-		Variables:  interpolateOutputs.Variables,
 	})
 	switch err.(type) {
 	case DeleteEnvError:
@@ -369,11 +361,9 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	err = m.executor.DeleteEnv(DeleteEnvInput{
+		Args:       interpolateOutputs.Args,
 		Deployment: "jumpbox",
 		Directory:  varsDir,
-		Manifest:   interpolateOutputs.Manifest,
-		State:      state.Jumpbox.State,
-		Variables:  interpolateOutputs.Variables,
 	})
 	switch err.(type) {
 	case DeleteEnvError:
