@@ -148,4 +148,31 @@ var _ = Describe("Cmd", func() {
 			})
 		})
 	})
+
+	Describe("GetBOSHPath", func() {
+		Context("when a user has bosh", func() {
+			It("returns bosh", func() {
+				os.Setenv("PATH", filepath.Dir(pathToBOSH))
+
+				boshPath, err := cmd.GetBOSHPath()
+				Expect(boshPath).To(Equal("bosh"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when a user has bosh2", func() {
+			It("returns bosh2", func() {
+				err := os.Rename(pathToBOSH, filepath.Join(filepath.Dir(pathToBOSH), "bosh2"))
+				Expect(err).NotTo(HaveOccurred())
+
+				bosh2 := filepath.Join(filepath.Dir(pathToBOSH), "bosh2")
+				err = os.Setenv("PATH", filepath.Dir(bosh2))
+				Expect(err).NotTo(HaveOccurred())
+
+				boshPath, err := cmd.GetBOSHPath()
+				Expect(boshPath).To(Equal(bosh2))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
 })

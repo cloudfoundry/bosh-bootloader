@@ -119,6 +119,7 @@ type socks5Proxy interface {
 }
 
 type stateStore interface {
+	GetStateDir() string
 	GetVarsDir() (string, error)
 	GetDirectorDeploymentDir() (string, error)
 	GetJumpboxDeploymentDir() (string, error)
@@ -150,6 +151,8 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
 	}
 
+	stateDir := m.stateStore.GetStateDir()
+
 	deploymentDir, err := m.stateStore.GetJumpboxDeploymentDir()
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Get deployment dir: %s", err)
@@ -157,6 +160,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	iaasInputs := InterpolateInput{
 		DeploymentDir:  deploymentDir,
+		StateDir:       stateDir,
 		VarsDir:        varsDir,
 		IAAS:           state.IAAS,
 		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
@@ -218,6 +222,8 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
 	}
 
+	stateDir := m.stateStore.GetStateDir()
+
 	directorDeploymentDir, err := m.stateStore.GetDirectorDeploymentDir()
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Get deployment dir: %s", err)
@@ -225,6 +231,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 
 	iaasInputs := InterpolateInput{
 		DeploymentDir:  directorDeploymentDir,
+		StateDir:       stateDir,
 		VarsDir:        varsDir,
 		IAAS:           state.IAAS,
 		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
@@ -283,6 +290,8 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
+	stateDir := m.stateStore.GetStateDir()
+
 	deploymentDir, err := m.stateStore.GetDirectorDeploymentDir()
 	if err != nil {
 		return fmt.Errorf("Get deployment dir: %s", err)
@@ -290,6 +299,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	iaasInputs := InterpolateInput{
 		DeploymentDir: deploymentDir,
+		StateDir:      stateDir,
 		VarsDir:       varsDir,
 		IAAS:          state.IAAS,
 		BOSHState:     state.BOSH.State,
@@ -341,6 +351,8 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
+	stateDir := m.stateStore.GetStateDir()
+
 	deploymentDir, err := m.stateStore.GetJumpboxDeploymentDir()
 	if err != nil {
 		return fmt.Errorf("Get deployment dir: %s", err)
@@ -348,6 +360,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 
 	iaasInputs := InterpolateInput{
 		DeploymentDir:  deploymentDir,
+		StateDir:       stateDir,
 		VarsDir:        varsDir,
 		IAAS:           state.IAAS,
 		Variables:      state.Jumpbox.Variables,

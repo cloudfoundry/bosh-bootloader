@@ -288,6 +288,7 @@ var _ = Describe("Store", func() {
 			os.RemoveAll(expectedDir)
 		},
 		Entry("cloudconfig", filepath.Join(".bbl", "cloudconfig"), func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("state", "", func() (string, error) { return store.GetStateDir(), nil }),
 		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
@@ -374,5 +375,4 @@ var _ = Describe("Store", func() {
 			})
 		})
 	})
-
 })

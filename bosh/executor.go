@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type Executor struct {
@@ -20,6 +21,7 @@ type Executor struct {
 
 type InterpolateInput struct {
 	DeploymentDir  string
+	StateDir       string
 	VarsDir        string
 	IAAS           string
 	DeploymentVars string
@@ -45,6 +47,7 @@ type DeleteEnvInput struct {
 }
 
 type command interface {
+	GetBOSHPath() (string, error)
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
@@ -117,6 +120,19 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutpu
 		"create-env", setupFiles["manifest"].path,
 		"--state", jumpboxState,
 	}, sharedArgs...)
+
+	boshPath, err := e.command.GetBOSHPath()
+	if err != nil {
+		return InterpolateOutput{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
+	}
+
+	createEnvCmd := []byte(fmt.Sprintf("%s %s", boshPath, strings.Join(createEnvArgs, " ")))
+
+	err = e.writeFile(filepath.Join(input.StateDir, "create-jumpbox.sh"), createEnvCmd, os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, fmt.Errorf("Jumpbox write create env script: %s", err) //not tested
+	}
+
 	return InterpolateOutput{
 		Args: createEnvArgs,
 	}, nil
@@ -232,6 +248,19 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutp
 		"create-env", setupFiles["manifest"].path,
 		"--state", boshState,
 	}, sharedArgs...)
+
+	boshPath, err := e.command.GetBOSHPath()
+	if err != nil {
+		return InterpolateOutput{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
+	}
+
+	createEnvCmd := []byte(fmt.Sprintf("%s %s", boshPath, strings.Join(createEnvArgs, " ")))
+
+	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm)
+	if err != nil {
+		return InterpolateOutput{}, fmt.Errorf("write create env script: %s", err) //not tested
+	}
+
 	return InterpolateOutput{
 		Args: createEnvArgs,
 	}, nil

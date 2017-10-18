@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -22,6 +23,7 @@ var _ = Describe("Executor", func() {
 			cmd *fakes.BOSHCommand
 
 			deploymentDir string
+			stateDir      string
 			varsDir       string
 
 			executor         bosh.Executor
@@ -34,9 +36,13 @@ var _ = Describe("Executor", func() {
 				stdout.Write([]byte("some-manifest"))
 				return nil
 			}
+			cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
 
 			var err error
 			deploymentDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			stateDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			varsDir, err = ioutil.TempDir("", "")
@@ -46,6 +52,7 @@ var _ = Describe("Executor", func() {
 				IAAS:          "aws",
 				DeploymentDir: deploymentDir,
 				VarsDir:       varsDir,
+				StateDir:      stateDir,
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
@@ -70,7 +77,17 @@ var _ = Describe("Executor", func() {
 				"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
 			})
 
-			Expect(jumpboxInterpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "jumpbox")))
+			expectedCreateEnvArgs := createEnvArgs(sharedArgs, deploymentDir, varsDir, "jumpbox")
+
+			Expect(jumpboxInterpolateOutput.Args).To(Equal(expectedCreateEnvArgs))
+
+			By("writing the create-env args to a shell script", func() {
+				expectedScript := fmt.Sprintf("bosh-path %s", strings.Join(expectedCreateEnvArgs, " "))
+				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(shellScript)).To(Equal(expectedScript))
+			})
 		})
 	})
 
@@ -79,6 +96,7 @@ var _ = Describe("Executor", func() {
 			cmd *fakes.BOSHCommand
 
 			deploymentDir string
+			stateDir      string
 			varsDir       string
 
 			executor         bosh.Executor
@@ -87,9 +105,13 @@ var _ = Describe("Executor", func() {
 
 		BeforeEach(func() {
 			cmd = &fakes.BOSHCommand{}
+			cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
 
 			var err error
 			deploymentDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			stateDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			varsDir, err = ioutil.TempDir("", "")
@@ -97,6 +119,7 @@ var _ = Describe("Executor", func() {
 
 			interpolateInput = bosh.InterpolateInput{
 				DeploymentDir:  deploymentDir,
+				StateDir:       stateDir,
 				VarsDir:        varsDir,
 				DeploymentVars: "internal_cidr: 10.0.0.0/24",
 				BOSHState: map[string]interface{}{
@@ -138,7 +161,17 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 				}
 
-				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+				expectedCreateEnvArgs := createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")
+
+				Expect(interpolateOutput.Args).To(Equal(expectedCreateEnvArgs))
+
+				By("writing the create-env args to a shell script", func() {
+					expectedScript := fmt.Sprintf("bosh-path %s", strings.Join(expectedCreateEnvArgs, " "))
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
 			})
 		})
 

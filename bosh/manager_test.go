@@ -39,6 +39,7 @@ var _ = Describe("Manager", func() {
 
 		stateStore = &fakes.StateStore{}
 		stateStore.GetVarsDirCall.Returns.Directory = "some-bbl-vars-dir"
+		stateStore.GetStateDirCall.Returns.Directory = "some-state-dir"
 		stateStore.GetDirectorDeploymentDirCall.Returns.Directory = "some-director-deployment-dir"
 		stateStore.GetJumpboxDeploymentDirCall.Returns.Directory = "some-jumpbox-deployment-dir"
 
@@ -129,6 +130,7 @@ project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))
 			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-director-deployment-dir"))
 			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.BOSHState).To(Equal(map[string]interface{}{"some-key": "some-value"}))
 
@@ -295,6 +297,7 @@ gcp_credentials_json: some-credential-json
 
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.BOSHState).To(Equal(map[string]interface{}{"some-key": "some-value"}))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Args).To(Equal(createEnvArgs))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
@@ -412,6 +415,7 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.Variables).To(Equal(vars))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.IAAS).To(Equal("some-iaas"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
+			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Args).To(Equal([]string{"some", "command", "args"}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
@@ -492,6 +496,7 @@ gcp_credentials_json: some-credential-json
 				Variables:      boshVars,
 				OpsFile:        "some-ops-file",
 				DeploymentDir:  "some-director-deployment-dir",
+				StateDir:       "some-state-dir",
 				VarsDir:        "some-bbl-vars-dir",
 				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
 			}))

@@ -98,6 +98,10 @@ func (s Store) Set(state State) error {
 	return nil
 }
 
+func (s Store) GetStateDir() string {
+	return s.dir
+}
+
 func (s Store) GetCloudConfigDir() (string, error) {
 	return s.getDir(filepath.Join(".bbl", "cloudconfig"))
 }

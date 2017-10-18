@@ -28,6 +28,13 @@ type StateStore struct {
 		}
 	}
 
+	GetStateDirCall struct {
+		CallCount int
+		Returns   struct {
+			Directory string
+		}
+	}
+
 	GetBblDirCall struct {
 		CallCount int
 		Returns   struct {
@@ -93,6 +100,12 @@ func (s *StateStore) GetCloudConfigDir() (string, error) {
 	s.GetCloudConfigDirCall.CallCount++
 
 	return s.GetCloudConfigDirCall.Returns.Directory, s.GetCloudConfigDirCall.Returns.Error
+}
+
+func (s *StateStore) GetStateDir() string {
+	s.GetStateDirCall.CallCount++
+
+	return s.GetStateDirCall.Returns.Directory
 }
 
 func (s *StateStore) GetBblDir() (string, error) {

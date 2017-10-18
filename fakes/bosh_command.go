@@ -6,6 +6,14 @@ import (
 )
 
 type BOSHCommand struct {
+	GetBOSHPathCall struct {
+		CallCount int
+		Returns   struct {
+			Path  string
+			Error error
+		}
+	}
+
 	RunStub        func(stdout io.Writer, workingDirectory string, args []string) error
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
@@ -21,6 +29,12 @@ type BOSHCommand struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *BOSHCommand) GetBOSHPath() (string, error) {
+	fake.GetBOSHPathCall.CallCount++
+
+	return fake.GetBOSHPathCall.Returns.Path, fake.GetBOSHPathCall.Returns.Error
 }
 
 func (fake *BOSHCommand) Run(stdout io.Writer, workingDirectory string, args []string) error {
