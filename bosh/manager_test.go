@@ -99,9 +99,7 @@ director_ssl:
 				},
 			}
 
-			boshExecutor.DirectorCreateEnvArgsCall.Returns.Output = bosh.InterpolateOutput{
-				Args: []string{"some", "command", "args"},
-			}
+			boshExecutor.DirectorCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
 
 			boshExecutor.CreateEnvCall.Returns.Variables = boshVars
 		})
@@ -259,9 +257,7 @@ gcp_credentials_json: some-credential-json
 `
 
 			createEnvArgs = []string{"bosh", "create-env", "/path/to/manifest.yml", "etc"}
-			boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = bosh.InterpolateOutput{
-				Args: createEnvArgs,
-			}
+			boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = createEnvArgs
 
 			boshExecutor.CreateEnvCall.Returns.Variables = "jumpbox_ssh:\n  private_key: some-jumpbox-private-key"
 		})
@@ -408,9 +404,7 @@ gcp_credentials_json: some-credential-json
 		})
 
 		It("calls delete env", func() {
-			boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = bosh.InterpolateOutput{
-				Args: []string{"some", "command", "args"},
-			}
+			boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
 
 			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
@@ -462,9 +456,7 @@ gcp_credentials_json: some-credential-json
 
 	Describe("DeleteDirector", func() {
 		BeforeEach(func() {
-			boshExecutor.DirectorCreateEnvArgsCall.Returns.Output = bosh.InterpolateOutput{
-				Args: []string{"some", "command", "args"},
-			}
+			boshExecutor.DirectorCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
 		})
 
 		It("calls delete env", func() {
@@ -535,9 +527,7 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = bosh.InterpolateOutput{
-						Args: []string{"some", "command", "args"},
-					}
+					boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
 
 					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError("Delete bosh director: cannot start proxy due to missing jumpbox private key"))

@@ -31,10 +31,6 @@ type InterpolateInput struct {
 	OpsFile        string
 }
 
-type InterpolateOutput struct {
-	Args []string
-}
-
 type CreateEnvInput struct {
 	Args       []string
 	StateDir   string
@@ -63,7 +59,7 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	}
 }
 
-func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutput, error) {
+func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error) {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -91,7 +87,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutpu
 	for _, f := range setupFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
+			return []string{}, fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
 		}
 	}
 
@@ -105,12 +101,12 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutpu
 	if input.BOSHState != nil {
 		stateJSON, err := e.marshalJSON(input.BOSHState)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("Jumpbox marshal state json: %s", err) //not tested
+			return []string{}, fmt.Errorf("Jumpbox marshal state json: %s", err) //not tested
 		}
 
 		err = e.writeFile(jumpboxState, stateJSON, os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("Jumpbox write state json: %s", err) //not tested
+			return []string{}, fmt.Errorf("Jumpbox write state json: %s", err) //not tested
 		}
 	}
 
@@ -121,22 +117,20 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutpu
 
 	boshPath, err := e.command.GetBOSHPath()
 	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
+		return []string{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
 	}
 
 	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
 
 	err = e.writeFile(filepath.Join(input.StateDir, "create-jumpbox.sh"), createEnvCmd, os.ModePerm)
 	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("Jumpbox write create env script: %s", err) //not tested
+		return []string{}, fmt.Errorf("Jumpbox write create env script: %s", err) //not tested
 	}
 
-	return InterpolateOutput{
-		Args: createEnvArgs,
-	}, nil
+	return createEnvArgs, nil
 }
 
-func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutput, error) {
+func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error) {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -205,14 +199,14 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutp
 	for _, f := range setupFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
+			return []string{}, fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
 	for _, f := range opsFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
+			return []string{}, fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
@@ -233,12 +227,12 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutp
 	if input.BOSHState != nil {
 		stateJSON, err := e.marshalJSON(input.BOSHState)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("marshal JSON: %s", err) //not tested
+			return []string{}, fmt.Errorf("marshal JSON: %s", err) //not tested
 		}
 
 		err = e.writeFile(boshState, stateJSON, os.ModePerm)
 		if err != nil {
-			return InterpolateOutput{}, fmt.Errorf("write file: %s", err) //not tested
+			return []string{}, fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
@@ -249,19 +243,17 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutp
 
 	boshPath, err := e.command.GetBOSHPath()
 	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
+		return []string{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
 	}
 
 	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
 
 	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm)
 	if err != nil {
-		return InterpolateOutput{}, fmt.Errorf("write create env script: %s", err) //not tested
+		return []string{}, fmt.Errorf("write create env script: %s", err) //not tested
 	}
 
-	return InterpolateOutput{
-		Args: createEnvArgs,
-	}, nil
+	return createEnvArgs, nil
 }
 
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {

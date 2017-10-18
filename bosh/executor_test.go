@@ -67,7 +67,7 @@ var _ = Describe("Executor", func() {
 			interpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 			interpolateInput.OpsFile = ""
 
-			jumpboxInterpolateOutput, err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			args, err := executor.JumpboxCreateEnvArgs(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmd.RunCallCount()).To(Equal(0))
 
@@ -79,7 +79,7 @@ var _ = Describe("Executor", func() {
 
 			expectedCreateEnvArgs := createEnvArgs(sharedArgs, deploymentDir, varsDir, "jumpbox")
 
-			Expect(jumpboxInterpolateOutput.Args).To(Equal(expectedCreateEnvArgs))
+			Expect(args).To(Equal(expectedCreateEnvArgs))
 
 			By("writing the create-env args to a shell script", func() {
 				expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path %s\n", strings.Join(expectedCreateEnvArgs, " "))
@@ -146,7 +146,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				}
 
-				interpolateOutput, err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
+				args, err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
@@ -163,7 +163,7 @@ var _ = Describe("Executor", func() {
 
 				expectedCreateEnvArgs := createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")
 
-				Expect(interpolateOutput.Args).To(Equal(expectedCreateEnvArgs))
+				Expect(args).To(Equal(expectedCreateEnvArgs))
 
 				By("writing the create-env args to a shell script", func() {
 					expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path %s\n", strings.Join(expectedCreateEnvArgs, " "))
@@ -191,7 +191,7 @@ var _ = Describe("Executor", func() {
 			It("generates create-env args for director", func() {
 				awsInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 
-				interpolateOutput, err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
+				args, err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
@@ -209,7 +209,7 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 				})
 
-				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+				Expect(args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 			})
 		})
 
@@ -230,7 +230,7 @@ var _ = Describe("Executor", func() {
 				gcpInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 				gcpInterpolateInput.OpsFile = ""
 
-				interpolateOutput, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+				args, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
@@ -245,12 +245,12 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
 				})
 
-				Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+				Expect(args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 			})
 
 			Context("when a user opsfile is provided", func() {
 				It("puts the user-provided opsfile in create-env args", func() {
-					interpolateOutput, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+					args, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cmd.RunCallCount()).To(Equal(0))
@@ -266,7 +266,7 @@ var _ = Describe("Executor", func() {
 						"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 					})
 
-					Expect(interpolateOutput.Args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+					Expect(args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
 				})
 			})
 		})
