@@ -174,6 +174,23 @@ var _ = Describe("Store", func() {
 				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 
+			It("removes create-env scripts", func() {
+				createDirector := filepath.Join(tempDir, "create-director.sh")
+				createJumpbox := filepath.Join(tempDir, "create-jumpbox.sh")
+				err := ioutil.WriteFile(createDirector, []byte("#!/bin/bash"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+				err = ioutil.WriteFile(createJumpbox, []byte("#!/bin/bash"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = store.Set(storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = os.Stat(createDirector)
+				Expect(os.IsNotExist(err)).To(BeTrue())
+				_, err = os.Stat(createJumpbox)
+				Expect(os.IsNotExist(err)).To(BeTrue())
+			})
+
 			DescribeTable("removing bbl-created directories",
 				func(directory string, expectToBeDeleted bool) {
 					err := os.Mkdir(filepath.Join(tempDir, directory), os.ModePerm)
