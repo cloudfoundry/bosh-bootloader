@@ -114,7 +114,8 @@ director_ssl:
 
 			Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
-			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Args).To(Equal([]string{"some", "command", "args"}))
 
 			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.DeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
@@ -300,7 +301,8 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.BOSHState).To(Equal(map[string]interface{}{"some-key": "some-value"}))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Args).To(Equal(createEnvArgs))
-			Expect(boshExecutor.CreateEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 
 			Expect(state).To(Equal(storage.State{
@@ -419,7 +421,8 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Args).To(Equal([]string{"some", "command", "args"}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Directory).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 		})
 
 		Context("when an error occurs", func() {
@@ -503,7 +506,8 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
 				Args:       []string{"some", "command", "args"},
 				Deployment: "director",
-				Directory:  "some-bbl-vars-dir",
+				StateDir:   "some-state-dir",
+				VarsDir:    "some-bbl-vars-dir",
 			}))
 		})
 

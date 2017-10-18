@@ -177,7 +177,8 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
 		Args:       interpolateOutputs.Args,
 		Deployment: "jumpbox",
-		Directory:  varsDir,
+		VarsDir:    varsDir,
+		StateDir:   stateDir,
 	})
 	switch err.(type) {
 	case CreateEnvError:
@@ -248,7 +249,8 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
 		Args:       interpolateOutputs.Args,
 		Deployment: "director",
-		Directory:  varsDir,
+		StateDir:   stateDir,
+		VarsDir:    varsDir,
 	})
 
 	switch err.(type) {
@@ -329,7 +331,8 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 	err = m.executor.DeleteEnv(DeleteEnvInput{
 		Args:       interpolateOutputs.Args,
 		Deployment: "director",
-		Directory:  varsDir,
+		VarsDir:    varsDir,
+		StateDir:   stateDir,
 	})
 	switch err.(type) {
 	case DeleteEnvError:
@@ -375,7 +378,8 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	err = m.executor.DeleteEnv(DeleteEnvInput{
 		Args:       interpolateOutputs.Args,
 		Deployment: "jumpbox",
-		Directory:  varsDir,
+		StateDir:   stateDir,
+		VarsDir:    varsDir,
 	})
 	switch err.(type) {
 	case DeleteEnvError:

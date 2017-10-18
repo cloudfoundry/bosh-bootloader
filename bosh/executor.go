@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -36,15 +37,12 @@ type InterpolateOutput struct {
 
 type CreateEnvInput struct {
 	Args       []string
-	Directory  string
+	StateDir   string
+	VarsDir    string
 	Deployment string
 }
 
-type DeleteEnvInput struct {
-	Args       []string
-	Deployment string
-	Directory  string
-}
+type DeleteEnvInput CreateEnvInput
 
 type command interface {
 	GetBOSHPath() (string, error)
@@ -126,7 +124,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) (InterpolateOutpu
 		return InterpolateOutput{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
 	}
 
-	createEnvCmd := []byte(fmt.Sprintf("%s %s", boshPath, strings.Join(createEnvArgs, " ")))
+	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
 
 	err = e.writeFile(filepath.Join(input.StateDir, "create-jumpbox.sh"), createEnvCmd, os.ModePerm)
 	if err != nil {
@@ -254,7 +252,7 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutp
 		return InterpolateOutput{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
 	}
 
-	createEnvCmd := []byte(fmt.Sprintf("%s %s", boshPath, strings.Join(createEnvArgs, " ")))
+	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
 
 	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm)
 	if err != nil {
@@ -267,13 +265,17 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) (InterpolateOutp
 }
 
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
-	err := e.command.Run(os.Stdout, createEnvInput.Directory, createEnvInput.Args)
+	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
+
+	cmd := exec.Command(createEnvScript)
+
+	err := cmd.Run()
 	if err != nil {
 		return "", fmt.Errorf("Create env: %s", err)
 	}
 
 	varsStoreFileName := fmt.Sprintf("%s-variables.yml", createEnvInput.Deployment)
-	varsStoreContents, err := e.readFile(filepath.Join(createEnvInput.Directory, varsStoreFileName))
+	varsStoreContents, err := e.readFile(filepath.Join(createEnvInput.VarsDir, varsStoreFileName))
 	if err != nil {
 		return "", fmt.Errorf("Reading vars file for %s deployment: %s", createEnvInput.Deployment, err) // not tested
 	}
@@ -291,7 +293,7 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 		deleteEnvArgs = append(deleteEnvArgs, arg)
 	}
 
-	err := e.command.Run(os.Stdout, deleteEnvInput.Directory, deleteEnvArgs)
+	err := e.command.Run(os.Stdout, deleteEnvInput.VarsDir, deleteEnvArgs)
 	if err != nil {
 		return fmt.Errorf("Delete env: %s", err)
 	}
