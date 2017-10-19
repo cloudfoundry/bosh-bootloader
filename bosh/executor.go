@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 type Executor struct {
@@ -110,8 +109,8 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 		}
 	}
 
-	createEnvArgs := append([]string{
-		"create-env", setupFiles["manifest"].path,
+	boshArgs := append([]string{
+		setupFiles["manifest"].path,
 		"--state", jumpboxState,
 	}, sharedArgs...)
 
@@ -120,27 +119,21 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 		return []string{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
 	}
 
-	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
+	createEnvCmd := []byte(formatScript(boshPath, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
 	err = e.writeFileUnlessExisting(createJumpboxScript, createEnvCmd, os.ModePerm, "Jumpbox write create-env script: %s")
 	if err != nil {
 		return []string{}, err
 	}
 
-	deleteEnvArgs := append([]string{
-		"delete-env", setupFiles["manifest"].path,
-		"--state", jumpboxState,
-	}, sharedArgs...)
-
-	deleteEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(deleteEnvArgs, " ")))
-
+	deleteEnvCmd := []byte(formatScript(boshPath, "delete-env", boshArgs))
 	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
 	err = e.writeFileUnlessExisting(deleteJumpboxScript, deleteEnvCmd, os.ModePerm, "Jumpbox write delete-env script: %s")
 	if err != nil {
 		return []string{}, err
 	}
 
-	return createEnvArgs, nil
+	return append([]string{"create-env"}, boshArgs...), nil
 }
 
 func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error) {
@@ -254,32 +247,36 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error
 		return []string{}, fmt.Errorf("Director get BOSH path: %s", err) //not tested
 	}
 
-	createEnvArgs := append([]string{
-		"create-env", setupFiles["manifest"].path,
+	boshArgs := append([]string{
+		setupFiles["manifest"].path,
 		"--state", boshState,
 	}, sharedArgs...)
 
-	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
-
+	createEnvCmd := []byte(formatScript(boshPath, "create-env", boshArgs))
 	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm, "Write create-env script for director: %s")
 	if err != nil {
 		return []string{}, err
 	}
 
-	deleteEnvArgs := append([]string{
-		"delete-env", setupFiles["manifest"].path,
-		"--state", boshState,
-	}, sharedArgs...)
-
-	deleteEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(deleteEnvArgs, " ")))
-
-
+	deleteEnvCmd := []byte(formatScript(boshPath, "delete-env", boshArgs))
 	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm, "Write delete-env script for director: %s")
 	if err != nil {
 		return []string{}, err
 	}
 
-	return createEnvArgs, nil
+	return append([]string{"create-env"}, boshArgs...), nil
+}
+
+func formatScript(boshPath, command string, args []string) string {
+	script := fmt.Sprintf("#!/bin/sh\n%s %s \\\n", boshPath, command)
+	for _, arg := range args {
+		if arg[0] == '-' {
+			script = fmt.Sprintf("%s  %s", script, arg)
+		} else {
+			script = fmt.Sprintf("%s  %s \\\n", script, arg)
+		}
+	}
+	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
 func (e Executor) writeFileUnlessExisting(path string, contents []byte, mode os.FileMode, failureMessage string) error {

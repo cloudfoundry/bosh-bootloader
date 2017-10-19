@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -79,7 +78,7 @@ var _ = Describe("Executor", func() {
 			}
 
 			By("writing the create-env args to a shell script", func() {
-				expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path create-env %s\n", strings.Join(expectedArgs, " "))
+				expectedScript := formatScript("create-env", expectedArgs)
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
 				Expect(err).NotTo(HaveOccurred())
 
@@ -87,7 +86,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			By("writing the delete-env args to a shell script", func() {
-				expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path delete-env %s\n", strings.Join(expectedArgs, " "))
+				expectedScript := formatScript("delete-env", expectedArgs)
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
 				Expect(err).NotTo(HaveOccurred())
 
@@ -217,7 +216,7 @@ var _ = Describe("Executor", func() {
 				}
 
 				By("writing the create-env args to a shell script", func() {
-					expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path create-env %s\n", strings.Join(expectedArgs, " "))
+					expectedScript := formatScript("create-env", expectedArgs)
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
 					Expect(err).NotTo(HaveOccurred())
 
@@ -225,7 +224,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				By("writing the delete-env args to a shell script", func() {
-					expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path delete-env %s\n", strings.Join(expectedArgs, " "))
+					expectedScript := formatScript("delete-env", expectedArgs)
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
 					Expect(err).NotTo(HaveOccurred())
 
@@ -566,3 +565,15 @@ var _ = Describe("Executor", func() {
 		})
 	})
 })
+
+func formatScript(command string, args []string) string {
+	script := fmt.Sprintf("#!/bin/sh\nbosh-path %s \\\n", command)
+	for _, arg := range args {
+		if arg[0] == '-' {
+			script = fmt.Sprintf("%s  %s", script, arg)
+		} else {
+			script = fmt.Sprintf("%s  %s \\\n", script, arg)
+		}
+	}
+	return fmt.Sprintf("%s\n", script[:len(script)-2])
+}
