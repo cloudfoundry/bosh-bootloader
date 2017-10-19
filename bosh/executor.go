@@ -122,12 +122,9 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 
 	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
-	_, err = os.Stat(createJumpboxScript)
+	err = e.writeFileUnlessExisting(createJumpboxScript, createEnvCmd, os.ModePerm, "Jumpbox write create-env script: %s")
 	if err != nil {
-		err = e.writeFile(createJumpboxScript, createEnvCmd, os.ModePerm)
-		if err != nil {
-			return []string{}, fmt.Errorf("Jumpbox write create-env script: %s", err) //not tested
-		}
+		return []string{}, err
 	}
 
 	deleteEnvArgs := append([]string{
@@ -138,12 +135,9 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 	deleteEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(deleteEnvArgs, " ")))
 
 	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
-	_, err = os.Stat(deleteJumpboxScript)
+	err = e.writeFileUnlessExisting(deleteJumpboxScript, deleteEnvCmd, os.ModePerm, "Jumpbox write delete-env script: %s")
 	if err != nil {
-		err = e.writeFile(deleteJumpboxScript, deleteEnvCmd, os.ModePerm)
-		if err != nil {
-			return []string{}, fmt.Errorf("Jumpbox write delete-env script: %s", err) //not tested
-		}
+		return []string{}, err
 	}
 
 	return createEnvArgs, nil
@@ -267,9 +261,9 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error
 
 	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
 
-	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm)
+	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm, "Write create-env script for director: %s")
 	if err != nil {
-		return []string{}, fmt.Errorf("Write create-env script for director: %s", err) //not tested
+		return []string{}, err
 	}
 
 	deleteEnvArgs := append([]string{
@@ -279,12 +273,25 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error
 
 	deleteEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(deleteEnvArgs, " ")))
 
-	err = e.writeFile(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm)
+
+	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm, "Write delete-env script for director: %s")
 	if err != nil {
-		return []string{}, fmt.Errorf("Write delete-env script for director: %s", err) //not tested
+		return []string{}, err
 	}
 
 	return createEnvArgs, nil
+}
+
+func (e Executor) writeFileUnlessExisting(path string, contents []byte, mode os.FileMode, failureMessage string) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		err = e.writeFile(path, contents, mode)
+		if err != nil {
+			return fmt.Errorf(failureMessage, err) //not tested
+		}
+	}
+
+	return nil
 }
 
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
