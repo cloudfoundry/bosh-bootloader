@@ -121,10 +121,13 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 	}
 
 	createEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(createEnvArgs, " ")))
-
-	err = e.writeFile(filepath.Join(input.StateDir, "create-jumpbox.sh"), createEnvCmd, os.ModePerm)
+	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
+	_, err = os.Stat(createJumpboxScript)
 	if err != nil {
-		return []string{}, fmt.Errorf("Jumpbox write create-env script: %s", err) //not tested
+		err = e.writeFile(createJumpboxScript, createEnvCmd, os.ModePerm)
+		if err != nil {
+			return []string{}, fmt.Errorf("Jumpbox write create-env script: %s", err) //not tested
+		}
 	}
 
 	deleteEnvArgs := append([]string{
@@ -134,9 +137,13 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 
 	deleteEnvCmd := []byte(fmt.Sprintf("#!/bin/sh\n%s %s\n", boshPath, strings.Join(deleteEnvArgs, " ")))
 
-	err = e.writeFile(filepath.Join(input.StateDir, "delete-jumpbox.sh"), deleteEnvCmd, os.ModePerm)
+	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
+	_, err = os.Stat(deleteJumpboxScript)
 	if err != nil {
-		return []string{}, fmt.Errorf("Jumpbox write delete-env script: %s", err) //not tested
+		err = e.writeFile(deleteJumpboxScript, deleteEnvCmd, os.ModePerm)
+		if err != nil {
+			return []string{}, fmt.Errorf("Jumpbox write delete-env script: %s", err) //not tested
+		}
 	}
 
 	return createEnvArgs, nil

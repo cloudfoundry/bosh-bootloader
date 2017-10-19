@@ -98,6 +98,52 @@ var _ = Describe("Executor", func() {
 			expectedArgs = append([]string{"create-env"}, expectedArgs...)
 			Expect(args).To(Equal(expectedArgs))
 		})
+
+		Context("when a create-env script already exists", func() {
+			var (
+				createEnvPath     string
+				createEnvContents string
+			)
+			BeforeEach(func() {
+				createEnvPath = filepath.Join(stateDir, "create-jumpbox.sh")
+				createEnvContents = "#!/bin/bash\necho 'I already exist'\n"
+
+				ioutil.WriteFile(createEnvPath, []byte(createEnvContents), os.ModePerm)
+			})
+
+			It("does not override the existing script", func() {
+				_, err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(shellScript)).To(Equal(createEnvContents))
+			})
+		})
+
+		Context("when a delete-env script already exists", func() {
+			var (
+				deleteEnvPath     string
+				deleteEnvContents string
+			)
+			BeforeEach(func() {
+				deleteEnvPath = filepath.Join(stateDir, "delete-jumpbox.sh")
+				deleteEnvContents = "#!/bin/bash\necho 'I already exist'\n"
+
+				ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), os.ModePerm)
+			})
+
+			It("does not override the existing script", func() {
+				_, err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(shellScript)).To(Equal(deleteEnvContents))
+			})
+		})
 	})
 
 	Describe("DirectorCreateEnvArgs", func() {
