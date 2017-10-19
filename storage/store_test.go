@@ -174,12 +174,19 @@ var _ = Describe("Store", func() {
 				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 
-			It("removes create-env scripts", func() {
+			It("removes  bosh *-env scripts", func() {
 				createDirector := filepath.Join(tempDir, "create-director.sh")
 				createJumpbox := filepath.Join(tempDir, "create-jumpbox.sh")
+				deleteDirector := filepath.Join(tempDir, "delete-director.sh")
+				deleteJumpbox := filepath.Join(tempDir, "delete-jumpbox.sh")
+
 				err := ioutil.WriteFile(createDirector, []byte("#!/bin/bash"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(createJumpbox, []byte("#!/bin/bash"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+				err = ioutil.WriteFile(deleteDirector, []byte("#!/bin/bash"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+				err = ioutil.WriteFile(deleteJumpbox, []byte("#!/bin/bash"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = store.Set(storage.State{})

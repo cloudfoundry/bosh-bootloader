@@ -62,6 +62,10 @@ var _ = Describe("up", func() {
 			}
 
 			checkExists(stateDir, []string{"bbl-state.json"})
+			checkExists(stateDir, []string{"create-jumpbox.sh"})
+			checkExists(stateDir, []string{"create-director.sh"})
+			checkExists(stateDir, []string{"delete-jumpbox.sh"})
+			checkExists(stateDir, []string{"delete-director.sh"})
 			checkExists(filepath.Join(stateDir, ".bbl", "cloudconfig"), []string{
 				"cloud-config.yml",
 				"ops.yml",

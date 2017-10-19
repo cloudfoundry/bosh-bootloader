@@ -71,23 +71,32 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmd.RunCallCount()).To(Equal(0))
 
-			sharedArgs := append([]string{
+			expectedArgs := []string{
+				fmt.Sprintf("%s/jumpbox.yml", deploymentDir),
+				"--state", fmt.Sprintf("%s/jumpbox-state.json", varsDir),
 				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", varsDir),
 				"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", varsDir),
 				"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
-			})
-
-			expectedCreateEnvArgs := createEnvArgs(sharedArgs, deploymentDir, varsDir, "jumpbox")
-
-			Expect(args).To(Equal(expectedCreateEnvArgs))
+			}
 
 			By("writing the create-env args to a shell script", func() {
-				expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path %s\n", strings.Join(expectedCreateEnvArgs, " "))
+				expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path create-env %s\n", strings.Join(expectedArgs, " "))
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(string(shellScript)).To(Equal(expectedScript))
 			})
+
+			By("writing the delete-env args to a shell script", func() {
+				expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path delete-env %s\n", strings.Join(expectedArgs, " "))
+				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(shellScript)).To(Equal(expectedScript))
+			})
+
+			expectedArgs = append([]string{"create-env"}, expectedArgs...)
+			Expect(args).To(Equal(expectedArgs))
 		})
 	})
 
@@ -148,10 +157,11 @@ var _ = Describe("Executor", func() {
 
 				args, err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(cmd.RunCallCount()).To(Equal(0))
 
-				sharedArgs := []string{
+				expectedArgs := []string{
+					fmt.Sprintf("%s/bosh.yml", deploymentDir),
+					"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -161,17 +171,24 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 				}
 
-				expectedCreateEnvArgs := createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")
-
-				Expect(args).To(Equal(expectedCreateEnvArgs))
-
 				By("writing the create-env args to a shell script", func() {
-					expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path %s\n", strings.Join(expectedCreateEnvArgs, " "))
+					expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path create-env %s\n", strings.Join(expectedArgs, " "))
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(string(shellScript)).To(Equal(expectedScript))
 				})
+
+				By("writing the delete-env args to a shell script", func() {
+					expectedScript := fmt.Sprintf("#!/bin/sh\nbosh-path delete-env %s\n", strings.Join(expectedArgs, " "))
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+
+				expectedArgs = append([]string{"create-env"}, expectedArgs...)
+				Expect(args).To(Equal(expectedArgs))
 			})
 		})
 
@@ -189,14 +206,15 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("generates create-env args for director", func() {
-				awsInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
-
 				args, err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
 
-				sharedArgs := append([]string{
+				expectedArgs := append([]string{
+					"create-env",
+					fmt.Sprintf("%s/bosh.yml", deploymentDir),
+					"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -208,8 +226,7 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/aws-bosh-director-encrypt-disk-ops.yml", deploymentDir),
 					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 				})
-
-				Expect(args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+				Expect(args).To(Equal(expectedArgs))
 			})
 		})
 
@@ -227,7 +244,6 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("generates create-env args for director", func() {
-				gcpInterpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 				gcpInterpolateInput.OpsFile = ""
 
 				args, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
@@ -235,7 +251,10 @@ var _ = Describe("Executor", func() {
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
 
-				sharedArgs := append([]string{
+				expectedArgs := append([]string{
+					"create-env",
+					fmt.Sprintf("%s/bosh.yml", deploymentDir),
+					"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
 					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -244,8 +263,7 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/credhub.yml", deploymentDir),
 					"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
 				})
-
-				Expect(args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+				Expect(args).To(Equal(expectedArgs))
 			})
 
 			Context("when a user opsfile is provided", func() {
@@ -255,7 +273,10 @@ var _ = Describe("Executor", func() {
 
 					Expect(cmd.RunCallCount()).To(Equal(0))
 
-					sharedArgs := append([]string{
+					expectedArgs := append([]string{
+						"create-env",
+						fmt.Sprintf("%s/bosh.yml", deploymentDir),
+						"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
 						"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
 						"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
 						"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
@@ -265,8 +286,7 @@ var _ = Describe("Executor", func() {
 						"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
 						"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
 					})
-
-					Expect(args).To(Equal(createEnvArgs(sharedArgs, deploymentDir, varsDir, "bosh")))
+					Expect(args).To(Equal(expectedArgs))
 				})
 			})
 		})
@@ -277,8 +297,9 @@ var _ = Describe("Executor", func() {
 			cmd      *fakes.BOSHCommand
 			executor bosh.Executor
 
-			varsDir  string
-			stateDir string
+			createEnvPath string
+			varsDir       string
+			stateDir      string
 
 			createEnvInput bosh.CreateEnvInput
 		)
@@ -301,7 +322,7 @@ var _ = Describe("Executor", func() {
 				VarsDir:    varsDir,
 			}
 
-			createEnvPath := filepath.Join(stateDir, "create-some-deployment.sh")
+			createEnvPath = filepath.Join(stateDir, "create-some-deployment.sh")
 			createEnvContents := fmt.Sprintf("#!/bin/bash\necho 'some-vars-store-contents' > %s/some-deployment-variables.yml\n", varsDir)
 
 			ioutil.WriteFile(createEnvPath, []byte(createEnvContents), os.ModePerm)
@@ -322,21 +343,13 @@ var _ = Describe("Executor", func() {
 
 		Context("when the create-env script returns an error", func() {
 			BeforeEach(func() {
-				createEnvPath := filepath.Join(stateDir, "create-some-deployment.sh")
-				createEnvContents := fmt.Sprintf("#!/bin/bash\nexit 1\n", varsDir)
-
+				createEnvContents := "#!/bin/bash\nexit 1\n"
 				ioutil.WriteFile(createEnvPath, []byte(createEnvContents), os.ModePerm)
 			})
 
 			It("returns an error", func() {
-				createEnvInput := bosh.CreateEnvInput{
-					Args:       []string{"some", "command", "args"},
-					Deployment: "some-deployment",
-					StateDir:   stateDir,
-					VarsDir:    varsDir,
-				}
 				vars, err := executor.CreateEnv(createEnvInput)
-				Expect(err).To(MatchError("Create env: exit status 1"))
+				Expect(err).To(MatchError("Run bosh create-env: exit status 1"))
 				Expect(vars).To(Equal(""))
 			})
 		})
@@ -347,7 +360,9 @@ var _ = Describe("Executor", func() {
 			cmd      *fakes.BOSHCommand
 			executor bosh.Executor
 
-			varsDir string
+			deleteEnvPath string
+			varsDir       string
+			stateDir      string
 
 			deleteEnvInput bosh.DeleteEnvInput
 		)
@@ -358,6 +373,8 @@ var _ = Describe("Executor", func() {
 			cmd = &fakes.BOSHCommand{}
 			varsDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
+			stateDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
@@ -365,32 +382,35 @@ var _ = Describe("Executor", func() {
 				Args:       []string{"create-env", "command", "args"},
 				Deployment: "some-deployment",
 				VarsDir:    varsDir,
+				StateDir:   stateDir,
 			}
+
+			deleteEnvPath = filepath.Join(stateDir, "delete-some-deployment.sh")
+			deleteEnvContents := "#!/bin/bash\necho delete-env\n"
+
+			ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), os.ModePerm)
 		})
 
-		It("deletes a bosh environment", func() {
+		AfterEach(func() {
+			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
+		})
+
+		It("deletes a bosh environment with the delete-env script", func() {
 			err := executor.DeleteEnv(deleteEnvInput)
 			Expect(err).NotTo(HaveOccurred())
 
-			writer, dir, args := cmd.RunArgsForCall(0)
-			Expect(writer).To(Equal(os.Stdout))
-			Expect(dir).To(Equal(varsDir))
-			Expect(args).To(Equal([]string{"delete-env", "command", "args"}))
+			Expect(cmd.RunCallCount()).To(Equal(0))
 		})
 
-		Context("when the run command returns an error", func() {
+		Context("when the create-env script returns an error", func() {
 			BeforeEach(func() {
-				cmd.RunReturns(errors.New("tangerine"))
+				deleteEnvContents := "#!/bin/bash\nexit 1\n"
+				ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), os.ModePerm)
 			})
 
 			It("returns an error", func() {
-				deleteEnvInput := bosh.DeleteEnvInput{
-					Args:       []string{"some", "command", "args"},
-					Deployment: "some-deployment",
-					VarsDir:    varsDir,
-				}
 				err := executor.DeleteEnv(deleteEnvInput)
-				Expect(err).To(MatchError("Delete env: tangerine"))
+				Expect(err).To(MatchError("Run bosh delete-env: exit status 1"))
 			})
 		})
 	})
@@ -455,14 +475,3 @@ var _ = Describe("Executor", func() {
 		})
 	})
 })
-
-func createEnvArgs(sharedArgs []string, deploymentDir, varsDir, deployment string) []string {
-	return append(
-		[]string{
-			"create-env",
-			fmt.Sprintf("%s/%s.yml", deploymentDir, deployment),
-			"--state", fmt.Sprintf("%s/%s-state.json", varsDir, deployment),
-		},
-		sharedArgs...,
-	)
-}

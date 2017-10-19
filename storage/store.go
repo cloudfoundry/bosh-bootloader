@@ -70,6 +70,8 @@ func (s Store) Set(state State) error {
 
 		_ = os.RemoveAll(filepath.Join(s.dir, "create-jumpbox.sh"))
 		_ = os.RemoveAll(filepath.Join(s.dir, "create-director.sh"))
+		_ = os.RemoveAll(filepath.Join(s.dir, "delete-jumpbox.sh"))
+		_ = os.RemoveAll(filepath.Join(s.dir, "delete-director.sh"))
 
 		return nil
 	}
