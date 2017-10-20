@@ -483,7 +483,6 @@ gcp_credentials_json: some-credential-json
 				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
 			}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
-				Args:       nil,
 				Deployment: "director",
 				StateDir:   "some-state-dir",
 				VarsDir:    "some-bbl-vars-dir",

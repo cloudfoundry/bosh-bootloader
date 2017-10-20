@@ -31,7 +31,6 @@ type InterpolateInput struct {
 }
 
 type CreateEnvInput struct {
-	Args       []string
 	StateDir   string
 	VarsDir    string
 	Deployment string

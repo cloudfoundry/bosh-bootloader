@@ -315,7 +315,6 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			createEnvInput = bosh.CreateEnvInput{
-				Args:       []string{"some", "command", "args"},
 				Deployment: "some-deployment",
 				StateDir:   stateDir,
 				VarsDir:    varsDir,
@@ -378,7 +377,6 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			deleteEnvInput = bosh.DeleteEnvInput{
-				Args:       []string{"create-env", "command", "args"},
 				Deployment: "some-deployment",
 				VarsDir:    varsDir,
 				StateDir:   stateDir,
