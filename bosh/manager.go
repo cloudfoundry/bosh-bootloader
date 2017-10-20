@@ -143,9 +143,7 @@ func (m *Manager) Version() (string, error) {
 	return version, err
 }
 
-func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
-	m.logger.Step("creating jumpbox")
-
+func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
@@ -173,6 +171,18 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		return storage.State{}, fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
 
+	return m.CreateJumpbox(state, terraformOutputs.GetString("jumpbox_url"))
+}
+
+func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage.State, error) {
+	m.logger.Step("creating jumpbox")
+
+	varsDir, err := m.stateStore.GetVarsDir()
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
+	}
+
+	stateDir := m.stateStore.GetStateDir()
 	osUnsetenv("BOSH_ALL_PROXY")
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
 		Deployment: "jumpbox",
@@ -194,7 +204,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	state.Jumpbox = storage.Jumpbox{
 		Variables: variables,
-		URL:       terraformOutputs.GetString("jumpbox_url"),
+		URL:       jumpboxURL,
 	}
 
 	m.logger.Step("starting socks5 proxy to jumpbox")
@@ -214,9 +224,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	return state, nil
 }
 
-func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
-	m.logger.Step("creating bosh director")
-
+func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
@@ -244,6 +252,19 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	if err != nil {
 		return storage.State{}, err
 	}
+
+	return state, nil
+}
+
+func (m *Manager) CreateDirector(state storage.State) (storage.State, error) {
+	m.logger.Step("creating bosh director")
+
+	varsDir, err := m.stateStore.GetVarsDir()
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
+	}
+
+	stateDir := m.stateStore.GetStateDir()
 
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
 		Deployment: "director",

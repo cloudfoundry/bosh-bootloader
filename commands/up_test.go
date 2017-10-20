@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -142,12 +143,20 @@ var _ = Describe("Up", func() {
 
 			terraformApplyState = storage.State{TFState: "terraform-apply-call"}
 			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
+			boshManager.InitializeJumpboxCall.Returns.State = terraformApplyState
 
 			createJumpboxState = storage.State{TFState: "create-jumpbox-call"}
 			boshManager.CreateJumpboxCall.Returns.State = createJumpboxState
+			boshManager.InitializeDirectorCall.Returns.State = createJumpboxState
 
 			createDirectorState = storage.State{TFState: "create-director-call"}
 			boshManager.CreateDirectorCall.Returns.State = createDirectorState
+
+			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+				Map: map[string]interface{}{
+					"jumpbox_url": "some-jumpbox-url",
+				},
+			}
 		})
 
 		It("it works", func() {
@@ -172,10 +181,15 @@ var _ = Describe("Up", func() {
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
 
+			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
+			Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(terraformApplyState))
 			Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 			Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
+			Expect(boshManager.CreateJumpboxCall.Receives.JumpboxURL).To(Equal("some-jumpbox-url"))
 			Expect(stateStore.SetCall.Receives[3].State).To(Equal(createJumpboxState))
 
+			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
+			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(createJumpboxState))
 			Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
 			Expect(stateStore.SetCall.Receives[4].State).To(Equal(createDirectorState))
@@ -203,7 +217,7 @@ var _ = Describe("Up", func() {
 				err := command.Execute([]string{"--ops-file", opsFilePath}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshManager.CreateDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
+				Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
 			})
 		})
 
@@ -227,7 +241,7 @@ var _ = Describe("Up", func() {
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
-				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(0))
+				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
 				Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(BeTrue())
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
@@ -344,6 +358,17 @@ var _ = Describe("Up", func() {
 				})
 			})
 
+			Context("when the jumpbox cannot be initialized", func() {
+				BeforeEach(func() {
+					boshManager.InitializeJumpboxCall.Returns.Error = errors.New("pineapple")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Create jumpbox: pineapple"))
+				})
+			})
+
 			Context("when the jumpbox cannot be deployed", func() {
 				BeforeEach(func() {
 					boshManager.CreateJumpboxCall.Returns.Error = errors.New("pineapple")
@@ -363,6 +388,17 @@ var _ = Describe("Up", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Save state after create jumpbox: kiwi"))
+				})
+			})
+
+			Context("when bosh cannot be initialized", func() {
+				BeforeEach(func() {
+					boshManager.InitializeDirectorCall.Returns.Error = errors.New("pineapple")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Create bosh director: pineapple"))
 				})
 			})
 

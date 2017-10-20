@@ -129,7 +129,12 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Parse terraform outputs: %s", err)
 	}
 
-	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
+	state, err = u.boshManager.InitializeJumpbox(state, terraformOutputs)
+	if err != nil {
+		return fmt.Errorf("Create jumpbox: %s", err)
+	}
+
+	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs.GetString("jumpbox_url"))
 	if err != nil {
 		return fmt.Errorf("Create jumpbox: %s", err)
 	}
@@ -140,7 +145,12 @@ func (u Up) Execute(args []string, state storage.State) error {
 	}
 
 	state.BOSH.UserOpsFile = string(opsFileContents)
-	state, err = u.boshManager.CreateDirector(state, terraformOutputs)
+	state, err = u.boshManager.InitializeDirector(state, terraformOutputs)
+	if err != nil {
+		return fmt.Errorf("Create bosh director: %s", err)
+	}
+
+	state, err = u.boshManager.CreateDirector(state)
 	switch err.(type) {
 	case bosh.ManagerCreateError:
 		bcErr := err.(bosh.ManagerCreateError)
