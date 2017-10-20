@@ -21,9 +21,9 @@ var _ = Describe("Executor", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
-			deploymentDir string
-			stateDir      string
-			varsDir       string
+			stateDir              string
+			relativeDeploymentDir string
+			relativeVarsDir       string
 
 			executor         bosh.Executor
 			interpolateInput bosh.InterpolateInput
@@ -38,14 +38,19 @@ var _ = Describe("Executor", func() {
 			cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
 
 			var err error
-			deploymentDir, err = ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
 			stateDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			varsDir, err = ioutil.TempDir("", "")
+			deploymentDir := filepath.Join(stateDir, "deployment")
+			err = os.Mkdir(deploymentDir, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
+
+			varsDir := filepath.Join(stateDir, "vars")
+			err = os.Mkdir(varsDir, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
+			relativeVarsDir = "${BBL_STATE_DIR}/vars"
 
 			interpolateInput = bosh.InterpolateInput{
 				IAAS:          "aws",
@@ -70,15 +75,15 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedArgs := []string{
-				fmt.Sprintf("%s/jumpbox.yml", deploymentDir),
-				"--state", fmt.Sprintf("%s/jumpbox-state.json", varsDir),
-				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", varsDir),
-				"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", varsDir),
-				"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
+				fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+				"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", relativeVarsDir),
+				"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", relativeVarsDir),
+				"-o", fmt.Sprintf("%s/cpi.yml", relativeDeploymentDir),
 			}
 
 			By("writing the create-env args to a shell script", func() {
-				expectedScript := formatScript("create-env", expectedArgs)
+				expectedScript := formatScript("create-env", stateDir, expectedArgs)
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
 				Expect(err).NotTo(HaveOccurred())
 
@@ -86,7 +91,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			By("writing the delete-env args to a shell script", func() {
-				expectedScript := formatScript("delete-env", expectedArgs)
+				expectedScript := formatScript("delete-env", stateDir, expectedArgs)
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
 				Expect(err).NotTo(HaveOccurred())
 
@@ -145,9 +150,9 @@ var _ = Describe("Executor", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
-			deploymentDir string
-			stateDir      string
-			varsDir       string
+			stateDir              string
+			relativeDeploymentDir string
+			relativeVarsDir       string
 
 			executor         bosh.Executor
 			interpolateInput bosh.InterpolateInput
@@ -158,14 +163,19 @@ var _ = Describe("Executor", func() {
 			cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
 
 			var err error
-			deploymentDir, err = ioutil.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
 			stateDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			varsDir, err = ioutil.TempDir("", "")
+			deploymentDir := filepath.Join(stateDir, "deployment")
+			err = os.Mkdir(deploymentDir, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
+
+			varsDir := filepath.Join(stateDir, "vars")
+			err = os.Mkdir(varsDir, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
+			relativeVarsDir = "${BBL_STATE_DIR}/vars"
 
 			interpolateInput = bosh.InterpolateInput{
 				DeploymentDir:  deploymentDir,
@@ -201,19 +211,19 @@ var _ = Describe("Executor", func() {
 				Expect(cmd.RunCallCount()).To(Equal(0))
 
 				expectedArgs := []string{
-					fmt.Sprintf("%s/bosh.yml", deploymentDir),
-					"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
-					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
-					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
-					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/jumpbox-user.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/uaa.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/credhub.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
+					fmt.Sprintf("%s/bosh.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/bosh-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/director-variables.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/cpi.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/jumpbox-user.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/uaa.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/credhub.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/user-ops-file.yml", relativeVarsDir),
 				}
 
 				By("writing the create-env args to a shell script", func() {
-					expectedScript := formatScript("create-env", expectedArgs)
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
 					Expect(err).NotTo(HaveOccurred())
 
@@ -221,7 +231,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				By("writing the delete-env args to a shell script", func() {
-					expectedScript := formatScript("delete-env", expectedArgs)
+					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
 					Expect(err).NotTo(HaveOccurred())
 
@@ -473,7 +483,7 @@ var _ = Describe("Executor", func() {
 	})
 })
 
-func formatScript(command string, args []string) string {
+func formatScript(command string, stateDir string, args []string) string {
 	script := fmt.Sprintf("#!/bin/sh\nbosh-path %s \\\n", command)
 	for _, arg := range args {
 		if arg[0] == '-' {
@@ -482,5 +492,6 @@ func formatScript(command string, args []string) string {
 			script = fmt.Sprintf("%s  %s \\\n", script, arg)
 		}
 	}
+
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
