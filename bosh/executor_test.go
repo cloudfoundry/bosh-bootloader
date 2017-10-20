@@ -339,6 +339,7 @@ var _ = Describe("Executor", func() {
 		AfterEach(func() {
 			os.Remove(filepath.Join(varsDir, "some-deployment-variables.yml"))
 			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
+			os.Unsetenv("BBL_STATE_DIR")
 		})
 
 		It("runs the create-env script and returns the resulting vars-store contents", func() {
@@ -347,6 +348,11 @@ var _ = Describe("Executor", func() {
 
 			Expect(cmd.RunCallCount()).To(Equal(0))
 			Expect(vars).To(ContainSubstring("some-vars-store-contents"))
+
+			By("setting BBL_STATE_DIR environment variable", func() {
+				bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
+				Expect(bblStateDirEnv).To(Equal(stateDir))
+			})
 		})
 
 		Context("when the create-env script returns an error", func() {
@@ -399,6 +405,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		AfterEach(func() {
+			os.Unsetenv("BBL_STATE_DIR")
 			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
 		})
 
@@ -407,6 +414,11 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCallCount()).To(Equal(0))
+
+			By("setting BBL_STATE_DIR environment variable", func() {
+				bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
+				Expect(bblStateDirEnv).To(Equal(stateDir))
+			})
 		})
 
 		Context("when the create-env script returns an error", func() {

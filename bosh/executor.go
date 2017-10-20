@@ -288,6 +288,7 @@ func (e Executor) writeFileUnlessExisting(path string, contents []byte, mode os.
 }
 
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
+	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
 	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
 
 	cmd := exec.Command(createEnvScript)
@@ -307,6 +308,7 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 }
 
 func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
+	os.Setenv("BBL_STATE_DIR", deleteEnvInput.StateDir)
 	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s.sh", deleteEnvInput.Deployment))
 
 	cmd := exec.Command(deleteEnvScript)
