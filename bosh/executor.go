@@ -58,7 +58,7 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	}
 }
 
-func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error) {
+func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -86,7 +86,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 	for _, f := range setupFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return []string{}, fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
+			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
 		}
 	}
 
@@ -100,12 +100,12 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 	if input.BOSHState != nil {
 		stateJSON, err := e.marshalJSON(input.BOSHState)
 		if err != nil {
-			return []string{}, fmt.Errorf("Jumpbox marshal state json: %s", err) //not tested
+			return fmt.Errorf("Jumpbox marshal state json: %s", err) //not tested
 		}
 
 		err = e.writeFile(jumpboxState, stateJSON, os.ModePerm)
 		if err != nil {
-			return []string{}, fmt.Errorf("Jumpbox write state json: %s", err) //not tested
+			return fmt.Errorf("Jumpbox write state json: %s", err) //not tested
 		}
 	}
 
@@ -116,27 +116,27 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) ([]string, error)
 
 	boshPath, err := e.command.GetBOSHPath()
 	if err != nil {
-		return []string{}, fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
+		return fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
 	}
 
 	createEnvCmd := []byte(formatScript(boshPath, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
 	err = e.writeFileUnlessExisting(createJumpboxScript, createEnvCmd, os.ModePerm, "Jumpbox write create-env script: %s")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, "delete-env", boshArgs))
 	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
 	err = e.writeFileUnlessExisting(deleteJumpboxScript, deleteEnvCmd, os.ModePerm, "Jumpbox write delete-env script: %s")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	return append([]string{"create-env"}, boshArgs...), nil
+	return nil
 }
 
-func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error) {
+func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	type setupFile struct {
 		path     string
 		contents []byte
@@ -205,14 +205,14 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error
 	for _, f := range setupFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return []string{}, fmt.Errorf("write file: %s", err) //not tested
+			return fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
 	for _, f := range opsFiles {
 		err := e.writeFile(f.path, f.contents, os.ModePerm)
 		if err != nil {
-			return []string{}, fmt.Errorf("write file: %s", err) //not tested
+			return fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
@@ -233,18 +233,18 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error
 	if input.BOSHState != nil {
 		stateJSON, err := e.marshalJSON(input.BOSHState)
 		if err != nil {
-			return []string{}, fmt.Errorf("marshal JSON: %s", err) //not tested
+			return fmt.Errorf("marshal JSON: %s", err) //not tested
 		}
 
 		err = e.writeFile(boshState, stateJSON, os.ModePerm)
 		if err != nil {
-			return []string{}, fmt.Errorf("write file: %s", err) //not tested
+			return fmt.Errorf("write file: %s", err) //not tested
 		}
 	}
 
 	boshPath, err := e.command.GetBOSHPath()
 	if err != nil {
-		return []string{}, fmt.Errorf("Director get BOSH path: %s", err) //not tested
+		return fmt.Errorf("Director get BOSH path: %s", err) //not tested
 	}
 
 	boshArgs := append([]string{
@@ -255,16 +255,16 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) ([]string, error
 	createEnvCmd := []byte(formatScript(boshPath, "create-env", boshArgs))
 	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm, "Write create-env script for director: %s")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, "delete-env", boshArgs))
 	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm, "Write delete-env script for director: %s")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	return append([]string{"create-env"}, boshArgs...), nil
+	return nil
 }
 
 func formatScript(boshPath, command string, args []string) string {

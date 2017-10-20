@@ -101,8 +101,8 @@ type AzureYAML struct {
 }
 
 type executor interface {
-	DirectorCreateEnvArgs(InterpolateInput) ([]string, error)
-	JumpboxCreateEnvArgs(InterpolateInput) ([]string, error)
+	DirectorCreateEnvArgs(InterpolateInput) error
+	JumpboxCreateEnvArgs(InterpolateInput) error
 	CreateEnv(CreateEnvInput) (string, error)
 	DeleteEnv(DeleteEnvInput) error
 	Version() (string, error)
@@ -168,14 +168,13 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		BOSHState:      state.Jumpbox.State,
 	}
 
-	createEnvArgs, err := m.executor.JumpboxCreateEnvArgs(iaasInputs)
+	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
 
 	osUnsetenv("BOSH_ALL_PROXY")
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
-		Args:       createEnvArgs,
 		Deployment: "jumpbox",
 		VarsDir:    varsDir,
 		StateDir:   stateDir,
@@ -241,13 +240,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		BOSHState:      state.BOSH.State,
 	}
 
-	createEnvArgs, err := m.executor.DirectorCreateEnvArgs(iaasInputs)
+	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return storage.State{}, err
 	}
 
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
-		Args:       createEnvArgs,
 		Deployment: "director",
 		StateDir:   stateDir,
 		VarsDir:    varsDir,
@@ -323,13 +321,12 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
 
-	deleteEnvArgs, err := m.executor.DirectorCreateEnvArgs(iaasInputs)
+	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return err
 	}
 
 	err = m.executor.DeleteEnv(DeleteEnvInput{
-		Args:       deleteEnvArgs,
 		Deployment: "director",
 		VarsDir:    varsDir,
 		StateDir:   stateDir,
@@ -370,13 +367,12 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 	}
 
-	deleteEnvArgs, err := m.executor.JumpboxCreateEnvArgs(iaasInputs)
+	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return err
 	}
 
 	err = m.executor.DeleteEnv(DeleteEnvInput{
-		Args:       deleteEnvArgs,
 		Deployment: "jumpbox",
 		StateDir:   stateDir,
 		VarsDir:    varsDir,

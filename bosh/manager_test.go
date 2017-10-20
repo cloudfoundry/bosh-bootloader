@@ -99,8 +99,6 @@ director_ssl:
 				},
 			}
 
-			boshExecutor.DirectorCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
-
 			boshExecutor.CreateEnvCall.Returns.Variables = boshVars
 		})
 
@@ -114,7 +112,6 @@ director_ssl:
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
-			Expect(boshExecutor.CreateEnvCall.Receives.Input.Args).To(Equal([]string{"some", "command", "args"}))
 
 			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.DeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -257,8 +254,6 @@ gcp_credentials_json: some-credential-json
 `
 
 			createEnvArgs = []string{"bosh", "create-env", "/path/to/manifest.yml", "etc"}
-			boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = createEnvArgs
-
 			boshExecutor.CreateEnvCall.Returns.Variables = "jumpbox_ssh:\n  private_key: some-jumpbox-private-key"
 		})
 
@@ -296,7 +291,6 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.BOSHState).To(Equal(map[string]interface{}{"some-key": "some-value"}))
-			Expect(boshExecutor.CreateEnvCall.Receives.Input.Args).To(Equal(createEnvArgs))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
@@ -404,8 +398,6 @@ gcp_credentials_json: some-credential-json
 		})
 
 		It("calls delete env", func() {
-			boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
-
 			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.Variables).To(Equal(vars))
@@ -413,7 +405,6 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Args).To(Equal([]string{"some", "command", "args"}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
@@ -455,10 +446,6 @@ gcp_credentials_json: some-credential-json
 	})
 
 	Describe("DeleteDirector", func() {
-		BeforeEach(func() {
-			boshExecutor.DirectorCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
-		})
-
 		It("calls delete env", func() {
 			socks5ProxyAddr := "localhost:1234"
 			socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
@@ -496,7 +483,7 @@ gcp_credentials_json: some-credential-json
 				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
 			}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
-				Args:       []string{"some", "command", "args"},
+				Args:       nil,
 				Deployment: "director",
 				StateDir:   "some-state-dir",
 				VarsDir:    "some-bbl-vars-dir",
@@ -527,8 +514,6 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					boshExecutor.JumpboxCreateEnvArgsCall.Returns.Output = []string{"some", "command", "args"}
-
 					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError("Delete bosh director: cannot start proxy due to missing jumpbox private key"))
 				})

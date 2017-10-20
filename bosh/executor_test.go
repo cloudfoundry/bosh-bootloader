@@ -66,7 +66,7 @@ var _ = Describe("Executor", func() {
 			interpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 			interpolateInput.OpsFile = ""
 
-			args, err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			err := executor.JumpboxCreateEnvArgs(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedArgs := []string{
@@ -92,9 +92,6 @@ var _ = Describe("Executor", func() {
 
 				Expect(string(shellScript)).To(Equal(expectedScript))
 			})
-
-			expectedArgs = append([]string{"create-env"}, expectedArgs...)
-			Expect(args).To(Equal(expectedArgs))
 		})
 
 		Context("when a create-env script already exists", func() {
@@ -110,7 +107,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("does not override the existing script", func() {
-				_, err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				err := executor.JumpboxCreateEnvArgs(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
@@ -133,7 +130,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("does not override the existing script", func() {
-				_, err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				err := executor.JumpboxCreateEnvArgs(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
@@ -199,7 +196,7 @@ var _ = Describe("Executor", func() {
 					return nil
 				}
 
-				args, err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
+				err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cmd.RunCallCount()).To(Equal(0))
 
@@ -230,47 +227,6 @@ var _ = Describe("Executor", func() {
 
 					Expect(string(shellScript)).To(Equal(expectedScript))
 				})
-
-				expectedArgs = append([]string{"create-env"}, expectedArgs...)
-				Expect(args).To(Equal(expectedArgs))
-			})
-		})
-
-		Context("aws", func() {
-			var awsInterpolateInput bosh.InterpolateInput
-
-			BeforeEach(func() {
-				awsInterpolateInput = interpolateInput
-				awsInterpolateInput.IAAS = "aws"
-
-				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-					stdout.Write([]byte("some-manifest"))
-					return nil
-				}
-			})
-
-			It("generates create-env args for director", func() {
-				args, err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cmd.RunCallCount()).To(Equal(0))
-
-				expectedArgs := append([]string{
-					"create-env",
-					fmt.Sprintf("%s/bosh.yml", deploymentDir),
-					"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
-					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
-					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
-					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/jumpbox-user.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/uaa.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/credhub.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/aws-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/iam-instance-profile.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/aws-bosh-director-encrypt-disk-ops.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
-				})
-				Expect(args).To(Equal(expectedArgs))
 			})
 		})
 
@@ -287,53 +243,6 @@ var _ = Describe("Executor", func() {
 				}
 			})
 
-			It("generates create-env args for director", func() {
-				gcpInterpolateInput.OpsFile = ""
-
-				args, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cmd.RunCallCount()).To(Equal(0))
-
-				expectedArgs := append([]string{
-					"create-env",
-					fmt.Sprintf("%s/bosh.yml", deploymentDir),
-					"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
-					"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
-					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
-					"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/jumpbox-user.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/uaa.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/credhub.yml", deploymentDir),
-					"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
-				})
-				Expect(args).To(Equal(expectedArgs))
-			})
-
-			Context("when a user opsfile is provided", func() {
-				It("puts the user-provided opsfile in create-env args", func() {
-					args, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cmd.RunCallCount()).To(Equal(0))
-
-					expectedArgs := append([]string{
-						"create-env",
-						fmt.Sprintf("%s/bosh.yml", deploymentDir),
-						"--state", fmt.Sprintf("%s/bosh-state.json", varsDir),
-						"--vars-store", fmt.Sprintf("%s/director-variables.yml", varsDir),
-						"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", varsDir),
-						"-o", fmt.Sprintf("%s/cpi.yml", deploymentDir),
-						"-o", fmt.Sprintf("%s/jumpbox-user.yml", deploymentDir),
-						"-o", fmt.Sprintf("%s/uaa.yml", deploymentDir),
-						"-o", fmt.Sprintf("%s/credhub.yml", deploymentDir),
-						"-o", fmt.Sprintf("%s/gcp-bosh-director-ephemeral-ip-ops.yml", deploymentDir),
-						"-o", fmt.Sprintf("%s/user-ops-file.yml", varsDir),
-					})
-					Expect(args).To(Equal(expectedArgs))
-				})
-			})
-
 			Context("when a create-env script already exists", func() {
 				var (
 					createEnvPath     string
@@ -347,7 +256,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("does not override the existing script", func() {
-					_, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+					err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
 					Expect(err).NotTo(HaveOccurred())
 
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
@@ -370,7 +279,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("does not override the existing script", func() {
-					_, err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+					err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
 					Expect(err).NotTo(HaveOccurred())
 
 					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
