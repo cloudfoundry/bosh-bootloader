@@ -119,7 +119,6 @@ var _ = Describe("bbl", func() {
 			Entry("ENV ID", "env-id", "environment ID", []string{"help", "env-id"}),
 			Entry("ENV ID", "env-id", "environment ID", []string{"env-id", "--help"}),
 			Entry("Help", "help", "Prints helpful message for the given command", []string{"help", "help"}),
-			Entry("Help", "help", "Prints helpful message for the given command", []string{"help", "--help"}),
 			Entry("Latest Error", "latest-error", "Prints the output from the latest call to terraform", []string{"help", "latest-error"}),
 			Entry("Latest Error", "latest-error", "Prints the output from the latest call to terraform", []string{"latest-error", "--help"}),
 			Entry("LBs", "lbs", "Prints attached load balancer(s)", []string{"help", "lbs"}),

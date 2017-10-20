@@ -40,12 +40,13 @@ var _ = Describe("LoadState", func() {
 				})
 			})
 
-			Context("when help is passed as a flag", func() {
+			Context("when --help is passed as a flag", func() {
 				It("sets the help command", func() {
 					appConfig, err := c.Bootstrap([]string{"bbl", "--help"})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Command).To(Equal("help"))
+					Expect(appConfig.ShowCommandHelp).To(BeFalse())
 				})
 			})
 
@@ -67,7 +68,6 @@ var _ = Describe("LoadState", func() {
 					Expect(appConfig.ShowCommandHelp).To(BeTrue())
 				},
 				Entry("bbl help help", []string{"bbl", "help", "help"}, "help"),
-				Entry("bbl help --help", []string{"bbl", "help", "--help"}, "help"),
 				Entry("bbl help version", []string{"bbl", "help", "version"}, "version"),
 				Entry("bbl version --help", []string{"bbl", "version", "--help"}, "version"),
 			)

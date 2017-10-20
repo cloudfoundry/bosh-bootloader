@@ -80,8 +80,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 
 	if len(remainingArgs) == 0 || (len(remainingArgs) == 1 && remainingArgs[0] == "help") {
 		return application.Configuration{
-			ShowCommandHelp: globalFlags.Help,
-			Command:         "help",
+			Command: "help",
 		}, nil
 	}
 
