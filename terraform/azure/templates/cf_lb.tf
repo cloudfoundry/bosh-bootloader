@@ -81,3 +81,7 @@ resource "azurerm_application_gateway" "network" {
           backend_http_settings_name = "${azurerm_virtual_network.cf-vn.name}-be-htst"
   }
 }
+
+output "app_gateway_name" {
+	value = "${azurerm_application_gateway.network.name}"
+}
