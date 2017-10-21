@@ -141,6 +141,10 @@ func (b BBL) DeleteLBs() *gexec.Session {
 	return b.execute(args, os.Stdout, os.Stderr)
 }
 
+func (b BBL) Lbs() string {
+	return b.fetchValue("lbs")
+}
+
 func (b BBL) DirectorUsername() string {
 	return b.fetchValue("director-username")
 }
@@ -173,8 +177,20 @@ func (b BBL) BOSHDeploymentVars() string {
 	return b.fetchValue("bosh-deployment-vars")
 }
 
+func (b BBL) JumpboxDeploymentVars() string {
+	return b.fetchValue("jumpbox-deployment-vars")
+}
+
+func (b BBL) CloudConfig() string {
+	return b.fetchValue("cloud-config")
+}
+
 func (b BBL) PrintEnv() string {
 	return b.fetchValue("print-env")
+}
+
+func (b BBL) LatestError() string {
+	return b.fetchValue("latest-error")
 }
 
 func (b BBL) SaveDirectorCA() string {
