@@ -83,10 +83,7 @@ var _ = Describe("lbs test", func() {
 		})
 
 		By("verifying that the bbl lbs output contains the cf lbs", func() {
-			session := bbl.LBs()
-			Eventually(session, 2*time.Second).Should(gexec.Exit(0))
-
-			stdout := string(session.Out.Contents())
+			stdout := bbl.Lbs()
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))

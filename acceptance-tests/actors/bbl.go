@@ -122,15 +122,6 @@ func (b BBL) UpdateLB(certPath, keyPath, chainPath string) *gexec.Session {
 	return b.execute(args, os.Stdout, os.Stderr)
 }
 
-func (b BBL) LBs() *gexec.Session {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"lbs",
-	}
-
-	return b.execute(args, os.Stdout, os.Stderr)
-}
-
 func (b BBL) DeleteLBs() *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
