@@ -131,18 +131,10 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		return bblState, nil
 	}
 
-	m.logger.Step("generating terraform template")
-	template := m.templateGenerator.Generate(bblState)
-
 	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Input generator generate: %s", err)
-	}
-
-	err = m.executor.Init(template, bblState.TFState)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("Executor init: %s", err)
 	}
 
 	m.logger.Step("terraform destroy")

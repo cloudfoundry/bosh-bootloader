@@ -396,6 +396,7 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(state))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
 			})
@@ -415,6 +416,8 @@ var _ = Describe("Destroy", func() {
 					err := destroy.Execute([]string{}, state)
 					Expect(err).To(Equal(terraformManagerError))
 
+					Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(state))
 					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
 
@@ -484,6 +487,7 @@ var _ = Describe("Destroy", func() {
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
 				expectedState := state
 				expectedState.BOSH = storage.BOSH{}
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedState))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedState))
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
 			})
@@ -514,6 +518,8 @@ var _ = Describe("Destroy", func() {
 					err := destroy.Execute([]string{}, state)
 					Expect(err).To(Equal(terraformManagerError))
 
+					Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedBBLState))
 					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedBBLState))
 
@@ -698,6 +704,8 @@ var _ = Describe("Destroy", func() {
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(bblState))
+				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(bblState))
 				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
@@ -725,6 +733,8 @@ var _ = Describe("Destroy", func() {
 					err := destroy.Execute([]string{}, bblState)
 					Expect(err).To(Equal(terraformManagerError))
 
+					Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(bblState))
 					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
 
@@ -744,6 +754,15 @@ var _ = Describe("Destroy", func() {
 
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
 						Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					})
+				})
+
+				Context("when terraform manager init fails", func() {
+					It("returns an error", func() {
+						terraformManager.InitCall.Returns.Error = errors.New("clementine")
+
+						err := destroy.Execute([]string{}, bblState)
+						Expect(err).To(MatchError("clementine"))
 					})
 				})
 
