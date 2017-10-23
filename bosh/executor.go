@@ -293,6 +293,8 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
 
 	cmd := exec.Command(createEnvScript)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	err := cmd.Run()
 	if err != nil {
@@ -313,6 +315,8 @@ func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s.sh", deleteEnvInput.Deployment))
 
 	cmd := exec.Command(deleteEnvScript)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	err := cmd.Run()
 	if err != nil {
