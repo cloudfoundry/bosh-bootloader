@@ -123,15 +123,11 @@ func (e Executor) Apply(input map[string]string) (string, error) {
 	return string(tfState), nil
 }
 
-func (e Executor) Destroy(input map[string]string, template, prevTFState string) (string, error) {
+//TODO: Merge Apply and Destroy (pass in command)
+func (e Executor) Destroy(input map[string]string) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", fmt.Errorf("Get terraform dir: %s", err)
-	}
-
-	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
-	if err != nil {
-		return "", fmt.Errorf("Write terraform template: %s", err)
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
@@ -140,18 +136,6 @@ func (e Executor) Destroy(input map[string]string, template, prevTFState string)
 	}
 
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
-
-	if prevTFState != "" {
-		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
-		if err != nil {
-			return "", fmt.Errorf("Write previous terraform state: %s", err)
-		}
-	}
-
-	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
-	if err != nil {
-		return "", fmt.Errorf("Run terraform init: %s", err)
-	}
 
 	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
 	if err != nil {

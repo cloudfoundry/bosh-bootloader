@@ -111,7 +111,7 @@ var _ = Describe("Manager", func() {
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 					"generating terraform template",
 					"generating terraform variables",
-					"applying terraform template",
+					"terraform apply",
 				}))
 			})
 		})
@@ -140,7 +140,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("when an error occurs", func() {
-			Context("when InputGenerator.Generate returns an error", func() {
+			Context("when input generator returns an error", func() {
 				BeforeEach(func() {
 					inputGenerator.GenerateCall.Returns.Error = errors.New("kiwi")
 				})
@@ -221,6 +221,10 @@ var _ = Describe("Manager", func() {
 				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
+				Expect(executor.InitCall.CallCount).To(Equal(1))
+				Expect(executor.InitCall.Receives.Template).To(Equal(templateGenerator.GenerateCall.Returns.Template))
+				Expect(executor.InitCall.Receives.TFState).To(Equal(incomingState.TFState))
+				Expect(executor.DestroyCall.CallCount).To(Equal(1))
 				Expect(executor.DestroyCall.Receives.Inputs).To(Equal(map[string]string{
 					"env_id":        incomingState.EnvID,
 					"project_id":    incomingState.GCP.ProjectID,
@@ -229,11 +233,13 @@ var _ = Describe("Manager", func() {
 					"credentials":   "some-path",
 					"system_domain": incomingState.LB.Domain,
 				}))
-				Expect(executor.DestroyCall.Receives.Template).To(Equal(templateGenerator.GenerateCall.Returns.Template))
-				Expect(executor.DestroyCall.Receives.TFState).To(Equal(incomingState.TFState))
 
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-					"destroying infrastructure", "finished destroying infrastructure",
+					"destroying infrastructure",
+					"generating terraform template",
+					"generating terraform variables",
+					"terraform destroy",
+					"finished destroying infrastructure",
 				}))
 			})
 
@@ -246,7 +252,7 @@ var _ = Describe("Manager", func() {
 				Expect(newBBLState).To(Equal(expectedState))
 			})
 
-			Context("when InputGenerator.Generate returns an error", func() {
+			Context("when input generator returns an error", func() {
 				BeforeEach(func() {
 					inputGenerator.GenerateCall.Returns.Error = errors.New("apple")
 				})
@@ -254,6 +260,17 @@ var _ = Describe("Manager", func() {
 				It("bubbles up the error", func() {
 					_, err := manager.Destroy(incomingState)
 					Expect(err).To(MatchError("Input generator generate: apple"))
+				})
+			})
+
+			Context("when executor init returns an error", func() {
+				BeforeEach(func() {
+					executor.InitCall.Returns.Error = errors.New("apple")
+				})
+
+				It("bubbles up the error", func() {
+					_, err := manager.Destroy(incomingState)
+					Expect(err).To(MatchError("Executor init: apple"))
 				})
 			})
 

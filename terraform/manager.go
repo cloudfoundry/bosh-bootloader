@@ -20,7 +20,7 @@ type Manager struct {
 
 type executor interface {
 	Version() (string, error)
-	Destroy(inputs map[string]string, terraformTemplate, tfState string) (string, error)
+	Destroy(inputs map[string]string) (string, error)
 	Init(terraformTemplate, tfState string) error
 	Apply(inputs map[string]string) (string, error)
 	Outputs(string) (map[string]interface{}, error)
@@ -105,7 +105,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 		return storage.State{}, fmt.Errorf("Executor init: %s", err)
 	}
 
-	m.logger.Step("applying terraform template")
+	m.logger.Step("terraform apply")
 	tfState, err := m.executor.Apply(input)
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
@@ -127,18 +127,22 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 		return bblState, nil
 	}
 
+	m.logger.Step("generating terraform template")
 	template := m.templateGenerator.Generate(bblState)
 
+	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Input generator generate: %s", err)
 	}
 
-	tfState, err := m.executor.Destroy(
-		input,
-		template,
-		bblState.TFState)
+	err = m.executor.Init(template, bblState.TFState)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Executor init: %s", err)
+	}
 
+	m.logger.Step("terraform destroy")
+	tfState, err := m.executor.Destroy(input)
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
 	switch err.(type) {

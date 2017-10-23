@@ -31,9 +31,7 @@ type TerraformExecutor struct {
 	DestroyCall struct {
 		CallCount int
 		Receives  struct {
-			Inputs   map[string]string
-			Template string
-			TFState  string
+			Inputs map[string]string
 		}
 		Returns struct {
 			TFState string
@@ -97,11 +95,9 @@ func (t *TerraformExecutor) Apply(inputs map[string]string) (string, error) {
 	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Destroy(inputs map[string]string, template, tfState string) (string, error) {
+func (t *TerraformExecutor) Destroy(inputs map[string]string) (string, error) {
 	t.DestroyCall.CallCount++
 	t.DestroyCall.Receives.Inputs = inputs
-	t.DestroyCall.Receives.Template = template
-	t.DestroyCall.Receives.TFState = tfState
 	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error
 }
 
