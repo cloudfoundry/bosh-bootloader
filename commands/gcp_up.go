@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -21,11 +22,16 @@ func NewGCPUp(gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever) GCPUp {
 }
 
 func (u GCPUp) Execute(state storage.State) (storage.State, error) {
-	var err error
-	state.GCP.Zones, err = u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
+	zones, err := u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Retrieving availability zones: %s", err)
 	}
+	if len(zones) == 0 {
+		return storage.State{}, errors.New("Zone list is empty")
+	}
+
+	state.GCP.Zones = zones
+	state.GCP.Zone = zones[0]
 
 	return state, nil
 }

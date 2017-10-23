@@ -98,7 +98,11 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	}
 
 	if globalFlags.GCPProjectID != "" {
-		c.logger.Println("Deprecation warning: the --gcp-project-id (BBL_GCP_PROJECT_ID) flag is now ignored.")
+		c.logger.Println("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored.")
+	}
+
+	if globalFlags.GCPZone != "" {
+		c.logger.Println("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored.")
 	}
 
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
@@ -177,13 +181,6 @@ func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State
 			return storage.State{}, errors.New(projectIDMismatch)
 		}
 		state.GCP.ProjectID = projectID
-	}
-	if globalFlags.GCPZone != "" {
-		if state.GCP.Zone != "" && globalFlags.GCPZone != state.GCP.Zone {
-			zoneMismatch := fmt.Sprintf("The zone cannot be changed for an existing environment. The current zone is %s.", state.GCP.Zone)
-			return storage.State{}, errors.New(zoneMismatch)
-		}
-		state.GCP.Zone = globalFlags.GCPZone
 	}
 	if globalFlags.GCPRegion != "" {
 		if state.GCP.Region != "" && globalFlags.GCPRegion != state.GCP.Region {
@@ -270,9 +267,6 @@ func validateAWS(aws storage.AWS) error {
 func validateGCP(gcp storage.GCP) error {
 	if gcp.ServiceAccountKey == "" {
 		return errors.New("GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)")
-	}
-	if gcp.Zone == "" {
-		return errors.New("GCP zone must be provided (--gcp-zone or BBL_GCP_ZONE)")
 	}
 	if gcp.Region == "" {
 		return errors.New("GCP region must be provided (--gcp-region or BBL_GCP_REGION)")

@@ -412,7 +412,6 @@ var _ = Describe("LoadState", func() {
 							"bbl", "up", "--name", "some-env-id",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKeyPath,
-							"--gcp-zone", "some-availability-zone",
 							"--gcp-region", "some-region",
 						}
 					})
@@ -426,7 +425,6 @@ var _ = Describe("LoadState", func() {
 						Expect(state.IAAS).To(Equal("gcp"))
 						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
-						Expect(state.GCP.Zone).To(Equal("some-availability-zone"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
 
@@ -529,7 +527,6 @@ var _ = Describe("LoadState", func() {
 
 						os.Setenv("BBL_IAAS", "gcp")
 						os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKey)
-						os.Setenv("BBL_GCP_ZONE", "some-zone")
 						os.Setenv("BBL_GCP_REGION", "some-region")
 					})
 
@@ -543,7 +540,6 @@ var _ = Describe("LoadState", func() {
 						Expect(state.IAAS).To(Equal("gcp"))
 						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
-						Expect(state.GCP.Zone).To(Equal("some-zone"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
 
@@ -558,8 +554,9 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Context("when a previous state exists", func() {
+				var existingState storage.State
 				BeforeEach(func() {
-					fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+					existingState = storage.State{
 						IAAS: "gcp",
 						GCP: storage.GCP{
 							ServiceAccountKey: serviceAccountKey,
@@ -569,6 +566,7 @@ var _ = Describe("LoadState", func() {
 						},
 						EnvID: "some-env-id",
 					}
+					fakeStateBootstrap.GetStateCall.Returns.State = existingState
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -578,12 +576,11 @@ var _ = Describe("LoadState", func() {
 							"create-lbs",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKey,
-							"--gcp-zone", "some-zone",
 							"--gcp-region", "some-region",
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
+						Expect(appConfig.State).To(Equal(existingState))
 					})
 				})
 
@@ -597,8 +594,6 @@ var _ = Describe("LoadState", func() {
 						"The iaas type cannot be changed for an existing environment. The current iaas type is gcp."),
 					Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--gcp-region", "some-other-region"},
 						"The region cannot be changed for an existing environment. The current region is some-region."),
-					Entry("returns an error for non-matching zone", []string{"bbl", "create-lbs", "--gcp-zone", "some-other-zone"},
-						"The zone cannot be changed for an existing environment. The current zone is some-zone."),
 					Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
 						"The project ID cannot be changed for an existing environment. The current project ID is some-project-id."),
 				)
@@ -620,7 +615,25 @@ var _ = Describe("LoadState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-project-id (BBL_GCP_PROJECT_ID) flag is now ignored."))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored."))
+					})
+				})
+
+				Context("when the deprecated --gcp-zone is passed in", func() {
+					BeforeEach(func() {
+						args = []string{
+							"bbl", "up",
+							"--iaas", "gcp",
+							"--gcp-zone", "some-zone",
+							"--gcp-service-account-key", serviceAccountKey,
+						}
+					})
+					It("ignores the flag and prints a warning", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.State.GCP.Zone).To(Equal(""))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored."))
 					})
 				})
 			})
@@ -815,9 +828,7 @@ var _ = Describe("LoadState", func() {
 				storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
-						ProjectID: "some-project-id",
-						Zone:      "some-availability-zone",
-						Region:    "some-region",
+						Region: "some-region",
 					},
 				},
 				"GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)"),
@@ -825,22 +836,10 @@ var _ = Describe("LoadState", func() {
 				storage.State{
 					IAAS: "gcp",
 					GCP: storage.GCP{
-						ProjectID:         "some-project-id",
 						ServiceAccountKey: "some-service-account-key",
-						Zone:              "some-availability-zone",
 					},
 				},
 				"GCP region must be provided (--gcp-region or BBL_GCP_REGION)"),
-			Entry("when GCP zone is missing",
-				storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						ProjectID:         "some-project-id",
-						ServiceAccountKey: "some-service-account-key",
-						Region:            "some-region",
-					},
-				},
-				"GCP zone must be provided (--gcp-zone or BBL_GCP_ZONE)"),
 			Entry("when Azure client id is missing",
 				storage.State{
 					IAAS: "azure",

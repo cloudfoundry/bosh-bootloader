@@ -35,7 +35,7 @@ func NewClientProvider(gcpBasePath string) *ClientProvider {
 func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone string) error {
 	config, err := google.JWTConfigFromJSON([]byte(serviceAccountKey), compute.ComputeScope)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse service account key: %s", err)
 	}
 
 	if p.basePath != "" {
@@ -44,7 +44,7 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone st
 
 	service, err := compute.New(gcpHTTPClient(config))
 	if err != nil {
-		return err
+		return fmt.Errorf("create gcp client: %s", err)
 	}
 
 	if p.basePath != "" {
@@ -59,26 +59,10 @@ func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone st
 
 	_, err = p.client.GetRegion(region)
 	if err != nil {
-		return err
+		return fmt.Errorf("get region: %s", err)
 	}
 
-	_, err = p.client.GetZone(zone)
-	if err != nil {
-		return err
-	}
-
-	zones, err := p.client.GetZones(region)
-	if err != nil {
-		return err
-	}
-
-	for _, zoneInRegion := range zones {
-		if zoneInRegion == zone {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("Zone %s is not in region %s.", zone, region)
+	return nil
 }
 
 func (p *ClientProvider) Client() Client {

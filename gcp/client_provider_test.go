@@ -67,7 +67,7 @@ var _ = Describe("ClientProvider", func() {
 		Context("when the service account key is not valid json", func() {
 			It("returns an error", func() {
 				err := clientProvider.SetConfig("1231:123", "proj-id", "some-region", "some-zone")
-				Expect(err).To(MatchError("invalid character ':' after top-level value"))
+				Expect(err).To(MatchError("parse service account key: invalid character ':' after top-level value"))
 			})
 		})
 
@@ -80,30 +80,16 @@ var _ = Describe("ClientProvider", func() {
 
 			It("returns an error", func() {
 				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "some-region", "some-zone")
-				Expect(err).To(MatchError("client is nil"))
-			})
-		})
-
-		Context("when the zone is invalid", func() {
-			It("returns an error", func() {
-				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "region-1", "bad-zone")
-				Expect(err).To(MatchError(ContainSubstring("googleapi")))
-				Expect(err).To(MatchError(ContainSubstring("404")))
+				Expect(err).To(MatchError("create gcp client: client is nil"))
 			})
 		})
 
 		Context("when the region is invalid", func() {
 			It("returns an error", func() {
-				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "bad-region", "zone-2b")
+				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "bad-region", "some-zone")
+				Expect(err).To(MatchError(ContainSubstring("get region: ")))
 				Expect(err).To(MatchError(ContainSubstring("googleapi")))
 				Expect(err).To(MatchError(ContainSubstring("404")))
-			})
-		})
-
-		Context("when the zone does not belong to the region", func() {
-			It("returns an error", func() {
-				err := clientProvider.SetConfig(serviceAccountKey, "proj-id", "region-1", "zone-2b")
-				Expect(err).To(MatchError(ContainSubstring("Zone zone-2b is not in region region-1.")))
 			})
 		})
 	})

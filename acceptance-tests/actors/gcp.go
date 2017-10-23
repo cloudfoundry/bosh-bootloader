@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/oauth2/google"
@@ -15,10 +16,10 @@ import (
 )
 
 type GCP struct {
-	service   *compute.Service
-	projectID string
-	region    string
-	zone      string
+	service       *compute.Service
+	projectID     string
+	region        string
+	stateFilePath string
 }
 
 func NewGCP(config acceptance.Config) GCP {
@@ -28,28 +29,24 @@ func NewGCP(config acceptance.Config) GCP {
 	}
 
 	googleConfig, err := google.JWTConfigFromJSON(rawServiceAccountKey, "https://www.googleapis.com/auth/compute")
-	if err != nil {
-		panic(err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 
 	p := struct {
 		ProjectID string `json:"project_id"`
 	}{}
 	err = json.Unmarshal(rawServiceAccountKey, &p)
-	if err != nil {
-		panic(err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 
 	service, err := compute.New(googleConfig.Client(context.Background()))
-	if err != nil {
-		panic(err)
-	}
+	Expect(err).NotTo(HaveOccurred())
+
+	stateFilePath := filepath.Join(config.StateFileDir, "bbl-state.json")
 
 	return GCP{
-		service:   service,
-		projectID: p.ProjectID,
-		region:    config.GCPRegion,
-		zone:      config.GCPZone,
+		service:       service,
+		projectID:     p.ProjectID,
+		region:        config.GCPRegion,
+		stateFilePath: stateFilePath,
 	}
 }
 
@@ -66,7 +63,8 @@ func (g GCP) GetTargetHTTPSProxy(name string) (*compute.TargetHttpsProxy, error)
 }
 
 func (g GCP) NetworkHasBOSHDirector(envID string) bool {
-	list, err := g.service.Instances.List(g.projectID, g.zone).
+	zone := getZoneFromStateFile(g.stateFilePath)
+	list, err := g.service.Instances.List(g.projectID, zone).
 		Filter("labels.director:bosh-init").
 		Do()
 	Expect(err).NotTo(HaveOccurred())
@@ -80,4 +78,18 @@ func (g GCP) NetworkHasBOSHDirector(envID string) bool {
 	}
 
 	return false
+}
+
+func getZoneFromStateFile(path string) string {
+	p := struct {
+		GCP struct {
+			Zone string `json:"zone"`
+		} `json:"gcp"`
+	}{}
+
+	contents, err := ioutil.ReadFile(path)
+	Expect(err).NotTo(HaveOccurred())
+	err = json.Unmarshal(contents, &p)
+	Expect(err).NotTo(HaveOccurred())
+	return p.GCP.Zone
 }

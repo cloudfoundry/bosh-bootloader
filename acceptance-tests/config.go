@@ -126,10 +126,6 @@ func validateGCPCreds(config Config) error {
 		return errors.New("gcp region is missing")
 	}
 
-	if config.GCPZone == "" {
-		return errors.New("gcp zone is missing")
-	}
-
 	return nil
 }
 
@@ -149,7 +145,6 @@ func loadConfigFromEnvVars() Config {
 
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
-		GCPZone:              os.Getenv("BBL_GCP_ZONE"),
 
 		StateFileDir:            os.Getenv("BBL_STATE_DIR"),
 		StemcellPath:            os.Getenv("STEMCELL_PATH"),
