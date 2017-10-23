@@ -143,17 +143,17 @@ func (m *Manager) Version() (string, error) {
 	return version, err
 }
 
-func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
+func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
+		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	stateDir := m.stateStore.GetStateDir()
 
 	deploymentDir, err := m.stateStore.GetJumpboxDeploymentDir()
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get deployment dir: %s", err)
+		return fmt.Errorf("Get deployment dir: %s", err)
 	}
 
 	iaasInputs := InterpolateInput{
@@ -168,10 +168,10 @@ func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraf
 
 	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Jumpbox interpolate: %s", err)
+		return fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
 
-	return m.CreateJumpbox(state, terraformOutputs.GetString("jumpbox_url"))
+	return nil
 }
 
 func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage.State, error) {
@@ -224,17 +224,17 @@ func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage
 	return state, nil
 }
 
-func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
+func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
+		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	stateDir := m.stateStore.GetStateDir()
 
 	directorDeploymentDir, err := m.stateStore.GetDirectorDeploymentDir()
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get deployment dir: %s", err)
+		return fmt.Errorf("Get deployment dir: %s", err)
 	}
 
 	iaasInputs := InterpolateInput{
@@ -250,10 +250,10 @@ func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terra
 
 	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
 	if err != nil {
-		return storage.State{}, err
+		return err
 	}
 
-	return state, nil
+	return nil
 }
 
 func (m *Manager) CreateDirector(state storage.State) (storage.State, error) {

@@ -103,7 +103,7 @@ director_ssl:
 
 		Describe("InitializeDirector", func() {
 			It("Calls DirectorCreateEnvArgs", func() {
-				_, err := boshManager.InitializeDirector(state, terraformOutputs)
+				err := boshManager.InitializeDirector(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput.DeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
@@ -132,7 +132,7 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					_, err := boshManager.InitializeDirector(storage.State{}, terraformOutputs)
+					err := boshManager.InitializeDirector(storage.State{}, terraformOutputs)
 					Expect(err).To(MatchError("failed to interpolate"))
 				})
 			})
@@ -141,7 +141,7 @@ gcp_credentials_json: some-credential-json
 				It("returns an error", func() {
 					stateStore.GetVarsDirCall.Returns.Error = errors.New("pineapple")
 
-					_, err := boshManager.InitializeDirector(storage.State{}, terraformOutputs)
+					err := boshManager.InitializeDirector(storage.State{}, terraformOutputs)
 					Expect(err).To(MatchError("Get vars dir: pineapple"))
 				})
 			})
@@ -150,7 +150,7 @@ gcp_credentials_json: some-credential-json
 				It("returns an error", func() {
 					stateStore.GetDirectorDeploymentDirCall.Returns.Error = errors.New("pineapple")
 
-					_, err := boshManager.InitializeDirector(storage.State{}, terraformOutputs)
+					err := boshManager.InitializeDirector(storage.State{}, terraformOutputs)
 					Expect(err).To(MatchError("Get deployment dir: pineapple"))
 				})
 			})
@@ -269,8 +269,8 @@ gcp_credentials_json: some-credential-json
 		})
 
 		Describe("InitializeJumpbox", func() {
-			It("Calls JumpboxCreateEnvArgsCall appropriately", func() {
-				_, err := boshManager.InitializeJumpbox(state, terraformOutputs)
+			It("calls JumpboxCreateEnvArgsCall appropriately", func() {
+				err := boshManager.InitializeJumpbox(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
@@ -284,7 +284,7 @@ gcp_credentials_json: some-credential-json
 					It("returns an error", func() {
 						stateStore.GetVarsDirCall.Returns.Error = errors.New("kiwi")
 
-						_, err := boshManager.InitializeJumpbox(state, terraformOutputs)
+						err := boshManager.InitializeJumpbox(state, terraformOutputs)
 						Expect(err).To(MatchError("Get vars dir: kiwi"))
 					})
 				})
@@ -293,11 +293,10 @@ gcp_credentials_json: some-credential-json
 					It("returns an error", func() {
 						stateStore.GetJumpboxDeploymentDirCall.Returns.Error = errors.New("kiwi")
 
-						_, err := boshManager.InitializeJumpbox(state, terraformOutputs)
+						err := boshManager.InitializeJumpbox(state, terraformOutputs)
 						Expect(err).To(MatchError("Get deployment dir: kiwi"))
 					})
 				})
-
 			})
 		})
 

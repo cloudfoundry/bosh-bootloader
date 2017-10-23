@@ -13,7 +13,6 @@ type BOSHManager struct {
 			TerraformOutputs terraform.Outputs
 		}
 		Returns struct {
-			State storage.State
 			Error error
 		}
 	}
@@ -35,7 +34,6 @@ type BOSHManager struct {
 			TerraformOutputs terraform.Outputs
 		}
 		Returns struct {
-			State storage.State
 			Error error
 		}
 	}
@@ -98,11 +96,11 @@ type BOSHManager struct {
 	}
 }
 
-func (b *BOSHManager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
+func (b *BOSHManager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
 	b.InitializeJumpboxCall.CallCount++
 	b.InitializeJumpboxCall.Receives.State = state
 	b.InitializeJumpboxCall.Receives.TerraformOutputs = terraformOutputs
-	return b.InitializeJumpboxCall.Returns.State, b.InitializeJumpboxCall.Returns.Error
+	return b.InitializeJumpboxCall.Returns.Error
 }
 
 func (b *BOSHManager) CreateJumpbox(state storage.State, jumpboxURL string) (storage.State, error) {
@@ -112,11 +110,11 @@ func (b *BOSHManager) CreateJumpbox(state storage.State, jumpboxURL string) (sto
 	return b.CreateJumpboxCall.Returns.State, b.CreateJumpboxCall.Returns.Error
 }
 
-func (b *BOSHManager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
+func (b *BOSHManager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) error {
 	b.InitializeDirectorCall.CallCount++
 	b.InitializeDirectorCall.Receives.State = state
 	b.InitializeDirectorCall.Receives.TerraformOutputs = terraformOutputs
-	return b.InitializeDirectorCall.Returns.State, b.InitializeDirectorCall.Returns.Error
+	return b.InitializeDirectorCall.Returns.Error
 }
 
 func (b *BOSHManager) CreateDirector(state storage.State) (storage.State, error) {

@@ -134,8 +134,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Parse terraform outputs: %s", err)
 	}
 
-	state, err = u.boshManager.InitializeJumpbox(state, terraformOutputs)
-	if err != nil {
+	if err := u.boshManager.InitializeJumpbox(state, terraformOutputs); err != nil {
 		return fmt.Errorf("Create jumpbox: %s", err)
 	}
 
@@ -150,8 +149,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 	}
 
 	state.BOSH.UserOpsFile = string(opsFileContents)
-	state, err = u.boshManager.InitializeDirector(state, terraformOutputs)
-	if err != nil {
+	if err := u.boshManager.InitializeDirector(state, terraformOutputs); err != nil {
 		return fmt.Errorf("Create bosh director: %s", err)
 	}
 

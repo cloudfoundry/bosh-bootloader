@@ -143,11 +143,9 @@ var _ = Describe("Up", func() {
 
 			terraformApplyState = storage.State{TFState: "terraform-apply-call"}
 			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
-			boshManager.InitializeJumpboxCall.Returns.State = terraformApplyState
 
 			createJumpboxState = storage.State{TFState: "create-jumpbox-call"}
 			boshManager.CreateJumpboxCall.Returns.State = createJumpboxState
-			boshManager.InitializeDirectorCall.Returns.State = createJumpboxState
 
 			createDirectorState = storage.State{TFState: "create-director-call"}
 			boshManager.CreateDirectorCall.Returns.State = createDirectorState
