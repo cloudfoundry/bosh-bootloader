@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
-	commandsFakes "github.com/cloudfoundry/bosh-bootloader/commands/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
@@ -22,7 +21,7 @@ var _ = Describe("DeleteLBs", func() {
 		boshManager          *fakes.BOSHManager
 		environmentValidator *fakes.EnvironmentValidator
 		cloudConfigManager   *fakes.CloudConfigManager
-		terraformManager     *commandsFakes.TerraformApplier
+		terraformManager     *fakes.TerraformManager
 		stateStore           *fakes.StateStore
 
 		incomingState storage.State
@@ -35,7 +34,7 @@ var _ = Describe("DeleteLBs", func() {
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 		environmentValidator = &fakes.EnvironmentValidator{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		terraformManager = &commandsFakes.TerraformApplier{}
+		terraformManager = &fakes.TerraformManager{}
 		stateStore = &fakes.StateStore{}
 
 		incomingState = storage.State{
@@ -109,12 +108,12 @@ var _ = Describe("DeleteLBs", func() {
 			})
 
 			By("running terraform apply to delete lbs and certificate", func() {
-				Expect(terraformManager.ApplyCallCount()).To(Equal(1))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 
 				expectedTerraformState := incomingState
 				expectedTerraformState.LB = storage.LB{}
 
-				Expect(terraformManager.ApplyArgsForCall(0)).To(Equal(expectedTerraformState))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedTerraformState))
 			})
 
 			By("saving state with no lb type", func() {
@@ -133,7 +132,7 @@ var _ = Describe("DeleteLBs", func() {
 						Type: "concourse",
 					},
 				}
-				terraformManager.ApplyReturns(state, nil)
+				terraformManager.ApplyCall.Returns.BBLState = state
 
 				err := command.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
@@ -162,7 +161,7 @@ var _ = Describe("DeleteLBs", func() {
 			})
 			Context("when terraform manager fails to apply the second time with terraformManagerError", func() {
 				It("return an error", func() {
-					terraformManager.ApplyReturns(storage.State{}, errors.New("apply failed"))
+					terraformManager.ApplyCall.Returns.Error = errors.New("apply failed")
 
 					err := command.Execute([]string{}, incomingState)
 					Expect(err).To(MatchError("apply failed"))
@@ -181,7 +180,7 @@ var _ = Describe("DeleteLBs", func() {
 					}
 					managerError.ErrorCall.Returns = "cannot apply"
 
-					terraformManager.ApplyReturns(storage.State{}, managerError)
+					terraformManager.ApplyCall.Returns.Error = managerError
 				})
 
 				It("returns an error", func() {
@@ -236,7 +235,7 @@ var _ = Describe("DeleteLBs", func() {
 				}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformManager.ApplyCallCount()).To(Equal(0))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
 				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`no lb type exists, skipping...`))
 			},
 				Entry("no-ops when LB type does not exist in state LB", storage.State{
@@ -253,7 +252,7 @@ var _ = Describe("DeleteLBs", func() {
 					err := command.Execute([]string{"--unknown-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -unknown-flag"))
 
-					Expect(terraformManager.ApplyCallCount()).To(Equal(0))
+					Expect(terraformManager.ApplyCall.CallCount).To(Equal(0))
 				})
 			})
 		})

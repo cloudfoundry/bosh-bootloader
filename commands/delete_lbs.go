@@ -14,7 +14,7 @@ type DeleteLBs struct {
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
 	environmentValidator environmentValidator
-	terraformManager     terraformApplier
+	terraformManager     terraformManager
 }
 
 type config struct {
@@ -23,7 +23,7 @@ type config struct {
 
 func NewDeleteLBs(logger logger, stateValidator stateValidator, boshManager boshManager,
 	cloudConfigManager cloudConfigManager, stateStore stateStore,
-	environmentValidator environmentValidator, terraformManager terraformApplier) DeleteLBs {
+	environmentValidator environmentValidator, terraformManager terraformManager) DeleteLBs {
 	return DeleteLBs{
 		logger:               logger,
 		stateValidator:       stateValidator,

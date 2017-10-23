@@ -18,7 +18,7 @@ type Up struct {
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
 	envIDManager       envIDManager
-	terraformManager   terraformApplier
+	terraformManager   terraformManager
 }
 
 type UpCmd interface {
@@ -32,7 +32,7 @@ type UpConfig struct {
 }
 
 func NewUp(upCmd UpCmd, boshManager boshManager, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, envIDManager envIDManager, terraformManager terraformApplier) Up {
+	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Up {
 	return Up{
 		upCmd:              upCmd,
 		boshManager:        boshManager,

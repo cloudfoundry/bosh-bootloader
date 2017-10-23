@@ -383,7 +383,6 @@ var _ = Describe("Executor", func() {
 
 		BeforeEach(func() {
 			var err error
-
 			cmd = &fakes.BOSHCommand{}
 			varsDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
@@ -399,14 +398,14 @@ var _ = Describe("Executor", func() {
 			}
 
 			deleteEnvPath = filepath.Join(stateDir, "delete-some-deployment.sh")
-			deleteEnvContents := "#!/bin/bash\necho delete-env\n"
+			deleteEnvContents := "#!/bin/bash\necho delete-env > /dev/null\n"
 
 			ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), os.ModePerm)
 		})
 
 		AfterEach(func() {
 			os.Unsetenv("BBL_STATE_DIR")
-			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
+			os.Remove(filepath.Join(stateDir, "delete-some-deployment.sh"))
 		})
 
 		It("deletes a bosh environment with the delete-env script", func() {

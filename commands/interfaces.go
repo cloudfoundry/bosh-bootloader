@@ -5,16 +5,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
-//go:generate counterfeiter -o ./fakes/terraform_applier.go --fake-name TerraformApplier . terraformApplier
-type terraformApplier interface {
+type terraformManager interface {
 	ValidateVersion() error
 	GetOutputs(storage.State) (terraform.Outputs, error)
 	Apply(storage.State) (storage.State, error)
-}
-
-type terraformDestroyer interface {
-	ValidateVersion() error
-	GetOutputs(storage.State) (terraform.Outputs, error)
 	Destroy(storage.State) (storage.State, error)
 }
 

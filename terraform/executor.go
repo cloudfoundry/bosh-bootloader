@@ -123,7 +123,6 @@ func (e Executor) Apply(input map[string]string) (string, error) {
 	return string(tfState), nil
 }
 
-//TODO: Merge Apply and Destroy (pass in command)
 func (e Executor) Destroy(input map[string]string) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {

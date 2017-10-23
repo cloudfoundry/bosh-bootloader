@@ -18,7 +18,7 @@ type Destroy struct {
 	boshManager              boshManager
 	stateStore               stateStore
 	stateValidator           stateValidator
-	terraformManager         terraformDestroyer
+	terraformManager         terraformManager
 	networkDeletionValidator NetworkDeletionValidator
 }
 
@@ -33,7 +33,7 @@ type NetworkDeletionValidator interface {
 
 func NewDestroy(logger logger, stdin io.Reader,
 	boshManager boshManager, stateStore stateStore, stateValidator stateValidator,
-	terraformManager terraformDestroyer, networkDeletionValidator NetworkDeletionValidator) Destroy {
+	terraformManager terraformManager, networkDeletionValidator NetworkDeletionValidator) Destroy {
 	return Destroy{
 		logger:                   logger,
 		stdin:                    stdin,

@@ -13,7 +13,7 @@ var (
 )
 
 type GCPCreateLBs struct {
-	terraformManager          terraformApplier
+	terraformManager          terraformManager
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
 	environmentValidator      EnvironmentValidator
@@ -31,7 +31,7 @@ type availabilityZoneRetriever interface {
 	GetZones(region string) ([]string, error)
 }
 
-func NewGCPCreateLBs(terraformManager terraformApplier,
+func NewGCPCreateLBs(terraformManager terraformManager,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, environmentValidator EnvironmentValidator,
 	availabilityZoneRetriever availabilityZoneRetriever) GCPCreateLBs {

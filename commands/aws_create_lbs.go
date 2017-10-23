@@ -10,7 +10,7 @@ type AWSCreateLBs struct {
 	cloudConfigManager   cloudConfigManager
 	stateStore           stateStore
 	stateValidator       stateValidator
-	terraformManager     terraformApplier
+	terraformManager     terraformManager
 	environmentValidator EnvironmentValidator
 }
 
@@ -27,7 +27,7 @@ type EnvironmentValidator interface {
 }
 
 func NewAWSCreateLBs(cloudConfigManager cloudConfigManager, stateStore stateStore,
-	terraformManager terraformApplier, environmentValidator EnvironmentValidator) AWSCreateLBs {
+	terraformManager terraformManager, environmentValidator EnvironmentValidator) AWSCreateLBs {
 	return AWSCreateLBs{
 		cloudConfigManager:   cloudConfigManager,
 		stateStore:           stateStore,
