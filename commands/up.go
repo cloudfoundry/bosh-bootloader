@@ -110,6 +110,11 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Save state after sync: %s", err)
 	}
 
+	err = u.terraformManager.Init(state)
+	if err != nil {
+		return fmt.Errorf("Terraform manager init: %s", err)
+	}
+
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {
 		return handleTerraformError(err, u.stateStore)

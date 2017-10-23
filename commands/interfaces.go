@@ -8,6 +8,7 @@ import (
 type terraformManager interface {
 	ValidateVersion() error
 	GetOutputs(storage.State) (terraform.Outputs, error)
+	Init(storage.State) error
 	Apply(storage.State) (storage.State, error)
 	Destroy(storage.State) (storage.State, error)
 }

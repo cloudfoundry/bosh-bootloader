@@ -46,6 +46,47 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
+	AfterEach(func() {
+		terraformOutputBuffer.Reset()
+	})
+
+	Describe("Init", func() {
+		var incomingState storage.State
+
+		BeforeEach(func() {
+			incomingState = storage.State{
+				TFState: "some-tf-state",
+			}
+			templateGenerator.GenerateCall.Returns.Template = "some-terraform-template"
+		})
+
+		It("returns a state with new tfState and output from executor apply", func() {
+			err := manager.Init(incomingState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+
+			Expect(executor.InitCall.CallCount).To(Equal(1))
+			Expect(executor.InitCall.Receives.TFState).To(Equal("some-tf-state"))
+			Expect(executor.InitCall.Receives.Template).To(Equal(string("some-terraform-template")))
+
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+				"generating terraform template",
+			}))
+		})
+
+		Context("when the executor init causes an executor error", func() {
+			BeforeEach(func() {
+				executor.InitCall.Returns.Error = errors.New("canteloupe")
+			})
+
+			It("returns the bblState with latest terraform output and a ManagerError", func() {
+				err := manager.Init(incomingState)
+				Expect(err).To(MatchError("Executor init: canteloupe"))
+			})
+		})
+	})
+
 	Describe("Apply", func() {
 		var (
 			incomingState storage.State
@@ -73,61 +114,16 @@ var _ = Describe("Manager", func() {
 				"credentials":   "some-path",
 				"system_domain": incomingState.LB.Domain,
 			}
-		})
 
-		Context("when the iaas is aws", func() {
-			var awsState storage.State
-			BeforeEach(func() {
-				awsState = storage.State{
-					IAAS:    "aws",
-					EnvID:   "some-env-id",
-					TFState: "some-tf-state",
-				}
-				inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
-					"env_id": incomingState.EnvID,
-				}
-				templateGenerator.GenerateCall.Returns.Template = "some-terraform-template"
-			})
-
-			It("returns a state with new tfState and output from executor apply", func() {
-				terraformOutputBuffer.Write([]byte("some-updated-tf-state"))
-
-				expectedAWSState := awsState
-				expectedAWSState.TFState = "some-updated-tf-state"
-				expectedAWSState.LatestTFOutput = "some-updated-tf-state"
-				state, err := manager.Apply(awsState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(awsState))
-				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(awsState))
-
-				Expect(executor.InitCall.CallCount).To(Equal(1))
-				Expect(executor.InitCall.Receives.TFState).To(Equal("some-tf-state"))
-				Expect(executor.InitCall.Receives.Template).To(Equal(string("some-terraform-template")))
-				Expect(executor.ApplyCall.CallCount).To(Equal(1))
-				Expect(executor.ApplyCall.Receives.Inputs).To(HaveKeyWithValue("env_id", awsState.EnvID))
-				Expect(state).To(Equal(expectedAWSState))
-
-				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-					"generating terraform template",
-					"generating terraform variables",
-					"terraform apply",
-				}))
-			})
+			terraformOutputBuffer.Write([]byte(expectedTFOutput))
 		})
 
 		It("returns a state with new tfState and output from executor apply", func() {
-			terraformOutputBuffer.Write([]byte(expectedTFOutput))
-
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
-			Expect(executor.InitCall.CallCount).To(Equal(1))
-			Expect(executor.InitCall.Receives.TFState).To(Equal("some-tf-state"))
-			Expect(executor.InitCall.Receives.Template).To(Equal(string("some-gcp-terraform-template")))
 			Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,
@@ -137,6 +133,11 @@ var _ = Describe("Manager", func() {
 				"system_domain": incomingState.LB.Domain,
 			}))
 			Expect(state).To(Equal(expectedState))
+
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+				"generating terraform variables",
+				"terraform apply",
+			}))
 		})
 
 		Context("when an error occurs", func() {
@@ -151,17 +152,6 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			Context("when the executor init causes an executor error", func() {
-				BeforeEach(func() {
-					executor.InitCall.Returns.Error = errors.New("canteloupe")
-				})
-
-				It("returns the bblState with latest terraform output and a ManagerError", func() {
-					_, err := manager.Apply(incomingState)
-					Expect(err).To(MatchError("Executor init: canteloupe"))
-				})
-			})
-
 			Context("when the applying causes an executor error", func() {
 				BeforeEach(func() {
 					executor.ApplyCall.Returns.Error = &fakes.TerraformExecutorError{}
@@ -173,7 +163,7 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			Context("when Executor.Apply returns a non-ExecutorError error", func() {
+			Context("when executor apply returns a non-ExecutorError error", func() {
 				BeforeEach(func() {
 					executor.ApplyCall.Returns.Error = errors.New("banana")
 				})

@@ -174,6 +174,9 @@ var _ = Describe("Up", func() {
 			Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
 			Expect(stateStore.SetCall.Receives[1].State).To(Equal(envIDManagerState))
 
+			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(envIDManagerState))
+
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(terraformApplyState))
@@ -322,6 +325,17 @@ var _ = Describe("Up", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Save state after sync: kiwi"))
+				})
+			})
+
+			Context("when the terraform manager fails on init", func() {
+				BeforeEach(func() {
+					terraformManager.InitCall.Returns.Error = errors.New("grapefruit")
+				})
+
+				It("returns the error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Terraform manager init: grapefruit"))
 				})
 			})
 

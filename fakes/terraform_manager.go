@@ -6,6 +6,15 @@ import (
 )
 
 type TerraformManager struct {
+	InitCall struct {
+		CallCount int
+		Receives  struct {
+			BBLState storage.State
+		}
+		Returns struct {
+			Error error
+		}
+	}
 	ApplyCall struct {
 		CallCount int
 		Receives  struct {
@@ -60,6 +69,13 @@ type TerraformManager struct {
 			Error error
 		}
 	}
+}
+
+func (t *TerraformManager) Init(bblState storage.State) error {
+	t.InitCall.CallCount++
+	t.InitCall.Receives.BBLState = bblState
+
+	return t.InitCall.Returns.Error
 }
 
 func (t *TerraformManager) Apply(bblState storage.State) (storage.State, error) {
