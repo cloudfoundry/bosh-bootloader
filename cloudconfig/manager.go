@@ -57,7 +57,7 @@ type terraformManager interface {
 }
 
 type sshKeyGetter interface {
-	Get(storage.State) (string, error)
+	Get(string) (string, error)
 }
 
 type stateStore interface {

@@ -1,12 +1,10 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
-
 type SSHKeyGetter struct {
 	GetCall struct {
 		CallCount int
 		Receives  struct {
-			State storage.State
+			Variables string
 		}
 		Returns struct {
 			PrivateKey string
@@ -15,9 +13,9 @@ type SSHKeyGetter struct {
 	}
 }
 
-func (s *SSHKeyGetter) Get(state storage.State) (string, error) {
+func (s *SSHKeyGetter) Get(variables string) (string, error) {
 	s.GetCall.CallCount++
-	s.GetCall.Receives.State = state
+	s.GetCall.Receives.Variables = variables
 
 	return s.GetCall.Returns.PrivateKey, s.GetCall.Returns.Error
 }

@@ -46,7 +46,8 @@ Commands:
   env-id                  Prints environment ID
   latest-error            Prints the output from the latest call to terraform
   print-env               Prints BOSH friendly environment variables
-  ssh-key                 Prints SSH private key
+  ssh-key                 Prints jumpbox SSH private key
+  director-ssh-key        Prints director SSH private key
 
   Use "bbl [command] --help" for more information about a command.`
 

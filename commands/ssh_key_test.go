@@ -24,6 +24,12 @@ var _ = Describe("SSHKey", func() {
 	BeforeEach(func() {
 		incomingState = storage.State{
 			Version: 3,
+			BOSH: storage.BOSH{
+				Variables: "some-director-variables",
+			},
+			Jumpbox: storage.Jumpbox{
+				Variables: "some-jumpbox-variables",
+			},
 		}
 
 		stateValidator = &fakes.StateValidator{}
@@ -53,8 +59,22 @@ var _ = Describe("SSHKey", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(sshKeyGetter.GetCall.CallCount).To(Equal(1))
-			Expect(sshKeyGetter.GetCall.Receives.State).To(Equal(incomingState))
+			Expect(sshKeyGetter.GetCall.Receives.Variables).To(Equal("some-jumpbox-variables"))
 			Expect(logger.PrintlnCall.Messages).To(Equal([]string{"some-private-ssh-key"}))
+		})
+
+		Context("director-ssh-key", func() {
+			BeforeEach(func() {
+				sshKeyCommand = commands.NewDirectorSSHKey(logger, stateValidator, sshKeyGetter)
+			})
+
+			It("uses BOSH variables to get the SSH key", func() {
+				err := sshKeyCommand.Execute([]string{}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(sshKeyGetter.GetCall.CallCount).To(Equal(1))
+				Expect(sshKeyGetter.GetCall.Receives.Variables).To(Equal("some-director-variables"))
+			})
 		})
 
 		Context("failure cases", func() {

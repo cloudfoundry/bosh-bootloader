@@ -160,6 +160,10 @@ func (b BBL) SSHKey() string {
 	return b.fetchValue("ssh-key")
 }
 
+func (b BBL) DirectorSSHKey() string {
+	return b.fetchValue("director-ssh-key")
+}
+
 func (b BBL) EnvID() string {
 	return b.fetchValue("env-id")
 }

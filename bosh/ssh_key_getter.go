@@ -1,7 +1,6 @@
 package bosh
 
 import (
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -11,18 +10,17 @@ func NewSSHKeyGetter() SSHKeyGetter {
 	return SSHKeyGetter{}
 }
 
-func (j SSHKeyGetter) Get(state storage.State) (string, error) {
-	var variables struct {
+func (j SSHKeyGetter) Get(vars string) (string, error) {
+	var p struct {
 		JumpboxSSH struct {
 			PrivateKey string `yaml:"private_key"`
 		} `yaml:"jumpbox_ssh"`
 	}
 
-	vars := state.Jumpbox.Variables
-	err := yaml.Unmarshal([]byte(vars), &variables)
+	err := yaml.Unmarshal([]byte(vars), &p)
 	if err != nil {
 		return "", err
 	}
 
-	return variables.JumpboxSSH.PrivateKey, nil
+	return p.JumpboxSSH.PrivateKey, nil
 }

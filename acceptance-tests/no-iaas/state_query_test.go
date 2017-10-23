@@ -27,7 +27,8 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 	//   env-id                  Prints environment ID
 	//   latest-error            Prints the output from the latest call to terraform
 	//   print-env               Prints BOSH friendly environment variables
-	//   ssh-key                 Prints SSH private key
+	//   ssh-key                 Prints jumpbox SSH private key
+	//   director-ssh-key        Prints director SSH private key
 	var (
 		bbl actors.BBL
 	)
@@ -143,6 +144,11 @@ tags:
 		stdout := bbl.SSHKey()
 		Expect(stdout).To(Equal("-----BEGIN RSA PRIVATE KEY-----\nssh-key\n-----END RSA PRIVATE KEY-----"))
 	})
+
+	It("bbl director-ssh-key", func() {
+		stdout := bbl.DirectorSSHKey()
+		Expect(stdout).To(Equal("-----BEGIN RSA PRIVATE KEY-----\ndirector-ssh-key\n-----END RSA PRIVATE KEY-----"))
+	})
 })
 
 const BBL_STATE_5_1_0 = `
@@ -184,7 +190,7 @@ const BBL_STATE_5_1_0 = `
 		"directorSSLCA": "-----BEGIN CERTIFICATE-----\ndirector-ca-cert\n-----END CERTIFICATE-----\n",
 		"directorSSLCertificate": "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n",
 		"directorSSLPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n-----END RSA PRIVATE KEY-----\n",
-		"variables": "some-bosh-vars",
+		"variables": "jumpbox_ssh:\n  private_key: |\n    -----BEGIN RSA PRIVATE KEY-----\n    director-ssh-key\n    -----END RSA PRIVATE KEY-----",
 		"state": {},
 		"manifest": "some-manifest",
 		"userOpsFile": "some-ops-file"

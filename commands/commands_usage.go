@@ -71,7 +71,9 @@ const (
 
 	EnvIdCommandUsage = "Prints environment ID"
 
-	SSHKeyCommandUsage = "Prints SSH private key for the jumpbox user. This can be used to ssh to the director/use the director as a gateway host."
+	SSHKeyCommandUsage = "Prints SSH private key for the jumpbox."
+
+	DirectorSSHKeyCommandUsage = "Prints SSH private key for the director."
 
 	RotateCommandUsage = "Rotates SSH key for the jumpbox user." + requiresCredentials
 
@@ -120,7 +122,12 @@ func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage
 
 func (JumpboxDeploymentVars) Usage() string { return JumpboxDeploymentVarsCommandUsage }
 
-func (SSHKey) Usage() string { return SSHKeyCommandUsage }
+func (s SSHKey) Usage() string {
+	if s.Director {
+		return DirectorSSHKeyCommandUsage
+	}
+	return SSHKeyCommandUsage
+}
 
 func (Rotate) Usage() string { return RotateCommandUsage }
 
