@@ -1,6 +1,30 @@
 package commands
 
 const (
+	requiresCredentials = `
+
+  Credentials for your IaaS are required:
+  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
+  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+
+  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
+
+  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`
+
+	certKeyRequirements = `
+
+  --cert/--key requirements:
+  ------------------------------
+  |     | cf       | concourse |
+  ------------------------------
+  | aws | required | required  |
+  ------------------------------
+  | gcp | required | n/a       |
+  ------------------------------`
+
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
   --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
@@ -25,7 +49,7 @@ const (
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
 
   [--no-confirm]       Do not ask for confirmation (optional)
-  [--skip-if-missing]  Gracefully exit if there is no state file (optional)`
+  [--skip-if-missing]  Gracefully exit if there is no state file (optional)` + requiresCredentials
 
 	CreateLBsCommandUsage = `Attaches load balancer(s) with a certificate, key, and optional chain
 
@@ -33,31 +57,11 @@ const (
   [--cert]            Path to SSL certificate (conditionally required; refer to table below)
   [--key]             Path to SSL certificate key (conditionally required; refer to table below)
   [--chain]           Path to SSL certificate chain (optional; only supported on aws)
-  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
-
-  Credentials for your IaaS are required to run create-lbs:
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
-
-  --cert/--key requirements:
-  ------------------------------
-  |     | cf       | concourse |
-  ------------------------------
-  | aws | required | required  |
-  ------------------------------
-  | gcp | required | n/a       |
-  ------------------------------`
+  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")` + requiresCredentials + certKeyRequirements
 
 	DeleteLBsCommandUsage = `Deletes load balancer(s)
 
-  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)`
+  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)` + requiresCredentials
 
 	LBsCommandUsage = "Prints attached load balancer(s)"
 
@@ -69,7 +73,7 @@ const (
 
 	SSHKeyCommandUsage = "Prints SSH private key for the jumpbox user. This can be used to ssh to the director/use the director as a gateway host."
 
-	RotateCommandUsage = "Rotates SSH key for the jumpbox user."
+	RotateCommandUsage = "Rotates SSH key for the jumpbox user." + requiresCredentials
 
 	JumpboxAddressCommandUsage = "Prints BOSH jumpbox address"
 

@@ -51,7 +51,7 @@ var _ = Describe("Commands Usage", func() {
   [--chain]           Path to SSL certificate chain (optional; only supported on aws)
   [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
 
-  Credentials for your IaaS are required to run create-lbs:
+  Credentials for your IaaS are required:
   --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
   --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
 
@@ -81,7 +81,18 @@ var _ = Describe("Commands Usage", func() {
 				usageText := command.Usage()
 				Expect(usageText).To(Equal(`Deletes load balancer(s)
 
-  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)`))
+  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)
+
+  Credentials for your IaaS are required:
+  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
+  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+
+  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
+
+  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`))
 			})
 		})
 	})
@@ -94,7 +105,39 @@ var _ = Describe("Commands Usage", func() {
 				Expect(usageText).To(Equal(`Tears down BOSH director infrastructure
 
   [--no-confirm]       Do not ask for confirmation (optional)
-  [--skip-if-missing]  Gracefully exit if there is no state file (optional)`))
+  [--skip-if-missing]  Gracefully exit if there is no state file (optional)
+
+  Credentials for your IaaS are required:
+  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
+  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+
+  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
+
+  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`))
+			})
+		})
+	})
+
+	Describe("Rotate", func() {
+		Describe("Usage", func() {
+			It("returns string describing usage", func() {
+				command := commands.Rotate{}
+				usageText := command.Usage()
+				Expect(usageText).To(Equal(`Rotates SSH key for the jumpbox user.
+
+  Credentials for your IaaS are required:
+  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
+  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+
+  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
+
+  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`))
 			})
 		})
 	})
@@ -121,7 +164,6 @@ var _ = Describe("Commands Usage", func() {
 		Entry("director-ca-cert", newStateQuery("director ca cert"), "Prints BOSH director CA certificate"),
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
 		Entry("ssh-key", commands.SSHKey{}, "Prints SSH private key for the jumpbox user. This can be used to ssh to the director/use the director as a gateway host."),
-		Entry("rotate", commands.Rotate{}, "Rotates SSH key for the jumpbox user."),
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
 		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
