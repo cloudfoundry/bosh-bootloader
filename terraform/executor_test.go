@@ -42,10 +42,6 @@ var _ = Describe("Executor", func() {
 		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
-		terraform.SetReadFile(func(filename string) ([]byte, error) {
-			return []byte{}, nil
-		})
-
 		terraformDir, err = ioutil.TempDir("", "terraform")
 		Expect(err).NotTo(HaveOccurred())
 		stateStore.GetTerraformDirCall.Returns.Directory = terraformDir
@@ -75,51 +71,20 @@ var _ = Describe("Executor", func() {
 		terraform.ResetWriteFile()
 	})
 
-	Describe("Apply", func() {
-		It("writes the terraform template to a file", func() {
-			_, err := executor.Apply(input, "some-template", "")
+	Describe("Init", func() {
+		It("writes existing terraform state and runs terraform init", func() {
+			err := executor.Init("some-template", "some-tf-state")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stateStore.GetTerraformDirCall.CallCount).To(Equal(1))
 
-			fileContents, err := ioutil.ReadFile(filepath.Join(terraformDir, "template.tf"))
+			terraformTemplate, err := ioutil.ReadFile(filepath.Join(terraformDir, "template.tf"))
 			Expect(err).NotTo(HaveOccurred())
+			Expect(string(terraformTemplate)).To(Equal("some-template"))
 
-			Expect(string(fileContents)).To(Equal("some-template"))
-		})
-
-		It("passes the correct args and dir to run command", func() {
-			_, err := executor.Apply(input, "some-template", "")
+			terraformState, err := ioutil.ReadFile(tfStatePath)
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
-				"apply",
-				"-state", relativeStatePath,
-				"-var", "project_id=some-project-id",
-				"-var", "env_id=some-env-id",
-				"-var", "region=some-region",
-				"-var", "zone=some-zone",
-				"-var", "ssl_certificate=some/certificate/path",
-				"-var", "ssl_certificate_private_key=some/key/path",
-				"-var", "credentials=some/credentials/path",
-				"-var", "system_domain=some-domain",
-			}))
-			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
-		})
-
-		It("reads and returns the terraform state written by the command", func() {
-			var actualFilename string
-			terraform.SetReadFile(func(filename string) ([]byte, error) {
-				actualFilename = filename
-				return []byte("some-terraform-state"), nil
-			})
-
-			terraformState, err := executor.Apply(input, "some-template", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(actualFilename).To(ContainSubstring("terraform.tfstate"))
-			Expect(terraformState).To(Equal("some-terraform-state"))
+			Expect(string(terraformState)).To(Equal("some-tf-state"))
 		})
 
 		Context("when previous tf state is blank", func() {
@@ -138,28 +103,15 @@ var _ = Describe("Executor", func() {
 					return nil
 				})
 			})
-
 			AfterEach(func() {
 				terraform.ResetWriteFile()
 			})
 
 			It("does not write the previous tf state file", func() {
-				_, err := executor.Apply(input, "some-template", "")
+				err := executor.Init("some-template", "")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(writeTFStateFileCallCount).To(Equal(0))
-			})
-		})
-
-		Context("when previous tf state is not blank", func() {
-			It("writes the tf state to a file", func() {
-				_, err := executor.Apply(input, "some-template", "some-tf-state")
-				Expect(err).NotTo(HaveOccurred())
-
-				fileContents, err := ioutil.ReadFile(tfStatePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(string(fileContents)).To(Equal("some-tf-state"))
 			})
 		})
 
@@ -170,7 +122,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := executor.Apply(input, "some-template", "")
+					err := executor.Init("some-template", "")
 					Expect(err).To(MatchError("Get terraform dir: canteloupe"))
 				})
 			})
@@ -186,7 +138,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := executor.Apply(input, "some-template", "")
+					err := executor.Init("some-template", "")
 					Expect(err).To(MatchError("Write terraform template: pear"))
 				})
 			})
@@ -197,7 +149,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := executor.Apply(input, "", "")
+					err := executor.Init("", "")
 					Expect(err).To(MatchError("Get vars dir: coconut"))
 				})
 			})
@@ -213,32 +165,65 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := executor.Apply(input, "some-template", "some-tf-state")
+					err := executor.Init("some-template", "some-tf-state")
 					Expect(err).To(MatchError("Write previous terraform state: peach"))
 				})
 			})
-
 			Context("when terraform init fails", func() {
 				BeforeEach(func() {
 					cmd.RunCall.Returns.Errors = []error{errors.New("guava")}
 				})
 
 				It("returns an error", func() {
-					_, err := executor.Apply(input, "some-template", "")
+					err := executor.Init("some-template", "")
 					Expect(err).To(MatchError("Run terraform init: guava"))
 				})
 			})
+		})
+	})
 
+	Describe("Apply", func() {
+		It("runs terraform apply", func() {
+			//TODO: Can I remove this ?
+			terraform.ResetReadFile()
+			err := executor.Init("some-template", "some-terraform-state") // We need to run the terraform init command.
+			Expect(err).NotTo(HaveOccurred())
+
+			terraformState, err := executor.Apply(input)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(terraformState).To(Equal("some-terraform-state"))
+
+			By("passing the correct args and dir to run command", func() {
+				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+					"apply",
+					"-state", relativeStatePath,
+					"-var", "project_id=some-project-id",
+					"-var", "env_id=some-env-id",
+					"-var", "region=some-region",
+					"-var", "zone=some-zone",
+					"-var", "ssl_certificate=some/certificate/path",
+					"-var", "ssl_certificate_private_key=some/key/path",
+					"-var", "credentials=some/credentials/path",
+					"-var", "system_domain=some-domain",
+				}))
+				Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+			})
+		})
+
+		Context("when an error occurs", func() {
 			Context("when terraform command run fails", func() {
 				BeforeEach(func() {
 					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 
 					cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
+					_ = executor.Init("some-template", "")
 				})
 
 				It("returns an error and the current tf state", func() {
-					_, err := executor.Apply(input, "some-template", "")
+					_, err := executor.Apply(input)
 					taErr := err.(terraform.ExecutorError)
 					Expect(taErr).To(MatchError("the-executor-error"))
 
@@ -253,10 +238,11 @@ var _ = Describe("Executor", func() {
 					terraform.SetReadFile(func(filename string) ([]byte, error) {
 						return []byte{}, errors.New("lychee")
 					})
+					_ = executor.Init("some-template", "")
 				})
 
 				It("returns an error", func() {
-					_, err := executor.Apply(input, "some-template", "")
+					_, err := executor.Apply(input)
 					Expect(err).To(MatchError("Read terraform state: lychee"))
 				})
 			})
@@ -275,7 +261,8 @@ var _ = Describe("Executor", func() {
 					})
 
 					It("returns an error and the current tf state", func() {
-						_, err := executor.Apply(input, "some-template", "")
+						err := executor.Init("some-template", "")
+						_, err = executor.Apply(input)
 						taErr := err.(terraform.ExecutorError)
 
 						tfState, err := taErr.TFState()

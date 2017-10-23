@@ -3,6 +3,7 @@ package terraform
 import (
 	"bytes"
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/coreos/go-semver/semver"
@@ -20,7 +21,8 @@ type Manager struct {
 type executor interface {
 	Version() (string, error)
 	Destroy(inputs map[string]string, terraformTemplate, tfState string) (string, error)
-	Apply(inputs map[string]string, terraformTemplate, tfState string) (string, error)
+	Init(terraformTemplate, tfState string) error
+	Apply(inputs map[string]string) (string, error)
 	Outputs(string) (map[string]interface{}, error)
 	Output(string, string) (string, error)
 }
@@ -95,15 +97,16 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("Input generator generate: %s", err)
+	}
+
+	err = m.executor.Init(template, bblState.TFState)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Executor init: %s", err)
 	}
 
 	m.logger.Step("applying terraform template")
-	tfState, err := m.executor.Apply(
-		input,
-		template,
-		bblState.TFState,
-	)
+	tfState, err := m.executor.Apply(input)
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
@@ -128,7 +131,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("Input generator generate: %s", err)
 	}
 
 	tfState, err := m.executor.Destroy(
@@ -142,7 +145,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	case executorError:
 		return storage.State{}, NewManagerError(bblState, err.(executorError))
 	case error:
-		return storage.State{}, err
+		return storage.State{}, fmt.Errorf("Executor destroy: %s", err)
 	}
 	m.logger.Step("finished destroying infrastructure")
 

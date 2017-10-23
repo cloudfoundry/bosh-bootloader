@@ -53,7 +53,8 @@ const VERSION_DEV_BUILD = "[DEV BUILD]"
 
 func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	unmarshalJSON func([]byte, interface{}) error,
-	marshalJSON func(interface{}) ([]byte, error), writeFile func(string, []byte, os.FileMode) error) Executor {
+	marshalJSON func(interface{}) ([]byte, error),
+	writeFile func(string, []byte, os.FileMode) error) Executor {
 	return Executor{
 		command:       cmd,
 		readFile:      readFile,
@@ -121,14 +122,14 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
-	err = e.writeFileUnlessExisting(createJumpboxScript, createEnvCmd, os.ModePerm, "Jumpbox write create-env script: %s")
+	err = e.writeFileUnlessExisting(createJumpboxScript, createEnvCmd, os.ModePerm, "Jumpbox write create-env script")
 	if err != nil {
 		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, input.StateDir, "delete-env", boshArgs))
 	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
-	err = e.writeFileUnlessExisting(deleteJumpboxScript, deleteEnvCmd, os.ModePerm, "Jumpbox write delete-env script: %s")
+	err = e.writeFileUnlessExisting(deleteJumpboxScript, deleteEnvCmd, os.ModePerm, "Jumpbox write delete-env script")
 	if err != nil {
 		return err
 	}
@@ -248,13 +249,13 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	}, sharedArgs...)
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
-	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm, "Write create-env script for director: %s")
+	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm, "Write create-env script for director")
 	if err != nil {
 		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, input.StateDir, "delete-env", boshArgs))
-	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm, "Write delete-env script for director: %s")
+	err = e.writeFileUnlessExisting(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm, "Write delete-env script for director")
 	if err != nil {
 		return err
 	}
@@ -280,7 +281,7 @@ func (e Executor) writeFileUnlessExisting(path string, contents []byte, mode os.
 	if err != nil {
 		err = e.writeFile(path, contents, mode)
 		if err != nil {
-			return fmt.Errorf(failureMessage, err) //not tested
+			return fmt.Errorf("%s: %s", failureMessage, err) //not tested
 		}
 	}
 

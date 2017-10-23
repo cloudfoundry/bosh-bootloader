@@ -54,36 +54,49 @@ func NewExecutor(cmd terraformCmd, stateStore stateStore, debug bool) Executor {
 	}
 }
 
-func (e Executor) Apply(input map[string]string, template, prevTFState string) (string, error) {
+func (e Executor) Init(template, prevTFState string) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform dir: %s", err)
+		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
 	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
 	if err != nil {
-		return "", fmt.Errorf("Write terraform template: %s", err)
+		return fmt.Errorf("Write terraform template: %s", err)
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars dir: %s", err)
+		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
-
 	if prevTFState != "" {
 		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
 		if err != nil {
-			return "", fmt.Errorf("Write previous terraform state: %s", err)
+			return fmt.Errorf("Write previous terraform state: %s", err)
 		}
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
 	if err != nil {
-		return "", fmt.Errorf("Run terraform init: %s", err)
+		return fmt.Errorf("Run terraform init: %s", err)
 	}
 
+	return nil
+}
+
+func (e Executor) Apply(input map[string]string) (string, error) {
+	varsDir, err := e.stateStore.GetVarsDir()
+	if err != nil {
+		return "", fmt.Errorf("Get vars dir: %s", err)
+	}
+	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
+
+	terraformDir, err := e.stateStore.GetTerraformDir()
+	if err != nil {
+		return "", fmt.Errorf("Get terraform dir: %s", err)
+	}
 	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
 	if err != nil {
 		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
@@ -96,6 +109,7 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 	for k, v := range input {
 		args = append(args, makeVar(k, v)...)
 	}
+
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
 		return "", NewExecutorError(tfStatePath, err, e.debug)

@@ -8,12 +8,20 @@ type Import struct {
 }
 
 type TerraformExecutor struct {
+	InitCall struct {
+		CallCount int
+		Receives  struct {
+			Template string
+			TFState  string
+		}
+		Returns struct {
+			Error error
+		}
+	}
 	ApplyCall struct {
 		CallCount int
 		Receives  struct {
-			Inputs   map[string]string
-			Template string
-			TFState  string
+			Inputs map[string]string
 		}
 		Returns struct {
 			TFState string
@@ -76,11 +84,16 @@ type TerraformExecutor struct {
 	}
 }
 
-func (t *TerraformExecutor) Apply(inputs map[string]string, template, tfState string) (string, error) {
+func (t *TerraformExecutor) Init(template, tfState string) error {
+	t.InitCall.CallCount++
+	t.InitCall.Receives.Template = template
+	t.InitCall.Receives.TFState = tfState
+	return t.InitCall.Returns.Error
+}
+
+func (t *TerraformExecutor) Apply(inputs map[string]string) (string, error) {
 	t.ApplyCall.CallCount++
 	t.ApplyCall.Receives.Inputs = inputs
-	t.ApplyCall.Receives.Template = template
-	t.ApplyCall.Receives.TFState = tfState
 	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error
 }
 
