@@ -31,7 +31,9 @@ func (u GCPUp) Execute(state storage.State) (storage.State, error) {
 	}
 
 	state.GCP.Zones = zones
-	state.GCP.Zone = zones[0]
+	if state.GCP.Zone == "" {
+		state.GCP.Zone = zones[0]
+	}
 
 	return state, nil
 }

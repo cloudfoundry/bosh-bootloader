@@ -46,6 +46,19 @@ var _ = Describe("GCPUp", func() {
 			Expect(returnedState.GCP.Zone).To(Equal("zone-1"))
 		})
 
+		Context("when zone is already set on the state", func() {
+			BeforeEach(func() {
+				incomingState.GCP.Zone = "zone-2"
+			})
+
+			It("uses existing zone", func() {
+				returnedState, err := gcpUp.Execute(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(returnedState.GCP.Zone).To(Equal("zone-2"))
+			})
+		})
+
 		Context("failure cases", func() {
 			Context("when GCP AZs cannot be retrieved", func() {
 				BeforeEach(func() {
