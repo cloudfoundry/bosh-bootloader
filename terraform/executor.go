@@ -78,6 +78,16 @@ func (e Executor) Init(template, prevTFState string) error {
 		}
 	}
 
+	err = os.MkdirAll(filepath.Join(terraformDir, ".terraform"), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Create .terraform directory: %s", err)
+	}
+
+	err = writeFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err)
+	}
+
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
 	if err != nil {
 		return fmt.Errorf("Run terraform init: %s", err)

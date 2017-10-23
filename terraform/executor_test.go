@@ -87,6 +87,16 @@ var _ = Describe("Executor", func() {
 			Expect(string(terraformState)).To(Equal("some-tf-state"))
 		})
 
+		It("writes a .gitignore file to .terraform so that plugin binaries are not committed", func() {
+			err := executor.Init("some-template", "some-tf-state")
+			Expect(err).NotTo(HaveOccurred())
+
+			contents, err := ioutil.ReadFile(filepath.Join(terraformDir, ".terraform", ".gitignore"))
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(string(contents)).To(Equal("*\n"))
+		})
+
 		Context("when previous tf state is blank", func() {
 			var writeTFStateFileCallCount int
 
@@ -169,6 +179,35 @@ var _ = Describe("Executor", func() {
 					Expect(err).To(MatchError("Write previous terraform state: peach"))
 				})
 			})
+
+			Context("when creating the .terraform directory fails", func() {
+				BeforeEach(func() {
+					_, err := os.Create(filepath.Join(terraformDir, ".terraform"))
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("returns an error", func() {
+					err := executor.Init("some-template", "some-tf-state")
+					Expect(err.Error()).To(ContainSubstring("Create .terraform directory: "))
+				})
+			})
+
+			Context("when writing the .gitignore for terraform binaries fails", func() {
+				BeforeEach(func() {
+					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
+						if file == filepath.Join(terraformDir, ".terraform", ".gitignore") {
+							return errors.New("nectarine")
+						}
+						return nil
+					})
+				})
+
+				It("returns an error", func() {
+					err := executor.Init("some-template", "some-tf-state")
+					Expect(err).To(MatchError("Write .gitignore for terraform binaries: nectarine"))
+				})
+			})
+
 			Context("when terraform init fails", func() {
 				BeforeEach(func() {
 					cmd.RunCall.Returns.Errors = []error{errors.New("guava")}
