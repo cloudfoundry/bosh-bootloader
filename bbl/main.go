@@ -32,10 +32,7 @@ import (
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
 
-var (
-	Version     string
-	gcpBasePath string
-)
+var Version string
 
 func main() {
 	logger := application.NewLogger(os.Stdout)
@@ -89,13 +86,11 @@ func main() {
 		networkDeletionValidator = awsClient
 		networkClient = awsClient
 	} else if appConfig.State.IAAS == "gcp" && needsIAASCreds {
-		gcpClientProvider := gcp.NewClientProvider(gcpBasePath)
-		err = gcpClientProvider.SetConfig(appConfig.State.GCP.ServiceAccountKey, appConfig.State.GCP.ProjectID, appConfig.State.GCP.Region, appConfig.State.GCP.Zone)
+		gcpClient, err = gcp.NewClient(appConfig.State.GCP, "")
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
 
-		gcpClient = gcpClientProvider.Client()
 		networkDeletionValidator = gcpClient
 		networkClient = gcpClient
 	} else if appConfig.State.IAAS == "azure" && needsIAASCreds {

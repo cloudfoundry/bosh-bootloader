@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+	compute "google.golang.org/api/compute/v1"
+
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
-
-	compute "google.golang.org/api/compute/v1"
-)
-
-const (
-	GoogleComputeAuth = "https://www.googleapis.com/auth/compute"
 )
 
 func gcpHTTPClientFunc(config *jwt.Config) *http.Client {
@@ -21,50 +18,35 @@ func gcpHTTPClientFunc(config *jwt.Config) *http.Client {
 
 var gcpHTTPClient = gcpHTTPClientFunc
 
-type ClientProvider struct {
-	basePath string
-	client   Client
-}
-
-func NewClientProvider(gcpBasePath string) *ClientProvider {
-	return &ClientProvider{
-		basePath: gcpBasePath,
-	}
-}
-
-func (p *ClientProvider) SetConfig(serviceAccountKey, projectID, region, zone string) error {
-	config, err := google.JWTConfigFromJSON([]byte(serviceAccountKey), compute.ComputeScope)
+func NewClient(gcpConfig storage.GCP, basePath string) (Client, error) {
+	config, err := google.JWTConfigFromJSON([]byte(gcpConfig.ServiceAccountKey), compute.ComputeScope)
 	if err != nil {
-		return fmt.Errorf("parse service account key: %s", err)
+		return Client{}, fmt.Errorf("parse service account key: %s", err)
 	}
 
-	if p.basePath != "" {
-		config.TokenURL = p.basePath
+	if basePath != "" {
+		config.TokenURL = basePath
 	}
 
 	service, err := compute.New(gcpHTTPClient(config))
 	if err != nil {
-		return fmt.Errorf("create gcp client: %s", err)
+		return Client{}, fmt.Errorf("create gcp client: %s", err)
 	}
 
-	if p.basePath != "" {
-		service.BasePath = p.basePath
+	if basePath != "" {
+		service.BasePath = basePath
 	}
 
-	p.client = Client{
+	client := Client{
 		computeClient: gcpComputeClient{service: service},
-		projectID:     projectID,
-		zone:          zone,
+		projectID:     gcpConfig.ProjectID,
+		zone:          gcpConfig.Zone,
 	}
 
-	_, err = p.client.GetRegion(region)
+	_, err = client.GetRegion(gcpConfig.Region)
 	if err != nil {
-		return fmt.Errorf("get region: %s", err)
+		return Client{}, fmt.Errorf("get region: %s", err)
 	}
 
-	return nil
-}
-
-func (p *ClientProvider) Client() Client {
-	return p.client
+	return client, nil
 }
