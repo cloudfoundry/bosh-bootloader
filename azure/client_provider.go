@@ -1,63 +1,41 @@
 package azure
 
 import (
-	"context"
-	"net/http"
-
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/storage"
+	azurestorage "github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-
-	"golang.org/x/oauth2/jwt"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-func azureHTTPClientFunc(config *jwt.Config) *http.Client {
-	return config.Client(context.Background())
-}
-
-var azureHTTPClient = azureHTTPClientFunc
-
-type ClientProvider struct {
-	client Client
-}
-
-func NewClientProvider() *ClientProvider {
-	return &ClientProvider{}
-}
-
-func (p *ClientProvider) SetConfig(subscriptionID, tenantID, clientID, clientSecret string) error {
-	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, tenantID)
+func NewClient(azureConfig storage.Azure) (Client, error) {
+	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, azureConfig.TenantID)
 	if err != nil {
-		return err
+		return Client{}, err
 	}
 
-	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, clientID, clientSecret, azure.PublicCloud.ResourceManagerEndpoint)
+	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, azureConfig.ClientID, azureConfig.ClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
 	if err != nil {
-		return err
+		return Client{}, err
 	}
 
-	ac := storage.NewAccountsClient(subscriptionID)
+	ac := azurestorage.NewAccountsClient(azureConfig.SubscriptionID)
 	ac.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	ac.Sender = autorest.CreateSender(autorest.AsIs())
 
-	vmsClient := compute.NewVirtualMachinesClient(subscriptionID)
+	vmsClient := compute.NewVirtualMachinesClient(azureConfig.SubscriptionID)
 	vmsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	vmsClient.Sender = autorest.CreateSender(autorest.AsIs())
 
-	p.client = Client{
+	client := Client{
 		azureVMsClient: vmsClient,
 	}
 
 	_, err = ac.List()
 	if err != nil {
-		return err
+		return Client{}, err
 	}
 
-	return nil
-}
-
-func (p *ClientProvider) Client() Client {
-	return p.client
+	return client, nil
 }

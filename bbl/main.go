@@ -94,12 +94,12 @@ func main() {
 		networkDeletionValidator = gcpClient
 		networkClient = gcpClient
 	} else if appConfig.State.IAAS == "azure" && needsIAASCreds {
-		azureClientProvider := azure.NewClientProvider()
-		err = azureClientProvider.SetConfig(appConfig.State.Azure.SubscriptionID, appConfig.State.Azure.TenantID, appConfig.State.Azure.ClientID, appConfig.State.Azure.ClientSecret)
+		azureClient, err := azure.NewClient(appConfig.State.Azure)
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
-		networkDeletionValidator = azureClientProvider.Client()
+
+		networkDeletionValidator = azureClient
 	}
 
 	var (
