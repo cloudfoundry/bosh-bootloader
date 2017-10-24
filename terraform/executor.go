@@ -116,8 +116,9 @@ func (e Executor) Apply(input map[string]string) (string, error) {
 		"apply",
 		"-state", relativeStatePath,
 	}
-	for k, v := range input {
-		args = append(args, makeVar(k, v)...)
+	for name, value := range input {
+		tfVar := []string{"-var", fmt.Sprintf("%s=%s", name, value)}
+		args = append(args, tfVar...)
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
@@ -156,9 +157,11 @@ func (e Executor) Destroy(input map[string]string) (string, error) {
 		"-force",
 		"-state", relativeStatePath,
 	}
-	for k, v := range input {
-		args = append(args, makeVar(k, v)...)
+	for name, value := range input {
+		tfVar := []string{"-var", fmt.Sprintf("%s=%s", name, value)}
+		args = append(args, tfVar...)
 	}
+
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
 		return "", NewExecutorError(tfStatePath, err, e.debug)
@@ -316,8 +319,4 @@ func (e Executor) Outputs(tfState string) (map[string]interface{}, error) {
 	}
 
 	return outputs, nil
-}
-
-func makeVar(name string, value string) []string {
-	return []string{"-var", fmt.Sprintf("%s=%s", name, value)}
 }
