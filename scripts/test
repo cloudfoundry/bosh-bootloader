@@ -27,15 +27,16 @@ function main() {
 	pushd "${root_dir}" > /dev/null
     echo "Unit tests"
 		ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites -skipPackage acceptance-test ${@}
+
     if [ -z ${@} ]
     then
       echo "No-IAAS integration tests"
       ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites acceptance-tests/no-iaas ${@}
     fi
-	popd > /dev/null
 
-  echo "Test compilation of acceptance-tests"
-  ginkgo -r -p -dryRun acceptance-tests
+    echo "Test compilation of acceptance-tests"
+    ginkgo -r -p -dryRun acceptance-tests
+	popd > /dev/null
 }
 
 main "${@:-""}"
