@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Azure/azure-sdk-for-go/arm/compute"
 	"github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -17,10 +18,6 @@ func azureHTTPClientFunc(config *jwt.Config) *http.Client {
 }
 
 var azureHTTPClient = azureHTTPClientFunc
-
-type Client struct {
-	accountsClient storage.AccountsClient
-}
 
 type ClientProvider struct {
 	client Client
@@ -45,8 +42,12 @@ func (p *ClientProvider) SetConfig(subscriptionID, tenantID, clientID, clientSec
 	ac.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	ac.Sender = autorest.CreateSender(autorest.AsIs())
 
+	vmsClient := compute.NewVirtualMachinesClient(subscriptionID)
+	vmsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	vmsClient.Sender = autorest.CreateSender(autorest.AsIs())
+
 	p.client = Client{
-		accountsClient: ac,
+		azureVMsClient: vmsClient,
 	}
 
 	_, err = ac.List()

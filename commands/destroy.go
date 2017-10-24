@@ -90,7 +90,10 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 			return nil
 		}
 	} else if state.IAAS == "azure" {
-		return nil
+		networkName = terraformOutputs.GetString("bosh_network_name")
+		if networkName == "" {
+			return nil
+		}
 	}
 
 	err = d.networkDeletionValidator.ValidateSafeToDelete(networkName, state.EnvID)

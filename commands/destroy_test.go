@@ -212,10 +212,10 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			PContext("when instances exist in the azure network", func() {
+			Context("when instances exist in the azure network", func() {
 				BeforeEach(func() {
 					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-						Map: map[string]interface{}{"virtual_network_name": "some-network-id"},
+						Map: map[string]interface{}{"bosh_network_name": "some-network-id"},
 					}
 					networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
 				})

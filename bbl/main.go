@@ -104,6 +104,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
+		networkDeletionValidator = azureClientProvider.Client()
 	}
 
 	var (

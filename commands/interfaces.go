@@ -54,10 +54,6 @@ type stateValidator interface {
 	Validate() error
 }
 
-type networkInstancesChecker interface {
-	ValidateSafeToDelete(networkName string) error
-}
-
 type certificateValidator interface {
 	Validate(command, certPath, keyPath, chainPath string) error
 }
