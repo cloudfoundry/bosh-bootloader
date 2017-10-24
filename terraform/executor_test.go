@@ -669,23 +669,23 @@ resource "some-resource-type" "some-addr" {
 		Context("when an error occurs", func() {
 			Context("when it fails to get terraform dir", func() {
 				BeforeEach(func() {
-					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed to get terraform dir")
+					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Output("some-tf-state", "external_ip")
-					Expect(err).To(MatchError("failed to get terraform dir"))
+					Expect(err).To(MatchError("Get terraform dir: failed"))
 				})
 			})
 
 			Context("when it fails to get vars dir", func() {
 				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed to get vars dir")
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Output("some-tf-state", "external_ip")
-					Expect(err).To(MatchError("failed to get vars dir"))
+					Expect(err).To(MatchError("Get vars dir: failed"))
 				})
 			})
 
@@ -693,38 +693,37 @@ resource "some-resource-type" "some-addr" {
 				BeforeEach(func() {
 					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
 						if strings.Contains(file, "terraform.tfstate") {
-							return errors.New("failed to write tf state file")
+							return errors.New("failed")
 						}
-
 						return nil
 					})
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Output("some-tf-state", "external_ip")
-					Expect(err).To(MatchError("failed to write tf state file"))
+					Expect(err).To(MatchError("Write terraform state to terraform.tfstate in terraform dir: failed"))
 				})
 			})
 
 			Context("when terraform init fails", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("failed to initialize terraform")}
+					cmd.RunCall.Returns.Errors = []error{errors.New("failed")}
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Output("some-template", "external_ip")
-					Expect(err).To(MatchError("failed to initialize terraform"))
+					Expect(err).To(MatchError("Run terraform init in terraform dir: failed"))
 				})
 			})
 
 			Context("when it fails to call terraform command run", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
+					cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed")}
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Output("some-tf-state", "external_ip")
-					Expect(err).To(MatchError("failed to run terraform command"))
+					Expect(err).To(MatchError("Run terraform output -state: failed"))
 				})
 			})
 		})
@@ -762,12 +761,12 @@ resource "some-resource-type" "some-addr" {
 		Context("when an error occurs", func() {
 			Context("when it fails to get vars dir", func() {
 				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed to get vars dir")
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed")
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
-					Expect(err).To(MatchError("failed to get vars dir"))
+					Expect(err).To(MatchError("Get vars dir: failed"))
 				})
 			})
 
@@ -775,38 +774,37 @@ resource "some-resource-type" "some-addr" {
 				BeforeEach(func() {
 					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
 						if strings.Contains(file, "terraform.tfstate") {
-							return errors.New("failed to write tf state file")
+							return errors.New("failed")
 						}
-
 						return nil
 					})
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
-					Expect(err).To(MatchError("failed to write tf state file"))
+					Expect(err).To(MatchError("Write terraform state to terraform.tfstate: failed"))
 				})
 			})
 
 			Context("when terraform init fails", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("failed to initialize terraform")}
+					cmd.RunCall.Returns.Errors = []error{errors.New("failed")}
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
-					Expect(err).To(MatchError("failed to initialize terraform"))
+					Expect(err).To(MatchError("Run terraform init in vars dir: failed"))
 				})
 			})
 
 			Context("when it fails to call terraform command run", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
+					cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed")}
 				})
 
 				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
-					Expect(err).To(MatchError("failed to run terraform command"))
+					Expect(err).To(MatchError("Run terraform output --json in vars dir: failed"))
 				})
 			})
 
@@ -819,7 +817,7 @@ resource "some-resource-type" "some-addr" {
 
 				It("returns an error", func() {
 					_, err := executor.Outputs("some-tf-state")
-					Expect(err).To(MatchError("invalid character '%' looking for beginning of value"))
+					Expect(err).To(MatchError("Unmarshal terraform output: invalid character '%' looking for beginning of value"))
 				})
 			})
 		})
