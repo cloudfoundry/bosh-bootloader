@@ -25,12 +25,17 @@ function main() {
 	root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 	pushd "${root_dir}" > /dev/null
+    echo "Unit tests"
 		ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites -skipPackage acceptance-test ${@}
     if [ -z ${@} ]
     then
+      echo "No-IAAS integration tests"
       ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites acceptance-tests/no-iaas ${@}
     fi
 	popd > /dev/null
+
+  echo "Test compilation of acceptance-tests"
+  ginkgo -r -p -dryRun acceptance-tests
 }
 
 main "${@:-""}"
