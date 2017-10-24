@@ -56,6 +56,18 @@ func (b BBL) Up(additionalArgs ...string) *gexec.Session {
 	return b.execute(args, os.Stdout, os.Stderr)
 }
 
+func (b BBL) Plan(additionalArgs ...string) *gexec.Session {
+	args := []string{
+		"--state-dir", b.stateDirectory,
+		"--debug",
+		"plan",
+	}
+
+	args = append(args, additionalArgs...)
+
+	return b.execute(args, os.Stdout, os.Stderr)
+}
+
 func (b BBL) Rotate() *gexec.Session {
 	return b.execute([]string{
 		"--state-dir", b.stateDirectory,

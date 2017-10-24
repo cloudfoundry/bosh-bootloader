@@ -50,10 +50,13 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 	}
 
 	if !config.NoDirector && !state.NoDirector {
-		err = fastFailBOSHVersion(u.boshManager)
-		if err != nil {
+		if err := fastFailBOSHVersion(u.boshManager); err != nil {
 			return err
 		}
+	}
+
+	if err := u.terraformManager.ValidateVersion(); err != nil {
+		return fmt.Errorf("Terraform manager validate version: %s", err)
 	}
 
 	if state.EnvID != "" && config.Name != "" && config.Name != state.EnvID {
@@ -64,11 +67,7 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
-	err := u.terraformManager.ValidateVersion()
-	if err != nil {
-		return fmt.Errorf("Terraform validate version: %s", err)
-	}
-
+	var err error
 	state, err = u.upCmd.Execute(state)
 	if err != nil {
 		return err

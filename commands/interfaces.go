@@ -5,6 +5,12 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
+type up interface {
+	CheckFastFails([]string, storage.State) error
+	ParseArgs([]string, storage.State) (UpConfig, error)
+	Execute([]string, storage.State) error
+}
+
 type terraformManager interface {
 	ValidateVersion() error
 	GetOutputs(storage.State) (terraform.Outputs, error)

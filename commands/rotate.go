@@ -10,11 +10,6 @@ type sshKeyDeleter interface {
 	Delete(storage.State) (storage.State, error)
 }
 
-type up interface {
-	CheckFastFails([]string, storage.State) error
-	Execute([]string, storage.State) error
-}
-
 type Rotate struct {
 	stateValidator stateValidator
 	sshKeyDeleter  sshKeyDeleter

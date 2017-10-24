@@ -130,7 +130,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 			terraformOutputs.GetString("internal_tag_name"),
 		)
 		if err != nil {
-			return []op{}, err
+			return []op{}, fmt.Errorf("Generating network subnet: %s", err)
 		}
 
 		subnets = append(subnets, subnet)

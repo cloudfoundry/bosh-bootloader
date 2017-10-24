@@ -1,6 +1,9 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type Up struct {
 	CheckFastFailsCall struct {
@@ -11,6 +14,17 @@ type Up struct {
 		}
 		Returns struct {
 			Error error
+		}
+	}
+	ParseArgsCall struct {
+		CallCount int
+		Receives  struct {
+			Args  []string
+			State storage.State
+		}
+		Returns struct {
+			Config commands.UpConfig
+			Error  error
 		}
 	}
 	ExecuteCall struct {
@@ -31,6 +45,14 @@ func (u *Up) CheckFastFails(subcommandFlags []string, state storage.State) error
 	u.CheckFastFailsCall.Receives.State = state
 
 	return u.CheckFastFailsCall.Returns.Error
+}
+
+func (u *Up) ParseArgs(args []string, state storage.State) (commands.UpConfig, error) {
+	u.ParseArgsCall.CallCount++
+	u.ParseArgsCall.Receives.Args = args
+	u.ParseArgsCall.Receives.State = state
+
+	return u.ParseArgsCall.Returns.Config, u.ParseArgsCall.Returns.Error
 }
 
 func (u *Up) Execute(args []string, state storage.State) error {

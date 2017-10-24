@@ -50,42 +50,45 @@ var _ = Describe("Up", func() {
 	})
 
 	Describe("CheckFastFails", func() {
+		Context("when terraform manager validate version fails", func() {
+			It("returns an error", func() {
+				terraformManager.ValidateVersionCall.Returns.Error = errors.New("lychee")
+
+				err := command.CheckFastFails([]string{}, storage.State{})
+				Expect(err).To(MatchError("Terraform manager validate version: lychee"))
+			})
+		})
+
 		Context("when the version of BOSH is a dev build", func() {
 			It("does not fail", func() {
 				boshManager.VersionCall.Returns.Error = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
-
 				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
 
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
-		Context("when the version of BOSH is lower than 2.0.24", func() {
-			Context("when bbling up with a director", func() {
-				BeforeEach(func() {
+		Context("when the version of the bosh-cli is lower than 2.0.24", func() {
+			Context("when there is a bosh director", func() {
+				It("returns an error", func() {
 					boshManager.VersionCall.Returns.Version = "1.9.1"
-				})
-
-				It("returns a helpful error message", func() {
 					err := command.CheckFastFails([]string{}, storage.State{Version: 999})
 
 					Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
 				})
 			})
 
-			Context("when the no-director flag is specified", func() {
+			Context("when there is no director", func() {
 				It("does not return an error", func() {
 					boshManager.VersionCall.Returns.Version = "1.9.1"
-					err := command.CheckFastFails([]string{
-						"--no-director",
-					}, storage.State{Version: 999})
+					err := command.CheckFastFails([]string{"--no-director"}, storage.State{Version: 999})
 
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
 
-		Context("when the version of BOSH cannot be retrieved", func() {
+		Context("when bosh -v fails", func() {
 			It("returns an error", func() {
 				boshManager.VersionCall.Returns.Error = errors.New("BOOM")
 				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
@@ -94,7 +97,7 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the version of BOSH is invalid", func() {
+		Context("when bosh -v is invalid", func() {
 			It("returns an error", func() {
 				boshManager.VersionCall.Returns.Version = "X.5.2"
 				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
@@ -160,8 +163,6 @@ var _ = Describe("Up", func() {
 		It("it works", func() {
 			err := command.Execute([]string{"--name", "some-name"}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
-
-			Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(1))
 
 			Expect(iaasUp.ExecuteCall.CallCount).To(Equal(1))
 			Expect(iaasUp.ExecuteCall.Receives.State).To(Equal(incomingState))
@@ -250,13 +251,6 @@ var _ = Describe("Up", func() {
 		})
 
 		Describe("failure cases", func() {
-			It("returns an error if terraform manager version validator fails", func() {
-				terraformManager.ValidateVersionCall.Returns.Error = errors.New("grape")
-
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Terraform validate version: grape"))
-			})
-
 			Context("when the iaas up command fails", func() {
 				BeforeEach(func() {
 					iaasUp.ExecuteCall.Returns.Error = errors.New("tomato")

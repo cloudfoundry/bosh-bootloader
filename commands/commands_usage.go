@@ -100,6 +100,8 @@ const (
 
 func (Up) Usage() string { return UpCommandUsage }
 
+func (Plan) Usage() string { return "" }
+
 func (Destroy) Usage() string { return DestroyCommandUsage }
 
 func (CreateLBs) Usage() string { return CreateLBsCommandUsage }
