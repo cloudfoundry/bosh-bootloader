@@ -37,5 +37,9 @@ func (e EnvironmentValidator) Validate(state storage.State) error {
 		}
 	}
 
+	if state.IAAS == "gcp" && len(state.GCP.Zones) == 0 {
+		return errors.New("bbl state is missing availability zones; have you run bbl up?")
+	}
+
 	return nil
 }

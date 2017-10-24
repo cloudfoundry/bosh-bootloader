@@ -158,7 +158,7 @@ func main() {
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 	case "gcp":
 		upCmd = commands.NewGCPUp(gcpClient)
-		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, gcpClient)
+		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 	case "azure":
 		upCmd = commands.NewAzureUp()

@@ -17,12 +17,11 @@ import (
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (
-		terraformManager          *fakes.TerraformManager
-		cloudConfigManager        *fakes.CloudConfigManager
-		stateStore                *fakes.StateStore
-		environmentValidator      *fakes.EnvironmentValidator
-		terraformExecutorError    *fakes.TerraformExecutorError
-		availabilityZoneRetriever *fakes.GCPClient
+		terraformManager       *fakes.TerraformManager
+		cloudConfigManager     *fakes.CloudConfigManager
+		stateStore             *fakes.StateStore
+		environmentValidator   *fakes.EnvironmentValidator
+		terraformExecutorError *fakes.TerraformExecutorError
 
 		bblState    storage.State
 		command     commands.GCPCreateLBs
@@ -38,9 +37,8 @@ var _ = Describe("GCPCreateLBs", func() {
 		stateStore = &fakes.StateStore{}
 		environmentValidator = &fakes.EnvironmentValidator{}
 		terraformExecutorError = &fakes.TerraformExecutorError{}
-		availabilityZoneRetriever = &fakes.GCPClient{}
 
-		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator, availabilityZoneRetriever)
+		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator)
 
 		tempCertFile, err := ioutil.TempFile("", "cert")
 		Expect(err).NotTo(HaveOccurred())
@@ -60,6 +58,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 		bblState = storage.State{
 			GCP: storage.GCP{
+				Zones:  []string{"z1", "z2", "z3"},
 				Region: "some-region",
 			},
 			TFState: "some-tfstate",
@@ -71,9 +70,6 @@ var _ = Describe("GCPCreateLBs", func() {
 	})
 
 	Describe("Execute", func() {
-		BeforeEach(func() {
-			availabilityZoneRetriever.GetZonesCall.Returns.Zones = []string{"z1", "z2", "z3"}
-		})
 		It("calls terraform manager apply", func() {
 			expectedState := storage.State{
 				GCP: storage.GCP{
@@ -96,7 +92,6 @@ var _ = Describe("GCPCreateLBs", func() {
 			}}, bblState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.GetZonesCall.Receives.Region).To(Equal("some-region"))
 			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
 			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedState))
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
@@ -169,19 +164,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				It("returns a DirectorNotReachable error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
 					Expect(err).To(MatchError(application.DirectorNotReachable))
-				})
-			})
-
-			Context("when the availability zone retriever fails to get zones", func() {
-				BeforeEach(func() {
-					availabilityZoneRetriever.GetZonesCall.Returns.Error = errors.New("failed to get zones")
-				})
-
-				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-						LBType: "concourse",
-					}}, storage.State{TFState: "some-tf-state"})
-					Expect(err).To(MatchError("failed to get zones"))
 				})
 			})
 

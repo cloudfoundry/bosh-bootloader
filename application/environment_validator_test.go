@@ -51,5 +51,30 @@ var _ = Describe("EnvironmentValidator", func() {
 				Expect(err).To(MatchError(fmt.Sprintf("%s %s", application.DirectorNotReachable, "bosh is not available")))
 			})
 		})
+
+		Context("on GCP", func() {
+			It("checks availability zones", func() {
+				err := environmentValidator.Validate(storage.State{
+					IAAS:       "gcp",
+					NoDirector: true,
+					GCP: storage.GCP{
+						Zones: []string{"zone-1", "zone-2"},
+					},
+				})
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			Context("when zones are missing from the state", func() {
+				It("returns an error", func() {
+					err := environmentValidator.Validate(storage.State{
+						IAAS:       "gcp",
+						NoDirector: true,
+					})
+
+					Expect(err).To(MatchError("bbl state is missing availability zones; have you run bbl up?"))
+				})
+			})
+		})
 	})
 })
