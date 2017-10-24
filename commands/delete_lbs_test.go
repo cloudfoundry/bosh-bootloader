@@ -108,11 +108,12 @@ var _ = Describe("DeleteLBs", func() {
 			})
 
 			By("running terraform apply to delete lbs and certificate", func() {
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-
 				expectedTerraformState := incomingState
 				expectedTerraformState.LB = storage.LB{}
 
+				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedTerraformState))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedTerraformState))
 			})
 
@@ -159,6 +160,16 @@ var _ = Describe("DeleteLBs", func() {
 					Expect(err).To(MatchError("Environment validate: mesclun"))
 				})
 			})
+
+			Context("when terraform manager fails to init", func() {
+				It("return an error", func() {
+					terraformManager.InitCall.Returns.Error = errors.New("kiwi")
+
+					err := command.Execute([]string{}, incomingState)
+					Expect(err).To(MatchError("kiwi"))
+				})
+			})
+
 			Context("when terraform manager fails to apply the second time with terraformManagerError", func() {
 				It("return an error", func() {
 					terraformManager.ApplyCall.Returns.Error = errors.New("apply failed")

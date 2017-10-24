@@ -79,8 +79,11 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 
 	state.LB.Type = config.AWS.LBType
 
-	err = c.stateStore.Set(state)
-	if err != nil {
+	if err := c.stateStore.Set(state); err != nil {
+		return err
+	}
+
+	if err := c.terraformManager.Init(state); err != nil {
 		return err
 	}
 
@@ -89,8 +92,7 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 		return handleTerraformError(err, c.stateStore)
 	}
 
-	err = c.stateStore.Set(state)
-	if err != nil {
+	if err := c.stateStore.Set(state); err != nil {
 		return err
 	}
 

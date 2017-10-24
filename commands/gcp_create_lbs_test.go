@@ -75,16 +75,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			availabilityZoneRetriever.GetZonesCall.Returns.Zones = []string{"z1", "z2", "z3"}
 		})
 		It("calls terraform manager apply", func() {
-			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-				LBType:   "cf",
-				CertPath: certPath,
-				KeyPath:  keyPath,
-				Domain:   "some-domain",
-			}}, bblState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(availabilityZoneRetriever.GetZonesCall.Receives.Region).To(Equal("some-region"))
-			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
+			expectedState := storage.State{
 				GCP: storage.GCP{
 					Zones:  []string{"z1", "z2", "z3"},
 					Region: "some-region",
@@ -96,7 +87,20 @@ var _ = Describe("GCPCreateLBs", func() {
 					Key:    key,
 					Domain: "some-domain",
 				},
-			}))
+			}
+			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+				LBType:   "cf",
+				CertPath: certPath,
+				KeyPath:  keyPath,
+				Domain:   "some-domain",
+			}}, bblState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(availabilityZoneRetriever.GetZonesCall.Receives.Region).To(Equal("some-region"))
+			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedState))
+			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedState))
 		})
 
 		It("saves the updated tfstate", func() {
@@ -178,6 +182,18 @@ var _ = Describe("GCPCreateLBs", func() {
 						LBType: "concourse",
 					}}, storage.State{TFState: "some-tf-state"})
 					Expect(err).To(MatchError("failed to get zones"))
+				})
+			})
+
+			Context("when terraform manager fails to init", func() {
+				BeforeEach(func() {
+					terraformManager.InitCall.Returns.Error = errors.New("apple")
+				})
+				It("returns the error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{TFState: "some-tf-state"})
+					Expect(err).To(MatchError("apple"))
 				})
 			})
 

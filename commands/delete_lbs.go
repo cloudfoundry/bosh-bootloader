@@ -80,13 +80,16 @@ func (d DeleteLBs) Execute(subcommandFlags []string, state storage.State) error 
 		}
 	}
 
+	if err := d.terraformManager.Init(state); err != nil {
+		return err
+	}
+
 	state, err = d.terraformManager.Apply(state)
 	if err != nil {
 		return handleTerraformError(err, d.stateStore)
 	}
 
-	err = d.stateStore.Set(state)
-	if err != nil {
+	if err := d.stateStore.Set(state); err != nil {
 		return fmt.Errorf("Save state after delete lbs: %s", err)
 	}
 

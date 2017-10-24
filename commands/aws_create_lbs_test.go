@@ -90,7 +90,12 @@ var _ = Describe("AWS Create LBs", func() {
 				)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
+
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Type).To(Equal("cf"))
 			})
@@ -118,6 +123,7 @@ var _ = Describe("AWS Create LBs", func() {
 					)
 					Expect(err).NotTo(HaveOccurred())
 
+					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				})
@@ -151,6 +157,7 @@ var _ = Describe("AWS Create LBs", func() {
 					)
 					Expect(err).NotTo(HaveOccurred())
 
+					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				})
@@ -184,6 +191,7 @@ var _ = Describe("AWS Create LBs", func() {
 					)
 					Expect(err).NotTo(HaveOccurred())
 
+					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
 				})
@@ -398,6 +406,23 @@ var _ = Describe("AWS Create LBs", func() {
 						storage.State{},
 					)
 					Expect(err).To(MatchError("failed to apply"))
+				})
+			})
+
+			Context("when terraform manager init fails", func() {
+				It("returns an error", func() {
+					terraformManager.InitCall.Returns.Error = errors.New("clementine")
+
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								CertPath: certPath,
+								KeyPath:  keyPath,
+							},
+						},
+						storage.State{},
+					)
+					Expect(err).To(MatchError("clementine"))
 				})
 			})
 
