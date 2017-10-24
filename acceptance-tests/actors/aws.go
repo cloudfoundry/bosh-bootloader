@@ -7,7 +7,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
-	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 
 	. "github.com/onsi/gomega"
@@ -31,9 +30,7 @@ func NewAWS(configuration acceptance.Config) AWS {
 		Region:          configuration.AWSRegion,
 	}
 
-	clientProvider := &clientmanager.ClientProvider{}
-	clientProvider.SetConfig(awsConfig, application.NewLogger(os.Stdout))
-	client := clientProvider.Client()
+	client := ec2.NewClient(awsConfig, application.NewLogger(os.Stdout))
 
 	return AWS{
 		client:    client,

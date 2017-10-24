@@ -10,7 +10,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
-	"github.com/cloudfoundry/bosh-bootloader/aws/clientmanager"
 	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -73,15 +72,12 @@ func main() {
 		availabilityZoneRetriever ec2.AvailabilityZoneRetriever
 	)
 	if appConfig.State.IAAS == "aws" && needsIAASCreds {
-		awsClientProvider := &clientmanager.ClientProvider{}
-		awsConfiguration := aws.Config{
+		awsClient := ec2.NewClient(aws.Config{
 			AccessKeyID:     appConfig.State.AWS.AccessKeyID,
 			SecretAccessKey: appConfig.State.AWS.SecretAccessKey,
 			Region:          appConfig.State.AWS.Region,
-		}
-		awsClientProvider.SetConfig(awsConfiguration, logger)
+		}, logger)
 
-		awsClient := awsClientProvider.Client()
 		availabilityZoneRetriever = awsClient
 		networkDeletionValidator = awsClient
 		networkClient = awsClient
