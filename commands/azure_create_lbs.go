@@ -9,7 +9,7 @@ import (
 )
 
 type AzureCreateLBs struct {
-	terraformManager          terraformApplier
+	terraformManager          terraformManager
 	cloudConfigManager        cloudConfigManager
 	stateStore                stateStore
 	environmentValidator      EnvironmentValidator
@@ -22,7 +22,7 @@ type AzureCreateLBsConfig struct {
 	Domain   string
 }
 
-func NewAzureCreateLBs(terraformManager terraformApplier,
+func NewAzureCreateLBs(terraformManager terraformManager,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, environmentValidator EnvironmentValidator) AzureCreateLBs {
 	return AzureCreateLBs{
