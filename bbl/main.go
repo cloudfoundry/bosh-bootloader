@@ -144,7 +144,7 @@ func main() {
 	case "azure":
 		cloudConfigOpsGenerator = azurecloudconfig.NewOpsGenerator(terraformManager)
 	}
-	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter)
 
 	// Subcommands
 	var (

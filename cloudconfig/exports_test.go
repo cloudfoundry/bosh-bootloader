@@ -3,8 +3,6 @@ package cloudconfig
 import (
 	"io/ioutil"
 	"os"
-
-	"golang.org/x/net/proxy"
 )
 
 func SetTempDir(f func(string, string) (string, error)) {
@@ -21,12 +19,4 @@ func SetWriteFile(f func(string, []byte, os.FileMode) error) {
 
 func ResetWriteFile() {
 	writeFile = ioutil.WriteFile
-}
-
-func SetProxySOCKS5(f func(string, string, *proxy.Auth, proxy.Dialer) (proxy.Dialer, error)) {
-	proxySOCKS5 = f
-}
-
-func ResetProxySOCKS5() {
-	proxySOCKS5 = proxy.SOCKS5
 }

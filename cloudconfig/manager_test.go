@@ -24,7 +24,6 @@ var _ = Describe("Manager", func() {
 		opsGenerator       *fakes.CloudConfigOpsGenerator
 		boshClientProvider *fakes.BOSHClientProvider
 		boshClient         *fakes.BOSHClient
-		socks5Proxy        *fakes.Socks5Proxy
 		terraformManager   *fakes.TerraformManager
 		sshKeyGetter       *fakes.SSHKeyGetter
 		manager            cloudconfig.Manager
@@ -42,7 +41,6 @@ var _ = Describe("Manager", func() {
 		opsGenerator = &fakes.CloudConfigOpsGenerator{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
-		socks5Proxy = &fakes.Socks5Proxy{}
 		terraformManager = &fakes.TerraformManager{}
 		sshKeyGetter = &fakes.SSHKeyGetter{}
 
@@ -73,7 +71,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, socks5Proxy, terraformManager, sshKeyGetter)
+		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, terraformManager, sshKeyGetter)
 	})
 
 	Describe("Generate", func() {

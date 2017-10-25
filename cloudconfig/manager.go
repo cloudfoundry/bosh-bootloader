@@ -7,17 +7,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"golang.org/x/net/proxy"
-
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 var (
-	tempDir     func(string, string) (string, error)                                  = ioutil.TempDir
-	writeFile   func(string, []byte, os.FileMode) error                               = ioutil.WriteFile
-	proxySOCKS5 func(string, string, *proxy.Auth, proxy.Dialer) (proxy.Dialer, error) = proxy.SOCKS5
+	tempDir   func(string, string) (string, error)    = ioutil.TempDir
+	writeFile func(string, []byte, os.FileMode) error = ioutil.WriteFile
 )
 
 type Manager struct {
@@ -26,7 +23,6 @@ type Manager struct {
 	stateStore         stateStore
 	opsGenerator       OpsGenerator
 	boshClientProvider boshClientProvider
-	socks5Proxy        socks5Proxy
 	terraformManager   terraformManager
 	sshKeyGetter       sshKeyGetter
 }
@@ -47,11 +43,6 @@ type boshClientProvider interface {
 	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (bosh.Client, error)
 }
 
-type socks5Proxy interface {
-	Start(string, string) error
-	Addr() string
-}
-
 type terraformManager interface {
 	GetOutputs(storage.State) (terraform.Outputs, error)
 }
@@ -65,14 +56,13 @@ type stateStore interface {
 }
 
 func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
-	socks5Proxy socks5Proxy, terraformManager terraformManager, sshKeyGetter sshKeyGetter) Manager {
+	terraformManager terraformManager, sshKeyGetter sshKeyGetter) Manager {
 	return Manager{
 		logger:             logger,
 		command:            cmd,
 		stateStore:         stateStore,
 		opsGenerator:       opsGenerator,
 		boshClientProvider: boshClientProvider,
-		socks5Proxy:        socks5Proxy,
 		terraformManager:   terraformManager,
 		sshKeyGetter:       sshKeyGetter,
 	}
