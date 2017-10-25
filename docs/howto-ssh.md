@@ -1,43 +1,31 @@
 # How-To SSH
 
-## To the BOSH director if you have a jumpbox (v5.0.0+)
+## To the BOSH director
 
-Required:
-* [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment)
-
-1. Set JUMPBOX_PRIVATE_KEY by running:
+1. Set up a SOCKS5 proxy by running:
 
     ```
     eval "$(bbl print-env)"
     ```
 
-1. Retrieve the bosh credentials from the bbl-state:
-
-    ```
-    cat bbl-state.json | jq --raw-output .bosh.variables > creds.yml
-    ```
-
 1. Interpolate out the jumpbox user's ssh key for reaching the director:
 
     ```
-    bosh int creds.yml --path /jumpbox_ssh/private_key > jumpbox-user.key
-    chmod 600 jumpbox-user.key
+    bbl director-ssh-key > director-jumpbox-user.key
+    chmod 600 director-jumpbox-user.key
     ```
 
-1. Add the key to the SSH agent:
+1. SSH via the proxy:
 
     ```
-    ssh-add jumpbox-user.key
+    ssh -o ProxyCommand='nc -x localhost:`echo $BOSH_ALL_PROXY| cut -f3 -d':'` %h %p' \
+        -i /tmp/director-jumpbox-user.key jumpbox@10.0.0.6
     ```
 
-1. SSH to the jumpbox:
+## To job VMs
 
-    ```
-    ssh -A jumpbox@`bbl jumpbox-address|sed 's/:22//'` -i $JUMPBOX_PRIVATE_KEY
-    ```
-
-1. From the jumpbox, ssh to the director:
-
-    ```
-    ssh jumpbox@10.0.0.6
-    ```
+The command 
+```
+eval "$(bbl print-env)"
+bosh ssh web/0
+```
