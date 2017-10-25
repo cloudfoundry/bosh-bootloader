@@ -105,6 +105,16 @@ var _ = Describe("Client Provider", func() {
 				})
 			})
 
+			Context("when getting the proxy address returns an error", func() {
+				BeforeEach(func() {
+					socks5Proxy.AddrCall.Returns.Error = errors.New("mango")
+				})
+				It("returns an error", func() {
+					_, err := clientProvider.Dialer(jumpbox)
+					Expect(err).To(MatchError(ContainSubstring("get proxy address: mango")))
+				})
+			})
+
 			Context("when the socks5 client cannot be created", func() {
 				BeforeEach(func() {
 					bosh.SetProxySOCKS5(func(network, addr string, auth *proxy.Auth, forward proxy.Dialer) (proxy.Dialer, error) {

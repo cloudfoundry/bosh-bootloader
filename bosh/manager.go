@@ -115,7 +115,7 @@ type logger interface {
 
 type socks5Proxy interface {
 	Start(string, string) error
-	Addr() string
+	Addr() (string, error)
 }
 
 type stateStore interface {
@@ -218,7 +218,11 @@ func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage
 		return storage.State{}, fmt.Errorf("Start proxy: %s", err)
 	}
 
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+	addr, err := m.socks5Proxy.Addr()
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Get proxy address: %s", err)
+	}
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", addr))
 
 	m.logger.Step("started proxy")
 	return state, nil
@@ -335,10 +339,14 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
 	if err != nil {
-		return err
+		return fmt.Errorf("Start socks5 proxy: %s", err)
 	}
 
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", m.socks5Proxy.Addr()))
+	addr, err := m.socks5Proxy.Addr()
+	if err != nil {
+		return fmt.Errorf("Get proxy address: %s", err)
+	}
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", addr))
 
 	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
 

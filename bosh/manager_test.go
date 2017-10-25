@@ -392,6 +392,15 @@ gcp_credentials_json: some-credential-json
 						Expect(err).To(MatchError("Start proxy: coconut"))
 					})
 				})
+
+				Context("when the socks5 proxy fails to return an address", func() {
+					It("returns an error", func() {
+						socks5Proxy.AddrCall.Returns.Error = errors.New("mango")
+
+						_, err := boshManager.CreateJumpbox(state, "some-jumpbox-url")
+						Expect(err).To(MatchError("Get proxy address: mango"))
+					})
+				})
 			})
 		})
 	})
@@ -583,7 +592,18 @@ gcp_credentials_json: some-credential-json
 
 					It("returns an error", func() {
 						err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
-						Expect(err).To(MatchError("failed to start socks5Proxy"))
+						Expect(err).To(MatchError("Start socks5 proxy: failed to start socks5Proxy"))
+					})
+				})
+
+				Context("when the socks5Proxy fails to return an address", func() {
+					BeforeEach(func() {
+						socks5Proxy.AddrCall.Returns.Error = errors.New("plum")
+					})
+
+					It("returns an error", func() {
+						err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
+						Expect(err).To(MatchError("Get proxy address: plum"))
 					})
 				})
 			})

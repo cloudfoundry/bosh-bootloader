@@ -37,7 +37,12 @@ func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
 		return nil, fmt.Errorf("start proxy: %s", err)
 	}
 
-	socks5Dialer, err := proxySOCKS5("tcp", c.socks5Proxy.Addr(), nil, proxy.Direct)
+	addr, err := c.socks5Proxy.Addr()
+	if err != nil {
+		return nil, fmt.Errorf("get proxy address: %s", err)
+	}
+
+	socks5Dialer, err := proxySOCKS5("tcp", addr, nil, proxy.Direct)
 	if err != nil {
 		return nil, fmt.Errorf("create socks5 client: %s", err)
 	}

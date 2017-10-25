@@ -19,9 +19,9 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
-	"github.com/cloudfoundry/bosh-bootloader/proxy"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	proxy "github.com/cloudfoundry/socks5-proxy"
 
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
@@ -127,7 +127,7 @@ func main() {
 
 	// BOSH
 	hostKeyGetter := proxy.NewHostKeyGetter()
-	socks5Proxy := proxy.NewSocks5Proxy(logger, hostKeyGetter, 0)
+	socks5Proxy := proxy.NewSocks5Proxy(hostKeyGetter)
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore)
