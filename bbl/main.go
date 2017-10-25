@@ -96,6 +96,7 @@ func main() {
 		}
 
 		networkDeletionValidator = azureClient
+		networkClient = azureClient
 	}
 
 	var (

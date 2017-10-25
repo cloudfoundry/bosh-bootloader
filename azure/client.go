@@ -4,14 +4,39 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/arm/network"
 )
 
 type Client struct {
 	azureVMsClient AzureVMsClient
+	azureVNsClient AzureVNsClient
 }
 
 type AzureVMsClient interface {
 	List(resourceGroup string) (compute.VirtualMachineListResult, error)
+}
+
+type AzureVNsClient interface {
+	List(networkName string) (network.VirtualNetworkListResult, error)
+}
+
+func (c Client) CheckExists(envID string) (bool, error) {
+	resourceGroupName := fmt.Sprintf("%s-bosh", envID)
+	networkName := fmt.Sprintf("%s-bosh-vn", envID)
+
+	networkList, err := c.azureVNsClient.List(resourceGroupName)
+	if err != nil {
+		return false, fmt.Errorf("List networks: %s", err)
+	}
+
+	for _, network := range *networkList.Value {
+		name := getOrEmpty(network.Name)
+		if name == networkName {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (c Client) ValidateSafeToDelete(networkName string, envID string) error {

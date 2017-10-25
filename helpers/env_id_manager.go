@@ -63,7 +63,7 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 	case "aws":
 		networkName = envID + "-vpc"
 	case "azure":
-		return nil
+		networkName = envID
 	case "gcp":
 		networkName = envID + "-network"
 	}

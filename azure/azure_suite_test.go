@@ -9,5 +9,5 @@ import (
 
 func TestAzure(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Azure Suite")
+	RunSpecs(t, "azure")
 }

@@ -70,28 +70,16 @@ var _ = Describe("EnvIDManager", func() {
 			})
 
 			Context("for azure", func() {
-				PIt("fails if an environment with that name was already created", func() {
-					//The Azure client requires a Check Exists
-					//This should replace the test below with the same description
-					//once CheckExists is implemented.
+				It("fails if an environment with that name was already created", func() {
 					networkClient.CheckExistsCall.Returns.Exists = true
 					_, err := envIDManager.Sync(storage.State{
 						IAAS: "azure",
 					}, "existing-env")
 
 					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
-					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env-bosh-vn"))
+					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env"))
 
 					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
-				})
-
-				It("fails if an environment with that name was already created", func() {
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "azure",
-					}, "existing-env")
-
-					Expect(err).NotTo(HaveOccurred())
-					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(0))
 				})
 			})
 		})

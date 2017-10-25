@@ -5,3 +5,9 @@ func NewClientWithInjectedVMsClient(azureVMsClient AzureVMsClient) Client {
 		azureVMsClient: azureVMsClient,
 	}
 }
+
+func NewClientWithInjectedVNsClient(azureVNsClient AzureVNsClient) Client {
+	return Client{
+		azureVNsClient: azureVNsClient,
+	}
+}

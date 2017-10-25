@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/arm/network"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	. "github.com/onsi/ginkgo"
@@ -11,13 +12,72 @@ import (
 )
 
 var _ = Describe("Client", func() {
-	var (
-		// computeClient *fakes.GCPComputeClient
-		azureClient *fakes.AzureVMsClient
-		client      azure.Client
-	)
+	Describe("CheckExists", func() {
+		var (
+			azureClient *fakes.AzureVNsClient
+			client      azure.Client
+		)
+
+		BeforeEach(func() {
+			azureClient = &fakes.AzureVNsClient{}
+			client = azure.NewClientWithInjectedVNsClient(azureClient)
+		})
+
+		Context("when the network does not exist", func() {
+			BeforeEach(func() {
+				otherNetworkName := "some-other-environment-bosh-vn"
+				azureClient.ListCall.Returns.Result = network.VirtualNetworkListResult{
+					Value: &[]network.VirtualNetwork{
+						network.VirtualNetwork{
+							Name: &otherNetworkName,
+						},
+					},
+				}
+			})
+			It("returns false", func() {
+				exists, err := client.CheckExists("some-environment")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(exists).To(BeFalse())
+			})
+		})
+
+		Context("when the network exists", func() {
+			BeforeEach(func() {
+				sameNetworkName := "exact-same-bosh-vn"
+				azureClient.ListCall.Returns.Result = network.VirtualNetworkListResult{
+					Value: &[]network.VirtualNetwork{
+						network.VirtualNetwork{
+							Name: &sameNetworkName,
+						},
+					},
+				}
+			})
+			It("returns true", func() {
+				exists, err := client.CheckExists("exact-same")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(exists).To(BeTrue())
+			})
+		})
+
+		Context("when listing the networks fails", func() {
+			BeforeEach(func() {
+				azureClient.ListCall.Returns.Error = errors.New("grape")
+			})
+			It("returns the error", func() {
+				_, err := client.CheckExists("some-network")
+				Expect(err).To(MatchError("List networks: grape"))
+			})
+		})
+	})
 
 	Describe("ValidateSafeToDelete", func() {
+		var (
+			azureClient *fakes.AzureVMsClient
+			client      azure.Client
+		)
+
 		BeforeEach(func() {
 			azureClient = &fakes.AzureVMsClient{}
 			client = azure.NewClientWithInjectedVMsClient(azureClient)
