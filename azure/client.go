@@ -2,38 +2,35 @@ package azure
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/network"
+	"github.com/Azure/go-autorest/autorest"
 )
 
 type Client struct {
-	azureVMsClient AzureVMsClient
-	azureVNsClient AzureVNsClient
+	azureVMsClient    AzureVMsClient
+	azureGroupsClient AzureGroupsClient
 }
 
 type AzureVMsClient interface {
 	List(resourceGroup string) (compute.VirtualMachineListResult, error)
 }
 
-type AzureVNsClient interface {
-	List(networkName string) (network.VirtualNetworkListResult, error)
+type AzureGroupsClient interface {
+	CheckExistence(resourceGroupName string) (autorest.Response, error)
 }
 
 func (c Client) CheckExists(envID string) (bool, error) {
 	resourceGroupName := fmt.Sprintf("%s-bosh", envID)
-	networkName := fmt.Sprintf("%s-bosh-vn", envID)
 
-	networkList, err := c.azureVNsClient.List(resourceGroupName)
+	response, err := c.azureGroupsClient.CheckExistence(resourceGroupName)
 	if err != nil {
-		return false, fmt.Errorf("List networks: %s", err)
+		return false, fmt.Errorf("Check existence for resource group %s: %s", resourceGroupName, err)
 	}
 
-	for _, network := range *networkList.Value {
-		name := getOrEmpty(network.Name)
-		if name == networkName {
-			return true, nil
-		}
+	if response.StatusCode == http.StatusOK {
+		return true, nil
 	}
 
 	return false, nil

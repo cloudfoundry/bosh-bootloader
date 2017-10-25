@@ -6,8 +6,8 @@ func NewClientWithInjectedVMsClient(azureVMsClient AzureVMsClient) Client {
 	}
 }
 
-func NewClientWithInjectedVNsClient(azureVNsClient AzureVNsClient) Client {
+func NewClientWithInjectedGroupsClient(azureGroupsClient AzureGroupsClient) Client {
 	return Client{
-		azureVNsClient: azureVNsClient,
+		azureGroupsClient: azureGroupsClient,
 	}
 }

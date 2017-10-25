@@ -2,7 +2,7 @@ package azure
 
 import (
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/network"
+	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	azurestorage "github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -29,13 +29,13 @@ func NewClient(azureConfig storage.Azure) (Client, error) {
 	vmsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	vmsClient.Sender = autorest.CreateSender(autorest.AsIs())
 
-	vnsClient := network.NewVirtualNetworksClient(azureConfig.SubscriptionID)
-	vnsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
-	vnsClient.Sender = autorest.CreateSender(autorest.AsIs())
+	groupsClient := resources.NewGroupsClient(azureConfig.SubscriptionID)
+	groupsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	groupsClient.Sender = autorest.CreateSender(autorest.AsIs())
 
 	client := Client{
-		azureVMsClient: vmsClient,
-		azureVNsClient: vnsClient,
+		azureVMsClient:    vmsClient,
+		azureGroupsClient: groupsClient,
 	}
 
 	_, err = ac.List()

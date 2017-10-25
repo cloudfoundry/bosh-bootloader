@@ -9,13 +9,13 @@
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
-  packages = ["arm/compute","arm/network","arm/resources/resources","arm/storage"]
+  packages = ["arm/compute","arm/resources/resources","arm/storage"]
   revision = "df4dd90d076ebbf6e87d08d3f00bfac8ff4bde1a"
   version = "v10.3.1-beta"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
-  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/to","autorest/validation"]
+  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/mocks","autorest/to","autorest/validation"]
   revision = "f6be1abbb5abd0517522f850dd785990d373da7e"
   version = "v8.4.0"
 
@@ -148,6 +148,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0c195eff6151b1bdb10e55e1294bf916a3c643456e5d5c516cc467b3a93d7d7b"
+  inputs-digest = "f090f2b2663dcfb605bcbc94342f99275c91d1fa672dd369bc74475d61880a2c"
   solver-name = "gps-cdcl"
   solver-version = 1

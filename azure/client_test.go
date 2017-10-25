@@ -4,7 +4,8 @@ import (
 	"errors"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/network"
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/mocks"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	. "github.com/onsi/ginkgo"
@@ -14,26 +15,20 @@ import (
 var _ = Describe("Client", func() {
 	Describe("CheckExists", func() {
 		var (
-			azureClient *fakes.AzureVNsClient
+			azureClient *fakes.AzureGroupsClient
 			client      azure.Client
 		)
 
 		BeforeEach(func() {
-			azureClient = &fakes.AzureVNsClient{}
-			client = azure.NewClientWithInjectedVNsClient(azureClient)
+			azureClient = &fakes.AzureGroupsClient{}
+			client = azure.NewClientWithInjectedGroupsClient(azureClient)
+
+			azureClient.CheckExistenceCall.Returns.Response = autorest.Response{
+				Response: mocks.NewResponseWithStatus("some-message", 404),
+			}
 		})
 
-		Context("when the network does not exist", func() {
-			BeforeEach(func() {
-				otherNetworkName := "some-other-environment-bosh-vn"
-				azureClient.ListCall.Returns.Result = network.VirtualNetworkListResult{
-					Value: &[]network.VirtualNetwork{
-						network.VirtualNetwork{
-							Name: &otherNetworkName,
-						},
-					},
-				}
-			})
+		Context("when the resource group does not exist", func() {
 			It("returns false", func() {
 				exists, err := client.CheckExists("some-environment")
 				Expect(err).NotTo(HaveOccurred())
@@ -42,15 +37,10 @@ var _ = Describe("Client", func() {
 			})
 		})
 
-		Context("when the network exists", func() {
+		Context("when the resource group already exists", func() {
 			BeforeEach(func() {
-				sameNetworkName := "exact-same-bosh-vn"
-				azureClient.ListCall.Returns.Result = network.VirtualNetworkListResult{
-					Value: &[]network.VirtualNetwork{
-						network.VirtualNetwork{
-							Name: &sameNetworkName,
-						},
-					},
+				azureClient.CheckExistenceCall.Returns.Response = autorest.Response{
+					Response: mocks.NewResponseWithStatus("some-message", 200),
 				}
 			})
 			It("returns true", func() {
@@ -61,13 +51,13 @@ var _ = Describe("Client", func() {
 			})
 		})
 
-		Context("when listing the networks fails", func() {
+		Context("when the azure client returns an error", func() {
 			BeforeEach(func() {
-				azureClient.ListCall.Returns.Error = errors.New("grape")
+				azureClient.CheckExistenceCall.Returns.Error = errors.New("grape")
 			})
 			It("returns the error", func() {
-				_, err := client.CheckExists("some-network")
-				Expect(err).To(MatchError("List networks: grape"))
+				_, err := client.CheckExists("exact-same")
+				Expect(err).To(MatchError("Check existence for resource group exact-same-bosh: grape"))
 			})
 		})
 	})
