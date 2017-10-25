@@ -38,6 +38,12 @@
   revision = "dafed03eebc65cdf3de2928e3f94793bc893ede0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/socks5-proxy"
+  packages = ["."]
+  revision = "930de75eb8c55a3325de5dd09a33e3631c53d677"
+
+[[projects]]
   name = "github.com/coreos/go-semver"
   packages = ["semver"]
   revision = "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
@@ -148,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f090f2b2663dcfb605bcbc94342f99275c91d1fa672dd369bc74475d61880a2c"
+  inputs-digest = "e14ff63487e85c28cbbf8ae421a3a1a90f13593a72c17c15e5633d15cce10cef"
   solver-name = "gps-cdcl"
   solver-version = 1
