@@ -39,21 +39,24 @@ Usage:
   bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
 
 Global Options:
-  --help      [-h]       Prints usage
-  --state-dir            Directory containing bbl-state.json
+  --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
+  --state-dir            Directory containing the bbl state
   --debug                Prints debugging output
-  --version              Prints version
+  --version   [-v]       Prints version
 
-Commands:
-  help                    Prints usage
-  version                 Prints version
-  up                      Deploys BOSH director on an IAAS
-  destroy                 Tears down BOSH director infrastructure
-  lbs                     Prints attached load balancer(s)
-  create-lbs              Attaches load balancer(s)
+Basic Commands: A good place to start
+  up                      Deploys BOSH director on an IAAS. Updates existing director
+  print-env               All environment variables needed for targeting BOSH. Use with: eval "$(bbl print-env)"
+  create-lbs              Creates recommended load balancer(s) for CF, Concourse
+
+Maintenance Lifecycle Commands:
+  destroy                 Tears down BOSH director infrastructure. Cleans up state directory
   update-lbs              Updates load balancer(s)
   delete-lbs              Deletes attached load balancer(s)
   rotate                  Rotates SSH key for the jumpbox user
+  plan                    Populates a state directory with the latest config without applying it
+
+Environmental Detail Commands: Useful for automation and gaining access
   bosh-deployment-vars    Prints required variables for BOSH deployment
   jumpbox-deployment-vars Prints required variables for jumpbox deployment
   cloud-config            Prints suggested cloud configuration for BOSH environment
@@ -63,12 +66,14 @@ Commands:
   director-password       Prints BOSH director password
   director-ca-cert        Prints BOSH director CA certificate
   env-id                  Prints environment ID
-  latest-error            Prints the output from the latest call to terraform
-  print-env               Prints BOSH friendly environment variables
   ssh-key                 Prints jumpbox SSH private key
   director-ssh-key        Prints director SSH private key
+  lbs                     Prints load balancer(s) and DNS records
 
-  Use "bbl [command] --help" for more information about a command.
+Troubleshooting Commands:
+  help                    Prints usage
+  version                 Prints version
+  latest-error            Prints the output from the latest call to terraform
 `, "\n")))
 		})
 	})
@@ -81,10 +86,10 @@ Commands:
   bbl [GLOBAL OPTIONS] my-command [OPTIONS]
 
 Global Options:
-  --help      [-h]       Prints usage
-  --state-dir            Directory containing bbl-state.json
+  --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
+  --state-dir            Directory containing the bbl state
   --debug                Prints debugging output
-  --version              Prints version
+  --version   [-v]       Prints version
 
 [my-command command options]
   some message
