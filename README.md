@@ -1,9 +1,9 @@
 # bosh-bootloader
 ---
 
-This is a command line utility for standing up a CloudFoundry or Concourse installation
+bbl (pronounced: "bubble") is a command line utility for standing up a CloudFoundry or Concourse installation
 on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installation on
-AWS and GCP. Azure support is in progress.
+AWS, GCP and Azure. Openstack and vSphere support are planned.
 
 * [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
@@ -13,7 +13,7 @@ AWS and GCP. Azure support is in progress.
 - [AWS - Getting Started](docs/getting-started-aws.md)
 - [AWS - Deploying Concourse](docs/concourse-aws.md)
 - [GCP - Deploying Concourse](docs/concourse-gcp.md)
-- [GCP - Deploying Cloud Foundry](https://github.com/cloudfoundry/cf-deployment/blob/master/deployment-guide.md)
+- [GCP - Deploying Cloud Foundry](deployment-guide.md)
 - [Advanced BOSH Configuration](docs/advanced.md)
 
 ## Prerequisites
@@ -23,7 +23,7 @@ AWS and GCP. Azure support is in progress.
 The following should be installed on your local machine
 - [bosh-cli](https://bosh.io/docs/cli-v2.html)
 - [terraform](https://www.terraform.io/downloads.html) >= 0.10.0
-- ruby
+- ruby (necessary for bosh create-env)
 
 ### Install bosh-bootloader using a package manager
 
@@ -35,73 +35,55 @@ $ brew install bosh-cli
 $ brew install bbl
 ```
 
-### IAAS Configuration
-
-#### AWS
-
-[Create an IAM user.](docs/getting-started-aws.md#creating-an-iam-user)
-
-#### GCP
-
-[Create a service account.](docs/getting-started-gcp.md#creating-a-service-account)
-
 ## Usage
 
-The `bbl` command can be invoked on the command line and will display its usage.
-
-```
-$ bbl
-Usage:
-  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
-
-Global Options:
-  --help      [-h]       Prints usage
-  --state-dir            Directory containing bbl-state.json
-  --debug                Prints debugging output
-  --version              Prints version
-
-Commands:
-  help                    Prints usage
-  version                 Prints version
-  up                      Deploys BOSH director on an IAAS
-  destroy                 Tears down BOSH director infrastructure
-  lbs                     Prints attached load balancer(s)
-  create-lbs              Attaches load balancer(s)
-  update-lbs              Updates load balancer(s)
-  delete-lbs              Deletes attached load balancer(s)
-  rotate                  Rotates SSH key for the jumpbox user
-  bosh-deployment-vars    Prints required variables for BOSH deployment
-  jumpbox-deployment-vars Prints required variables for jumpbox deployment
-  cloud-config            Prints suggested cloud configuration for BOSH environment
-  jumpbox-address         Prints BOSH jumpbox address
-  director-address        Prints BOSH director address
-  director-username       Prints BOSH director username
-  director-password       Prints BOSH director password
-  director-ca-cert        Prints BOSH director CA certificate
-  env-id                  Prints environment ID
-  latest-error            Prints the output from the latest call to terraform
-  print-env               Prints BOSH friendly environment variables
-  ssh-key                 Prints SSH private key
-
-  Use "bbl [command] --help" for more information about a command.
-```
-
-### Generic steps to a Cloud Foundry deployment
+### Generic getting started guide
 
 1. Create the necessary IAAS user/account for bbl.
 
-1. `bbl up` with IAAS credentials as flags or environment variables.
+1. `bbl up --iaas <MY IAAS>` with IAAS credentials as flags or environment variables.
+
+1. `eval $(bbl print-env)` to target the director that you just created.
+
+1. `bosh ssh` `bosh deploy` or `bosh status` should all just work with no further information needed from bbl. 
+
+
+For detailed, IAAS specific instructions see your preferred IAAS's getting started guide:
+- [Azure - Getting Started](docs/getting-started-azure.md)
+- [GCP - Getting Started](docs/getting-started-gcp.md#creating-a-service-account)
+- [AWS - Getting Started](docs/getting-started-aws.md#creating-an-iam-user)
+
+### Generic steps for Cloud Foundry deployment
+
+1. Create an environment and target the BOSH director as described above
 
 1. `bbl create-lbs --type cf` with a certificate and key as flags or environment variables.
-(Continue to provide the IAAS credentials from Step 1 as flags or environment variables.)
+(Continue to provide the IAAS credentials as flags or environment variables.)
 
-1. `eval "$(bbl print-env)"` to export environment variables for the bosh-cli and
-to create an SSH tunnel to the BOSH director for Step 5.
+1. `bosh deploy cf.yml -o operations/<MY IAAS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
 
-1. `bosh deploy` with a [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
+### Managing state
 
-To tear down load balancers, run `bbl delete-lbs`.
+The bbl state directory contains all of the files that were used to create your bosh director. This should be checked in
+to version control, so that you have all the information necessary to later destroy or update this environment at a later
+date.
 
-To tear it all down, run `bbl destroy`.
+ filename |  contents
+------------ | -------------
+``bbl-state.json`` | Environment name, and bbl version metadata
+``bosh-deployment`` | The latest [bosh-deployment](http://github.com/cloudfoundry/bosh-deployment) that has been tested with your version of bbl
+``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced]](docs/advanced.md#opsfile) for help with modifying this
+``create-jumpbox.sh`` | The BOSH cli command bbl will use to create your jumpbox.
+``delete-director.sh`` |The BOSH cli command bbl will use to delete your director.
+``delete-jumpbox.sh`` | The BOSH cli command bbl will use to delete your jumpbox.
+``jumpbox-deployment`` | The latest [jumpbox-deployment](http://github.com/cppforlife/jumpbox-deployment) that has been tested with your version of bbl.
+``terraform`` | The terraform templates bbl used to pave your IaaS. See [docs/advanced#terraform]() for information on modifying this.
+``vars `` | This is where bbl will store environment specific variables. Consider storing this outside of version control.
 
-Note: You must delete your BOSH deployments before running `bbl destroy`.
+### Tearing down an environment
+
+Once you are done kicking the tires on CF and BOSH, clean up your environment to save IAAS costs:
+
+1. You must first delete any deployments on BOSH. e.g. `bosh -d cf delete-deployment`
+
+1. `bbl down` with your IAAS user/account information.
