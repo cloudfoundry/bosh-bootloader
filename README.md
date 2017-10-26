@@ -1,5 +1,5 @@
 # bosh-bootloader
-bbl (pronounced: "bubble") is a command line utility for standing up a CloudFoundry or Concourse installation
+Also know as bbl (pronounced: "bubble"), bosh-bootloader is a command line utility for standing up a CloudFoundry or Concourse installation
 on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installation on
 AWS, GCP and Azure. Openstack and vSphere support are planned.
 
