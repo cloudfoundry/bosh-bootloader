@@ -46,6 +46,19 @@ var _ = Describe("GCP Zoner Hack", func() {
 			Expect(returnedState.GCP.Zone).To(Equal("zone-1"))
 		})
 
+		Context("when zones are already set on the state", func() {
+			BeforeEach(func() {
+				incomingState.GCP.Zones = []string{"existing-zone-1", "existing-zone-2"}
+			})
+
+			It("uses the existing zones", func() {
+				returnedState, err := gcpZonerHack.SetZones(incomingState)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(returnedState.GCP.Zones).To(Equal([]string{"existing-zone-1", "existing-zone-2"}))
+			})
+		})
+
 		Context("when zone is already set on the state", func() {
 			BeforeEach(func() {
 				incomingState.GCP.Zone = "zone-2"
@@ -53,8 +66,8 @@ var _ = Describe("GCP Zoner Hack", func() {
 
 			It("uses existing zone", func() {
 				returnedState, err := gcpZonerHack.SetZones(incomingState)
-				Expect(err).NotTo(HaveOccurred())
 
+				Expect(err).NotTo(HaveOccurred())
 				Expect(returnedState.GCP.Zone).To(Equal("zone-2"))
 			})
 		})
