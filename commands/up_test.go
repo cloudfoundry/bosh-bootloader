@@ -20,7 +20,6 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
-		iaasUp             *fakes.UpCmd
 		boshManager        *fakes.BOSHManager
 		terraformManager   *fakes.TerraformManager
 		cloudConfigManager *fakes.CloudConfigManager
@@ -31,7 +30,6 @@ var _ = Describe("Up", func() {
 	)
 
 	BeforeEach(func() {
-		iaasUp = &fakes.UpCmd{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 
@@ -46,7 +44,7 @@ var _ = Describe("Up", func() {
 
 		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
-		command = commands.NewUp(iaasUp, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+		command = commands.NewUp(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -139,7 +137,6 @@ var _ = Describe("Up", func() {
 		BeforeEach(func() {
 			incomingState = storage.State{TFState: "incoming-state"}
 			iaasState = storage.State{TFState: "iaas-state"}
-			iaasUp.ExecuteCall.Returns.State = iaasState
 
 			envIDManagerState = storage.State{TFState: "env-id-sync-call"}
 			envIDManager.SyncCall.Returns.State = envIDManagerState
@@ -164,21 +161,17 @@ var _ = Describe("Up", func() {
 			err := command.Execute([]string{"--name", "some-name"}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(iaasUp.ExecuteCall.CallCount).To(Equal(1))
-			Expect(iaasUp.ExecuteCall.Receives.State).To(Equal(incomingState))
-			Expect(stateStore.SetCall.Receives[0].State).To(Equal(iaasState))
-
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-			Expect(envIDManager.SyncCall.Receives.State).To(Equal(iaasState))
+			Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
 			Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
-			Expect(stateStore.SetCall.Receives[1].State).To(Equal(envIDManagerState))
+			Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
 
 			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
 			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(envIDManagerState))
 
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
-			Expect(stateStore.SetCall.Receives[2].State).To(Equal(terraformApplyState))
+			Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
@@ -188,18 +181,18 @@ var _ = Describe("Up", func() {
 			Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 			Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
 			Expect(boshManager.CreateJumpboxCall.Receives.JumpboxURL).To(Equal("some-jumpbox-url"))
-			Expect(stateStore.SetCall.Receives[3].State).To(Equal(createJumpboxState))
+			Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
 
 			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(createJumpboxState))
 			Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
-			Expect(stateStore.SetCall.Receives[4].State).To(Equal(createDirectorState))
+			Expect(stateStore.SetCall.Receives[3].State).To(Equal(createDirectorState))
 
 			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
 			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
-			Expect(stateStore.SetCall.CallCount).To(Equal(5))
+			Expect(stateStore.SetCall.CallCount).To(Equal(4))
 		})
 
 		Context("when the config has ops files", func() {
@@ -244,35 +237,13 @@ var _ = Describe("Up", func() {
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
 				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
-				Expect(stateStore.SetCall.Receives[2].State.NoDirector).To(BeTrue())
-				Expect(stateStore.SetCall.CallCount).To(Equal(3))
+				Expect(stateStore.SetCall.CallCount).To(Equal(2))
+				Expect(stateStore.SetCall.Receives[1].State.NoDirector).To(BeTrue())
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})
 		})
 
 		Describe("failure cases", func() {
-			Context("when the iaas up command fails", func() {
-				BeforeEach(func() {
-					iaasUp.ExecuteCall.Returns.Error = errors.New("tomato")
-				})
-
-				It("returns an error as-is", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("tomato"))
-				})
-			})
-
-			Context("when saving the state fails after env id sync", func() {
-				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Save state after IAAS up: kiwi"))
-				})
-			})
-
 			Context("when parse args fails", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{"--foo"}, storage.State{})
@@ -282,7 +253,7 @@ var _ = Describe("Up", func() {
 
 			Context("when the config has the no-director flag set and the bbl state has a bosh director", func() {
 				BeforeEach(func() {
-					iaasUp.ExecuteCall.Returns.State = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
+					incomingState = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
 				})
 
 				It("fast fails", func() {
@@ -311,7 +282,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after env id sync", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -344,7 +315,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after terraform apply", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -388,7 +359,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after create jumpbox", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -421,7 +392,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after create director", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -461,8 +432,8 @@ var _ = Describe("Up", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("grapefruit"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(3))
-					Expect(stateStore.SetCall.Receives[2].State).To(Equal(partialState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(partialState))
 				})
 
 				Context("when the applier fails and we cannot retrieve the updated bbl state", func() {
@@ -479,7 +450,7 @@ var _ = Describe("Up", func() {
 				Context("when we fail to set the bbl state", func() {
 					BeforeEach(func() {
 						managerError.BBLStateCall.Returns.BBLState = partialState
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("failed to set bbl state")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set bbl state")}}
 					})
 
 					It("saves the bbl state and returns the error", func() {
@@ -502,21 +473,21 @@ var _ = Describe("Up", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Create bosh director: rambutan"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(5))
-					Expect(stateStore.SetCall.Receives[4].State).To(Equal(partialState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(4))
+					Expect(stateStore.SetCall.Receives[3].State).To(Equal(partialState))
 				})
 
 				Context("when it fails to save the state", func() {
 					BeforeEach(func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {}, {errors.New("lychee")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("lychee")}}
 					})
 
 					It("returns a compound error", func() {
 						err := command.Execute([]string{}, storage.State{})
 						Expect(err).To(MatchError("Save state after bosh director create error: rambutan, lychee"))
 
-						Expect(stateStore.SetCall.CallCount).To(Equal(5))
-						Expect(stateStore.SetCall.Receives[4].State).To(Equal(partialState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(4))
+						Expect(stateStore.SetCall.Receives[3].State).To(Equal(partialState))
 					})
 				})
 			})

@@ -1,9 +1,9 @@
-package commands_test
+package config_test
 
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-bootloader/commands"
+	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
@@ -11,10 +11,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GCPUp", func() {
+var _ = Describe("GCP Zoner Hack", func() {
 	var (
-		gcpUp    commands.GCPUp
-		gcpZones *fakes.GCPClient
+		gcpZonerHack config.GCPZonerHack
+		gcpZones     *fakes.GCPClient
 
 		incomingState storage.State
 	)
@@ -25,12 +25,12 @@ var _ = Describe("GCPUp", func() {
 		incomingState = storage.State{GCP: storage.GCP{Region: "some-region"}}
 		gcpZones.GetZonesCall.Returns.Zones = []string{"zone-1", "zone-2"}
 
-		gcpUp = commands.NewGCPUp(gcpZones)
+		gcpZonerHack = config.NewGCPZonerHack(gcpZones)
 	})
 
-	Describe("Execute", func() {
+	Describe("Set Zones", func() {
 		It("retrieves zones for a region", func() {
-			returnedState, err := gcpUp.Execute(incomingState)
+			returnedState, err := gcpZonerHack.SetZones(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(gcpZones.GetZonesCall.CallCount).To(Equal(1))
@@ -40,7 +40,7 @@ var _ = Describe("GCPUp", func() {
 		})
 
 		It("picks a zone and sets it on the state", func() {
-			returnedState, err := gcpUp.Execute(incomingState)
+			returnedState, err := gcpZonerHack.SetZones(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(returnedState.GCP.Zone).To(Equal("zone-1"))
@@ -52,7 +52,7 @@ var _ = Describe("GCPUp", func() {
 			})
 
 			It("uses existing zone", func() {
-				returnedState, err := gcpUp.Execute(incomingState)
+				returnedState, err := gcpZonerHack.SetZones(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(returnedState.GCP.Zone).To(Equal("zone-2"))
@@ -66,7 +66,7 @@ var _ = Describe("GCPUp", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := gcpUp.Execute(storage.State{})
+					_, err := gcpZonerHack.SetZones(storage.State{})
 					Expect(err).To(MatchError("Retrieving availability zones: canteloupe"))
 				})
 			})
@@ -77,7 +77,7 @@ var _ = Describe("GCPUp", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := gcpUp.Execute(storage.State{})
+					_, err := gcpZonerHack.SetZones(storage.State{})
 					Expect(err).To(MatchError("Zone list is empty"))
 				})
 			})

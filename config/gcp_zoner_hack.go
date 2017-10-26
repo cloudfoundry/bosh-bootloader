@@ -1,4 +1,4 @@
-package commands
+package config
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-type GCPUp struct {
+type GCPZonerHack struct {
 	gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever
 }
 
@@ -15,14 +15,14 @@ type gcpAvailabilityZoneRetriever interface {
 	GetZones(string) ([]string, error)
 }
 
-func NewGCPUp(gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever) GCPUp {
-	return GCPUp{
+func NewGCPZonerHack(gcpAvailabilityZoneRetriever gcpAvailabilityZoneRetriever) GCPZonerHack {
+	return GCPZonerHack{
 		gcpAvailabilityZoneRetriever: gcpAvailabilityZoneRetriever,
 	}
 }
 
-func (u GCPUp) Execute(state storage.State) (storage.State, error) {
-	zones, err := u.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
+func (g GCPZonerHack) SetZones(state storage.State) (storage.State, error) {
+	zones, err := g.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Retrieving availability zones: %s", err)
 	}

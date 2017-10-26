@@ -13,16 +13,11 @@ import (
 )
 
 type Up struct {
-	upCmd              UpCmd
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
 	envIDManager       envIDManager
 	terraformManager   terraformManager
-}
-
-type UpCmd interface {
-	Execute(storage.State) (storage.State, error)
 }
 
 type UpConfig struct {
@@ -31,10 +26,9 @@ type UpConfig struct {
 	NoDirector bool
 }
 
-func NewUp(upCmd UpCmd, boshManager boshManager, cloudConfigManager cloudConfigManager,
+func NewUp(boshManager boshManager, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Up {
 	return Up{
-		upCmd:              upCmd,
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
@@ -67,17 +61,6 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
-	var err error
-	state, err = u.upCmd.Execute(state)
-	if err != nil {
-		return err
-	}
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return fmt.Errorf("Save state after IAAS up: %s", err)
-	}
-
 	config, err := u.ParseArgs(args, state)
 	if err != nil {
 		return err

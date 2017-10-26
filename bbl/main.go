@@ -89,6 +89,13 @@ func main() {
 
 		networkDeletionValidator = gcpClient
 		networkClient = gcpClient
+
+		gcpZonerHack := config.NewGCPZonerHack(gcpClient)
+		stateWithZones, err := gcpZonerHack.SetZones(appConfig.State)
+		if err != nil {
+			log.Fatalf("\n\n%s\n", err)
+		}
+		appConfig.State = stateWithZones
 	} else if appConfig.State.IAAS == "azure" && needsIAASCreds {
 		azureClient, err := azure.NewClient(appConfig.State.Azure)
 		if err != nil {
@@ -148,21 +155,16 @@ func main() {
 
 	// Subcommands
 	var (
-		upCmd        commands.UpCmd
 		createLBsCmd commands.CreateLBsCmd
 		lbsCmd       commands.LBsCmd
 	)
 	switch appConfig.State.IAAS {
 	case "aws":
-		upCmd = commands.NewAWSUp()
 		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 	case "gcp":
-		upCmd = commands.NewGCPUp(gcpClient)
 		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
-	case "azure":
-		upCmd = commands.NewAzureUp()
 	}
 
 	// Commands
@@ -170,7 +172,7 @@ func main() {
 	if appConfig.State.IAAS != "" {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
-	up := commands.NewUp(upCmd, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+	up := commands.NewUp(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	usage := commands.NewUsage(logger)
 
 	commandSet := application.CommandSet{}
