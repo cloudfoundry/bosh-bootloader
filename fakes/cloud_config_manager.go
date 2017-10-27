@@ -34,7 +34,10 @@ type CloudConfigManager struct {
 	}
 	InterpolateCall struct {
 		CallCount int
-		Returns   struct {
+		Receives  struct {
+			State storage.State
+		}
+		Returns struct {
 			CloudConfig string
 			Error       error
 		}
@@ -59,7 +62,8 @@ func (c *CloudConfigManager) GenerateVars(state storage.State) error {
 	return c.GenerateVarsCall.Returns.Error
 }
 
-func (c *CloudConfigManager) Interpolate() (string, error) {
+func (c *CloudConfigManager) Interpolate(state storage.State) (string, error) {
 	c.InterpolateCall.CallCount++
+	c.InterpolateCall.Receives.State = state
 	return c.InterpolateCall.Returns.CloudConfig, c.InterpolateCall.Returns.Error
 }

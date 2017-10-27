@@ -220,20 +220,79 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe("Interpolate", func() {
-		It("returns a cloud config yaml provided a valid bbl state", func() {
-			cloudConfigYAML, err := manager.Interpolate()
-			Expect(err).NotTo(HaveOccurred())
+		Context("when cloud config files exist in the state dir", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCallCount()).To(Equal(1))
-			_, workingDirectory, args := cmd.RunArgsForCall(0)
-			Expect(workingDirectory).To(Equal(cloudConfigDir))
-			Expect(args).To(Equal([]string{
-				"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
-				"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
-				"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
-			}))
+				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some existing ops"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
+				err = ioutil.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte("some existing vars"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns a cloud config yaml provided a valid bbl state", func() {
+				cloudConfigYAML, err := manager.Interpolate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(1))
+				_, workingDirectory, args := cmd.RunArgsForCall(0)
+				Expect(workingDirectory).To(Equal(cloudConfigDir))
+				Expect(args).To(Equal([]string{
+					"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
+					"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
+					"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
+				}))
+
+				Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
+			})
+
+			It("is read-only", func() {
+				cloudConfig, err := ioutil.ReadFile(filepath.Join(cloudConfigDir, "cloud-config.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(cloudConfig)).To(Equal("some existing cloud config"))
+
+				ops, err := ioutil.ReadFile(filepath.Join(cloudConfigDir, "ops.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(ops)).To(Equal("some existing ops"))
+
+				vars, err := ioutil.ReadFile(filepath.Join(varsDir, "cloud-config-vars.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(vars)).To(Equal("some existing vars"))
+			})
+		})
+
+		Context("for state dirs created by bbl 5.1.0 and earlier", func() {
+			It("writes cloud-config files before interpolating", func() {
+				cloudConfigYAML, err := manager.Interpolate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				cloudConfig, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cloudConfig).To(gomegamatchers.MatchYAML(baseCloudConfig))
+
+				Expect(opsGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+
+				ops, err := ioutil.ReadFile(fmt.Sprintf("%s/ops.yml", cloudConfigDir))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(ops)).To(Equal("some-ops"))
+
+				vars, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config-vars.yml", varsDir))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(vars)).To(Equal("some-vars"))
+
+				Expect(cmd.RunCallCount()).To(Equal(1))
+				_, workingDirectory, args := cmd.RunArgsForCall(0)
+				Expect(workingDirectory).To(Equal(cloudConfigDir))
+				Expect(args).To(Equal([]string{
+					"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
+					"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
+					"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
+				}))
+
+				Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
+			})
 		})
 
 		Context("failure cases", func() {
@@ -243,7 +302,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := manager.Interpolate()
+					_, err := manager.Interpolate(incomingState)
 					Expect(err).To(MatchError("Get cloud config dir: carrot"))
 				})
 			})
@@ -254,7 +313,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := manager.Interpolate()
+					_, err := manager.Interpolate(incomingState)
 					Expect(err).To(MatchError("Get vars dir: eggplant"))
 				})
 			})
@@ -265,7 +324,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := manager.Interpolate()
+					_, err := manager.Interpolate(incomingState)
 					Expect(err).To(MatchError("Interpolate cloud config: failed to run"))
 				})
 			})
@@ -277,7 +336,6 @@ var _ = Describe("Manager", func() {
 			err := manager.Update(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.StepCall.Messages).To(Equal([]string{
-				"initializing cloud config",
 				"generating cloud config",
 				"applying cloud config",
 			}))
