@@ -71,10 +71,10 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Bosh manager initialize director: %s", err)
 	}
 
-	// _, err = p.cloudConfigManager.Generate(state)
-	// if err != nil {
-	// 	return fmt.Errorf("Cloud config manager generate: %s", err)
-	// }
+	_, err = p.cloudConfigManager.Generate(state)
+	if err != nil {
+		return fmt.Errorf("Cloud config manager generate: %s", err)
+	}
 
 	return nil
 }

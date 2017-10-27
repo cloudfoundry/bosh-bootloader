@@ -3,7 +3,6 @@ package aws
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -14,7 +13,12 @@ import (
 )
 
 type OpsGenerator struct {
-	terraformManager terraformManager
+	terraformManager          terraformManager
+	availabilityZoneRetriever availabilityZoneRetriever
+}
+
+type availabilityZoneRetriever interface {
+	RetrieveAvailabilityZones(string) ([]string, error)
 }
 
 type terraformManager interface {
@@ -68,18 +72,91 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
+func NewOpsGenerator(terraformManager terraformManager, availabilityZoneRetriever availabilityZoneRetriever) OpsGenerator {
 	return OpsGenerator{
-		terraformManager: terraformManager,
+		terraformManager:          terraformManager,
+		availabilityZoneRetriever: availabilityZoneRetriever,
 	}
 }
 
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
-	return "", nil
+	terraformOutputs, err := o.terraformManager.GetOutputs(state)
+	if err != nil {
+		return "", fmt.Errorf("Get terraform outputs: %s", err)
+	}
+	azs, err := o.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
+	if err != nil {
+		return "", fmt.Errorf("Retrieve availability zones: %s", err)
+	}
+	varsYAML := map[string]string{
+		"internal_security_group":              terraformOutputs.GetString("internal_security_group"),
+		"cf_router_lb_name":                    terraformOutputs.GetString("cf_router_lb_name"),
+		"cf_router_lb_internal_security_group": terraformOutputs.GetString("cf_router_lb_internal_security_group"),
+		"cf_ssh_lb_name":                       terraformOutputs.GetString("cf_ssh_lb_name"),
+		"cf_ssh_lb_internal_security_group":    terraformOutputs.GetString("cf_ssh_lb_internal_security_group"),
+		"cf_tcp_lb_name":                       terraformOutputs.GetString("cf_tcp_lb_name"),
+		"cf_tcp_lb_internal_security_group":    terraformOutputs.GetString("cf_tcp_lb_internal_security_group"),
+		"concourse_lb_name":                    terraformOutputs.GetString("concourse_lb_name"),
+		"concourse_lb_internal_security_group": terraformOutputs.GetString("concourse_lb_internal_security_group"),
+	}
+
+	internalAZSubnetIDMap := terraformOutputs.GetStringMap("internal_az_subnet_id_mapping")
+	if len(internalAZSubnetIDMap) == 0 {
+		return "", errors.New("missing internal_az_subnet_id_mapping terraform output")
+	}
+
+	internalAZSubnetCIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_cidr_mapping")
+	if len(internalAZSubnetCIDRMap) == 0 {
+		return "", errors.New("missing internal_az_subnet_cidr_mapping terraform output")
+	}
+
+	requiredOutputs := []string{"internal_security_group"}
+	switch state.LB.Type {
+	case "concourse":
+		requiredOutputs = append(requiredOutputs, "concourse_lb_name", "concourse_lb_internal_security_group")
+	case "cf":
+		requiredOutputs = append(
+			requiredOutputs,
+			"cf_router_lb_name",
+			"cf_router_lb_internal_security_group",
+			"cf_ssh_lb_name",
+			"cf_ssh_lb_internal_security_group",
+			"cf_tcp_lb_name",
+			"cf_tcp_lb_internal_security_group",
+		)
+	}
+
+	for _, output := range requiredOutputs {
+		if varsYAML[output] == "" {
+			return "", fmt.Errorf("missing %s terraform output", output)
+		}
+	}
+
+	for i, myAZ := range azs {
+		az, err := azify(
+			i,
+			myAZ,
+			internalAZSubnetCIDRMap[myAZ],
+			internalAZSubnetIDMap[myAZ],
+		)
+		if err != nil {
+			return "", err
+		}
+
+		for name, value := range az {
+			varsYAML[name] = value
+		}
+	}
+
+	varsBytes, err := marshal(varsYAML)
+	if err != nil {
+		panic(err) // not tested; cannot occur
+	}
+	return string(varsBytes), nil
 }
 
-func (a OpsGenerator) Generate(state storage.State) (string, error) {
-	ops, err := a.generateOps(state)
+func (o OpsGenerator) Generate(state storage.State) (string, error) {
+	ops, err := o.generateOps(state)
 	if err != nil {
 		return "", err
 	}
@@ -106,51 +183,25 @@ func createOp(opType, opPath string, value interface{}) op {
 	}
 }
 
-func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
+func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	ops := []op{}
 	subnets := []networkSubnet{}
 
-	terraformOutputs, err := a.terraformManager.GetOutputs(state)
+	azs, err := o.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
 	if err != nil {
-		return []op{}, err
+		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err)
 	}
 
-	internalAZSubnetIDMap := terraformOutputs.GetStringMap("internal_az_subnet_id_mapping")
-	if len(internalAZSubnetIDMap) == 0 {
-		return []op{}, errors.New("missing internal_az_subnet_id_mapping terraform output")
-	}
-
-	internalAZSubnetCIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_cidr_mapping")
-	if len(internalAZSubnetCIDRMap) == 0 {
-		return []op{}, errors.New("missing internal_az_subnet_cidr_mapping terraform output")
-	}
-
-	internalSecurityGroup := terraformOutputs.GetString("internal_security_group")
-	if internalSecurityGroup == "" {
-		return []op{}, errors.New("missing internal_security_group terraform output")
-	}
-
-	var azs []string
-	for myAZ, _ := range internalAZSubnetIDMap {
-		azs = append(azs, myAZ)
-	}
-	sort.Strings(azs)
-
-	for i, myAZ := range azs {
+	for i, _ := range azs {
 		azOp := createOp("replace", "/azs/-", az{
 			Name: fmt.Sprintf("z%d", i+1),
 			CloudProperties: azCloudProperties{
-				AvailabilityZone: myAZ,
+				AvailabilityZone: fmt.Sprintf("((az%d_name))", i+1),
 			},
 		})
 		ops = append(ops, azOp)
 
-		subnet, err := generateNetworkSubnet(
-			fmt.Sprintf("z%d", i+1),
-			internalAZSubnetCIDRMap[myAZ],
-			internalAZSubnetIDMap[myAZ],
-			internalSecurityGroup,
-		)
+		subnet, err := generateNetworkSubnet(i)
 		if err != nil {
 			return []op{}, err
 		}
@@ -172,54 +223,36 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 
 	switch state.LB.Type {
 	case "cf":
+		internalSecurityGroup := "((internal_security_group))"
+
 		lbSecurityGroups := []map[string]string{
-			map[string]string{"name": "cf-router-network-properties", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
-			map[string]string{"name": "diego-ssh-proxy-network-properties", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
-			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "cf_tcp_lb_name", "group": "cf_tcp_lb_internal_security_group"},
-			map[string]string{"name": "router-lb", "lb": "cf_router_lb_name", "group": "cf_router_lb_internal_security_group"},
-			map[string]string{"name": "ssh-proxy-lb", "lb": "cf_ssh_lb_name", "group": "cf_ssh_lb_internal_security_group"},
+			map[string]string{"name": "cf-router-network-properties", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
+			map[string]string{"name": "diego-ssh-proxy-network-properties", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
+			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "((cf_tcp_lb_name))", "group": "((cf_tcp_lb_internal_security_group))"},
+			map[string]string{"name": "router-lb", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
+			map[string]string{"name": "ssh-proxy-lb", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
 		}
 
 		for _, details := range lbSecurityGroups {
-			elb := terraformOutputs.GetString(details["lb"])
-			if elb == "" {
-				return []op{}, fmt.Errorf("missing %s terraform output", details["lb"])
-			}
-
-			grp := terraformOutputs.GetString(details["group"])
-			if grp == "" {
-				return []op{}, fmt.Errorf("missing %s terraform output", details["group"])
-			}
-
 			ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 				Name: details["name"],
 				CloudProperties: lbCloudProperties{
-					ELBs: []string{elb},
+					ELBs: []string{details["lb"]},
 					SecurityGroups: []string{
-						grp,
+						details["group"],
 						internalSecurityGroup,
 					},
 				},
 			}))
 		}
 	case "concourse":
-		concourseLoadBalancer := terraformOutputs.GetString("concourse_lb_name")
-		if concourseLoadBalancer == "" {
-			return []op{}, errors.New("missing concourse_lb_name terraform output")
-		}
-
-		concourseInternalSecurityGroup := terraformOutputs.GetString("concourse_lb_internal_security_group")
-		if concourseInternalSecurityGroup == "" {
-			return []op{}, errors.New("missing concourse_lb_internal_security_group terraform output")
-		}
-
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "lb",
 			CloudProperties: lbCloudProperties{
-				ELBs: []string{concourseLoadBalancer},
+				ELBs: []string{"((concourse_lb_name))"},
 				SecurityGroups: []string{
-					concourseInternalSecurityGroup,
-					internalSecurityGroup,
+					"((concourse_lb_internal_security_group))",
+					"((internal_security_group))",
 				},
 			},
 		}))
@@ -228,10 +261,10 @@ func (a OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	return ops, nil
 }
 
-func generateNetworkSubnet(az, cidr, subnet, securityGroup string) (networkSubnet, error) {
+func azify(az int, azName, cidr, subnet string) (map[string]string, error) {
 	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
 	if err != nil {
-		return networkSubnet{}, err
+		return map[string]string{}, err
 	}
 
 	gateway := parsedCidr.GetFirstIP().Add(1).String()
@@ -241,20 +274,33 @@ func generateNetworkSubnet(az, cidr, subnet, securityGroup string) (networkSubne
 	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
 	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
 
+	return map[string]string{
+		fmt.Sprintf("az%d_name", az+1):       azName,
+		fmt.Sprintf("az%d_gateway", az+1):    gateway,
+		fmt.Sprintf("az%d_range", az+1):      cidr,
+		fmt.Sprintf("az%d_reserved_1", az+1): fmt.Sprintf("%s-%s", firstReserved, secondReserved),
+		fmt.Sprintf("az%d_reserved_2", az+1): lastReserved,
+		fmt.Sprintf("az%d_static", az+1):     fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+		fmt.Sprintf("az%d_subnet", az+1):     subnet,
+	}, nil
+}
+
+func generateNetworkSubnet(az int) (networkSubnet, error) {
+	az++
 	return networkSubnet{
-		AZ:      az,
-		Gateway: gateway,
-		Range:   cidr,
+		AZ:      fmt.Sprintf("z%d", az),
+		Gateway: fmt.Sprintf("((az%d_gateway))", az),
+		Range:   fmt.Sprintf("((az%d_range))", az),
 		Reserved: []string{
-			fmt.Sprintf("%s-%s", firstReserved, secondReserved),
-			fmt.Sprintf("%s", lastReserved),
+			fmt.Sprintf("((az%d_reserved_1))", az),
+			fmt.Sprintf("((az%d_reserved_2))", az),
 		},
 		Static: []string{
-			fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+			fmt.Sprintf("((az%d_static))", az),
 		},
 		CloudProperties: networkSubnetCloudProperties{
-			Subnet:         subnet,
-			SecurityGroups: []string{securityGroup},
+			Subnet:         fmt.Sprintf("((az%d_subnet))", az),
+			SecurityGroups: []string{"((internal_security_group))"},
 		},
 	}, nil
 }

@@ -51,15 +51,15 @@ var _ = Describe("Client", func() {
 				AvailabilityZones: []*awsec2.AvailabilityZone{
 					{ZoneName: awslib.String("us-east-1a")},
 					{ZoneName: awslib.String("us-east-1b")},
-					{ZoneName: awslib.String("us-east-1c")},
 					{ZoneName: awslib.String("us-east-1e")},
+					{ZoneName: awslib.String("us-east-1c")},
 				},
 			}
 
 			azs, err := client.RetrieveAvailabilityZones("us-east-1")
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(azs).To(ConsistOf("us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"))
+			Expect(azs).To(Equal([]string{"us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"}))
 			Expect(ec2Client.DescribeAvailabilityZonesCall.Receives.Input).To(Equal(&awsec2.DescribeAvailabilityZonesInput{
 				Filters: []*awsec2.Filter{{
 					Name:   awslib.String("region-name"),

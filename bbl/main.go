@@ -145,7 +145,7 @@ func main() {
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
 	switch appConfig.State.IAAS {
 	case "aws":
-		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager)
+		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
 	case "gcp":
 		cloudConfigOpsGenerator = gcpcloudconfig.NewOpsGenerator(terraformManager)
 	case "azure":

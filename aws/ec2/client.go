@@ -3,6 +3,7 @@ package ec2
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -60,6 +61,8 @@ func (c Client) RetrieveAvailabilityZones(region string) ([]string, error) {
 
 		azList = append(azList, *az.ZoneName)
 	}
+
+	sort.Strings(azList)
 
 	return azList, nil
 }
