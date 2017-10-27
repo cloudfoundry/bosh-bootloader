@@ -1,7 +1,7 @@
 # bosh-bootloader
-Also know as bbl (pronounced: "bubble"), bosh-bootloader is a command line utility for standing up a CloudFoundry or Concourse installation
-on an IAAS. This CLI supports bootstrapping a CloudFoundry or Concourse installation on
-AWS, GCP and Azure. Openstack and vSphere support are planned.
+Also known as `bbl` *(pronounced: "bubble")*, bosh-bootloader is a command line
+utility for standing up a [CloudFoundry](https://cloudfoundry.org/) or [Concourse](https://concourse.ci) installation
+on an IAAS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.
 
 * [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
@@ -43,7 +43,7 @@ $ brew install bbl
 
 1. `eval $(bbl print-env)` to target the director that you just created.
 
-1. `bosh ssh` `bosh deploy` or `bosh status` should all just work with no further information needed from bbl. 
+1. `bosh ssh`, `bosh deploy` or `bosh status` should all just work with no further information needed from bbl.
 
 
 For detailed, IAAS specific instructions see your preferred IAAS's getting started guide:
