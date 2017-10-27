@@ -69,9 +69,6 @@ var _ = Describe("Plan", func() {
 			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(state))
 			Expect(boshManager.InitializeDirectorCall.Receives.TerraformOutputs.Map).To(BeNil())
-
-			Expect(cloudConfigManager.GenerateCall.CallCount).To(Equal(1))
-			Expect(cloudConfigManager.GenerateCall.Receives.State).To(Equal(state))
 		})
 
 		Context("when --no-director is passed", func() {
@@ -133,13 +130,6 @@ var _ = Describe("Plan", func() {
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("Bosh manager initialize director: tomatoe"))
-			})
-
-			It("returns an error if cloud config manager fails to generate a cloud-config", func() {
-				cloudConfigManager.GenerateCall.Returns.Error = errors.New("blueberry")
-
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("Cloud config manager generate: blueberry"))
 			})
 		})
 	})
