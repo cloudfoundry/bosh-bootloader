@@ -3,4 +3,4 @@
   value:
     name: lb
     cloud_properties:
-      target_pool: concourse-target-pool
+      target_pool: ((concourse_target_pool))

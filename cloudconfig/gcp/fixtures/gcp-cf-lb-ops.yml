@@ -3,35 +3,35 @@
   value:
     name: cf-router-network-properties
     cloud_properties:
-      backend_service: router-backend-service
-      target_pool: ws-target-pool
+      backend_service: ((router_backend_service))
+      target_pool: ((ws_target_pool))
       tags:
-      - router-backend-service
-      - ws-target-pool
+      - ((router_backend_service))
+      - ((ws_target_pool))
 
 - type: replace
   path: /vm_extensions/-
   value:
     name: diego-ssh-proxy-network-properties
     cloud_properties:
-      target_pool: ssh-proxy-target-pool
+      target_pool: ((ssh_proxy_target_pool))
       tags:
-      - ssh-proxy-target-pool
+      - ((ssh_proxy_target_pool))
 
 - type: replace
   path: /vm_extensions/-
   value:
     name: cf-tcp-router-network-properties
     cloud_properties:
-      target_pool: tcp-router-target-pool
+      target_pool: ((tcp_router_target_pool))
       tags:
-      - tcp-router-target-pool
+      - ((tcp_router_target_pool))
 
 - type: replace
   path: /vm_extensions/-
   value:
     name: credhub-network-properties
     cloud_properties:
-      target_pool: credhub-target-pool
+      target_pool: ((credhub_target_pool))
       tags:
-      - credhub-target-pool
+      - ((credhub_target_pool))

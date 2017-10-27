@@ -425,10 +425,10 @@
       - 10.0.31.190-10.0.31.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: some-network-name
-        subnetwork_name: some-subnetwork-name
+        network_name: ((network_name))
+        subnetwork_name: ((subnetwork_name))
         tags:
-          - some-internal-tag
+          - ((internal_tag_name))
     - az: z2
       gateway: 10.0.32.1
       range: 10.0.32.0/20
@@ -439,10 +439,10 @@
       - 10.0.47.190-10.0.47.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: some-network-name
-        subnetwork_name: some-subnetwork-name
+        network_name: ((network_name))
+        subnetwork_name: ((subnetwork_name))
         tags:
-          - some-internal-tag
+          - ((internal_tag_name))
     - az: z3
       gateway: 10.0.48.1
       range: 10.0.48.0/20
@@ -453,10 +453,10 @@
       - 10.0.63.190-10.0.63.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: some-network-name
-        subnetwork_name: some-subnetwork-name
+        network_name: ((network_name))
+        subnetwork_name: ((subnetwork_name))
         tags:
-          - some-internal-tag
+          - ((internal_tag_name))
     type: manual
 
 - type: replace
@@ -474,10 +474,10 @@
       - 10.0.31.190-10.0.31.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: some-network-name
-        subnetwork_name: some-subnetwork-name
+        network_name: ((network_name))
+        subnetwork_name: ((subnetwork_name))
         tags:
-          - some-internal-tag
+          - ((internal_tag_name))
     - az: z2
       gateway: 10.0.32.1
       range: 10.0.32.0/20
@@ -488,10 +488,10 @@
       - 10.0.47.190-10.0.47.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: some-network-name
-        subnetwork_name: some-subnetwork-name
+        network_name: ((network_name))
+        subnetwork_name: ((subnetwork_name))
         tags:
-          - some-internal-tag
+          - ((internal_tag_name))
     - az: z3
       gateway: 10.0.48.1
       range: 10.0.48.0/20
@@ -502,9 +502,9 @@
       - 10.0.63.190-10.0.63.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: some-network-name
-        subnetwork_name: some-subnetwork-name
+        network_name: ((network_name))
+        subnetwork_name: ((subnetwork_name))
         tags:
-          - some-internal-tag
+          - ((internal_tag_name))
     type: manual
 
