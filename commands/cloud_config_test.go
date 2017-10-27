@@ -24,7 +24,7 @@ var _ = Describe("CloudConfig", func() {
 		stateValidator = &fakes.StateValidator{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 
-		cloudConfigManager.GenerateCall.Returns.CloudConfig = "some-cloud-config"
+		cloudConfigManager.InterpolateCall.Returns.CloudConfig = "some-cloud-config"
 
 		state = storage.State{
 			BOSH: storage.BOSH{
@@ -55,15 +55,14 @@ var _ = Describe("CloudConfig", func() {
 		It("prints the cloud configuration for the bbl environment", func() {
 			err := cloudConfig.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudConfigManager.GenerateCall.CallCount).To(Equal(1))
-			Expect(cloudConfigManager.GenerateCall.Receives.State).To(Equal(state))
+			Expect(cloudConfigManager.InterpolateCall.CallCount).To(Equal(1))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-cloud-config"))
 		})
 
 		Context("failure cases", func() {
 			Context("when the cloud config manager fails to generate", func() {
 				BeforeEach(func() {
-					cloudConfigManager.GenerateCall.Returns.Error = errors.New("failed to generate cloud configuration")
+					cloudConfigManager.InterpolateCall.Returns.Error = errors.New("failed to generate cloud configuration")
 				})
 
 				It("returns an error", func() {

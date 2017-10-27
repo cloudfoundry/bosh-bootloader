@@ -30,7 +30,7 @@ func (c CloudConfig) CheckFastFails(subcommandFlags []string, state storage.Stat
 }
 
 func (c CloudConfig) Execute(args []string, state storage.State) error {
-	contents, err := c.cloudConfigManager.Generate(state)
+	contents, err := c.cloudConfigManager.Interpolate()
 	if err != nil {
 		return err
 	}

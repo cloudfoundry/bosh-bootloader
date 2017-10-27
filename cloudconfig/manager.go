@@ -71,7 +71,50 @@ func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator 
 	}
 }
 
-func (m Manager) Generate(state storage.State) (string, error) {
+func (m Manager) Initialize(state storage.State) error {
+	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	if err != nil {
+		return fmt.Errorf("Get cloud config dir: %s", err)
+	}
+
+	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	ops, err := m.opsGenerator.Generate(state)
+	if err != nil {
+		return err
+	}
+
+	err = writeFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m Manager) GenerateVars(state storage.State) error {
+	varsDir, err := m.stateStore.GetVarsDir()
+	if err != nil {
+		return fmt.Errorf("Get vars dir: %s", err)
+	}
+
+	vars, err := m.opsGenerator.GenerateVars(state)
+	if err != nil {
+		return fmt.Errorf("Generate cloud config vars: %s", err)
+	}
+
+	err = writeFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write cloud config vars: %s", err)
+	}
+
+	return nil
+}
+
+func (m Manager) Interpolate() (string, error) {
 	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("Get cloud config dir: %s", err)
@@ -80,31 +123,6 @@ func (m Manager) Generate(state storage.State) (string, error) {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return "", fmt.Errorf("Get vars dir: %s", err)
-	}
-
-	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	ops, err := m.opsGenerator.Generate(state)
-	if err != nil {
-		return "", err
-	}
-
-	err = writeFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	vars, err := m.opsGenerator.GenerateVars(state)
-	if err != nil {
-		return "", fmt.Errorf("Generate cloud config vars: %s", err)
-	}
-
-	err = writeFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), os.ModePerm)
-	if err != nil {
-		return "", fmt.Errorf("Write cloud config vars: %s", err)
 	}
 
 	args := []string{
@@ -128,8 +146,30 @@ func (m Manager) Update(state storage.State) error {
 		return err // not tested
 	}
 
+	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	if err != nil {
+		return fmt.Errorf("Get cloud config dir: %s", err)
+	}
+
+	_, err = os.Stat(filepath.Join(cloudConfigDir, "cloud-config.yml"))
+	if err != nil {
+		_, err = os.Stat(filepath.Join(cloudConfigDir, "ops-yml"))
+		if err != nil {
+			m.logger.Step("initializing cloud config")
+			err = m.Initialize(state)
+			if err != nil {
+				return err // not tested
+			}
+		}
+	}
+
 	m.logger.Step("generating cloud config")
-	cloudConfig, err := m.Generate(state)
+	err = m.GenerateVars(state)
+	if err != nil {
+		return err
+	}
+
+	cloudConfig, err := m.Interpolate()
 	if err != nil {
 		return err
 	}

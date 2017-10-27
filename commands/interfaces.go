@@ -78,5 +78,7 @@ type stateStore interface {
 
 type cloudConfigManager interface {
 	Update(state storage.State) error
-	Generate(state storage.State) (string, error)
+	Initialize(state storage.State) error
+	GenerateVars(state storage.State) error
+	Interpolate() (string, error)
 }
