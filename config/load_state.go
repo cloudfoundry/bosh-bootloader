@@ -242,6 +242,7 @@ func NeedsIAASCreds(command string) bool {
 	_, ok := map[string]struct{}{
 		"up":         struct{}{},
 		"down":       struct{}{},
+		"plan":       struct{}{},
 		"destroy":    struct{}{},
 		"create-lbs": struct{}{},
 		"delete-lbs": struct{}{},

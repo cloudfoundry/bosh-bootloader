@@ -28,8 +28,9 @@ var _ = Describe("Manager", func() {
 		sshKeyGetter       *fakes.SSHKeyGetter
 		manager            cloudconfig.Manager
 
-		tempDir       string
-		incomingState storage.State
+		cloudConfigDir string
+		varsDir        string
+		incomingState  storage.State
 
 		baseCloudConfig []byte
 	)
@@ -47,10 +48,13 @@ var _ = Describe("Manager", func() {
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
 		var err error
-		tempDir, err = ioutil.TempDir("", "")
+		cloudConfigDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
+		stateStore.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
 
-		stateStore.GetCloudConfigDirCall.Returns.Directory = tempDir
+		varsDir, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
 		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-cloud-config"))
@@ -67,6 +71,7 @@ var _ = Describe("Manager", func() {
 		}
 
 		opsGenerator.GenerateCall.Returns.OpsYAML = "some-ops"
+		opsGenerator.GenerateVarsCall.Returns.VarsYAML = "some-vars"
 
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
@@ -80,37 +85,55 @@ var _ = Describe("Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stateStore.GetCloudConfigDirCall.CallCount).To(Equal(1))
+			Expect(stateStore.GetVarsDirCall.CallCount).To(Equal(1))
 
-			cloudConfig, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config.yml", tempDir))
+			cloudConfig, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cloudConfig).To(Equal(baseCloudConfig))
 
 			Expect(opsGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+			Expect(opsGenerator.GenerateVarsCall.Receives.State).To(Equal(incomingState))
 
-			ops, err := ioutil.ReadFile(fmt.Sprintf("%s/ops.yml", tempDir))
+			ops, err := ioutil.ReadFile(fmt.Sprintf("%s/ops.yml", cloudConfigDir))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(ops)).To(Equal("some-ops"))
 
+			vars, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config-vars.yml", varsDir))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(vars)).To(Equal("some-vars"))
+
 			Expect(cmd.RunCallCount()).To(Equal(1))
 			_, workingDirectory, args := cmd.RunArgsForCall(0)
-			Expect(workingDirectory).To(Equal(tempDir))
+			Expect(workingDirectory).To(Equal(cloudConfigDir))
 			Expect(args).To(Equal([]string{
-				"interpolate", fmt.Sprintf("%s/cloud-config.yml", tempDir),
-				"-o", fmt.Sprintf("%s/ops.yml", tempDir),
+				"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
+				"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
+				"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
 			}))
 
 			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
 		})
 
 		Context("failure cases", func() {
-			Context("when getting cloud config dir fails", func() {
+			Context("when getting the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("failed to create temp dir")
+					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns an error", func() {
 					_, err := manager.Generate(storage.State{})
-					Expect(err).To(MatchError("failed to create temp dir"))
+					Expect(err).To(MatchError("Get cloud config dir: carrot"))
+				})
+			})
+
+			Context("when getting the vars dir fails", func() {
+				BeforeEach(func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("eggplant")
+				})
+
+				It("returns an error", func() {
+					_, err := manager.Generate(storage.State{})
+					Expect(err).To(MatchError("Get vars dir: eggplant"))
 				})
 			})
 
@@ -162,6 +185,37 @@ var _ = Describe("Manager", func() {
 				It("returns an error", func() {
 					_, err := manager.Generate(storage.State{})
 					Expect(err).To(MatchError("failed to write file"))
+				})
+			})
+
+			Context("when ops generator fails to generate vars", func() {
+				BeforeEach(func() {
+					opsGenerator.GenerateVarsCall.Returns.Error = errors.New("raspberry")
+				})
+
+				It("returns an error", func() {
+					_, err := manager.Generate(storage.State{})
+					Expect(err).To(MatchError("Generate cloud config vars: raspberry"))
+				})
+			})
+
+			Context("when write file fails to write the vars file", func() {
+				BeforeEach(func() {
+					cloudconfig.SetWriteFile(func(filename string, body []byte, mode os.FileMode) error {
+						if strings.Contains(filename, "cloud-config-vars.yml") {
+							return errors.New("coconut")
+						}
+						return nil
+					})
+				})
+
+				AfterEach(func() {
+					cloudconfig.ResetWriteFile()
+				})
+
+				It("returns an error", func() {
+					_, err := manager.Generate(storage.State{})
+					Expect(err).To(MatchError("Write cloud config vars: coconut"))
 				})
 			})
 

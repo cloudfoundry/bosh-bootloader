@@ -2,6 +2,7 @@ package cloudconfig
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -37,6 +38,7 @@ type command interface {
 
 type OpsGenerator interface {
 	Generate(state storage.State) (string, error)
+	GenerateVars(state storage.State) (string, error)
 }
 
 type boshClientProvider interface {
@@ -53,6 +55,7 @@ type sshKeyGetter interface {
 
 type stateStore interface {
 	GetCloudConfigDir() (string, error)
+	GetVarsDir() (string, error)
 }
 
 func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
@@ -71,7 +74,12 @@ func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator 
 func (m Manager) Generate(state storage.State) (string, error) {
 	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Get cloud config dir: %s", err)
+	}
+
+	varsDir, err := m.stateStore.GetVarsDir()
+	if err != nil {
+		return "", fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), os.ModePerm)
@@ -89,9 +97,20 @@ func (m Manager) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
+	vars, err := m.opsGenerator.GenerateVars(state)
+	if err != nil {
+		return "", fmt.Errorf("Generate cloud config vars: %s", err)
+	}
+
+	err = writeFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), os.ModePerm)
+	if err != nil {
+		return "", fmt.Errorf("Write cloud config vars: %s", err)
+	}
+
 	args := []string{
 		"interpolate", filepath.Join(cloudConfigDir, "cloud-config.yml"),
 		"-o", filepath.Join(cloudConfigDir, "ops.yml"),
+		"--vars-file", filepath.Join(varsDir, "cloud-config-vars.yml"),
 	}
 
 	buf := bytes.NewBuffer([]byte{})

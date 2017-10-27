@@ -54,6 +54,10 @@ func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 	}
 }
 
+func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
+	return "", nil
+}
+
 func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs(state)
 	if err != nil {
