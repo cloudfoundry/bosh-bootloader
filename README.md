@@ -41,7 +41,7 @@ $ brew install bbl
 
 1. `bbl up --iaas <MY IAAS>` with IAAS credentials as flags or environment variables.
 
-1. `eval $(bbl print-env)` to target the director that you just created.
+1. `eval "$(bbl print-env)"` to target the director that you just created.
 
 1. `bosh ssh`, `bosh deploy` or `bosh status` should all just work with no further information needed from bbl.
 
