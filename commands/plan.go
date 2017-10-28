@@ -71,5 +71,9 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Bosh manager initialize director: %s", err)
 	}
 
+	if err := p.cloudConfigManager.Initialize(state); err != nil {
+		return fmt.Errorf("Cloud config manager initialize: %s", err)
+	}
+
 	return nil
 }

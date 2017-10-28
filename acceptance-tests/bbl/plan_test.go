@@ -49,10 +49,10 @@ var _ = Describe("plan", func() {
 			checkExists(stateDir, []string{"create-director.sh"})
 			checkExists(stateDir, []string{"delete-jumpbox.sh"})
 			checkExists(stateDir, []string{"delete-director.sh"})
-			// checkExists(filepath.Join(stateDir, ".bbl", "cloudconfig"), []string{
-			// 	"cloud-config.yml",
-			// 	"ops.yml",
-			// })
+			checkExists(filepath.Join(stateDir, ".bbl", "cloudconfig"), []string{
+				"cloud-config.yml",
+				"ops.yml",
+			})
 			checkExists(filepath.Join(stateDir, ".bbl"), []string{
 				"previous-user-ops-file.yml",
 			})
