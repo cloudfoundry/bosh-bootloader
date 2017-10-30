@@ -88,7 +88,7 @@ var _ = Describe("concourse deployment test", func() {
 				fmt.Sprintf("%s/concourse-deployment.yml", configuration.ConcourseDeploymentPath),
 				"concourse-vars.yml",
 				[]string{fmt.Sprintf("%s/operations/%s.yml", configuration.ConcourseDeploymentPath, configuration.IAAS)},
-				map[string]string{"domain": lbURL},
+				map[string]string{"system_domain": lbURL},
 			)
 			Expect(err).NotTo(HaveOccurred())
 
