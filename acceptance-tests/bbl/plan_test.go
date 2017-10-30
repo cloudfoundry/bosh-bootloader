@@ -19,6 +19,8 @@ var _ = Describe("plan", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("plan")
+
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
