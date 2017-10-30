@@ -26,9 +26,7 @@ type Config struct {
 	GCPRegion            string
 	GCPZone              string
 
-	StateFileDir            string
-	StemcellPath            string
-	ConcourseDeploymentPath string
+	StateFileDir string
 }
 
 func LoadConfig() (Config, error) {
@@ -146,9 +144,7 @@ func loadConfigFromEnvVars() Config {
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
 
-		StateFileDir:            os.Getenv("BBL_STATE_DIR"),
-		StemcellPath:            os.Getenv("STEMCELL_PATH"),
-		ConcourseDeploymentPath: os.Getenv("CONCOURSE_DEPLOYMENT_PATH"),
+		StateFileDir: os.Getenv("BBL_STATE_DIR"),
 	}
 }
 
