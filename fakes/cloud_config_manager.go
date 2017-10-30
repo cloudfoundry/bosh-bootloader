@@ -34,12 +34,21 @@ type CloudConfigManager struct {
 	}
 	InterpolateCall struct {
 		CallCount int
-		Receives  struct {
-			State storage.State
-		}
-		Returns struct {
+		Returns   struct {
 			CloudConfig string
 			Error       error
+		}
+	}
+	IsPresentCloudConfigCall struct {
+		CallCount int
+		Returns   struct {
+			IsPresent bool
+		}
+	}
+	IsPresentCloudConfigVarsCall struct {
+		CallCount int
+		Returns   struct {
+			IsPresent bool
 		}
 	}
 }
@@ -62,8 +71,17 @@ func (c *CloudConfigManager) GenerateVars(state storage.State) error {
 	return c.GenerateVarsCall.Returns.Error
 }
 
-func (c *CloudConfigManager) Interpolate(state storage.State) (string, error) {
+func (c *CloudConfigManager) Interpolate() (string, error) {
 	c.InterpolateCall.CallCount++
-	c.InterpolateCall.Receives.State = state
 	return c.InterpolateCall.Returns.CloudConfig, c.InterpolateCall.Returns.Error
+}
+
+func (c *CloudConfigManager) IsPresentCloudConfig() (bool) {
+	c.IsPresentCloudConfigCall.CallCount++
+	return c.IsPresentCloudConfigCall.Returns.IsPresent
+}
+
+func (c *CloudConfigManager) IsPresentCloudConfigVars() (bool) {
+	c.IsPresentCloudConfigVarsCall.CallCount++
+	return c.IsPresentCloudConfigVarsCall.Returns.IsPresent
 }

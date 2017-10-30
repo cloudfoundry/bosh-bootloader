@@ -114,32 +114,44 @@ func (m Manager) GenerateVars(state storage.State) error {
 	return nil
 }
 
-func (m Manager) Interpolate(state storage.State) (string, error) {
+func (m Manager) IsPresentCloudConfig() bool {
 	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
 	if err != nil {
-		return "", fmt.Errorf("Get cloud config dir: %s", err)
+		return false
 	}
 
 	_, err1 := os.Stat(filepath.Join(cloudConfigDir, "cloud-config.yml"))
 	_, err2 := os.Stat(filepath.Join(cloudConfigDir, "ops.yml"))
 	if err1 != nil || err2 != nil {
-		err = m.Initialize(state)
-		if err != nil {
-			return "", err // not tested
-		}
+		return false
+	}
+
+	return true
+}
+
+func (m Manager) IsPresentCloudConfigVars() bool {
+	varsDir, err := m.stateStore.GetVarsDir()
+	if err != nil {
+		return false
+	}
+
+	_, err = os.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (m Manager) Interpolate() (string, error) {
+	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("Get cloud config dir: %s", err)
 	}
 
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return "", fmt.Errorf("Get vars dir: %s", err)
-	}
-
-	_, err = os.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
-	if err != nil {
-		err = m.GenerateVars(state)
-		if err != nil {
-			return "", err // not tested
-		}
 	}
 
 	args := []string{
@@ -164,12 +176,17 @@ func (m Manager) Update(state storage.State) error {
 	}
 
 	m.logger.Step("generating cloud config")
+	err = m.Initialize(state)
+	if err != nil {
+		return err
+	}
+
 	err = m.GenerateVars(state)
 	if err != nil {
 		return err
 	}
 
-	cloudConfig, err := m.Interpolate(state)
+	cloudConfig, err := m.Interpolate()
 	if err != nil {
 		return err
 	}
