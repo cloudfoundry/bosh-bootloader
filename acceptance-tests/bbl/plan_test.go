@@ -29,11 +29,6 @@ var _ = Describe("plan", func() {
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "plan-env")
 	})
 
-	AfterEach(func() {
-		session := bbl.Down()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit())
-	})
-
 	It("sets up the bbl state directory", func() {
 		session := bbl.Plan("--name", bbl.PredefinedEnvID())
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
