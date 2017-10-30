@@ -120,13 +120,9 @@ func (m Manager) Interpolate(state storage.State) (string, error) {
 		return "", fmt.Errorf("Get cloud config dir: %s", err)
 	}
 
-	_, err1 := os.Stat(filepath.Join(cloudConfigDir, "cloud-config.yml"))
-	_, err2 := os.Stat(filepath.Join(cloudConfigDir, "ops.yml"))
-	if err1 != nil || err2 != nil {
-		err = m.Initialize(state)
-		if err != nil {
-			return "", err // not tested
-		}
+	err = m.Initialize(state)
+	if err != nil {
+		return "", err // not tested
 	}
 
 	varsDir, err := m.stateStore.GetVarsDir()
@@ -134,12 +130,9 @@ func (m Manager) Interpolate(state storage.State) (string, error) {
 		return "", fmt.Errorf("Get vars dir: %s", err)
 	}
 
-	_, err = os.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
+	err = m.GenerateVars(state)
 	if err != nil {
-		err = m.GenerateVars(state)
-		if err != nil {
-			return "", err // not tested
-		}
+		return "", err // not tested
 	}
 
 	args := []string{

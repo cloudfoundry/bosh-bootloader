@@ -352,33 +352,6 @@ var _ = Describe("Manager", func() {
 			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal([]byte("some-cloud-config")))
 		})
 
-		Context("when cloud config files already exist", func() {
-			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some ops"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("uses existing cloud config", func() {
-				err := manager.Update(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-				Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
-
-				cloudConfig, err := ioutil.ReadFile(filepath.Join(cloudConfigDir, "cloud-config.yml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(cloudConfig)).To(Equal("some existing cloud config"))
-
-				ops, err := ioutil.ReadFile(filepath.Join(cloudConfigDir, "ops.yml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(ops)).To(Equal("some ops"))
-			})
-		})
-
 		Context("failure cases", func() {
 			Context("when manager generate's command fails to run", func() {
 				BeforeEach(func() {
