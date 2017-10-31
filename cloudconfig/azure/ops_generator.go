@@ -55,32 +55,40 @@ func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 }
 
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
-	return "", nil
-}
-
-func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs(state)
 	if err != nil {
 		return "", err
 	}
 
+	azs := []string{"z1", "z2", "z3"}
+	var varsYAML = map[string]string{
+		"bosh_network_name":           terraformOutputs.GetString("bosh_network_name"),
+		"bosh_subnet_name":            terraformOutputs.GetString("bosh_subnet_name"),
+		"bosh_default_security_group": terraformOutputs.GetString("bosh_default_security_group"),
+	}
+	for i, _ := range azs {
+		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))
+		az, err := azify(i, cidr)
+		if err != nil {
+			panic(err)
+		}
+		for name, value := range az {
+			varsYAML[name] = value
+		}
+	}
+	varsBytes, err := marshal(varsYAML)
+	if err != nil {
+		return "", err
+	}
+
+	return string(varsBytes), nil
+}
+
+func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	zones := []string{"z1", "z2", "z3"}
 	var subnets []networkSubnet
 	for i, _ := range zones {
-		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))
-		subnet, err := generateNetworkSubnet(
-			fmt.Sprintf("z%d", i+1),
-			cidr,
-			terraformOutputs.GetString("bosh_network_name"),
-			terraformOutputs.GetString("bosh_subnet_name"),
-			terraformOutputs.GetString("bosh_default_security_group"),
-		)
-		if err != nil {
-			panic(err)
-			return "", err
-		}
-
-		subnets = append(subnets, subnet)
+		subnets = append(subnets, generateNetworkSubnet(i))
 	}
 
 	cloudConfigOps := []op{
@@ -118,34 +126,48 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	), nil
 }
 
-func generateNetworkSubnet(az, cidr, networkName, subnetName, securityGroup string) (networkSubnet, error) {
+func azify(az int, cidr string) (map[string]string, error) {
 	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
 	if err != nil {
-		return networkSubnet{}, err
+		panic(err)
 	}
 
-	gateway := parsedCidr.GetFirstIP().Add(1).String()
-	firstReserved := parsedCidr.GetFirstIP().Add(2).String()
-	secondReserved := parsedCidr.GetFirstIP().Add(3).String()
-	lastReserved := parsedCidr.GetLastIP().String()
-	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
-	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
+	firstIP := parsedCidr.GetFirstIP()
+	gateway := firstIP.Add(1).String()
+	firstReserved := firstIP.Add(2).String()
+	secondReserved := firstIP.Add(3).String()
+	lastIP := parsedCidr.GetLastIP()
+	lastReserved := lastIP.String()
+	lastStatic := lastIP.Subtract(1).String()
+	firstStatic := lastIP.Subtract(65).String()
 
+	azIndex := az + 1
+	return map[string]string{
+		fmt.Sprintf("az%d_gateway", azIndex):    gateway,
+		fmt.Sprintf("az%d_range", azIndex):      cidr,
+		fmt.Sprintf("az%d_reserved_1", azIndex): fmt.Sprintf("%s-%s", firstReserved, secondReserved),
+		fmt.Sprintf("az%d_reserved_2", azIndex): lastReserved,
+		fmt.Sprintf("az%d_static", azIndex):     fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+	}, nil
+}
+
+func generateNetworkSubnet(az int) networkSubnet {
+	azIndex := az + 1
 	return networkSubnet{
-		AZ:      az,
-		Gateway: gateway,
-		Range:   cidr,
+		AZ:      fmt.Sprintf("z%d", azIndex),
+		Gateway: fmt.Sprintf("((az%d_gateway))", azIndex),
+		Range:   fmt.Sprintf("((az%d_range))", azIndex),
 		Reserved: []string{
-			fmt.Sprintf("%s-%s", firstReserved, secondReserved),
-			fmt.Sprintf("%s", lastReserved),
+			fmt.Sprintf("((az%d_reserved_1))", azIndex),
+			fmt.Sprintf("((az%d_reserved_2))", azIndex),
 		},
 		Static: []string{
-			fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+			fmt.Sprintf("((az%d_static))", azIndex),
 		},
 		CloudProperties: subnetCloudProperties{
-			VirtualNetworkName: networkName,
-			SubnetName:         subnetName,
-			SecurityGroup:      securityGroup,
+			VirtualNetworkName: "((bosh_network_name))",
+			SubnetName:         "((bosh_subnet_name))",
+			SecurityGroup:      "((bosh_default_security_group))",
 		},
-	}, nil
+	}
 }

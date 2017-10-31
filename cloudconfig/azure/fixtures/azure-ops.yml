@@ -103,42 +103,42 @@
     name: default
     type: manual
     subnets:
-    - gateway: 10.0.16.1
-      range: 10.0.16.0/20
+    - gateway: ((az1_gateway))
+      range: ((az1_range))
       az: z1
       reserved:
-      - 10.0.16.2-10.0.16.3
-      - 10.0.31.255
+      - ((az1_reserved_1))
+      - ((az1_reserved_2))
       static:
-      - 10.0.31.190-10.0.31.254
+      - ((az1_static))
       cloud_properties:
-        virtual_network_name: some-virtual-network-name
-        subnet_name: some-subnet-name
-        security_group: some-security-group
-    - gateway: 10.0.32.1
-      range: 10.0.32.0/20
+        virtual_network_name: ((bosh_network_name))
+        subnet_name: ((bosh_subnet_name))
+        security_group: ((bosh_default_security_group))
+    - gateway: ((az2_gateway))
+      range: ((az2_range))
       az: z2
       reserved:
-      - 10.0.32.2-10.0.32.3
-      - 10.0.47.255
+      - ((az2_reserved_1))
+      - ((az2_reserved_2))
       static:
-      - 10.0.47.190-10.0.47.254
+      - ((az2_static))
       cloud_properties:
-        virtual_network_name: some-virtual-network-name
-        subnet_name: some-subnet-name
-        security_group: some-security-group
-    - gateway: 10.0.48.1
-      range: 10.0.48.0/20
+        virtual_network_name: ((bosh_network_name))
+        subnet_name: ((bosh_subnet_name))
+        security_group: ((bosh_default_security_group))
+    - gateway: ((az3_gateway))
+      range: ((az3_range))
       az: z3
       reserved:
-      - 10.0.48.2-10.0.48.3
-      - 10.0.63.255
+      - ((az3_reserved_1))
+      - ((az3_reserved_2))
       static:
-      - 10.0.63.190-10.0.63.254
+      - ((az3_static))
       cloud_properties:
-        virtual_network_name: some-virtual-network-name
-        subnet_name: some-subnet-name
-        security_group: some-security-group
+        virtual_network_name: ((bosh_network_name))
+        subnet_name: ((bosh_subnet_name))
+        security_group: ((bosh_default_security_group))
 
 - type: replace
   path: /networks/-
@@ -146,39 +146,39 @@
     name: private
     type: manual
     subnets:
-    - gateway: 10.0.16.1
-      range: 10.0.16.0/20
+    - gateway: ((az1_gateway))
+      range: ((az1_range))
       az: z1
       reserved:
-      - 10.0.16.2-10.0.16.3
-      - 10.0.31.255
+      - ((az1_reserved_1))
+      - ((az1_reserved_2))
       static:
-      - 10.0.31.190-10.0.31.254
+      - ((az1_static))
       cloud_properties:
-        virtual_network_name: some-virtual-network-name
-        subnet_name: some-subnet-name
-        security_group: some-security-group
-    - gateway: 10.0.32.1
-      range: 10.0.32.0/20
+        virtual_network_name: ((bosh_network_name))
+        subnet_name: ((bosh_subnet_name))
+        security_group: ((bosh_default_security_group))
+    - gateway: ((az2_gateway))
+      range: ((az2_range))
       az: z2
       reserved:
-      - 10.0.32.2-10.0.32.3
-      - 10.0.47.255
+      - ((az2_reserved_1))
+      - ((az2_reserved_2))
       static:
-      - 10.0.47.190-10.0.47.254
+      - ((az2_static))
       cloud_properties:
-        virtual_network_name: some-virtual-network-name
-        subnet_name: some-subnet-name
-        security_group: some-security-group
-    - gateway: 10.0.48.1
-      range: 10.0.48.0/20
+        virtual_network_name: ((bosh_network_name))
+        subnet_name: ((bosh_subnet_name))
+        security_group: ((bosh_default_security_group))
+    - gateway: ((az3_gateway))
+      range: ((az3_range))
       az: z3
       reserved:
-      - 10.0.48.2-10.0.48.3
-      - 10.0.63.255
+      - ((az3_reserved_1))
+      - ((az3_reserved_2))
       static:
-      - 10.0.63.190-10.0.63.254
+      - ((az3_static))
       cloud_properties:
-        virtual_network_name: some-virtual-network-name
-        subnet_name: some-subnet-name
-        security_group: some-security-group
+        virtual_network_name: ((bosh_network_name))
+        subnet_name: ((bosh_subnet_name))
+        security_group: ((bosh_default_security_group))
