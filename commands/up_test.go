@@ -155,6 +155,8 @@ var _ = Describe("Up", func() {
 					"jumpbox_url": "some-jumpbox-url",
 				},
 			}
+
+			terraformManager.IsInitializedCall.Returns.IsInitialized = true
 		})
 
 		It("it works", func() {
@@ -166,8 +168,7 @@ var _ = Describe("Up", func() {
 			Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
 
-			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(envIDManagerState))
+			Expect(terraformManager.InitCall.CallCount).To(Equal(0))
 
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
@@ -193,6 +194,18 @@ var _ = Describe("Up", func() {
 			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(4))
+		})
+
+		Context("when terraform is not initialized yet", func() {
+			BeforeEach(func() {
+				terraformManager.IsInitializedCall.Returns.IsInitialized = false
+			})
+			It("calls init on the manager", func() {
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(envIDManagerState))
+			})
 		})
 
 		Context("when the config has ops files", func() {
@@ -293,6 +306,7 @@ var _ = Describe("Up", func() {
 
 			Context("when the terraform manager fails on init", func() {
 				BeforeEach(func() {
+					terraformManager.IsInitializedCall.Returns.IsInitialized = false
 					terraformManager.InitCall.Returns.Error = errors.New("grapefruit")
 				})
 

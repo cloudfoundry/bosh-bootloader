@@ -50,10 +50,29 @@ var _ = Describe("Manager", func() {
 		terraformOutputBuffer.Reset()
 	})
 
+	Describe("IsInitialized", func() {
+		It("returns the output of executor.ShouldInit", func() {
+			executor.IsInitializedCall.Returns.IsInitialized = true
+			Expect(manager.IsInitialized()).To(BeTrue())
+
+			executor.IsInitializedCall.Returns.IsInitialized = false
+			Expect(manager.IsInitialized()).To(BeFalse())
+		})
+	})
+
 	Describe("Init", func() {
 		var incomingState storage.State
 
 		BeforeEach(func() {
+			inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+				"env_id":        incomingState.EnvID,
+				"project_id":    incomingState.GCP.ProjectID,
+				"region":        incomingState.GCP.Region,
+				"zone":          incomingState.GCP.Zone,
+				"credentials":   "some-path",
+				"system_domain": incomingState.LB.Domain,
+			}
+
 			incomingState = storage.State{
 				TFState: "some-tf-state",
 			}
@@ -66,23 +85,47 @@ var _ = Describe("Manager", func() {
 
 			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
+			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
+
 			Expect(executor.InitCall.CallCount).To(Equal(1))
 			Expect(executor.InitCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(executor.InitCall.Receives.Template).To(Equal(string("some-terraform-template")))
+			Expect(executor.InitCall.Receives.Inputs).To(Equal(map[string]string{
+				"env_id":        incomingState.EnvID,
+				"project_id":    incomingState.GCP.ProjectID,
+				"region":        incomingState.GCP.Region,
+				"zone":          incomingState.GCP.Zone,
+				"credentials":   "some-path",
+				"system_domain": incomingState.LB.Domain,
+			}))
 
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				"generating terraform template",
+				"generating terraform variables",
 			}))
 		})
 
-		Context("when the executor init causes an executor error", func() {
-			BeforeEach(func() {
-				executor.InitCall.Returns.Error = errors.New("canteloupe")
+		Context("failure cases", func() {
+			Context("when input generator returns an error", func() {
+				BeforeEach(func() {
+					inputGenerator.GenerateCall.Returns.Error = errors.New("kiwi")
+				})
+
+				It("bubbles up the error", func() {
+					err := manager.Init(incomingState)
+					Expect(err).To(MatchError("Input generator generate: kiwi"))
+				})
 			})
 
-			It("returns the bblState with latest terraform output and a ManagerError", func() {
-				err := manager.Init(incomingState)
-				Expect(err).To(MatchError("Executor init: canteloupe"))
+			Context("when the executor init causes an executor error", func() {
+				BeforeEach(func() {
+					executor.InitCall.Returns.Error = errors.New("canteloupe")
+				})
+
+				It("returns the bblState with latest terraform output and a ManagerError", func() {
+					err := manager.Init(incomingState)
+					Expect(err).To(MatchError("Executor init: canteloupe"))
+				})
 			})
 		})
 	})
@@ -106,15 +149,6 @@ var _ = Describe("Manager", func() {
 			expectedState.LatestTFOutput = expectedTFOutput
 
 			templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
-			inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
-				"env_id":        incomingState.EnvID,
-				"project_id":    incomingState.GCP.ProjectID,
-				"region":        incomingState.GCP.Region,
-				"zone":          incomingState.GCP.Zone,
-				"credentials":   "some-path",
-				"system_domain": incomingState.LB.Domain,
-			}
-
 			terraformOutputBuffer.Write([]byte(expectedTFOutput))
 		})
 
@@ -122,36 +156,14 @@ var _ = Describe("Manager", func() {
 			state, err := manager.Apply(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
-
-			Expect(executor.ApplyCall.Receives.Inputs).To(Equal(map[string]string{
-				"env_id":        incomingState.EnvID,
-				"project_id":    incomingState.GCP.ProjectID,
-				"region":        incomingState.GCP.Region,
-				"zone":          incomingState.GCP.Zone,
-				"credentials":   "some-path",
-				"system_domain": incomingState.LB.Domain,
-			}))
 			Expect(state).To(Equal(expectedState))
 
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				"generating terraform variables",
 				"terraform apply",
 			}))
 		})
 
 		Context("when an error occurs", func() {
-			Context("when input generator returns an error", func() {
-				BeforeEach(func() {
-					inputGenerator.GenerateCall.Returns.Error = errors.New("kiwi")
-				})
-
-				It("bubbles up the error", func() {
-					_, err := manager.Apply(incomingState)
-					Expect(err).To(MatchError("Input generator generate: kiwi"))
-				})
-			})
-
 			Context("when the applying causes an executor error", func() {
 				BeforeEach(func() {
 					executor.ApplyCall.Returns.Error = &fakes.TerraformExecutorError{}

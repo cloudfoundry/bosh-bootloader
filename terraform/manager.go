@@ -21,8 +21,9 @@ type Manager struct {
 type executor interface {
 	Version() (string, error)
 	Destroy(inputs map[string]string) (string, error)
-	Init(terraformTemplate, tfState string) error
-	Apply(inputs map[string]string) (string, error)
+	IsInitialized() bool
+	Init(terraformTemplate, tfState string, inputs map[string]string) error
+	Apply() (string, error)
 	Outputs(string) (map[string]interface{}, error)
 	Output(string, string) (string, error)
 }
@@ -90,11 +91,21 @@ func (m Manager) ValidateVersion() error {
 	return nil
 }
 
+func (m Manager) IsInitialized() bool {
+	return m.executor.IsInitialized()
+}
+
 func (m Manager) Init(bblState storage.State) error {
 	m.logger.Step("generating terraform template")
 	template := m.templateGenerator.Generate(bblState)
 
-	err := m.executor.Init(template, bblState.TFState)
+	m.logger.Step("generating terraform variables")
+	input, err := m.inputGenerator.Generate(bblState)
+	if err != nil {
+		return fmt.Errorf("Input generator generate: %s", err)
+	}
+
+	err = m.executor.Init(template, bblState.TFState, input)
 	if err != nil {
 		return fmt.Errorf("Executor init: %s", err)
 	}
@@ -103,14 +114,8 @@ func (m Manager) Init(bblState storage.State) error {
 }
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
-	m.logger.Step("generating terraform variables")
-	input, err := m.inputGenerator.Generate(bblState)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("Input generator generate: %s", err)
-	}
-
 	m.logger.Step("terraform apply")
-	tfState, err := m.executor.Apply(input)
+	tfState, err := m.executor.Apply()
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 

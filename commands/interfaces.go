@@ -15,6 +15,7 @@ type terraformManager interface {
 	ValidateVersion() error
 	GetOutputs(storage.State) (terraform.Outputs, error)
 	Init(storage.State) error
+	IsInitialized() bool
 	Apply(storage.State) (storage.State, error)
 	Destroy(storage.State) (storage.State, error)
 }
