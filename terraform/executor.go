@@ -51,11 +51,6 @@ func (e Executor) IsInitialized() bool {
 		return false // not tested
 	}
 
-	_, err = os.Stat(filepath.Join(varsDir, "terraform.tfstate"))
-	if err != nil {
-		return false
-	}
-
 	_, err = os.Stat(filepath.Join(varsDir, "terraform.tfvars"))
 	if err != nil {
 		return false
