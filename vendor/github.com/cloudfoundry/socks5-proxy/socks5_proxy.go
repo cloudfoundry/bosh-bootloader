@@ -20,6 +20,8 @@ type Proxy interface {
 	Addr() (string, error)
 }
 
+type DialFunc func(network, address string) (net.Conn, error)
+
 type Socks5Proxy struct {
 	hostKeyGetter KeyGetter
 	port          int
@@ -38,14 +40,28 @@ func (s *Socks5Proxy) Start(key, url string) error {
 		return nil
 	}
 
+	dialer, err := s.Dialer(key, url)
+	if err != nil {
+		return err
+	}
+
+	err = s.StartWithDialer(dialer)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Socks5Proxy) Dialer(key, url string) (DialFunc, error) {
 	signer, err := ssh.ParsePrivateKey([]byte(key))
 	if err != nil {
-		return fmt.Errorf("parse private key: %s", err)
+		return nil, fmt.Errorf("parse private key: %s", err)
 	}
 
 	hostKey, err := s.hostKeyGetter.Get(key, url)
 	if err != nil {
-		return fmt.Errorf("get host key: %s", err)
+		return nil, fmt.Errorf("get host key: %s", err)
 	}
 
 	clientConfig := &ssh.ClientConfig{
@@ -56,16 +72,21 @@ func (s *Socks5Proxy) Start(key, url string) error {
 		HostKeyCallback: ssh.FixedHostKey(hostKey),
 	}
 
-	serverConn, err := ssh.Dial("tcp", url, clientConfig)
+	conn, err := ssh.Dial("tcp", url, clientConfig)
 	if err != nil {
-		return fmt.Errorf("ssh dial: %s", err)
+		return nil, fmt.Errorf("ssh dial: %s", err)
 	}
 
+	return conn.Dial, nil
+}
+
+func (s *Socks5Proxy) StartWithDialer(dialer DialFunc) error {
 	conf := &socks5.Config{
 		Dial: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return serverConn.Dial(network, addr)
+			return dialer(network, addr)
 		},
 	}
+
 	server, err := socks5.New(conf)
 	if err != nil {
 		return fmt.Errorf("new socks5 server: %s", err) // not tested

@@ -41,7 +41,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
-  revision = "930de75eb8c55a3325de5dd09a33e3631c53d677"
+  revision = "85b64ab377f2687275ba05f71ab3221067f138e7"
 
 [[projects]]
   name = "github.com/coreos/go-semver"

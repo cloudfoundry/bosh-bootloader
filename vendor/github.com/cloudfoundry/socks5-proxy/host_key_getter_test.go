@@ -20,7 +20,7 @@ var _ = Describe("HostKeyGetter", func() {
 			Expect(err).NotTo(HaveOccurred())
 			key = signer.PublicKey()
 
-			sshServerAddr = startSSHServer("")
+			sshServerAddr = proxy.StartTestSSHServer("", sshPrivateKey)
 
 			hostKeyGetter = proxy.NewHostKeyGetter()
 		})
