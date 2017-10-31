@@ -58,7 +58,7 @@ var _ = Describe("InputGenerator", func() {
 		inputs, err := inputGenerator.Generate(state)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(inputs).To(Equal(map[string]string{
+		Expect(inputs).To(Equal(map[string]interface{}{
 			"env_id":        state.EnvID,
 			"project_id":    state.GCP.ProjectID,
 			"region":        state.GCP.Region,
@@ -67,7 +67,7 @@ var _ = Describe("InputGenerator", func() {
 			"system_domain": state.LB.Domain,
 		}))
 
-		credentials, err := ioutil.ReadFile(inputs["credentials"])
+		credentials, err := ioutil.ReadFile(inputs["credentials"].(string))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(credentials)).To(Equal("some-service-account-key"))
 	})
@@ -82,7 +82,7 @@ var _ = Describe("InputGenerator", func() {
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(inputs).To(Equal(map[string]string{
+			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":                      state.EnvID,
 				"project_id":                  state.GCP.ProjectID,
 				"region":                      state.GCP.Region,
@@ -93,11 +93,11 @@ var _ = Describe("InputGenerator", func() {
 				"system_domain":               state.LB.Domain,
 			}))
 
-			sslCertificate, err := ioutil.ReadFile(inputs["ssl_certificate"])
+			sslCertificate, err := ioutil.ReadFile(inputs["ssl_certificate"].(string))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(sslCertificate)).To(Equal("some-cert"))
 
-			sslCertificatePrivateKey, err := ioutil.ReadFile(inputs["ssl_certificate_private_key"])
+			sslCertificatePrivateKey, err := ioutil.ReadFile(inputs["ssl_certificate_private_key"].(string))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(sslCertificatePrivateKey)).To(Equal("some-key"))
 		})

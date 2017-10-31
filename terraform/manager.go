@@ -20,16 +20,16 @@ type Manager struct {
 
 type executor interface {
 	Version() (string, error)
-	Destroy(inputs map[string]string) (string, error)
+	Destroy(inputs map[string]interface{}) (string, error)
 	IsInitialized() bool
-	Init(terraformTemplate, tfState string, inputs map[string]string) error
+	Init(terraformTemplate, tfState string, inputs map[string]interface{}) error
 	Apply() (string, error)
 	Outputs(string) (map[string]interface{}, error)
 	Output(string, string) (string, error)
 }
 
 type InputGenerator interface {
-	Generate(storage.State) (map[string]string, error)
+	Generate(storage.State) (map[string]interface{}, error)
 }
 
 type outputGenerator interface {

@@ -25,7 +25,7 @@ var _ = Describe("Executor", func() {
 		tempDir      string
 		terraformDir string
 		varsDir      string
-		input        map[string]string
+		input        map[string]interface{}
 
 		tfStatePath       string
 		relativeStatePath string
@@ -60,7 +60,8 @@ var _ = Describe("Executor", func() {
 		relativeVarsPath, err = filepath.Rel(terraformDir, tfVarsPath)
 		Expect(err).NotTo(HaveOccurred())
 
-		input = map[string]string{
+		input = map[string]interface{}{
+			"availability_zones":          []string{"z1", "z2"},
 			"env_id":                      "some-env-id",
 			"project_id":                  "some-project-id",
 			"region":                      "some-region",
@@ -118,6 +119,7 @@ var _ = Describe("Executor", func() {
 
 			terraformVars, err := ioutil.ReadFile(tfVarsPath)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(string(terraformVars)).To(ContainSubstring(`availability_zones=["z1","z2"]`))
 			Expect(string(terraformVars)).To(ContainSubstring(`env_id="some-env-id"`))
 			Expect(string(terraformVars)).To(ContainSubstring(`project_id="some-project-id"`))
 			Expect(string(terraformVars)).To(ContainSubstring(`region="some-region"`))
@@ -389,14 +391,7 @@ var _ = Describe("Executor", func() {
 					"destroy",
 					"-force",
 					"-state", relativeStatePath,
-					"-var", "project_id=some-project-id",
-					"-var", "env_id=some-env-id",
-					"-var", "region=some-region",
-					"-var", "zone=some-zone",
-					"-var", "ssl_certificate=some/certificate/path",
-					"-var", "ssl_certificate_private_key=some/key/path",
-					"-var", "credentials=some/credentials/path",
-					"-var", "system_domain=some-domain",
+					"-var-file", relativeVarsPath,
 				}))
 				Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 			})

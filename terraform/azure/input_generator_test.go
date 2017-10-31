@@ -34,7 +34,7 @@ var _ = Describe("InputGenerator", func() {
 		inputs, err := inputGenerator.Generate(state)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(inputs).To(Equal(map[string]string{
+		Expect(inputs).To(Equal(map[string]interface{}{
 			"simple_env_id":   "envid",
 			"env_id":          state.EnvID,
 			"location":        state.Azure.Location,
@@ -51,7 +51,7 @@ var _ = Describe("InputGenerator", func() {
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(inputs).To(Equal(map[string]string{
+			Expect(inputs).To(Equal(map[string]interface{}{
 				"simple_env_id":   "superlongenvironment",
 				"env_id":          state.EnvID,
 				"location":        state.Azure.Location,

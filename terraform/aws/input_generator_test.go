@@ -56,14 +56,14 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(inputs).To(Equal(map[string]string{
+			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":                 "some-env-id",
 				"short_env_id":           "some-env-id",
 				"access_key":             "some-access-key-id",
 				"secret_key":             "some-secret-access-key",
 				"region":                 "some-region",
 				"bosh_availability_zone": "",
-				"availability_zones":     `["z1","z2","z3"]`,
+				"availability_zones":     []string{"z1", "z2", "z3"},
 			}))
 		})
 	})
@@ -96,14 +96,14 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(inputs).To(Equal(map[string]string{
+			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":                      "some-env-id",
 				"short_env_id":                "some-env-id",
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
 				"bosh_availability_zone":      "",
-				"availability_zones":          `["z1","z2","z3"]`,
+				"availability_zones":          []string{"z1", "z2", "z3"},
 				"ssl_certificate":             "some-cert",
 				"ssl_certificate_chain":       "some-chain",
 				"ssl_certificate_private_key": "some-key",
@@ -121,14 +121,14 @@ var _ = Describe("InputGenerator", func() {
 
 				Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
-				Expect(inputs).To(Equal(map[string]string{
+				Expect(inputs).To(Equal(map[string]interface{}{
 					"env_id":                      "some-env-id",
 					"short_env_id":                "some-env-id",
 					"access_key":                  "some-access-key-id",
 					"secret_key":                  "some-secret-access-key",
 					"region":                      "some-region",
 					"bosh_availability_zone":      "",
-					"availability_zones":          `["z1","z2","z3"]`,
+					"availability_zones":          []string{"z1", "z2", "z3"},
 					"ssl_certificate":             "some-cert",
 					"ssl_certificate_chain":       "some-chain",
 					"ssl_certificate_private_key": "some-key",
@@ -165,14 +165,14 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
-			Expect(inputs).To(Equal(map[string]string{
+			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":                      "some-env-id",
 				"short_env_id":                "some-env-id",
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
 				"bosh_availability_zone":      "",
-				"availability_zones":          `["z1","z2","z3"]`,
+				"availability_zones":          []string{"z1", "z2", "z3"},
 				"ssl_certificate":             "some-cert",
 				"ssl_certificate_chain":       "some-chain",
 				"ssl_certificate_private_key": "some-key",
@@ -187,23 +187,6 @@ var _ = Describe("InputGenerator", func() {
 
 				_, err := inputGenerator.Generate(storage.State{})
 				Expect(err).To(MatchError("failed to get zones"))
-			})
-		})
-
-		Context("when the azs failed to marshal", func() {
-			BeforeEach(func() {
-				aws.SetJSONMarshal(func(interface{}) ([]byte, error) {
-					return []byte{}, errors.New("failed to marshal")
-				})
-			})
-
-			AfterEach(func() {
-				aws.ResetJSONMarshal()
-			})
-
-			It("returns an error", func() {
-				_, err := inputGenerator.Generate(storage.State{})
-				Expect(err).To(MatchError("failed to marshal"))
 			})
 		})
 	})

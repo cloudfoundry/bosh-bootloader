@@ -9,13 +9,13 @@ type InputGenerator struct {
 			State storage.State
 		}
 		Returns struct {
-			Inputs map[string]string
+			Inputs map[string]interface{}
 			Error  error
 		}
 	}
 }
 
-func (i *InputGenerator) Generate(state storage.State) (map[string]string, error) {
+func (i *InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
 	i.GenerateCall.CallCount++
 	i.GenerateCall.Receives.State = state
 	return i.GenerateCall.Returns.Inputs, i.GenerateCall.Returns.Error

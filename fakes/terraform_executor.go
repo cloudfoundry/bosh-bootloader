@@ -19,7 +19,7 @@ type TerraformExecutor struct {
 		Receives  struct {
 			Template string
 			TFState  string
-			Inputs   map[string]string
+			Inputs   map[string]interface{}
 		}
 		Returns struct {
 			Error error
@@ -36,7 +36,7 @@ type TerraformExecutor struct {
 	DestroyCall struct {
 		CallCount int
 		Receives  struct {
-			Inputs map[string]string
+			Inputs map[string]interface{}
 		}
 		Returns struct {
 			TFState string
@@ -92,7 +92,7 @@ func (t *TerraformExecutor) IsInitialized() bool {
 	return t.IsInitializedCall.Returns.IsInitialized
 }
 
-func (t *TerraformExecutor) Init(template, tfState string, inputs map[string]string) error {
+func (t *TerraformExecutor) Init(template, tfState string, inputs map[string]interface{}) error {
 	t.InitCall.CallCount++
 	t.InitCall.Receives.Template = template
 	t.InitCall.Receives.TFState = tfState
@@ -105,7 +105,7 @@ func (t *TerraformExecutor) Apply() (string, error) {
 	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Destroy(inputs map[string]string) (string, error) {
+func (t *TerraformExecutor) Destroy(inputs map[string]interface{}) (string, error) {
 	t.DestroyCall.CallCount++
 	t.DestroyCall.Receives.Inputs = inputs
 	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error

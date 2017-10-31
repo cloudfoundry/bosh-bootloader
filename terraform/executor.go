@@ -74,7 +74,7 @@ func (e Executor) IsInitialized() bool {
 	return true
 }
 
-func (e Executor) Init(template, prevTFState string, input map[string]string) error {
+func (e Executor) Init(template, prevTFState string, input map[string]interface{}) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return fmt.Errorf("Get terraform dir: %s", err)
@@ -123,10 +123,15 @@ func (e Executor) Init(template, prevTFState string, input map[string]string) er
 	return nil
 }
 
-func formatVars(inputs map[string]string) string {
+func formatVars(inputs map[string]interface{}) string {
 	formattedVars := ""
 	for name, value := range inputs {
-		formattedVars = fmt.Sprintf("%s\n%s=\"%s\"", formattedVars, name, value)
+		if _, ok := value.(string); ok {
+			value = fmt.Sprintf(`"%s"`, value)
+		} else if valList, ok := value.([]string); ok {
+			value = fmt.Sprintf(`["%s"]`, strings.Join(valList, `","`))
+		}
+		formattedVars = fmt.Sprintf("%s\n%s=%s", formattedVars, name, value)
 	}
 	return formattedVars
 }
@@ -170,7 +175,7 @@ func (e Executor) Apply() (string, error) {
 	return string(tfState), nil
 }
 
-func (e Executor) Destroy(input map[string]string) (string, error) {
+func (e Executor) Destroy(input map[string]interface{}) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", fmt.Errorf("Get terraform dir: %s", err)
@@ -188,14 +193,16 @@ func (e Executor) Destroy(input map[string]string) (string, error) {
 		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
 	}
 
+	relativeVarsPath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, "terraform.tfvars"))
+	if err != nil {
+		return "", fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+	}
+
 	args := []string{
 		"destroy",
 		"-force",
 		"-state", relativeStatePath,
-	}
-	for name, value := range input {
-		tfVar := []string{"-var", fmt.Sprintf("%s=%s", name, value)}
-		args = append(args, tfVar...)
+		"-var-file", relativeVarsPath,
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)

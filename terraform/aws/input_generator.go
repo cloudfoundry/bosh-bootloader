@@ -23,14 +23,10 @@ func NewInputGenerator(availabilityZoneRetriever ec2.AvailabilityZoneRetriever) 
 	}
 }
 
-func (i InputGenerator) Generate(state storage.State) (map[string]string, error) {
+func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
 	azs, err := i.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
 	if err != nil {
-		return map[string]string{}, err
-	}
-	zones, err := jsonMarshal(azs)
-	if err != nil {
-		return map[string]string{}, err
+		return map[string]interface{}{}, err
 	}
 
 	shortEnvID := state.EnvID
@@ -39,14 +35,14 @@ func (i InputGenerator) Generate(state storage.State) (map[string]string, error)
 		shortEnvID = fmt.Sprintf("%s-%s", shortEnvID[:terraformNameCharLimit-8], sha1[:terraformNameCharLimit-11])
 	}
 
-	inputs := map[string]string{
+	inputs := map[string]interface{}{
 		"env_id":                 state.EnvID,
 		"short_env_id":           shortEnvID,
 		"access_key":             state.AWS.AccessKeyID,
 		"secret_key":             state.AWS.SecretAccessKey,
 		"region":                 state.AWS.Region,
 		"bosh_availability_zone": "",
-		"availability_zones":     string(zones),
+		"availability_zones":     azs,
 	}
 
 	if state.LB.Type == "cf" || state.LB.Type == "concourse" {

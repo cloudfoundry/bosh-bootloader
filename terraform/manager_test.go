@@ -64,7 +64,7 @@ var _ = Describe("Manager", func() {
 		var incomingState storage.State
 
 		BeforeEach(func() {
-			inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+			inputGenerator.GenerateCall.Returns.Inputs = map[string]interface{}{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,
 				"region":        incomingState.GCP.Region,
@@ -90,7 +90,7 @@ var _ = Describe("Manager", func() {
 			Expect(executor.InitCall.CallCount).To(Equal(1))
 			Expect(executor.InitCall.Receives.TFState).To(Equal("some-tf-state"))
 			Expect(executor.InitCall.Receives.Template).To(Equal(string("some-terraform-template")))
-			Expect(executor.InitCall.Receives.Inputs).To(Equal(map[string]string{
+			Expect(executor.InitCall.Receives.Inputs).To(Equal(map[string]interface{}{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,
 				"region":        incomingState.GCP.Region,
@@ -205,7 +205,7 @@ var _ = Describe("Manager", func() {
 				expectedState.TFState = expectedTFState
 				expectedState.LatestTFOutput = expectedTFOutput
 
-				inputGenerator.GenerateCall.Returns.Inputs = map[string]string{
+				inputGenerator.GenerateCall.Returns.Inputs = map[string]interface{}{
 					"env_id":        incomingState.EnvID,
 					"project_id":    incomingState.GCP.ProjectID,
 					"region":        incomingState.GCP.Region,
@@ -224,7 +224,7 @@ var _ = Describe("Manager", func() {
 				Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 				Expect(executor.DestroyCall.CallCount).To(Equal(1))
-				Expect(executor.DestroyCall.Receives.Inputs).To(Equal(map[string]string{
+				Expect(executor.DestroyCall.Receives.Inputs).To(Equal(map[string]interface{}{
 					"env_id":        incomingState.EnvID,
 					"project_id":    incomingState.GCP.ProjectID,
 					"region":        incomingState.GCP.Region,
