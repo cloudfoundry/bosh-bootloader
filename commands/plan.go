@@ -50,6 +50,11 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		state.NoDirector = true
 	}
 
+	state, err = p.envIDManager.Sync(state, config.Name)
+	if err != nil {
+		return fmt.Errorf("Env id manager sync: %s", err)
+	}
+
 	err = p.stateStore.Set(state)
 	if err != nil {
 		return fmt.Errorf("Save state: %s", err)

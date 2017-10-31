@@ -46,8 +46,18 @@ var _ = Describe("Plan", func() {
 	})
 
 	Describe("Execute", func() {
+		var (
+			state       storage.State
+			syncedState storage.State
+		)
+
+		BeforeEach(func() {
+			state = storage.State{ID: "some-state-id"}
+			syncedState = storage.State{ID: "synced-state-id"}
+			envIDManager.SyncCall.Returns.State = syncedState
+		})
+
 		It("sets up the bbl state dir", func() {
-			state := storage.State{ID: "some-state-id"}
 			args := []string{"--ops-file"}
 			err := command.Execute(args, state)
 			Expect(err).NotTo(HaveOccurred())
@@ -56,26 +66,30 @@ var _ = Describe("Plan", func() {
 			Expect(up.ParseArgsCall.Receives.Args).To(Equal(args))
 			Expect(up.ParseArgsCall.Receives.State).To(Equal(state))
 
+			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
+			Expect(envIDManager.SyncCall.Receives.State).To(Equal(state))
+
 			Expect(stateStore.SetCall.CallCount).To(Equal(1))
-			Expect(stateStore.SetCall.Receives[0].State).To(Equal(state))
+			Expect(stateStore.SetCall.Receives[0].State).To(Equal(syncedState))
 
 			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(state))
+			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(syncedState))
 
 			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
-			Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(state))
+			Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(syncedState))
 			Expect(boshManager.InitializeJumpboxCall.Receives.TerraformOutputs.Map).To(BeNil())
 
 			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
-			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(state))
+			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(syncedState))
 			Expect(boshManager.InitializeDirectorCall.Receives.TerraformOutputs.Map).To(BeNil())
 
 			Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
-			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(state))
+			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(syncedState))
 		})
 
 		Context("when --no-director is passed", func() {
 			It("sets no director on the state", func() {
+				envIDManager.SyncCall.Returns.State = storage.State{NoDirector: true}
 				up.ParseArgsCall.Returns.Config = commands.UpConfig{NoDirector: true}
 
 				err := command.Execute([]string{"--no-director"}, storage.State{NoDirector: false})
