@@ -288,10 +288,7 @@ func (m *Manager) CreateDirector(state storage.State) (storage.State, error) {
 		return storage.State{}, fmt.Errorf("Create director env: %s", err)
 	}
 
-	directorVars, err := getDirectorVars(variables)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("Get director vars: %s", err)
-	}
+	directorVars := getDirectorVars(variables)
 
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
@@ -533,47 +530,42 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 }
 
 func getJumpboxPrivateKey(v string) (string, error) {
-	variables := map[string]interface{}{}
+	var vars struct {
+		JumpboxSSH struct {
+			PrivateKey string `yaml:"private_key"`
+		} `yaml:"jumpbox_ssh"`
+	}
 
-	err := yaml.Unmarshal([]byte(v), &variables)
+	err := yaml.Unmarshal([]byte(v), &vars)
 	if err != nil {
 		return "", err
 	}
-
-	var (
-		jumpboxMap map[interface{}]interface{}
-		ok         bool
-	)
-	if jumpboxMap, ok = variables["jumpbox_ssh"].(map[interface{}]interface{}); !ok {
+	if vars.JumpboxSSH.PrivateKey == "" {
 		return "", errors.New("cannot start proxy due to missing jumpbox private key")
 	}
 
-	jumpboxSSH := map[string]string{}
-	for k, v := range jumpboxMap {
-		jumpboxSSH[k.(string)] = v.(string)
-	}
-
-	return jumpboxSSH["private_key"], nil
+	return vars.JumpboxSSH.PrivateKey, nil
 }
 
-func getDirectorVars(v string) (directorVars, error) {
-	variables := map[string]interface{}{}
-
-	err := yaml.Unmarshal([]byte(v), &variables)
-	if err != nil {
-		return directorVars{}, err
+func getDirectorVars(v string) directorVars {
+	var vars struct {
+		AdminPassword string `yaml:"admin_password"`
+		DirectorSSL   struct {
+			CA          string `yaml:"ca"`
+			Certificate string `yaml:"certificate"`
+			PrivateKey  string `yaml:"private_key"`
+		} `yaml:"director_ssl"`
 	}
 
-	directorSSLInterfaceMap := variables["director_ssl"].(map[interface{}]interface{})
-	directorSSL := map[string]string{}
-	for k, v := range directorSSLInterfaceMap {
-		directorSSL[k.(string)] = v.(string)
+	err := yaml.Unmarshal([]byte(v), &vars)
+	if err != nil {
+		panic(err) // can't happen
 	}
 
 	return directorVars{
-		directorPassword:       variables["admin_password"].(string),
-		directorSSLCA:          directorSSL["ca"],
-		directorSSLCertificate: directorSSL["certificate"],
-		directorSSLPrivateKey:  directorSSL["private_key"],
-	}, nil
+		directorPassword:       vars.AdminPassword,
+		directorSSLCA:          vars.DirectorSSL.CA,
+		directorSSLCertificate: vars.DirectorSSL.Certificate,
+		directorSSLPrivateKey:  vars.DirectorSSL.PrivateKey,
+	}
 }
