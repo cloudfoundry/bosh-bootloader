@@ -126,8 +126,12 @@ func (e Executor) Init(template, prevTFState string, input map[string]interface{
 func formatVars(inputs map[string]interface{}) string {
 	formattedVars := ""
 	for name, value := range inputs {
-		if _, ok := value.(string); ok {
-			value = fmt.Sprintf(`"%s"`, value)
+		if vString, ok := value.(string); ok {
+			vString = fmt.Sprintf(`"%s"`, vString)
+			if strings.Contains(vString, "\n") {
+				vString = strings.Replace(vString, "\n", "\\n", -1)
+			}
+			value = vString
 		} else if valList, ok := value.([]string); ok {
 			value = fmt.Sprintf(`["%s"]`, strings.Join(valList, `","`))
 		}
