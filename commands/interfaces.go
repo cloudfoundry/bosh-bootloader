@@ -5,6 +5,12 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
+type plan interface {
+	CheckFastFails([]string, storage.State) error
+	ParseArgs([]string, storage.State) (UpConfig, error)
+	Execute([]string, storage.State) error
+}
+
 type up interface {
 	CheckFastFails([]string, storage.State) error
 	ParseArgs([]string, storage.State) (UpConfig, error)

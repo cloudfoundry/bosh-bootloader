@@ -172,14 +172,15 @@ func main() {
 	if appConfig.State.IAAS != "" {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
-	up := commands.NewUp(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	usage := commands.NewUsage(logger)
 
 	commandSet := application.CommandSet{}
 	commandSet["help"] = usage
 	commandSet["version"] = commands.NewVersion(Version, logger)
 	commandSet["up"] = up
-	commandSet["plan"] = commands.NewPlan(up, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+	commandSet["plan"] = plan
 	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore)
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)

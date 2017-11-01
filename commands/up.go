@@ -4,15 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Up struct {
+	plan               plan
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
@@ -26,9 +24,10 @@ type UpConfig struct {
 	NoDirector bool
 }
 
-func NewUp(boshManager boshManager, cloudConfigManager cloudConfigManager,
+func NewUp(plan plan, boshManager boshManager, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Up {
 	return Up{
+		plan:               plan,
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
@@ -38,26 +37,7 @@ func NewUp(boshManager boshManager, cloudConfigManager cloudConfigManager,
 }
 
 func (u Up) CheckFastFails(args []string, state storage.State) error {
-	config, err := u.ParseArgs(args, state)
-	if err != nil {
-		return err
-	}
-
-	if !config.NoDirector && !state.NoDirector {
-		if err := fastFailBOSHVersion(u.boshManager); err != nil {
-			return err
-		}
-	}
-
-	if err := u.terraformManager.ValidateVersion(); err != nil {
-		return fmt.Errorf("Terraform manager validate version: %s", err)
-	}
-
-	if state.EnvID != "" && config.Name != "" && config.Name != state.EnvID {
-		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
-	}
-
-	return nil
+	return u.plan.CheckFastFails(args, state)
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
@@ -167,27 +147,5 @@ func (u Up) Execute(args []string, state storage.State) error {
 }
 
 func (u Up) ParseArgs(args []string, state storage.State) (UpConfig, error) {
-	opsFileDir, err := u.stateStore.GetBblDir()
-	if err != nil {
-		return UpConfig{}, err //not tested
-	}
-
-	prevOpsFilePath := filepath.Join(opsFileDir, "previous-user-ops-file.yml")
-	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
-	if err != nil {
-		return UpConfig{}, err //not tested
-	}
-
-	var config UpConfig
-	upFlags := flags.New("up")
-	upFlags.String(&config.Name, "name", "")
-	upFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
-	upFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
-
-	err = upFlags.Parse(args)
-	if err != nil {
-		return UpConfig{}, err
-	}
-
-	return config, nil
+	return u.plan.ParseArgs(args, state)
 }

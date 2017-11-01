@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -20,6 +19,7 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
+		plan               *fakes.Plan
 		boshManager        *fakes.BOSHManager
 		terraformManager   *fakes.TerraformManager
 		cloudConfigManager *fakes.CloudConfigManager
@@ -30,6 +30,8 @@ var _ = Describe("Up", func() {
 	)
 
 	BeforeEach(func() {
+		plan = &fakes.Plan{}
+
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 
@@ -44,84 +46,17 @@ var _ = Describe("Up", func() {
 
 		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
-		command = commands.NewUp(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
-		Context("when terraform manager validate version fails", func() {
-			It("returns an error", func() {
-				terraformManager.ValidateVersionCall.Returns.Error = errors.New("lychee")
+		It("returns CheckFastFails on Plan", func() {
+			plan.CheckFastFailsCall.Returns.Error = errors.New("banana")
+			err := command.CheckFastFails([]string{}, storage.State{Version: 999})
 
-				err := command.CheckFastFails([]string{}, storage.State{})
-				Expect(err).To(MatchError("Terraform manager validate version: lychee"))
-			})
-		})
-
-		Context("when the version of BOSH is a dev build", func() {
-			It("does not fail", func() {
-				boshManager.VersionCall.Returns.Error = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
-				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
-
-				Expect(err).NotTo(HaveOccurred())
-			})
-		})
-
-		Context("when the version of the bosh-cli is lower than 2.0.24", func() {
-			Context("when there is a bosh director", func() {
-				It("returns an error", func() {
-					boshManager.VersionCall.Returns.Version = "1.9.1"
-					err := command.CheckFastFails([]string{}, storage.State{Version: 999})
-
-					Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
-				})
-			})
-
-			Context("when there is no director", func() {
-				It("does not return an error", func() {
-					boshManager.VersionCall.Returns.Version = "1.9.1"
-					err := command.CheckFastFails([]string{"--no-director"}, storage.State{Version: 999})
-
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-		})
-
-		Context("when bosh -v fails", func() {
-			It("returns an error", func() {
-				boshManager.VersionCall.Returns.Error = errors.New("BOOM")
-				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
-
-				Expect(err.Error()).To(ContainSubstring("BOOM"))
-			})
-		})
-
-		Context("when bosh -v is invalid", func() {
-			It("returns an error", func() {
-				boshManager.VersionCall.Returns.Version = "X.5.2"
-				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
-
-				Expect(err.Error()).To(ContainSubstring("invalid syntax"))
-			})
-		})
-
-		Context("when bbl-state contains an env-id", func() {
-			Context("when the passed in name matches the env-id", func() {
-				It("returns no error", func() {
-					err := command.CheckFastFails([]string{
-						"--name", "some-name",
-					}, storage.State{EnvID: "some-name"})
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("when the passed in name does not match the env-id", func() {
-				It("returns an error", func() {
-					err := command.CheckFastFails([]string{
-						"--name", "some-other-name",
-					}, storage.State{EnvID: "some-name"})
-					Expect(err).To(MatchError("The director name cannot be changed for an existing environment. Current name is some-name."))
-				})
-			})
+			Expect(err).To(MatchError("banana"))
+			Expect(plan.CheckFastFailsCall.Receives.SubcommandFlags).To(Equal([]string{}))
+			Expect(plan.CheckFastFailsCall.Receives.State).To(Equal(storage.State{Version: 999}))
 		})
 	})
 
@@ -136,6 +71,8 @@ var _ = Describe("Up", func() {
 			terraformOutputs    terraform.Outputs
 		)
 		BeforeEach(func() {
+			plan.ParseArgsCall.Returns.Config = commands.UpConfig{Name: "some-name"}
+
 			incomingState = storage.State{TFState: "incoming-state", IAAS: "some-iaas"}
 			iaasState = storage.State{TFState: "iaas-state", IAAS: "some-iaas"}
 
@@ -164,8 +101,12 @@ var _ = Describe("Up", func() {
 		})
 
 		It("it works", func() {
-			err := command.Execute([]string{"--name", "some-name"}, incomingState)
+			err := command.Execute([]string{"some", "flags"}, incomingState)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(plan.ParseArgsCall.CallCount).To(Equal(1))
+			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"some", "flags"}))
+			Expect(plan.ParseArgsCall.Receives.State).To(Equal(incomingState))
 
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 			Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
@@ -202,6 +143,15 @@ var _ = Describe("Up", func() {
 			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(4))
+		})
+
+		Context("if parse args fails", func() {
+			It("returns an error if parse args fails", func() {
+				plan.ParseArgsCall.Returns.Error = errors.New("canteloupe")
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).To(MatchError("canteloupe"))
+			})
 		})
 
 		Context("when terraform is not initialized yet", func() {
@@ -247,13 +197,15 @@ var _ = Describe("Up", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					opsFilePath = opsFile.Name()
+					plan.ParseArgsCall.Returns.Config = commands.UpConfig{OpsFile: opsFilePath}
+
 					opsFileContents := "some-ops-file-contents"
 					err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("passes the ops file contents to the bosh manager", func() {
-					err := command.Execute([]string{"--ops-file", opsFilePath}, incomingState)
+					err := command.Execute([]string{}, incomingState)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
@@ -262,8 +214,12 @@ var _ = Describe("Up", func() {
 		})
 
 		Context("when --no-director flag is passed", func() {
+			BeforeEach(func() {
+				plan.ParseArgsCall.Returns.Config = commands.UpConfig{NoDirector: true}
+			})
+
 			It("sets NoDirector to true on the state", func() {
-				err := command.Execute([]string{"--no-director"}, storage.State{})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(envIDManager.SyncCall.Receives.State.NoDirector).To(BeTrue())
@@ -290,26 +246,35 @@ var _ = Describe("Up", func() {
 
 		Describe("failure cases", func() {
 			Context("when parse args fails", func() {
+				BeforeEach(func() {
+					plan.ParseArgsCall.Returns.Error = errors.New("apple")
+				})
+
 				It("returns an error", func() {
-					err := command.Execute([]string{"--foo"}, storage.State{})
-					Expect(err).To(MatchError("flag provided but not defined: -foo"))
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("apple"))
 				})
 			})
 
 			Context("when the config has the no-director flag set and the bbl state has a bosh director", func() {
 				BeforeEach(func() {
 					incomingState = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
+					plan.ParseArgsCall.Returns.Config = commands.UpConfig{NoDirector: true}
 				})
 
 				It("fast fails", func() {
-					err := command.Execute([]string{"--no-director"}, incomingState)
+					err := command.Execute([]string{}, incomingState)
 					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
 				})
 			})
 
 			Context("when the ops file cannot be read", func() {
+				BeforeEach(func() {
+					plan.ParseArgsCall.Returns.Config = commands.UpConfig{OpsFile: "some/fake/path"}
+				})
+
 				It("returns an error", func() {
-					err := command.Execute([]string{"--ops-file", "some/fake/path"}, storage.State{})
+					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Reading ops-file contents: open some/fake/path: no such file or directory"))
 				})
 			})
@@ -543,100 +508,14 @@ var _ = Describe("Up", func() {
 	})
 
 	Describe("ParseArgs", func() {
-		Context("when the --ops-file flag is specified", func() {
-			var providedOpsFilePath string
-			BeforeEach(func() {
-				opsFileDir, err := ioutil.TempDir("", "")
-				Expect(err).NotTo(HaveOccurred())
+		It("returns ParseArgs on Plan", func() {
+			plan.ParseArgsCall.Returns.Config = commands.UpConfig{OpsFile: "some-path"}
+			config, err := command.ParseArgs([]string{"--ops-file", "some-path"}, storage.State{ID: "some-state-id"})
+			Expect(err).NotTo(HaveOccurred())
 
-				providedOpsFilePath = filepath.Join(opsFileDir, "some-ops-file")
-
-				err = ioutil.WriteFile(providedOpsFilePath, []byte("some-ops-file-contents"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns a config with the ops-file path", func() {
-				config, err := command.ParseArgs([]string{
-					"--ops-file", providedOpsFilePath,
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(config.OpsFile).To(Equal(providedOpsFilePath))
-			})
-		})
-
-		Context("when the --ops-file flag is not specified", func() {
-			It("creates a default ops-file with the contents of state.BOSH.UserOpsFile", func() {
-				config, err := command.ParseArgs([]string{}, storage.State{
-					BOSH: storage.BOSH{
-						UserOpsFile: "some-ops-file-contents",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				filePath := config.OpsFile
-				fileContents, err := ioutil.ReadFile(filePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
-			})
-
-			It("writes the previous user ops file to the .bbl directory", func() {
-				config, err := command.ParseArgs([]string{}, storage.State{
-					BOSH: storage.BOSH{
-						UserOpsFile: "some-ops-file-contents",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				filePath := config.OpsFile
-				fileContents, err := ioutil.ReadFile(filePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(filePath).To(Equal(filepath.Join(tempDir, "previous-user-ops-file.yml")))
-				Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
-			})
-		})
-
-		Context("when the user provides the name flag", func() {
-			It("passes the name flag in the up config", func() {
-				config, err := command.ParseArgs([]string{
-					"--name", "a-better-name",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.Name).To(Equal("a-better-name"))
-			})
-		})
-
-		Context("when the user provides the no-director flag", func() {
-			It("passes NoDirector as true in the up config", func() {
-				config, err := command.ParseArgs([]string{
-					"--no-director",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.NoDirector).To(Equal(true))
-			})
-
-			Context("when the --no-director flag was omitted on a subsequent bbl-up", func() {
-				It("passes no-director as true in the up config", func() {
-					config, err := command.ParseArgs([]string{},
-						storage.State{
-							IAAS:       "gcp",
-							NoDirector: true,
-						})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(config.NoDirector).To(Equal(true))
-				})
-			})
-		})
-
-		Context("failure cases", func() {
-			Context("when undefined flags are passed", func() {
-				It("returns an error", func() {
-					_, err := command.ParseArgs([]string{"--foo", "bar"}, storage.State{})
-					Expect(err).To(MatchError("flag provided but not defined: -foo"))
-				})
-			})
+			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"--ops-file", "some-path"}))
+			Expect(plan.ParseArgsCall.Receives.State).To(Equal(storage.State{ID: "some-state-id"}))
+			Expect(config.OpsFile).To(Equal("some-path"))
 		})
 	})
 })

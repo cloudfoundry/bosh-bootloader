@@ -3,12 +3,15 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Plan struct {
-	up                 up
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
@@ -16,10 +19,9 @@ type Plan struct {
 	terraformManager   terraformManager
 }
 
-func NewPlan(up up, boshManager boshManager, cloudConfigManager cloudConfigManager,
+func NewPlan(boshManager boshManager, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Plan {
 	return Plan{
-		up:                 up,
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
@@ -29,11 +31,52 @@ func NewPlan(up up, boshManager boshManager, cloudConfigManager cloudConfigManag
 }
 
 func (p Plan) CheckFastFails(args []string, state storage.State) error {
-	return p.up.CheckFastFails(args, state)
+	config, err := p.ParseArgs(args, state)
+	if err != nil {
+		return err
+	}
+
+	if !config.NoDirector && !state.NoDirector {
+		if err := fastFailBOSHVersion(p.boshManager); err != nil {
+			return err
+		}
+	}
+
+	if err := p.terraformManager.ValidateVersion(); err != nil {
+		return fmt.Errorf("Terraform manager validate version: %s", err)
+	}
+
+	if state.EnvID != "" && config.Name != "" && config.Name != state.EnvID {
+		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
+	}
+
+	return nil
 }
 
 func (p Plan) ParseArgs(args []string, state storage.State) (UpConfig, error) {
-	return p.up.ParseArgs(args, state)
+	opsFileDir, err := p.stateStore.GetBblDir()
+	if err != nil {
+		return UpConfig{}, err //not tested
+	}
+
+	prevOpsFilePath := filepath.Join(opsFileDir, "previous-user-ops-file.yml")
+	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
+	if err != nil {
+		return UpConfig{}, err //not tested
+	}
+
+	var config UpConfig
+	upFlags := flags.New("up")
+	upFlags.String(&config.Name, "name", "")
+	upFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
+	upFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
+
+	err = upFlags.Parse(args)
+	if err != nil {
+		return UpConfig{}, err
+	}
+
+	return config, nil
 }
 
 func (p Plan) Execute(args []string, state storage.State) error {
