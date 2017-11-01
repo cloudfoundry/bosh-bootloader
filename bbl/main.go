@@ -180,7 +180,7 @@ func main() {
 	commandSet["version"] = commands.NewVersion(Version, logger)
 	commandSet["up"] = up
 	commandSet["plan"] = commands.NewPlan(up, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
-	sshKeyDeleter := bosh.NewSSHKeyDeleter()
+	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore)
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
