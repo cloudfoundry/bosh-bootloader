@@ -1,6 +1,6 @@
 resource "azurerm_network_security_group" "bosh" {
   name                = "${var.env_id}-bosh"
-  location            = "${var.location}"
+  location            = "${var.region}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   tags {
@@ -10,7 +10,7 @@ resource "azurerm_network_security_group" "bosh" {
 
 resource "azurerm_network_security_group" "cf" {
   name                = "${var.env_id}-cf"
-  location            = "${var.location}"
+  location            = "${var.region}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   tags {

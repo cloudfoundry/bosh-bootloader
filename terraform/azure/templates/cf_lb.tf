@@ -3,7 +3,7 @@ resource "azurerm_virtual_network" "cf-vn" {
   name                = "${var.env_id}-cf-vnet"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
   address_space       = ["10.254.0.0/16"]
-  location            = "${var.location}"
+  location            = "${var.region}"
 }
 
 resource "azurerm_subnet" "sub1" {
@@ -22,7 +22,7 @@ resource "azurerm_subnet" "sub2" {
 
 resource "azurerm_public_ip" "lb" {
   name                         = "${var.env_id}-cf-lb-ip"
-  location                     = "${var.location}"
+  location                     = "${var.region}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
   public_ip_address_allocation = "dynamic"
 }

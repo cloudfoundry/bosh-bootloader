@@ -17,11 +17,11 @@ import (
 
 var _ = Describe("AzureCreateLBs", func() {
 	var (
-		terraformManager          *fakes.TerraformManager
-		cloudConfigManager        *fakes.CloudConfigManager
-		stateStore                *fakes.StateStore
-		environmentValidator      *fakes.EnvironmentValidator
-		terraformExecutorError    *fakes.TerraformExecutorError
+		terraformManager       *fakes.TerraformManager
+		cloudConfigManager     *fakes.CloudConfigManager
+		stateStore             *fakes.StateStore
+		environmentValidator   *fakes.EnvironmentValidator
+		terraformExecutorError *fakes.TerraformExecutorError
 
 		bblState    storage.State
 		command     commands.AzureCreateLBs
@@ -58,6 +58,7 @@ var _ = Describe("AzureCreateLBs", func() {
 
 		bblState = storage.State{
 			Azure: storage.Azure{
+				// Zones:  []string{"z1", "z2", "z3"},
 				Region: "some-region",
 			},
 			TFState: "some-tfstate",
@@ -69,19 +70,10 @@ var _ = Describe("AzureCreateLBs", func() {
 	})
 
 	Describe("Execute", func() {
-		BeforeEach(func() {
-		})
 		It("calls terraform manager apply", func() {
-			err := command.Execute(commands.CreateLBsConfig{Azure: commands.AzureCreateLBsConfig{
-				LBType:   "cf",
-				CertPath: certPath,
-				KeyPath:  keyPath,
-				Domain:   "some-domain",
-			}}, bblState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
+			expectedState := storage.State{
 				Azure: storage.Azure{
+					// Zones:  []string{"z1", "z2", "z3"},
 					Region: "some-region",
 				},
 				TFState: "some-tfstate",
@@ -91,7 +83,19 @@ var _ = Describe("AzureCreateLBs", func() {
 					Key:    key,
 					Domain: "some-domain",
 				},
-			}))
+			}
+			err := command.Execute(commands.CreateLBsConfig{Azure: commands.AzureCreateLBsConfig{
+				LBType:   "cf",
+				CertPath: certPath,
+				KeyPath:  keyPath,
+				Domain:   "some-domain",
+			}}, bblState)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedState))
+			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(expectedState))
 		})
 
 		It("saves the updated tfstate", func() {
@@ -160,6 +164,18 @@ var _ = Describe("AzureCreateLBs", func() {
 				It("returns a DirectorNotReachable error", func() {
 					err := command.Execute(commands.CreateLBsConfig{Azure: commands.AzureCreateLBsConfig{}}, storage.State{})
 					Expect(err).To(MatchError(application.DirectorNotReachable))
+				})
+			})
+
+			Context("when terraform manager fails to init", func() {
+				BeforeEach(func() {
+					terraformManager.InitCall.Returns.Error = errors.New("apple")
+				})
+				It("returns the error", func() {
+					err := command.Execute(commands.CreateLBsConfig{Azure: commands.AzureCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{TFState: "some-tf-state"})
+					Expect(err).To(MatchError("apple"))
 				})
 			})
 

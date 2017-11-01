@@ -70,6 +70,10 @@ func (c AzureCreateLBs) Execute(config CreateLBsConfig, state storage.State) err
 		state.LB.Key = string(key)
 	}
 
+	if err := c.terraformManager.Init(state); err != nil {
+		return err
+	}
+
 	state, err = c.terraformManager.Apply(state)
 	if err != nil {
 		// TODO fix terraform error
