@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,50 +32,52 @@ var _ = Describe("plan", func() {
 
 	It("sets up the bbl state directory", func() {
 		session := bbl.Plan("--name", bbl.PredefinedEnvID())
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+
+		expectedArtifacts := []string{
+			filepath.Join(stateDir, "create-jumpbox.sh"),
+			filepath.Join(stateDir, "create-director.sh"),
+			filepath.Join(stateDir, "delete-jumpbox.sh"),
+			filepath.Join(stateDir, "delete-director.sh"),
+			filepath.Join(stateDir, ".bbl", "cloudconfig", "cloud-config.yml"),
+			filepath.Join(stateDir, ".bbl", "cloudconfig", "ops.yml"),
+			filepath.Join(stateDir, ".bbl", "previous-user-ops-file.yml"),
+			filepath.Join(stateDir, "bosh-deployment", "bosh.yml"),
+			filepath.Join(stateDir, "bosh-deployment", "cpi.yml"),
+			filepath.Join(stateDir, "bosh-deployment", "credhub.yml"),
+			filepath.Join(stateDir, "bosh-deployment", "jumpbox-user.yml"),
+			filepath.Join(stateDir, "bosh-deployment", "uaa.yml"),
+			filepath.Join(stateDir, "jumpbox-deployment", "jumpbox.yml"),
+			filepath.Join(stateDir, "jumpbox-deployment", "cpi.yml"),
+			filepath.Join(stateDir, "terraform", "template.tf"),
+			filepath.Join(stateDir, "vars", "user-ops-file.yml"),
+		}
 
 		By("verifying that artifacts are created in state dir", func() {
-			checkExists := func(dir string, filenames []string) {
-				for _, f := range filenames {
-					_, err := os.Stat(filepath.Join(dir, f))
-					Expect(err).NotTo(HaveOccurred())
-				}
+			for _, f := range expectedArtifacts {
+				_, err := os.Stat(f)
+				Expect(err).NotTo(HaveOccurred())
 			}
+		})
 
-			checkExists(stateDir, []string{"bbl-state.json"})
-			checkExists(stateDir, []string{"create-jumpbox.sh"})
-			checkExists(stateDir, []string{"create-director.sh"})
-			checkExists(stateDir, []string{"delete-jumpbox.sh"})
-			checkExists(stateDir, []string{"delete-director.sh"})
-			checkExists(filepath.Join(stateDir, ".bbl", "cloudconfig"), []string{
-				"cloud-config.yml",
-				"ops.yml",
-			})
-			checkExists(filepath.Join(stateDir, ".bbl"), []string{
-				"previous-user-ops-file.yml",
-			})
-			checkExists(filepath.Join(stateDir, "bosh-deployment"), []string{
-				"bosh.yml",
-				"cpi.yml",
-				"credhub.yml",
-				"jumpbox-user.yml",
-				"uaa.yml",
-			})
-			checkExists(filepath.Join(stateDir, "jumpbox-deployment"), []string{
-				"cpi.yml",
-				"jumpbox.yml",
-			})
-			checkExists(filepath.Join(stateDir, "terraform"), []string{
-				"template.tf",
-			})
-			checkExists(filepath.Join(stateDir, "vars"), []string{
-				// "bosh-state.json",
-				"director-variables.yml",
-				// "jumpbox-state.json",
-				"jumpbox-variables.yml",
-				// "terraform.tfstate",
-				"user-ops-file.yml",
-			})
+		By("modifying artifacts", func() {
+			for _, f := range expectedArtifacts {
+				err := ioutil.WriteFile(f, []byte("modified after plan"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
+
+		By("rerunning bbl plan", func() {
+			session := bbl.Plan("--name", bbl.PredefinedEnvID())
+			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("verifying that modified artifacts were overwritten", func() {
+			for _, f := range expectedArtifacts {
+				contents, err := ioutil.ReadFile(f)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).NotTo(ContainSubstring("modified after plan"))
+			}
 		})
 	})
 })
