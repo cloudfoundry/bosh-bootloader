@@ -6,11 +6,19 @@ import (
 )
 
 type BOSHManager struct {
+	IsJumpboxInitializedCall struct {
+		CallCount int
+		Receives  struct {
+			IAAS string
+		}
+		Returns struct {
+			IsInitialized bool
+		}
+	}
 	InitializeJumpboxCall struct {
 		CallCount int
 		Receives  struct {
-			State            storage.State
-			TerraformOutputs terraform.Outputs
+			State storage.State
 		}
 		Returns struct {
 			Error error
@@ -19,19 +27,27 @@ type BOSHManager struct {
 	CreateJumpboxCall struct {
 		CallCount int
 		Receives  struct {
-			State      storage.State
-			JumpboxURL string
+			State            storage.State
+			TerraformOutputs terraform.Outputs
 		}
 		Returns struct {
 			State storage.State
 			Error error
 		}
 	}
+	IsDirectorInitializedCall struct {
+		CallCount int
+		Receives  struct {
+			IAAS string
+		}
+		Returns struct {
+			IsInitialized bool
+		}
+	}
 	InitializeDirectorCall struct {
 		CallCount int
 		Receives  struct {
-			State            storage.State
-			TerraformOutputs terraform.Outputs
+			State storage.State
 		}
 		Returns struct {
 			Error error
@@ -40,7 +56,8 @@ type BOSHManager struct {
 	CreateDirectorCall struct {
 		CallCount int
 		Receives  struct {
-			State storage.State
+			State            storage.State
+			TerraformOutputs terraform.Outputs
 		}
 		Returns struct {
 			State storage.State
@@ -96,30 +113,41 @@ type BOSHManager struct {
 	}
 }
 
-func (b *BOSHManager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
+func (b *BOSHManager) IsJumpboxInitialized(iaas string) bool {
+	b.IsJumpboxInitializedCall.CallCount++
+	b.IsJumpboxInitializedCall.Receives.IAAS = iaas
+	return b.IsJumpboxInitializedCall.Returns.IsInitialized
+}
+
+func (b *BOSHManager) InitializeJumpbox(state storage.State) error {
 	b.InitializeJumpboxCall.CallCount++
 	b.InitializeJumpboxCall.Receives.State = state
-	b.InitializeJumpboxCall.Receives.TerraformOutputs = terraformOutputs
 	return b.InitializeJumpboxCall.Returns.Error
 }
 
-func (b *BOSHManager) CreateJumpbox(state storage.State, jumpboxURL string) (storage.State, error) {
+func (b *BOSHManager) CreateJumpbox(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	b.CreateJumpboxCall.CallCount++
 	b.CreateJumpboxCall.Receives.State = state
-	b.CreateJumpboxCall.Receives.JumpboxURL = jumpboxURL
+	b.CreateJumpboxCall.Receives.TerraformOutputs = terraformOutputs
 	return b.CreateJumpboxCall.Returns.State, b.CreateJumpboxCall.Returns.Error
 }
 
-func (b *BOSHManager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) error {
+func (b *BOSHManager) IsDirectorInitialized(iaas string) bool {
+	b.IsDirectorInitializedCall.CallCount++
+	b.IsDirectorInitializedCall.Receives.IAAS = iaas
+	return b.IsDirectorInitializedCall.Returns.IsInitialized
+}
+
+func (b *BOSHManager) InitializeDirector(state storage.State) error {
 	b.InitializeDirectorCall.CallCount++
 	b.InitializeDirectorCall.Receives.State = state
-	b.InitializeDirectorCall.Receives.TerraformOutputs = terraformOutputs
 	return b.InitializeDirectorCall.Returns.Error
 }
 
-func (b *BOSHManager) CreateDirector(state storage.State) (storage.State, error) {
+func (b *BOSHManager) CreateDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	b.CreateDirectorCall.CallCount++
 	b.CreateDirectorCall.Receives.State = state
+	b.CreateDirectorCall.Receives.TerraformOutputs = terraformOutputs
 	return b.CreateDirectorCall.Returns.State, b.CreateDirectorCall.Returns.Error
 }
 

@@ -101,6 +101,8 @@ type AzureYAML struct {
 }
 
 type executor interface {
+	IsDirectorInitialized(InterpolateInput) bool
+	IsJumpboxInitialized(InterpolateInput) bool
 	DirectorCreateEnvArgs(InterpolateInput) error
 	JumpboxCreateEnvArgs(InterpolateInput) error
 	CreateEnv(CreateEnvInput) (string, error)
@@ -143,7 +145,24 @@ func (m *Manager) Version() (string, error) {
 	return version, err
 }
 
-func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
+func (m *Manager) IsJumpboxInitialized(iaas string) bool {
+	stateDir := m.stateStore.GetStateDir()
+
+	jumpboxDeploymentDir, err := m.stateStore.GetJumpboxDeploymentDir()
+	if err != nil {
+		return false
+	}
+
+	iaasInputs := InterpolateInput{
+		DeploymentDir: jumpboxDeploymentDir,
+		StateDir:      stateDir,
+		IAAS:          iaas,
+	}
+
+	return m.executor.IsJumpboxInitialized(iaasInputs)
+}
+
+func (m *Manager) InitializeJumpbox(state storage.State) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)
@@ -157,13 +176,12 @@ func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraf
 	}
 
 	iaasInputs := InterpolateInput{
-		DeploymentDir:  deploymentDir,
-		StateDir:       stateDir,
-		VarsDir:        varsDir,
-		IAAS:           state.IAAS,
-		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
-		Variables:      state.Jumpbox.Variables,
-		BOSHState:      state.Jumpbox.State,
+		DeploymentDir: deploymentDir,
+		StateDir:      stateDir,
+		VarsDir:       varsDir,
+		IAAS:          state.IAAS,
+		Variables:     state.Jumpbox.Variables,
+		BOSHState:     state.Jumpbox.State,
 	}
 
 	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)
@@ -174,7 +192,7 @@ func (m *Manager) InitializeJumpbox(state storage.State, terraformOutputs terraf
 	return nil
 }
 
-func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage.State, error) {
+func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	m.logger.Step("creating jumpbox")
 
 	varsDir, err := m.stateStore.GetVarsDir()
@@ -185,9 +203,10 @@ func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage
 	stateDir := m.stateStore.GetStateDir()
 	osUnsetenv("BOSH_ALL_PROXY")
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
-		Deployment: "jumpbox",
-		VarsDir:    varsDir,
-		StateDir:   stateDir,
+		Deployment:     "jumpbox",
+		VarsDir:        varsDir,
+		StateDir:       stateDir,
+		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
 	})
 	switch err.(type) {
 	case CreateEnvError:
@@ -204,7 +223,7 @@ func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage
 
 	state.Jumpbox = storage.Jumpbox{
 		Variables: variables,
-		URL:       jumpboxURL,
+		URL:       terraformOutputs.GetString("jumpbox_url"),
 	}
 
 	m.logger.Step("starting socks5 proxy to jumpbox")
@@ -228,7 +247,30 @@ func (m *Manager) CreateJumpbox(state storage.State, jumpboxURL string) (storage
 	return state, nil
 }
 
-func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terraform.Outputs) error {
+func (m *Manager) IsDirectorInitialized(iaas string) bool {
+	varsDir, err := m.stateStore.GetVarsDir()
+	if err != nil {
+		return false
+	}
+
+	stateDir := m.stateStore.GetStateDir()
+
+	directorDeploymentDir, err := m.stateStore.GetDirectorDeploymentDir()
+	if err != nil {
+		return false
+	}
+
+	iaasInputs := InterpolateInput{
+		DeploymentDir: directorDeploymentDir,
+		StateDir:      stateDir,
+		VarsDir:       varsDir,
+		IAAS:          iaas,
+	}
+
+	return m.executor.IsDirectorInitialized(iaasInputs)
+}
+
+func (m *Manager) InitializeDirector(state storage.State) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)
@@ -242,14 +284,13 @@ func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terra
 	}
 
 	iaasInputs := InterpolateInput{
-		DeploymentDir:  directorDeploymentDir,
-		StateDir:       stateDir,
-		VarsDir:        varsDir,
-		IAAS:           state.IAAS,
-		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
-		Variables:      state.BOSH.Variables,
-		OpsFile:        state.BOSH.UserOpsFile,
-		BOSHState:      state.BOSH.State,
+		DeploymentDir: directorDeploymentDir,
+		StateDir:      stateDir,
+		VarsDir:       varsDir,
+		IAAS:          state.IAAS,
+		Variables:     state.BOSH.Variables,
+		OpsFile:       state.BOSH.UserOpsFile,
+		BOSHState:     state.BOSH.State,
 	}
 
 	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
@@ -260,7 +301,7 @@ func (m *Manager) InitializeDirector(state storage.State, terraformOutputs terra
 	return nil
 }
 
-func (m *Manager) CreateDirector(state storage.State) (storage.State, error) {
+func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	m.logger.Step("creating bosh director")
 
 	varsDir, err := m.stateStore.GetVarsDir()
@@ -271,9 +312,10 @@ func (m *Manager) CreateDirector(state storage.State) (storage.State, error) {
 	stateDir := m.stateStore.GetStateDir()
 
 	variables, err := m.executor.CreateEnv(CreateEnvInput{
-		Deployment: "director",
-		StateDir:   stateDir,
-		VarsDir:    varsDir,
+		Deployment:     "director",
+		StateDir:       stateDir,
+		VarsDir:        varsDir,
+		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
 	})
 
 	switch err.(type) {
@@ -345,8 +387,6 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 	}
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", addr))
 
-	iaasInputs.DeploymentVars = m.GetDirectorDeploymentVars(state, terraformOutputs)
-
 	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
 	if err != nil {
 		return err
@@ -385,12 +425,11 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	iaasInputs := InterpolateInput{
-		DeploymentDir:  deploymentDir,
-		StateDir:       stateDir,
-		VarsDir:        varsDir,
-		IAAS:           state.IAAS,
-		Variables:      state.Jumpbox.Variables,
-		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+		DeploymentDir: deploymentDir,
+		StateDir:      stateDir,
+		VarsDir:       varsDir,
+		IAAS:          state.IAAS,
+		Variables:     state.Jumpbox.Variables,
 	}
 
 	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)

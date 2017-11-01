@@ -77,11 +77,9 @@ var _ = Describe("Plan", func() {
 
 			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
 			Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(syncedState))
-			Expect(boshManager.InitializeJumpboxCall.Receives.TerraformOutputs.Map).To(BeNil())
 
 			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(syncedState))
-			Expect(boshManager.InitializeDirectorCall.Receives.TerraformOutputs.Map).To(BeNil())
 
 			Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
 			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(syncedState))

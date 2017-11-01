@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type Plan struct {
@@ -68,11 +67,11 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		return nil
 	}
 
-	if err := p.boshManager.InitializeJumpbox(state, terraform.Outputs{}); err != nil {
+	if err := p.boshManager.InitializeJumpbox(state); err != nil {
 		return fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
 	}
 
-	if err := p.boshManager.InitializeDirector(state, terraform.Outputs{}); err != nil {
+	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return fmt.Errorf("Bosh manager initialize director: %s", err)
 	}
 

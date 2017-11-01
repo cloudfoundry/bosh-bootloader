@@ -13,10 +13,178 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Executor", func() {
+	var executor bosh.Executor
+
+	Describe("IsJumpboxInitialized", func() {
+		var (
+			filePaths map[string]string
+			input     bosh.InterpolateInput
+		)
+		BeforeEach(func() {
+			stateDir, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			deploymentDir := filepath.Join(stateDir, "deployment")
+			err = os.Mkdir(deploymentDir, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			filePaths = map[string]string{
+				"manifest":       filepath.Join(deploymentDir, "jumpbox.yml"),
+				"cpi":            filepath.Join(deploymentDir, "cpi.yml"),
+				"create-jumpbox": filepath.Join(stateDir, "create-jumpbox.sh"),
+				"delete-jumpbox": filepath.Join(stateDir, "delete-jumpbox.sh"),
+			}
+			for _, p := range filePaths {
+				_, err = os.Create(p)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			executor = bosh.NewExecutor(&fakes.BOSHCommand{}, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+			input = bosh.InterpolateInput{
+				DeploymentDir: deploymentDir,
+				StateDir:      stateDir,
+				IAAS:          "gcp",
+			}
+		})
+		Context("when all files are present", func() {
+			It("returns true", func() {
+				Expect(executor.IsJumpboxInitialized(input)).To(BeTrue())
+			})
+		})
+		Context("when any file is missing", func() {
+			DescribeTable("returns false", func(missingFile string) {
+				err := os.Remove(filePaths[missingFile])
+				Expect(err).NotTo(HaveOccurred())
+				Expect(executor.IsJumpboxInitialized(input)).To(BeFalse())
+			},
+				Entry("manifest missing", "manifest"),
+				Entry("create jumpbox missing", "create-jumpbox"),
+				Entry("delete jumpbox missing", "delete-jumpbox"),
+				Entry("cpi missing", "cpi"),
+			)
+		})
+	})
+
+	Describe("IsDirectorInitialized", func() {
+		var (
+			deploymentDir string
+			filePaths     map[string]string
+			input         bosh.InterpolateInput
+		)
+		BeforeEach(func() {
+			stateDir, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			deploymentDir = filepath.Join(stateDir, "deployment")
+			err = os.Mkdir(deploymentDir, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			filePaths = map[string]string{
+				"manifest":        filepath.Join(deploymentDir, "bosh.yml"),
+				"cpi":             filepath.Join(deploymentDir, "cpi.yml"),
+				"jumpbox user":    filepath.Join(deploymentDir, "jumpbox-user.yml"),
+				"uaa":             filepath.Join(deploymentDir, "uaa.yml"),
+				"credhub":         filepath.Join(deploymentDir, "credhub.yml"),
+				"create-director": filepath.Join(stateDir, "create-director.sh"),
+				"delete-director": filepath.Join(stateDir, "delete-director.sh"),
+			}
+			for _, p := range filePaths {
+				_, err = os.Create(p)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			executor = bosh.NewExecutor(&fakes.BOSHCommand{}, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+			input = bosh.InterpolateInput{
+				DeploymentDir: deploymentDir,
+				StateDir:      stateDir,
+				IAAS:          "gcp",
+			}
+		})
+
+		Context("when any iaas-agnostic file is missing", func() {
+			DescribeTable("returns false", func(missingFile string) {
+				err := os.Remove(filePaths[missingFile])
+				Expect(err).NotTo(HaveOccurred())
+				Expect(executor.IsDirectorInitialized(input)).To(BeFalse())
+			},
+				Entry("manifest missing", "manifest"),
+				Entry("create director missing", "create-director"),
+				Entry("delete director missing", "delete-director"),
+				Entry("jumpbox user missing", "jumpbox user"),
+				Entry("credhub missing", "credhub"),
+				Entry("uaa missing", "uaa"),
+				Entry("cpi missing", "cpi"),
+			)
+		})
+
+		Context("gcp", func() {
+			BeforeEach(func() {
+				input.IAAS = "gcp"
+
+				ephemeralIPPath := filepath.Join(deploymentDir, "gcp-bosh-director-ephemeral-ip-ops.yml")
+				_, err := os.Create(ephemeralIPPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				filePaths["ephemeral ip"] = ephemeralIPPath
+			})
+
+			Context("when all files are present", func() {
+				It("returns true", func() {
+					Expect(executor.IsDirectorInitialized(input)).To(BeTrue())
+				})
+			})
+
+			Context("when any gcp-specific file is missing", func() {
+				DescribeTable("returns false", func(missingFile string) {
+					err := os.Remove(filePaths[missingFile])
+					Expect(err).NotTo(HaveOccurred())
+					Expect(executor.IsDirectorInitialized(input)).To(BeFalse())
+				},
+					Entry("ephemeral IP missing", "ephemeral ip"),
+				)
+			})
+		})
+
+		Context("aws", func() {
+			BeforeEach(func() {
+				input.IAAS = "aws"
+
+				awsFiles := map[string]string{
+					"ephemeral ip":         filepath.Join(deploymentDir, "aws-bosh-director-ephemeral-ip-ops.yml"),
+					"iam instance profile": filepath.Join(deploymentDir, "iam-instance-profile.yml"),
+					"encrypt disk":         filepath.Join(deploymentDir, "aws-bosh-director-encrypt-disk-ops.yml"),
+				}
+
+				for name, path := range awsFiles {
+					_, err := os.Create(path)
+					Expect(err).NotTo(HaveOccurred())
+					filePaths[name] = path
+				}
+			})
+
+			Context("when all files are present", func() {
+				It("returns true", func() {
+					Expect(executor.IsDirectorInitialized(input)).To(BeTrue())
+				})
+			})
+
+			Context("when any aws-specific file is missing", func() {
+				DescribeTable("returns false", func(missingFile string) {
+					err := os.Remove(filePaths[missingFile])
+					Expect(err).NotTo(HaveOccurred())
+					Expect(executor.IsDirectorInitialized(input)).To(BeFalse())
+				},
+					Entry("ephemeral IP missing", "ephemeral ip"),
+					Entry("iam instance profile missing", "iam instance profile"),
+					Entry("encrypt disk missing", "encrypt disk"),
+				)
+			})
+		})
+	})
+
 	Describe("JumpboxCreateEnvArgs", func() {
 		var (
 			cmd *fakes.BOSHCommand
@@ -68,7 +236,6 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("generates create-env args for jumpbox", func() {
-			interpolateInput.DeploymentVars = "internal_cidr: 10.0.0.0/24"
 			interpolateInput.OpsFile = ""
 
 			err := executor.JumpboxCreateEnvArgs(interpolateInput)
@@ -96,52 +263,6 @@ var _ = Describe("Executor", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(string(shellScript)).To(Equal(expectedScript))
-			})
-		})
-
-		Context("when a create-env script already exists", func() {
-			var (
-				createEnvPath     string
-				createEnvContents string
-			)
-			BeforeEach(func() {
-				createEnvPath = filepath.Join(stateDir, "create-jumpbox.sh")
-				createEnvContents = "#!/bin/bash\necho 'I already exist'\n"
-
-				ioutil.WriteFile(createEnvPath, []byte(createEnvContents), os.ModePerm)
-			})
-
-			It("does not override the existing script", func() {
-				err := executor.JumpboxCreateEnvArgs(interpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(string(shellScript)).To(Equal(createEnvContents))
-			})
-		})
-
-		Context("when a delete-env script already exists", func() {
-			var (
-				deleteEnvPath     string
-				deleteEnvContents string
-			)
-			BeforeEach(func() {
-				deleteEnvPath = filepath.Join(stateDir, "delete-jumpbox.sh")
-				deleteEnvContents = "#!/bin/bash\necho 'I already exist'\n"
-
-				ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), os.ModePerm)
-			})
-
-			It("does not override the existing script", func() {
-				err := executor.JumpboxCreateEnvArgs(interpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(string(shellScript)).To(Equal(deleteEnvContents))
 			})
 		})
 	})
@@ -178,10 +299,9 @@ var _ = Describe("Executor", func() {
 			relativeVarsDir = "${BBL_STATE_DIR}/vars"
 
 			interpolateInput = bosh.InterpolateInput{
-				DeploymentDir:  deploymentDir,
-				StateDir:       stateDir,
-				VarsDir:        varsDir,
-				DeploymentVars: "internal_cidr: 10.0.0.0/24",
+				DeploymentDir: deploymentDir,
+				StateDir:      stateDir,
+				VarsDir:       varsDir,
 				BOSHState: map[string]interface{}{
 					"key": "value",
 				},
@@ -252,52 +372,6 @@ var _ = Describe("Executor", func() {
 					return nil
 				}
 			})
-
-			Context("when a create-env script already exists", func() {
-				var (
-					createEnvPath     string
-					createEnvContents string
-				)
-				BeforeEach(func() {
-					createEnvPath = filepath.Join(stateDir, "create-director.sh")
-					createEnvContents = "#!/bin/bash\necho 'I already exist'\n"
-
-					ioutil.WriteFile(createEnvPath, []byte(createEnvContents), os.ModePerm)
-				})
-
-				It("does not override the existing script", func() {
-					err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(shellScript)).To(Equal(createEnvContents))
-				})
-			})
-
-			Context("when a delete-env script already exists", func() {
-				var (
-					deleteEnvPath     string
-					deleteEnvContents string
-				)
-				BeforeEach(func() {
-					deleteEnvPath = filepath.Join(stateDir, "delete-director.sh")
-					deleteEnvContents = "#!/bin/bash\necho 'I already exist'\n"
-
-					ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), os.ModePerm)
-				})
-
-				It("does not override the existing script", func() {
-					err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
-					Expect(err).NotTo(HaveOccurred())
-
-					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(shellScript)).To(Equal(deleteEnvContents))
-				})
-			})
 		})
 	})
 
@@ -325,9 +399,10 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			createEnvInput = bosh.CreateEnvInput{
-				Deployment: "some-deployment",
-				StateDir:   stateDir,
-				VarsDir:    varsDir,
+				DeploymentVars: "some-deployment-vars",
+				Deployment:     "some-deployment",
+				StateDir:       stateDir,
+				VarsDir:        varsDir,
 			}
 
 			createEnvPath = filepath.Join(stateDir, "create-some-deployment.sh")
@@ -348,6 +423,13 @@ var _ = Describe("Executor", func() {
 
 			Expect(cmd.RunCallCount()).To(Equal(0))
 			Expect(vars).To(ContainSubstring("some-vars-store-contents"))
+
+			By("writing deployment vars to the state dir", func() {
+				deploymentVars, err := ioutil.ReadFile(filepath.Join(varsDir, "some-deployment-deployment-vars.yml"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(deploymentVars)).To(Equal("some-deployment-vars"))
+			})
 
 			By("setting BBL_STATE_DIR environment variable", func() {
 				bblStateDirEnv := os.Getenv("BBL_STATE_DIR")

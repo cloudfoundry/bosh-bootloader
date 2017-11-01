@@ -118,11 +118,13 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Parse terraform outputs: %s", err)
 	}
 
-	if err := u.boshManager.InitializeJumpbox(state, terraformOutputs); err != nil {
-		return fmt.Errorf("Create jumpbox: %s", err)
+	if !u.boshManager.IsJumpboxInitialized(state.IAAS) {
+		if err := u.boshManager.InitializeJumpbox(state); err != nil {
+			return fmt.Errorf("Create jumpbox: %s", err)
+		}
 	}
 
-	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs.GetString("jumpbox_url"))
+	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
 	if err != nil {
 		return fmt.Errorf("Create jumpbox: %s", err)
 	}
@@ -132,12 +134,14 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Save state after create jumpbox: %s", err)
 	}
 
-	state.BOSH.UserOpsFile = string(opsFileContents)
-	if err := u.boshManager.InitializeDirector(state, terraformOutputs); err != nil {
-		return fmt.Errorf("Create bosh director: %s", err)
+	if !u.boshManager.IsDirectorInitialized(state.IAAS) {
+		state.BOSH.UserOpsFile = string(opsFileContents)
+		if err := u.boshManager.InitializeDirector(state); err != nil {
+			return fmt.Errorf("Create bosh director: %s", err)
+		}
 	}
 
-	state, err = u.boshManager.CreateDirector(state)
+	state, err = u.boshManager.CreateDirector(state, terraformOutputs)
 	switch err.(type) {
 	case bosh.ManagerCreateError:
 		bcErr := err.(bosh.ManagerCreateError)

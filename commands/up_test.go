@@ -133,30 +133,34 @@ var _ = Describe("Up", func() {
 			terraformApplyState storage.State
 			createJumpboxState  storage.State
 			createDirectorState storage.State
+			terraformOutputs    terraform.Outputs
 		)
 		BeforeEach(func() {
-			incomingState = storage.State{TFState: "incoming-state"}
-			iaasState = storage.State{TFState: "iaas-state"}
+			incomingState = storage.State{TFState: "incoming-state", IAAS: "some-iaas"}
+			iaasState = storage.State{TFState: "iaas-state", IAAS: "some-iaas"}
 
-			envIDManagerState = storage.State{TFState: "env-id-sync-call"}
+			envIDManagerState = storage.State{TFState: "env-id-sync-call", IAAS: "some-iaas"}
 			envIDManager.SyncCall.Returns.State = envIDManagerState
 
-			terraformApplyState = storage.State{TFState: "terraform-apply-call"}
+			terraformApplyState = storage.State{TFState: "terraform-apply-call", IAAS: "some-iaas"}
 			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
 
-			createJumpboxState = storage.State{TFState: "create-jumpbox-call"}
+			createJumpboxState = storage.State{TFState: "create-jumpbox-call", IAAS: "some-iaas"}
 			boshManager.CreateJumpboxCall.Returns.State = createJumpboxState
 
-			createDirectorState = storage.State{TFState: "create-director-call"}
+			createDirectorState = storage.State{TFState: "create-director-call", IAAS: "some-iaas"}
 			boshManager.CreateDirectorCall.Returns.State = createDirectorState
 
-			terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+			terraformOutputs = terraform.Outputs{
 				Map: map[string]interface{}{
 					"jumpbox_url": "some-jumpbox-url",
 				},
 			}
+			terraformManager.GetOutputsCall.Returns.Outputs = terraformOutputs
 
 			terraformManager.IsInitializedCall.Returns.IsInitialized = true
+			boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = true
+			boshManager.IsDirectorInitializedCall.Returns.IsInitialized = true
 		})
 
 		It("it works", func() {
@@ -168,6 +172,7 @@ var _ = Describe("Up", func() {
 			Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
 
+			Expect(terraformManager.IsInitializedCall.CallCount).To(Equal(1))
 			Expect(terraformManager.InitCall.CallCount).To(Equal(0))
 
 			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
@@ -177,17 +182,20 @@ var _ = Describe("Up", func() {
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
 
-			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
-			Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(terraformApplyState))
+			Expect(boshManager.IsJumpboxInitializedCall.CallCount).To(Equal(1))
+			Expect(boshManager.IsJumpboxInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
+			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(0))
 			Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 			Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
-			Expect(boshManager.CreateJumpboxCall.Receives.JumpboxURL).To(Equal("some-jumpbox-url"))
+			Expect(boshManager.CreateJumpboxCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
 			Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
 
-			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
-			Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(createJumpboxState))
+			Expect(boshManager.IsDirectorInitializedCall.CallCount).To(Equal(1))
+			Expect(boshManager.IsDirectorInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
+			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
 			Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
+			Expect(boshManager.CreateDirectorCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
 			Expect(stateStore.SetCall.Receives[3].State).To(Equal(createDirectorState))
 
 			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
@@ -208,24 +216,48 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the config has ops files", func() {
-			var opsFilePath string
-
+		Context("when the jumpbox is not initialized yet", func() {
 			BeforeEach(func() {
-				opsFile, err := ioutil.TempFile("", "ops-file")
+				boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
+			})
+			It("calls init on the manager", func() {
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
+				Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
+				Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(terraformApplyState))
+			})
+		})
 
-				opsFilePath = opsFile.Name()
-				opsFileContents := "some-ops-file-contents"
-				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+		Context("when the director is not initialized yet", func() {
+			BeforeEach(func() {
+				boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
+			})
+			It("calls init on the manager", func() {
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
+				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
+				Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(createJumpboxState))
 			})
 
-			It("passes the ops file contents to the bosh manager", func() {
-				err := command.Execute([]string{"--ops-file", opsFilePath}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
+			Context("when the config has ops files", func() {
+				var opsFilePath string
 
-				Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
+				BeforeEach(func() {
+					opsFile, err := ioutil.TempFile("", "ops-file")
+					Expect(err).NotTo(HaveOccurred())
+
+					opsFilePath = opsFile.Name()
+					opsFileContents := "some-ops-file-contents"
+					err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("passes the ops file contents to the bosh manager", func() {
+					err := command.Execute([]string{"--ops-file", opsFilePath}, incomingState)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
+				})
 			})
 		})
 
@@ -352,6 +384,7 @@ var _ = Describe("Up", func() {
 			Context("when the jumpbox cannot be initialized", func() {
 				BeforeEach(func() {
 					boshManager.InitializeJumpboxCall.Returns.Error = errors.New("pineapple")
+					boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
 				})
 
 				It("returns an error", func() {
@@ -385,6 +418,7 @@ var _ = Describe("Up", func() {
 			Context("when bosh cannot be initialized", func() {
 				BeforeEach(func() {
 					boshManager.InitializeDirectorCall.Returns.Error = errors.New("pineapple")
+					boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
 				})
 
 				It("returns an error", func() {

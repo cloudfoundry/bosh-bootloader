@@ -40,7 +40,27 @@ type BOSHExecutor struct {
 			InterpolateInput bosh.InterpolateInput
 		}
 		Returns struct {
-			Error  error
+			Error error
+		}
+	}
+
+	IsJumpboxInitializedCall struct {
+		CallCount int
+		Receives  struct {
+			InterpolateInput bosh.InterpolateInput
+		}
+		Returns struct {
+			IsInitialized bool
+		}
+	}
+
+	IsDirectorInitializedCall struct {
+		CallCount int
+		Receives  struct {
+			InterpolateInput bosh.InterpolateInput
+		}
+		Returns struct {
+			IsInitialized bool
 		}
 	}
 
@@ -79,6 +99,20 @@ func (e *BOSHExecutor) DirectorCreateEnvArgs(input bosh.InterpolateInput) error 
 	e.DirectorCreateEnvArgsCall.Receives.InterpolateInput = input
 
 	return e.DirectorCreateEnvArgsCall.Returns.Error
+}
+
+func (e *BOSHExecutor) IsDirectorInitialized(input bosh.InterpolateInput) bool {
+	e.IsDirectorInitializedCall.CallCount++
+	e.IsDirectorInitializedCall.Receives.InterpolateInput = input
+
+	return e.IsDirectorInitializedCall.Returns.IsInitialized
+}
+
+func (e *BOSHExecutor) IsJumpboxInitialized(input bosh.InterpolateInput) bool {
+	e.IsJumpboxInitializedCall.CallCount++
+	e.IsJumpboxInitializedCall.Receives.InterpolateInput = input
+
+	return e.IsJumpboxInitializedCall.Returns.IsInitialized
 }
 
 func (e *BOSHExecutor) Version() (string, error) {
