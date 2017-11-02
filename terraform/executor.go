@@ -15,6 +15,7 @@ import (
 
 var writeFile func(file string, data []byte, perm os.FileMode) error = ioutil.WriteFile
 var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
+var redactedError = "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"
 
 type Executor struct {
 	cmd        terraformCmd
@@ -160,7 +161,11 @@ func (e Executor) Apply() error {
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
-		return NewExecutorError(tfStatePath, err, e.debug)
+		if e.debug {
+			return err
+		} else {
+			return fmt.Errorf(redactedError)
+		}
 	}
 
 	return nil
@@ -198,7 +203,11 @@ func (e Executor) Destroy(input map[string]interface{}) error {
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
-		return NewExecutorError(tfStatePath, err, e.debug)
+		if e.debug {
+			return err
+		} else {
+			return fmt.Errorf(redactedError)
+		}
 	}
 
 	return nil

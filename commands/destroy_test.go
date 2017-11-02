@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -26,7 +24,6 @@ var _ = Describe("Destroy", func() {
 		stateStore               *fakes.StateStore
 		stateValidator           *fakes.StateValidator
 		terraformManager         *fakes.TerraformManager
-		terraformManagerError    *fakes.TerraformManagerError
 		networkDeletionValidator *fakes.NetworkDeletionValidator
 		stdin                    *bytes.Buffer
 	)
@@ -40,7 +37,6 @@ var _ = Describe("Destroy", func() {
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
-		terraformManagerError = &fakes.TerraformManagerError{}
 		networkDeletionValidator = &fakes.NetworkDeletionValidator{}
 
 		// Returning a fully empty State is unrealistic.
@@ -372,85 +368,6 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
-		Context("when iaas is azure", func() {
-			var (
-				state        storage.State
-				updatedState storage.State
-			)
-
-			BeforeEach(func() {
-				stdin.Write([]byte("yes\n"))
-				state = storage.State{
-					IAAS: "azure",
-				}
-
-				updatedState = storage.State{
-					IAAS: "azure",
-				}
-				terraformManager.DestroyCall.Returns.BBLState = updatedState
-			})
-
-			It("calls terraform destroy and deletes the state file", func() {
-				err := destroy.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(state))
-				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
-				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
-			})
-
-			Context("when terraform destroy fails", func() {
-				BeforeEach(func() {
-					terraformManagerError.ErrorCall.Returns = "failed to destroy"
-					terraformManagerError.BBLStateCall.Returns.BBLState = updatedState
-
-					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
-					terraformManager.DestroyCall.Returns.Error = terraformManagerError
-
-					stdin.Write([]byte("yes\n"))
-				})
-
-				It("saves the partially destroyed tf state", func() {
-					err := destroy.Execute([]string{}, state)
-					Expect(err).To(Equal(terraformManagerError))
-
-					Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(state))
-					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
-					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
-
-					Expect(terraformManagerError.BBLStateCall.CallCount).To(Equal(1))
-
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedState))
-				})
-
-				Context("when we cannot retrieve the updated bbl state", func() {
-					BeforeEach(func() {
-						terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
-					})
-
-					It("returns an error containing both messages", func() {
-						err := destroy.Execute([]string{}, state)
-
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					})
-				})
-
-				Context("and the state fails to be set", func() {
-					It("returns an error containing both messages", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "azure",
-						})
-
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
-					})
-				})
-			})
-		})
-
 		Context("when iaas is aws", func() {
 			var (
 				state storage.State
@@ -501,44 +418,26 @@ var _ = Describe("Destroy", func() {
 
 					updatedBBLState = state
 
-					terraformManagerError.ErrorCall.Returns = "failed to destroy"
-					terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState
-
-					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
-					terraformManager.DestroyCall.Returns.Error = terraformManagerError
+					terraformManager.DestroyCall.Returns.BBLState = updatedBBLState
+					terraformManager.DestroyCall.Returns.Error = errors.New("failed to destroy")
 
 					stdin.Write([]byte("yes\n"))
 				})
 
 				It("saves the partially destroyed tf state", func() {
 					err := destroy.Execute([]string{}, state)
-					Expect(err).To(Equal(terraformManagerError))
+					Expect(err).To(MatchError("failed to destroy"))
 
 					Expect(terraformManager.InitCall.CallCount).To(Equal(1))
 					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedBBLState))
 					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
 					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(expectedBBLState))
 
-					Expect(terraformManagerError.BBLStateCall.CallCount).To(Equal(1))
-
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedBBLState))
 				})
 
-				Context("when we cannot retrieve the updated bbl state", func() {
-					BeforeEach(func() {
-						terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
-					})
-
-					It("returns an error containing both messages", func() {
-						err := destroy.Execute([]string{}, state)
-
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					})
-				})
-
-				Context("and the state fails to be set", func() {
+				Context("when the state fails to be set", func() {
 					It("returns an error containing both messages", func() {
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
 						err := destroy.Execute([]string{}, storage.State{
@@ -603,9 +502,8 @@ var _ = Describe("Destroy", func() {
 			})
 
 			Context("when bosh fails to delete the director", func() {
-				var (
-					state storage.State
-				)
+				var state storage.State
+
 				BeforeEach(func() {
 					state = storage.State{
 						BOSH: storage.BOSH{
@@ -615,9 +513,8 @@ var _ = Describe("Destroy", func() {
 					}
 				})
 				Context("when bosh delete returns a bosh manager delete error", func() {
-					var (
-						errState storage.State
-					)
+					var errState storage.State
+
 					BeforeEach(func() {
 						errState = storage.State{
 							BOSH: storage.BOSH{
@@ -641,7 +538,6 @@ var _ = Describe("Destroy", func() {
 								errors.New("saving state failed"),
 							}}
 						})
-
 						It("returns an error", func() {
 							err := destroy.Execute([]string{}, state)
 							Expect(err).To(MatchError("the following errors occurred:\ndeletion failed,\nsaving state failed"))
@@ -653,121 +549,6 @@ var _ = Describe("Destroy", func() {
 					boshManager.DeleteDirectorCall.Returns.Error = errors.New("deletion failed")
 					err := destroy.Execute([]string{}, state)
 					Expect(err).To(MatchError("deletion failed"))
-				})
-			})
-		})
-
-		Context("when iaas is gcp", func() {
-			var serviceAccountKeyPath string
-			var serviceAccountKey string
-			var bblState storage.State
-
-			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-					"external_ip":        "some-external-ip",
-					"network_name":       "some-network-name",
-					"subnetwork_name":    "some-subnetwork-name",
-					"bosh_open_tag_name": "some-bosh-tag",
-					"internal_tag_name":  "some-internal-tag",
-					"director_address":   "some-director-address",
-				}}
-
-				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
-				Expect(err).NotTo(HaveOccurred())
-				serviceAccountKeyPath = tempFile.Name()
-				serviceAccountKey = `{"real": "json"}`
-				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				bblState = storage.State{
-					IAAS:  "gcp",
-					EnvID: "some-env-id",
-					GCP: storage.GCP{
-						ServiceAccountKey: "some-service-account-key",
-						ProjectID:         "some-project-id",
-						Zone:              "some-zone",
-						Region:            "some-region",
-					},
-				}
-				terraformManager.DestroyCall.Returns.BBLState = bblState
-			})
-
-			It("calls terraform destroy and deletes the state file", func() {
-				stdin.Write([]byte("yes\n"))
-				err := destroy.Execute([]string{}, bblState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(bblState))
-				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
-				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
-			})
-
-			Context("when terraform destroy fails", func() {
-				var (
-					updatedBBLState storage.State
-				)
-
-				BeforeEach(func() {
-					updatedBBLState = bblState
-
-					terraformManagerError.ErrorCall.Returns = "failed to destroy"
-					terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState
-
-					terraformManager.DestroyCall.Returns.BBLState = storage.State{}
-					terraformManager.DestroyCall.Returns.Error = terraformManagerError
-
-					stdin.Write([]byte("yes\n"))
-				})
-
-				It("saves the partially destroyed tf state", func() {
-					err := destroy.Execute([]string{}, bblState)
-					Expect(err).To(Equal(terraformManagerError))
-
-					Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-					Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(bblState))
-					Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
-					Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(bblState))
-
-					Expect(terraformManagerError.BBLStateCall.CallCount).To(Equal(1))
-
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives[1].State).To(Equal(updatedBBLState))
-				})
-
-				Context("when we cannot retrieve the updated bbl state", func() {
-					BeforeEach(func() {
-						terraformManagerError.BBLStateCall.Returns.Error = errors.New("some-bbl-state-error")
-					})
-
-					It("returns an error containing both messages", func() {
-						err := destroy.Execute([]string{}, bblState)
-
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nsome-bbl-state-error"))
-						Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					})
-				})
-
-				Context("when terraform manager init fails", func() {
-					It("returns an error", func() {
-						terraformManager.InitCall.Returns.Error = errors.New("clementine")
-
-						err := destroy.Execute([]string{}, bblState)
-						Expect(err).To(MatchError("clementine"))
-					})
-				})
-
-				Context("and the state fails to be set", func() {
-					It("returns an error containing both messages", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
-						err := destroy.Execute([]string{}, storage.State{
-							IAAS: "gcp",
-						})
-
-						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
-					})
 				})
 			})
 		})

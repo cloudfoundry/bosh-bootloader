@@ -387,8 +387,13 @@ var _ = Describe("AWS Create LBs", func() {
 			})
 
 			Context("when terraform manager fails to apply", func() {
-				It("returns an error", func() {
+				It("saves the bbl state and returns the error", func() {
 					terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
+					terraformManager.ApplyCall.Returns.BBLState = storage.State{
+						LB: storage.LB{
+							Type: "concourse",
+						},
+					}
 
 					err := command.Execute(
 						commands.CreateLBsConfig{
@@ -400,6 +405,32 @@ var _ = Describe("AWS Create LBs", func() {
 						storage.State{},
 					)
 					Expect(err).To(MatchError("failed to apply"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State.LB.Type).To(Equal("concourse"))
+				})
+
+				Context("when we fail to set the bbl state", func() {
+					BeforeEach(func() {
+						terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{
+							{},
+							{errors.New("failed to set bbl state")},
+						}
+					})
+
+					It("returns the terraform error and the state store set error", func() {
+						err := command.Execute(
+							commands.CreateLBsConfig{
+								AWS: commands.AWSCreateLBsConfig{
+									CertPath: certPath,
+									KeyPath:  keyPath,
+								},
+							},
+							storage.State{},
+						)
+						Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to set bbl state"))
+					})
 				})
 			})
 
@@ -417,84 +448,6 @@ var _ = Describe("AWS Create LBs", func() {
 						storage.State{},
 					)
 					Expect(err).To(MatchError("clementine"))
-				})
-			})
-
-			Context("when the terraform manager fails with terraformManagerError", func() {
-				var managerError *fakes.TerraformManagerError
-				BeforeEach(func() {
-					managerError = &fakes.TerraformManagerError{}
-					managerError.BBLStateCall.Returns.BBLState = storage.State{
-						LB: storage.LB{
-							Type: "concourse",
-						},
-					}
-					managerError.ErrorCall.Returns = "cannot apply"
-					terraformManager.ApplyCall.Returns.Error = managerError
-				})
-
-				It("saves the bbl state and returns the error", func() {
-					err := command.Execute(
-						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
-						},
-						storage.State{},
-					)
-					Expect(err).To(MatchError("cannot apply"))
-
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
-						LB: storage.LB{
-							Type: "concourse",
-						},
-					}))
-				})
-
-				Context("when the terraform manager error fails to return a bbl state", func() {
-					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
-					})
-
-					It("saves the bbl state and returns the error", func() {
-						err := command.Execute(
-							commands.CreateLBsConfig{
-								AWS: commands.AWSCreateLBsConfig{
-									CertPath: certPath,
-									KeyPath:  keyPath,
-								},
-							},
-							storage.State{},
-						)
-						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
-					})
-				})
-
-				Context("when we fail to set the bbl state", func() {
-					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.BBLState = storage.State{}
-
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{
-							{},
-							{errors.New("failed to set bbl state")},
-						}
-					})
-
-					It("attempts to save the bbl state and returns the error", func() {
-						err := command.Execute(
-							commands.CreateLBsConfig{
-								AWS: commands.AWSCreateLBsConfig{
-									CertPath: certPath,
-									KeyPath:  keyPath,
-								},
-							},
-							storage.State{},
-						)
-
-						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to set bbl state"))
-					})
 				})
 			})
 

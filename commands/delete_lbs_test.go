@@ -167,35 +167,19 @@ var _ = Describe("DeleteLBs", func() {
 				})
 			})
 
-			Context("when terraform manager fails to apply the second time with terraformManagerError", func() {
-				It("return an error", func() {
-					terraformManager.ApplyCall.Returns.Error = errors.New("apply failed")
-
-					err := command.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("apply failed"))
-				})
-			})
-
-			Context("when terraform manager fails to apply with non-terraformManagerError", func() {
-				var (
-					managerError *fakes.TerraformManagerError
-				)
-
+			Context("when terraform manager fails to apply", func() {
 				BeforeEach(func() {
-					managerError = &fakes.TerraformManagerError{}
-					managerError.BBLStateCall.Returns.BBLState = storage.State{
+					terraformManager.ApplyCall.Returns.BBLState = storage.State{
 						LB: storage.LB{
 							Type: "concourse",
 						},
 					}
-					managerError.ErrorCall.Returns = "cannot apply"
-
-					terraformManager.ApplyCall.Returns.Error = managerError
+					terraformManager.ApplyCall.Returns.Error = errors.New("failed to apply")
 				})
 
-				It("returns an error", func() {
+				It("saves the bbl state and returns the error", func() {
 					err := command.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError("cannot apply"))
+					Expect(err).To(MatchError("failed to apply"))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
@@ -203,17 +187,6 @@ var _ = Describe("DeleteLBs", func() {
 							Type: "concourse",
 						},
 					}))
-				})
-
-				Context("when the terraform manager error fails to return a bbl state", func() {
-					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
-					})
-
-					It("saves the bbl state and returns the error", func() {
-						err := command.Execute([]string{}, incomingState)
-						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
-					})
 				})
 			})
 

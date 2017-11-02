@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,7 +20,6 @@ var _ = Describe("GCPCreateLBs", func() {
 		cloudConfigManager     *fakes.CloudConfigManager
 		stateStore             *fakes.StateStore
 		environmentValidator   *fakes.EnvironmentValidator
-		terraformExecutorError *fakes.TerraformExecutorError
 
 		bblState    storage.State
 		command     commands.GCPCreateLBs
@@ -36,7 +34,6 @@ var _ = Describe("GCPCreateLBs", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		environmentValidator = &fakes.EnvironmentValidator{}
-		terraformExecutorError = &fakes.TerraformExecutorError{}
 
 		command = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator)
 
@@ -187,47 +184,23 @@ var _ = Describe("GCPCreateLBs", func() {
 						KeyPath:  keyPath,
 					}}, storage.State{})
 					Expect(err).To(MatchError("failed to apply"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(0))
-				})
-			})
-
-			Context("when both the applier fails and terraformManagerError.BBLState fails", func() {
-				BeforeEach(func() {
-					terraformExecutorError.TFStateCall.Returns.Error = errors.New("failed to get tf state")
-					terraformExecutorError.ErrorCall.Returns = "failed to apply"
-					expectedError := terraform.NewManagerError(bblState, terraformExecutorError)
-					terraformManager.ApplyCall.Returns.Error = expectedError
-				})
-
-				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-						LBType: "concourse",
-					}}, bblState)
-
-					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nfailed to get tf state"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(0))
 				})
 			})
 
 			Context("when both the applier fails and state fails to be set", func() {
 				BeforeEach(func() {
-					terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-					terraformExecutorError.ErrorCall.Returns = "failed to apply"
-					expectedError := terraform.NewManagerError(storage.State{
-						LB: storage.LB{
-							Type: "concourse",
-						},
-					}, terraformExecutorError)
-					terraformManager.ApplyCall.Returns.Error = expectedError
-
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("state failed to be set")}}
+					terraformManager.ApplyCall.Returns.Error = errors.New("grape")
+					terraformManager.ApplyCall.Returns.BBLState = storage.State{
+						LB: storage.LB{Type: "concourse"},
+					}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("cherry")}}
 				})
 
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
 					}}, storage.State{})
-					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
+					Expect(err).To(MatchError("the following errors occurred:\ngrape,\ncherry"))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{

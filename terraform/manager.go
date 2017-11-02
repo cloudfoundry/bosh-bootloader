@@ -104,11 +104,8 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
-	switch err.(type) {
-	case executorError:
-		return storage.State{}, NewManagerError(bblState, err.(executorError))
-	case error:
-		return storage.State{}, err
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Executor apply: %s", err)
 	}
 
 	return bblState, nil
@@ -124,12 +121,10 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 
 	m.logger.Step("terraform destroy")
 	err = m.executor.Destroy(input)
+
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
-	switch err.(type) {
-	case executorError:
-		return storage.State{}, NewManagerError(bblState, err.(executorError))
-	case error:
+	if err != nil {
 		return storage.State{}, fmt.Errorf("Executor destroy: %s", err)
 	}
 	m.logger.Step("finished destroying infrastructure")

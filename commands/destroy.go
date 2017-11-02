@@ -154,7 +154,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 	state, err = d.terraformManager.Destroy(state)
 	if err != nil {
-		return handleTerraformError(err, d.stateStore)
+		return handleTerraformError(err, state, d.stateStore)
 	}
 
 	if err := d.stateStore.Set(storage.State{}); err != nil {

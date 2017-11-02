@@ -147,27 +147,14 @@ var _ = Describe("Manager", func() {
 			}))
 		})
 
-		Context("when an error occurs", func() {
-			Context("when the applying causes an executor error", func() {
-				BeforeEach(func() {
-					executor.ApplyCall.Returns.Error = &fakes.TerraformExecutorError{}
-				})
-
-				It("returns the bblState with latest terraform output and a ManagerError", func() {
-					_, err := manager.Apply(incomingState)
-					Expect(err).To(BeAssignableToTypeOf(terraform.ManagerError{}))
-				})
+		Context("when executor apply fails", func() {
+			BeforeEach(func() {
+				executor.ApplyCall.Returns.Error = errors.New("grape")
 			})
 
-			Context("when executor apply returns a non-ExecutorError error", func() {
-				BeforeEach(func() {
-					executor.ApplyCall.Returns.Error = errors.New("banana")
-				})
-
-				It("bubbles up the error", func() {
-					_, err := manager.Apply(incomingState)
-					Expect(err).To(MatchError("banana"))
-				})
+			It("returns the error", func() {
+				_, err := manager.Apply(incomingState)
+				Expect(err).To(MatchError("Executor apply: grape"))
 			})
 		})
 	})
@@ -233,32 +220,14 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		Context("when Executor.Destroy returns a ExecutorError", func() {
-			var executorError *fakes.TerraformExecutorError
-
+		Context("when executor destroy fails", func() {
 			BeforeEach(func() {
-				executorError = &fakes.TerraformExecutorError{}
-				executor.DestroyCall.Returns.Error = executorError
+				executor.DestroyCall.Returns.Error = errors.New("grape")
 			})
 
-			It("returns a ManagerError", func() {
+			It("returns the error", func() {
 				_, err := manager.Destroy(incomingState)
-
-				expectedState := incomingState
-				expectedState.LatestTFOutput = expectedTFOutput
-				expectedError := terraform.NewManagerError(expectedState, executorError)
-				Expect(err).To(MatchError(expectedError))
-			})
-		})
-
-		Context("when Executor.Destroy returns a non-ExecutorError error", func() {
-			BeforeEach(func() {
-				executor.DestroyCall.Returns.Error = errors.New("pineapple")
-			})
-
-			It("bubbles up the error", func() {
-				_, err := manager.Destroy(incomingState)
-				Expect(err).To(MatchError("Executor destroy: pineapple"))
+				Expect(err).To(MatchError("Executor destroy: grape"))
 			})
 		})
 	})

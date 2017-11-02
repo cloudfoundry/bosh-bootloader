@@ -264,49 +264,28 @@ var _ = Describe("Executor", func() {
 			})
 		})
 
-		Context("when an error occurs", func() {
-			Context("when terraform command run fails", func() {
-				BeforeEach(func() {
-					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
+		Context("when terraform command run fails", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 
-					cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
-					_ = executor.Init("some-template", input)
-				})
-
-				It("returns an error and the current tf state", func() {
-					err := executor.Apply()
-					taErr := err.(terraform.ExecutorError)
-					Expect(taErr).To(MatchError("the-executor-error"))
-
-					tfState, err := taErr.TFState()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(tfState).To(Equal("some-tf-state"))
-				})
+				cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
+				_ = executor.Init("some-template", input)
 			})
 
-			Context("when --debug is false", func() {
+			It("returns the error", func() {
+				err := executor.Apply()
+				Expect(err).To(MatchError("the-executor-error"))
+			})
+
+			Context("and --debug is false", func() {
 				BeforeEach(func() {
 					executor = terraform.NewExecutor(cmd, stateStore, false)
 				})
 
-				Context("when terraform command run fails", func() {
-					BeforeEach(func() {
-						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-
-						cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
-					})
-
-					It("returns an error and the current tf state", func() {
-						err := executor.Init("some-template", input)
-						err = executor.Apply()
-						taErr := err.(terraform.ExecutorError)
-
-						tfState, err := taErr.TFState()
-						Expect(err).NotTo(HaveOccurred())
-						Expect(tfState).To(Equal("some-tf-state"))
-					})
+				It("returns a redacted error message", func() {
+					err := executor.Apply()
+					Expect(err).To(MatchError("Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"))
 				})
 			})
 		})
@@ -360,43 +339,30 @@ var _ = Describe("Executor", func() {
 				})
 			})
 
-			Context("when it fails to call terraform command run", func() {
+			Context("when command run fails", func() {
 				BeforeEach(func() {
 					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 					cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
 				})
 
-				It("returns an error and the current tf state", func() {
+				It("returns an error", func() {
 					err := executor.Destroy(input)
-					tdErr := err.(terraform.ExecutorError)
-					Expect(tdErr).To(MatchError("the-executor-error"))
-
-					tfState, err := tdErr.TFState()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(tfState).To(Equal("some-tf-state"))
-				})
-			})
-
-			Context("when --debug is false", func() {
-				BeforeEach(func() {
-					executor = terraform.NewExecutor(cmd, stateStore, false)
+					Expect(err).To(MatchError("the-executor-error"))
 				})
 
-				Context("when it fails to call terraform command run", func() {
+				Context("when --debug is false", func() {
 					BeforeEach(func() {
+						executor = terraform.NewExecutor(cmd, stateStore, false)
 						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
 						Expect(err).NotTo(HaveOccurred())
 
 						cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
 					})
 
-					It("returns an error and the current tf state", func() {
+					It("returns a redacted error", func() {
 						err := executor.Destroy(input)
-						tdErr := err.(terraform.ExecutorError)
-
-						tfState, err := tdErr.TFState()
-						Expect(tfState).To(Equal("some-tf-state"))
+						Expect(err).To(MatchError("Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"))
 					})
 				})
 			})

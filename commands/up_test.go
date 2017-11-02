@@ -373,20 +373,15 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("when the terraform manager fails with terraformManagerError", func() {
-				var (
-					managerError *fakes.TerraformManagerError
-					partialState storage.State
-				)
+			Context("when terraform manager apply fails", func() {
+				var partialState storage.State
 
 				BeforeEach(func() {
-					managerError = &fakes.TerraformManagerError{}
 					partialState = storage.State{
 						LatestTFOutput: "some terraform error",
 					}
-					managerError.BBLStateCall.Returns.BBLState = partialState
-					managerError.ErrorCall.Returns = "grapefruit"
-					terraformManager.ApplyCall.Returns.Error = managerError
+					terraformManager.ApplyCall.Returns.BBLState = partialState
+					terraformManager.ApplyCall.Returns.Error = errors.New("grapefruit")
 				})
 
 				It("saves the bbl state and returns the error", func() {
@@ -397,20 +392,8 @@ var _ = Describe("Up", func() {
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(partialState))
 				})
 
-				Context("when the applier fails and we cannot retrieve the updated bbl state", func() {
-					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.Error = errors.New("failed to retrieve bbl state")
-					})
-
-					It("returns an error", func() {
-						err := command.Execute([]string{}, storage.State{})
-						Expect(err).To(MatchError("the following errors occurred:\ngrapefruit,\nfailed to retrieve bbl state"))
-					})
-				})
-
 				Context("when we fail to set the bbl state", func() {
 					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.BBLState = partialState
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set bbl state")}}
 					})
 

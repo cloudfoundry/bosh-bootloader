@@ -89,7 +89,7 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 
 	state, err = c.terraformManager.Apply(state)
 	if err != nil {
-		return handleTerraformError(err, c.stateStore)
+		return handleTerraformError(err, state, c.stateStore)
 	}
 
 	if err := c.stateStore.Set(state); err != nil {

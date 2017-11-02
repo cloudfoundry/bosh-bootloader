@@ -72,7 +72,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {
-		return handleTerraformError(err, u.stateStore)
+		return handleTerraformError(err, state, u.stateStore)
 	}
 
 	err = u.stateStore.Set(state)
