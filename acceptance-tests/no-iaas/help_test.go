@@ -92,6 +92,8 @@ var _ = Describe("bbl", func() {
 			Eventually(string(session.Out.Contents())).Should(ContainSubstring(fmt.Sprintf("bbl [GLOBAL OPTIONS] %s [OPTIONS]", command)))
 			Eventually(string(session.Out.Contents())).Should(ContainSubstring(expectedDescription))
 		},
+			Entry("Plan", "plan", "--aws-access-key-id", []string{"help", "plan"}),
+			Entry("Plan", "plan", "--aws-access-key-id", []string{"plan", "--help"}),
 			Entry("Up", "up", "--aws-access-key-id", []string{"help", "up"}),
 			Entry("Up", "up", "--aws-access-key-id", []string{"up", "--help"}),
 			Entry("Destroy", "destroy", "--no-confirm", []string{"help", "destroy"}),

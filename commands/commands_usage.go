@@ -25,6 +25,27 @@ const (
   | gcp | required | n/a       |
   ------------------------------`
 
+	PlanCommandUsage = `Populates a state directory with the latest config without applying it
+
+  --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
+  [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
+  [--ops-file]               Path to BOSH ops file (optional)
+  [--no-director]            Skips creating BOSH environment
+
+  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
+  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+  --aws-region               AWS Region to use (Defaults to environment variable BBL_AWS_REGION)
+  [--aws-bosh-az]            AWS Availability Zone to use for BOSH director (Defaults to environment variable BBL_AWS_BOSH_AZ)
+
+  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
+  --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)
+
+  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
+  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
+  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
+  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
+  --azure-location           Azure Location to use (Defaults to environment variable BBL_AZURE_LOCATION)`
+
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
   --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
@@ -100,7 +121,7 @@ const (
 
 func (Up) Usage() string { return UpCommandUsage }
 
-func (Plan) Usage() string { return "" }
+func (Plan) Usage() string { return PlanCommandUsage }
 
 func (Destroy) Usage() string { return DestroyCommandUsage }
 
