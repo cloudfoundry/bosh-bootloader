@@ -61,7 +61,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				Zones:  []string{"z1", "z2", "z3"},
 				Region: "some-region",
 			},
-			TFState: "some-tfstate",
 		}
 	})
 
@@ -76,7 +75,6 @@ var _ = Describe("GCPCreateLBs", func() {
 					Zones:  []string{"z1", "z2", "z3"},
 					Region: "some-region",
 				},
-				TFState: "some-tfstate",
 				LB: storage.LB{
 					Type:   "cf",
 					Cert:   certificate,
@@ -103,12 +101,11 @@ var _ = Describe("GCPCreateLBs", func() {
 				LB: storage.LB{
 					Type: "concourse",
 				},
-				TFState: "some-new-tfstate",
 			}
 
 			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 				LBType: "concourse",
-			}}, storage.State{TFState: "some-old-tfstate"})
+			}}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(1))
@@ -116,7 +113,6 @@ var _ = Describe("GCPCreateLBs", func() {
 				LB: storage.LB{
 					Type: "concourse",
 				},
-				TFState: "some-new-tfstate",
 			}))
 		})
 
@@ -174,31 +170,8 @@ var _ = Describe("GCPCreateLBs", func() {
 				It("returns the error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{TFState: "some-tf-state"})
+					}}, storage.State{})
 					Expect(err).To(MatchError("apple"))
-				})
-			})
-
-			Context("even if the applier fails", func() {
-				BeforeEach(func() {
-					terraformExecutorError.TFStateCall.Returns.TFState = "some-updated-tf-state"
-					terraformExecutorError.ErrorCall.Returns = "failed to apply"
-					expectedError := terraform.NewManagerError(storage.State{
-						TFState: "some-tf-state",
-					}, terraformExecutorError)
-					terraformManager.ApplyCall.Returns.Error = expectedError
-				})
-
-				It("saves the tf state", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-						LBType: "concourse",
-					}}, storage.State{
-						TFState: "some-prev-tf-state",
-					})
-
-					Expect(err).To(MatchError("failed to apply"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(1))
-					Expect(stateStore.SetCall.Receives[0].State.TFState).To(Equal("some-updated-tf-state"))
 				})
 			})
 
@@ -212,9 +185,7 @@ var _ = Describe("GCPCreateLBs", func() {
 						LBType:   "cf",
 						CertPath: certPath,
 						KeyPath:  keyPath,
-					}}, storage.State{
-						TFState: "some-tf-state",
-					})
+					}}, storage.State{})
 					Expect(err).To(MatchError("failed to apply"))
 					Expect(stateStore.SetCall.CallCount).To(Equal(0))
 				})
@@ -246,7 +217,6 @@ var _ = Describe("GCPCreateLBs", func() {
 						LB: storage.LB{
 							Type: "concourse",
 						},
-						TFState: "some-tf-state",
 					}, terraformExecutorError)
 					terraformManager.ApplyCall.Returns.Error = expectedError
 
@@ -256,13 +226,12 @@ var _ = Describe("GCPCreateLBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{TFState: "some-tf-state"})
+					}}, storage.State{})
 					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-						LB:      storage.LB{Type: "concourse"},
-						TFState: "some-updated-tf-state",
+						LB: storage.LB{Type: "concourse"},
 					}))
 				})
 			})
@@ -275,7 +244,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{TFState: "some-tf-state"})
+					}}, storage.State{})
 					Expect(err).To(MatchError("failed to save state"))
 				})
 			})
@@ -288,7 +257,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{TFState: "some-tf-state"})
+					}}, storage.State{})
 					Expect(err).To(MatchError("failed to update cloud config"))
 				})
 			})

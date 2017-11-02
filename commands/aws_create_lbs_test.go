@@ -73,7 +73,6 @@ var _ = Describe("AWS Create LBs", func() {
 				}
 
 				stateReturnedFromTerraform = statePassedToTerraform
-				stateReturnedFromTerraform.TFState = "some-updated-tf-state"
 				terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 			})
 
@@ -105,7 +104,6 @@ var _ = Describe("AWS Create LBs", func() {
 					statePassedToTerraform.LB.Chain = "some-chain"
 
 					stateReturnedFromTerraform = statePassedToTerraform
-					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
 					terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 				})
 
@@ -139,7 +137,6 @@ var _ = Describe("AWS Create LBs", func() {
 					}
 
 					stateReturnedFromTerraform = statePassedToTerraform
-					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
 					terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 				})
 
@@ -174,7 +171,6 @@ var _ = Describe("AWS Create LBs", func() {
 					statePassedToTerraform = incomingState
 
 					stateReturnedFromTerraform = statePassedToTerraform
-					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
 					terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 				})
 
@@ -207,7 +203,6 @@ var _ = Describe("AWS Create LBs", func() {
 					}
 
 					stateReturnedFromTerraform = statePassedToTerraform
-					stateReturnedFromTerraform.TFState = "some-updated-tf-state"
 					terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 				})
 
@@ -233,7 +228,6 @@ var _ = Describe("AWS Create LBs", func() {
 						statePassedToTerraform.LB.Chain = "some-chain"
 
 						stateReturnedFromTerraform = statePassedToTerraform
-						stateReturnedFromTerraform.TFState = "some-updated-tf-state"
 						terraformManager.ApplyCall.Returns.BBLState = stateReturnedFromTerraform
 					})
 
@@ -431,7 +425,9 @@ var _ = Describe("AWS Create LBs", func() {
 				BeforeEach(func() {
 					managerError = &fakes.TerraformManagerError{}
 					managerError.BBLStateCall.Returns.BBLState = storage.State{
-						TFState: "some-partial-tf-state",
+						LB: storage.LB{
+							Type: "concourse",
+						},
 					}
 					managerError.ErrorCall.Returns = "cannot apply"
 					terraformManager.ApplyCall.Returns.Error = managerError
@@ -445,15 +441,15 @@ var _ = Describe("AWS Create LBs", func() {
 								KeyPath:  keyPath,
 							},
 						},
-						storage.State{
-							TFState: "some-tf-state",
-						},
+						storage.State{},
 					)
 					Expect(err).To(MatchError("cannot apply"))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(2))
 					Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{
-						TFState: "some-partial-tf-state",
+						LB: storage.LB{
+							Type: "concourse",
+						},
 					}))
 				})
 
@@ -470,9 +466,7 @@ var _ = Describe("AWS Create LBs", func() {
 									KeyPath:  keyPath,
 								},
 							},
-							storage.State{
-								TFState: "some-tf-state",
-							},
+							storage.State{},
 						)
 						Expect(err).To(MatchError("the following errors occurred:\ncannot apply,\nfailed to retrieve bbl state"))
 					})
@@ -480,7 +474,7 @@ var _ = Describe("AWS Create LBs", func() {
 
 				Context("when we fail to set the bbl state", func() {
 					BeforeEach(func() {
-						managerError.BBLStateCall.Returns.BBLState = storage.State{TFState: "some-partial-tf-state"}
+						managerError.BBLStateCall.Returns.BBLState = storage.State{}
 
 						stateStore.SetCall.Returns = []fakes.SetCallReturn{
 							{},

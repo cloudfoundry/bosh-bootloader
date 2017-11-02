@@ -1,7 +1,5 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
-
 type Import struct {
 	Addr string
 	ID   string
@@ -18,7 +16,6 @@ type TerraformExecutor struct {
 		CallCount int
 		Receives  struct {
 			Template string
-			TFState  string
 			Inputs   map[string]interface{}
 		}
 		Returns struct {
@@ -43,18 +40,6 @@ type TerraformExecutor struct {
 			Error   error
 		}
 	}
-	ImportCall struct {
-		CallCount int
-		Receives  struct {
-			TFState string
-			Imports []Import
-			Creds   storage.AWS
-		}
-		Returns struct {
-			TFState string
-			Error   error
-		}
-	}
 	VersionCall struct {
 		CallCount int
 		Returns   struct {
@@ -66,7 +51,6 @@ type TerraformExecutor struct {
 		Stub      func(string) (string, error)
 		CallCount int
 		Receives  struct {
-			TFState    string
 			OutputName string
 		}
 		Returns struct {
@@ -77,10 +61,7 @@ type TerraformExecutor struct {
 	OutputsCall struct {
 		Stub      func() (map[string]interface{}, error)
 		CallCount int
-		Receives  struct {
-			TFState string
-		}
-		Returns struct {
+		Returns   struct {
 			Outputs map[string]interface{}
 			Error   error
 		}
@@ -92,10 +73,9 @@ func (t *TerraformExecutor) IsInitialized() bool {
 	return t.IsInitializedCall.Returns.IsInitialized
 }
 
-func (t *TerraformExecutor) Init(template, tfState string, inputs map[string]interface{}) error {
+func (t *TerraformExecutor) Init(template string, inputs map[string]interface{}) error {
 	t.InitCall.CallCount++
 	t.InitCall.Receives.Template = template
-	t.InitCall.Receives.TFState = tfState
 	t.InitCall.Receives.Inputs = inputs
 	return t.InitCall.Returns.Error
 }
@@ -111,26 +91,13 @@ func (t *TerraformExecutor) Destroy(inputs map[string]interface{}) (string, erro
 	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Import(addr, id, tfstate string, creds storage.AWS) (string, error) {
-	t.ImportCall.CallCount++
-	t.ImportCall.Receives.Imports = append(t.ImportCall.Receives.Imports, Import{
-		Addr: addr,
-		ID:   id,
-	})
-	t.ImportCall.Receives.TFState = tfstate
-	t.ImportCall.Receives.Creds = creds
-
-	return t.ImportCall.Returns.TFState, t.ImportCall.Returns.Error
-}
-
 func (t *TerraformExecutor) Version() (string, error) {
 	t.VersionCall.CallCount++
 	return t.VersionCall.Returns.Version, t.VersionCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Output(tfState, outputName string) (string, error) {
+func (t *TerraformExecutor) Output(outputName string) (string, error) {
 	t.OutputCall.CallCount++
-	t.OutputCall.Receives.TFState = tfState
 	t.OutputCall.Receives.OutputName = outputName
 
 	if t.OutputCall.Stub != nil {
@@ -140,9 +107,8 @@ func (t *TerraformExecutor) Output(tfState, outputName string) (string, error) {
 	return t.OutputCall.Returns.Output, t.OutputCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Outputs(tfState string) (map[string]interface{}, error) {
+func (t *TerraformExecutor) Outputs() (map[string]interface{}, error) {
 	t.OutputsCall.CallCount++
-	t.OutputsCall.Receives.TFState = tfState
 
 	if t.OutputsCall.Stub != nil {
 		return t.OutputsCall.Stub()

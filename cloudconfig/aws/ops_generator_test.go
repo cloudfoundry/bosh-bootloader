@@ -36,7 +36,6 @@ var _ = Describe("OpsGenerator", func() {
 			AWS: storage.AWS{
 				Region: "us-east-1",
 			},
-			TFState: "some-tf-state",
 		}
 
 		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
@@ -69,7 +68,7 @@ var _ = Describe("OpsGenerator", func() {
 			varsYAML, err := opsGenerator.GenerateVars(incomingState)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(varsYAML).To(gomegamatchers.MatchYAML(`
 az1_name: us-east-1a
 az1_gateway: 10.0.16.1

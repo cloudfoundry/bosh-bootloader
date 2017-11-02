@@ -39,8 +39,7 @@ var _ = Describe("ManagerError", func() {
 			actualBBLState, err := managerError.BBLState()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualBBLState).To(Equal(storage.State{
-				IAAS:    "gcp",
-				TFState: "some-tf-state",
+				IAAS: "gcp",
 			}))
 		})
 

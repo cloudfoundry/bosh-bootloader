@@ -29,8 +29,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 		terraformManager = &fakes.TerraformManager{}
 
 		incomingState = storage.State{
-			IAAS:    "gcp",
-			TFState: "some-tf-state",
+			IAAS: "gcp",
 			GCP: storage.GCP{
 				Region: "us-east1",
 				Zones:  []string{"us-east1-b", "us-east1-c", "us-east1-d"},
@@ -57,7 +56,8 @@ var _ = Describe("GCPOpsGenerator", func() {
 		It("returns the contents of a vars file", func() {
 			varsYAML, err := opsGenerator.GenerateVars(incomingState)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(varsYAML).To(MatchYAML(`
 network_name: some-network-name
 subnetwork_name: some-subnetwork-name

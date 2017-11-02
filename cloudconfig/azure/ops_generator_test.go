@@ -70,7 +70,7 @@ bosh_subnet_name: some-subnet-name
 bosh_default_security_group: some-security-group
 `))
 
-			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(incomingState))
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 		})
 
 		Context("failure cases", func() {

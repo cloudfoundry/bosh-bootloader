@@ -28,10 +28,9 @@ var _ = Describe("OutputGenerator", func() {
 	})
 
 	It("returns an object to access all terraform outputs", func() {
-		outputs, err := outputGenerator.Generate("some-key: some-value")
+		outputs, err := outputGenerator.Generate()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(executor.OutputsCall.Receives.TFState).To(Equal("some-key: some-value"))
 		Expect(outputs.Map).To(Equal(terraformOutputs))
 	})
 
@@ -39,7 +38,7 @@ var _ = Describe("OutputGenerator", func() {
 		It("returns an empty map and the error", func() {
 			executor.OutputsCall.Returns.Error = errors.New("executor outputs failed")
 
-			outputs, err := outputGenerator.Generate("")
+			outputs, err := outputGenerator.Generate()
 			Expect(err).To(MatchError("executor outputs failed"))
 			Expect(outputs.Map).To(BeEmpty())
 		})

@@ -15,14 +15,14 @@ import (
 type PrintEnv struct {
 	stateValidator   stateValidator
 	logger           logger
-	terraformManager terraformOutputter
+	terraformManager terraformManager
 }
 
 type envSetter interface {
 	Set(key, value string) error
 }
 
-func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager terraformOutputter) PrintEnv {
+func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager terraformManager) PrintEnv {
 	return PrintEnv{
 		stateValidator:   stateValidator,
 		logger:           logger,
@@ -90,7 +90,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 }
 
 func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
-	terraformOutputs, err := p.terraformManager.GetOutputs(state)
+	terraformOutputs, err := p.terraformManager.GetOutputs()
 	if err != nil {
 		return "", err
 	}

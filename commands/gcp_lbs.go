@@ -9,11 +9,11 @@ import (
 )
 
 type GCPLBs struct {
-	terraformManager terraformOutputter
+	terraformManager terraformManager
 	logger           logger
 }
 
-func NewGCPLBs(terraformManager terraformOutputter, logger logger) GCPLBs {
+func NewGCPLBs(terraformManager terraformManager, logger logger) GCPLBs {
 	return GCPLBs{
 		terraformManager: terraformManager,
 		logger:           logger,
@@ -21,7 +21,7 @@ func NewGCPLBs(terraformManager terraformOutputter, logger logger) GCPLBs {
 }
 
 func (l GCPLBs) Execute(subcommandFlags []string, state storage.State) error {
-	terraformOutputs, err := l.terraformManager.GetOutputs(state)
+	terraformOutputs, err := l.terraformManager.GetOutputs()
 	if err != nil {
 		return err
 	}

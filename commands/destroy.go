@@ -73,7 +73,7 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		return err
 	}
 
-	terraformOutputs, err := d.terraformManager.GetOutputs(state)
+	terraformOutputs, err := d.terraformManager.GetOutputs()
 	if err != nil {
 		return nil
 	}
@@ -123,7 +123,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
-	terraformOutputs, err := d.terraformManager.GetOutputs(state)
+	terraformOutputs, err := d.terraformManager.GetOutputs()
 	if err != nil {
 		return err
 	}

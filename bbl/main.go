@@ -45,6 +45,12 @@ func main() {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
+	stateStore := storage.NewStore(appConfig.Global.StateDir)
+	appConfig.State, err = stateStore.Migrate(appConfig.State)
+	if err != nil {
+		log.Fatalf("\n\n%s\n", err)
+	}
+
 	needsIAASCreds := config.NeedsIAASCreds(appConfig.Command) && !appConfig.ShowCommandHelp
 	if needsIAASCreds {
 		err = config.ValidateIAAS(appConfig.State)
@@ -55,7 +61,6 @@ func main() {
 
 	// Utilities
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
-	stateStore := storage.NewStore(appConfig.Global.StateDir)
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 	certificateValidator := certs.NewValidator()
 

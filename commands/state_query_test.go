@@ -17,15 +17,15 @@ import (
 
 var _ = Describe("StateQuery", func() {
 	var (
-		fakeLogger           *fakes.Logger
-		fakeStateValidator   *fakes.StateValidator
-		fakeTerraformManager *fakes.TerraformManager
+		fakeLogger         *fakes.Logger
+		fakeStateValidator *fakes.StateValidator
+		terraformManager   *fakes.TerraformManager
 	)
 
 	BeforeEach(func() {
 		fakeLogger = &fakes.Logger{}
 		fakeStateValidator = &fakes.StateValidator{}
-		fakeTerraformManager = &fakes.TerraformManager{}
+		terraformManager = &fakes.TerraformManager{}
 	})
 
 	Describe("CheckFastFails", func() {
@@ -35,7 +35,7 @@ var _ = Describe("StateQuery", func() {
 			})
 
 			It("returns an error", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "")
 
 				err := command.CheckFastFails([]string{}, storage.State{})
 				Expect(err).To(MatchError("state validator failed"))
@@ -54,7 +54,7 @@ var _ = Describe("StateQuery", func() {
 
 			DescribeTable("prints out the director information",
 				func(propertyName string) {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, propertyName)
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, propertyName)
 
 					err := command.CheckFastFails([]string{}, state)
 					Expect(err).To(MatchError("Error BBL does not manage this director."))
@@ -69,17 +69,18 @@ var _ = Describe("StateQuery", func() {
 	Describe("Execute", func() {
 		Context("bbl manages the jumpbox", func() {
 			BeforeEach(func() {
-				fakeTerraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 					Map: map[string]interface{}{"external_ip": "some-external-ip"},
 				}
 			})
 
 			It("prints out the jumpbox information", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "jumpbox address")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "jumpbox address")
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-external-ip"))
 			})
 		})
@@ -100,7 +101,7 @@ var _ = Describe("StateQuery", func() {
 
 			DescribeTable("prints out the director information",
 				func(propertyName, expectedOutput string) {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, propertyName)
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, propertyName)
 
 					err := command.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
@@ -125,7 +126,7 @@ var _ = Describe("StateQuery", func() {
 			})
 
 			It("prints the env id", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "environment id")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "environment id")
 
 				err := command.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
@@ -134,11 +135,11 @@ var _ = Describe("StateQuery", func() {
 			})
 
 			It("prints the eip as the director-address", func() {
-				fakeTerraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
 					Map: map[string]interface{}{"external_ip": "some-external-ip"},
 				}
 
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "director address")
+				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "director address")
 				err := command.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
@@ -148,11 +149,11 @@ var _ = Describe("StateQuery", func() {
 		Context("failure cases", func() {
 			Context("when the terraform output provider fails", func() {
 				BeforeEach(func() {
-					fakeTerraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
 				})
 
 				It("director-address returns an error for no-director environment", func() {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "director address")
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "director address")
 
 					err := command.Execute([]string{}, storage.State{
 						IAAS:       "gcp",
@@ -162,7 +163,7 @@ var _ = Describe("StateQuery", func() {
 				})
 
 				It("jumpbox-address returns an error", func() {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, "jumpbox address")
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "jumpbox address")
 
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to get terraform output"))
@@ -172,7 +173,7 @@ var _ = Describe("StateQuery", func() {
 			Context("when the state value is empty", func() {
 				It("returns an error", func() {
 					propertyName := fmt.Sprintf("%s-%d", "some-name", rand.Int())
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, fakeTerraformManager, propertyName)
+					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, propertyName)
 					err := command.Execute([]string{}, storage.State{
 						BOSH: storage.BOSH{},
 					})

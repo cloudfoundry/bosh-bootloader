@@ -74,7 +74,7 @@ func (e Executor) IsInitialized() bool {
 	return true
 }
 
-func (e Executor) Init(template, prevTFState string, input map[string]interface{}) error {
+func (e Executor) Init(template string, input map[string]interface{}) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return fmt.Errorf("Get terraform dir: %s", err)
@@ -88,14 +88,6 @@ func (e Executor) Init(template, prevTFState string, input map[string]interface{
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)
-	}
-
-	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
-	if prevTFState != "" {
-		err = writeFile(tfStatePath, []byte(prevTFState), os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("Write previous terraform state: %s", err)
-		}
 	}
 
 	err = os.MkdirAll(filepath.Join(terraformDir, ".terraform"), os.ModePerm)
@@ -239,15 +231,10 @@ func (e Executor) Version() (string, error) {
 	return version, nil
 }
 
-func (e Executor) Output(tfState, outputName string) (string, error) {
+func (e Executor) Output(outputName string) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return "", fmt.Errorf("Get terraform dir: %s", err)
-	}
-
-	err = writeFile(filepath.Join(terraformDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
-	if err != nil {
-		return "", fmt.Errorf("Write terraform state to terraform.tfstate in terraform dir: %s", err)
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
@@ -270,15 +257,10 @@ func (e Executor) Output(tfState, outputName string) (string, error) {
 	return strings.TrimSuffix(buffer.String(), "\n"), nil
 }
 
-func (e Executor) Outputs(tfState string) (map[string]interface{}, error) {
+func (e Executor) Outputs() (map[string]interface{}, error) {
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Get vars dir: %s", err)
-	}
-
-	err = writeFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(tfState), os.ModePerm)
-	if err != nil {
-		return map[string]interface{}{}, fmt.Errorf("Write terraform state to terraform.tfstate: %s", err)
 	}
 
 	err = e.cmd.Run(os.Stdout, varsDir, []string{"init"}, false)

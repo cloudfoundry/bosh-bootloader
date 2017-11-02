@@ -10,8 +10,8 @@ func NewOutputGenerator(executor executor) OutputGenerator {
 	}
 }
 
-func (g OutputGenerator) Generate(tfState string) (Outputs, error) {
-	tfOutputs, err := g.executor.Outputs(tfState)
+func (g OutputGenerator) Generate() (Outputs, error) {
+	tfOutputs, err := g.executor.Outputs()
 	if err != nil {
 		return Outputs{}, err
 	}

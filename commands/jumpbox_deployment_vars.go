@@ -10,10 +10,10 @@ type JumpboxDeploymentVars struct {
 	logger         logger
 	boshManager    boshManager
 	stateValidator stateValidator
-	terraform      terraformOutputter
+	terraform      terraformManager
 }
 
-func NewJumpboxDeploymentVars(logger logger, boshManager boshManager, stateValidator stateValidator, terraform terraformOutputter) JumpboxDeploymentVars {
+func NewJumpboxDeploymentVars(logger logger, boshManager boshManager, stateValidator stateValidator, terraform terraformManager) JumpboxDeploymentVars {
 	return JumpboxDeploymentVars{
 		logger:         logger,
 		boshManager:    boshManager,
@@ -39,7 +39,7 @@ func (b JumpboxDeploymentVars) CheckFastFails(subcommandFlags []string, state st
 }
 
 func (b JumpboxDeploymentVars) Execute(args []string, state storage.State) error {
-	terraformOutputs, err := b.terraform.GetOutputs(state)
+	terraformOutputs, err := b.terraform.GetOutputs()
 	if err != nil {
 		return fmt.Errorf("get terraform outputs: %s", err)
 	}

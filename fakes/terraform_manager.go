@@ -55,10 +55,7 @@ type TerraformManager struct {
 	}
 	GetOutputsCall struct {
 		CallCount int
-		Receives  struct {
-			BBLState storage.State
-		}
-		Returns struct {
+		Returns   struct {
 			Outputs terraform.Outputs
 			Error   error
 		}
@@ -113,10 +110,8 @@ func (t *TerraformManager) Import(bblState storage.State, outputs map[string]str
 	return t.ImportCall.Returns.BBLState, t.ImportCall.Returns.Error
 }
 
-func (t *TerraformManager) GetOutputs(bblState storage.State) (terraform.Outputs, error) {
+func (t *TerraformManager) GetOutputs() (terraform.Outputs, error) {
 	t.GetOutputsCall.CallCount++
-	t.GetOutputsCall.Receives.BBLState = bblState
-
 	return t.GetOutputsCall.Returns.Outputs, t.GetOutputsCall.Returns.Error
 }
 

@@ -72,19 +72,19 @@ var _ = Describe("Up", func() {
 		BeforeEach(func() {
 			plan.ParseArgsCall.Returns.Config = commands.UpConfig{Name: "some-name"}
 
-			incomingState = storage.State{TFState: "incoming-state", IAAS: "some-iaas"}
-			iaasState = storage.State{TFState: "iaas-state", IAAS: "some-iaas"}
+			incomingState = storage.State{LatestTFOutput: "incoming-state", IAAS: "some-iaas"}
+			iaasState = storage.State{LatestTFOutput: "iaas-state", IAAS: "some-iaas"}
 
-			envIDManagerState = storage.State{TFState: "env-id-sync-call", IAAS: "some-iaas"}
+			envIDManagerState = storage.State{LatestTFOutput: "env-id-sync-call", IAAS: "some-iaas"}
 			envIDManager.SyncCall.Returns.State = envIDManagerState
 
-			terraformApplyState = storage.State{TFState: "terraform-apply-call", IAAS: "some-iaas"}
+			terraformApplyState = storage.State{LatestTFOutput: "terraform-apply-call", IAAS: "some-iaas"}
 			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
 
-			createJumpboxState = storage.State{TFState: "create-jumpbox-call", IAAS: "some-iaas"}
+			createJumpboxState = storage.State{LatestTFOutput: "create-jumpbox-call", IAAS: "some-iaas"}
 			boshManager.CreateJumpboxCall.Returns.State = createJumpboxState
 
-			createDirectorState = storage.State{TFState: "create-director-call", IAAS: "some-iaas"}
+			createDirectorState = storage.State{LatestTFOutput: "create-director-call", IAAS: "some-iaas"}
 			boshManager.CreateDirectorCall.Returns.State = createDirectorState
 
 			terraformOutputs = terraform.Outputs{
@@ -121,7 +121,6 @@ var _ = Describe("Up", func() {
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
 
 				Expect(boshManager.IsJumpboxInitializedCall.CallCount).To(Equal(1))
 				Expect(boshManager.IsJumpboxInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
@@ -383,7 +382,7 @@ var _ = Describe("Up", func() {
 				BeforeEach(func() {
 					managerError = &fakes.TerraformManagerError{}
 					partialState = storage.State{
-						TFState: "some-partial-tf-state",
+						LatestTFOutput: "some terraform error",
 					}
 					managerError.BBLStateCall.Returns.BBLState = partialState
 					managerError.ErrorCall.Returns = "grapefruit"
@@ -426,7 +425,7 @@ var _ = Describe("Up", func() {
 				var partialState storage.State
 
 				BeforeEach(func() {
-					partialState = storage.State{TFState: "some-partial-tf-state"}
+					partialState = storage.State{LatestTFOutput: "some terraform error"}
 					expectedError := bosh.NewManagerCreateError(partialState, errors.New("rambutan"))
 					boshManager.CreateDirectorCall.Returns.Error = expectedError
 				})

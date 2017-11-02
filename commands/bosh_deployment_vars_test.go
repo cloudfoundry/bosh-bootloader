@@ -80,6 +80,7 @@ var _ = Describe("BOSHDeploymentVars", func() {
 			err := boshDeploymentVars.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetDirectorDeploymentVarsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))

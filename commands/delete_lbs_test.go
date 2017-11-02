@@ -43,7 +43,6 @@ var _ = Describe("DeleteLBs", func() {
 				Cert: "some-cert",
 				Key:  "some-key",
 			},
-			TFState: "some-tf-state",
 		}
 
 		command = commands.NewDeleteLBs(logger, stateValidator, boshManager, cloudConfigManager, stateStore, environmentValidator, terraformManager)
@@ -144,9 +143,7 @@ var _ = Describe("DeleteLBs", func() {
 
 		Context("when there is no lb", func() {
 			It("returns an error", func() {
-				err := command.Execute([]string{}, storage.State{
-					TFState: "some-tf-state",
-				})
+				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError(commands.LBNotFound))
 			})
 		})
@@ -187,7 +184,9 @@ var _ = Describe("DeleteLBs", func() {
 				BeforeEach(func() {
 					managerError = &fakes.TerraformManagerError{}
 					managerError.BBLStateCall.Returns.BBLState = storage.State{
-						TFState: "some-partial-tf-state",
+						LB: storage.LB{
+							Type: "concourse",
+						},
 					}
 					managerError.ErrorCall.Returns = "cannot apply"
 
@@ -200,7 +199,9 @@ var _ = Describe("DeleteLBs", func() {
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-						TFState: "some-partial-tf-state",
+						LB: storage.LB{
+							Type: "concourse",
+						},
 					}))
 				})
 

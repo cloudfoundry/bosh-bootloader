@@ -22,7 +22,7 @@ type availabilityZoneRetriever interface {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (terraform.Outputs, error)
+	GetOutputs() (terraform.Outputs, error)
 }
 
 type op struct {
@@ -80,7 +80,7 @@ func NewOpsGenerator(terraformManager terraformManager, availabilityZoneRetrieve
 }
 
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
-	terraformOutputs, err := o.terraformManager.GetOutputs(state)
+	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}

@@ -20,11 +20,10 @@ func NewManagerError(bblState storage.State, executorError executorError) Manage
 }
 
 func (m ManagerError) BBLState() (storage.State, error) {
-	tfState, err := m.executorError.TFState()
+	_, err := m.executorError.TFState()
 	if err != nil {
 		return storage.State{}, err
 	}
-	m.bblState.TFState = tfState
 	return m.bblState, nil
 }
 

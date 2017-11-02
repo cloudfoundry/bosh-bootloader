@@ -35,7 +35,6 @@ var _ = Describe("EnvironmentValidator", func() {
 
 			It("returns a helpful error message", func() {
 				err := environmentValidator.Validate(storage.State{
-					TFState: "some-tf-state",
 					BOSH: storage.BOSH{
 						DirectorAddress:  "some-director-address",
 						DirectorUsername: "some-director-username",

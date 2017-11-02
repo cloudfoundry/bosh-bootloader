@@ -22,10 +22,10 @@ type executor interface {
 	Version() (string, error)
 	Destroy(inputs map[string]interface{}) (string, error)
 	IsInitialized() bool
-	Init(terraformTemplate, tfState string, inputs map[string]interface{}) error
+	Init(terraformTemplate string, inputs map[string]interface{}) error
 	Apply() (string, error)
-	Outputs(string) (map[string]interface{}, error)
-	Output(string, string) (string, error)
+	Outputs() (map[string]interface{}, error)
+	Output(string) (string, error)
 }
 
 type InputGenerator interface {
@@ -33,7 +33,7 @@ type InputGenerator interface {
 }
 
 type outputGenerator interface {
-	Generate(string) (Outputs, error)
+	Generate() (Outputs, error)
 }
 
 type TemplateGenerator interface {
@@ -105,7 +105,7 @@ func (m Manager) Init(bblState storage.State) error {
 		return fmt.Errorf("Input generator generate: %s", err)
 	}
 
-	err = m.executor.Init(template, bblState.TFState, input)
+	err = m.executor.Init(template, input)
 	if err != nil {
 		return fmt.Errorf("Executor init: %s", err)
 	}
@@ -115,7 +115,7 @@ func (m Manager) Init(bblState storage.State) error {
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("terraform apply")
-	tfState, err := m.executor.Apply()
+	_, err := m.executor.Apply()
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
@@ -126,16 +126,11 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 		return storage.State{}, err
 	}
 
-	bblState.TFState = tfState
 	return bblState, nil
 }
 
 func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	m.logger.Step("destroying infrastructure")
-	if bblState.TFState == "" {
-		return bblState, nil
-	}
-
 	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
@@ -143,7 +138,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	}
 
 	m.logger.Step("terraform destroy")
-	tfState, err := m.executor.Destroy(input)
+	_, err = m.executor.Destroy(input)
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
 	switch err.(type) {
@@ -154,12 +149,11 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	}
 	m.logger.Step("finished destroying infrastructure")
 
-	bblState.TFState = tfState
 	return bblState, nil
 }
 
-func (m Manager) GetOutputs(state storage.State) (Outputs, error) {
-	return m.outputGenerator.Generate(state.TFState)
+func (m Manager) GetOutputs() (Outputs, error) {
+	return m.outputGenerator.Generate()
 }
 
 func readAndReset(buf *bytes.Buffer) string {

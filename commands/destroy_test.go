@@ -385,8 +385,7 @@ var _ = Describe("Destroy", func() {
 				}
 
 				updatedState = storage.State{
-					IAAS:    "azure",
-					TFState: "some-tf-state",
+					IAAS: "azure",
 				}
 				terraformManager.DestroyCall.Returns.BBLState = updatedState
 			})
@@ -395,7 +394,6 @@ var _ = Describe("Destroy", func() {
 				err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
 				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(state))
 				Expect(terraformManager.DestroyCall.Receives.BBLState).To(Equal(state))
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(storage.State{}))
@@ -484,7 +482,6 @@ var _ = Describe("Destroy", func() {
 				err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(state))
 				expectedState := state
 				expectedState.BOSH = storage.BOSH{}
 				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(expectedState))
@@ -503,7 +500,6 @@ var _ = Describe("Destroy", func() {
 					expectedBBLState.BOSH = storage.BOSH{}
 
 					updatedBBLState = state
-					updatedBBLState.TFState = "some-updated-tf-state"
 
 					terraformManagerError.ErrorCall.Returns = "failed to destroy"
 					terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState
@@ -692,7 +688,6 @@ var _ = Describe("Destroy", func() {
 						Zone:              "some-zone",
 						Region:            "some-region",
 					},
-					TFState: "some-tf-state",
 				}
 				terraformManager.DestroyCall.Returns.BBLState = bblState
 			})
@@ -703,7 +698,6 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(bblState))
 				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
 				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(bblState))
 				Expect(terraformManager.DestroyCall.CallCount).To(Equal(1))
@@ -718,7 +712,6 @@ var _ = Describe("Destroy", func() {
 
 				BeforeEach(func() {
 					updatedBBLState = bblState
-					updatedBBLState.TFState = "some-updated-tf-state"
 
 					terraformManagerError.ErrorCall.Returns = "failed to destroy"
 					terraformManagerError.BBLStateCall.Returns.BBLState = updatedBBLState

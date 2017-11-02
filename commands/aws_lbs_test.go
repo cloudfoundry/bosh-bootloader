@@ -33,8 +33,7 @@ var _ = Describe("AWSLBs", func() {
 		Context("when the lb type is cf", func() {
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "aws",
-					TFState: "some-tf-state",
+					IAAS: "aws",
 					LB: storage.LB{
 						Type: "cf",
 					},
@@ -51,9 +50,9 @@ var _ = Describe("AWSLBs", func() {
 
 			It("prints LB names and URLs for router and ssh proxy", func() {
 				err := command.Execute([]string{}, incomingState)
-
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 					"CF Router LB: some-router-lb-name [some-router-lb-url]\n",
 					"CF SSH Proxy LB: some-ssh-lb-name [some-ssh-lb-url]\n",
@@ -78,9 +77,9 @@ var _ = Describe("AWSLBs", func() {
 
 				It("prints LB names, URLs, and DNS servers", func() {
 					err := command.Execute([]string{}, incomingState)
-
 					Expect(err).NotTo(HaveOccurred())
 
+					Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 					Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 						"CF Router LB: some-router-lb-name [some-router-lb-url]\n",
 						"CF SSH Proxy LB: some-ssh-lb-name [some-ssh-lb-url]\n",
@@ -118,8 +117,7 @@ var _ = Describe("AWSLBs", func() {
 		Context("when the lb type is concourse", func() {
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "aws",
-					TFState: "some-tf-state",
+					IAAS: "aws",
 					LB: storage.LB{
 						Type: "concourse",
 					},
@@ -132,9 +130,9 @@ var _ = Describe("AWSLBs", func() {
 
 			It("prints LB name and URL", func() {
 				err := command.Execute([]string{}, incomingState)
-
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 					"Concourse LB: some-concourse-lb-name [some-concourse-lb-url]\n",
 				}))
@@ -144,8 +142,7 @@ var _ = Describe("AWSLBs", func() {
 		Context("when lb type is not cf or concourse", func() {
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "aws",
-					TFState: "some-tf-state",
+					IAAS: "aws",
 					LB: storage.LB{
 						Type: "other",
 					},
@@ -154,22 +151,18 @@ var _ = Describe("AWSLBs", func() {
 
 			It("returns error", func() {
 				err := command.Execute([]string{}, incomingState)
-
 				Expect(err).To(MatchError("no lbs found"))
 			})
 		})
 
 		Context("failure cases", func() {
 			BeforeEach(func() {
-				incomingState = storage.State{
-					TFState: "some-tf-state",
-				}
+				incomingState = storage.State{}
 			})
 
 			Context("when terraform manager fails", func() {
 				It("returns an error", func() {
 					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform manager failed")
-
 					err := command.Execute([]string{}, incomingState)
 
 					Expect(err).To(MatchError("terraform manager failed"))

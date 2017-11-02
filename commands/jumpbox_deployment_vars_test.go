@@ -80,6 +80,7 @@ var _ = Describe("JumpboxDeploymentVars", func() {
 			err := jumpboxDeploymentVars.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetJumpboxDeploymentVarsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))

@@ -84,7 +84,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return nil
 	}
 
-	terraformOutputs, err := u.terraformManager.GetOutputs(state)
+	terraformOutputs, err := u.terraformManager.GetOutputs()
 	if err != nil {
 		return fmt.Errorf("Parse terraform outputs: %s", err)
 	}

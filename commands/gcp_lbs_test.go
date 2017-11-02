@@ -44,9 +44,9 @@ var _ = Describe("GCPLBs", func() {
 				Type: "cf",
 			}
 			err := command.Execute([]string{}, incomingState)
-
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 				"CF Router LB: some-router-lb-ip\n",
 				"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
@@ -75,9 +75,9 @@ var _ = Describe("GCPLBs", func() {
 					Domain: "some-domain",
 				}
 				err := command.Execute([]string{}, incomingState)
-
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 					"CF Router LB: some-router-lb-ip\n",
 					"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
@@ -117,9 +117,9 @@ var _ = Describe("GCPLBs", func() {
 				Type: "concourse",
 			}
 			err := command.Execute([]string{}, incomingState)
-
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
 				"Concourse LB: some-concourse-lb-ip\n",
 			}))

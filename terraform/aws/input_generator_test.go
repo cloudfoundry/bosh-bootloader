@@ -73,9 +73,8 @@ var _ = Describe("InputGenerator", func() {
 
 		BeforeEach(func() {
 			state = storage.State{
-				IAAS:    "aws",
-				EnvID:   "some-env-id",
-				TFState: "some-tf-state",
+				IAAS:  "aws",
+				EnvID: "some-env-id",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
@@ -143,8 +142,7 @@ var _ = Describe("InputGenerator", func() {
 
 		BeforeEach(func() {
 			state = storage.State{
-				EnvID:   "some-env-id",
-				TFState: "some-tf-state",
+				EnvID: "some-env-id",
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",

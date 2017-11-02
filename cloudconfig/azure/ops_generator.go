@@ -16,7 +16,7 @@ type OpsGenerator struct {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (terraform.Outputs, error)
+	GetOutputs() (terraform.Outputs, error)
 }
 
 type op struct {
@@ -55,7 +55,7 @@ func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 }
 
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
-	terraformOutputs, err := o.terraformManager.GetOutputs(state)
+	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
 		return "", err
 	}

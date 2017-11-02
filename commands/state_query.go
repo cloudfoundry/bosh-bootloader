@@ -26,13 +26,13 @@ const (
 type StateQuery struct {
 	logger           logger
 	stateValidator   stateValidator
-	terraformManager terraformOutputter
+	terraformManager terraformManager
 	propertyName     string
 }
 
 type getPropertyFunc func(storage.State) string
 
-func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformOutputter, propertyName string) StateQuery {
+func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformManager, propertyName string) StateQuery {
 	return StateQuery{
 		logger:           logger,
 		stateValidator:   stateValidator,
@@ -103,7 +103,7 @@ func (s StateQuery) getDirectorAddress(state storage.State) (string, error) {
 }
 
 func (s StateQuery) getEIP(state storage.State) (string, error) {
-	terraformOutputs, err := s.terraformManager.GetOutputs(state)
+	terraformOutputs, err := s.terraformManager.GetOutputs()
 	if err != nil {
 		return "", err
 	}

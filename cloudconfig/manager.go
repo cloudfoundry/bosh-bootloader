@@ -46,7 +46,7 @@ type boshClientProvider interface {
 }
 
 type terraformManager interface {
-	GetOutputs(storage.State) (terraform.Outputs, error)
+	GetOutputs() (terraform.Outputs, error)
 }
 
 type sshKeyGetter interface {
