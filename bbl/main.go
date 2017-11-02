@@ -115,7 +115,6 @@ func main() {
 		inputGenerator    terraform.InputGenerator
 		templateGenerator terraform.TemplateGenerator
 	)
-	outputGenerator := terraform.NewOutputGenerator(terraformExecutor)
 	switch appConfig.State.IAAS {
 	case "aws":
 		templateGenerator = awsterraform.NewTemplateGenerator()
@@ -132,7 +131,6 @@ func main() {
 		Executor:              terraformExecutor,
 		TemplateGenerator:     templateGenerator,
 		InputGenerator:        inputGenerator,
-		OutputGenerator:       outputGenerator,
 		TerraformOutputBuffer: terraformOutputBuffer,
 		Logger:                logger,
 	})

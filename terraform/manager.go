@@ -13,7 +13,6 @@ type Manager struct {
 	executor              executor
 	templateGenerator     TemplateGenerator
 	inputGenerator        InputGenerator
-	outputGenerator       outputGenerator
 	terraformOutputBuffer *bytes.Buffer
 	logger                logger
 }
@@ -32,10 +31,6 @@ type InputGenerator interface {
 	Generate(storage.State) (map[string]interface{}, error)
 }
 
-type outputGenerator interface {
-	Generate() (Outputs, error)
-}
-
 type TemplateGenerator interface {
 	Generate(storage.State) string
 }
@@ -48,7 +43,6 @@ type NewManagerArgs struct {
 	Executor              executor
 	TemplateGenerator     TemplateGenerator
 	InputGenerator        InputGenerator
-	OutputGenerator       outputGenerator
 	TerraformOutputBuffer *bytes.Buffer
 	Logger                logger
 }
@@ -58,7 +52,6 @@ func NewManager(args NewManagerArgs) Manager {
 		executor:              args.Executor,
 		templateGenerator:     args.TemplateGenerator,
 		inputGenerator:        args.InputGenerator,
-		outputGenerator:       args.OutputGenerator,
 		terraformOutputBuffer: args.TerraformOutputBuffer,
 		logger:                args.Logger,
 	}
@@ -153,7 +146,12 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 }
 
 func (m Manager) GetOutputs() (Outputs, error) {
-	return m.outputGenerator.Generate()
+	tfOutputs, err := m.executor.Outputs()
+	if err != nil {
+		return Outputs{}, err
+	}
+
+	return Outputs{Map: tfOutputs}, nil
 }
 
 func readAndReset(buf *bytes.Buffer) string {

@@ -18,7 +18,6 @@ var _ = Describe("Manager", func() {
 		executor              *fakes.TerraformExecutor
 		templateGenerator     *fakes.TemplateGenerator
 		inputGenerator        *fakes.InputGenerator
-		outputGenerator       *fakes.OutputGenerator
 		logger                *fakes.Logger
 		manager               terraform.Manager
 		terraformOutputBuffer bytes.Buffer
@@ -29,7 +28,6 @@ var _ = Describe("Manager", func() {
 		executor = &fakes.TerraformExecutor{}
 		templateGenerator = &fakes.TemplateGenerator{}
 		inputGenerator = &fakes.InputGenerator{}
-		outputGenerator = &fakes.OutputGenerator{}
 		logger = &fakes.Logger{}
 
 		expectedTFOutput = "some terraform output"
@@ -38,7 +36,6 @@ var _ = Describe("Manager", func() {
 			Executor:              executor,
 			TemplateGenerator:     templateGenerator,
 			InputGenerator:        inputGenerator,
-			OutputGenerator:       outputGenerator,
 			TerraformOutputBuffer: &terraformOutputBuffer,
 			Logger:                logger,
 		})
@@ -274,9 +271,7 @@ var _ = Describe("Manager", func() {
 
 	Describe("GetOutputs", func() {
 		BeforeEach(func() {
-			outputGenerator.GenerateCall.Returns.Outputs = terraform.Outputs{
-				Map: map[string]interface{}{"external_ip": "some-external-ip"},
-			}
+			executor.OutputsCall.Returns.Outputs = map[string]interface{}{"external_ip": "some-external-ip"}
 		})
 
 		It("returns all terraform outputs except lb related outputs", func() {
@@ -288,9 +283,10 @@ var _ = Describe("Manager", func() {
 			}))
 		})
 
-		Context("when the output generator fails", func() {
-			It("returns the error to the caller", func() {
-				outputGenerator.GenerateCall.Returns.Error = errors.New("orange")
+		Context("when the executor outputs fails", func() {
+			It("returns the error", func() {
+				executor.OutputsCall.Returns.Error = errors.New("orange")
+
 				_, err := manager.GetOutputs()
 				Expect(err).To(MatchError("orange"))
 			})
