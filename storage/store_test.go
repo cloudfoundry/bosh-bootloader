@@ -196,6 +196,10 @@ var _ = Describe("Store", func() {
 				Expect(os.IsNotExist(err)).To(BeTrue())
 				_, err = os.Stat(createJumpbox)
 				Expect(os.IsNotExist(err)).To(BeTrue())
+				_, err = os.Stat(deleteDirector)
+				Expect(os.IsNotExist(err)).To(BeTrue())
+				_, err = os.Stat(deleteJumpbox)
+				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 
 			DescribeTable("removing bbl-created directories",
