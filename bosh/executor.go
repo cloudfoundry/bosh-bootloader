@@ -310,18 +310,6 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
-func (e Executor) writeFileUnlessExisting(path string, contents []byte, mode os.FileMode, failureMessage string) error {
-	_, err := os.Stat(path)
-	if err != nil {
-		err = e.writeFile(path, contents, mode)
-		if err != nil {
-			return fmt.Errorf("%s: %s", failureMessage, err) //not tested
-		}
-	}
-
-	return nil
-}
-
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
 	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
