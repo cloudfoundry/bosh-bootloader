@@ -92,6 +92,14 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		state.NoDirector = true
 	}
 
+	var opsFileContents []byte
+	if config.OpsFile != "" {
+		opsFileContents, err = ioutil.ReadFile(config.OpsFile)
+		if err != nil {
+			return fmt.Errorf("Reading ops-file contents: %v", err)
+		}
+	}
+
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return fmt.Errorf("Env id manager sync: %s", err)
@@ -114,6 +122,7 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
 	}
 
+	state.BOSH.UserOpsFile = string(opsFileContents)
 	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return fmt.Errorf("Bosh manager initialize director: %s", err)
 	}

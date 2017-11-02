@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 	"io/ioutil"
-	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -100,49 +99,51 @@ var _ = Describe("Up", func() {
 			boshManager.IsDirectorInitializedCall.Returns.IsInitialized = true
 		})
 
-		It("it works", func() {
-			err := command.Execute([]string{"some", "flags"}, incomingState)
-			Expect(err).NotTo(HaveOccurred())
+		Context("when bbl plan has been run", func() {
+			It("applies without re-initializing", func() {
+				err := command.Execute([]string{"some", "flags"}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(plan.ParseArgsCall.CallCount).To(Equal(1))
-			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"some", "flags"}))
-			Expect(plan.ParseArgsCall.Receives.State).To(Equal(incomingState))
+				Expect(plan.ParseArgsCall.CallCount).To(Equal(1))
+				Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"some", "flags"}))
+				Expect(plan.ParseArgsCall.Receives.State).To(Equal(incomingState))
 
-			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-			Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
-			Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
-			Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
+				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
+				Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
+				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
 
-			Expect(terraformManager.IsInitializedCall.CallCount).To(Equal(1))
-			Expect(terraformManager.InitCall.CallCount).To(Equal(0))
+				Expect(terraformManager.IsInitializedCall.CallCount).To(Equal(1))
+				Expect(terraformManager.InitCall.CallCount).To(Equal(0))
 
-			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
-			Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
 
-			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-			Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+				Expect(terraformManager.GetOutputsCall.Receives.BBLState).To(Equal(terraformApplyState))
 
-			Expect(boshManager.IsJumpboxInitializedCall.CallCount).To(Equal(1))
-			Expect(boshManager.IsJumpboxInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
-			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(0))
-			Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
-			Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
-			Expect(boshManager.CreateJumpboxCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
-			Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
+				Expect(boshManager.IsJumpboxInitializedCall.CallCount).To(Equal(1))
+				Expect(boshManager.IsJumpboxInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
+				Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
+				Expect(boshManager.CreateJumpboxCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
+				Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
 
-			Expect(boshManager.IsDirectorInitializedCall.CallCount).To(Equal(1))
-			Expect(boshManager.IsDirectorInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
-			Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
-			Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
-			Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
-			Expect(boshManager.CreateDirectorCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
-			Expect(stateStore.SetCall.Receives[3].State).To(Equal(createDirectorState))
+				Expect(boshManager.IsDirectorInitializedCall.CallCount).To(Equal(1))
+				Expect(boshManager.IsDirectorInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
+				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
+				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
+				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
+				Expect(boshManager.CreateDirectorCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
+				Expect(stateStore.SetCall.Receives[3].State).To(Equal(createDirectorState))
 
-			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
-			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
-			Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+			})
 		})
 
 		Context("if parse args fails", func() {
@@ -154,15 +155,31 @@ var _ = Describe("Up", func() {
 			})
 		})
 
+		Context("when nothing is initialized", func() {
+			BeforeEach(func() {
+				terraformManager.IsInitializedCall.Returns.IsInitialized = false
+				boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
+				boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
+			})
+			It("calls bbl plan", func() {
+				err := command.Execute([]string{"some", "flags"}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
+				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{"some", "flags"}))
+				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
+			})
+		})
+
 		Context("when terraform is not initialized yet", func() {
 			BeforeEach(func() {
 				terraformManager.IsInitializedCall.Returns.IsInitialized = false
 			})
-			It("calls init on the manager", func() {
-				err := command.Execute([]string{}, storage.State{})
+			It("calls bbl plan", func() {
+				err := command.Execute([]string{"some", "flags"}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(envIDManagerState))
+				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
+				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{"some", "flags"}))
+				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
 			})
 		})
 
@@ -171,10 +188,11 @@ var _ = Describe("Up", func() {
 				boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
 			})
 			It("calls init on the manager", func() {
-				err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
-				Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(terraformApplyState))
+				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
+				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{}))
+				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
 			})
 		})
 
@@ -183,33 +201,11 @@ var _ = Describe("Up", func() {
 				boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
 			})
 			It("calls init on the manager", func() {
-				err := command.Execute([]string{}, storage.State{})
+				err := command.Execute([]string{}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(1))
-				Expect(boshManager.InitializeDirectorCall.Receives.State).To(Equal(createJumpboxState))
-			})
-
-			Context("when the config has ops files", func() {
-				var opsFilePath string
-
-				BeforeEach(func() {
-					opsFile, err := ioutil.TempFile("", "ops-file")
-					Expect(err).NotTo(HaveOccurred())
-
-					opsFilePath = opsFile.Name()
-					plan.ParseArgsCall.Returns.Config = commands.UpConfig{OpsFile: opsFilePath}
-
-					opsFileContents := "some-ops-file-contents"
-					err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				It("passes the ops file contents to the bosh manager", func() {
-					err := command.Execute([]string{}, incomingState)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal("some-ops-file-contents"))
-				})
+				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
+				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{}))
+				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
 			})
 		})
 
@@ -268,17 +264,6 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("when the ops file cannot be read", func() {
-				BeforeEach(func() {
-					plan.ParseArgsCall.Returns.Config = commands.UpConfig{OpsFile: "some/fake/path"}
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Reading ops-file contents: open some/fake/path: no such file or directory"))
-				})
-			})
-
 			Context("when the env id manager fails", func() {
 				BeforeEach(func() {
 					envIDManager.SyncCall.Returns.Error = errors.New("apple")
@@ -298,18 +283,6 @@ var _ = Describe("Up", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Save state after sync: kiwi"))
-				})
-			})
-
-			Context("when the terraform manager fails on init", func() {
-				BeforeEach(func() {
-					terraformManager.IsInitializedCall.Returns.IsInitialized = false
-					terraformManager.InitCall.Returns.Error = errors.New("grapefruit")
-				})
-
-				It("returns the error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Terraform manager init: grapefruit"))
 				})
 			})
 
@@ -346,18 +319,6 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("when the jumpbox cannot be initialized", func() {
-				BeforeEach(func() {
-					boshManager.InitializeJumpboxCall.Returns.Error = errors.New("pineapple")
-					boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Create jumpbox: pineapple"))
-				})
-			})
-
 			Context("when the jumpbox cannot be deployed", func() {
 				BeforeEach(func() {
 					boshManager.CreateJumpboxCall.Returns.Error = errors.New("pineapple")
@@ -377,18 +338,6 @@ var _ = Describe("Up", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Save state after create jumpbox: kiwi"))
-				})
-			})
-
-			Context("when bosh cannot be initialized", func() {
-				BeforeEach(func() {
-					boshManager.InitializeDirectorCall.Returns.Error = errors.New("pineapple")
-					boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Create bosh director: pineapple"))
 				})
 			})
 

@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -41,6 +40,13 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
+	if !u.terraformManager.IsInitialized() || !u.boshManager.IsJumpboxInitialized(state.IAAS) || !u.boshManager.IsDirectorInitialized(state.IAAS) {
+		err := u.plan.Execute(args, state)
+		if err != nil {
+			return err
+		}
+	}
+
 	config, err := u.ParseArgs(args, state)
 	if err != nil {
 		return err
@@ -54,14 +60,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 		state.NoDirector = true
 	}
 
-	var opsFileContents []byte
-	if config.OpsFile != "" {
-		opsFileContents, err = ioutil.ReadFile(config.OpsFile)
-		if err != nil {
-			return fmt.Errorf("Reading ops-file contents: %v", err)
-		}
-	}
-
 	state, err = u.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return fmt.Errorf("Env id manager sync: %s", err)
@@ -70,13 +68,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 	err = u.stateStore.Set(state)
 	if err != nil {
 		return fmt.Errorf("Save state after sync: %s", err)
-	}
-
-	if !u.terraformManager.IsInitialized() {
-		err = u.terraformManager.Init(state)
-		if err != nil {
-			return fmt.Errorf("Terraform manager init: %s", err)
-		}
 	}
 
 	state, err = u.terraformManager.Apply(state)
@@ -98,12 +89,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Parse terraform outputs: %s", err)
 	}
 
-	if !u.boshManager.IsJumpboxInitialized(state.IAAS) {
-		if err := u.boshManager.InitializeJumpbox(state); err != nil {
-			return fmt.Errorf("Create jumpbox: %s", err)
-		}
-	}
-
 	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
 	if err != nil {
 		return fmt.Errorf("Create jumpbox: %s", err)
@@ -112,13 +97,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 	err = u.stateStore.Set(state)
 	if err != nil {
 		return fmt.Errorf("Save state after create jumpbox: %s", err)
-	}
-
-	if !u.boshManager.IsDirectorInitialized(state.IAAS) {
-		state.BOSH.UserOpsFile = string(opsFileContents)
-		if err := u.boshManager.InitializeDirector(state); err != nil {
-			return fmt.Errorf("Create bosh director: %s", err)
-		}
 	}
 
 	state, err = u.boshManager.CreateDirector(state, terraformOutputs)

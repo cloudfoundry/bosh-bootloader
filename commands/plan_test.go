@@ -105,7 +105,36 @@ var _ = Describe("Plan", func() {
 			})
 		})
 
+		Context("when --ops-file is passed", func() {
+			var (
+				opsFilePath     string
+				opsFileContents string
+			)
+
+			BeforeEach(func() {
+				opsFile, err := ioutil.TempFile("", "ops-file")
+				Expect(err).NotTo(HaveOccurred())
+
+				opsFilePath = opsFile.Name()
+
+				opsFileContents = "some-ops-file-contents"
+				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("passes the ops file contents to the bosh manager", func() {
+				err := command.Execute([]string{"--ops-file", opsFilePath}, storage.State{})
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal(opsFileContents))
+			})
+		})
+
 		Describe("failure cases", func() {
+			It("returns an error if reading the ops file fails", func() {
+				err := command.Execute([]string{"--ops-file", "some-invalid-path"}, storage.State{})
+				Expect(err).To(MatchError("Reading ops-file contents: open some-invalid-path: no such file or directory"))
+			})
+
 			It("returns an error if state store set fails", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("peach")}}
 
