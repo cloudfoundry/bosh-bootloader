@@ -40,6 +40,7 @@ var _ = Describe("up after plan", func() {
 	})
 
 	AfterEach(func() {
+		acceptance.SkipUnless("up-after-plan")
 		deleteDirectorPath := filepath.Join(stateDir, "delete-director.sh")
 		deleteJumpboxPath := filepath.Join(stateDir, "delete-jumpbox.sh")
 		noOpScript := []byte("#!/bin/bash\n")
