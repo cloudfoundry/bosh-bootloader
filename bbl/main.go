@@ -127,13 +127,7 @@ func main() {
 		inputGenerator = gcpterraform.NewInputGenerator()
 	}
 
-	terraformManager := terraform.NewManager(terraform.NewManagerArgs{
-		Executor:              terraformExecutor,
-		TemplateGenerator:     templateGenerator,
-		InputGenerator:        inputGenerator,
-		TerraformOutputBuffer: terraformOutputBuffer,
-		Logger:                logger,
-	})
+	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
 
 	// BOSH
 	hostKeyGetter := proxy.NewHostKeyGetter()

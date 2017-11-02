@@ -32,13 +32,7 @@ var _ = Describe("Manager", func() {
 
 		expectedTFOutput = "some terraform output"
 
-		manager = terraform.NewManager(terraform.NewManagerArgs{
-			Executor:              executor,
-			TemplateGenerator:     templateGenerator,
-			InputGenerator:        inputGenerator,
-			TerraformOutputBuffer: &terraformOutputBuffer,
-			Logger:                logger,
-		})
+		manager = terraform.NewManager(executor, templateGenerator, inputGenerator, &terraformOutputBuffer, logger)
 	})
 
 	AfterEach(func() {

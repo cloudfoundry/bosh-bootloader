@@ -39,21 +39,13 @@ type logger interface {
 	Step(string, ...interface{})
 }
 
-type NewManagerArgs struct {
-	Executor              executor
-	TemplateGenerator     TemplateGenerator
-	InputGenerator        InputGenerator
-	TerraformOutputBuffer *bytes.Buffer
-	Logger                logger
-}
-
-func NewManager(args NewManagerArgs) Manager {
+func NewManager(executor executor, templateGenerator TemplateGenerator, inputGenerator InputGenerator, terraformOutputBuffer *bytes.Buffer, logger logger) Manager {
 	return Manager{
-		executor:              args.Executor,
-		templateGenerator:     args.TemplateGenerator,
-		inputGenerator:        args.InputGenerator,
-		terraformOutputBuffer: args.TerraformOutputBuffer,
-		logger:                args.Logger,
+		executor:              executor,
+		templateGenerator:     templateGenerator,
+		inputGenerator:        inputGenerator,
+		terraformOutputBuffer: terraformOutputBuffer,
+		logger:                logger,
 	}
 }
 
