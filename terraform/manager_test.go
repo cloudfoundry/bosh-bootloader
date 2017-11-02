@@ -22,7 +22,6 @@ var _ = Describe("Manager", func() {
 		logger                *fakes.Logger
 		manager               terraform.Manager
 		terraformOutputBuffer bytes.Buffer
-		expectedTFState       string
 		expectedTFOutput      string
 	)
 
@@ -34,7 +33,6 @@ var _ = Describe("Manager", func() {
 		logger = &fakes.Logger{}
 
 		expectedTFOutput = "some terraform output"
-		expectedTFState = "some-updated-tf-state"
 
 		manager = terraform.NewManager(terraform.NewManagerArgs{
 			Executor:              executor,
@@ -140,8 +138,6 @@ var _ = Describe("Manager", func() {
 				EnvID: "some-env-id",
 			}
 
-			executor.ApplyCall.Returns.TFState = expectedTFState
-
 			expectedState = incomingState
 			expectedState.LatestTFOutput = expectedTFOutput
 
@@ -193,7 +189,6 @@ var _ = Describe("Manager", func() {
 
 		BeforeEach(func() {
 			incomingState = storage.State{}
-			executor.DestroyCall.Returns.TFState = expectedTFState
 
 			expectedState = incomingState
 			expectedState.LatestTFOutput = expectedTFOutput

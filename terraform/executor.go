@@ -132,24 +132,24 @@ func formatVars(inputs map[string]interface{}) string {
 	return formattedVars
 }
 
-func (e Executor) Apply() (string, error) {
+func (e Executor) Apply() error {
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars dir: %s", err)
+		return fmt.Errorf("Get vars dir: %s", err)
 	}
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
 
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform dir: %s", err)
+		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
 	if err != nil {
-		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
+		return fmt.Errorf("Get relative terraform state path: %s", err) //not tested
 	}
 	relativeVarsPath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, "terraform.tfvars"))
 	if err != nil {
-		return "", fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+		return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
 	}
 
 	args := []string{
@@ -160,38 +160,33 @@ func (e Executor) Apply() (string, error) {
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
-		return "", NewExecutorError(tfStatePath, err, e.debug)
+		return NewExecutorError(tfStatePath, err, e.debug)
 	}
 
-	tfState, err := readFile(tfStatePath)
-	if err != nil {
-		return "", fmt.Errorf("Read terraform state: %s", err)
-	}
-
-	return string(tfState), nil
+	return nil
 }
 
-func (e Executor) Destroy(input map[string]interface{}) (string, error) {
+func (e Executor) Destroy(input map[string]interface{}) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform dir: %s", err)
+		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars dir: %s", err)
+		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
 
 	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
 	if err != nil {
-		return "", fmt.Errorf("Get relative terraform state path: %s", err) //not tested
+		return fmt.Errorf("Get relative terraform state path: %s", err) //not tested
 	}
 
 	relativeVarsPath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, "terraform.tfvars"))
 	if err != nil {
-		return "", fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+		return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
 	}
 
 	args := []string{
@@ -203,15 +198,10 @@ func (e Executor) Destroy(input map[string]interface{}) (string, error) {
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {
-		return "", NewExecutorError(tfStatePath, err, e.debug)
+		return NewExecutorError(tfStatePath, err, e.debug)
 	}
 
-	tfState, err := readFile(tfStatePath)
-	if err != nil {
-		return "", fmt.Errorf("Read terraform state: %s", err)
-	}
-
-	return string(tfState), nil
+	return nil
 }
 
 func (e Executor) Version() (string, error) {

@@ -26,8 +26,7 @@ type TerraformExecutor struct {
 		CallCount int
 		Receives  struct{}
 		Returns   struct {
-			TFState string
-			Error   error
+			Error error
 		}
 	}
 	DestroyCall struct {
@@ -36,8 +35,7 @@ type TerraformExecutor struct {
 			Inputs map[string]interface{}
 		}
 		Returns struct {
-			TFState string
-			Error   error
+			Error error
 		}
 	}
 	VersionCall struct {
@@ -80,15 +78,15 @@ func (t *TerraformExecutor) Init(template string, inputs map[string]interface{})
 	return t.InitCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Apply() (string, error) {
+func (t *TerraformExecutor) Apply() error {
 	t.ApplyCall.CallCount++
-	return t.ApplyCall.Returns.TFState, t.ApplyCall.Returns.Error
+	return t.ApplyCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Destroy(inputs map[string]interface{}) (string, error) {
+func (t *TerraformExecutor) Destroy(inputs map[string]interface{}) error {
 	t.DestroyCall.CallCount++
 	t.DestroyCall.Receives.Inputs = inputs
-	return t.DestroyCall.Returns.TFState, t.DestroyCall.Returns.Error
+	return t.DestroyCall.Returns.Error
 }
 
 func (t *TerraformExecutor) Version() (string, error) {
