@@ -55,6 +55,11 @@ type setupFile struct {
 
 const VERSION_DEV_BUILD = "[DEV BUILD]"
 
+var (
+	jumpboxDeploymentRepo = "vendor/github.com/cppforlife/jumpbox-deployment"
+	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
+)
+
 func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	unmarshalJSON func([]byte, interface{}) error,
 	marshalJSON func(interface{}) ([]byte, error),
@@ -72,11 +77,11 @@ func (e Executor) getJumpboxSetupFiles(input InterpolateInput) []setupFile {
 	return []setupFile{
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "jumpbox.yml"),
-			contents: MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/jumpbox.yml"),
+			contents: MustAsset(filepath.Join(jumpboxDeploymentRepo, "jumpbox.yml")),
 		},
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "cpi.yml"),
-			contents: MustAsset(filepath.Join("vendor/github.com/cppforlife/jumpbox-deployment", input.IAAS, "cpi.yml")),
+			contents: MustAsset(filepath.Join(jumpboxDeploymentRepo, input.IAAS, "cpi.yml")),
 		},
 	}
 }
@@ -171,7 +176,7 @@ func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
 	files := []setupFile{
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "bosh.yml"),
-			contents: MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml"),
+			contents: MustAsset(filepath.Join(boshDeploymentRepo, "bosh.yml")),
 		},
 	}
 	return files
@@ -181,19 +186,19 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []setupFile {
 	files := []setupFile{
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "cpi.yml"),
-			contents: MustAsset(filepath.Join("vendor/github.com/cloudfoundry/bosh-deployment", input.IAAS, "cpi.yml")),
+			contents: MustAsset(filepath.Join(boshDeploymentRepo, input.IAAS, "cpi.yml")),
 		},
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "jumpbox-user.yml"),
-			contents: MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml"),
+			contents: MustAsset(filepath.Join(boshDeploymentRepo, "jumpbox-user.yml")),
 		},
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "uaa.yml"),
-			contents: MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/uaa.yml"),
+			contents: MustAsset(filepath.Join(boshDeploymentRepo, "uaa.yml")),
 		},
 		setupFile{
 			path:     filepath.Join(input.DeploymentDir, "credhub.yml"),
-			contents: MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/credhub.yml"),
+			contents: MustAsset(filepath.Join(boshDeploymentRepo, "credhub.yml")),
 		},
 	}
 	if input.IAAS == "gcp" {
@@ -209,7 +214,7 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []setupFile {
 		})
 		files = append(files, setupFile{
 			path:     filepath.Join(input.DeploymentDir, "iam-instance-profile.yml"),
-			contents: MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml"),
+			contents: MustAsset(filepath.Join(boshDeploymentRepo, input.IAAS, "iam-instance-profile.yml")),
 		})
 		files = append(files, setupFile{
 			path:     filepath.Join(input.DeploymentDir, "aws-bosh-director-encrypt-disk-ops.yml"),
