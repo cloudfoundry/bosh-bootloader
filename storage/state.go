@@ -2,6 +2,7 @@ package storage
 
 type State struct {
 	Version        int     `json:"version"`
+	BBLVersion     string  `json:"bblVersion"`
 	IAAS           string  `json:"iaas"`
 	ID             string  `json:"id"`
 	NoDirector     bool    `json:"noDirector"`

@@ -31,12 +31,12 @@ import (
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 )
 
-var Version string
+var Version = "dev"
 
 func main() {
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
-	stateBootstrap := storage.NewStateBootstrap(stderrLogger)
+	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
 
 	newConfig := config.NewConfig(stateBootstrap, stderrLogger)
 	appConfig, err := newConfig.Bootstrap(os.Args)

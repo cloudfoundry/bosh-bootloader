@@ -16,14 +16,16 @@ import (
 var _ = Describe("StateBootstrap", func() {
 	Describe("GetState", func() {
 		var (
-			logger    *fakes.Logger
-			bootstrap storage.StateBootstrap
-			tempDir   string
+			logger        *fakes.Logger
+			bootstrap     storage.StateBootstrap
+			tempDir       string
+			latestVersion string
 		)
 
 		BeforeEach(func() {
 			logger = &fakes.Logger{}
-			bootstrap = storage.NewStateBootstrap(logger)
+			latestVersion = "latest"
+			bootstrap = storage.NewStateBootstrap(logger, latestVersion)
 
 			var err error
 			tempDir, err = ioutil.TempDir("", "")
@@ -41,7 +43,8 @@ var _ = Describe("StateBootstrap", func() {
 				state, err := bootstrap.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{
-					Version: 12,
+					Version:    13,
+					BBLVersion: latestVersion,
 				}))
 			})
 		})
@@ -60,10 +63,11 @@ var _ = Describe("StateBootstrap", func() {
 			})
 		})
 
-		Context("when there is a v11 state file", func() {
+		Context("when there is a current version state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 12,
+					"bblVersion": "some-bbl-version",
 					"iaas": "aws",
 					"aws": {
 						"accessKeyId": "some-aws-access-key-id",
@@ -86,8 +90,9 @@ var _ = Describe("StateBootstrap", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version: 12,
-					IAAS:    "aws",
+					Version:    12,
+					BBLVersion: "some-bbl-version",
+					IAAS:       "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",
 						SecretAccessKey: "some-aws-secret-access-key",
@@ -104,24 +109,44 @@ var _ = Describe("StateBootstrap", func() {
 			})
 		})
 
+		Context("when there is a state file missing BBL version", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
+					"version": 12
+				}`), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("populates BBL version based on state version", func() {
+				state, err := bootstrap.GetState(tempDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(state).To(Equal(storage.State{
+					Version:    12,
+					BBLVersion: "5.1.0",
+				}))
+			})
+		})
+
 		Context("when there is a state file with a newer version than internal version", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 9999
+					"version": 999,
+					"bblVersion": "9.9.9"
 				}`), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns an error", func() {
 				_, err := bootstrap.GetState(tempDir)
-				Expect(err).To(MatchError("Existing bbl environment was created with a newer version of bbl. Please upgrade to a version of bbl compatible with schema version 9999.\n"))
+				Expect(err).To(MatchError("Existing bbl environment was created with a newer version of bbl. Please upgrade to bbl v9.9.9.\n"))
 			})
 		})
 
 		Context("when there is a state file with an older version than internal version", func() {
 			var existingVersion int
 			BeforeEach(func() {
-				existingVersion = storage.STATE_VERSION - 1
+				existingVersion = storage.STATE_SCHEMA - 1
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(fmt.Sprintf(`{
 					"version": %d
 				}`, existingVersion)), os.ModePerm)
@@ -131,7 +156,7 @@ var _ = Describe("StateBootstrap", func() {
 			It("logs a warning to stderr", func() {
 				_, err := bootstrap.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.PrintlnCall.Receives.Message).To(Equal(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d). Some things may not work as expected until you bbl up again.", storage.STATE_VERSION, existingVersion)))
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d). Some things may not work as expected until you bbl up again.", storage.STATE_SCHEMA, existingVersion)))
 			})
 		})
 

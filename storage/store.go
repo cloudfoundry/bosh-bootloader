@@ -17,21 +17,21 @@ var (
 )
 
 const (
-	STATE_VERSION = 12
+	STATE_SCHEMA = 13
 
 	OS_READ_WRITE_MODE = os.FileMode(0644)
 	StateFileName      = "bbl-state.json"
 )
 
 type Store struct {
-	dir     string
-	version int
+	dir         string
+	stateSchema int
 }
 
 func NewStore(dir string) Store {
 	return Store{
-		dir:     dir,
-		version: STATE_VERSION,
+		dir:         dir,
+		stateSchema: STATE_SCHEMA,
 	}
 }
 
@@ -76,7 +76,7 @@ func (s Store) Set(state State) error {
 		return nil
 	}
 
-	state.Version = s.version
+	state.Version = s.stateSchema
 
 	if state.ID == "" {
 		uuid, err := uuidNewV4()

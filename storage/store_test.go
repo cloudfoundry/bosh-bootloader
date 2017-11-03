@@ -44,7 +44,8 @@ var _ = Describe("Store", func() {
 						0x13, 0x14, 0x15, 0x16}, nil
 				})
 				err := store.Set(storage.State{
-					IAAS: "aws",
+					BBLVersion: "5.3.0",
+					IAAS:       "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-aws-access-key-id",
 						SecretAccessKey: "some-aws-secret-access-key",
@@ -102,7 +103,8 @@ var _ = Describe("Store", func() {
 				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).To(MatchJSON(`{
-				"version": 12,
+				"version": 13,
+				"bblVersion": "5.3.0",
 				"iaas": "aws",
 				"noDirector": false,
 				"aws": {

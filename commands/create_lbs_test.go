@@ -81,9 +81,7 @@ var _ = Describe("create-lbs", func() {
 		Context("when the BOSH version is less than 2.0.24 and there is no director", func() {
 			It("does not fast fail", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := command.CheckFastFails([]string{
-					"--type", "concourse",
-				}, storage.State{
+				err := command.CheckFastFails([]string{"--type", "concourse"}, storage.State{
 					IAAS:       "gcp",
 					NoDirector: true,
 				})
@@ -113,28 +111,15 @@ var _ = Describe("create-lbs", func() {
 
 		Context("when iaas is gcp and lb type is concourse", func() {
 			It("does not call certificateValidator", func() {
-				_ = command.CheckFastFails(
-					[]string{
-						"--type", "concourse",
-					},
-					storage.State{
-						IAAS: "gcp",
-					})
-
+				_ = command.CheckFastFails([]string{"--type", "concourse"}, storage.State{IAAS: "gcp"})
 				Expect(certificateValidator.ValidateCall.CallCount).To(Equal(0))
 			})
 		})
 
 		Context("when lb type is concourse and domain flag is supplied", func() {
 			It("returns an error", func() {
-				err := command.CheckFastFails(
-					[]string{
-						"--type", "concourse",
-						"--domain", "ci.example.com",
-					},
-					storage.State{
-						IAAS: "gcp",
-					})
+				err := command.CheckFastFails([]string{"--type", "concourse", "--domain", "ci.example.com"},
+					storage.State{IAAS: "gcp"})
 				Expect(err).To(MatchError("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again."))
 			})
 		})
@@ -143,11 +128,7 @@ var _ = Describe("create-lbs", func() {
 	Describe("Execute", func() {
 		Context("if the iaas if GCP", func() {
 			It("creates a GCP lb type", func() {
-				err := command.Execute([]string{
-					"--type", "concourse",
-				}, storage.State{
-					IAAS: "gcp",
-				})
+				err := command.Execute([]string{"--type", "concourse"}, storage.State{IAAS: "gcp"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 					LBType: "concourse",

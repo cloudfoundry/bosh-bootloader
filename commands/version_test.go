@@ -24,7 +24,7 @@ var _ = Describe("Version", func() {
 
 	Describe("CheckFastFails", func() {
 		BeforeEach(func() {
-			version = commands.NewVersion("", logger)
+			version = commands.NewVersion("dev", logger)
 		})
 
 		It("returns no error", func() {
@@ -36,7 +36,7 @@ var _ = Describe("Version", func() {
 	Describe("Execute", func() {
 		Context("when no version number was passed in", func() {
 			BeforeEach(func() {
-				version = commands.NewVersion("", logger)
+				version = commands.NewVersion("dev", logger)
 			})
 
 			Describe("Execute", func() {

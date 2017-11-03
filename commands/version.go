@@ -7,17 +7,12 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const BBLDevVersion = "dev"
-
 type Version struct {
 	logger  logger
 	version string
 }
 
 func NewVersion(version string, logger logger) Version {
-	if version == "" {
-		version = BBLDevVersion
-	}
 	return Version{
 		logger:  logger,
 		version: fmt.Sprintf("%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH),
