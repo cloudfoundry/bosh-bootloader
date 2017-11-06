@@ -179,6 +179,18 @@ func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
 			contents: MustAsset(filepath.Join(boshDeploymentRepo, "bosh.yml")),
 		},
 	}
+
+	assetNames := AssetNames()
+	for _, asset := range assetNames {
+		if strings.Contains(asset, boshDeploymentRepo) {
+			files = append(files, setupFile{
+				name:     strings.TrimPrefix(asset, boshDeploymentRepo),
+				path:     filepath.Join(input.DeploymentDir, strings.TrimPrefix(asset, boshDeploymentRepo)),
+				contents: MustAsset(asset),
+			})
+		}
+	}
+
 	return files
 }
 
@@ -245,9 +257,11 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	opsFiles := e.getDirectorOpsFiles(input)
 
 	for _, f := range append(setupFiles, opsFiles...) {
-		err := e.writeFile(f.path, f.contents, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("write file: %s", err) //not tested
+		if f.name != "" {
+			os.MkdirAll(f.name)
+		}
+		if err := e.writeFile(f.path, f.contents, os.ModePerm); err != nil {
+			return fmt.Errorf("Director write setup file: %s", err) //not tested
 		}
 	}
 
