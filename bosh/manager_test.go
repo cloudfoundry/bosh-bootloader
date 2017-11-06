@@ -782,19 +782,20 @@ gcp_credentials_json: some-credential-json
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"network_name":           "some-network",
-					"subnetwork_name":        "some-subnetwork",
-					"bosh_open_tag_name":     "some-jumpbox-tag",
-					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-					"bosh_director_tag_name": "some-director-tag",
-					"internal_tag_name":      "some-internal-tag",
-					"external_ip":            "some-external-ip",
-					"director_address":       "some-director-address",
+					"network_name":              "some-network",
+					"subnetwork_name":           "some-subnetwork",
+					"bosh_open_tag_name":        "some-jumpbox-tag",
+					"jumpbox_tag_name":          "some-jumpbox-fw-tag",
+					"bosh_director_tag_name":    "some-director-tag",
+					"internal_tag_name":         "some-internal-tag",
+					"bosh_director_external_ip": "some-external-ip",
+					"director_address":          "some-director-address",
 				}})
 				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
+external_ip: some-external-ip
 zone: some-zone
 network: some-network
 subnetwork: some-subnetwork

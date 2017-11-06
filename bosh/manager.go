@@ -526,6 +526,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 		InternalGW:   "10.0.0.1",
 		InternalIP:   DIRECTOR_INTERNAL_IP,
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
+		ExternalIP:   terraformOutputs.GetString("bosh_director_external_ip"),
 	}
 
 	switch state.IAAS {
