@@ -96,6 +96,9 @@ var _ = Describe("AWS Create LBs", func() {
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(statePassedToTerraform))
 
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(stateReturnedFromTerraform))
+				Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
+				Expect(cloudConfigManager.InitializeCall.Receives.State.LB.Type).To(Equal("cf"))
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.Receives.State.LB.Type).To(Equal("cf"))
 			})
 
@@ -468,6 +471,26 @@ var _ = Describe("AWS Create LBs", func() {
 						storage.State{},
 					)
 					Expect(err).To(MatchError("failed to update cloud config"))
+				})
+			})
+
+			Context("when cloud config manager initialize fails", func() {
+				BeforeEach(func() {
+					cloudConfigManager.InitializeCall.Returns.Error = errors.New("coconut")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(
+						commands.CreateLBsConfig{
+							AWS: commands.AWSCreateLBsConfig{
+								LBType:   "concourse",
+								CertPath: certPath,
+								KeyPath:  keyPath,
+							},
+						},
+						storage.State{},
+					)
+					Expect(err).To(MatchError("coconut"))
 				})
 			})
 

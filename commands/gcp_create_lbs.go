@@ -89,6 +89,10 @@ func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 	}
 
 	if !state.NoDirector {
+		err = c.cloudConfigManager.Initialize(state)
+		if err != nil {
+			return err
+		}
 		err = c.cloudConfigManager.Update(state)
 		if err != nil {
 			return err

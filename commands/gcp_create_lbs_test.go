@@ -16,10 +16,10 @@ import (
 
 var _ = Describe("GCPCreateLBs", func() {
 	var (
-		terraformManager       *fakes.TerraformManager
-		cloudConfigManager     *fakes.CloudConfigManager
-		stateStore             *fakes.StateStore
-		environmentValidator   *fakes.EnvironmentValidator
+		terraformManager     *fakes.TerraformManager
+		cloudConfigManager   *fakes.CloudConfigManager
+		stateStore           *fakes.StateStore
+		environmentValidator *fakes.EnvironmentValidator
 
 		bblState    storage.State
 		command     commands.GCPCreateLBs
@@ -123,6 +123,8 @@ var _ = Describe("GCPCreateLBs", func() {
 
 			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
 			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(bblState))
+			Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(bblState))
 		})
 
 		Context("when there is no BOSH director", func() {
@@ -224,16 +226,30 @@ var _ = Describe("GCPCreateLBs", func() {
 
 			Context("when the cloud config fails to be updated", func() {
 				BeforeEach(func() {
-					cloudConfigManager.UpdateCall.Returns.Error = errors.New("failed to update cloud config")
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("pomegranate")
 				})
 
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
 					}}, storage.State{})
-					Expect(err).To(MatchError("failed to update cloud config"))
+					Expect(err).To(MatchError("pomegranate"))
 				})
 			})
+
+			Context("when the cloud config fails to initialize", func() {
+				BeforeEach(func() {
+					cloudConfigManager.InitializeCall.Returns.Error = errors.New("grapefruit")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{})
+					Expect(err).To(MatchError("grapefruit"))
+				})
+			})
+
 		})
 	})
 })

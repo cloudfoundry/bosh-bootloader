@@ -176,10 +176,6 @@ func (m Manager) Update(state storage.State) error {
 	}
 
 	m.logger.Step("generating cloud config")
-	err = m.Initialize(state)
-	if err != nil {
-		return err
-	}
 
 	err = m.GenerateVars(state)
 	if err != nil {
