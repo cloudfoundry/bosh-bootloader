@@ -154,7 +154,8 @@ director_ssl:
 
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
 
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(Equal(`internal_cidr: 10.0.0.0/24
+				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -640,7 +641,8 @@ gcp_credentials_json: some-credential-json
 					"jumpbox_security_group":        "some-security-group",
 					"external_ip":                   "some-external-ip",
 				}})
-				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+				Expect(vars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
 director_name: bosh-some-env-id
@@ -682,7 +684,8 @@ region: some-region
 					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
 					"external_ip":        "some-external-ip",
 				}})
-				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+				Expect(vars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
 director_name: bosh-some-env-id
@@ -730,7 +733,8 @@ gcp_credentials_json: some-credential-json
 					"bosh_director_external_ip": "some-external-ip",
 					"director_address":          "some-director-address",
 				}})
-				Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+				Expect(vars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -748,7 +752,8 @@ gcp_credentials_json: some-credential-json
 			Context("when terraform outputs are missing", func() {
 				It("returns valid yaml", func() {
 					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
-					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+					Expect(vars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -793,7 +798,8 @@ gcp_credentials_json: some-credential-json
 						"director_address":              "some-director-address",
 						"kms_key_arn":                   "some-kms-arn",
 					}})
-					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+					Expect(vars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
@@ -815,7 +821,8 @@ kms_key_arn: some-kms-arn
 			Context("when terraform outputs are missing", func() {
 				It("returns valid yaml", func() {
 					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
-					Expect(vars).To(Equal(`internal_cidr: 10.0.0.0/24
+					Expect(vars).To(MatchYAML(`---
+internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
