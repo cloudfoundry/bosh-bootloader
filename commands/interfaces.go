@@ -9,6 +9,7 @@ type plan interface {
 	CheckFastFails([]string, storage.State) error
 	ParseArgs([]string, storage.State) (UpConfig, error)
 	Execute([]string, storage.State) error
+	IsInitialized(storage.State) bool
 }
 
 type up interface {
@@ -21,16 +22,13 @@ type terraformManager interface {
 	ValidateVersion() error
 	GetOutputs() (terraform.Outputs, error)
 	Init(storage.State) error
-	IsInitialized() bool
 	Apply(storage.State) (storage.State, error)
 	Destroy(storage.State) (storage.State, error)
 }
 
 type boshManager interface {
-	IsDirectorInitialized(iaas string) bool
 	InitializeDirector(bblState storage.State) error
 	CreateDirector(bblState storage.State, terraformOutputs terraform.Outputs) (storage.State, error)
-	IsJumpboxInitialized(iaas string) bool
 	InitializeJumpbox(bblState storage.State) error
 	CreateJumpbox(bblState storage.State, terraformOutputs terraform.Outputs) (storage.State, error)
 	DeleteDirector(bblState storage.State, terraformOutputs terraform.Outputs) error

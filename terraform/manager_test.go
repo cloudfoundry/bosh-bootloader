@@ -39,16 +39,6 @@ var _ = Describe("Manager", func() {
 		terraformOutputBuffer.Reset()
 	})
 
-	Describe("IsInitialized", func() {
-		It("returns the output of executor.ShouldInit", func() {
-			executor.IsInitializedCall.Returns.IsInitialized = true
-			Expect(manager.IsInitialized()).To(BeTrue())
-
-			executor.IsInitializedCall.Returns.IsInitialized = false
-			Expect(manager.IsInitialized()).To(BeFalse())
-		})
-	})
-
 	Describe("Init", func() {
 		var incomingState storage.State
 

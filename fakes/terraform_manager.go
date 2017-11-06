@@ -15,13 +15,6 @@ type TerraformManager struct {
 			Error error
 		}
 	}
-	IsInitializedCall struct {
-		CallCount int
-		Receives  struct{}
-		Returns   struct {
-			IsInitialized bool
-		}
-	}
 	ApplyCall struct {
 		CallCount int
 		Receives  struct {
@@ -73,12 +66,6 @@ type TerraformManager struct {
 			Error error
 		}
 	}
-}
-
-func (t *TerraformManager) IsInitialized() bool {
-	t.IsInitializedCall.CallCount++
-
-	return t.IsInitializedCall.Returns.IsInitialized
 }
 
 func (t *TerraformManager) Init(bblState storage.State) error {

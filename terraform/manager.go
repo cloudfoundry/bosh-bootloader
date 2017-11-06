@@ -20,7 +20,6 @@ type Manager struct {
 type executor interface {
 	Version() (string, error)
 	Destroy(inputs map[string]interface{}) error
-	IsInitialized() bool
 	Init(terraformTemplate string, inputs map[string]interface{}) error
 	Apply() error
 	Outputs() (map[string]interface{}, error)
@@ -74,10 +73,6 @@ func (m Manager) ValidateVersion() error {
 	}
 
 	return nil
-}
-
-func (m Manager) IsInitialized() bool {
-	return m.executor.IsInitialized()
 }
 
 func (m Manager) Init(bblState storage.State) error {

@@ -40,7 +40,7 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
-	if !u.terraformManager.IsInitialized() || !u.boshManager.IsJumpboxInitialized(state.IAAS) || !u.boshManager.IsDirectorInitialized(state.IAAS) {
+	if !u.plan.IsInitialized(state) {
 		err := u.plan.Execute(args, state)
 		if err != nil {
 			return err

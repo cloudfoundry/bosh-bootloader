@@ -46,35 +46,6 @@ func NewExecutor(cmd terraformCmd, stateStore stateStore, debug bool) Executor {
 	}
 }
 
-func (e Executor) IsInitialized() bool {
-	varsDir, err := e.stateStore.GetVarsDir()
-	if err != nil {
-		return false // not tested
-	}
-
-	_, err = os.Stat(filepath.Join(varsDir, "terraform.tfvars"))
-	if err != nil {
-		return false
-	}
-
-	terraformDir, err := e.stateStore.GetTerraformDir()
-	if err != nil {
-		return false // not tested
-	}
-
-	_, err = os.Stat(filepath.Join(terraformDir, ".terraform"))
-	if err != nil {
-		return false
-	}
-
-	_, err = os.Stat(filepath.Join(terraformDir, "template.tf"))
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
 func (e Executor) Init(template string, input map[string]interface{}) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {

@@ -49,7 +49,8 @@ type command interface {
 }
 
 type setupFile struct {
-	path     string
+	source   string
+	dest     string
 	contents []byte
 }
 
@@ -76,60 +77,44 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 func (e Executor) getJumpboxSetupFiles(input InterpolateInput) []setupFile {
 	return []setupFile{
 		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "jumpbox.yml"),
+			dest:     filepath.Join(input.DeploymentDir, "jumpbox.yml"),
 			contents: MustAsset(filepath.Join(jumpboxDeploymentRepo, "jumpbox.yml")),
 		},
 		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "cpi.yml"),
+			dest:     filepath.Join(input.DeploymentDir, "cpi.yml"),
 			contents: MustAsset(filepath.Join(jumpboxDeploymentRepo, input.IAAS, "cpi.yml")),
 		},
 	}
 }
 
-func (e Executor) getCreateEnvScripts(input InterpolateInput, deployment string) []setupFile {
-	return []setupFile{
-		setupFile{path: filepath.Join(input.StateDir, fmt.Sprintf("create-%s.sh", deployment))},
-		setupFile{path: filepath.Join(input.StateDir, fmt.Sprintf("delete-%s.sh", deployment))},
+func (e Executor) getCreateEnvScripts(input InterpolateInput, deployment string) []string {
+	return []string{
+		filepath.Join(input.StateDir, fmt.Sprintf("create-%s.sh", deployment)),
+		filepath.Join(input.StateDir, fmt.Sprintf("delete-%s.sh", deployment)),
 	}
-}
-
-func (e Executor) allFilesExist(files []setupFile) bool {
-	for _, f := range files {
-		_, err := os.Stat(f.path)
-		if err != nil {
-			return false
-		}
-	}
-	return true
-}
-
-func (e Executor) IsJumpboxInitialized(input InterpolateInput) bool {
-	setupFiles := e.getJumpboxSetupFiles(input)
-	createEnvScripts := e.getCreateEnvScripts(input, "jumpbox")
-	return e.allFilesExist(setupFiles) && e.allFilesExist(createEnvScripts)
 }
 
 func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	setupFiles := e.getJumpboxSetupFiles(input)
 
 	varsStoreFile := setupFile{
-		path:     filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
+		dest:     filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
 		contents: []byte(input.Variables),
 	}
 
 	setupFiles = append(setupFiles, varsStoreFile)
 
 	for _, f := range setupFiles {
-		err := e.writeFile(f.path, f.contents, os.ModePerm)
+		err := e.writeFile(f.dest, f.contents, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
 		}
 	}
 
 	sharedArgs := []string{
-		"--vars-store", varsStoreFile.path,
+		"--vars-store", varsStoreFile.dest,
 		"--vars-file", filepath.Join(input.VarsDir, "jumpbox-deployment-vars.yml"),
-		"-o", setupFiles[1].path,
+		"-o", setupFiles[1].dest,
 	}
 
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
@@ -146,7 +131,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	boshArgs := append([]string{
-		setupFiles[0].path,
+		setupFiles[0].dest,
 		"--state", jumpboxState,
 	}, sharedArgs...)
 
@@ -173,105 +158,91 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 }
 
 func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
-	files := []setupFile{
-		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "bosh.yml"),
-			contents: MustAsset(filepath.Join(boshDeploymentRepo, "bosh.yml")),
-		},
-	}
+	files := []setupFile{}
 
 	assetNames := AssetNames()
 	for _, asset := range assetNames {
 		if strings.Contains(asset, boshDeploymentRepo) {
 			files = append(files, setupFile{
-				name:     strings.TrimPrefix(asset, boshDeploymentRepo),
-				path:     filepath.Join(input.DeploymentDir, strings.TrimPrefix(asset, boshDeploymentRepo)),
+				source:   strings.TrimPrefix(asset, boshDeploymentRepo),
+				dest:     filepath.Join(input.DeploymentDir, strings.TrimPrefix(asset, boshDeploymentRepo)),
 				contents: MustAsset(asset),
 			})
 		}
 	}
 
-	return files
-}
+	statePath := filepath.Join(input.DeploymentDir, input.IAAS)
+	assetPath := filepath.Join(boshDeploymentRepo, input.IAAS)
 
-func (e Executor) getDirectorOpsFiles(input InterpolateInput) []setupFile {
-	files := []setupFile{
-		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "cpi.yml"),
-			contents: MustAsset(filepath.Join(boshDeploymentRepo, input.IAAS, "cpi.yml")),
-		},
-		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "jumpbox-user.yml"),
-			contents: MustAsset(filepath.Join(boshDeploymentRepo, "jumpbox-user.yml")),
-		},
-		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "uaa.yml"),
-			contents: MustAsset(filepath.Join(boshDeploymentRepo, "uaa.yml")),
-		},
-		setupFile{
-			path:     filepath.Join(input.DeploymentDir, "credhub.yml"),
-			contents: MustAsset(filepath.Join(boshDeploymentRepo, "credhub.yml")),
-		},
-	}
 	if input.IAAS == "gcp" {
 		files = append(files, setupFile{
-			path:     filepath.Join(input.DeploymentDir, "gcp-bosh-director-ephemeral-ip-ops.yml"),
+			source:   filepath.Join(assetPath, "bosh-director-ephemeral-ip-ops.yml"),
+			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
 			contents: []byte(GCPBoshDirectorEphemeralIPOps),
 		})
 	}
 	if input.IAAS == "aws" {
 		files = append(files, setupFile{
-			path:     filepath.Join(input.DeploymentDir, "aws-bosh-director-ephemeral-ip-ops.yml"),
+			source:   filepath.Join(assetPath, "bosh-director-ephemeral-ip-ops.yml"),
+			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
 			contents: []byte(AWSBoshDirectorEphemeralIPOps),
 		})
 		files = append(files, setupFile{
-			path:     filepath.Join(input.DeploymentDir, "iam-instance-profile.yml"),
-			contents: MustAsset(filepath.Join(boshDeploymentRepo, input.IAAS, "iam-instance-profile.yml")),
-		})
-		files = append(files, setupFile{
-			path:     filepath.Join(input.DeploymentDir, "aws-bosh-director-encrypt-disk-ops.yml"),
+			source:   filepath.Join(assetPath, "bosh-director-encrypt-disk-ops.yml"),
+			dest:     filepath.Join(statePath, "bosh-director-encrypt-disk-ops.yml"),
 			contents: []byte(AWSEncryptDiskOps),
 		})
 	}
+
 	return files
 }
 
-func (e Executor) IsDirectorInitialized(input InterpolateInput) bool {
-	setupFiles := e.getDirectorSetupFiles(input)
-	opsFiles := e.getDirectorOpsFiles(input)
-	createEnvScripts := e.getCreateEnvScripts(input, "director")
-	return e.allFilesExist(setupFiles) && e.allFilesExist(opsFiles) && e.allFilesExist(createEnvScripts)
+func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
+	files := []string{
+		filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
+		filepath.Join(input.DeploymentDir, "jumpbox-user.yml"),
+		filepath.Join(input.DeploymentDir, "uaa.yml"),
+		filepath.Join(input.DeploymentDir, "credhub.yml"),
+	}
+	if input.IAAS == "gcp" {
+		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
+	}
+	if input.IAAS == "aws" {
+		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
+		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "iam-instance-profile.yml"))
+		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "bosh-director-encrypt-disk-ops.yml"))
+	}
+	return files
 }
 
 func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	setupFiles := e.getDirectorSetupFiles(input)
 	varsStoreFile := setupFile{
-		path:     filepath.Join(input.VarsDir, "director-variables.yml"),
+		dest:     filepath.Join(input.VarsDir, "director-variables.yml"),
 		contents: []byte(input.Variables),
 	}
 	userOpsFile := setupFile{
-		path:     filepath.Join(input.VarsDir, "user-ops-file.yml"),
+		dest:     filepath.Join(input.VarsDir, "user-ops-file.yml"),
 		contents: []byte(input.OpsFile),
 	}
 	setupFiles = append(setupFiles, varsStoreFile, userOpsFile)
-	opsFiles := e.getDirectorOpsFiles(input)
 
-	for _, f := range append(setupFiles, opsFiles...) {
-		if f.name != "" {
-			os.MkdirAll(f.name)
+	for _, f := range setupFiles {
+		if f.source != "" {
+			os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
 		}
-		if err := e.writeFile(f.path, f.contents, os.ModePerm); err != nil {
+		if err := e.writeFile(f.dest, f.contents, os.ModePerm); err != nil {
 			return fmt.Errorf("Director write setup file: %s", err) //not tested
 		}
 	}
 
 	sharedArgs := []string{
-		"--vars-store", varsStoreFile.path,
+		"--vars-store", varsStoreFile.dest,
 		"--vars-file", filepath.Join(input.VarsDir, "director-deployment-vars.yml"),
 	}
 
-	for _, f := range opsFiles {
-		sharedArgs = append(sharedArgs, "-o", f.path)
+	for _, f := range e.getDirectorOpsFiles(input) {
+		sharedArgs = append(sharedArgs, "-o", f)
 	}
 
 	if input.OpsFile != "" {
@@ -297,7 +268,7 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	boshArgs := append([]string{
-		setupFiles[0].path,
+		filepath.Join(input.DeploymentDir, "bosh.yml"),
 		"--state", boshState,
 	}, sharedArgs...)
 

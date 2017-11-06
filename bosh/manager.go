@@ -101,8 +101,6 @@ type AzureYAML struct {
 }
 
 type executor interface {
-	IsDirectorInitialized(InterpolateInput) bool
-	IsJumpboxInitialized(InterpolateInput) bool
 	DirectorCreateEnvArgs(InterpolateInput) error
 	JumpboxCreateEnvArgs(InterpolateInput) error
 	CreateEnv(CreateEnvInput) (string, error)
@@ -143,23 +141,6 @@ func (m *Manager) Version() (string, error) {
 		m.logger.Println("warning: BOSH version could not be parsed")
 	}
 	return version, err
-}
-
-func (m *Manager) IsJumpboxInitialized(iaas string) bool {
-	stateDir := m.stateStore.GetStateDir()
-
-	jumpboxDeploymentDir, err := m.stateStore.GetJumpboxDeploymentDir()
-	if err != nil {
-		return false
-	}
-
-	iaasInputs := InterpolateInput{
-		DeploymentDir: jumpboxDeploymentDir,
-		StateDir:      stateDir,
-		IAAS:          iaas,
-	}
-
-	return m.executor.IsJumpboxInitialized(iaasInputs)
 }
 
 func (m *Manager) InitializeJumpbox(state storage.State) error {
@@ -245,29 +226,6 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	m.logger.Step("started proxy")
 	return state, nil
-}
-
-func (m *Manager) IsDirectorInitialized(iaas string) bool {
-	varsDir, err := m.stateStore.GetVarsDir()
-	if err != nil {
-		return false
-	}
-
-	stateDir := m.stateStore.GetStateDir()
-
-	directorDeploymentDir, err := m.stateStore.GetDirectorDeploymentDir()
-	if err != nil {
-		return false
-	}
-
-	iaasInputs := InterpolateInput{
-		DeploymentDir: directorDeploymentDir,
-		StateDir:      stateDir,
-		VarsDir:       varsDir,
-		IAAS:          iaas,
-	}
-
-	return m.executor.IsDirectorInitialized(iaasInputs)
 }
 
 func (m *Manager) InitializeDirector(state storage.State) error {

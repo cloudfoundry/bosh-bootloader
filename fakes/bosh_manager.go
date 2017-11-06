@@ -6,15 +6,6 @@ import (
 )
 
 type BOSHManager struct {
-	IsJumpboxInitializedCall struct {
-		CallCount int
-		Receives  struct {
-			IAAS string
-		}
-		Returns struct {
-			IsInitialized bool
-		}
-	}
 	InitializeJumpboxCall struct {
 		CallCount int
 		Receives  struct {
@@ -33,15 +24,6 @@ type BOSHManager struct {
 		Returns struct {
 			State storage.State
 			Error error
-		}
-	}
-	IsDirectorInitializedCall struct {
-		CallCount int
-		Receives  struct {
-			IAAS string
-		}
-		Returns struct {
-			IsInitialized bool
 		}
 	}
 	InitializeDirectorCall struct {
@@ -113,12 +95,6 @@ type BOSHManager struct {
 	}
 }
 
-func (b *BOSHManager) IsJumpboxInitialized(iaas string) bool {
-	b.IsJumpboxInitializedCall.CallCount++
-	b.IsJumpboxInitializedCall.Receives.IAAS = iaas
-	return b.IsJumpboxInitializedCall.Returns.IsInitialized
-}
-
 func (b *BOSHManager) InitializeJumpbox(state storage.State) error {
 	b.InitializeJumpboxCall.CallCount++
 	b.InitializeJumpboxCall.Receives.State = state
@@ -130,12 +106,6 @@ func (b *BOSHManager) CreateJumpbox(state storage.State, terraformOutputs terraf
 	b.CreateJumpboxCall.Receives.State = state
 	b.CreateJumpboxCall.Receives.TerraformOutputs = terraformOutputs
 	return b.CreateJumpboxCall.Returns.State, b.CreateJumpboxCall.Returns.Error
-}
-
-func (b *BOSHManager) IsDirectorInitialized(iaas string) bool {
-	b.IsDirectorInitializedCall.CallCount++
-	b.IsDirectorInitializedCall.Receives.IAAS = iaas
-	return b.IsDirectorInitializedCall.Returns.IsInitialized
 }
 
 func (b *BOSHManager) InitializeDirector(state storage.State) error {

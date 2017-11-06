@@ -133,3 +133,7 @@ func (p Plan) Execute(args []string, state storage.State) error {
 
 	return nil
 }
+
+func (p Plan) IsInitialized(state storage.State) bool {
+	return state.BBLVersion != "" && state.BBLVersion >= "5.2.0"
+}

@@ -37,6 +37,15 @@ type Plan struct {
 			Error error
 		}
 	}
+	IsInitializedCall struct {
+		CallCount int
+		Receives  struct {
+			State storage.State
+		}
+		Returns struct {
+			IsInitialized bool
+		}
+	}
 }
 
 func (p *Plan) CheckFastFails(subcommandFlags []string, state storage.State) error {
@@ -61,4 +70,11 @@ func (p *Plan) Execute(args []string, state storage.State) error {
 	p.ExecuteCall.Receives.State = state
 
 	return p.ExecuteCall.Returns.Error
+}
+
+func (p *Plan) IsInitialized(state storage.State) bool {
+	p.IsInitializedCall.CallCount++
+	p.IsInitializedCall.Receives.State = state
+
+	return p.IsInitializedCall.Returns.IsInitialized
 }

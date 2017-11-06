@@ -17,6 +17,7 @@ var _ = Describe("plan", func() {
 	var (
 		bbl      actors.BBL
 		stateDir string
+		iaas     string
 	)
 
 	BeforeEach(func() {
@@ -24,6 +25,8 @@ var _ = Describe("plan", func() {
 
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
+
+		iaas = configuration.IAAS
 
 		stateDir = configuration.StateFileDir
 
@@ -43,7 +46,7 @@ var _ = Describe("plan", func() {
 			filepath.Join(stateDir, ".bbl", "cloudconfig", "ops.yml"),
 			filepath.Join(stateDir, ".bbl", "previous-user-ops-file.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "bosh.yml"),
-			filepath.Join(stateDir, "bosh-deployment", "cpi.yml"),
+			filepath.Join(stateDir, "bosh-deployment", iaas, "cpi.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "credhub.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "jumpbox-user.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "uaa.yml"),

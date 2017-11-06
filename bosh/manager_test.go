@@ -68,67 +68,6 @@ director_ssl:
 		bosh.ResetOSSetenv()
 	})
 
-	Describe("IsDirectorInitialized", func() {
-		It("delegates to bosh executor", func() {
-			boshExecutor.IsDirectorInitializedCall.Returns.IsInitialized = false
-			Expect(boshManager.IsDirectorInitialized("some-iaas")).To(BeFalse())
-
-			Expect(boshExecutor.IsDirectorInitializedCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
-				DeploymentDir: "some-director-deployment-dir",
-				StateDir:      "some-state-dir",
-				VarsDir:       "some-bbl-vars-dir",
-				IAAS:          "some-iaas",
-			}))
-
-			boshExecutor.IsDirectorInitializedCall.Returns.IsInitialized = true
-			Expect(boshManager.IsDirectorInitialized("some-iaas")).To(BeTrue())
-		})
-
-		Context("failure cases", func() {
-			Context("when get vars dir fails", func() {
-				It("returns false", func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("pineapple")
-
-					Expect(boshManager.IsDirectorInitialized("some-iaas")).To(BeFalse())
-				})
-			})
-
-			Context("when get deployment dir fails", func() {
-				It("returns false", func() {
-					stateStore.GetDirectorDeploymentDirCall.Returns.Error = errors.New("pineapple")
-
-					Expect(boshManager.IsDirectorInitialized("some-iaas")).To(BeFalse())
-				})
-			})
-		})
-	})
-
-	Describe("IsJumpboxInitialized", func() {
-		It("delegates to bosh executor", func() {
-			boshExecutor.IsJumpboxInitializedCall.Returns.IsInitialized = false
-			Expect(boshManager.IsJumpboxInitialized("some-iaas")).To(BeFalse())
-
-			Expect(boshExecutor.IsJumpboxInitializedCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
-				DeploymentDir: "some-jumpbox-deployment-dir",
-				StateDir:      "some-state-dir",
-				IAAS:          "some-iaas",
-			}))
-
-			boshExecutor.IsJumpboxInitializedCall.Returns.IsInitialized = true
-			Expect(boshManager.IsJumpboxInitialized("some-iaas")).To(BeTrue())
-		})
-
-		Context("failure cases", func() {
-			Context("when get deployment dir fails", func() {
-				It("returns false", func() {
-					stateStore.GetJumpboxDeploymentDirCall.Returns.Error = errors.New("pineapple")
-
-					Expect(boshManager.IsJumpboxInitialized("some-iaas")).To(BeFalse())
-				})
-			})
-		})
-	})
-
 	Describe("Director set-up", func() {
 		var state storage.State
 		BeforeEach(func() {

@@ -94,15 +94,16 @@ var _ = Describe("Up", func() {
 			}
 			terraformManager.GetOutputsCall.Returns.Outputs = terraformOutputs
 
-			terraformManager.IsInitializedCall.Returns.IsInitialized = true
-			boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = true
-			boshManager.IsDirectorInitializedCall.Returns.IsInitialized = true
+			plan.IsInitializedCall.Returns.IsInitialized = true
 		})
 
 		Context("when bbl plan has been run", func() {
 			It("applies without re-initializing", func() {
 				err := command.Execute([]string{"some", "flags"}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
+
+				Expect(plan.IsInitializedCall.CallCount).To(Equal(1))
+				Expect(plan.IsInitializedCall.Receives.State).To(Equal(incomingState))
 
 				Expect(plan.ParseArgsCall.CallCount).To(Equal(1))
 				Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"some", "flags"}))
@@ -112,8 +113,6 @@ var _ = Describe("Up", func() {
 				Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
 				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
 				Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
-
-				Expect(terraformManager.IsInitializedCall.CallCount).To(Equal(1))
 				Expect(terraformManager.InitCall.CallCount).To(Equal(0))
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
@@ -122,16 +121,12 @@ var _ = Describe("Up", func() {
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 
-				Expect(boshManager.IsJumpboxInitializedCall.CallCount).To(Equal(1))
-				Expect(boshManager.IsJumpboxInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
 				Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
 				Expect(boshManager.CreateJumpboxCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
 				Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
 
-				Expect(boshManager.IsDirectorInitializedCall.CallCount).To(Equal(1))
-				Expect(boshManager.IsDirectorInitializedCall.Receives.IAAS).To(Equal("some-iaas"))
 				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
@@ -156,54 +151,17 @@ var _ = Describe("Up", func() {
 
 		Context("when nothing is initialized", func() {
 			BeforeEach(func() {
-				terraformManager.IsInitializedCall.Returns.IsInitialized = false
-				boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
-				boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
+				plan.IsInitializedCall.Returns.IsInitialized = false
 			})
 			It("calls bbl plan", func() {
 				err := command.Execute([]string{"some", "flags"}, incomingState)
 				Expect(err).NotTo(HaveOccurred())
+
+				Expect(plan.IsInitializedCall.CallCount).To(Equal(1))
+				Expect(plan.IsInitializedCall.Receives.State).To(Equal(incomingState))
+
 				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
 				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{"some", "flags"}))
-				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
-			})
-		})
-
-		Context("when terraform is not initialized yet", func() {
-			BeforeEach(func() {
-				terraformManager.IsInitializedCall.Returns.IsInitialized = false
-			})
-			It("calls bbl plan", func() {
-				err := command.Execute([]string{"some", "flags"}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
-				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{"some", "flags"}))
-				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
-			})
-		})
-
-		Context("when the jumpbox is not initialized yet", func() {
-			BeforeEach(func() {
-				boshManager.IsJumpboxInitializedCall.Returns.IsInitialized = false
-			})
-			It("calls init on the manager", func() {
-				err := command.Execute([]string{}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
-				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{}))
-				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
-			})
-		})
-
-		Context("when the director is not initialized yet", func() {
-			BeforeEach(func() {
-				boshManager.IsDirectorInitializedCall.Returns.IsInitialized = false
-			})
-			It("calls init on the manager", func() {
-				err := command.Execute([]string{}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
-				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{}))
 				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
 			})
 		})

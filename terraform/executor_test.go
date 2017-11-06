@@ -78,30 +78,6 @@ var _ = Describe("Executor", func() {
 		terraform.ResetWriteFile()
 	})
 
-	Describe("IsInitialized", func() {
-		Context("when the state-dir does not contain any terraform files", func() {
-			It("returns false", func() {
-				Expect(executor.IsInitialized()).To(BeFalse())
-			})
-
-			Context("when the state-dir contains all the terraform files", func() {
-				BeforeEach(func() {
-					err := ioutil.WriteFile(tfStatePath, []byte("state"), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-					err = ioutil.WriteFile(tfVarsPath, []byte("vars"), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-					err = ioutil.WriteFile(filepath.Join(terraformDir, "template.tf"), []byte("template"), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-					err = os.Mkdir(filepath.Join(terraformDir, ".terraform"), os.ModePerm)
-					Expect(err).NotTo(HaveOccurred())
-				})
-				It("returns true", func() {
-					Expect(executor.IsInitialized()).To(BeTrue())
-				})
-			})
-		})
-	})
-
 	Describe("Init", func() {
 		It("writes existing terraform state and runs terraform init", func() {
 			err := executor.Init("some-template", input)
