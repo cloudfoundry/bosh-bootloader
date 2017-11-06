@@ -150,8 +150,8 @@ var _ = Describe("Executor", func() {
 			err := executor.DirectorCreateEnvArgs(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
-			simplePath := filepath.Join(deploymentDir, "README.md")
-			expectedContents := bosh.MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/README.md")
+			simplePath := filepath.Join(deploymentDir, "LICENSE")
+			expectedContents := bosh.MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/LICENSE")
 
 			contents, err := ioutil.ReadFile(simplePath)
 			Expect(err).NotTo(HaveOccurred())
