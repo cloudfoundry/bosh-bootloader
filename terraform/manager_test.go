@@ -140,11 +140,13 @@ var _ = Describe("Manager", func() {
 		Context("when executor apply fails", func() {
 			BeforeEach(func() {
 				executor.ApplyCall.Returns.Error = errors.New("grape")
+				incomingState.LatestTFOutput = "some terraform output"
 			})
 
-			It("returns the error", func() {
-				_, err := manager.Apply(incomingState)
+			It("returns the bbl state and the error", func() {
+				state, err := manager.Apply(incomingState)
 				Expect(err).To(MatchError("Executor apply: grape"))
+				Expect(state.LatestTFOutput).To(Equal(incomingState.LatestTFOutput))
 			})
 		})
 	})

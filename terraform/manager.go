@@ -100,7 +100,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Executor apply: %s", err)
+		return bblState, fmt.Errorf("Executor apply: %s", err)
 	}
 
 	return bblState, nil
