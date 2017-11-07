@@ -9,11 +9,11 @@ import (
 )
 
 type AzureLBs struct {
-	terraformManager terraformOutputter
+	terraformManager terraformManager
 	logger           logger
 }
 
-func NewAzureLBs(terraformManager terraformOutputter, logger logger) AzureLBs {
+func NewAzureLBs(terraformManager terraformManager, logger logger) AzureLBs {
 	return AzureLBs{
 		terraformManager: terraformManager,
 		logger:           logger,
