@@ -1,13 +1,19 @@
 #!/bin/bash -exu
 
-pushd terraform/aws
-  go-bindata -pkg aws -o templates.go templates
-popd
+if [ "${@}" == "aws" ]; then
+  pushd terraform/aws
+    go-bindata -pkg aws -o templates.go templates
+  popd
+fi
 
-pushd terraform/azure
-  go-bindata -pkg azure -o templates.go templates
-popd
+if [ "${@}" == "azure" ]; then
+  pushd terraform/azure
+    go-bindata -pkg azure -o templates.go templates
+  popd
+fi
 
-pushd terraform/gcp
-  go-bindata -pkg gcp -o templates.go templates
-popd
+if [ "${@}" == "gcp" ]; then
+  pushd terraform/gcp
+    go-bindata -pkg gcp -o templates.go templates
+  popd
+fi
