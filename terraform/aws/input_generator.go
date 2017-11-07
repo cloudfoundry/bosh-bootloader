@@ -2,22 +2,19 @@ package aws
 
 import (
 	"crypto/sha1"
-	"encoding/json"
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type InputGenerator struct {
-	availabilityZoneRetriever ec2.AvailabilityZoneRetriever
+	availabilityZoneRetriever aws.AvailabilityZoneRetriever
 }
 
 const terraformNameCharLimit = 18
 
-var jsonMarshal = json.Marshal
-
-func NewInputGenerator(availabilityZoneRetriever ec2.AvailabilityZoneRetriever) InputGenerator {
+func NewInputGenerator(availabilityZoneRetriever aws.AvailabilityZoneRetriever) InputGenerator {
 	return InputGenerator{
 		availabilityZoneRetriever: availabilityZoneRetriever,
 	}

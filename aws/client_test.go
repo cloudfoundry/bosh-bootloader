@@ -1,12 +1,12 @@
-package ec2_test
+package aws_test
 
 import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	awslib "github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
@@ -18,8 +18,8 @@ import (
 var _ = Describe("Client", func() {
 	Describe("NewClient", func() {
 		It("returns a Client with the provided configuration", func() {
-			client := ec2.NewClient(
-				aws.Config{
+			client := aws.NewClient(
+				storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
 					Region:          "some-region",
@@ -37,13 +37,13 @@ var _ = Describe("Client", func() {
 
 	Describe("RetrieveAvailabilityZones", func() {
 		var (
-			client    ec2.Client
+			client    aws.Client
 			ec2Client *fakes.AWSEC2Client
 		)
 
 		BeforeEach(func() {
 			ec2Client = &fakes.AWSEC2Client{}
-			client = ec2.NewClientWithInjectedEC2Client(ec2Client, &fakes.Logger{})
+			client = aws.NewClientWithInjectedEC2Client(ec2Client, &fakes.Logger{})
 		})
 
 		It("fetches availability zones for a given region", func() {
@@ -110,13 +110,13 @@ var _ = Describe("Client", func() {
 
 	Describe("ValidateSafeToDelete", func() {
 		var (
-			client    ec2.Client
+			client    aws.Client
 			ec2Client *fakes.AWSEC2Client
 		)
 
 		BeforeEach(func() {
 			ec2Client = &fakes.AWSEC2Client{}
-			client = ec2.NewClientWithInjectedEC2Client(ec2Client, &fakes.Logger{})
+			client = aws.NewClientWithInjectedEC2Client(ec2Client, &fakes.Logger{})
 		})
 
 		Context("when the only EC2 instances are bosh and nat", func() {

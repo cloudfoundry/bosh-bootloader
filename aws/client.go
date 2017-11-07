@@ -1,4 +1,4 @@
-package ec2
+package aws
 
 import (
 	"errors"
@@ -6,11 +6,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-bootloader/aws"
-
 	awslib "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type EC2Client interface {
@@ -32,9 +32,14 @@ type Client struct {
 	logger    logger
 }
 
-func NewClient(config aws.Config, logger logger) Client {
+func NewClient(creds storage.AWS, logger logger) Client {
+	config := &awslib.Config{
+		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),
+		Region:      awslib.String(creds.Region),
+	}
+
 	return Client{
-		ec2Client: awsec2.New(session.New(config.ClientConfig())),
+		ec2Client: awsec2.New(session.New(config)),
 		logger:    logger,
 	}
 }

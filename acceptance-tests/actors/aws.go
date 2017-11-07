@@ -7,34 +7,38 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
-	"github.com/cloudfoundry/bosh-bootloader/aws/ec2"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/gomega"
 
 	awslib "github.com/aws/aws-sdk-go/aws"
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elb"
 )
 
 type AWS struct {
-	client    ec2.Client
+	client    aws.Client
 	elbClient *elb.ELB
 }
 
-func NewAWS(configuration acceptance.Config) AWS {
-	awsConfig := aws.Config{
-		AccessKeyID:     configuration.AWSAccessKeyID,
-		SecretAccessKey: configuration.AWSSecretAccessKey,
-		Region:          configuration.AWSRegion,
+func NewAWS(c acceptance.Config) AWS {
+	creds := storage.AWS{
+		AccessKeyID:     c.AWSAccessKeyID,
+		SecretAccessKey: c.AWSSecretAccessKey,
+		Region:          c.AWSRegion,
 	}
+	client := aws.NewClient(creds, application.NewLogger(os.Stdout))
 
-	client := ec2.NewClient(awsConfig, application.NewLogger(os.Stdout))
-
+	elbConfig := &awslib.Config{
+		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),
+		Region:      awslib.String(creds.Region),
+	}
 	return AWS{
 		client:    client,
-		elbClient: elb.New(session.New(awsConfig.ClientConfig())),
+		elbClient: elb.New(session.New(elbConfig)),
 	}
 }
 

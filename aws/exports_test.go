@@ -1,4 +1,4 @@
-package ec2
+package aws
 
 func NewClientWithInjectedEC2Client(ec2Client EC2Client, logger logger) Client {
 	return Client{
