@@ -471,13 +471,6 @@ func mustMarshal(yamlStruct interface{}) []byte {
 	return yamlBytes
 }
 
-func getTerraformOutput(key string, outputs terraform.Outputs) string {
-	if value, ok := outputs.Map[key]; ok {
-		return fmt.Sprintf("%s", value)
-	}
-	return ""
-}
-
 func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
