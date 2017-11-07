@@ -16,11 +16,6 @@ var (
 	osUnsetenv = os.Unsetenv
 )
 
-const (
-	DIRECTOR_USERNAME    = "admin"
-	DIRECTOR_INTERNAL_IP = "10.0.0.6"
-)
-
 type Manager struct {
 	executor    executor
 	logger      logger
@@ -29,10 +24,12 @@ type Manager struct {
 }
 
 type directorVars struct {
-	directorPassword       string
-	directorSSLCA          string
-	directorSSLCertificate string
-	directorSSLPrivateKey  string
+	address        string
+	username       string
+	password       string
+	sslCA          string
+	sslCertificate string
+	sslPrivateKey  string
 }
 
 type sharedDeploymentVarsYAML struct {
@@ -273,12 +270,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
-		DirectorAddress:        fmt.Sprintf("https://%s:25555", DIRECTOR_INTERNAL_IP),
-		DirectorUsername:       DIRECTOR_USERNAME,
-		DirectorPassword:       directorVars.directorPassword,
-		DirectorSSLCA:          directorVars.directorSSLCA,
-		DirectorSSLCertificate: directorVars.directorSSLCertificate,
-		DirectorSSLPrivateKey:  directorVars.directorSSLPrivateKey,
+		DirectorAddress:        directorVars.address,
+		DirectorUsername:       directorVars.username,
+		DirectorPassword:       directorVars.password,
+		DirectorSSLCA:          directorVars.sslCA,
+		DirectorSSLCertificate: directorVars.sslCertificate,
+		DirectorSSLPrivateKey:  directorVars.sslPrivateKey,
 		Variables:              variables,
 		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
@@ -456,7 +453,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	vars := sharedDeploymentVarsYAML{
 		InternalCIDR: "10.0.0.0/24",
 		InternalGW:   "10.0.0.1",
-		InternalIP:   DIRECTOR_INTERNAL_IP,
+		InternalIP:   "10.0.0.6",
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 		ExternalIP:   terraformOutputs.GetString("bosh_director_external_ip"),
 	}
@@ -535,9 +532,11 @@ func getDirectorVars(v string) directorVars {
 	}
 
 	return directorVars{
-		directorPassword:       vars.AdminPassword,
-		directorSSLCA:          vars.DirectorSSL.CA,
-		directorSSLCertificate: vars.DirectorSSL.Certificate,
-		directorSSLPrivateKey:  vars.DirectorSSL.PrivateKey,
+		address:        "https://10.0.0.6:25555",
+		username:       "admin",
+		password:       vars.AdminPassword,
+		sslCA:          vars.DirectorSSL.CA,
+		sslCertificate: vars.DirectorSSL.Certificate,
+		sslPrivateKey:  vars.DirectorSSL.PrivateKey,
 	}
 }
