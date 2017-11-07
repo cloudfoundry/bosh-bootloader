@@ -35,25 +35,6 @@ type directorVars struct {
 	directorSSLPrivateKey  string
 }
 
-type deploymentVariables struct {
-	DirectorName          string
-	Zone                  string
-	Network               string
-	Subnetwork            string
-	Tags                  []string
-	ProjectID             string
-	ExternalIP            string
-	CredentialsJSON       string
-	PrivateKey            string
-	DefaultKeyName        string
-	DefaultSecurityGroups []string
-	SubnetID              string
-	AZ                    string
-	Region                string
-	SecretAccessKey       string
-	AccessKeyID           string
-}
-
 type sharedDeploymentVarsYAML struct {
 	InternalCIDR string    `yaml:"internal_cidr,omitempty"`
 	InternalGW   string    `yaml:"internal_gw,omitempty"`
