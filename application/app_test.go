@@ -3,7 +3,6 @@ package application_test
 import (
 	"errors"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -216,41 +215,6 @@ var _ = Describe("App", func() {
 					err := app.Run()
 					Expect(err).To(MatchError("unknown command: some-unknown-command"))
 					Expect(usage.PrintCall.CallCount).To(Equal(1))
-				})
-			})
-
-			Context("when the command fails for aws error", func() {
-				Context("when error is AccessDenied", func() {
-					BeforeEach(func() {
-						awsError := awserr.New("UnauthorizedOperation", "User is not authorized to perform: action:SubCommand", nil)
-						errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 403, "some-request-id")
-						app = NewAppWithConfiguration(application.Configuration{
-							Command: "error",
-						})
-					})
-
-					It("returns an error and link to bbl README", func() {
-						err := app.Run()
-
-						Expect(err).To(MatchError("The AWS credentials provided have insufficient permissions to perform the operation `bbl error`.\nPlease refer to the bbl README:\nhttps://github.com/cloudfoundry/bosh-bootloader#configure-aws.\nOriginal error message from AWS:\n\nUser is not authorized to perform: action:SubCommand"))
-					})
-				})
-
-				Context("when the error is not AccessDenied", func() {
-					BeforeEach(func() {
-						awsError := awserr.New("InternalServerError", "Some message", nil)
-						errorCmd.ExecuteCall.Returns.Error = awserr.NewRequestFailure(awsError, 500, "some-request-id")
-						app = NewAppWithConfiguration(application.Configuration{
-							Command: "error",
-						})
-					})
-
-					It("returns an error", func() {
-						err := app.Run()
-
-						Expect(err).To(ContainSubstring("InternalServerError"))
-						Expect(err).NotTo(ContainSubstring("README"))
-					})
 				})
 			})
 
