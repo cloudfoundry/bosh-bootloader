@@ -23,6 +23,7 @@ var _ = Describe("up", func() {
 		caCertPath      string
 		sshSession      *gexec.Session
 		stateDir        string
+		iaas            string
 
 		boshDirectorChecker actors.BOSHDirectorChecker
 	)
@@ -32,6 +33,8 @@ var _ = Describe("up", func() {
 
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
+
+		iaas = configuration.IAAS
 
 		stateDir = configuration.StateFileDir
 
@@ -75,13 +78,13 @@ var _ = Describe("up", func() {
 			})
 			checkExists(filepath.Join(stateDir, "bosh-deployment"), []string{
 				"bosh.yml",
-				"cpi.yml",
+				filepath.Join(iaas, "cpi.yml"),
 				"credhub.yml",
 				"jumpbox-user.yml",
 				"uaa.yml",
 			})
 			checkExists(filepath.Join(stateDir, "jumpbox-deployment"), []string{
-				"cpi.yml",
+				filepath.Join(iaas, "cpi.yml"),
 				"jumpbox.yml",
 			})
 			checkExists(filepath.Join(stateDir, "terraform"), []string{
