@@ -51,7 +51,7 @@ var _ = Describe("plan", func() {
 			filepath.Join(stateDir, "bosh-deployment", "jumpbox-user.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "uaa.yml"),
 			filepath.Join(stateDir, "jumpbox-deployment", "jumpbox.yml"),
-			filepath.Join(stateDir, "jumpbox-deployment", "cpi.yml"),
+			filepath.Join(stateDir, "jumpbox-deployment", iaas, "cpi.yml"),
 			filepath.Join(stateDir, "terraform", "template.tf"),
 			filepath.Join(stateDir, "vars", "user-ops-file.yml"),
 		}

@@ -22,6 +22,7 @@ var _ = Describe("Executor", func() {
 			cmd *fakes.BOSHCommand
 
 			stateDir              string
+			deploymentDir         string
 			relativeDeploymentDir string
 			relativeVarsDir       string
 
@@ -41,7 +42,7 @@ var _ = Describe("Executor", func() {
 			stateDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			deploymentDir := filepath.Join(stateDir, "deployment")
+			deploymentDir = filepath.Join(stateDir, "deployment")
 			err = os.Mkdir(deploymentDir, os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -67,6 +68,25 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
+		It("writes bosh-deployment assets to the deployment dir", func() {
+			err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			Expect(err).NotTo(HaveOccurred())
+
+			simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
+			expectedContents := bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/no-external-ip.yml")
+
+			contents, err := ioutil.ReadFile(simplePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).To(Equal(expectedContents))
+
+			nestedPath := filepath.Join(deploymentDir, "vsphere", "cpi.yml")
+			expectedContents = bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/vsphere/cpi.yml")
+
+			contents, err = ioutil.ReadFile(nestedPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).To(Equal(expectedContents))
+		})
+
 		It("generates create-env args for jumpbox", func() {
 			interpolateInput.OpsFile = ""
 
@@ -78,7 +98,7 @@ var _ = Describe("Executor", func() {
 				"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
 				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", relativeVarsDir),
 				"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", relativeVarsDir),
-				"-o", fmt.Sprintf("%s/cpi.yml", relativeDeploymentDir),
+				"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
 			}
 
 			By("writing the create-env args to a shell script", func() {

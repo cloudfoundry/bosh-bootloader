@@ -74,28 +74,24 @@ func NewExecutor(cmd command, readFile func(string) ([]byte, error),
 	}
 }
 
-func (e Executor) getJumpboxSetupFiles(input InterpolateInput) []setupFile {
-	return []setupFile{
-		setupFile{
-			dest:     filepath.Join(input.DeploymentDir, "jumpbox.yml"),
-			contents: MustAsset(filepath.Join(jumpboxDeploymentRepo, "jumpbox.yml")),
-		},
-		setupFile{
-			dest:     filepath.Join(input.DeploymentDir, "cpi.yml"),
-			contents: MustAsset(filepath.Join(jumpboxDeploymentRepo, input.IAAS, "cpi.yml")),
-		},
-	}
-}
+func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
+	files := []setupFile{}
 
-func (e Executor) getCreateEnvScripts(input InterpolateInput, deployment string) []string {
-	return []string{
-		filepath.Join(input.StateDir, fmt.Sprintf("create-%s.sh", deployment)),
-		filepath.Join(input.StateDir, fmt.Sprintf("delete-%s.sh", deployment)),
+	assetNames := AssetNames()
+	for _, asset := range assetNames {
+		if strings.Contains(asset, sourcePath) {
+			files = append(files, setupFile{
+				source:   strings.TrimPrefix(asset, sourcePath),
+				dest:     filepath.Join(destPath, strings.TrimPrefix(asset, sourcePath)),
+				contents: MustAsset(asset),
+			})
+		}
 	}
+	return files
 }
 
 func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
-	setupFiles := e.getJumpboxSetupFiles(input)
+	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, input.DeploymentDir)
 
 	varsStoreFile := setupFile{
 		dest:     filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
@@ -105,6 +101,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	setupFiles = append(setupFiles, varsStoreFile)
 
 	for _, f := range setupFiles {
+		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
 		err := e.writeFile(f.dest, f.contents, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
@@ -114,7 +111,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	sharedArgs := []string{
 		"--vars-store", varsStoreFile.dest,
 		"--vars-file", filepath.Join(input.VarsDir, "jumpbox-deployment-vars.yml"),
-		"-o", setupFiles[1].dest,
+		"-o", filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
 	}
 
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
@@ -131,7 +128,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	boshArgs := append([]string{
-		setupFiles[0].dest,
+		filepath.Join(input.DeploymentDir, "jumpbox.yml"),
 		"--state", jumpboxState,
 	}, sharedArgs...)
 
@@ -158,18 +155,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 }
 
 func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
-	files := []setupFile{}
-
-	assetNames := AssetNames()
-	for _, asset := range assetNames {
-		if strings.Contains(asset, boshDeploymentRepo) {
-			files = append(files, setupFile{
-				source:   strings.TrimPrefix(asset, boshDeploymentRepo),
-				dest:     filepath.Join(input.DeploymentDir, strings.TrimPrefix(asset, boshDeploymentRepo)),
-				contents: MustAsset(asset),
-			})
-		}
-	}
+	files := e.getSetupFiles(boshDeploymentRepo, input.DeploymentDir)
 
 	statePath := filepath.Join(input.DeploymentDir, input.IAAS)
 	assetPath := filepath.Join(boshDeploymentRepo, input.IAAS)
