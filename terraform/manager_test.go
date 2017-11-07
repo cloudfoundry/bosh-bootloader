@@ -213,11 +213,13 @@ var _ = Describe("Manager", func() {
 		Context("when executor destroy fails", func() {
 			BeforeEach(func() {
 				executor.DestroyCall.Returns.Error = errors.New("grape")
+				incomingState.LatestTFOutput = "some terraform output"
 			})
 
-			It("returns the error", func() {
-				_, err := manager.Destroy(incomingState)
+			It("returns the current bbl state and the error", func() {
+				state, err := manager.Destroy(incomingState)
 				Expect(err).To(MatchError("Executor destroy: grape"))
+				Expect(state.LatestTFOutput).To(Equal(incomingState.LatestTFOutput))
 			})
 		})
 	})
