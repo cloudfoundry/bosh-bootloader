@@ -1,7 +1,7 @@
 resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
-  cidr_block        = "${cidrsubnet("10.0.0.0/20", 4, count.index+2)}"
+  cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, count.index+2)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {

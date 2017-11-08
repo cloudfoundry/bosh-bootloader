@@ -451,7 +451,7 @@ variable "bosh_availability_zone" {
 
 resource "aws_subnet" "bosh_subnet" {
   vpc_id            = "${aws_vpc.vpc.id}"
-  cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, 0)}"
+  cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"
