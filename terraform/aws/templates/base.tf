@@ -169,7 +169,7 @@ resource "aws_security_group" "nat_security_group" {
 }
 
 resource "aws_instance" "nat" {
-  private_ip             = "${cidrhost(var.internal_cidr, 7)}"
+  private_ip             = "${cidrhost(aws_subnet.bosh_subnet.cidr_block, 7)}"
   instance_type          = "t2.medium"
   subnet_id              = "${aws_subnet.bosh_subnet.id}"
   source_dest_check      = false
@@ -428,13 +428,8 @@ resource "aws_security_group_rule" "bosh_internal_security_rule_udp" {
   source_security_group_id = "${aws_security_group.bosh_security_group.id}"
 }
 
-variable "internal_cidr" {
-  type    = "string"
-  default = "10.0.0.0/24"
-}
-
 output "internal_cidr" {
-  value = "${var.internal_cidr}"
+  value = "${aws_subnet.bosh_subnet.cidr_block}"
 }
 
 variable "bosh_availability_zone" {
@@ -443,7 +438,7 @@ variable "bosh_availability_zone" {
 
 resource "aws_subnet" "bosh_subnet" {
   vpc_id            = "${aws_vpc.vpc.id}"
-  cidr_block        = "${var.internal_cidr}"
+  cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, 0)}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"
@@ -480,7 +475,7 @@ variable "availability_zones" {
 resource "aws_subnet" "internal_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.vpc.id}"
-  cidr_block        = "${cidrsubnet("10.0.0.0/16", 4, count.index+1)}"
+  cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index+1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
