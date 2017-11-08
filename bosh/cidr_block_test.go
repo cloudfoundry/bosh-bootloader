@@ -25,6 +25,13 @@ var _ = Describe("CIDRBlock", func() {
 		})
 	})
 
+	Describe("GetNthIP", func() {
+		It("returns the nth ip of the cidr block", func() {
+			ip := cidrBlock.GetNthIP(6)
+			Expect(ip.String()).To(Equal("10.0.16.6"))
+		})
+	})
+
 	Describe("GetLastIP", func() {
 		It("returns the first ip of the cidr block", func() {
 			ip := cidrBlock.GetLastIP()

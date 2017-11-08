@@ -240,9 +240,9 @@ func generateNetworkSubnet(az, cidr, networkName, subnetworkName, internalTag st
 		return networkSubnet{}, err
 	}
 
-	gateway := parsedCidr.GetFirstIP().Add(1).String()
-	firstReserved := parsedCidr.GetFirstIP().Add(2).String()
-	secondReserved := parsedCidr.GetFirstIP().Add(3).String()
+	gateway := parsedCidr.GetNthIP(1).String()
+	firstReserved := parsedCidr.GetNthIP(2).String()
+	secondReserved := parsedCidr.GetNthIP(3).String()
 	lastReserved := parsedCidr.GetLastIP().String()
 	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
 	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()

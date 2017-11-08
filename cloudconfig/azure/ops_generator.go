@@ -132,10 +132,9 @@ func azify(az int, cidr string) (map[string]string, error) {
 		panic(err)
 	}
 
-	firstIP := parsedCidr.GetFirstIP()
-	gateway := firstIP.Add(1).String()
-	firstReserved := firstIP.Add(2).String()
-	secondReserved := firstIP.Add(3).String()
+	gateway := parsedCidr.GetNthIP(1).String()
+	firstReserved := parsedCidr.GetNthIP(2).String()
+	secondReserved := parsedCidr.GetNthIP(3).String()
 	lastIP := parsedCidr.GetLastIP()
 	lastReserved := lastIP.String()
 	lastStatic := lastIP.Subtract(1).String()

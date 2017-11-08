@@ -267,9 +267,9 @@ func azify(az int, azName, cidr, subnet string) (map[string]string, error) {
 		return map[string]string{}, err
 	}
 
-	gateway := parsedCidr.GetFirstIP().Add(1).String()
-	firstReserved := parsedCidr.GetFirstIP().Add(2).String()
-	secondReserved := parsedCidr.GetFirstIP().Add(3).String()
+	gateway := parsedCidr.GetNthIP(1).String()
+	firstReserved := parsedCidr.GetNthIP(2).String()
+	secondReserved := parsedCidr.GetNthIP(3).String()
 	lastReserved := parsedCidr.GetLastIP().String()
 	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
 	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()

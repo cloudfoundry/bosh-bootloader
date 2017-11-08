@@ -27,6 +27,15 @@ resource "google_compute_network" "bbl-network" {
   auto_create_subnetworks = false
 }
 
+variable "internal_cidr" {
+  type    = "string"
+  default = "10.0.0.0/24"
+}
+
+output "internal_cidr" {
+  value = "${var.internal_cidr}"
+}
+
 resource "google_compute_subnetwork" "bbl-subnet" {
   name			= "${var.env_id}-subnet"
   ip_cidr_range = "10.0.0.0/16"

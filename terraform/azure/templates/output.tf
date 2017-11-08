@@ -39,3 +39,7 @@ output "bosh_vms_public_key" {
 output "jumpbox_url" {
 	value = "${azurerm_public_ip.bosh.ip_address}:22"
 }
+
+output "internal_cidr" {
+  value = "${var.internal_cidr}"
+}

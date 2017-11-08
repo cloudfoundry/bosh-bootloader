@@ -136,6 +136,7 @@ director_ssl:
 		Describe("CreateDirector", func() {
 			BeforeEach(func() {
 				terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
+					"internal_cidr":          "10.2.0.0/24",
 					"network_name":           "some-network",
 					"subnetwork_name":        "some-subnetwork",
 					"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -155,9 +156,9 @@ director_ssl:
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
 
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`---
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
+internal_cidr: 10.2.0.0/24
+internal_gw: 10.2.0.1
+internal_ip: 10.2.0.6
 director_name: bosh-some-env-id
 zone: some-zone
 network: some-network
@@ -221,6 +222,7 @@ gcp_credentials_json: some-credential-json
 
 		BeforeEach(func() {
 			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
+				"internal_cidr":          "10.0.0.0/24",
 				"network_name":           "some-network",
 				"subnetwork_name":        "some-subnetwork",
 				"bosh_open_tag_name":     "some-jumpbox-tag",
@@ -632,6 +634,7 @@ gcp_credentials_json: some-credential-json
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"internal_cidr":                 "10.0.0.0/24",
 					"network_name":                  "some-network",
 					"bosh_subnet_id":                "some-subnetwork",
 					"bosh_subnet_availability_zone": "some-zone",
@@ -678,6 +681,7 @@ region: some-region
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"internal_cidr":      "10.1.0.0/24",
 					"network_name":       "some-network",
 					"subnetwork_name":    "some-subnetwork",
 					"bosh_open_tag_name": "some-jumpbox-tag",
@@ -685,9 +689,9 @@ region: some-region
 					"external_ip":        "some-external-ip",
 				}})
 				Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
+internal_cidr: 10.1.0.0/24
+internal_gw: 10.1.0.1
+internal_ip: 10.1.0.5
 director_name: bosh-some-env-id
 external_ip: some-external-ip
 zone: some-zone
@@ -724,6 +728,7 @@ gcp_credentials_json: some-credential-json
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"internal_cidr":             "10.0.1.0/24",
 					"network_name":              "some-network",
 					"subnetwork_name":           "some-subnetwork",
 					"bosh_open_tag_name":        "some-jumpbox-tag",
@@ -734,9 +739,9 @@ gcp_credentials_json: some-credential-json
 					"director_address":          "some-director-address",
 				}})
 				Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
+internal_cidr: 10.0.1.0/24
+internal_gw: 10.0.1.1
+internal_ip: 10.0.1.6
 director_name: bosh-some-env-id
 external_ip: some-external-ip
 zone: some-zone
@@ -788,6 +793,7 @@ gcp_credentials_json: some-credential-json
 			Context("when terraform was used to standup infrastructure", func() {
 				It("returns a correct yaml string of bosh deployment variables", func() {
 					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+						"internal_cidr":                 "10.0.2.0/26",
 						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
 						"bosh_security_group":           "some-bosh-security-group",
@@ -799,9 +805,9 @@ gcp_credentials_json: some-credential-json
 						"kms_key_arn":                   "some-kms-arn",
 					}})
 					Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
+internal_cidr: 10.0.2.0/26
+internal_gw: 10.0.2.1
+internal_ip: 10.0.2.6
 director_name: bosh-some-env-id
 private_key: some-private-key
 az: some-bosh-subnet-az

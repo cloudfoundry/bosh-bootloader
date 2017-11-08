@@ -43,9 +43,13 @@ func ParseCIDRBlock(cidrBlock string) (CIDRBlock, error) {
 }
 
 func (c CIDRBlock) GetFirstIP() IP {
-	return c.firstIP
+	return c.GetNthIP(0)
+}
+
+func (c CIDRBlock) GetNthIP(n int) IP {
+	return c.firstIP.Add(n)
 }
 
 func (c CIDRBlock) GetLastIP() IP {
-	return c.firstIP.Add(c.CIDRSize - 1)
+	return c.GetNthIP(c.CIDRSize - 1)
 }

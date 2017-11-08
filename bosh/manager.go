@@ -391,10 +391,18 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 }
 
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
+	internalCIDR := terraformOutputs.GetString("internal_cidr")
+
+	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
+	if err != nil {
+		internalCIDR = "10.0.0.0/24"
+		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
+	}
+
 	vars := sharedDeploymentVarsYAML{
-		InternalCIDR: "10.0.0.0/24",
-		InternalGW:   "10.0.0.1",
-		InternalIP:   "10.0.0.5",
+		InternalCIDR: internalCIDR,
+		InternalGW:   parsedInternalCIDR.GetNthIP(1).String(),
+		InternalIP:   parsedInternalCIDR.GetNthIP(5).String(),
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 		ExternalIP:   terraformOutputs.GetString("external_ip"),
 	}
@@ -450,10 +458,18 @@ func mustMarshal(yamlStruct interface{}) []byte {
 }
 
 func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
+	internalCIDR := terraformOutputs.GetString("internal_cidr")
+
+	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
+	if err != nil {
+		internalCIDR = "10.0.0.0/24"
+		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
+	}
+
 	vars := sharedDeploymentVarsYAML{
-		InternalCIDR: "10.0.0.0/24",
-		InternalGW:   "10.0.0.1",
-		InternalIP:   "10.0.0.6",
+		InternalCIDR: internalCIDR,
+		InternalGW:   parsedInternalCIDR.GetNthIP(1).String(),
+		InternalIP:   parsedInternalCIDR.GetNthIP(6).String(),
 		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
 		ExternalIP:   terraformOutputs.GetString("bosh_director_external_ip"),
 	}

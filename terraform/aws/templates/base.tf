@@ -169,7 +169,7 @@ resource "aws_security_group" "nat_security_group" {
 }
 
 resource "aws_instance" "nat" {
-  private_ip             = "10.0.0.7"
+  private_ip             = "${cidrhost(var.internal_cidr, 7)}"
   instance_type          = "t2.medium"
   subnet_id              = "${aws_subnet.bosh_subnet.id}"
   source_dest_check      = false
@@ -428,9 +428,13 @@ resource "aws_security_group_rule" "bosh_internal_security_rule_udp" {
   source_security_group_id = "${aws_security_group.bosh_security_group.id}"
 }
 
-variable "bosh_subnet_cidr" {
+variable "internal_cidr" {
   type    = "string"
   default = "10.0.0.0/24"
+}
+
+output "internal_cidr" {
+  value = "${var.internal_cidr}"
 }
 
 variable "bosh_availability_zone" {
@@ -439,7 +443,7 @@ variable "bosh_availability_zone" {
 
 resource "aws_subnet" "bosh_subnet" {
   vpc_id            = "${aws_vpc.vpc.id}"
-  cidr_block        = "${var.bosh_subnet_cidr}"
+  cidr_block        = "${var.internal_cidr}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"
