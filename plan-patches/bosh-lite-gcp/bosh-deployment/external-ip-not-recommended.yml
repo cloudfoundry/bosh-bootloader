@@ -1,0 +1,17 @@
+# Adapted from bosh-deployment/external-ip-not-recommended.yml
+
+- type: replace
+  path: /networks/-
+  value:
+    name: foo
+    type: vip
+
+- type: replace
+  path: /instance_groups/name=bosh/networks/0/default?
+  value: [dns, gateway]
+
+- type: replace
+  path: /instance_groups/name=bosh/networks/-
+  value:
+    name: foo
+    static_ips: [((external_ip))]
