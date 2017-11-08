@@ -16,10 +16,10 @@ import (
 
 var _ = Describe("AzureCreateLBs", func() {
 	var (
-		terraformManager       *fakes.TerraformManager
-		cloudConfigManager     *fakes.CloudConfigManager
-		stateStore             *fakes.StateStore
-		environmentValidator   *fakes.EnvironmentValidator
+		terraformManager     *fakes.TerraformManager
+		cloudConfigManager   *fakes.CloudConfigManager
+		stateStore           *fakes.StateStore
+		environmentValidator *fakes.EnvironmentValidator
 
 		bblState    storage.State
 		command     commands.AzureCreateLBs
@@ -206,13 +206,12 @@ var _ = Describe("AzureCreateLBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{Azure: commands.AzureCreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{TFState: "some-tf-state"})
-					Expect(err).To(MatchError("the following errors occurred:\nfailed to apply,\nstate failed to be set"))
+					}}, storage.State{})
+					Expect(err).To(MatchError("the following errors occurred:\ngrape,\ncherry"))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 					Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{
-						LB:      storage.LB{Type: "concourse"},
-						TFState: "some-updated-tf-state",
+						LB: storage.LB{Type: "concourse"},
 					}))
 				})
 			})

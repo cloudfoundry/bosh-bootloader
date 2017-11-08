@@ -9,10 +9,10 @@ import (
 )
 
 type AzureCreateLBs struct {
-	terraformManager          terraformManager
-	cloudConfigManager        cloudConfigManager
-	stateStore                stateStore
-	environmentValidator      EnvironmentValidator
+	terraformManager     terraformManager
+	cloudConfigManager   cloudConfigManager
+	stateStore           stateStore
+	environmentValidator EnvironmentValidator
 }
 
 type AzureCreateLBsConfig struct {
@@ -26,10 +26,10 @@ func NewAzureCreateLBs(terraformManager terraformManager,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore, environmentValidator EnvironmentValidator) AzureCreateLBs {
 	return AzureCreateLBs{
-		terraformManager:          terraformManager,
-		cloudConfigManager:        cloudConfigManager,
-		stateStore:                stateStore,
-		environmentValidator:      environmentValidator,
+		terraformManager:     terraformManager,
+		cloudConfigManager:   cloudConfigManager,
+		stateStore:           stateStore,
+		environmentValidator: environmentValidator,
 	}
 }
 
@@ -76,8 +76,7 @@ func (c AzureCreateLBs) Execute(config CreateLBsConfig, state storage.State) err
 
 	state, err = c.terraformManager.Apply(state)
 	if err != nil {
-		// TODO fix terraform error
-		// return handleTerraformError(err, c.stateStore)
+		return handleTerraformError(err, state, c.stateStore)
 	}
 
 	if err := c.stateStore.Set(state); err != nil {
