@@ -190,7 +190,7 @@ var _ = Describe("AzureCreateLBs", func() {
 						TFState: "some-tf-state",
 					})
 					Expect(err).To(MatchError("failed to apply"))
-					Expect(stateStore.SetCall.CallCount).To(Equal(0))
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
 				})
 			})
 
