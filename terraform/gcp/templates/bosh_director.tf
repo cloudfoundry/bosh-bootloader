@@ -27,19 +27,19 @@ resource "google_compute_network" "bbl-network" {
   auto_create_subnetworks = false
 }
 
-variable "internal_cidr" {
-  type    = "string"
-  default = "10.0.0.0/24"
+output "internal_cidr" {
+  value = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
 }
 
-output "internal_cidr" {
-  value = "${var.internal_cidr}"
+variable "subnet_cidr" {
+  type    = "string"
+  default = "10.0.0.0/16"
 }
 
 resource "google_compute_subnetwork" "bbl-subnet" {
-  name			= "${var.env_id}-subnet"
-  ip_cidr_range = "10.0.0.0/16"
-  network		= "${google_compute_network.bbl-network.self_link}"
+  name          = "${var.env_id}-subnet"
+  ip_cidr_range = "${var.subnet_cidr}"
+  network       = "${google_compute_network.bbl-network.self_link}"
 }
 
 resource "google_compute_firewall" "external" {
