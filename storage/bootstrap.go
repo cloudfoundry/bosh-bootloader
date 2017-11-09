@@ -66,10 +66,6 @@ func (b StateBootstrap) GetState(dir string) (State, error) {
 		return state, fmt.Errorf("Existing bbl environment was created with a newer version of bbl. Please upgrade to bbl v%s.\n", state.BBLVersion)
 	}
 
-	if state.Version < STATE_SCHEMA {
-		b.logger.Println(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d).", STATE_SCHEMA, state.Version))
-	}
-
 	return state, nil
 }
 
