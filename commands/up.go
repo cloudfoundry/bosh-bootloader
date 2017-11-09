@@ -17,12 +17,6 @@ type Up struct {
 	terraformManager   terraformManager
 }
 
-type UpConfig struct {
-	Name       string
-	OpsFile    string
-	NoDirector bool
-}
-
 func NewUp(plan plan, boshManager boshManager, cloudConfigManager cloudConfigManager,
 	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Up {
 	return Up{
@@ -124,6 +118,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 	return nil
 }
 
-func (u Up) ParseArgs(args []string, state storage.State) (UpConfig, error) {
+func (u Up) ParseArgs(args []string, state storage.State) (PlanConfig, error) {
 	return u.plan.ParseArgs(args, state)
 }

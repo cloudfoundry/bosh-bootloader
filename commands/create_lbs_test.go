@@ -14,22 +14,50 @@ import (
 var _ = Describe("create-lbs", func() {
 	var (
 		command              commands.CreateLBs
-		createLBsCmd         *fakes.CreateLBsCmd
 		boshManager          *fakes.BOSHManager
-		certificateValidator *fakes.CertificateValidator
+		lbArgsHandler        *fakes.LBArgsHandler
 		logger               *fakes.Logger
 		stateValidator       *fakes.StateValidator
+		terraformManager     *fakes.TerraformManager
+		stateStore           *fakes.StateStore
+		environmentValidator *fakes.EnvironmentValidator
+		cloudConfigManager   *fakes.CloudConfigManager
+
+		lbState       storage.LB
+		mergedLBState storage.LB
 	)
 
 	BeforeEach(func() {
-		createLBsCmd = &fakes.CreateLBsCmd{}
 		boshManager = &fakes.BOSHManager{}
-		boshManager.VersionCall.Returns.Version = "2.0.24"
-		certificateValidator = &fakes.CertificateValidator{}
+		lbArgsHandler = &fakes.LBArgsHandler{}
 		logger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
+		terraformManager = &fakes.TerraformManager{}
+		cloudConfigManager = &fakes.CloudConfigManager{}
+		stateStore = &fakes.StateStore{}
+		environmentValidator = &fakes.EnvironmentValidator{}
 
-		command = commands.NewCreateLBs(createLBsCmd, logger, stateValidator, certificateValidator, boshManager)
+		boshManager.VersionCall.Returns.Version = "2.0.24"
+		lbState = storage.LB{
+			Domain: "something.io",
+		}
+		mergedLBState = storage.LB{
+			Type:   "some type",
+			Domain: "something.io",
+		}
+		lbArgsHandler.GetLBStateCall.Returns.LB = lbState
+		lbArgsHandler.MergeCall.Returns.LB = mergedLBState
+
+		command = commands.NewCreateLBs(
+			logger,
+			stateValidator,
+			boshManager,
+			lbArgsHandler,
+			cloudConfigManager,
+			terraformManager,
+			stateStore,
+			environmentValidator,
+		)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -43,25 +71,6 @@ var _ = Describe("create-lbs", func() {
 
 				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(err).To(MatchError("Validate state: raspberry"))
-			})
-		})
-
-		Context("if there is no lb type", func() {
-			It("returns an error", func() {
-				err := command.CheckFastFails([]string{}, storage.State{})
-				Expect(err).To(MatchError("--type is required"))
-			})
-		})
-
-		Context("if there is an lb type in the state file", func() {
-			It("does not return an error", func() {
-				err := command.CheckFastFails([]string{}, storage.State{
-					IAAS: "gcp",
-					LB: storage.LB{
-						Type: "concourse",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
@@ -89,9 +98,9 @@ var _ = Describe("create-lbs", func() {
 			})
 		})
 
-		Context("when certificate validator fails for cert and key", func() {
+		Context("when lb args validator fails", func() {
 			It("returns an error", func() {
-				certificateValidator.ValidateCall.Returns.Error = errors.New("failed to validate")
+				lbArgsHandler.GetLBStateCall.Returns.Error = errors.New("failed to validate")
 				err := command.CheckFastFails([]string{
 					"--type", "concourse",
 					"--cert", "/path/to/cert",
@@ -101,130 +110,132 @@ var _ = Describe("create-lbs", func() {
 					IAAS: "aws",
 				})
 
-				Expect(err).To(MatchError("Validate certificate: failed to validate"))
-				Expect(certificateValidator.ValidateCall.Receives.Command).To(Equal("create-lbs"))
-				Expect(certificateValidator.ValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
-				Expect(certificateValidator.ValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
-				Expect(certificateValidator.ValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))
-			})
-		})
-
-		Context("when iaas is gcp and lb type is concourse", func() {
-			It("does not call certificateValidator", func() {
-				_ = command.CheckFastFails([]string{"--type", "concourse"}, storage.State{IAAS: "gcp"})
-				Expect(certificateValidator.ValidateCall.CallCount).To(Equal(0))
-			})
-		})
-
-		Context("when lb type is concourse and domain flag is supplied", func() {
-			It("returns an error", func() {
-				err := command.CheckFastFails([]string{"--type", "concourse", "--domain", "ci.example.com"},
-					storage.State{IAAS: "gcp"})
-				Expect(err).To(MatchError("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again."))
+				Expect(err).To(MatchError("failed to validate"))
+				Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
+				Expect(lbArgsHandler.GetLBStateCall.Receives.Config.LBType).To(Equal("concourse"))
+				Expect(lbArgsHandler.GetLBStateCall.Receives.Config.CertPath).To(Equal("/path/to/cert"))
+				Expect(lbArgsHandler.GetLBStateCall.Receives.Config.KeyPath).To(Equal("/path/to/key"))
+				Expect(lbArgsHandler.GetLBStateCall.Receives.Config.ChainPath).To(Equal("/path/to/chain"))
 			})
 		})
 	})
 
 	Describe("Execute", func() {
-		Context("if the iaas if GCP", func() {
-			It("creates a GCP lb type", func() {
-				err := command.Execute([]string{"--type", "concourse"}, storage.State{IAAS: "gcp"})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{
-					LBType: "concourse",
-				}))
+		var (
+			oldLB               storage.LB
+			incomingState       storage.State
+			mergedState         storage.State
+			terraformApplyState storage.State
+		)
+
+		BeforeEach(func() {
+			oldLB = storage.LB{Type: "existing-type"}
+			incomingState = storage.State{
+				IAAS: "aws",
+				LB:   oldLB,
+			}
+			mergedState = incomingState
+			mergedState.LB = mergedLBState
+			terraformApplyState = storage.State{LatestTFOutput: "terraform-apply"}
+
+			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
+		})
+
+		It("handles arguments, calls terraform, and updates cloud config", func() {
+			err := command.Execute([]string{
+				"--type", "new-type",
+				"--cert", "my-cert",
+				"--key", "my-key",
+				"--chain", "my-chain",
+				"--domain", "my-domain",
+			}, incomingState)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
+			Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+				LBType:    "new-type",
+				CertPath:  "my-cert",
+				KeyPath:   "my-key",
+				ChainPath: "my-chain",
+				Domain:    "my-domain",
+			}))
+
+			Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(1))
+
+			Expect(lbArgsHandler.MergeCall.Receives.Old).To(Equal(oldLB))
+			Expect(lbArgsHandler.MergeCall.Receives.New).To(Equal(lbState))
+
+			Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(mergedState))
+
+			Expect(stateStore.SetCall.Receives[0].State).To(Equal(mergedState))
+
+			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(mergedState))
+
+			Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(mergedState))
+
+			Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
+
+			Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(terraformApplyState))
+			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
+			Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(terraformApplyState))
+		})
+
+		Context("on gcp", func() {
+			It("does not accept a chain argument", func() {
+				err := command.Execute([]string{"--chain", "some-chain"}, storage.State{IAAS: "gcp"})
+				Expect(err).To(MatchError("flag provided but not defined: -chain"))
 			})
 		})
 
-		Context("if GCP and type is cf", func() {
-			It("creates a GCP cf lb type is the iaas", func() {
-				err := command.Execute([]string{
-					"--type", "cf",
-					"--cert", "my-cert",
-					"--key", "my-key",
-					"--domain", "some-domain",
-				}, storage.State{
-					IAAS: "gcp",
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{
-					LBType:   "cf",
-					CertPath: "my-cert",
-					KeyPath:  "my-key",
-					Domain:   "some-domain",
-				}))
+		Context("no director", func() {
+			BeforeEach(func() {
+				terraformApplyState.NoDirector = true
+				terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
 			})
-		})
 
-		Context("if the iaas is AWS", func() {
-			It("creates an AWS lb type", func() {
+			It("handles arguments and calls terraform, but does not update the cloud config", func() {
 				err := command.Execute([]string{
-					"--type", "concourse",
+					"--type", "new-type",
 					"--cert", "my-cert",
 					"--key", "my-key",
 					"--chain", "my-chain",
-					"--domain", "some-domain",
-				}, storage.State{
-					IAAS: "aws",
-				})
+					"--domain", "my-domain",
+				}, incomingState)
+
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
-					commands.CreateLBsConfig{
-						LBType:    "concourse",
-						CertPath:  "my-cert",
-						KeyPath:   "my-key",
-						ChainPath: "my-chain",
-						Domain:    "some-domain",
-					},
-				))
-			})
-		})
+				Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
+				Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+					LBType:    "new-type",
+					CertPath:  "my-cert",
+					KeyPath:   "my-key",
+					ChainPath: "my-chain",
+					Domain:    "my-domain",
+				}))
 
-		Context("when an LB already exists", func() {
-			Context("using GCP", func() {
-				It("creates a GCP lb using the existing LB type", func() {
-					err := command.Execute([]string{
-						"--cert", "some-new-cert",
-						"--key", "some-new-key",
-					}, storage.State{
-						IAAS: "gcp",
-						LB: storage.LB{
-							Type: "cf",
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
+				Expect(terraformManager.ValidateVersionCall.CallCount).To(Equal(1))
 
-					Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
-						commands.CreateLBsConfig{
-							LBType:   "cf",
-							CertPath: "some-new-cert",
-							KeyPath:  "some-new-key",
-						}))
-				})
-			})
+				Expect(lbArgsHandler.MergeCall.Receives.Old).To(Equal(oldLB))
+				Expect(lbArgsHandler.MergeCall.Receives.New).To(Equal(lbState))
 
-			Context("using AWS", func() {
-				It("creates an AWS lb using the existing LB type", func() {
-					err := command.Execute([]string{
-						"--cert", "some-new-cert",
-						"--key", "some-new-key",
-					}, storage.State{
-						IAAS: "aws",
-						LB: storage.LB{
-							Type: "concourse",
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
+				Expect(environmentValidator.ValidateCall.Receives.State).To(Equal(mergedState))
 
-					Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
-						commands.CreateLBsConfig{
-							LBType:   "concourse",
-							CertPath: "some-new-cert",
-							KeyPath:  "some-new-key",
-						},
-					))
-				})
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(mergedState))
+
+				Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+				Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(mergedState))
+
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(mergedState))
+
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
+
+				Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(0))
+				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -236,29 +247,105 @@ var _ = Describe("create-lbs", func() {
 				})
 			})
 
-			Context("when the AWSCreateLBs fails", func() {
+			Context("when terraform version validation fails", func() {
 				BeforeEach(func() {
-					createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
+					terraformManager.ValidateVersionCall.Returns.Error = errors.New("an error")
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{"some-aws-args"}, storage.State{
-						IAAS: "aws",
-					})
-					Expect(err).To(MatchError("something bad happened"))
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("an error"))
 				})
 			})
 
-			Context("when the GCPCreateLBs fails", func() {
+			Context("when lb args validation fails", func() {
 				BeforeEach(func() {
-					createLBsCmd.ExecuteCall.Returns.Error = errors.New("something bad happened")
+					lbArgsHandler.GetLBStateCall.Returns.Error = errors.New("some error")
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{"some-gcp-args"}, storage.State{
-						IAAS: "gcp",
-					})
-					Expect(err).To(MatchError("something bad happened"))
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("some error"))
+				})
+			})
+
+			Context("when environment validation fails", func() {
+				BeforeEach(func() {
+					environmentValidator.ValidateCall.Returns.Error = errors.New("an error")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("an error"))
+				})
+			})
+
+			Context("when initial state storage fails", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{fakes.SetCallReturn{Error: errors.New("an error")}}
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("saving state before terraform init: an error"))
+				})
+			})
+
+			Context("when terraform initialization fails", func() {
+				BeforeEach(func() {
+					terraformManager.InitCall.Returns.Error = errors.New("an error")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("an error"))
+				})
+			})
+
+			Context("when terraform apply fails", func() {
+				BeforeEach(func() {
+					terraformManager.ApplyCall.Returns.Error = errors.New("an error")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("an error"))
+				})
+			})
+
+			Context("when second state storage fails", func() {
+				BeforeEach(func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{
+						fakes.SetCallReturn{},
+						fakes.SetCallReturn{Error: errors.New("an error")},
+					}
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("saving state after terraform apply: an error"))
+				})
+			})
+
+			Context("when cloud config initialize fails", func() {
+				BeforeEach(func() {
+					cloudConfigManager.InitializeCall.Returns.Error = errors.New("an error")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("an error"))
+				})
+			})
+
+			Context("when cloud config update fails", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("an error")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("an error"))
 				})
 			})
 		})

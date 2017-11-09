@@ -7,7 +7,3 @@ type Command interface {
 	Execute(subcommandFlags []string, state storage.State) error
 	Usage() string
 }
-
-func lbExists(lbType string) bool {
-	return lbType == "concourse" || lbType == "cf"
-}

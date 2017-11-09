@@ -24,6 +24,7 @@ var _ = Describe("Plan", func() {
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
 		envIDManager       *fakes.EnvIDManager
+		lbArgsHandler      *fakes.LBArgsHandler
 
 		tempDir string
 	)
@@ -36,6 +37,7 @@ var _ = Describe("Plan", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		envIDManager = &fakes.EnvIDManager{}
+		lbArgsHandler = &fakes.LBArgsHandler{}
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
@@ -43,7 +45,14 @@ var _ = Describe("Plan", func() {
 
 		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
-		command = commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+		command = commands.NewPlan(
+			boshManager,
+			cloudConfigManager,
+			stateStore,
+			envIDManager,
+			terraformManager,
+			lbArgsHandler,
+		)
 	})
 
 	Describe("Execute", func() {
@@ -62,6 +71,8 @@ var _ = Describe("Plan", func() {
 			args := []string{}
 			err := command.Execute(args, state)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(0))
 
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 			Expect(envIDManager.SyncCall.Receives.State).To(Equal(state))
@@ -101,6 +112,66 @@ var _ = Describe("Plan", func() {
 						},
 					})
 					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
+				})
+			})
+		})
+
+		Context("when --lb-type is passed", func() {
+			Context("aws", func() {
+				It("doesn't die", func() {
+					err := command.Execute(
+						[]string{
+							"--lb-type", "cf",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-chain", "chain",
+							"--lb-domain", "something.io",
+						}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+						LBType:    "cf",
+						CertPath:  "cert",
+						KeyPath:   "key",
+						ChainPath: "chain",
+						Domain:    "something.io",
+					}))
+				})
+			})
+			Context("gcp", func() {
+				It("doesn't die", func() {
+					err := command.Execute(
+						[]string{
+							"--lb-type", "cf",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-domain", "something.io",
+						}, storage.State{IAAS: "gcp"})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("gcp"))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+						LBType:   "cf",
+						CertPath: "cert",
+						KeyPath:  "key",
+						Domain:   "something.io",
+					}))
+				})
+			})
+			Context("when the lb args are not valid", func() {
+				BeforeEach(func() {
+					lbArgsHandler.GetLBStateCall.Returns.Error = errors.New("banana")
+				})
+				It("returns an error", func() {
+					err := command.Execute(
+						[]string{
+							"--lb-type", "cf",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-domain", "something.io",
+						}, storage.State{IAAS: "gcp"})
+					Expect(err).To(MatchError("banana"))
 				})
 			})
 		})

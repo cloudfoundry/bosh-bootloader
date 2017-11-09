@@ -7,15 +7,17 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/cloudfoundry/multierror"
 )
 
-var readAll func(r io.Reader) ([]byte, error) = ioutil.ReadAll
-var stat func(name string) (os.FileInfo, error) = os.Stat
+type CertData struct {
+	Cert  []byte
+	Key   []byte
+	Chain []byte
+}
 
 type Validator struct{}
 
@@ -23,26 +25,70 @@ func NewValidator() Validator {
 	return Validator{}
 }
 
-func (v Validator) Validate(command, certPath, keyPath, chainPath string) error {
+func (v Validator) ReadAndValidate(certPath, keyPath, chainPath string) (CertData, error) {
+	certData, readErrors := v.Read(certPath, keyPath, chainPath)
+	if readErrors != nil {
+		return CertData{}, readErrors
+	}
+
+	validateErrors := v.Validate(certData.Cert, certData.Key, certData.Chain)
+	if validateErrors != nil {
+		return CertData{}, validateErrors
+	}
+
+	return certData, nil
+}
+
+func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
 	var err error
-	var certificateData []byte
-	var chainData []byte
-	var certificate *x509.Certificate
-	var privateKey *rsa.PrivateKey
+	var certBytes []byte
+	var keyBytes []byte
+	var chainBytes []byte
+	validateErrors := multierror.NewMultiError("")
 
-	validateErrors := multierror.NewMultiError(command)
-
-	if certificateData, err = validateFileAndFormat("certificate", "--cert", certPath); err != nil {
+	if certBytes, err = readFile("certificate", "--cert", certPath); err != nil {
 		validateErrors.Add(err)
 	}
 
-	if _, err = validateFileAndFormat("key", "--key", keyPath); err != nil {
+	if keyBytes, err = readFile("key", "--key", keyPath); err != nil {
 		validateErrors.Add(err)
 	}
 
 	if chainPath != "" {
-		if chainData, err = validateFileAndFormat("chain", "--chain", chainPath); err != nil {
+		if chainBytes, err = readFile("chain", "--chain", chainPath); err != nil {
 			validateErrors.Add(err)
+		}
+	}
+
+	if validateErrors.Length() > 0 {
+		return CertData{}, validateErrors
+	}
+
+	return CertData{
+		Cert:  certBytes,
+		Key:   keyBytes,
+		Chain: chainBytes,
+	}, nil
+}
+
+func (v Validator) Validate(cert, key, chain []byte) error {
+	var err error
+	var certificate *x509.Certificate
+	var privateKey *rsa.PrivateKey
+	validateErrors := multierror.NewMultiError("")
+
+	err = validatePEM(cert)
+	if err != nil {
+		validateErrors.Add(fmt.Errorf("certificate %s: \"%s\"", err, cert))
+	}
+	err = validatePEM(key)
+	if err != nil {
+		validateErrors.Add(fmt.Errorf("key %s: \"%s\"", err, key))
+	}
+	if len(chain) > 0 {
+		err = validatePEM(chain)
+		if err != nil {
+			validateErrors.Add(fmt.Errorf("chain %s: \"%s\"", err, chain))
 		}
 	}
 
@@ -50,7 +96,7 @@ func (v Validator) Validate(command, certPath, keyPath, chainPath string) error 
 		return validateErrors
 	}
 
-	tlsCertificateStruct, err := tls.LoadX509KeyPair(certPath, keyPath)
+	tlsCertificateStruct, err := tls.X509KeyPair(cert, key)
 	if err != nil {
 		validateErrors.Add(err)
 	} else {
@@ -58,15 +104,15 @@ func (v Validator) Validate(command, certPath, keyPath, chainPath string) error 
 	}
 	if certificate == nil {
 		loadKeyPairError := err
-		certificate, err = parseCertificate(certificateData, loadKeyPairError)
+		certificate, err = parseCertificate(cert, loadKeyPairError)
 		if err != nil {
 			validateErrors.Add(err)
 		}
 	}
 
 	var certPool *x509.CertPool
-	if chainPath != "" {
-		certPool, err = parseChain(chainData)
+	if len(chain) > 0 {
+		certPool, err = parseChain(chain)
 		if err != nil {
 			validateErrors.Add(err)
 		}
@@ -91,7 +137,15 @@ func (v Validator) Validate(command, certPath, keyPath, chainPath string) error 
 	return nil
 }
 
-func validateFileAndFormat(propertyName string, flagName string, filePath string) ([]byte, error) {
+func validatePEM(data []byte) error {
+	p, _ := pem.Decode(data)
+	if p == nil {
+		return errors.New("is not PEM encoded")
+	}
+	return nil
+}
+
+func readFile(propertyName string, flagName string, filePath string) ([]byte, error) {
 	if filePath == "" {
 		return []byte{}, fmt.Errorf("%s is required", flagName)
 	}
@@ -103,7 +157,7 @@ func validateFileAndFormat(propertyName string, flagName string, filePath string
 		return []byte{}, err
 	}
 
-	fileInfo, err := stat(file.Name())
+	fileInfo, err := os.Stat(file.Name())
 	if err != nil {
 		return []byte{}, fmt.Errorf("%s: %s", err, filePath)
 	}
@@ -112,14 +166,9 @@ func validateFileAndFormat(propertyName string, flagName string, filePath string
 		return []byte{}, fmt.Errorf(`%s is not a regular file: %q`, propertyName, filePath)
 	}
 
-	fileData, err := readAll(file)
+	fileData, err := ioutil.ReadAll(file)
 	if err != nil {
 		return []byte{}, fmt.Errorf("%s: %s", err, filePath)
-	}
-
-	p, _ := pem.Decode(fileData)
-	if p == nil {
-		return []byte{}, fmt.Errorf("%s is not PEM encoded: %q", propertyName, filePath)
 	}
 
 	return fileData, nil

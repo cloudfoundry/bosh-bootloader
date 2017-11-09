@@ -23,7 +23,7 @@ type Plan struct {
 			State storage.State
 		}
 		Returns struct {
-			Config commands.UpConfig
+			Config commands.PlanConfig
 			Error  error
 		}
 	}
@@ -56,7 +56,7 @@ func (p *Plan) CheckFastFails(subcommandFlags []string, state storage.State) err
 	return p.CheckFastFailsCall.Returns.Error
 }
 
-func (p *Plan) ParseArgs(args []string, state storage.State) (commands.UpConfig, error) {
+func (p *Plan) ParseArgs(args []string, state storage.State) (commands.PlanConfig, error) {
 	p.ParseArgsCall.CallCount++
 	p.ParseArgsCall.Receives.Args = args
 	p.ParseArgsCall.Receives.State = state

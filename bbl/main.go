@@ -62,6 +62,7 @@ func main() {
 	envIDGenerator := helpers.NewEnvIDGenerator(rand.Reader)
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 	certificateValidator := certs.NewValidator()
+	lbArgsHandler := commands.NewLBArgsHandler(certificateValidator)
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
@@ -146,16 +147,12 @@ func main() {
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter)
 
 	// Subcommands
-	var (
-		createLBsCmd commands.CreateLBsCmd
-		lbsCmd       commands.LBsCmd
-	)
+	var lbsCmd commands.LBsCmd
+
 	switch appConfig.State.IAAS {
 	case "aws":
-		createLBsCmd = commands.NewAWSCreateLBs(cloudConfigManager, stateStore, terraformManager, environmentValidator)
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 	case "gcp":
-		createLBsCmd = commands.NewGCPCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator)
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 	}
 
@@ -164,7 +161,7 @@ func main() {
 	if appConfig.State.IAAS != "" {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
-	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
 	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
 	usage := commands.NewUsage(logger)
 
@@ -177,7 +174,7 @@ func main() {
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
-	commandSet["create-lbs"] = commands.NewCreateLBs(createLBsCmd, logger, stateValidator, certificateValidator, boshManager)
+	commandSet["create-lbs"] = commands.NewCreateLBs(logger, stateValidator, boshManager, lbArgsHandler, cloudConfigManager, terraformManager, stateStore, environmentValidator)
 	commandSet["update-lbs"] = commandSet["create-lbs"]
 	commandSet["delete-lbs"] = commands.NewDeleteLBs(logger, stateValidator, boshManager, cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)

@@ -1,10 +1,13 @@
 package fakes
 
+import "github.com/cloudfoundry/bosh-bootloader/certs"
+
 type CertificateValidator struct {
-	ValidateCall struct {
+	ReadAndValidateCall struct {
 		CallCount int
 		Returns   struct {
-			Error error
+			CertData certs.CertData
+			Error    error
 		}
 		Receives struct {
 			Command         string
@@ -15,11 +18,10 @@ type CertificateValidator struct {
 	}
 }
 
-func (c *CertificateValidator) Validate(command, certificatePath, keyPath, chainPath string) error {
-	c.ValidateCall.CallCount++
-	c.ValidateCall.Receives.Command = command
-	c.ValidateCall.Receives.CertificatePath = certificatePath
-	c.ValidateCall.Receives.KeyPath = keyPath
-	c.ValidateCall.Receives.ChainPath = chainPath
-	return c.ValidateCall.Returns.Error
+func (c *CertificateValidator) ReadAndValidate(certificatePath, keyPath, chainPath string) (certs.CertData, error) {
+	c.ReadAndValidateCall.CallCount++
+	c.ReadAndValidateCall.Receives.CertificatePath = certificatePath
+	c.ReadAndValidateCall.Receives.KeyPath = keyPath
+	c.ReadAndValidateCall.Receives.ChainPath = chainPath
+	return c.ReadAndValidateCall.Returns.CertData, c.ReadAndValidateCall.Returns.Error
 }

@@ -9,15 +9,14 @@ import (
 )
 
 type CreateLBs struct {
-	createLBsCmd         CreateLBsCmd
 	boshManager          boshManager
-	certificateValidator certificateValidator
 	logger               logger
 	stateValidator       stateValidator
-}
-
-type CreateLBsCmd interface {
-	Execute(createLBsConfig CreateLBsConfig, state storage.State) error
+	lbArgsHandler        lbArgsHandler
+	cloudConfigManager   cloudConfigManager
+	terraformManager     terraformManager
+	stateStore           stateStore
+	environmentValidator environmentValidator
 }
 
 type CreateLBsConfig struct {
@@ -30,33 +29,26 @@ type CreateLBsConfig struct {
 
 var LBNotFound error = errors.New("no load balancer has been found for this bbl environment")
 
-func NewCreateLBs(createLBsCmd CreateLBsCmd, logger logger, stateValidator stateValidator, certificateValidator certificateValidator, boshManager boshManager) CreateLBs {
+func NewCreateLBs(
+	logger logger,
+	stateValidator stateValidator,
+	boshManager boshManager,
+	lbArgsHandler lbArgsHandler,
+	cloudConfigManager cloudConfigManager,
+	terraformManager terraformManager,
+	stateStore stateStore,
+	environmentValidator environmentValidator,
+) CreateLBs {
 	return CreateLBs{
-		createLBsCmd:         createLBsCmd,
 		boshManager:          boshManager,
 		logger:               logger,
 		stateValidator:       stateValidator,
-		certificateValidator: certificateValidator,
+		lbArgsHandler:        lbArgsHandler,
+		cloudConfigManager:   cloudConfigManager,
+		terraformManager:     terraformManager,
+		stateStore:           stateStore,
+		environmentValidator: environmentValidator,
 	}
-}
-
-func (c CreateLBs) validateLBArgs(config CreateLBsConfig, iaas string) error {
-	if !lbExists(config.LBType) {
-		return errors.New("--type is required")
-	}
-
-	if !(iaas == "gcp" && config.LBType == "concourse") {
-		err := c.certificateValidator.Validate("create-lbs", config.CertPath, config.KeyPath, config.ChainPath)
-		if err != nil {
-			return fmt.Errorf("Validate certificate: %s", err)
-		}
-	}
-
-	if config.LBType == "concourse" && config.Domain != "" {
-		return errors.New("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
-	}
-
-	return nil
 }
 
 func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
@@ -65,7 +57,7 @@ func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State)
 		return err
 	}
 
-	if err := c.validateLBArgs(config, state.IAAS); err != nil {
+	if _, err := c.lbArgsHandler.GetLBState(state.IAAS, config); err != nil {
 		return err
 	}
 
@@ -89,9 +81,47 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	err = c.createLBsCmd.Execute(config, state)
+	err = c.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
+	}
+
+	newLBState, err := c.lbArgsHandler.GetLBState(state.IAAS, config)
+	if err != nil {
+		return err
+	}
+	state.LB = c.lbArgsHandler.Merge(newLBState, state.LB)
+
+	if err := c.environmentValidator.Validate(state); err != nil {
+		return err
+	}
+
+	if err := c.stateStore.Set(state); err != nil {
+		return fmt.Errorf("saving state before terraform init: %s", err)
+	}
+
+	if err := c.terraformManager.Init(state); err != nil {
+		return err
+	}
+
+	state, err = c.terraformManager.Apply(state)
+	if err != nil {
+		return handleTerraformError(err, state, c.stateStore)
+	}
+
+	if err := c.stateStore.Set(state); err != nil {
+		return fmt.Errorf("saving state after terraform apply: %s", err)
+	}
+
+	if !state.NoDirector {
+		err = c.cloudConfigManager.Initialize(state)
+		if err != nil {
+			return err
+		}
+		err = c.cloudConfigManager.Update(state)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

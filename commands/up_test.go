@@ -70,7 +70,7 @@ var _ = Describe("Up", func() {
 			terraformOutputs    terraform.Outputs
 		)
 		BeforeEach(func() {
-			plan.ParseArgsCall.Returns.Config = commands.UpConfig{Name: "some-name"}
+			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{Name: "some-name"}
 
 			incomingState = storage.State{LatestTFOutput: "incoming-state", IAAS: "some-iaas"}
 			iaasState = storage.State{LatestTFOutput: "iaas-state", IAAS: "some-iaas"}
@@ -168,7 +168,7 @@ var _ = Describe("Up", func() {
 
 		Context("when --no-director flag is passed", func() {
 			BeforeEach(func() {
-				plan.ParseArgsCall.Returns.Config = commands.UpConfig{NoDirector: true}
+				plan.ParseArgsCall.Returns.Config = commands.PlanConfig{NoDirector: true}
 			})
 
 			It("sets NoDirector to true on the state", func() {
@@ -212,7 +212,7 @@ var _ = Describe("Up", func() {
 			Context("when the config has the no-director flag set and the bbl state has a bosh director", func() {
 				BeforeEach(func() {
 					incomingState = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
-					plan.ParseArgsCall.Returns.Config = commands.UpConfig{NoDirector: true}
+					plan.ParseArgsCall.Returns.Config = commands.PlanConfig{NoDirector: true}
 				})
 
 				It("fast fails", func() {
@@ -398,7 +398,7 @@ var _ = Describe("Up", func() {
 
 	Describe("ParseArgs", func() {
 		It("returns ParseArgs on Plan", func() {
-			plan.ParseArgsCall.Returns.Config = commands.UpConfig{OpsFile: "some-path"}
+			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{OpsFile: "some-path"}
 			config, err := command.ParseArgs([]string{"--ops-file", "some-path"}, storage.State{ID: "some-state-id"})
 			Expect(err).NotTo(HaveOccurred())
 

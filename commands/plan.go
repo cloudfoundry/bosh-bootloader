@@ -17,16 +17,26 @@ type Plan struct {
 	stateStore         stateStore
 	envIDManager       envIDManager
 	terraformManager   terraformManager
+	lbArgsHandler      lbArgsHandler
+}
+
+type PlanConfig struct {
+	Name       string
+	OpsFile    string
+	NoDirector bool
+	LB         CreateLBsConfig
 }
 
 func NewPlan(boshManager boshManager, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Plan {
+	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager,
+	lbArgsHandler lbArgsHandler) Plan {
 	return Plan{
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
 		envIDManager:       envIDManager,
 		terraformManager:   terraformManager,
+		lbArgsHandler:      lbArgsHandler,
 	}
 }
 
@@ -53,27 +63,41 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 	return nil
 }
 
-func (p Plan) ParseArgs(args []string, state storage.State) (UpConfig, error) {
+func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) {
 	opsFileDir, err := p.stateStore.GetBblDir()
 	if err != nil {
-		return UpConfig{}, err //not tested
+		return PlanConfig{}, err //not tested
 	}
 
 	prevOpsFilePath := filepath.Join(opsFileDir, "previous-user-ops-file.yml")
 	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
 	if err != nil {
-		return UpConfig{}, err //not tested
+		return PlanConfig{}, err //not tested
 	}
 
-	var config UpConfig
+	var config PlanConfig
 	planFlags := flags.New("up")
 	planFlags.String(&config.Name, "name", "")
 	planFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
 	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
+	planFlags.String(&config.LB.LBType, "lb-type", "")
+	planFlags.String(&config.LB.CertPath, "lb-cert", "")
+	planFlags.String(&config.LB.KeyPath, "lb-key", "")
+	planFlags.String(&config.LB.Domain, "lb-domain", "")
+	if state.IAAS == "aws" {
+		planFlags.String(&config.LB.ChainPath, "lb-chain", "")
+	}
 
 	err = planFlags.Parse(args)
 	if err != nil {
-		return UpConfig{}, err
+		return PlanConfig{}, err
+	}
+
+	if (config.LB != CreateLBsConfig{}) {
+		_, err = p.lbArgsHandler.GetLBState(state.IAAS, config.LB)
+		if err != nil {
+			return PlanConfig{}, err
+		}
 	}
 
 	return config, nil

@@ -1,20 +1,21 @@
 package commands
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type plan interface {
 	CheckFastFails([]string, storage.State) error
-	ParseArgs([]string, storage.State) (UpConfig, error)
+	ParseArgs([]string, storage.State) (PlanConfig, error)
 	Execute([]string, storage.State) error
 	IsInitialized(storage.State) bool
 }
 
 type up interface {
 	CheckFastFails([]string, storage.State) error
-	ParseArgs([]string, storage.State) (UpConfig, error)
+	ParseArgs([]string, storage.State) (PlanConfig, error)
 	Execute([]string, storage.State) error
 }
 
@@ -64,7 +65,16 @@ type stateValidator interface {
 }
 
 type certificateValidator interface {
-	Validate(command, certPath, keyPath, chainPath string) error
+	ReadAndValidate(certPath, keyPath, chainPath string) (certs.CertData, error)
+}
+
+type lbArgsHandler interface {
+	GetLBState(string, CreateLBsConfig) (storage.LB, error)
+	Merge(storage.LB, storage.LB) storage.LB
+}
+
+type createLBsCmd interface {
+	Execute(state storage.State) error
 }
 
 type logger interface {
