@@ -156,7 +156,7 @@ var _ = Describe("StateBootstrap", func() {
 			It("logs a warning to stderr", func() {
 				_, err := bootstrap.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.PrintlnCall.Receives.Message).To(Equal(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d). Some things may not work as expected until you bbl up again.", storage.STATE_SCHEMA, existingVersion)))
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(fmt.Sprintf("Warning: Current schema version (%d) is newer than existing bbl environment schema (%d).", storage.STATE_SCHEMA, existingVersion)))
 			})
 		})
 
