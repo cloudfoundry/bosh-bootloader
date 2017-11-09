@@ -1,33 +1,22 @@
-variable "env_id" {
-	type = "string"
-}
+variable "env_id" {}
 
-variable "location" {
-	type = "string"
-}
+variable "location" {}
 
-variable "simple_env_id" {
-	type = "string"
-}
+variable "simple_env_id" {}
 
-variable "subscription_id" {
-	type = "string"
-}
+variable "subscription_id" {}
 
-variable "tenant_id" {
-	type = "string"
-}
+variable "tenant_id" {}
 
-variable "client_id" {
-	type = "string"
-}
+variable "client_id" {}
 
-variable "client_secret" {
-	type = "string"
+variable "client_secret" {}
+
+variable "network_cidr" {
+  default = "10.0.0.0/16"
 }
 
 variable "internal_cidr" {
-  type    = "string"
   default = "10.0.0.0/24"
 }
 
@@ -60,14 +49,14 @@ resource "azurerm_public_ip" "bosh" {
 
 resource "azurerm_virtual_network" "bosh" {
   name                = "${var.env_id}-bosh-vn"
-  address_space       = ["10.0.0.0/16"]
+  address_space       = ["${var.network_cidr}"]
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 }
 
 resource "azurerm_subnet" "bosh" {
   name                 = "${var.env_id}-bosh-sn"
-  address_prefix       = "10.0.0.0/16"
+  address_prefix       = "${var.network_cidr}"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
@@ -218,27 +207,27 @@ resource "azurerm_network_security_rule" "cf-log" {
 }
 
 output "bosh_network_name" {
-    value = "${azurerm_virtual_network.bosh.name}"
+  value = "${azurerm_virtual_network.bosh.name}"
 }
 
 output "bosh_subnet_name" {
-    value = "${azurerm_subnet.bosh.name}"
+  value = "${azurerm_subnet.bosh.name}"
 }
 
 output "bosh_resource_group_name" {
-    value = "${azurerm_resource_group.bosh.name}"
+  value = "${azurerm_resource_group.bosh.name}"
 }
 
 output "bosh_storage_account_name" {
-    value = "${azurerm_storage_account.bosh.name}"
+  value = "${azurerm_storage_account.bosh.name}"
 }
 
 output "bosh_default_security_group" {
-    value = "${azurerm_network_security_group.bosh.name}"
+  value = "${azurerm_network_security_group.bosh.name}"
 }
 
 output "external_ip" {
-    value = "${azurerm_public_ip.bosh.ip_address}"
+  value = "${azurerm_public_ip.bosh.ip_address}"
 }
 
 output "director_address" {
@@ -257,6 +246,10 @@ output "bosh_vms_public_key" {
 
 output "jumpbox_url" {
 	value = "${azurerm_public_ip.bosh.ip_address}:22"
+}
+
+output "network_cidr" {
+  value = "${var.network_cidr}"
 }
 
 output "internal_cidr" {

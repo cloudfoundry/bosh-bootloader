@@ -1,33 +1,22 @@
-variable "env_id" {
-	type = "string"
-}
+variable "env_id" {}
 
-variable "location" {
-	type = "string"
-}
+variable "location" {}
 
-variable "simple_env_id" {
-	type = "string"
-}
+variable "simple_env_id" {}
 
-variable "subscription_id" {
-	type = "string"
-}
+variable "subscription_id" {}
 
-variable "tenant_id" {
-	type = "string"
-}
+variable "tenant_id" {}
 
-variable "client_id" {
-	type = "string"
-}
+variable "client_id" {}
 
-variable "client_secret" {
-	type = "string"
+variable "client_secret" {}
+
+variable "network_cidr" {
+  default = "10.0.0.0/16"
 }
 
 variable "internal_cidr" {
-  type    = "string"
   default = "10.0.0.0/24"
 }
 
