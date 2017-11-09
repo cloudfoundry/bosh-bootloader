@@ -136,16 +136,15 @@ director_ssl:
 		Describe("CreateDirector", func() {
 			BeforeEach(func() {
 				terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":          "10.2.0.0/24",
-					"network_name":           "some-network",
-					"subnetwork_name":        "some-subnetwork",
-					"bosh_open_tag_name":     "some-jumpbox-tag",
-					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-					"bosh_director_tag_name": "some-director-tag",
-					"internal_tag_name":      "some-internal-tag",
-					"external_ip":            "some-external-ip",
-					"director_address":       "some-director-address",
-					"jumpbox_url":            "some-jumpbox-url",
+					"internal_cidr":     "10.2.0.0/24",
+					"network_name":      "some-network",
+					"subnetwork_name":   "some-subnetwork",
+					"director_tags":     []string{"some-director-tag"},
+					"jumpbox_tags":      []string{"some-jumpbox-tag", "some-open-director-tag"},
+					"internal_tag_name": "some-internal-tag",
+					"external_ip":       "some-external-ip",
+					"director_address":  "some-director-address",
+					"jumpbox_url":       "some-jumpbox-url",
 				}}
 			})
 
@@ -222,16 +221,14 @@ gcp_credentials_json: some-credential-json
 
 		BeforeEach(func() {
 			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-				"internal_cidr":          "10.0.0.0/24",
-				"network_name":           "some-network",
-				"subnetwork_name":        "some-subnetwork",
-				"bosh_open_tag_name":     "some-jumpbox-tag",
-				"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-				"bosh_director_tag_name": "some-director-tag",
-				"internal_tag_name":      "some-internal-tag",
-				"external_ip":            "some-external-ip",
-				"director_address":       "some-director-address",
-				"jumpbox_url":            "some-jumpbox-url",
+				"internal_cidr":     "10.0.0.0/24",
+				"network_name":      "some-network",
+				"subnetwork_name":   "some-subnetwork",
+				"jumpbox_tags":      []string{"some-jumpbox-tag", "some-open-director-tag"},
+				"internal_tag_name": "some-internal-tag",
+				"external_ip":       "some-external-ip",
+				"director_address":  "some-director-address",
+				"jumpbox_url":       "some-jumpbox-url",
 			}}
 
 			state = storage.State{
@@ -261,7 +258,7 @@ network: some-network
 subnetwork: some-subnetwork
 tags:
 - some-jumpbox-tag
-- some-jumpbox-fw-tag
+- some-open-director-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `
@@ -641,7 +638,7 @@ gcp_credentials_json: some-credential-json
 					"bosh_iam_instance_profile":     "some-instance-profile",
 					"bosh_vms_key_name":             "some-key-name",
 					"bosh_vms_private_key":          "some-private-key",
-					"jumpbox_security_group":        "some-security-group",
+					"jumpbox_security_group":        []string{"some-security-group"},
 					"external_ip":                   "some-external-ip",
 				}})
 				Expect(vars).To(MatchYAML(`---
@@ -681,12 +678,11 @@ region: some-region
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":      "10.1.0.0/24",
-					"network_name":       "some-network",
-					"subnetwork_name":    "some-subnetwork",
-					"bosh_open_tag_name": "some-jumpbox-tag",
-					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
-					"external_ip":        "some-external-ip",
+					"internal_cidr":   "10.1.0.0/24",
+					"network_name":    "some-network",
+					"subnetwork_name": "some-subnetwork",
+					"jumpbox_tags":    []string{"some-jumpbox-tag", "some-open-director-tag"},
+					"external_ip":     "some-external-ip",
 				}})
 				Expect(vars).To(MatchYAML(`---
 internal_cidr: 10.1.0.0/24
@@ -699,7 +695,7 @@ network: some-network
 subnetwork: some-subnetwork
 tags:
 - some-jumpbox-tag
-- some-jumpbox-fw-tag
+- some-open-director-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))
@@ -731,9 +727,7 @@ gcp_credentials_json: some-credential-json
 					"internal_cidr":             "10.0.1.0/24",
 					"network_name":              "some-network",
 					"subnetwork_name":           "some-subnetwork",
-					"bosh_open_tag_name":        "some-jumpbox-tag",
-					"jumpbox_tag_name":          "some-jumpbox-fw-tag",
-					"bosh_director_tag_name":    "some-director-tag",
+					"director_tags":             []string{"some-director-tag"},
 					"internal_tag_name":         "some-internal-tag",
 					"bosh_director_external_ip": "some-external-ip",
 					"director_address":          "some-director-address",
@@ -763,8 +757,6 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 zone: some-zone
-tags:
-- ""
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))
@@ -796,7 +788,7 @@ gcp_credentials_json: some-credential-json
 						"internal_cidr":                 "10.0.2.0/26",
 						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
-						"bosh_security_group":           "some-bosh-security-group",
+						"bosh_security_group":           []string{"some-bosh-security-group"},
 						"bosh_subnet_id":                "some-bosh-subnet",
 						"bosh_vms_key_name":             "some-keypair-name",
 						"bosh_vms_private_key":          "some-private-key",
@@ -834,8 +826,6 @@ internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 access_key_id: some-access-key-id
 secret_access_key: some-secret-access-key
-default_security_groups:
-- ""
 region: some-region
 `))
 				})

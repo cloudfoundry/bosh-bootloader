@@ -6,16 +6,12 @@ output "subnetwork_name" {
     value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
-output "bosh_open_tag_name" {
-    value = "${google_compute_firewall.bosh-open.name}"
+output "director_tags" {
+  value = ["${google_compute_firewall.bosh-director.name}"]
 }
 
-output "bosh_director_tag_name" {
-	value = "${google_compute_firewall.bosh-director.name}"
-}
-
-output "jumpbox_tag_name" {
-	value = "${var.env_id}-jumpbox"
+output "jumpbox_tags" {
+  value = ["${var.env_id}-jumpbox", "${google_compute_firewall.bosh-open.name}"]
 }
 
 output "internal_tag_name" {
