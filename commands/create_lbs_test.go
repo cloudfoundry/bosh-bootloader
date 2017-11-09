@@ -39,7 +39,7 @@ var _ = Describe("create-lbs", func() {
 			})
 
 			It("returns an error", func() {
-				err := command.CheckFastFails([]string{}, storage.State{})
+				err := command.CheckFastFails([]string{"--type", "concourse"}, storage.State{IAAS: "gcp"})
 
 				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(err).To(MatchError("Validate state: raspberry"))
@@ -130,9 +130,9 @@ var _ = Describe("create-lbs", func() {
 			It("creates a GCP lb type", func() {
 				err := command.Execute([]string{"--type", "concourse"}, storage.State{IAAS: "gcp"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{
 					LBType: "concourse",
-				}}))
+				}))
 			})
 		})
 
@@ -147,12 +147,12 @@ var _ = Describe("create-lbs", func() {
 					IAAS: "gcp",
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(commands.CreateLBsConfig{
 					LBType:   "cf",
 					CertPath: "my-cert",
 					KeyPath:  "my-key",
 					Domain:   "some-domain",
-				}}))
+				}))
 			})
 		})
 
@@ -171,13 +171,11 @@ var _ = Describe("create-lbs", func() {
 
 				Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
 					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							LBType:    "concourse",
-							CertPath:  "my-cert",
-							KeyPath:   "my-key",
-							ChainPath: "my-chain",
-							Domain:    "some-domain",
-						},
+						LBType:    "concourse",
+						CertPath:  "my-cert",
+						KeyPath:   "my-key",
+						ChainPath: "my-chain",
+						Domain:    "some-domain",
 					},
 				))
 			})
@@ -199,13 +197,10 @@ var _ = Describe("create-lbs", func() {
 
 					Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
 						commands.CreateLBsConfig{
-							GCP: commands.GCPCreateLBsConfig{
-								LBType:   "cf",
-								CertPath: "some-new-cert",
-								KeyPath:  "some-new-key",
-							},
-						},
-					))
+							LBType:   "cf",
+							CertPath: "some-new-cert",
+							KeyPath:  "some-new-key",
+						}))
 				})
 			})
 
@@ -224,11 +219,9 @@ var _ = Describe("create-lbs", func() {
 
 					Expect(createLBsCmd.ExecuteCall.Receives.Config).Should(Equal(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "concourse",
-								CertPath: "some-new-cert",
-								KeyPath:  "some-new-key",
-							},
+							LBType:   "concourse",
+							CertPath: "some-new-cert",
+							KeyPath:  "some-new-key",
 						},
 					))
 				})

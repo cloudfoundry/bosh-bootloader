@@ -38,12 +38,12 @@ func NewAWSCreateLBs(cloudConfigManager cloudConfigManager, stateStore stateStor
 
 func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error {
 	if state.LB.Type != "" {
-		if config.AWS.Domain == "" {
-			config.AWS.Domain = state.LB.Domain
+		if config.Domain == "" {
+			config.Domain = state.LB.Domain
 		}
 
-		if config.AWS.LBType == "" {
-			config.AWS.LBType = state.LB.Type
+		if config.LBType == "" {
+			config.LBType = state.LB.Type
 		}
 	}
 
@@ -51,12 +51,12 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 		return err
 	}
 
-	certContents, err := ioutil.ReadFile(config.AWS.CertPath)
+	certContents, err := ioutil.ReadFile(config.CertPath)
 	if err != nil {
 		return err
 	}
 
-	keyContents, err := ioutil.ReadFile(config.AWS.KeyPath)
+	keyContents, err := ioutil.ReadFile(config.KeyPath)
 	if err != nil {
 		return err
 	}
@@ -64,8 +64,8 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 	state.LB.Cert = string(certContents)
 	state.LB.Key = string(keyContents)
 
-	if config.AWS.ChainPath != "" {
-		chainContents, err := ioutil.ReadFile(config.AWS.ChainPath)
+	if config.ChainPath != "" {
+		chainContents, err := ioutil.ReadFile(config.ChainPath)
 		if err != nil {
 			return err
 		}
@@ -73,11 +73,11 @@ func (c AWSCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 		state.LB.Chain = string(chainContents)
 	}
 
-	if config.AWS.Domain != "" {
-		state.LB.Domain = config.AWS.Domain
+	if config.Domain != "" {
+		state.LB.Domain = config.Domain
 	}
 
-	state.LB.Type = config.AWS.LBType
+	state.LB.Type = config.LBType
 
 	if err := c.stateStore.Set(state); err != nil {
 		return err

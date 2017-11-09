@@ -66,12 +66,12 @@ func (p Plan) ParseArgs(args []string, state storage.State) (UpConfig, error) {
 	}
 
 	var config UpConfig
-	upFlags := flags.New("up")
-	upFlags.String(&config.Name, "name", "")
-	upFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
-	upFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
+	planFlags := flags.New("up")
+	planFlags.String(&config.Name, "name", "")
+	planFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
+	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
 
-	err = upFlags.Parse(args)
+	err = planFlags.Parse(args)
 	if err != nil {
 		return UpConfig{}, err
 	}

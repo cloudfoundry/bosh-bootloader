@@ -21,8 +21,11 @@ type CreateLBsCmd interface {
 }
 
 type CreateLBsConfig struct {
-	AWS AWSCreateLBsConfig
-	GCP GCPCreateLBsConfig
+	LBType    string
+	CertPath  string
+	KeyPath   string
+	ChainPath string
+	Domain    string
 }
 
 var LBNotFound error = errors.New("no load balancer has been found for this bbl environment")
@@ -37,29 +40,37 @@ func NewCreateLBs(createLBsCmd CreateLBsCmd, logger logger, stateValidator state
 	}
 }
 
+func (c CreateLBs) validateLBArgs(config CreateLBsConfig, iaas string) error {
+	if !lbExists(config.LBType) {
+		return errors.New("--type is required")
+	}
+
+	if !(iaas == "gcp" && config.LBType == "concourse") {
+		err := c.certificateValidator.Validate("create-lbs", config.CertPath, config.KeyPath, config.ChainPath)
+		if err != nil {
+			return fmt.Errorf("Validate certificate: %s", err)
+		}
+	}
+
+	if config.LBType == "concourse" && config.Domain != "" {
+		return errors.New("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
+	}
+
+	return nil
+}
+
 func (c CreateLBs) CheckFastFails(subcommandFlags []string, state storage.State) error {
 	config, err := parseFlags(subcommandFlags, state.IAAS, state.LB.Type)
 	if err != nil {
 		return err
 	}
 
+	if err := c.validateLBArgs(config, state.IAAS); err != nil {
+		return err
+	}
+
 	if err := c.stateValidator.Validate(); err != nil {
 		return fmt.Errorf("Validate state: %s", err)
-	}
-
-	if !lbExists(getLBType(config)) {
-		return errors.New("--type is required")
-	}
-
-	if !(state.IAAS == "gcp" && getLBType(config) == "concourse") {
-		err = c.certificateValidator.Validate("create-lbs", getCertPath(config), getKeyPath(config), getChainPath(config))
-		if err != nil {
-			return fmt.Errorf("Validate certificate: %s", err)
-		}
-	}
-
-	if getLBType(config) == "concourse" && getDomain(config) != "" {
-		return errors.New("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
 	}
 
 	if !state.NoDirector {
@@ -90,18 +101,13 @@ func parseFlags(subcommandFlags []string, iaas string, existingLBType string) (C
 	lbFlags := flags.New("create-lbs")
 
 	config := CreateLBsConfig{}
-	switch iaas {
-	case "aws":
-		lbFlags.String(&config.AWS.LBType, "type", existingLBType)
-		lbFlags.String(&config.AWS.CertPath, "cert", "")
-		lbFlags.String(&config.AWS.KeyPath, "key", "")
-		lbFlags.String(&config.AWS.ChainPath, "chain", "")
-		lbFlags.String(&config.AWS.Domain, "domain", "")
-	case "gcp":
-		lbFlags.String(&config.GCP.LBType, "type", existingLBType)
-		lbFlags.String(&config.GCP.CertPath, "cert", "")
-		lbFlags.String(&config.GCP.KeyPath, "key", "")
-		lbFlags.String(&config.GCP.Domain, "domain", "")
+	lbFlags.String(&config.LBType, "type", existingLBType)
+	lbFlags.String(&config.CertPath, "cert", "")
+	lbFlags.String(&config.KeyPath, "key", "")
+	lbFlags.String(&config.Domain, "domain", "")
+
+	if iaas == "aws" {
+		lbFlags.String(&config.ChainPath, "chain", "")
 	}
 
 	if err := lbFlags.Parse(subcommandFlags); err != nil {
@@ -109,51 +115,4 @@ func parseFlags(subcommandFlags []string, iaas string, existingLBType string) (C
 	}
 
 	return config, nil
-}
-
-func getLBType(config CreateLBsConfig) string {
-	if config.AWS.LBType != "" {
-		return config.AWS.LBType
-	}
-	if config.GCP.LBType != "" {
-		return config.GCP.LBType
-	}
-	return ""
-}
-
-func getCertPath(config CreateLBsConfig) string {
-	if config.AWS.CertPath != "" {
-		return config.AWS.CertPath
-	}
-	if config.GCP.CertPath != "" {
-		return config.GCP.CertPath
-	}
-	return ""
-}
-
-func getKeyPath(config CreateLBsConfig) string {
-	if config.AWS.KeyPath != "" {
-		return config.AWS.KeyPath
-	}
-	if config.GCP.KeyPath != "" {
-		return config.GCP.KeyPath
-	}
-	return ""
-}
-
-func getChainPath(config CreateLBsConfig) string {
-	if config.AWS.ChainPath != "" {
-		return config.AWS.ChainPath
-	}
-	return ""
-}
-
-func getDomain(config CreateLBsConfig) string {
-	if config.AWS.Domain != "" {
-		return config.AWS.Domain
-	}
-	if config.GCP.Domain != "" {
-		return config.GCP.Domain
-	}
-	return ""
 }

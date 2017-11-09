@@ -80,12 +80,12 @@ var _ = Describe("GCPCreateLBs", func() {
 					Domain: "some-domain",
 				},
 			}
-			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+			err := command.Execute(commands.CreateLBsConfig{
 				LBType:   "cf",
 				CertPath: certPath,
 				KeyPath:  keyPath,
 				Domain:   "some-domain",
-			}}, bblState)
+			}, bblState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
@@ -101,9 +101,9 @@ var _ = Describe("GCPCreateLBs", func() {
 				},
 			}
 
-			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+			err := command.Execute(commands.CreateLBsConfig{
 				LBType: "concourse",
-			}}, storage.State{})
+			}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(1))
@@ -117,9 +117,9 @@ var _ = Describe("GCPCreateLBs", func() {
 		It("uploads a new cloud-config to the bosh director", func() {
 			terraformManager.ApplyCall.Returns.BBLState = bblState
 
-			err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+			err := command.Execute(commands.CreateLBsConfig{
 				LBType: "concourse",
-			}}, bblState)
+			}, bblState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
@@ -132,7 +132,7 @@ var _ = Describe("GCPCreateLBs", func() {
 			It("does not call the CloudConfigManager", func() {
 				terraformManager.ApplyCall.Returns.BBLState.NoDirector = true
 
-				err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{
+				err := command.Execute(commands.CreateLBsConfig{}, storage.State{
 					NoDirector: true,
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -147,7 +147,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
+					err := command.Execute(commands.CreateLBsConfig{}, storage.State{})
 					Expect(err).To(MatchError("validate terraform version: cannot validate version"))
 				})
 			})
@@ -158,7 +158,7 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
+					err := command.Execute(commands.CreateLBsConfig{}, storage.State{})
 					Expect(err).To(MatchError(fmt.Errorf("validate environment: %s", application.DirectorNotReachable)))
 				})
 			})
@@ -168,9 +168,9 @@ var _ = Describe("GCPCreateLBs", func() {
 					terraformManager.InitCall.Returns.Error = errors.New("apple")
 				})
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					err := command.Execute(commands.CreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{})
+					}, storage.State{})
 					Expect(err).To(MatchError("initialize terraform: apple"))
 				})
 			})
@@ -181,11 +181,11 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					err := command.Execute(commands.CreateLBsConfig{
 						LBType:   "cf",
 						CertPath: certPath,
 						KeyPath:  keyPath,
-					}}, storage.State{})
+					}, storage.State{})
 					Expect(err).To(MatchError("failed to apply"))
 				})
 			})
@@ -200,9 +200,9 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					err := command.Execute(commands.CreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{})
+					}, storage.State{})
 					Expect(err).To(MatchError("the following errors occurred:\ngrape,\ncherry"))
 
 					Expect(stateStore.SetCall.CallCount).To(Equal(1))
@@ -218,9 +218,9 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					err := command.Execute(commands.CreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{})
+					}, storage.State{})
 					Expect(err).To(MatchError("save state: failed to save state"))
 				})
 			})
@@ -231,9 +231,9 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					err := command.Execute(commands.CreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{})
+					}, storage.State{})
 					Expect(err).To(MatchError("initialize cloud config: grapefruit"))
 				})
 			})
@@ -244,9 +244,9 @@ var _ = Describe("GCPCreateLBs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+					err := command.Execute(commands.CreateLBsConfig{
 						LBType: "concourse",
-					}}, storage.State{})
+					}, storage.State{})
 					Expect(err).To(MatchError("update cloud config: pomegranate"))
 				})
 			})

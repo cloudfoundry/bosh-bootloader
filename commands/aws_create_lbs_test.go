@@ -79,11 +79,9 @@ var _ = Describe("AWS Create LBs", func() {
 			It("creates a load balancer with certificate using terraform", func() {
 				err := command.Execute(
 					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							LBType:   "cf",
-							CertPath: certPath,
-							KeyPath:  keyPath,
-						},
+						LBType:   "cf",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					},
 					incomingState,
 				)
@@ -113,12 +111,10 @@ var _ = Describe("AWS Create LBs", func() {
 				It("creates a load balancer with certificate using terraform", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:    "cf",
-								CertPath:  certPath,
-								KeyPath:   keyPath,
-								ChainPath: chainPath,
-							},
+							LBType:    "cf",
+							CertPath:  certPath,
+							KeyPath:   keyPath,
+							ChainPath: chainPath,
 						},
 						incomingState,
 					)
@@ -146,12 +142,10 @@ var _ = Describe("AWS Create LBs", func() {
 				It("creates dns records for provided domain", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "cf",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-								Domain:   "some-domain",
-							},
+							LBType:   "cf",
+							CertPath: certPath,
+							KeyPath:  keyPath,
+							Domain:   "some-domain",
 						},
 						incomingState,
 					)
@@ -180,11 +174,9 @@ var _ = Describe("AWS Create LBs", func() {
 				It("does not change domain", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "cf",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							LBType:   "cf",
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						incomingState,
 					)
@@ -212,11 +204,9 @@ var _ = Describe("AWS Create LBs", func() {
 				It("creates a load balancer with certificate using terraform", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "concourse",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						incomingState,
 					)
@@ -237,12 +227,10 @@ var _ = Describe("AWS Create LBs", func() {
 					It("creates a load balancer with certificate using terraform", func() {
 						err := command.Execute(
 							commands.CreateLBsConfig{
-								AWS: commands.AWSCreateLBsConfig{
-									LBType:    "concourse",
-									CertPath:  certPath,
-									KeyPath:   keyPath,
-									ChainPath: chainPath,
-								},
+								LBType:    "concourse",
+								CertPath:  certPath,
+								KeyPath:   keyPath,
+								ChainPath: chainPath,
 							},
 							incomingState,
 						)
@@ -263,11 +251,9 @@ var _ = Describe("AWS Create LBs", func() {
 
 				err := command.Execute(
 					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							LBType:   "concourse",
-							CertPath: certPath,
-							KeyPath:  keyPath,
-						},
+						LBType:   "concourse",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					},
 					incomingState,
 				)
@@ -284,11 +270,9 @@ var _ = Describe("AWS Create LBs", func() {
 			It("returns an error", func() {
 				err := command.Execute(
 					commands.CreateLBsConfig{
-						AWS: commands.AWSCreateLBsConfig{
-							LBType:   "concourse",
-							CertPath: certPath,
-							KeyPath:  keyPath,
-						},
+						LBType:   "concourse",
+						CertPath: certPath,
+						KeyPath:  keyPath,
 					},
 					incomingState,
 				)
@@ -303,11 +287,9 @@ var _ = Describe("AWS Create LBs", func() {
 				It("saves state with new certificate name and lb type", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "concourse",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)
@@ -325,11 +307,9 @@ var _ = Describe("AWS Create LBs", func() {
 				func(newLbType, oldLbType string) {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "concourse",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{
 							LB: storage.LB{
@@ -347,10 +327,8 @@ var _ = Describe("AWS Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath: "/fake/cert/path",
-								KeyPath:  keyPath,
-							},
+							CertPath: "/fake/cert/path",
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)
@@ -362,10 +340,8 @@ var _ = Describe("AWS Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath: certPath,
-								KeyPath:  "/fake/key/path",
-							},
+							CertPath: certPath,
+							KeyPath:  "/fake/key/path",
 						},
 						storage.State{},
 					)
@@ -377,11 +353,9 @@ var _ = Describe("AWS Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath:  certPath,
-								KeyPath:   keyPath,
-								ChainPath: "/fake/chain/path",
-							},
+							CertPath:  certPath,
+							KeyPath:   keyPath,
+							ChainPath: "/fake/chain/path",
 						},
 						storage.State{},
 					)
@@ -400,10 +374,8 @@ var _ = Describe("AWS Create LBs", func() {
 
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)
@@ -425,10 +397,8 @@ var _ = Describe("AWS Create LBs", func() {
 					It("returns the terraform error and the state store set error", func() {
 						err := command.Execute(
 							commands.CreateLBsConfig{
-								AWS: commands.AWSCreateLBsConfig{
-									CertPath: certPath,
-									KeyPath:  keyPath,
-								},
+								CertPath: certPath,
+								KeyPath:  keyPath,
 							},
 							storage.State{},
 						)
@@ -443,10 +413,8 @@ var _ = Describe("AWS Create LBs", func() {
 
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)
@@ -462,11 +430,9 @@ var _ = Describe("AWS Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "concourse",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)
@@ -482,11 +448,9 @@ var _ = Describe("AWS Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								LBType:   "concourse",
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							LBType:   "concourse",
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)
@@ -502,10 +466,8 @@ var _ = Describe("AWS Create LBs", func() {
 				It("returns an error", func() {
 					err := command.Execute(
 						commands.CreateLBsConfig{
-							AWS: commands.AWSCreateLBsConfig{
-								CertPath: certPath,
-								KeyPath:  keyPath,
-							},
+							CertPath: certPath,
+							KeyPath:  keyPath,
 						},
 						storage.State{},
 					)

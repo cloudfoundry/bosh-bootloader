@@ -68,6 +68,8 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	AfterEach(func() {
+		acceptance.SkipUnless("upgrade")
+
 		By("destroying with the old bbl", func() {
 			session := oldBBL.Destroy()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit())

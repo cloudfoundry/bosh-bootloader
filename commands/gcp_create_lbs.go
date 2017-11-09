@@ -41,8 +41,8 @@ func NewGCPCreateLBs(terraformManager terraformManager,
 
 func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error {
 	if state.LB.Type != "" {
-		if config.GCP.Domain == "" {
-			config.GCP.Domain = state.LB.Domain
+		if config.Domain == "" {
+			config.Domain = state.LB.Domain
 		}
 	}
 
@@ -55,20 +55,20 @@ func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 		return fmt.Errorf("validate environment: %s", err)
 	}
 
-	state.LB.Type = config.GCP.LBType
+	state.LB.Type = config.LBType
 
 	var cert, key []byte
-	if config.GCP.LBType == "cf" {
-		state.LB.Domain = config.GCP.Domain
+	if config.LBType == "cf" {
+		state.LB.Domain = config.Domain
 
-		cert, err = ioutil.ReadFile(config.GCP.CertPath)
+		cert, err = ioutil.ReadFile(config.CertPath)
 		if err != nil {
 			return fmt.Errorf("read cert: %s", err)
 		}
 
 		state.LB.Cert = string(cert)
 
-		key, err = ioutil.ReadFile(config.GCP.KeyPath)
+		key, err = ioutil.ReadFile(config.KeyPath)
 		if err != nil {
 			return fmt.Errorf("read key: %s", err)
 		}
