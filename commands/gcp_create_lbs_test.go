@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -147,7 +148,7 @@ var _ = Describe("GCPCreateLBs", func() {
 
 				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
-					Expect(err).To(MatchError("cannot validate version"))
+					Expect(err).To(MatchError("validate terraform version: cannot validate version"))
 				})
 			})
 
@@ -156,9 +157,9 @@ var _ = Describe("GCPCreateLBs", func() {
 					environmentValidator.ValidateCall.Returns.Error = application.DirectorNotReachable
 				})
 
-				It("returns a DirectorNotReachable error", func() {
+				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{}}, storage.State{})
-					Expect(err).To(MatchError(application.DirectorNotReachable))
+					Expect(err).To(MatchError(fmt.Errorf("validate environment: %s", application.DirectorNotReachable)))
 				})
 			})
 
@@ -166,11 +167,11 @@ var _ = Describe("GCPCreateLBs", func() {
 				BeforeEach(func() {
 					terraformManager.InitCall.Returns.Error = errors.New("apple")
 				})
-				It("returns the error", func() {
+				It("returns an error", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
 					}}, storage.State{})
-					Expect(err).To(MatchError("apple"))
+					Expect(err).To(MatchError("initialize terraform: apple"))
 				})
 			})
 
@@ -220,20 +221,7 @@ var _ = Describe("GCPCreateLBs", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
 					}}, storage.State{})
-					Expect(err).To(MatchError("failed to save state"))
-				})
-			})
-
-			Context("when the cloud config fails to be updated", func() {
-				BeforeEach(func() {
-					cloudConfigManager.UpdateCall.Returns.Error = errors.New("pomegranate")
-				})
-
-				It("returns an error", func() {
-					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
-						LBType: "concourse",
-					}}, storage.State{})
-					Expect(err).To(MatchError("pomegranate"))
+					Expect(err).To(MatchError("save state: failed to save state"))
 				})
 			})
 
@@ -246,10 +234,22 @@ var _ = Describe("GCPCreateLBs", func() {
 					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
 						LBType: "concourse",
 					}}, storage.State{})
-					Expect(err).To(MatchError("grapefruit"))
+					Expect(err).To(MatchError("initialize cloud config: grapefruit"))
 				})
 			})
 
+			Context("when the cloud config fails to be updated", func() {
+				BeforeEach(func() {
+					cloudConfigManager.UpdateCall.Returns.Error = errors.New("pomegranate")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute(commands.CreateLBsConfig{GCP: commands.GCPCreateLBsConfig{
+						LBType: "concourse",
+					}}, storage.State{})
+					Expect(err).To(MatchError("update cloud config: pomegranate"))
+				})
+			})
 		})
 	})
 })

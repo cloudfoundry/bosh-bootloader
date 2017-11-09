@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	yaml "gopkg.in/yaml.v2"
@@ -47,11 +48,11 @@ func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 
 	err := c.terraformManager.ValidateVersion()
 	if err != nil {
-		return err
+		return fmt.Errorf("validate terraform version: %s", err)
 	}
 
 	if err := c.environmentValidator.Validate(state); err != nil {
-		return err
+		return fmt.Errorf("validate environment: %s", err)
 	}
 
 	state.LB.Type = config.GCP.LBType
@@ -62,21 +63,21 @@ func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 
 		cert, err = ioutil.ReadFile(config.GCP.CertPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("read cert: %s", err)
 		}
 
 		state.LB.Cert = string(cert)
 
 		key, err = ioutil.ReadFile(config.GCP.KeyPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("read key: %s", err)
 		}
 
 		state.LB.Key = string(key)
 	}
 
 	if err := c.terraformManager.Init(state); err != nil {
-		return err
+		return fmt.Errorf("initialize terraform: %s", err)
 	}
 
 	state, err = c.terraformManager.Apply(state)
@@ -85,17 +86,17 @@ func (c GCPCreateLBs) Execute(config CreateLBsConfig, state storage.State) error
 	}
 
 	if err := c.stateStore.Set(state); err != nil {
-		return err
+		return fmt.Errorf("save state: %s", err)
 	}
 
 	if !state.NoDirector {
 		err = c.cloudConfigManager.Initialize(state)
 		if err != nil {
-			return err
+			return fmt.Errorf("initialize cloud config: %s", err)
 		}
 		err = c.cloudConfigManager.Update(state)
 		if err != nil {
-			return err
+			return fmt.Errorf("update cloud config: %s", err)
 		}
 	}
 
