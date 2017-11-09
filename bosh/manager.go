@@ -413,7 +413,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			Zone:           state.GCP.Zone,
 			Network:        terraformOutputs.GetString("network_name"),
 			Subnetwork:     terraformOutputs.GetString("subnetwork_name"),
-			Tags:           terraformOutputs.GetStringSlice("jumpbox_tags"),
+			Tags:           []string{terraformOutputs.GetString("bosh_open_tag_name"), terraformOutputs.GetString("jumpbox_tag_name")},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
@@ -425,7 +425,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			SecretAccessKey:       state.AWS.SecretAccessKey,
 			IAMInstanceProfile:    terraformOutputs.GetString("bosh_iam_instance_profile"),
 			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
-			DefaultSecurityGroups: terraformOutputs.GetStringSlice("jumpbox_security_group"),
+			DefaultSecurityGroups: []string{terraformOutputs.GetString("jumpbox_security_group")},
 			Region:                state.AWS.Region,
 		}
 		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
@@ -480,7 +480,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			Zone:           state.GCP.Zone,
 			Network:        terraformOutputs.GetString("network_name"),
 			Subnetwork:     terraformOutputs.GetString("subnetwork_name"),
-			Tags:           terraformOutputs.GetStringSlice("director_tags"),
+			Tags:           []string{terraformOutputs.GetString("bosh_director_tag_name")},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
@@ -492,7 +492,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			SecretAccessKey:       state.AWS.SecretAccessKey,
 			IAMInstanceProfile:    terraformOutputs.GetString("bosh_iam_instance_profile"),
 			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
-			DefaultSecurityGroups: terraformOutputs.GetStringSlice("bosh_security_group"),
+			DefaultSecurityGroups: []string{terraformOutputs.GetString("bosh_security_group")},
 			Region:                state.AWS.Region,
 			KMSKeyARN:             terraformOutputs.GetString("kms_key_arn"),
 		}
