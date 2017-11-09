@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -180,7 +181,11 @@ var _ = Describe("Plan", func() {
 		Describe("failure cases", func() {
 			It("returns an error if reading the ops file fails", func() {
 				err := command.Execute([]string{"--ops-file", "some-invalid-path"}, storage.State{})
-				Expect(err).To(MatchError("Reading ops-file contents: open some-invalid-path: no such file or directory"))
+				if runtime.GOOS == "windows" {
+					Expect(err).To(MatchError("Reading ops-file contents: open some-invalid-path: The system cannot find the file specified."))
+				} else {
+					Expect(err).To(MatchError("Reading ops-file contents: open some-invalid-path: no such file or directory"))
+				}
 			})
 
 			It("returns an error if state store set fails", func() {
