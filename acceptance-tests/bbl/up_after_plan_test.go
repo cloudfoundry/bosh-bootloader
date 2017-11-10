@@ -27,6 +27,7 @@ var _ = Describe("up after plan", func() {
 		bbl        actors.BBL
 		stateDir   string
 		jumpboxURL string
+		iaas       string
 	)
 
 	BeforeEach(func() {
@@ -34,6 +35,8 @@ var _ = Describe("up after plan", func() {
 
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
+
+		iaas = configuration.IAAS
 
 		stateDir = configuration.StateFileDir
 
@@ -117,6 +120,10 @@ output "jumpbox_url" {
 		})
 
 		By("verifying that vm extensions were added to the cloud config", func() {
+			if iaas == "azure" {
+				return
+			}
+
 			var cloudConfig struct {
 				VMExtensions []struct {
 					Name            string                 `yaml:"name"`
@@ -138,6 +145,10 @@ output "jumpbox_url" {
 		})
 
 		By("verifying the bbl lbs output", func() {
+			if iaas == "azure" {
+				return
+			}
+
 			stdout := bbl.Lbs()
 			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))

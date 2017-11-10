@@ -67,14 +67,20 @@ var _ = Describe("LB args handler", func() {
 			})
 		})
 
-		Context("failure cases", func() {
-			Context("if there is no lb type", func() {
-				It("returns an error", func() {
-					_, err := handler.GetLBState("", commands.CreateLBsConfig{})
-					Expect(err).To(MatchError("--type is required"))
-				})
+		Context("when empty config is passed in", func() {
+			It("does not call certificateValidator", func() {
+				lbState, err := handler.GetLBState("", commands.CreateLBsConfig{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(lbState.Type).To(Equal(""))
+				Expect(lbState.Cert).To(Equal(""))
+				Expect(lbState.Key).To(Equal(""))
+				Expect(lbState.Chain).To(Equal(""))
+				Expect(lbState.Domain).To(Equal(""))
+				Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 			})
+		})
 
+		Context("failure cases", func() {
 			Context("when certificate validator fails for cert and key", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidateCall.Returns.Error = errors.New("failed to validate")
@@ -95,7 +101,7 @@ var _ = Describe("LB args handler", func() {
 						LBType: "concourse",
 						Domain: "something.io",
 					})
-					Expect(err).To(MatchError("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again."))
+					Expect(err).To(MatchError("domain is not implemented for concourse load balancers. Remove the --domain flag and try again."))
 				})
 			})
 		})

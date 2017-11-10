@@ -127,6 +127,10 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 	return nil
 }
 
+func lbExists(lbType string) bool {
+	return lbType == "concourse" || lbType == "cf"
+}
+
 func parseFlags(subcommandFlags []string, iaas string, existingLBType string) (CreateLBsConfig, error) {
 	lbFlags := flags.New("create-lbs")
 
@@ -142,6 +146,10 @@ func parseFlags(subcommandFlags []string, iaas string, existingLBType string) (C
 
 	if err := lbFlags.Parse(subcommandFlags); err != nil {
 		return config, err
+	}
+
+	if !lbExists(config.LBType) {
+		return CreateLBsConfig{}, errors.New("--type must be \"cf\" or \"concourse\"")
 	}
 
 	return config, nil

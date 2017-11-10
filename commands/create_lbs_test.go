@@ -129,7 +129,7 @@ var _ = Describe("create-lbs", func() {
 		)
 
 		BeforeEach(func() {
-			oldLB = storage.LB{Type: "existing-type"}
+			oldLB = storage.LB{Type: "cf"}
 			incomingState = storage.State{
 				IAAS: "aws",
 				LB:   oldLB,
@@ -143,7 +143,7 @@ var _ = Describe("create-lbs", func() {
 
 		It("handles arguments, calls terraform, and updates cloud config", func() {
 			err := command.Execute([]string{
-				"--type", "new-type",
+				"--type", "concourse",
 				"--cert", "my-cert",
 				"--key", "my-key",
 				"--chain", "my-chain",
@@ -154,7 +154,7 @@ var _ = Describe("create-lbs", func() {
 
 			Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
 			Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
-				LBType:    "new-type",
+				LBType:    "concourse",
 				CertPath:  "my-cert",
 				KeyPath:   "my-key",
 				ChainPath: "my-chain",
@@ -199,7 +199,7 @@ var _ = Describe("create-lbs", func() {
 
 			It("handles arguments and calls terraform, but does not update the cloud config", func() {
 				err := command.Execute([]string{
-					"--type", "new-type",
+					"--type", "concourse",
 					"--cert", "my-cert",
 					"--key", "my-key",
 					"--chain", "my-chain",
@@ -210,7 +210,7 @@ var _ = Describe("create-lbs", func() {
 
 				Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
 				Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
-					LBType:    "new-type",
+					LBType:    "concourse",
 					CertPath:  "my-cert",
 					KeyPath:   "my-key",
 					ChainPath: "my-chain",
@@ -240,10 +240,23 @@ var _ = Describe("create-lbs", func() {
 		})
 
 		Context("failure cases", func() {
+			var args []string
+
+			BeforeEach(func() {
+				args = []string{"--type", "concourse"}
+			})
+
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{"--invalid-flag"}, storage.State{})
 					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
+				})
+			})
+
+			Context("if there is no lb type", func() {
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("--type must be \"cf\" or \"concourse\""))
 				})
 			})
 
@@ -253,7 +266,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("an error"))
 				})
 			})
@@ -264,7 +277,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("some error"))
 				})
 			})
@@ -275,7 +288,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("an error"))
 				})
 			})
@@ -286,7 +299,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("saving state before terraform init: an error"))
 				})
 			})
@@ -297,7 +310,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("an error"))
 				})
 			})
@@ -308,7 +321,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("an error"))
 				})
 			})
@@ -322,7 +335,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("saving state after terraform apply: an error"))
 				})
 			})
@@ -333,7 +346,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("an error"))
 				})
 			})
@@ -344,7 +357,7 @@ var _ = Describe("create-lbs", func() {
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
+					err := command.Execute(args, storage.State{})
 					Expect(err).To(MatchError("an error"))
 				})
 			})

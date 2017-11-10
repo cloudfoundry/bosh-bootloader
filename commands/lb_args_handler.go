@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -19,48 +18,14 @@ func NewLBArgsHandler(certificateValidator certificateValidator) LBArgsHandler {
 	}
 }
 
-func lbExists(lbType string) bool {
-	return lbType == "concourse" || lbType == "cf"
-}
-
-func ReadCerts(config CreateLBsConfig) (storage.LB, error) {
-	lb := storage.LB{
-		Type:   config.LBType,
-		Domain: config.Domain,
-	}
-
-	certContents, err := ioutil.ReadFile(config.CertPath)
-	if err != nil {
-		return storage.LB{}, err
-	}
-
-	keyContents, err := ioutil.ReadFile(config.KeyPath)
-	if err != nil {
-		return storage.LB{}, err
-	}
-
-	lb.Cert = string(certContents)
-	lb.Key = string(keyContents)
-
-	if config.ChainPath != "" {
-		chainContents, err := ioutil.ReadFile(config.ChainPath)
-		if err != nil {
-			return storage.LB{}, err
-		}
-
-		lb.Chain = string(chainContents)
-	}
-
-	return lb, nil
-}
-
 func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.LB, error) {
-	if !lbExists(config.LBType) {
-		return storage.LB{}, errors.New("--type is required")
-	}
-
 	var certData certs.CertData
 	var err error
+
+	if config.LBType == "" {
+		return storage.LB{}, nil
+	}
+
 	if !(iaas == "gcp" && config.LBType == "concourse") {
 		certData, err = l.certificateValidator.ReadAndValidate(config.CertPath, config.KeyPath, config.ChainPath)
 		if err != nil {
@@ -69,7 +34,7 @@ func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.
 	}
 
 	if config.LBType == "concourse" && config.Domain != "" {
-		return storage.LB{}, errors.New("--domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
+		return storage.LB{}, errors.New("domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
 	}
 
 	return storage.LB{
