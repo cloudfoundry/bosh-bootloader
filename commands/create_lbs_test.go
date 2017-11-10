@@ -234,7 +234,7 @@ var _ = Describe("create-lbs", func() {
 
 				Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
 
-				Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(0))
+				Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})
 		})

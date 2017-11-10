@@ -113,11 +113,12 @@ func (c CreateLBs) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("saving state after terraform apply: %s", err)
 	}
 
+	err = c.cloudConfigManager.Initialize(state)
+	if err != nil {
+		return err
+	}
+
 	if !state.NoDirector {
-		err = c.cloudConfigManager.Initialize(state)
-		if err != nil {
-			return err
-		}
 		err = c.cloudConfigManager.Update(state)
 		if err != nil {
 			return err
