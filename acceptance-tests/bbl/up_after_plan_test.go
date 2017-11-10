@@ -119,43 +119,6 @@ output "jumpbox_url" {
 			Eventually(session, 40*time.Minute).Should(gexec.Exit())
 		})
 
-		By("verifying that vm extensions were added to the cloud config", func() {
-			if iaas == "azure" {
-				return
-			}
-
-			var cloudConfig struct {
-				VMExtensions []struct {
-					Name            string                 `yaml:"name"`
-					CloudProperties map[string]interface{} `yaml:"cloud_properties"`
-				} `yaml:"vm_extensions"`
-			}
-			output := bbl.CloudConfig()
-			err := yaml.Unmarshal([]byte(output), &cloudConfig)
-			Expect(err).NotTo(HaveOccurred())
-
-			var names []string
-			for _, extension := range cloudConfig.VMExtensions {
-				names = append(names, extension.Name)
-			}
-
-			Expect(names).To(ContainElement("cf-router-network-properties"))
-			Expect(names).To(ContainElement("diego-ssh-proxy-network-properties"))
-			Expect(names).To(ContainElement("cf-tcp-router-network-properties"))
-		})
-
-		By("verifying the bbl lbs output", func() {
-			if iaas == "azure" {
-				return
-			}
-
-			stdout := bbl.Lbs()
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
-		})
-
 		By("verifying that modified scripts were run", func() {
 			createEnvOutput, err := ioutil.ReadFile(createEnvOutputPath)
 			Expect(err).NotTo(HaveOccurred())

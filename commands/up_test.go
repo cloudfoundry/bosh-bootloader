@@ -24,6 +24,7 @@ var _ = Describe("Up", func() {
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
 		envIDManager       *fakes.EnvIDManager
+		lbArgsHandler      *fakes.LBArgsHandler
 
 		tempDir string
 	)
@@ -38,6 +39,7 @@ var _ = Describe("Up", func() {
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
 		envIDManager = &fakes.EnvIDManager{}
+		lbArgsHandler = &fakes.LBArgsHandler{}
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
@@ -45,7 +47,7 @@ var _ = Describe("Up", func() {
 
 		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
-		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
 	})
 
 	Describe("CheckFastFails", func() {

@@ -145,6 +145,10 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Terraform manager init: %s", err)
 	}
 
+	if err := p.cloudConfigManager.Initialize(state); err != nil {
+		return fmt.Errorf("Cloud config manager initialize: %s", err)
+	}
+
 	if state.NoDirector {
 		return nil
 	}
@@ -156,10 +160,6 @@ func (p Plan) Execute(args []string, state storage.State) error {
 	state.BOSH.UserOpsFile = string(opsFileContents)
 	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return fmt.Errorf("Bosh manager initialize director: %s", err)
-	}
-
-	if err := p.cloudConfigManager.Initialize(state); err != nil {
-		return fmt.Errorf("Cloud config manager initialize: %s", err)
 	}
 
 	return nil

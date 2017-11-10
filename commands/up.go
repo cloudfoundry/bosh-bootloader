@@ -15,10 +15,11 @@ type Up struct {
 	stateStore         stateStore
 	envIDManager       envIDManager
 	terraformManager   terraformManager
+	lbArgsHandler      lbArgsHandler
 }
 
 func NewUp(plan plan, boshManager boshManager, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager) Up {
+	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager, lbArgsHandler lbArgsHandler) Up {
 	return Up{
 		plan:               plan,
 		boshManager:        boshManager,
@@ -26,6 +27,7 @@ func NewUp(plan plan, boshManager boshManager, cloudConfigManager cloudConfigMan
 		stateStore:         stateStore,
 		envIDManager:       envIDManager,
 		terraformManager:   terraformManager,
+		lbArgsHandler:      lbArgsHandler,
 	}
 }
 
@@ -34,16 +36,23 @@ func (u Up) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (u Up) Execute(args []string, state storage.State) error {
+	config, err := u.ParseArgs(args, state)
+	if err != nil {
+		return err
+	}
+
 	if !u.plan.IsInitialized(state) {
 		err := u.plan.Execute(args, state)
 		if err != nil {
 			return err
 		}
-	}
 
-	config, err := u.ParseArgs(args, state)
-	if err != nil {
-		return err
+		newLBState, err := u.lbArgsHandler.GetLBState(state.IAAS, config.LB)
+		if err != nil {
+			return err
+		}
+
+		state.LB = newLBState
 	}
 
 	if config.NoDirector {

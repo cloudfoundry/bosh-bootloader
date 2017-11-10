@@ -50,7 +50,7 @@ func main() {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
-	needsIAASCreds := config.NeedsIAASCreds(appConfig.Command) && !appConfig.ShowCommandHelp
+	needsIAASCreds := config.NeedsIAASCreds(appConfig.State.IAAS, appConfig.Command) && !appConfig.ShowCommandHelp
 	if needsIAASCreds {
 		err = config.ValidateIAAS(appConfig.State)
 		if err != nil {
@@ -162,7 +162,7 @@ func main() {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
 	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
-	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager)
+	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
 	usage := commands.NewUsage(logger)
 
 	commandSet := application.CommandSet{}

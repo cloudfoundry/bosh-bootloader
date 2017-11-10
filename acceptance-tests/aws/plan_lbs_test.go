@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -13,45 +15,31 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("lbs test", func() {
+var _ = Describe("plan lbs test", func() {
 	var (
 		bbl actors.BBL
 		aws actors.AWS
 
-		certPath       string
-		chainPath      string
-		keyPath        string
-		otherCertPath  string
-		otherChainPath string
-		otherKeyPath   string
-		vpcName        string
+		certPath  string
+		chainPath string
+		keyPath   string
+		vpcName   string
 	)
 
 	BeforeEach(func() {
-		acceptance.SkipUnless("load-balancers")
+		acceptance.SkipUnless("plan-lbs")
 
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "plan-lbs-env")
 		aws = actors.NewAWS(configuration)
 
 		certPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 		Expect(err).NotTo(HaveOccurred())
-
 		chainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
-
 		keyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
-		Expect(err).NotTo(HaveOccurred())
-
-		otherCertPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CERT)
-		Expect(err).NotTo(HaveOccurred())
-
-		otherKeyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_KEY)
-		Expect(err).NotTo(HaveOccurred())
-
-		otherChainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.OTHER_BBL_CHAIN)
 		Expect(err).NotTo(HaveOccurred())
 
 		vpcName = fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID())
@@ -63,17 +51,17 @@ var _ = Describe("lbs test", func() {
 	})
 
 	It("creates, updates and deletes cf LBs with the specified cert and key", func() {
-		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
+		session := bbl.Up(
+			"--name", bbl.PredefinedEnvID(),
+			"--no-director",
+			"--lb-type", "cf",
+			"--lb-cert", certPath,
+			"--lb-key", keyPath,
+			"--lb-chain", chainPath,
+		)
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
-		By("verifying there are no load balancers", func() {
-			Expect(aws.LoadBalancers(vpcName)).To(BeEmpty())
-		})
-
-		By("creating cf lbs", func() {
-			session := bbl.CreateLB("cf", certPath, keyPath, chainPath)
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-
+		By("verifying that there are load balancers", func() {
 			Expect(aws.LoadBalancers(vpcName)).To(HaveLen(3))
 			Expect(aws.LoadBalancers(vpcName)).To(ConsistOf(
 				MatchRegexp(".*-cf-router-lb"),
@@ -82,11 +70,18 @@ var _ = Describe("lbs test", func() {
 			))
 		})
 
+		By("verifying that vm extensions were added to the cloud config", func() {
+			cloudConfig := bbl.CloudConfig()
+			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("cf-tcp-router-network-properties"))
+		})
+
 		By("verifying that the bbl lbs output contains the cf lbs", func() {
 			stdout := bbl.Lbs()
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
 			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
 		})
 
 		By("deleting lbs", func() {
@@ -99,3 +94,20 @@ var _ = Describe("lbs test", func() {
 		})
 	})
 })
+
+func vmExtensionNames(cloudConfigOutput string) []string {
+	var cloudConfig struct {
+		VMExtensions []struct {
+			Name            string                 `yaml:"name"`
+			CloudProperties map[string]interface{} `yaml:"cloud_properties"`
+		} `yaml:"vm_extensions"`
+	}
+	err := yaml.Unmarshal([]byte(cloudConfigOutput), &cloudConfig)
+	Expect(err).NotTo(HaveOccurred())
+
+	var names []string
+	for _, extension := range cloudConfig.VMExtensions {
+		names = append(names, extension.Name)
+	}
+	return names
+}
