@@ -162,7 +162,7 @@ func main() {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
 	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
-	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
+	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
 	usage := commands.NewUsage(logger)
 
 	commandSet := application.CommandSet{}

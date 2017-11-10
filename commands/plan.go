@@ -109,60 +109,68 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		return err
 	}
 
+	_, err = p.InitializePlan(config, state)
+	return err
+}
+
+func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.State, error) {
 	if config.NoDirector {
 		if !state.BOSH.IsEmpty() {
-			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
+			return storage.State{}, errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
 		}
 		state.NoDirector = true
 	}
 
-	var opsFileContents []byte
+	var (
+		opsFileContents []byte
+		err             error
+	)
 	if config.OpsFile != "" {
 		opsFileContents, err = ioutil.ReadFile(config.OpsFile)
 		if err != nil {
-			return fmt.Errorf("Reading ops-file contents: %v", err)
+			return storage.State{}, fmt.Errorf("Reading ops-file contents: %v", err)
 		}
 	}
 
 	newLBState, err := p.lbArgsHandler.GetLBState(state.IAAS, config.LB)
 	if err != nil {
-		return err
+		return storage.State{}, err
 	}
 
 	state.LB = newLBState
 
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
-		return fmt.Errorf("Env id manager sync: %s", err)
+		return storage.State{}, fmt.Errorf("Env id manager sync: %s", err)
 	}
 
 	err = p.stateStore.Set(state)
 	if err != nil {
-		return fmt.Errorf("Save state: %s", err)
+		return storage.State{}, fmt.Errorf("Save state: %s", err)
 	}
 
 	if err := p.terraformManager.Init(state); err != nil {
-		return fmt.Errorf("Terraform manager init: %s", err)
+		return storage.State{}, fmt.Errorf("Terraform manager init: %s", err)
 	}
 
 	if err := p.cloudConfigManager.Initialize(state); err != nil {
-		return fmt.Errorf("Cloud config manager initialize: %s", err)
+		return storage.State{}, fmt.Errorf("Cloud config manager initialize: %s", err)
 	}
 
 	if state.NoDirector {
-		return nil
+		return state, nil
 	}
 
 	if err := p.boshManager.InitializeJumpbox(state); err != nil {
-		return fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
+		return storage.State{}, fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
 	}
 
 	state.BOSH.UserOpsFile = string(opsFileContents)
 	if err := p.boshManager.InitializeDirector(state); err != nil {
-		return fmt.Errorf("Bosh manager initialize director: %s", err)
+		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err)
 	}
 
-	return nil
+	return state, nil
 }
 
 func (p Plan) IsInitialized(state storage.State) bool {

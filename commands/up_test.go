@@ -23,8 +23,6 @@ var _ = Describe("Up", func() {
 		terraformManager   *fakes.TerraformManager
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
-		envIDManager       *fakes.EnvIDManager
-		lbArgsHandler      *fakes.LBArgsHandler
 
 		tempDir string
 	)
@@ -38,8 +36,6 @@ var _ = Describe("Up", func() {
 		terraformManager = &fakes.TerraformManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
-		envIDManager = &fakes.EnvIDManager{}
-		lbArgsHandler = &fakes.LBArgsHandler{}
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
@@ -47,7 +43,7 @@ var _ = Describe("Up", func() {
 
 		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
-		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler)
+		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -65,20 +61,22 @@ var _ = Describe("Up", func() {
 		var (
 			incomingState       storage.State
 			iaasState           storage.State
-			envIDManagerState   storage.State
+			planState           storage.State
+			planConfig          commands.PlanConfig
 			terraformApplyState storage.State
 			createJumpboxState  storage.State
 			createDirectorState storage.State
 			terraformOutputs    terraform.Outputs
 		)
 		BeforeEach(func() {
-			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{Name: "some-name"}
+			planConfig = commands.PlanConfig{Name: "some-name"}
+			plan.ParseArgsCall.Returns.Config = planConfig
 
 			incomingState = storage.State{LatestTFOutput: "incoming-state", IAAS: "some-iaas"}
 			iaasState = storage.State{LatestTFOutput: "iaas-state", IAAS: "some-iaas"}
 
-			envIDManagerState = storage.State{LatestTFOutput: "env-id-sync-call", IAAS: "some-iaas"}
-			envIDManager.SyncCall.Returns.State = envIDManagerState
+			planState = storage.State{LatestTFOutput: "plan-state", IAAS: "some-iaas"}
+			plan.InitializePlanCall.Returns.State = planState
 
 			terraformApplyState = storage.State{LatestTFOutput: "terraform-apply-call", IAAS: "some-iaas"}
 			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
@@ -111,15 +109,13 @@ var _ = Describe("Up", func() {
 				Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"some", "flags"}))
 				Expect(plan.ParseArgsCall.Receives.State).To(Equal(incomingState))
 
-				Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-				Expect(envIDManager.SyncCall.Receives.State).To(Equal(incomingState))
-				Expect(envIDManager.SyncCall.Receives.Name).To(Equal("some-name"))
-				Expect(stateStore.SetCall.Receives[0].State).To(Equal(envIDManagerState))
+				Expect(plan.InitializePlanCall.CallCount).To(Equal(0))
+
 				Expect(terraformManager.InitCall.CallCount).To(Equal(0))
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(envIDManagerState))
-				Expect(stateStore.SetCall.Receives[1].State).To(Equal(terraformApplyState))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(incomingState))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(terraformApplyState))
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 
@@ -127,18 +123,18 @@ var _ = Describe("Up", func() {
 				Expect(boshManager.CreateJumpboxCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateJumpboxCall.Receives.State).To(Equal(terraformApplyState))
 				Expect(boshManager.CreateJumpboxCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
-				Expect(stateStore.SetCall.Receives[2].State).To(Equal(createJumpboxState))
+				Expect(stateStore.SetCall.Receives[1].State).To(Equal(createJumpboxState))
 
 				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
 				Expect(boshManager.CreateDirectorCall.CallCount).To(Equal(1))
 				Expect(boshManager.CreateDirectorCall.Receives.State).To(Equal(createJumpboxState))
 				Expect(boshManager.CreateDirectorCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
-				Expect(stateStore.SetCall.Receives[3].State).To(Equal(createDirectorState))
+				Expect(stateStore.SetCall.Receives[2].State).To(Equal(createDirectorState))
 
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(4))
+				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			})
 		})
 
@@ -162,22 +158,12 @@ var _ = Describe("Up", func() {
 				Expect(plan.IsInitializedCall.CallCount).To(Equal(1))
 				Expect(plan.IsInitializedCall.Receives.State).To(Equal(incomingState))
 
-				Expect(plan.ExecuteCall.CallCount).To(Equal(1))
-				Expect(plan.ExecuteCall.Receives.Args).To(Equal([]string{"some", "flags"}))
-				Expect(plan.ExecuteCall.Receives.State).To(Equal(incomingState))
-			})
-		})
+				Expect(plan.InitializePlanCall.CallCount).To(Equal(1))
+				Expect(plan.InitializePlanCall.Receives.Plan).To(Equal(planConfig))
+				Expect(plan.InitializePlanCall.Receives.State).To(Equal(incomingState))
 
-		Context("when --no-director flag is passed", func() {
-			BeforeEach(func() {
-				plan.ParseArgsCall.Returns.Config = commands.PlanConfig{NoDirector: true}
-			})
-
-			It("sets NoDirector to true on the state", func() {
-				err := command.Execute([]string{}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(envIDManager.SyncCall.Receives.State.NoDirector).To(BeTrue())
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
+				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(planState))
 			})
 		})
 
@@ -193,8 +179,8 @@ var _ = Describe("Up", func() {
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
 				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
-				Expect(stateStore.SetCall.CallCount).To(Equal(2))
-				Expect(stateStore.SetCall.Receives[1].State.NoDirector).To(BeTrue())
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives[0].State.NoDirector).To(BeTrue())
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
 			})
 		})
@@ -223,28 +209,6 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("when the env id manager fails", func() {
-				BeforeEach(func() {
-					envIDManager.SyncCall.Returns.Error = errors.New("apple")
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Env id manager sync: apple"))
-				})
-			})
-
-			Context("when saving the state fails after env id sync", func() {
-				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Save state after sync: kiwi"))
-				})
-			})
-
 			Context("when the terraform manager fails with non terraformManagerError", func() {
 				BeforeEach(func() {
 					terraformManager.ApplyCall.Returns.Error = errors.New("passionfruit")
@@ -258,7 +222,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after terraform apply", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -291,7 +255,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after create jumpbox", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -313,7 +277,7 @@ var _ = Describe("Up", func() {
 
 			Context("when saving the state fails after create director", func() {
 				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {Error: errors.New("kiwi")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("kiwi")}}
 				})
 
 				It("returns an error", func() {
@@ -348,13 +312,13 @@ var _ = Describe("Up", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("grapefruit"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(2))
-					Expect(stateStore.SetCall.Receives[1].State).To(Equal(partialState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(1))
+					Expect(stateStore.SetCall.Receives[0].State).To(Equal(partialState))
 				})
 
 				Context("when we fail to set the bbl state", func() {
 					BeforeEach(func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set bbl state")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set bbl state")}}
 					})
 
 					It("saves the bbl state and returns the error", func() {
@@ -377,21 +341,21 @@ var _ = Describe("Up", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Create bosh director: rambutan"))
 
-					Expect(stateStore.SetCall.CallCount).To(Equal(4))
-					Expect(stateStore.SetCall.Receives[3].State).To(Equal(partialState))
+					Expect(stateStore.SetCall.CallCount).To(Equal(3))
+					Expect(stateStore.SetCall.Receives[2].State).To(Equal(partialState))
 				})
 
 				Context("when it fails to save the state", func() {
 					BeforeEach(func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {}, {errors.New("lychee")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("lychee")}}
 					})
 
 					It("returns a compound error", func() {
 						err := command.Execute([]string{}, storage.State{})
 						Expect(err).To(MatchError("Save state after bosh director create error: rambutan, lychee"))
 
-						Expect(stateStore.SetCall.CallCount).To(Equal(4))
-						Expect(stateStore.SetCall.Receives[3].State).To(Equal(partialState))
+						Expect(stateStore.SetCall.CallCount).To(Equal(3))
+						Expect(stateStore.SetCall.Receives[2].State).To(Equal(partialState))
 					})
 				})
 			})

@@ -10,6 +10,7 @@ type plan interface {
 	CheckFastFails([]string, storage.State) error
 	ParseArgs([]string, storage.State) (PlanConfig, error)
 	Execute([]string, storage.State) error
+	InitializePlan(PlanConfig, storage.State) (storage.State, error)
 	IsInitialized(storage.State) bool
 }
 

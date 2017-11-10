@@ -37,6 +37,17 @@ type Plan struct {
 			Error error
 		}
 	}
+	InitializePlanCall struct {
+		CallCount int
+		Receives  struct {
+			Plan  commands.PlanConfig
+			State storage.State
+		}
+		Returns struct {
+			State storage.State
+			Error error
+		}
+	}
 	IsInitializedCall struct {
 		CallCount int
 		Receives  struct {
@@ -70,6 +81,14 @@ func (p *Plan) Execute(args []string, state storage.State) error {
 	p.ExecuteCall.Receives.State = state
 
 	return p.ExecuteCall.Returns.Error
+}
+
+func (p *Plan) InitializePlan(plan commands.PlanConfig, state storage.State) (storage.State, error) {
+	p.InitializePlanCall.CallCount++
+	p.InitializePlanCall.Receives.Plan = plan
+	p.InitializePlanCall.Receives.State = state
+
+	return p.InitializePlanCall.Returns.State, p.InitializePlanCall.Returns.Error
 }
 
 func (p *Plan) IsInitialized(state storage.State) bool {

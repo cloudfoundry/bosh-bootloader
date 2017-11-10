@@ -13,21 +13,22 @@ type Up struct {
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
-	envIDManager       envIDManager
 	terraformManager   terraformManager
-	lbArgsHandler      lbArgsHandler
 }
 
-func NewUp(plan plan, boshManager boshManager, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager, lbArgsHandler lbArgsHandler) Up {
+func NewUp(
+	plan plan,
+	boshManager boshManager,
+	cloudConfigManager cloudConfigManager,
+	stateStore stateStore,
+	terraformManager terraformManager,
+) Up {
 	return Up{
 		plan:               plan,
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
-		envIDManager:       envIDManager,
 		terraformManager:   terraformManager,
-		lbArgsHandler:      lbArgsHandler,
 	}
 }
 
@@ -42,35 +43,15 @@ func (u Up) Execute(args []string, state storage.State) error {
 	}
 
 	if !u.plan.IsInitialized(state) {
-		err := u.plan.Execute(args, state)
+		planState, err := u.plan.InitializePlan(config, state)
 		if err != nil {
 			return err
 		}
-
-		newLBState, err := u.lbArgsHandler.GetLBState(state.IAAS, config.LB)
-		if err != nil {
-			return err
-		}
-
-		state.LB = newLBState
+		state = planState
 	}
 
-	if config.NoDirector {
-		if !state.BOSH.IsEmpty() {
-			return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
-		}
-
-		state.NoDirector = true
-	}
-
-	state, err = u.envIDManager.Sync(state, config.Name)
-	if err != nil {
-		return fmt.Errorf("Env id manager sync: %s", err)
-	}
-
-	err = u.stateStore.Set(state)
-	if err != nil {
-		return fmt.Errorf("Save state after sync: %s", err)
+	if config.NoDirector && !state.BOSH.IsEmpty() {
+		return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
 	}
 
 	state, err = u.terraformManager.Apply(state)
