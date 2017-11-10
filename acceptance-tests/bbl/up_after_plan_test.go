@@ -15,6 +15,7 @@ import (
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	proxy "github.com/cloudfoundry/socks5-proxy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -58,7 +59,13 @@ var _ = Describe("up after plan", func() {
 	It("preserves files modified after plan", func() {
 		createEnvOutputPath := filepath.Join(stateDir, "create-env-output")
 		By("running bbl plan", func() {
-			session := bbl.Plan("--name", bbl.PredefinedEnvID())
+			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			Expect(err).NotTo(HaveOccurred())
+
+			session := bbl.Plan("--name", bbl.PredefinedEnvID(), "--lb-type", "cf", "--lb-cert", certPath, "--lb-key", keyPath)
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
@@ -107,6 +114,35 @@ output "jumpbox_url" {
 			// Don't check the exit code of up because upload cloud config fails.
 			// We don't yet have a way to inject different behavior for that step.
 			Eventually(session, 40*time.Minute).Should(gexec.Exit())
+		})
+
+		By("verifying that vm extensions were added to the cloud config", func() {
+			var cloudConfig struct {
+				VMExtensions []struct {
+					Name            string                 `yaml:"name"`
+					CloudProperties map[string]interface{} `yaml:"cloud_properties"`
+				} `yaml:"vm_extensions"`
+			}
+			output := bbl.CloudConfig()
+			err := yaml.Unmarshal([]byte(output), &cloudConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			var names []string
+			for _, extension := range cloudConfig.VMExtensions {
+				names = append(names, extension.Name)
+			}
+
+			Expect(names).To(ContainElement("cf-router-network-properties"))
+			Expect(names).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(names).To(ContainElement("cf-tcp-router-network-properties"))
+		})
+
+		By("verifying the bbl lbs output", func() {
+			stdout := bbl.Lbs()
+			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
 		})
 
 		By("verifying that modified scripts were run", func() {

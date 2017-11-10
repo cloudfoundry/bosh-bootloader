@@ -124,6 +124,13 @@ func (p Plan) Execute(args []string, state storage.State) error {
 		}
 	}
 
+	newLBState, err := p.lbArgsHandler.GetLBState(state.IAAS, config.LB)
+	if err != nil {
+		return err
+	}
+
+	state.LB = newLBState
+
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
 		return fmt.Errorf("Env id manager sync: %s", err)
