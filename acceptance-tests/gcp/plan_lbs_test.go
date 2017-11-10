@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"fmt"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -12,21 +13,32 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("lbs test", func() {
+var _ = Describe("plan lbs test", func() {
 	var (
 		bbl actors.BBL
 		gcp actors.GCP
+
+		certPath  string
+		chainPath string
+		keyPath   string
+		vpcName   string
 	)
 
 	BeforeEach(func() {
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
+		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "plan-lbs-env")
 		gcp = actors.NewGCP(configuration)
 
-		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		certPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+		Expect(err).NotTo(HaveOccurred())
+		chainPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+		Expect(err).NotTo(HaveOccurred())
+		keyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+		Expect(err).NotTo(HaveOccurred())
+
+		vpcName = fmt.Sprintf("%s-vpc", bbl.PredefinedEnvID())
 	})
 
 	AfterEach(func() {
@@ -34,17 +46,15 @@ var _ = Describe("lbs test", func() {
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
-	It("successfully creates, updates, and deletes cf lbs", func() {
-		By("creating cf load balancers", func() {
-			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
-			Expect(err).NotTo(HaveOccurred())
-
-			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
-			Expect(err).NotTo(HaveOccurred())
-
-			session := bbl.CreateLB("cf", certPath, keyPath, "")
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-		})
+	It("creates, updates and deletes cf LBs with the specified cert and key", func() {
+		session := bbl.Up(
+			"--name", bbl.PredefinedEnvID(),
+			"--no-director",
+			"--lb-type", "cf",
+			"--lb-cert", certPath,
+			"--lb-key", keyPath,
+		)
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("confirming that target pools exist", func() {
 			targetPools := []string{bbl.PredefinedEnvID() + "-cf-ssh-proxy", bbl.PredefinedEnvID() + "-cf-tcp-router"}
@@ -58,6 +68,14 @@ var _ = Describe("lbs test", func() {
 			targetHTTPSProxy, err := gcp.GetTargetHTTPSProxy(bbl.PredefinedEnvID() + "-https-proxy")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
+		})
+
+		By("verifying that vm extensions were added to the cloud config", func() {
+			cloudConfig := bbl.CloudConfig()
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
 		})
 
 		By("verifying the bbl lbs output", func() {

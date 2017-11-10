@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
-
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -72,9 +70,10 @@ var _ = Describe("plan lbs test", func() {
 
 		By("verifying that vm extensions were added to the cloud config", func() {
 			cloudConfig := bbl.CloudConfig()
-			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("cf-router-network-properties"))
-			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("diego-ssh-proxy-network-properties"))
-			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("cf-tcp-router-network-properties"))
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
 		})
 
 		By("verifying that the bbl lbs output contains the cf lbs", func() {
@@ -94,20 +93,3 @@ var _ = Describe("plan lbs test", func() {
 		})
 	})
 })
-
-func vmExtensionNames(cloudConfigOutput string) []string {
-	var cloudConfig struct {
-		VMExtensions []struct {
-			Name            string                 `yaml:"name"`
-			CloudProperties map[string]interface{} `yaml:"cloud_properties"`
-		} `yaml:"vm_extensions"`
-	}
-	err := yaml.Unmarshal([]byte(cloudConfigOutput), &cloudConfig)
-	Expect(err).NotTo(HaveOccurred())
-
-	var names []string
-	for _, extension := range cloudConfig.VMExtensions {
-		names = append(names, extension.Name)
-	}
-	return names
-}

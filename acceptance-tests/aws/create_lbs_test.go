@@ -77,9 +77,10 @@ var _ = Describe("create lbs test", func() {
 
 		By("verifying that vm extensions were added to the cloud config", func() {
 			cloudConfig := bbl.CloudConfig()
-			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("cf-router-network-properties"))
-			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("diego-ssh-proxy-network-properties"))
-			Expect(vmExtensionNames(cloudConfig)).To(ContainElement("cf-tcp-router-network-properties"))
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
 		})
 
 		By("deleting lbs", func() {
