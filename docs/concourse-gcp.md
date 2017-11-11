@@ -75,10 +75,6 @@ Run `bbl lbs` to discover the IP address of your load balancer. Then set up a A 
 ```
 bosh interpolate vars/director-variables.yml --path /credhub_cli_password
 ```
-* Upload your CredHub CA cert and UAA CA cert to the jumpbox
-```
-
-```
 * SSH to the jumpbox
 ```
 ssh -i $JUMPBOX_PRIVATE_KEY -t jumpbox@`../bbl-v5.4.0_osx jumpbox-address` bash
