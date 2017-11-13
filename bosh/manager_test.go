@@ -639,7 +639,7 @@ gcp_credentials_json: some-credential-json
 					"bosh_iam_instance_profile":     "some-instance-profile",
 					"bosh_vms_key_name":             "some-key-name",
 					"bosh_vms_private_key":          "some-private-key",
-					"jumpbox_security_group":        "some-security-group",
+					"jumpbox_security_group":        []string{"some-security-group"},
 					"external_ip":                   "some-external-ip",
 				}})
 				Expect(vars).To(MatchYAML(`---
@@ -790,7 +790,7 @@ gcp_credentials_json: some-credential-json
 						"internal_cidr":                 "10.0.2.0/26",
 						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
 						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
-						"bosh_security_group":           "some-bosh-security-group",
+						"bosh_security_group":           []string{"some-bosh-security-group"},
 						"bosh_subnet_id":                "some-bosh-subnet",
 						"bosh_vms_key_name":             "some-keypair-name",
 						"bosh_vms_private_key":          "some-private-key",
@@ -828,8 +828,6 @@ internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 access_key_id: some-access-key-id
 secret_access_key: some-secret-access-key
-default_security_groups:
-- ""
 region: some-region
 `))
 				})

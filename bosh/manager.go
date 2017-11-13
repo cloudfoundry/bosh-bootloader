@@ -425,7 +425,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			SecretAccessKey:       state.AWS.SecretAccessKey,
 			IAMInstanceProfile:    terraformOutputs.GetString("bosh_iam_instance_profile"),
 			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
-			DefaultSecurityGroups: []string{terraformOutputs.GetString("jumpbox_security_group")},
+			DefaultSecurityGroups: terraformOutputs.GetStringSlice("jumpbox_security_group"),
 			Region:                state.AWS.Region,
 		}
 		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
@@ -492,7 +492,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			SecretAccessKey:       state.AWS.SecretAccessKey,
 			IAMInstanceProfile:    terraformOutputs.GetString("bosh_iam_instance_profile"),
 			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
-			DefaultSecurityGroups: []string{terraformOutputs.GetString("bosh_security_group")},
+			DefaultSecurityGroups: terraformOutputs.GetStringSlice("bosh_security_group"),
 			Region:                state.AWS.Region,
 			KMSKeyARN:             terraformOutputs.GetString("kms_key_arn"),
 		}

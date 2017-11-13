@@ -299,7 +299,7 @@ resource "aws_security_group" "bosh_security_group" {
 }
 
 output "bosh_security_group" {
-  value="${aws_security_group.bosh_security_group.id}"
+  value = ["${aws_security_group.bosh_security_group.id}"]
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_ssh" {
@@ -375,7 +375,7 @@ resource "aws_security_group" "jumpbox" {
 }
 
 output "jumpbox_security_group" {
-  value="${aws_security_group.jumpbox.id}"
+  value = ["${aws_security_group.jumpbox.id}"]
 }
 
 resource "aws_security_group_rule" "jumpbox_ssh" {
