@@ -57,9 +57,7 @@ internal_ip: 10.0.0.6
 director_name: bosh-some-env-bbl5
 zone: us-east1-b
 network: some-env-bbl5-network
-subnetwork: some-env-bbl5-subnet
-tags:
-- some-env-bbl5-bosh-director`))
+subnetwork: some-env-bbl5-subnet`))
 	})
 
 	It("bbl jumpbox-deployment vars", func() {
@@ -71,10 +69,7 @@ director_name: bosh-some-env-bbl5
 external_ip: 35.185.60.196
 zone: us-east1-b
 network: some-env-bbl5-network
-subnetwork: some-env-bbl5-subnet
-tags:
-- some-env-bbl5-bosh-open
-- some-env-bbl5-jumpbox`))
+subnetwork: some-env-bbl5-subnet`))
 	})
 
 	It("bbl cloud-config", func() {

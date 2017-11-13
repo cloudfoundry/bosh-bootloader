@@ -136,16 +136,15 @@ director_ssl:
 		Describe("CreateDirector", func() {
 			BeforeEach(func() {
 				terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":          "10.2.0.0/24",
-					"network_name":           "some-network",
-					"subnetwork_name":        "some-subnetwork",
-					"bosh_open_tag_name":     "some-jumpbox-tag",
-					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-					"bosh_director_tag_name": "some-director-tag",
-					"internal_tag_name":      "some-internal-tag",
-					"external_ip":            "some-external-ip",
-					"director_address":       "some-director-address",
-					"jumpbox_url":            "some-jumpbox-url",
+					"internal_cidr":      "10.2.0.0/24",
+					"network_name":       "some-network",
+					"subnetwork_name":    "some-subnetwork",
+					"jumpbox_tags":       []string{"some-jumpbox-tag", "some-jumpbox-fw-tag"},
+					"bosh_director_tags": []string{"some-director-tag"},
+					"internal_tag_name":  "some-internal-tag",
+					"external_ip":        "some-external-ip",
+					"director_address":   "some-director-address",
+					"jumpbox_url":        "some-jumpbox-url",
 				}}
 			})
 
@@ -222,16 +221,15 @@ gcp_credentials_json: some-credential-json
 
 		BeforeEach(func() {
 			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-				"internal_cidr":          "10.0.0.0/24",
-				"network_name":           "some-network",
-				"subnetwork_name":        "some-subnetwork",
-				"bosh_open_tag_name":     "some-jumpbox-tag",
-				"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-				"bosh_director_tag_name": "some-director-tag",
-				"internal_tag_name":      "some-internal-tag",
-				"external_ip":            "some-external-ip",
-				"director_address":       "some-director-address",
-				"jumpbox_url":            "some-jumpbox-url",
+				"internal_cidr":      "10.0.0.0/24",
+				"network_name":       "some-network",
+				"subnetwork_name":    "some-subnetwork",
+				"jumpbox_tags":       []string{"some-jumpbox-tag", "some-jumpbox-fw-tag"},
+				"bosh_director_tags": []string{"some-director-tag"},
+				"internal_tag_name":  "some-internal-tag",
+				"external_ip":        "some-external-ip",
+				"director_address":   "some-director-address",
+				"jumpbox_url":        "some-jumpbox-url",
 			}}
 
 			state = storage.State{
@@ -681,12 +679,11 @@ region: some-region
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":      "10.1.0.0/24",
-					"network_name":       "some-network",
-					"subnetwork_name":    "some-subnetwork",
-					"bosh_open_tag_name": "some-jumpbox-tag",
-					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
-					"external_ip":        "some-external-ip",
+					"internal_cidr":   "10.1.0.0/24",
+					"network_name":    "some-network",
+					"subnetwork_name": "some-subnetwork",
+					"jumpbox_tags":    []string{"some-jumpbox-tag", "some-jumpbox-fw-tag"},
+					"external_ip":     "some-external-ip",
 				}})
 				Expect(vars).To(MatchYAML(`---
 internal_cidr: 10.1.0.0/24
@@ -731,9 +728,8 @@ gcp_credentials_json: some-credential-json
 					"internal_cidr":             "10.0.1.0/24",
 					"network_name":              "some-network",
 					"subnetwork_name":           "some-subnetwork",
-					"bosh_open_tag_name":        "some-jumpbox-tag",
-					"jumpbox_tag_name":          "some-jumpbox-fw-tag",
-					"bosh_director_tag_name":    "some-director-tag",
+					"jumpbox_tags":              []string{"some-jumpbox-tag", "some-jumpbox-fw-tag"},
+					"bosh_director_tags":        []string{"some-director-tag"},
 					"internal_tag_name":         "some-internal-tag",
 					"bosh_director_external_ip": "some-external-ip",
 					"director_address":          "some-director-address",
@@ -763,8 +759,6 @@ internal_gw: 10.0.0.1
 internal_ip: 10.0.0.6
 director_name: bosh-some-env-id
 zone: some-zone
-tags:
-- ""
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
 `))

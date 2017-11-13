@@ -1,51 +1,49 @@
-variable "project_id" {
-	type = "string"
-}
+variable "project_id" {}
 
-variable "region" {
-	type = "string"
-}
+variable "region" {}
 
-variable "zone" {
-	type = "string"
-}
+variable "zone" {}
 
-variable "env_id" {
-	type = "string"
-}
+variable "env_id" {}
 
-variable "credentials" {
-	type = "string"
-}
+variable "credentials" {}
 
 provider "google" {
-	credentials = "${file("${var.credentials}")}"
-	project = "${var.project_id}"
-	region = "${var.region}"
+  credentials = "${file("${var.credentials}")}"
+  project = "${var.project_id}"
+  region = "${var.region}"
 }
 
 output "network_name" {
-    value = "${google_compute_network.bbl-network.name}"
+  value = "${google_compute_network.bbl-network.name}"
 }
 
 output "subnetwork_name" {
-    value = "${google_compute_subnetwork.bbl-subnet.name}"
+  value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
 output "bosh_open_tag_name" {
-    value = "${google_compute_firewall.bosh-open.name}"
+  value = "${google_compute_firewall.bosh-open.name}"
 }
 
 output "bosh_director_tag_name" {
-	value = "${google_compute_firewall.bosh-director.name}"
+  value = "${google_compute_firewall.bosh-director.name}"
+}
+
+output "director_tags" {
+  value = ["${google_compute_firewall.bosh-director.name}"]
 }
 
 output "jumpbox_tag_name" {
-	value = "${var.env_id}-jumpbox"
+  value = "${var.env_id}-jumpbox"
+}
+
+output "jumpbox_tags" {
+  value = ["${google_compute_firewall.bosh-open.name}", "${var.env_id}-jumpbox"]
 }
 
 output "internal_tag_name" {
-    value = "${google_compute_firewall.internal.name}"
+  value = "${google_compute_firewall.internal.name}"
 }
 
 resource "google_compute_network" "bbl-network" {
