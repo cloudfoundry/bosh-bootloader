@@ -100,7 +100,7 @@ export CONCOURSE_PASSWORD=$(ssh -i $JUMPBOX_PRIVATE_KEY -t jumpbox@`bbl jumpbox-
 
 Now you should be able to login with `fly`* :
 ```
-~/Downloads/fly -t concourse login -c https://concourse.example.com/ -u $CONCOURSE_USERNAME -p $CONCOURSE_PASSWORD
+~/Downloads/fly -t concourse login -c https://myconcourse.example.com/ -u $CONCOURSE_USERNAME -p $CONCOURSE_PASSWORD
 ```
 (* depending on your certs and domain validity, you may need to supply `-k`. TODO: get concourse CA from credhub.)
 
