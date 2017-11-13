@@ -62,10 +62,11 @@ var _ = Describe("create lbs test", func() {
 
 		By("verifying the bbl lbs output", func() {
 			stdout := bbl.Lbs()
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF WebSocket LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF Credhub LB:.*"))
 		})
 
 		By("verifying that vm extensions were added to the cloud config", func() {

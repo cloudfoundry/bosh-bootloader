@@ -103,8 +103,33 @@ var _ = Describe("up after plan", func() {
 
 			terraformTemplatePath := filepath.Join(stateDir, "terraform", "template.tf")
 			newTerraformTemplate := []byte(fmt.Sprintf(`
-output "jumpbox_url" {
-	value = "%s"
+output "jumpbox_url" { value = "%s" }
+
+output "internal_security_group" { value = "some-security-group" }
+output	"cf_router_lb_name" { value = "some-router-lb-name" }
+output	"cf_router_lb_internal_security_group" { value = "some-router-internal-security-group" }
+output	"cf_ssh_lb_name" { value = "some-ssh-lb-name" }
+output	"cf_ssh_lb_internal_security_group" { value = "some-ssh-internal-security-group" }
+output	"cf_tcp_lb_name" { value = "some-tcp-lb-name" }
+output	"cf_tcp_lb_internal_security_group" { value = "some-tcp-internal-security-group" }
+output "internal_az_subnet_cidr_mapping" {
+  value = "${
+    map(
+		"us-east-1a", "10.0.16.0/20",
+		"us-east-1c", "10.0.48.0/20",
+		"us-east-1b", "10.0.32.0/20"
+    )
+  }"
+}
+
+output "internal_az_subnet_id_mapping" {
+  value = "${
+    map(
+	    "us-east-1c", "some-internal-subnet-ids-3",
+		"us-east-1a", "some-internal-subnet-ids-1",
+		"us-east-1b", "some-internal-subnet-ids-2"
+    )
+  }"
 }
 `, jumpboxURL))
 			err = ioutil.WriteFile(terraformTemplatePath, newTerraformTemplate, os.ModePerm)
@@ -117,6 +142,47 @@ output "jumpbox_url" {
 			// Don't check the exit code of up because upload cloud config fails.
 			// We don't yet have a way to inject different behavior for that step.
 			Eventually(session, 40*time.Minute).Should(gexec.Exit())
+		})
+
+		By("verifying that vm extensions were added to the cloud config", func() {
+			if iaas == "azure" {
+				return
+			}
+
+			var cloudConfig struct {
+				VMExtensions []struct {
+					Name            string                 `yaml:"name"`
+					CloudProperties map[string]interface{} `yaml:"cloud_properties"`
+				} `yaml:"vm_extensions"`
+			}
+			output := bbl.CloudConfig()
+			err := yaml.Unmarshal([]byte(output), &cloudConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			var names []string
+			for _, extension := range cloudConfig.VMExtensions {
+				names = append(names, extension.Name)
+			}
+
+			Expect(names).To(ContainElement("cf-router-network-properties"))
+			Expect(names).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(names).To(ContainElement("cf-tcp-router-network-properties"))
+		})
+
+		By("verifying the bbl lbs output", func() {
+			if iaas == "azure" {
+				return
+			}
+
+			stdout := bbl.Lbs()
+			Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
+
+			if iaas == "gcp" {
+				Expect(stdout).To(MatchRegexp("CF WebSocket LB:.*"))
+				Expect(stdout).To(MatchRegexp("CF Credhub LB:.*"))
+			}
 		})
 
 		By("verifying that modified scripts were run", func() {

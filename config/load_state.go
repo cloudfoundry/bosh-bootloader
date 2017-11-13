@@ -238,8 +238,8 @@ func ValidateIAAS(state storage.State) error {
 	return nil
 }
 
-func NeedsIAASCreds(iaas, command string) bool {
-	commandsThatNeedIAAS := map[string]struct{}{
+func NeedsIAASCreds(command string) bool {
+	_, ok := map[string]struct{}{
 		"up":         struct{}{},
 		"down":       struct{}{},
 		"plan":       struct{}{},
@@ -248,12 +248,7 @@ func NeedsIAASCreds(iaas, command string) bool {
 		"delete-lbs": struct{}{},
 		"update-lbs": struct{}{},
 		"rotate":     struct{}{},
-	}
-	if iaas == "aws" {
-		commandsThatNeedIAAS["cloud-config"] = struct{}{}
-	}
-
-	_, ok := commandsThatNeedIAAS[command]
+	}[command]
 	return ok
 }
 

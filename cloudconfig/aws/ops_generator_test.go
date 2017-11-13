@@ -59,7 +59,6 @@ var _ = Describe("OpsGenerator", func() {
 				"us-east-1b": "10.0.32.0/20",
 			},
 		}}
-		availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c"}
 
 		opsGenerator = aws.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
 	})
@@ -104,18 +103,15 @@ concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 		})
 
 		Context("failure cases", func() {
-			Context("when availability zone retrieval fails", func() {
+			Context("when the az subnet id map has a key not in the cidr map", func() {
 				BeforeEach(func() {
-					availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("papaya")
+					delete(terraformManager.GetOutputsCall.Returns.Outputs.Map["internal_az_subnet_cidr_mapping"].(map[string]interface{}), "us-east-1a")
 				})
-
 				It("returns an error", func() {
 					_, err := opsGenerator.GenerateVars(incomingState)
-
-					Expect(err).To(MatchError("Retrieve availability zones: papaya"))
+					Expect(err).To(MatchError("missing AZ in terraform output: internal_az_subnet_cidr_mapping"))
 				})
 			})
-
 			Context("when terraform fails to get outputs", func() {
 				It("returns an error", func() {
 					terraformManager.GetOutputsCall.Returns.Error = errors.New("breadfruit")
@@ -159,6 +155,9 @@ concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 
 	Describe("Generate", func() {
 		var expectedOpsYAML string
+		BeforeEach(func() {
+			availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c"}
+		})
 
 		Context("when there are no lbs", func() {
 			BeforeEach(func() {

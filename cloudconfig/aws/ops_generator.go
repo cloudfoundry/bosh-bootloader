@@ -3,6 +3,7 @@ package aws
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -84,10 +85,7 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
-	azs, err := o.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
-	if err != nil {
-		return "", fmt.Errorf("Retrieve availability zones: %s", err)
-	}
+
 	varsYAML := map[string]string{
 		"internal_security_group":              terraformOutputs.GetString("internal_security_group"),
 		"cf_router_lb_name":                    terraformOutputs.GetString("cf_router_lb_name"),
@@ -132,20 +130,32 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		}
 	}
 
-	for i, myAZ := range azs {
+	var azNames []string
+	for azName := range internalAZSubnetIDMap {
+		azNames = append(azNames, azName)
+	}
+	sort.Strings(azNames)
+
+	for azIndex, azName := range azNames {
+		cidr, ok := internalAZSubnetCIDRMap[azName]
+		if !ok {
+			return "", errors.New("missing AZ in terraform output: internal_az_subnet_cidr_mapping")
+		}
+
 		az, err := azify(
-			i,
-			myAZ,
-			internalAZSubnetCIDRMap[myAZ],
-			internalAZSubnetIDMap[myAZ],
-		)
+			azIndex,
+			azName,
+			cidr,
+			internalAZSubnetIDMap[azName])
+
 		if err != nil {
 			return "", err
 		}
 
-		for name, value := range az {
-			varsYAML[name] = value
+		for key, value := range az {
+			varsYAML[key] = value
 		}
+		azIndex++
 	}
 
 	varsBytes, err := marshal(varsYAML)
