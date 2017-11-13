@@ -39,7 +39,6 @@ var _ = Describe("GCPOpsGenerator", func() {
 		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 			"network_name":           "some-network-name",
 			"subnetwork_name":        "some-subnetwork-name",
-			"bosh_open_tag_name":     "some-bosh-tag",
 			"internal_tag_name":      "some-internal-tag",
 			"router_backend_service": "some-backend-service",
 			"ws_target_pool":         "some-ws-target-pool",

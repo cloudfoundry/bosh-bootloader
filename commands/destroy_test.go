@@ -106,12 +106,11 @@ var _ = Describe("Destroy", func() {
 
 			BeforeEach(func() {
 				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-					"external_ip":        "some-external-ip",
-					"network_name":       "some-network-name",
-					"subnetwork_name":    "some-subnetwork-name",
-					"bosh_open_tag_name": "some-bosh-tag",
-					"internal_tag_name":  "some-internal-tag",
-					"director_address":   "some-director-address",
+					"external_ip":       "some-external-ip",
+					"network_name":      "some-network-name",
+					"subnetwork_name":   "some-subnetwork-name",
+					"internal_tag_name": "some-internal-tag",
+					"director_address":  "some-director-address",
 				}}
 
 				bblState = storage.State{
