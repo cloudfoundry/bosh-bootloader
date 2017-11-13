@@ -100,7 +100,7 @@ func (c Client) ValidateSafeToDelete(networkName string, envID string) error {
 
 func (c Client) isInNetwork(networkName string, networkInterfaces []*compute.NetworkInterface) bool {
 	for _, networkInterface := range networkInterfaces {
-		if strings.Contains(networkInterface.Network, networkName) {
+		if networkInterface.Network == networkName {
 			return true
 		}
 	}

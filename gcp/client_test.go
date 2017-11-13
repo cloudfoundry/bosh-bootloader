@@ -2,7 +2,6 @@ package gcp_test
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
@@ -25,25 +24,18 @@ var _ = Describe("Client", func() {
 		})
 
 		Context("when the bosh director is the only vm on the network", func() {
-			var networkName string
 
 			BeforeEach(func() {
-				networkName = "some-network"
-				directorName := "some-bosh-director"
-
 				boshString := "bosh"
 				boshInitString := "bosh-init"
 
 				computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
 					Items: []*compute.Instance{
 						{
-							Name: directorName,
+							Name: "bosh-director",
 							NetworkInterfaces: []*compute.NetworkInterface{
 								{
-									Network: "some-other-network",
-								},
-								{
-									Network: fmt.Sprintf("http://some-host/%s", networkName),
+									Network: "network-name",
 								},
 							},
 							Metadata: &compute.Metadata{
@@ -63,7 +55,7 @@ var _ = Describe("Client", func() {
 							Name: "other-network-vm",
 							NetworkInterfaces: []*compute.NetworkInterface{
 								{
-									Network: "some-other-network",
+									Network: "other-network-name",
 								},
 							},
 							Metadata: &compute.Metadata{
@@ -75,63 +67,24 @@ var _ = Describe("Client", func() {
 			})
 
 			It("does not return an error ", func() {
-				err := client.ValidateSafeToDelete(networkName, "some-env-id")
+				err := client.ValidateSafeToDelete("network-name", "some-env-id")
 
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
-		Context("when instances other than bosh director exist in network", func() {
-			var (
-				networkName    string
-				vmName         string
-				deploymentName string
-				nonBOSHVMName  string
-			)
-
+		Context("when vms other than the bosh director exist in network", func() {
 			BeforeEach(func() {
-				networkName = "some-network"
 				directorName := "some-bosh-director"
-				deploymentName = "some-deployment"
-				vmName = "some-vm"
-				nonBOSHVMName = "some-non-bosh-vm"
-
-				boshString := "bosh"
-				boshInitString := "bosh-init"
+				deploymentName := "some-deployment"
 
 				computeClient.ListInstancesCall.Returns.InstanceList = &compute.InstanceList{
 					Items: []*compute.Instance{
 						{
-							Name: directorName,
+							Name: "bosh-managed-vm",
 							NetworkInterfaces: []*compute.NetworkInterface{
 								{
-									Network: "some-other-network",
-								},
-								{
-									Network: fmt.Sprintf("http://some-host/%s", networkName),
-								},
-							},
-							Metadata: &compute.Metadata{
-								Items: []*compute.MetadataItems{
-									{
-										Key:   "deployment",
-										Value: &boshString,
-									},
-									{
-										Key:   "director",
-										Value: &boshInitString,
-									},
-								},
-							},
-						},
-						{
-							Name: vmName,
-							NetworkInterfaces: []*compute.NetworkInterface{
-								{
-									Network: "some-other-network",
-								},
-								{
-									Network: fmt.Sprintf("http://some-host/%s", networkName),
+									Network: "network-name",
 								},
 							},
 							Metadata: &compute.Metadata{
@@ -148,24 +101,10 @@ var _ = Describe("Client", func() {
 							},
 						},
 						{
-							Name: nonBOSHVMName,
+							Name: "not-a-bosh-managed-vm",
 							NetworkInterfaces: []*compute.NetworkInterface{
 								{
-									Network: "some-other-network",
-								},
-								{
-									Network: fmt.Sprintf("http://some-host/%s", networkName),
-								},
-							},
-							Metadata: &compute.Metadata{
-								Items: []*compute.MetadataItems{},
-							},
-						},
-						{
-							Name: "other-network-vm",
-							NetworkInterfaces: []*compute.NetworkInterface{
-								{
-									Network: "some-other-network",
+									Network: "network-name",
 								},
 							},
 							Metadata: &compute.Metadata{
@@ -177,11 +116,11 @@ var _ = Describe("Client", func() {
 			})
 
 			It("returns a helpful error message", func() {
-				err := client.ValidateSafeToDelete(networkName, "some-env-id")
+				err := client.ValidateSafeToDelete("network-name", "some-env-id")
 
-				Expect(err).To(MatchError(fmt.Sprintf(`bbl environment is not safe to delete; vms still exist in network:
-%s (deployment: %s)
-%s (not managed by bosh)`, vmName, deploymentName, nonBOSHVMName)))
+				Expect(err).To(MatchError(`bbl environment is not safe to delete; vms still exist in network:
+bosh-managed-vm (deployment: some-deployment)
+not-a-bosh-managed-vm (not managed by bosh)`))
 			})
 		})
 
