@@ -444,6 +444,14 @@ gcp_credentials_json: some-credential-json
 		It("calls delete env", func() {
 			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
+				Deployment:     "jumpbox",
+				StateDir:       "some-state-dir",
+				VarsDir:        "some-bbl-vars-dir",
+				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.5\ndirector_name: bosh-\n",
+			}))
+
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
@@ -504,6 +512,13 @@ gcp_credentials_json: some-credential-json
 				},
 			}, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
+				Deployment:     "director",
+				StateDir:       "some-state-dir",
+				VarsDir:        "some-bbl-vars-dir",
+				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
+			}))
 
 			Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 			Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))

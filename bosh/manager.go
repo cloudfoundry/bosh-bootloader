@@ -83,6 +83,7 @@ type executor interface {
 	JumpboxCreateEnvArgs(InterpolateInput) error
 	CreateEnv(CreateEnvInput) (string, error)
 	DeleteEnv(DeleteEnvInput) error
+	WriteDeploymentVars(CreateEnvInput) error
 	Version() (string, error)
 }
 
@@ -161,12 +162,19 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	stateDir := m.stateStore.GetStateDir()
 	osUnsetenv("BOSH_ALL_PROXY")
-	variables, err := m.executor.CreateEnv(CreateEnvInput{
+	createEnvInput := CreateEnvInput{
 		Deployment:     "jumpbox",
-		VarsDir:        varsDir,
 		StateDir:       stateDir,
+		VarsDir:        varsDir,
 		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
-	})
+	}
+
+	err = m.executor.WriteDeploymentVars(createEnvInput)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
+	}
+
+	variables, err := m.executor.CreateEnv(createEnvInput)
 	switch err.(type) {
 	case CreateEnvError:
 		ceErr := err.(CreateEnvError)
@@ -247,12 +255,19 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 
 	stateDir := m.stateStore.GetStateDir()
 
-	variables, err := m.executor.CreateEnv(CreateEnvInput{
+	createEnvInput := CreateEnvInput{
 		Deployment:     "director",
 		StateDir:       stateDir,
 		VarsDir:        varsDir,
 		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
-	})
+	}
+
+	err = m.executor.WriteDeploymentVars(createEnvInput)
+	if err != nil {
+		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
+	}
+
+	variables, err := m.executor.CreateEnv(createEnvInput)
 
 	switch err.(type) {
 	case CreateEnvError:
@@ -291,6 +306,18 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 	}
 
 	stateDir := m.stateStore.GetStateDir()
+
+	createEnvInput := CreateEnvInput{
+		Deployment:     "director",
+		StateDir:       stateDir,
+		VarsDir:        varsDir,
+		DeploymentVars: m.GetDirectorDeploymentVars(state, terraformOutputs),
+	}
+
+	err = m.executor.WriteDeploymentVars(createEnvInput)
+	if err != nil {
+		return fmt.Errorf("Write deployment vars: %s", err)
+	}
 
 	jumpboxPrivateKey, err := getJumpboxPrivateKey(state.Jumpbox.Variables)
 	if err != nil {
@@ -334,6 +361,18 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	stateDir := m.stateStore.GetStateDir()
+
+	createEnvInput := CreateEnvInput{
+		Deployment:     "jumpbox",
+		StateDir:       stateDir,
+		VarsDir:        varsDir,
+		DeploymentVars: m.GetJumpboxDeploymentVars(state, terraformOutputs),
+	}
+
+	err = m.executor.WriteDeploymentVars(createEnvInput)
+	if err != nil {
+		return fmt.Errorf("Write deployment vars: %s", err)
+	}
 
 	err = m.executor.DeleteEnv(DeleteEnvInput{
 		Deployment: "jumpbox",

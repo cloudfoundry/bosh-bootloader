@@ -234,6 +234,42 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
+	Describe("WriteDeploymentVars", func() {
+		var (
+			executor       bosh.Executor
+			varsDir        string
+			createEnvInput bosh.CreateEnvInput
+		)
+
+		BeforeEach(func() {
+			var err error
+			cmd := &fakes.BOSHCommand{}
+			varsDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+			stateDir, err := ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
+
+			createEnvInput = bosh.CreateEnvInput{
+				DeploymentVars: "some-deployment-vars",
+				Deployment:     "some-deployment",
+				StateDir:       stateDir,
+				VarsDir:        varsDir,
+			}
+		})
+		It("writes the deployment vars yml file", func() {
+			By("writing deployment vars to the state dir", func() {
+				err := executor.WriteDeploymentVars(createEnvInput)
+				Expect(err).NotTo(HaveOccurred())
+				deploymentVars, err := ioutil.ReadFile(filepath.Join(varsDir, "some-deployment-deployment-vars.yml"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(deploymentVars)).To(Equal("some-deployment-vars"))
+			})
+		})
+	})
+
 	Describe("CreateEnv", func() {
 		var (
 			cmd      *fakes.BOSHCommand

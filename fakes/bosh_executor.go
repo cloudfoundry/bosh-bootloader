@@ -44,6 +44,16 @@ type BOSHExecutor struct {
 		}
 	}
 
+	WriteDeploymentVarsCall struct {
+		CallCount int
+		Receives  struct {
+			Input bosh.CreateEnvInput
+		}
+		Returns struct {
+			Error error
+		}
+	}
+
 	VersionCall struct {
 		CallCount int
 		Returns   struct {
@@ -51,6 +61,13 @@ type BOSHExecutor struct {
 			Error   error
 		}
 	}
+}
+
+func (e *BOSHExecutor) WriteDeploymentVars(input bosh.CreateEnvInput) error {
+	e.WriteDeploymentVarsCall.CallCount++
+	e.WriteDeploymentVarsCall.Receives.Input = input
+
+	return e.WriteDeploymentVarsCall.Returns.Error
 }
 
 func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) (string, error) {

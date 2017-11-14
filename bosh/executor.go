@@ -286,6 +286,15 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
+func (e Executor) WriteDeploymentVars(createEnvInput CreateEnvInput) error {
+	varsFilePath := filepath.Join(createEnvInput.VarsDir, fmt.Sprintf("%s-deployment-vars.yml", createEnvInput.Deployment))
+	err := e.writeFile(varsFilePath, []byte(createEnvInput.DeploymentVars), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write vars file: %s", err) // not tested
+	}
+	return nil
+}
+
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
 	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
