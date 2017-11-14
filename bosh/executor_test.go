@@ -283,13 +283,6 @@ var _ = Describe("Executor", func() {
 			Expect(cmd.RunCallCount()).To(Equal(0))
 			Expect(vars).To(ContainSubstring("some-vars-store-contents"))
 
-			By("writing deployment vars to the state dir", func() {
-				deploymentVars, err := ioutil.ReadFile(filepath.Join(varsDir, "some-deployment-deployment-vars.yml"))
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(string(deploymentVars)).To(Equal("some-deployment-vars"))
-			})
-
 			By("setting BBL_STATE_DIR environment variable", func() {
 				bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
 				Expect(bblStateDirEnv).To(Equal(stateDir))
