@@ -1,15 +1,25 @@
-variable "project_id" {}
+variable "project_id" {
+	type = "string"
+}
 
-variable "region" {}
+variable "region" {
+	type = "string"
+}
 
-variable "zone" {}
+variable "zone" {
+	type = "string"
+}
 
-variable "env_id" {}
+variable "env_id" {
+	type = "string"
+}
 
-variable "credentials" {}
+variable "credentials" {
+	type = "string"
+}
 
 provider "google" {
-  credentials = "${file("${var.credentials}")}"
-  project = "${var.project_id}"
-  region = "${var.region}"
+	credentials = "${file("${var.credentials}")}"
+	project = "${var.project_id}"
+	region = "${var.region}"
 }

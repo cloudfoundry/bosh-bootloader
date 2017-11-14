@@ -413,7 +413,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 			Zone:           state.GCP.Zone,
 			Network:        terraformOutputs.GetString("network_name"),
 			Subnetwork:     terraformOutputs.GetString("subnetwork_name"),
-			Tags:           terraformOutputs.GetStringSlice("jumpbox_tags"),
+			Tags:           []string{terraformOutputs.GetString("bosh_open_tag_name"), terraformOutputs.GetString("jumpbox_tag_name")},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
@@ -480,7 +480,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			Zone:           state.GCP.Zone,
 			Network:        terraformOutputs.GetString("network_name"),
 			Subnetwork:     terraformOutputs.GetString("subnetwork_name"),
-			Tags:           terraformOutputs.GetStringSlice("bosh_director_tags"),
+			Tags:           []string{terraformOutputs.GetString("bosh_director_tag_name")},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
