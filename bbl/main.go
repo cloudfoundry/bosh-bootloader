@@ -172,7 +172,7 @@ func main() {
 	commandSet["plan"] = plan
 	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore)
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
-	commandSet["destroy"] = commands.NewDestroy(logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
+	commandSet["destroy"] = commands.NewDestroy(plan, logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
 	commandSet["create-lbs"] = commands.NewCreateLBs(logger, stateValidator, boshManager, lbArgsHandler, cloudConfigManager, terraformManager, stateStore, environmentValidator)
 	commandSet["update-lbs"] = commandSet["create-lbs"]

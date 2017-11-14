@@ -290,17 +290,11 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
 	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
 
-	varsFilePath := filepath.Join(createEnvInput.VarsDir, fmt.Sprintf("%s-deployment-vars.yml", createEnvInput.Deployment))
-	err := e.writeFile(varsFilePath, []byte(createEnvInput.DeploymentVars), os.ModePerm)
-	if err != nil {
-		return "", fmt.Errorf("Write vars file: %s", err) // not tested
-	}
-
 	cmd := exec.Command(createEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		return "", fmt.Errorf("Run bosh create-env: %s", err)
 	}

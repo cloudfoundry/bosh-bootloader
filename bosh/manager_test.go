@@ -444,11 +444,6 @@ gcp_credentials_json: some-credential-json
 		It("calls delete env", func() {
 			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.Variables).To(Equal(vars))
-			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.IAAS).To(Equal("some-iaas"))
-			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
-			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
-			Expect(boshExecutor.JumpboxCreateEnvArgsCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
@@ -517,14 +512,6 @@ gcp_credentials_json: some-credential-json
 			Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
 			Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 
-			Expect(boshExecutor.DirectorCreateEnvArgsCall.Receives.InterpolateInput).To(Equal(bosh.InterpolateInput{
-				BOSHState:     map[string]interface{}{"key": "value"},
-				Variables:     boshVars,
-				OpsFile:       "some-ops-file",
-				DeploymentDir: "some-director-deployment-dir",
-				StateDir:      "some-state-dir",
-				VarsDir:       "some-bbl-vars-dir",
-			}))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
 				Deployment: "director",
 				StateDir:   "some-state-dir",

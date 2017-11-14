@@ -21,6 +21,7 @@ var _ = Describe("Destroy", func() {
 		destroy                  commands.Destroy
 		boshManager              *fakes.BOSHManager
 		logger                   *fakes.Logger
+		plan                     *fakes.Plan
 		stateStore               *fakes.StateStore
 		stateValidator           *fakes.StateValidator
 		terraformManager         *fakes.TerraformManager
@@ -32,6 +33,7 @@ var _ = Describe("Destroy", func() {
 		stdin = bytes.NewBuffer([]byte{})
 		logger = &fakes.Logger{}
 
+		plan = &fakes.Plan{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 		stateStore = &fakes.StateStore{}
@@ -42,7 +44,7 @@ var _ = Describe("Destroy", func() {
 		// Returning a fully empty State is unrealistic.
 		terraformManager.DestroyCall.Returns.BBLState = storage.State{ID: "some-state-id"}
 
-		destroy = commands.NewDestroy(logger, stdin, boshManager, stateStore,
+		destroy = commands.NewDestroy(plan, logger, stdin, boshManager, stateStore,
 			stateValidator, terraformManager, networkDeletionValidator)
 	})
 
@@ -229,6 +231,10 @@ var _ = Describe("Destroy", func() {
 	})
 
 	Describe("Execute", func() {
+		BeforeEach(func() {
+			plan.IsInitializedCall.Returns.IsInitialized = true
+		})
+
 		DescribeTable("prompting the user for confirmation",
 			func(response string, proceed bool) {
 				fmt.Fprintf(stdin, "%s\n", response)
@@ -315,6 +321,8 @@ var _ = Describe("Destroy", func() {
 			err := destroy.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(plan.IsInitializedCall.CallCount).To(Equal(1))
+			Expect(plan.IsInitializedCall.Receives.State).To(Equal(state))
 			Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
 			Expect(boshManager.DeleteDirectorCall.Receives.State).To(Equal(state))
 			Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(1))
@@ -322,6 +330,34 @@ var _ = Describe("Destroy", func() {
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(2))
 			Expect(stateStore.SetCall.Receives[0].State.BOSH).To(Equal(storage.BOSH{}))
+		})
+
+		Context("when the plan is not initialized", func() {
+			It("initializes the plan", func() {
+				plan.IsInitializedCall.Returns.IsInitialized = false
+				stdin.Write([]byte("yes\n"))
+				state := storage.State{
+					EnvID: "unintialized",
+					BOSH: storage.BOSH{
+						UserOpsFile: "some ops file contents",
+					},
+					NoDirector: true,
+					LB:         storage.LB{Type: "lb-type", Domain: "lb-domain"},
+				}
+				err := destroy.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(plan.IsInitializedCall.CallCount).To(Equal(1))
+				Expect(plan.IsInitializedCall.Receives.State).To(Equal(state))
+				Expect(plan.InitializePlanCall.CallCount).To(Equal(1))
+				Expect(plan.InitializePlanCall.Receives.State).To(Equal(state))
+				Expect(plan.InitializePlanCall.Receives.Plan).To(Equal(commands.PlanConfig{
+					Name:       "unintialized",
+					OpsFile:    "some ops file contents",
+					NoDirector: true,
+					LB:         storage.LB{Type: "lb-type", Domain: "lb-domain"},
+				}))
+			})
 		})
 
 		Context("failure cases", func() {

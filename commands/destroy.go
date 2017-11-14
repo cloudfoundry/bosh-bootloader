@@ -13,6 +13,7 @@ import (
 )
 
 type Destroy struct {
+	plan                     plan
 	logger                   logger
 	stdin                    io.Reader
 	boshManager              boshManager
@@ -31,10 +32,11 @@ type NetworkDeletionValidator interface {
 	ValidateSafeToDelete(networkName string, envID string) error
 }
 
-func NewDestroy(logger logger, stdin io.Reader,
+func NewDestroy(plan plan, logger logger, stdin io.Reader,
 	boshManager boshManager, stateStore stateStore, stateValidator stateValidator,
 	terraformManager terraformManager, networkDeletionValidator NetworkDeletionValidator) Destroy {
 	return Destroy{
+		plan:                     plan,
 		logger:                   logger,
 		stdin:                    stdin,
 		boshManager:              boshManager,
@@ -120,6 +122,20 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		if proceed != "yes" && proceed != "y" {
 			d.logger.Step("exiting")
 			return nil
+		}
+	}
+
+	if !d.plan.IsInitialized(state) {
+		planConfig := PlanConfig{
+			Name:       state.EnvID,
+			OpsFile:    state.BOSH.UserOpsFile,
+			NoDirector: state.NoDirector,
+			LB:         state.LB,
+		}
+
+		state, err = d.plan.InitializePlan(planConfig, state)
+		if err != nil {
+			panic(err)
 		}
 	}
 
