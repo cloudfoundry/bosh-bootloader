@@ -44,7 +44,6 @@ var _ = Describe("plan", func() {
 			filepath.Join(stateDir, "delete-director.sh"),
 			filepath.Join(stateDir, ".bbl", "cloudconfig", "cloud-config.yml"),
 			filepath.Join(stateDir, ".bbl", "cloudconfig", "ops.yml"),
-			filepath.Join(stateDir, ".bbl", "previous-user-ops-file.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "bosh.yml"),
 			filepath.Join(stateDir, "bosh-deployment", iaas, "cpi.yml"),
 			filepath.Join(stateDir, "bosh-deployment", "credhub.yml"),
