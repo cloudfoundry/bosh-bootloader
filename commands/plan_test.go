@@ -72,9 +72,7 @@ var _ = Describe("Plan", func() {
 			err := command.Execute(args, state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
-			Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("some-iaas"))
-			Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{}))
+			Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(0))
 
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 			Expect(envIDManager.SyncCall.Receives.State).To(Equal(state))
@@ -118,7 +116,7 @@ var _ = Describe("Plan", func() {
 			})
 		})
 
-		Context("when --lb-type is passed", func() {
+		Context("when lb flags are passed", func() {
 			var lb storage.LB
 			BeforeEach(func() {
 				lb = storage.LB{
@@ -138,7 +136,7 @@ var _ = Describe("Plan", func() {
 							"--lb-domain", "something.io",
 						}, storage.State{IAAS: "aws"})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(2))
+					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
 						LBType:    "cf",
@@ -150,30 +148,6 @@ var _ = Describe("Plan", func() {
 
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
 					Expect(envIDManager.SyncCall.Receives.State.LB).To(Equal(lb))
-				})
-			})
-			Context("gcp", func() {
-				It("doesn't use --lb-chain", func() {
-					err := command.Execute(
-						[]string{
-							"--lb-chain", "chain",
-						}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("flag provided but not defined: -lb-chain"))
-				})
-			})
-			Context("when the lb args are not valid", func() {
-				BeforeEach(func() {
-					lbArgsHandler.GetLBStateCall.Returns.Error = errors.New("banana")
-				})
-				It("returns an error", func() {
-					err := command.Execute(
-						[]string{
-							"--lb-type", "cf",
-							"--lb-cert", "cert",
-							"--lb-key", "key",
-							"--lb-domain", "something.io",
-						}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("banana"))
 				})
 			})
 		})
@@ -336,46 +310,13 @@ var _ = Describe("Plan", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("returns a config with the ops-file path", func() {
+			It("returns a config with the ops-file path contents", func() {
 				config, err := command.ParseArgs([]string{
 					"--ops-file", providedOpsFilePath,
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(config.OpsFile).To(Equal(providedOpsFilePath))
-			})
-		})
-
-		Context("when the --ops-file flag is not specified", func() {
-			It("creates a default ops-file with the contents of state.BOSH.UserOpsFile", func() {
-				config, err := command.ParseArgs([]string{}, storage.State{
-					BOSH: storage.BOSH{
-						UserOpsFile: "some-ops-file-contents",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				filePath := config.OpsFile
-				fileContents, err := ioutil.ReadFile(filePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
-			})
-
-			It("writes the previous user ops file to the .bbl directory", func() {
-				config, err := command.ParseArgs([]string{}, storage.State{
-					BOSH: storage.BOSH{
-						UserOpsFile: "some-ops-file-contents",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				filePath := config.OpsFile
-				fileContents, err := ioutil.ReadFile(filePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(filePath).To(Equal(filepath.Join(tempDir, "previous-user-ops-file.yml")))
-				Expect(string(fileContents)).To(Equal("some-ops-file-contents"))
+				Expect(config.OpsFile).To(Equal("some-ops-file-contents"))
 			})
 		})
 
@@ -407,6 +348,67 @@ var _ = Describe("Plan", func() {
 						})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(config.NoDirector).To(Equal(true))
+				})
+			})
+		})
+
+		Context("when --lb-type is passed", func() {
+			var lb storage.LB
+			BeforeEach(func() {
+				lb = storage.LB{
+					Type: "some-type",
+				}
+				lbArgsHandler.GetLBStateCall.Returns.LB = lb
+			})
+
+			Context("aws", func() {
+				It("sets LB args on the state", func() {
+					config, err := command.ParseArgs(
+						[]string{
+							"--lb-type", "cf",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-chain", "chain",
+							"--lb-domain", "something.io",
+						}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+						LBType:    "cf",
+						CertPath:  "cert",
+						KeyPath:   "key",
+						ChainPath: "chain",
+						Domain:    "something.io",
+					}))
+
+					Expect(config.LB).To(Equal(lb))
+				})
+			})
+
+			Context("gcp", func() {
+				It("doesn't use --lb-chain", func() {
+					_, err := command.ParseArgs(
+						[]string{
+							"--lb-chain", "chain",
+						}, storage.State{IAAS: "gcp"})
+					Expect(err).To(MatchError("flag provided but not defined: -lb-chain"))
+				})
+			})
+
+			Context("when the lb args are not valid", func() {
+				BeforeEach(func() {
+					lbArgsHandler.GetLBStateCall.Returns.Error = errors.New("banana")
+				})
+				It("returns an error", func() {
+					_, err := command.ParseArgs(
+						[]string{
+							"--lb-type", "cf",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-domain", "something.io",
+						}, storage.State{IAAS: "gcp"})
+					Expect(err).To(MatchError("banana"))
 				})
 			})
 		})

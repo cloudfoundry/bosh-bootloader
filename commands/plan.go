@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -24,7 +22,7 @@ type PlanConfig struct {
 	Name       string
 	OpsFile    string
 	NoDirector bool
-	LB         CreateLBsConfig
+	LB         storage.LB
 }
 
 func NewPlan(boshManager boshManager, cloudConfigManager cloudConfigManager,
@@ -64,40 +62,44 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 }
 
 func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) {
-	opsFileDir, err := p.stateStore.GetBblDir()
-	if err != nil {
-		return PlanConfig{}, err //not tested
-	}
-
-	prevOpsFilePath := filepath.Join(opsFileDir, "previous-user-ops-file.yml")
-	err = ioutil.WriteFile(prevOpsFilePath, []byte(state.BOSH.UserOpsFile), os.ModePerm)
-	if err != nil {
-		return PlanConfig{}, err //not tested
-	}
-
-	var config PlanConfig
+	var (
+		config      PlanConfig
+		lbConfig    CreateLBsConfig
+		opsFilePath string
+	)
 	planFlags := flags.New("up")
 	planFlags.String(&config.Name, "name", "")
-	planFlags.String(&config.OpsFile, "ops-file", prevOpsFilePath)
+	planFlags.String(&opsFilePath, "ops-file", "")
 	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
-	planFlags.String(&config.LB.LBType, "lb-type", "")
-	planFlags.String(&config.LB.CertPath, "lb-cert", "")
-	planFlags.String(&config.LB.KeyPath, "lb-key", "")
-	planFlags.String(&config.LB.Domain, "lb-domain", "")
+	planFlags.String(&lbConfig.LBType, "lb-type", "")
+	planFlags.String(&lbConfig.CertPath, "lb-cert", "")
+	planFlags.String(&lbConfig.KeyPath, "lb-key", "")
+	planFlags.String(&lbConfig.Domain, "lb-domain", "")
 	if state.IAAS == "aws" {
-		planFlags.String(&config.LB.ChainPath, "lb-chain", "")
+		planFlags.String(&lbConfig.ChainPath, "lb-chain", "")
 	}
 
-	err = planFlags.Parse(args)
+	err := planFlags.Parse(args)
 	if err != nil {
 		return PlanConfig{}, err
 	}
 
-	if (config.LB != CreateLBsConfig{}) {
-		_, err = p.lbArgsHandler.GetLBState(state.IAAS, config.LB)
+	if (lbConfig != CreateLBsConfig{}) {
+		lbState, err := p.lbArgsHandler.GetLBState(state.IAAS, lbConfig)
 		if err != nil {
 			return PlanConfig{}, err
 		}
+		config.LB = lbState
+	}
+
+	if opsFilePath != "" {
+		opsFileContents, err := ioutil.ReadFile(opsFilePath)
+		if err != nil {
+			return PlanConfig{}, fmt.Errorf("Reading ops-file contents: %v", err)
+		}
+		config.OpsFile = string(opsFileContents)
+	} else {
+		config.OpsFile = state.BOSH.UserOpsFile
 	}
 
 	return config, nil
@@ -121,23 +123,9 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 		state.NoDirector = true
 	}
 
-	var (
-		opsFileContents []byte
-		err             error
-	)
-	if config.OpsFile != "" {
-		opsFileContents, err = ioutil.ReadFile(config.OpsFile)
-		if err != nil {
-			return storage.State{}, fmt.Errorf("Reading ops-file contents: %v", err)
-		}
-	}
+	var err error
 
-	newLBState, err := p.lbArgsHandler.GetLBState(state.IAAS, config.LB)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	state.LB = newLBState
+	state.LB = config.LB
 
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
@@ -165,7 +153,7 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 		return storage.State{}, fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
 	}
 
-	state.BOSH.UserOpsFile = string(opsFileContents)
+	state.BOSH.UserOpsFile = config.OpsFile
 	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err)
 	}
