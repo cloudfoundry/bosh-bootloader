@@ -94,8 +94,8 @@ export CREDHUB_CA="$(bosh interpolate vars/director-variables.yml --path /credhu
 ```
 * retrieve the concourse username and password from credhub
 ```
-export CONCOURSE_USERNAME=$(ssh -i $JUMPBOX_PRIVATE_KEY -t jumpbox@`bbl jumpbox-address` "export CREDHUB_CA=\"$CREDHUB_CA\"; export UAA_CA=\"$UAA_CA\"; cd ~; ./credhub login -s https://10.0.0.6:8844 --ca-cert \"\$UAA_CA\" --ca-cert \"\$CREDHUB_CA\" -u credhub-cli -p $CREDHUB_CLI_PASSWORD>/dev/null; ./credhub get --name \`./credhub find -n 'basic_auth_username' | grep -e'- name' | cut -d':' -f2\` | grep value | cut -d":" -f2 | tr -d '[:space:]'" 2>/dev/null)
-export CONCOURSE_PASSWORD=$(ssh -i $JUMPBOX_PRIVATE_KEY -t jumpbox@`bbl jumpbox-address` "export CREDHUB_CA=\"$CREDHUB_CA\"; export UAA_CA=\"$UAA_CA\"; cd ~; ./credhub login -s https://10.0.0.6:8844 --ca-cert \"\$UAA_CA\" --ca-cert \"\$CREDHUB_CA\" -u credhub-cli -p $CREDHUB_CLI_PASSWORD>/dev/null; ./credhub get --name \`./credhub find -n 'basic_auth_password' | grep -e'- name' | cut -d':' -f2\` | grep value | cut -d":" -f2 | tr -d '[:space:]'" 2>/dev/null)
+export CONCOURSE_USERNAME=$(ssh -i $JUMPBOX_PRIVATE_KEY -t jumpbox@`bbl jumpbox-address` "export CREDHUB_CA=\"$CREDHUB_CA\"; export UAA_CA=\"$UAA_CA\"; export CREDHUB_CLI_PASSWORD=\"$CREDHUB_CLI_PASSWORD\"; cd ~; ./credhub login -s https://10.0.0.6:8844 --ca-cert \"\$UAA_CA\" --ca-cert \"\$CREDHUB_CA\" -u credhub-cli -p $CREDHUB_CLI_PASSWORD>/dev/null; ./credhub get --name \`./credhub find -n 'basic_auth_username' | grep -e'- name' | cut -d':' -f2\` | grep value | cut -d":" -f2 | tr -d '[:space:]'" 2>/dev/null)
+export CONCOURSE_PASSWORD=$(ssh -i $JUMPBOX_PRIVATE_KEY -t jumpbox@`bbl jumpbox-address` "export CREDHUB_CA=\"$CREDHUB_CA\"; export UAA_CA=\"$UAA_CA\"; export CREDHUB_CLI_PASSWORD=\"$CREDHUB_CLI_PASSWORD\"; cd ~; ./credhub login -s https://10.0.0.6:8844 --ca-cert \"\$UAA_CA\" --ca-cert \"\$CREDHUB_CA\" -u credhub-cli -p $CREDHUB_CLI_PASSWORD>/dev/null; ./credhub get --name \`./credhub find -n 'basic_auth_password' | grep -e'- name' | cut -d':' -f2\` | grep value | cut -d":" -f2 | tr -d '[:space:]'" 2>/dev/null)
 ```
 
 Now you should be able to login with `fly`* :
