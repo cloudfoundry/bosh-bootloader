@@ -73,9 +73,6 @@ var _ = Describe("up", func() {
 				"cloud-config.yml",
 				"ops.yml",
 			})
-			checkExists(filepath.Join(stateDir, ".bbl"), []string{
-				"previous-user-ops-file.yml",
-			})
 			checkExists(filepath.Join(stateDir, "bosh-deployment"), []string{
 				"bosh.yml",
 				filepath.Join(iaas, "cpi.yml"),
