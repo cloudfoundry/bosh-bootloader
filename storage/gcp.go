@@ -1,8 +1,8 @@
 package storage
 
 type GCP struct {
-	ServiceAccountKey string   `json:"serviceAccountKey,omitempty"`
-	ProjectID         string   `json:"projectID,omitempty"`
+	ServiceAccountKey string   `json:"-"`
+	ProjectID         string   `json:"-"`
 	Zone              string   `json:"zone"`
 	Region            string   `json:"region"`
 	Zones             []string `json:"zones"`

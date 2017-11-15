@@ -3,12 +3,9 @@ package bosh
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
-
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"golang.org/x/net/proxy"
@@ -17,17 +14,19 @@ import (
 var proxySOCKS5 func(string, string, *proxy.Auth, proxy.Dialer) (proxy.Dialer, error) = proxy.SOCKS5
 
 type ClientProvider struct {
-	socks5Proxy socks5Proxy
+	socks5Proxy  socks5Proxy
+	sshKeyGetter sshKeyGetter
 }
 
-func NewClientProvider(socks5Proxy socks5Proxy) ClientProvider {
+func NewClientProvider(socks5Proxy socks5Proxy, sshKeyGetter sshKeyGetter) ClientProvider {
 	return ClientProvider{
-		socks5Proxy: socks5Proxy,
+		socks5Proxy:  socks5Proxy,
+		sshKeyGetter: sshKeyGetter,
 	}
 }
 
 func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
-	privateKey, err := getJumpboxSSHKey(jumpbox.Variables)
+	privateKey, err := c.sshKeyGetter.Get("jumpbox")
 	if err != nil {
 		return nil, fmt.Errorf("get jumpbox ssh key: %s", err)
 	}
@@ -75,23 +74,4 @@ func (c ClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directo
 	httpClient := c.HTTPClient(dialer, []byte(directorCACert))
 	boshClient := NewClient(httpClient, directorAddress, directorUsername, directorPassword, directorCACert)
 	return boshClient, nil
-}
-
-func getJumpboxSSHKey(vars string) (string, error) {
-	var variables struct {
-		JumpboxSSH struct {
-			PrivateKey string `yaml:"private_key"`
-		} `yaml:"jumpbox_ssh"`
-	}
-
-	err := yaml.Unmarshal([]byte(vars), &variables)
-	if err != nil {
-		return "", err
-	}
-
-	if variables.JumpboxSSH.PrivateKey == "" {
-		return "", errors.New("private key not found")
-	}
-
-	return variables.JumpboxSSH.PrivateKey, nil
 }

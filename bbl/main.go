@@ -132,9 +132,9 @@ func main() {
 	socks5Proxy := proxy.NewSocks5Proxy(hostKeyGetter)
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore)
-	boshClientProvider := bosh.NewClientProvider(socks5Proxy)
-	sshKeyGetter := bosh.NewSSHKeyGetter()
+	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore)
+	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore, sshKeyGetter)
+	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 	environmentValidator := application.NewEnvironmentValidator(boshClientProvider)
 
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
@@ -189,7 +189,7 @@ func main() {
 	commandSet["director-ssh-key"] = commands.NewDirectorSSHKey(logger, stateValidator, sshKeyGetter)
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
-	commandSet["print-env"] = commands.NewPrintEnv(logger, stateValidator, terraformManager)
+	commandSet["print-env"] = commands.NewPrintEnv(logger, stateValidator, sshKeyGetter, terraformManager)
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 	commandSet["jumpbox-deployment-vars"] = commands.NewJumpboxDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)

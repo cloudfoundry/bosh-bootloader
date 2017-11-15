@@ -1,13 +1,13 @@
 package bosh_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,8 +18,6 @@ var _ = Describe("SSHKeyDeleter", func() {
 		var (
 			sshKeyDeleter bosh.SSHKeyDeleter
 			varsDir       string
-			state         storage.State
-			expectedState storage.State
 			stateStore    *fakes.StateStore
 
 			beforeDeletionVars string
@@ -38,28 +36,6 @@ var _ = Describe("SSHKeyDeleter", func() {
 			afterDeletionVars = "foo: bar\n"
 
 			sshKeyDeleter = bosh.NewSSHKeyDeleter(stateStore)
-			state = storage.State{
-				BOSH: storage.BOSH{
-					Variables: beforeDeletionVars,
-				},
-				Jumpbox: storage.Jumpbox{
-					Variables: beforeDeletionVars,
-				},
-			}
-			expectedState = storage.State{
-				BOSH: storage.BOSH{
-					Variables: afterDeletionVars,
-				},
-				Jumpbox: storage.Jumpbox{
-					Variables: afterDeletionVars,
-				},
-			}
-		})
-
-		It("deletes the jumpbox ssh key from the state and returns the new state", func() {
-			newState, err := sshKeyDeleter.Delete(state)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(newState).To(Equal(expectedState))
 		})
 
 		Context("when the jumpbox-variables.yml exists on disk", func() {
@@ -68,7 +44,7 @@ var _ = Describe("SSHKeyDeleter", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("deletes the jumpbox key from the file on disk", func() {
-				_, err := sshKeyDeleter.Delete(storage.State{})
+				err := sshKeyDeleter.Delete()
 				Expect(err).NotTo(HaveOccurred())
 
 				contents, err := ioutil.ReadFile(filepath.Join(varsDir, "jumpbox-variables.yml"))
@@ -77,9 +53,20 @@ var _ = Describe("SSHKeyDeleter", func() {
 			})
 		})
 
-		Context("when the jumpbox-variables.yml does not exists on disk", func() {
+		Context("when the jumpbox-variables.yml doesn't contain ssh key", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(afterDeletionVars), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("does nothing", func() {
+				err := sshKeyDeleter.Delete()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when the jumpbox-variables.yml does not exist on disk", func() {
 			It("does not write the file to disk", func() {
-				_, err := sshKeyDeleter.Delete(state)
+				err := sshKeyDeleter.Delete()
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = os.Stat(filepath.Join(varsDir, "jumpbox-variables.yml"))
@@ -87,19 +74,25 @@ var _ = Describe("SSHKeyDeleter", func() {
 			})
 		})
 
-		Context("when the BOSH variables is invalid YAML", func() {
+		Context("when the Jumpbox variables is invalid YAML", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte("invalid yaml"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
 			It("returns an error", func() {
-				state.BOSH.Variables = "invalid yaml"
-				_, err := sshKeyDeleter.Delete(state)
-				Expect(err).To(MatchError(ContainSubstring("BOSH variables: yaml: unmarshal errors:")))
+				err := sshKeyDeleter.Delete()
+				Expect(err).To(MatchError(ContainSubstring("Jumpbox variables: yaml: unmarshal errors:")))
 			})
 		})
 
-		Context("when the Jumpbox variables is invalid YAML", func() {
+		Context("when the vars dir can't be accessed", func() {
+			BeforeEach(func() {
+				stateStore.GetVarsDirCall.Returns.Error = errors.New("potato")
+			})
 			It("returns an error", func() {
-				state.Jumpbox.Variables = "invalid yaml"
-				_, err := sshKeyDeleter.Delete(state)
-				Expect(err).To(MatchError(ContainSubstring("Jumpbox variables: yaml: unmarshal errors:")))
+				err := sshKeyDeleter.Delete()
+				Expect(err).To(MatchError("Get vars dir: potato"))
 			})
 		})
 	})

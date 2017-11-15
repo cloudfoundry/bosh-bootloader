@@ -58,11 +58,7 @@ var _ = Describe("Executor", func() {
 				DeploymentDir: deploymentDir,
 				VarsDir:       varsDir,
 				StateDir:      stateDir,
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: "key: value",
-				OpsFile:   "some-ops-file",
+				OpsFile:       "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
@@ -155,11 +151,7 @@ var _ = Describe("Executor", func() {
 				DeploymentDir: deploymentDir,
 				StateDir:      stateDir,
 				VarsDir:       varsDir,
-				BOSHState: map[string]interface{}{
-					"key": "value",
-				},
-				Variables: "key: value",
-				OpsFile:   "some-ops-file",
+				OpsFile:       "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)

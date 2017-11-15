@@ -169,7 +169,90 @@ var _ = Describe("Migrator", func() {
 					})
 				})
 			})
+
+			Context("when the state has populated BOSH variables", func() {
+				BeforeEach(func() {
+					incomingState = storage.State{
+						EnvID: "some-env-id",
+						BOSH: storage.BOSH{
+							DirectorAddress: "10.0.0.6",
+							Variables:       "some-bosh-vars",
+						},
+					}
+				})
+				It("copies the BOSH state to the director-variables.yml file", func() {
+					_, err := migrator.Migrate(incomingState)
+					Expect(err).NotTo(HaveOccurred())
+					boshVars, err := ioutil.ReadFile(filepath.Join(varsDir, "director-variables.yml"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(boshVars)).To(Equal("some-bosh-vars"))
+
+					By("saving the state after removing the old values", func() {
+						Expect(store.SetCall.CallCount).To(Equal(1))
+						Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
+							EnvID: "some-env-id",
+							BOSH: storage.BOSH{
+								DirectorAddress: "10.0.0.6",
+							},
+						}))
+					})
+				})
+				Context("failure cases", func() {
+					Context("when the director variables file cannot be written", func() {
+						BeforeEach(func() {
+							err := os.MkdirAll(filepath.Join(varsDir, "director-variables.yml"), os.ModePerm)
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("returns an error", func() {
+							_, err := migrator.Migrate(incomingState)
+							Expect(err).To(MatchError(ContainSubstring("migrating bosh variables: ")))
+						})
+					})
+				})
+			})
+
+			Context("when the state has populated jumpbox variables", func() {
+				BeforeEach(func() {
+					incomingState = storage.State{
+						EnvID: "some-env-id",
+						Jumpbox: storage.Jumpbox{
+							URL:       "10.0.0.5:25555",
+							Variables: "some-jumpbox-vars",
+						},
+					}
+				})
+				It("copies the jumpbox state to the jumpbox-variables.yml file", func() {
+					_, err := migrator.Migrate(incomingState)
+					Expect(err).NotTo(HaveOccurred())
+					jumpboxVars, err := ioutil.ReadFile(filepath.Join(varsDir, "jumpbox-variables.yml"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(jumpboxVars)).To(Equal("some-jumpbox-vars"))
+
+					By("saving the state after removing the old values", func() {
+						Expect(store.SetCall.CallCount).To(Equal(1))
+						Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
+							EnvID: "some-env-id",
+							Jumpbox: storage.Jumpbox{
+								URL: "10.0.0.5:25555",
+							},
+						}))
+					})
+				})
+				Context("failure cases", func() {
+					Context("when the director variables file cannot be written", func() {
+						BeforeEach(func() {
+							err := os.MkdirAll(filepath.Join(varsDir, "jumpbox-variables.yml"), os.ModePerm)
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("returns an error", func() {
+							_, err := migrator.Migrate(incomingState)
+							Expect(err).To(MatchError(ContainSubstring("migrating jumpbox variables: ")))
+						})
+					})
+				})
+			})
 		})
 	})
-
 })

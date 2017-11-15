@@ -1,7 +1,6 @@
 package bosh
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -17,10 +16,11 @@ var (
 )
 
 type Manager struct {
-	executor    executor
-	logger      logger
-	socks5Proxy socks5Proxy
-	stateStore  stateStore
+	executor     executor
+	logger       logger
+	socks5Proxy  socks5Proxy
+	stateStore   stateStore
+	sshKeyGetter sshKeyGetter
 }
 
 type directorVars struct {
@@ -104,12 +104,17 @@ type stateStore interface {
 	GetJumpboxDeploymentDir() (string, error)
 }
 
-func NewManager(executor executor, logger logger, socks5Proxy socks5Proxy, stateStore stateStore) *Manager {
+type sshKeyGetter interface {
+	Get(string) (string, error)
+}
+
+func NewManager(executor executor, logger logger, socks5Proxy socks5Proxy, stateStore stateStore, sshKeyGetter sshKeyGetter) *Manager {
 	return &Manager{
-		executor:    executor,
-		logger:      logger,
-		socks5Proxy: socks5Proxy,
-		stateStore:  stateStore,
+		executor:     executor,
+		logger:       logger,
+		socks5Proxy:  socks5Proxy,
+		stateStore:   stateStore,
+		sshKeyGetter: sshKeyGetter,
 	}
 }
 
@@ -140,8 +145,6 @@ func (m *Manager) InitializeJumpbox(state storage.State) error {
 		StateDir:      stateDir,
 		VarsDir:       varsDir,
 		IAAS:          state.IAAS,
-		Variables:     state.Jumpbox.Variables,
-		BOSHState:     state.Jumpbox.State,
 	}
 
 	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)
@@ -189,12 +192,11 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	m.logger.Step("created jumpbox")
 
 	state.Jumpbox = storage.Jumpbox{
-		Variables: variables,
-		URL:       terraformOutputs.GetString("jumpbox_url"),
+		URL: terraformOutputs.GetString("jumpbox_url"),
 	}
 
 	m.logger.Step("starting socks5 proxy to jumpbox")
-	jumpboxPrivateKey, err := getJumpboxPrivateKey(variables)
+	jumpboxPrivateKey, err := m.sshKeyGetter.Get("jumpbox")
 	if err != nil {
 		return storage.State{}, fmt.Errorf("jumpbox key: %s", err)
 	}
@@ -232,9 +234,7 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 		StateDir:      stateDir,
 		VarsDir:       varsDir,
 		IAAS:          state.IAAS,
-		Variables:     state.BOSH.Variables,
 		OpsFile:       state.BOSH.UserOpsFile,
-		BOSHState:     state.BOSH.State,
 	}
 
 	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
@@ -291,7 +291,6 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DirectorSSLCA:          directorVars.sslCA,
 		DirectorSSLCertificate: directorVars.sslCertificate,
 		DirectorSSLPrivateKey:  directorVars.sslPrivateKey,
-		Variables:              variables,
 		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
 
@@ -319,7 +318,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 		return fmt.Errorf("Write deployment vars: %s", err)
 	}
 
-	jumpboxPrivateKey, err := getJumpboxPrivateKey(state.Jumpbox.Variables)
+	jumpboxPrivateKey, err := m.sshKeyGetter.Get("jumpbox")
 	if err != nil {
 		return fmt.Errorf("Delete bosh director: %s", err)
 	}
@@ -513,24 +512,6 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	}
 
 	return string(mustMarshal(vars))
-}
-
-func getJumpboxPrivateKey(v string) (string, error) {
-	var vars struct {
-		JumpboxSSH struct {
-			PrivateKey string `yaml:"private_key"`
-		} `yaml:"jumpbox_ssh"`
-	}
-
-	err := yaml.Unmarshal([]byte(v), &vars)
-	if err != nil {
-		return "", err
-	}
-	if vars.JumpboxSSH.PrivateKey == "" {
-		return "", errors.New("cannot start proxy due to missing jumpbox private key")
-	}
-
-	return vars.JumpboxSSH.PrivateKey, nil
 }
 
 func getDirectorVars(v string) directorVars {

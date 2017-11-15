@@ -47,13 +47,14 @@ func (s SSHKey) CheckFastFails(subcommandFlags []string, state storage.State) er
 }
 
 func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
-	var vars string
+	var deployment string
 	if s.Director {
-		vars = state.BOSH.Variables
+		deployment = "director"
 	} else {
-		vars = state.Jumpbox.Variables
+		deployment = "jumpbox"
 	}
-	privateKey, err := s.sshKeyGetter.Get(vars)
+
+	privateKey, err := s.sshKeyGetter.Get(deployment)
 	if err != nil {
 		return err
 	}

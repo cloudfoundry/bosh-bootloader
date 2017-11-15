@@ -25,8 +25,6 @@ type InterpolateInput struct {
 	StateDir      string
 	VarsDir       string
 	IAAS          string
-	BOSHState     map[string]interface{}
-	Variables     string
 	OpsFile       string
 }
 
@@ -93,13 +91,6 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, input.DeploymentDir)
 
-	varsStoreFile := setupFile{
-		dest:     filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
-		contents: []byte(input.Variables),
-	}
-
-	setupFiles = append(setupFiles, varsStoreFile)
-
 	for _, f := range setupFiles {
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
 		err := e.writeFile(f.dest, f.contents, os.ModePerm)
@@ -109,23 +100,12 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	sharedArgs := []string{
-		"--vars-store", varsStoreFile.dest,
+		"--vars-store", filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
 		"--vars-file", filepath.Join(input.VarsDir, "jumpbox-deployment-vars.yml"),
 		"-o", filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
 	}
 
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
-	if input.BOSHState != nil {
-		stateJSON, err := e.marshalJSON(input.BOSHState)
-		if err != nil {
-			return fmt.Errorf("Jumpbox marshal state json: %s", err) //not tested
-		}
-
-		err = e.writeFile(jumpboxState, stateJSON, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("Jumpbox write state json: %s", err) //not tested
-		}
-	}
 
 	boshArgs := append([]string{
 		filepath.Join(input.DeploymentDir, "jumpbox.yml"),
@@ -203,15 +183,11 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
 
 func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	setupFiles := e.getDirectorSetupFiles(input)
-	varsStoreFile := setupFile{
-		dest:     filepath.Join(input.VarsDir, "director-variables.yml"),
-		contents: []byte(input.Variables),
-	}
 	userOpsFile := setupFile{
 		dest:     filepath.Join(input.VarsDir, "user-ops-file.yml"),
 		contents: []byte(input.OpsFile),
 	}
-	setupFiles = append(setupFiles, varsStoreFile, userOpsFile)
+	setupFiles = append(setupFiles, userOpsFile)
 
 	for _, f := range setupFiles {
 		if f.source != "" {
@@ -223,7 +199,7 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	sharedArgs := []string{
-		"--vars-store", varsStoreFile.dest,
+		"--vars-store", filepath.Join(input.VarsDir, "director-variables.yml"),
 		"--vars-file", filepath.Join(input.VarsDir, "director-deployment-vars.yml"),
 	}
 

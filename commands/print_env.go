@@ -7,14 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type PrintEnv struct {
 	stateValidator   stateValidator
 	logger           logger
+	sshKeyGetter     sshKeyGetter
 	terraformManager terraformManager
 }
 
@@ -22,10 +21,11 @@ type envSetter interface {
 	Set(key, value string) error
 }
 
-func NewPrintEnv(logger logger, stateValidator stateValidator, terraformManager terraformManager) PrintEnv {
+func NewPrintEnv(logger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter, terraformManager terraformManager) PrintEnv {
 	return PrintEnv{
 		stateValidator:   stateValidator,
 		logger:           logger,
+		sshKeyGetter:     sshKeyGetter,
 		terraformManager: terraformManager,
 	}
 }
@@ -69,7 +69,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 
 	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
 
-	privateKeyContents, err := p.privateKeyFromJumpboxVariables(state.Jumpbox.Variables)
+	privateKeyContents, err := p.sshKeyGetter.Get("jumpbox")
 	if err != nil {
 		return err
 	}
@@ -112,19 +112,4 @@ func (p PrintEnv) getPort() (string, error) {
 	}
 
 	return port, nil
-}
-
-func (p PrintEnv) privateKeyFromJumpboxVariables(jumpboxVariables string) (string, error) {
-	var jumpboxVars struct {
-		JumpboxSSH struct {
-			PrivateKey string `yaml:"private_key"`
-		} `yaml:"jumpbox_ssh"`
-	}
-
-	err := yaml.Unmarshal([]byte(jumpboxVariables), &jumpboxVars)
-	if err != nil {
-		return "", fmt.Errorf("error unmarshalling jumpbox variables: %v", err)
-	}
-
-	return jumpboxVars.JumpboxSSH.PrivateKey, nil
 }

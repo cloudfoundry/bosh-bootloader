@@ -69,8 +69,6 @@ var _ = Describe("StateBootstrap", func() {
 					"bblVersion": "some-bbl-version",
 					"iaas": "aws",
 					"aws": {
-						"accessKeyId": "some-aws-access-key-id",
-						"secretAccessKey": "some-aws-secret-access-key",
 						"region": "some-aws-region"
 					},
 					"bosh": {
@@ -93,9 +91,7 @@ var _ = Describe("StateBootstrap", func() {
 					BBLVersion: "some-bbl-version",
 					IAAS:       "aws",
 					AWS: storage.AWS{
-						AccessKeyID:     "some-aws-access-key-id",
-						SecretAccessKey: "some-aws-secret-access-key",
-						Region:          "some-aws-region",
+						Region: "some-aws-region",
 					},
 					BOSH: storage.BOSH{
 						DirectorAddress:        "some-director-address",

@@ -7,7 +7,7 @@ import (
 )
 
 type sshKeyDeleter interface {
-	Delete(storage.State) (storage.State, error)
+	Delete() error
 }
 
 type Rotate struct {
@@ -38,12 +38,12 @@ func (r Rotate) CheckFastFails(subcommandFlags []string, state storage.State) er
 }
 
 func (r Rotate) Execute(args []string, state storage.State) error {
-	updatedState, err := r.sshKeyDeleter.Delete(state)
+	err := r.sshKeyDeleter.Delete()
 	if err != nil {
 		return fmt.Errorf("delete ssh key: %s", err)
 	}
 
-	err = r.up.Execute(args, updatedState)
+	err = r.up.Execute(args, state)
 	if err != nil {
 		return fmt.Errorf("up: %s", err)
 	}

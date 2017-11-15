@@ -22,15 +22,7 @@ var _ = Describe("SSHKey", func() {
 	)
 
 	BeforeEach(func() {
-		incomingState = storage.State{
-			Version: 3,
-			BOSH: storage.BOSH{
-				Variables: "some-director-variables",
-			},
-			Jumpbox: storage.Jumpbox{
-				Variables: "some-jumpbox-variables",
-			},
-		}
+		incomingState = storage.State{}
 
 		stateValidator = &fakes.StateValidator{}
 		logger = &fakes.Logger{}
@@ -59,7 +51,7 @@ var _ = Describe("SSHKey", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(sshKeyGetter.GetCall.CallCount).To(Equal(1))
-			Expect(sshKeyGetter.GetCall.Receives.Variables).To(Equal("some-jumpbox-variables"))
+			Expect(sshKeyGetter.GetCall.Receives.Deployment).To(Equal("jumpbox"))
 			Expect(logger.PrintlnCall.Messages).To(Equal([]string{"some-private-ssh-key"}))
 		})
 
@@ -73,7 +65,7 @@ var _ = Describe("SSHKey", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(sshKeyGetter.GetCall.CallCount).To(Equal(1))
-				Expect(sshKeyGetter.GetCall.Receives.Variables).To(Equal("some-director-variables"))
+				Expect(sshKeyGetter.GetCall.Receives.Deployment).To(Equal("director"))
 			})
 		})
 

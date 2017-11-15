@@ -70,9 +70,8 @@ var _ = Describe("Rotate", func() {
 
 	Describe("Execute", func() {
 		var (
-			state    storage.State
-			newState storage.State
-			args     []string
+			state storage.State
+			args  []string
 		)
 
 		BeforeEach(func() {
@@ -83,13 +82,6 @@ var _ = Describe("Rotate", func() {
 					Variables: "ssh_key: foo\nsome_other_key: bar\n",
 				},
 			}
-			newState = storage.State{
-				EnvID: "some-env-id",
-				Jumpbox: storage.Jumpbox{
-					Variables: "some_other_key: bar\n",
-				},
-			}
-			sshKeyDeleter.DeleteCall.Returns.State = newState
 		})
 
 		It("deletes the ssh key", func() {
@@ -97,7 +89,6 @@ var _ = Describe("Rotate", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(sshKeyDeleter.DeleteCall.CallCount).To(Equal(1))
-			Expect(sshKeyDeleter.DeleteCall.Receives.State).To(Equal(state))
 		})
 
 		It("calls up with args and new state", func() {
@@ -106,7 +97,7 @@ var _ = Describe("Rotate", func() {
 
 			Expect(up.ExecuteCall.CallCount).To(Equal(1))
 			Expect(up.ExecuteCall.Receives.Args).To(Equal(args))
-			Expect(up.ExecuteCall.Receives.State).To(Equal(newState))
+			Expect(up.ExecuteCall.Receives.State).To(Equal(state))
 		})
 
 		Context("when the ssh key deleter returns an error", func() {

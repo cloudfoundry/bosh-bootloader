@@ -18,6 +18,7 @@ var _ = Describe("PrintEnv", func() {
 		logger           *fakes.Logger
 		stateValidator   *fakes.StateValidator
 		terraformManager *fakes.TerraformManager
+		sshKeyGetter     *fakes.SSHKeyGetter
 		printEnv         commands.PrintEnv
 		state            storage.State
 	)
@@ -26,6 +27,8 @@ var _ = Describe("PrintEnv", func() {
 		logger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
+		sshKeyGetter = &fakes.SSHKeyGetter{}
+		sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
 
 		state = storage.State{
 			BOSH: storage.BOSH{
@@ -36,13 +39,10 @@ var _ = Describe("PrintEnv", func() {
 			},
 			Jumpbox: storage.Jumpbox{
 				URL: "some-magical-jumpbox-url",
-				Variables: `jumpbox_ssh:
-  private_key: some-private-key
-`,
 			},
 		}
 
-		printEnv = commands.NewPrintEnv(logger, stateValidator, terraformManager)
+		printEnv = commands.NewPrintEnv(logger, stateValidator, sshKeyGetter, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -62,6 +62,8 @@ var _ = Describe("PrintEnv", func() {
 		It("prints the correct environment variables for the bosh cli", func() {
 			err := printEnv.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(sshKeyGetter.GetCall.Receives.Deployment).To(Equal("jumpbox"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
@@ -89,14 +91,6 @@ var _ = Describe("PrintEnv", func() {
 			}
 		})
 
-		Context("when the jumpbox variables yaml is invalid", func() {
-			It("returns the error", func() {
-				state.Jumpbox.Variables = "%%%"
-				err := printEnv.Execute([]string{}, state)
-				Expect(err).To(MatchError("error unmarshalling jumpbox variables: yaml: could not find expected directive name"))
-			})
-		})
-
 		Context("when there is no director", func() {
 			BeforeEach(func() {
 				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
@@ -121,12 +115,26 @@ var _ = Describe("PrintEnv", func() {
 
 		Context("failure cases", func() {
 			Context("when terraform manager get outputs fails", func() {
-				It("returns an error", func() {
+				BeforeEach(func() {
 					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
+				})
+
+				It("returns an error", func() {
 					err := printEnv.Execute([]string{}, storage.State{
 						NoDirector: true,
 					})
 					Expect(err).To(MatchError("failed to get terraform output"))
+				})
+			})
+
+			Context("when ssh key getter fails", func() {
+				BeforeEach(func() {
+					sshKeyGetter.GetCall.Returns.Error = errors.New("papaya")
+				})
+
+				It("returns an error", func() {
+					err := printEnv.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("papaya"))
 				})
 			})
 		})

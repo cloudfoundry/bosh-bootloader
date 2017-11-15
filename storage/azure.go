@@ -1,9 +1,9 @@
 package storage
 
 type Azure struct {
-	ClientID       string `json:"clientId"`
-	ClientSecret   string `json:"clientSecret"`
+	ClientID       string `json:"-"`
+	ClientSecret   string `json:"-"`
 	Location       string `json:"location"`
-	SubscriptionID string `json:"subscriptionId"`
-	TenantID       string `json:"tenantId"`
+	SubscriptionID string `json:"-"`
+	TenantID       string `json:"-"`
 }

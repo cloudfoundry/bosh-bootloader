@@ -86,11 +86,6 @@ func (s Store) Set(state State) error {
 		state.ID = uuid.String()
 	}
 
-	state.AWS.AccessKeyID = ""
-	state.AWS.SecretAccessKey = ""
-	state.GCP.ServiceAccountKey = ""
-	state.GCP.ProjectID = ""
-
 	jsonData, err := marshalIndent(state, "", "\t")
 	if err != nil {
 		return err

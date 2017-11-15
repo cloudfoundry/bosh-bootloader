@@ -18,11 +18,15 @@ var _ = Describe("Client Provider", func() {
 		clientProvider bosh.ClientProvider
 		jumpbox        storage.Jumpbox
 		socks5Proxy    *fakes.Socks5Proxy
+		sshKeyGetter   *fakes.SSHKeyGetter
 	)
 
 	BeforeEach(func() {
 		socks5Proxy = &fakes.Socks5Proxy{}
-		clientProvider = bosh.NewClientProvider(socks5Proxy)
+		sshKeyGetter = &fakes.SSHKeyGetter{}
+		sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+
+		clientProvider = bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 	})
 
 	Describe("Dialer", func() {
@@ -51,13 +55,8 @@ var _ = Describe("Client Provider", func() {
 		})
 
 		Context("when using a jumpbox", func() {
-			BeforeEach(func() {
-				jumpbox = storage.Jumpbox{URL: "https://some-jumpbox", Variables: "jumpbox_ssh: { private_key: some-private-key }"}
-				clientProvider = bosh.NewClientProvider(socks5Proxy)
-			})
-
 			It("starts the socks 5 proxy to the jumpbox and returns a socks 5 client", func() {
-				socks5Client, err := clientProvider.Dialer(jumpbox)
+				socks5Client, err := clientProvider.Dialer(storage.Jumpbox{URL: "https://some-jumpbox"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(socks5Client).To(Equal(fakeSocks5Client))
 
@@ -73,25 +72,14 @@ var _ = Describe("Client Provider", func() {
 				Expect(socks5Forward).To(Equal(proxy.Direct))
 			})
 
-			Context("when the private key does not exist", func() {
+			Context("when retrieving the private key fails", func() {
 				BeforeEach(func() {
-					jumpbox = storage.Jumpbox{URL: "https://some-jumpbox"}
-					clientProvider = bosh.NewClientProvider(socks5Proxy)
+					sshKeyGetter.GetCall.Returns.Error = errors.New("tamarind")
 				})
 				It("returns an error", func() {
 					_, err := clientProvider.Dialer(jumpbox)
-					Expect(err).To(MatchError(ContainSubstring("get jumpbox ssh key: private key not found")))
-				})
-			})
-
-			Context("when the private key cannot be unmarshaled", func() {
-				BeforeEach(func() {
-					jumpbox = storage.Jumpbox{URL: "https://some-jumpbox", Variables: "%%%%"}
-					clientProvider = bosh.NewClientProvider(socks5Proxy)
-				})
-				It("returns an error", func() {
-					_, err := clientProvider.Dialer(jumpbox)
-					Expect(err).To(MatchError(ContainSubstring("get jumpbox ssh key: yaml")))
+					Expect(err).To(MatchError("get jumpbox ssh key: tamarind"))
+					Expect(sshKeyGetter.GetCall.Receives.Deployment).To(Equal("jumpbox"))
 				})
 			})
 
@@ -139,8 +127,9 @@ var _ = Describe("Client Provider", func() {
 			var err error
 			ca, err = ioutil.ReadFile("fixtures/some-fake-ca.crt")
 			Expect(err).NotTo(HaveOccurred())
+			sshKeyGetter := &fakes.SSHKeyGetter{}
 
-			clientProvider = bosh.NewClientProvider(socks5Proxy)
+			clientProvider = bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 			dialer = &fakes.Socks5Client{}
 		})
 

@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -20,11 +19,11 @@ func NewSSHKeyDeleter(stateStore stateStore) SSHKeyDeleter {
 	}
 }
 
-func (s SSHKeyDeleter) Delete(state storage.State) (storage.State, error) {
+func (s SSHKeyDeleter) Delete() error {
 	var err error
 	varsDir, err := s.stateStore.GetVarsDir()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
 	varsStore := filepath.Join(varsDir, "jumpbox-variables.yml")
@@ -32,24 +31,15 @@ func (s SSHKeyDeleter) Delete(state storage.State) (storage.State, error) {
 	if err == nil {
 		varString, err := deleteJumpboxSSHKey(string(variables))
 		if err != nil {
-			return storage.State{}, fmt.Errorf("Jumpbox variables: %s", err)
+			return fmt.Errorf("Jumpbox variables: %s", err)
 		}
 		err = ioutil.WriteFile(varsStore, []byte(varString), os.ModePerm)
 		if err != nil {
-			return storage.State{}, fmt.Errorf("Writing jumpbox vars store: %s", err) //not tested
+			return fmt.Errorf("Writing jumpbox vars store: %s", err) //not tested
 		}
 	}
 
-	state.Jumpbox.Variables, err = deleteJumpboxSSHKey(state.Jumpbox.Variables)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("Jumpbox variables: %s", err)
-	}
-
-	state.BOSH.Variables, err = deleteJumpboxSSHKey(state.BOSH.Variables)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("BOSH variables: %s", err)
-	}
-	return state, nil
+	return nil
 }
 
 func deleteJumpboxSSHKey(varsString string) (string, error) {

@@ -1,7 +1,7 @@
 package storage
 
 type AWS struct {
-	AccessKeyID     string `json:"accessKeyId,omitempty"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+	AccessKeyID     string `json:"-"`
+	SecretAccessKey string `json:"-"`
 	Region          string `json:"region"`
 }

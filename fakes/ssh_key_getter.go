@@ -4,7 +4,7 @@ type SSHKeyGetter struct {
 	GetCall struct {
 		CallCount int
 		Receives  struct {
-			Variables string
+			Deployment string
 		}
 		Returns struct {
 			PrivateKey string
@@ -13,9 +13,9 @@ type SSHKeyGetter struct {
 	}
 }
 
-func (s *SSHKeyGetter) Get(variables string) (string, error) {
+func (s *SSHKeyGetter) Get(deployment string) (string, error) {
 	s.GetCall.CallCount++
-	s.GetCall.Receives.Variables = variables
+	s.GetCall.Receives.Deployment = deployment
 
 	return s.GetCall.Returns.PrivateKey, s.GetCall.Returns.Error
 }
