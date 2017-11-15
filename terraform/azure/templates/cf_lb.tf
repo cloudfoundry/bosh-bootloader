@@ -1,8 +1,21 @@
+variable "system_domain" {
+  type = "string"
+  default = "example.com"
+}
+
+variable "pfx_cert_base64" {
+  type = "string"
+}
+
+variable "pfx_password" {
+  type = "string"
+}
+
 # Create a application gateway in the web_servers resource group
 resource "azurerm_virtual_network" "cf-vn" {
   name                = "${var.env_id}-cf-vnet"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
-  address_space       = ["10.254.0.0/16"]
+  address_space       = ["${var.network_cidr}"]
   location            = "${var.region}"
 }
 
@@ -10,7 +23,7 @@ resource "azurerm_subnet" "sub1" {
   name                 = "${var.env_id}-cf-subnet1"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.cf-vn.name}"
-  address_prefix       = "10.0.0.0/24"
+  address_prefix       = "${var.internal_cidr}"
 }
 
 resource "azurerm_public_ip" "lb" {
@@ -36,7 +49,7 @@ resource "azurerm_application_gateway" "network" {
     name = "Probe01"
     protocol = "Http"
     path = "/login"
-    host = "login.${systemDomain}"
+    host = "login.${var.system_domain}"
     interval = 60
     timeout = 60
     unhealthy_threshold = 3
@@ -48,7 +61,7 @@ resource "azurerm_application_gateway" "network" {
   }
  
   frontend_port {
-    name         = "$frontendporthttps"
+    name         = "frontendporthttps"
     port         = 443
   }
 
@@ -60,8 +73,6 @@ resource "azurerm_application_gateway" "network" {
   frontend_ip_configuration {
     name         = "${var.env_id}-cf-frontend-ip-configuration"
     public_ip_address_id = "${azurerm_public_ip.lb.id}"
-
-
   }
 
   backend_address_pool {
@@ -74,15 +85,21 @@ resource "azurerm_application_gateway" "network" {
     port                  = 80
     protocol              = "Http"
     request_timeout       = 1
-    probe_name            = "${var.env_id}-probe01"
+    probe_name            = "Probe01"
+  }
+
+  ssl_certificate {
+    name = "ssl-cert"
+    data = "${var.pfx_base64}"
+    password = "${var.pfx_password}"
   }
  
   http_listener {
     name                                  = "${azurerm_virtual_network.cf-vn.name}-httplstn"
     frontend_ip_configuration_name        = "${var.env_id}-cf-frontend-ip-configuration"
-    frontend_port_name                    = "${var.env_id}-cf-frontend-port"
+    frontend_port_name                    = "frontendporthttps"
     protocol                              = "Https"
-    ssl_certificate_name                  = "${var.env_id}-ssl-cert"
+    ssl_certificate_name                  = "ssl-cert"
   }
  
   request_routing_rule {
