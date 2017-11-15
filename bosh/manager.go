@@ -283,9 +283,19 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 
 	directorVars := getDirectorVars(variables)
 
+	internalCIDR := terraformOutputs.GetString("internal_cidr")
+	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
+	if err != nil {
+		internalCIDR = "10.0.0.0/24"
+		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
+	}
+	internalIP := parsedInternalCIDR.GetNthIP(6).String()
+
+
+
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
-		DirectorAddress:        directorVars.address,
+		DirectorAddress:        fmt.Sprintf("https://%s:25555", internalIP),
 		DirectorUsername:       directorVars.username,
 		DirectorPassword:       directorVars.password,
 		DirectorSSLCA:          directorVars.sslCA,
