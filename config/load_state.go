@@ -44,16 +44,43 @@ type StateBootstrap interface {
 	GetState(string) (storage.State, error)
 }
 
-func NewConfig(bootstrap StateBootstrap, logger logger) Config {
+type StateStore interface {
+	Migrate(storage.State) (storage.State, error)
+	Set(storage.State) error
+}
+
+func NewConfig(bootstrap StateBootstrap, store StateStore, logger logger) Config {
 	return Config{
 		stateBootstrap: bootstrap,
+		store:          store,
 		logger:         logger,
 	}
 }
 
 type Config struct {
 	stateBootstrap StateBootstrap
+	store          StateStore
 	logger         logger
+}
+
+func ParseArgs(args []string) (globalFlags, []string, error) {
+	var globals globalFlags
+	parser := flags.NewParser(&globals, flags.IgnoreUnknown)
+
+	remainingArgs, err := parser.ParseArgs(args[1:])
+	if err != nil {
+		return globalFlags{}, remainingArgs, err
+	}
+
+	if !filepath.IsAbs(globals.StateDir) {
+		workingDir, err := os.Getwd()
+		if err != nil {
+			return globalFlags{}, remainingArgs, err // not tested
+		}
+		globals.StateDir = filepath.Join(workingDir, globals.StateDir)
+	}
+
+	return globals, remainingArgs, nil
 }
 
 func (c Config) Bootstrap(args []string) (application.Configuration, error) {
@@ -63,10 +90,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		}, nil
 	}
 
-	var globalFlags globalFlags
-	parser := flags.NewParser(&globalFlags, flags.IgnoreUnknown)
-
-	remainingArgs, err := parser.ParseArgs(args[1:])
+	globalFlags, remainingArgs, err := ParseArgs(args)
 	if err != nil {
 		return application.Configuration{}, err
 	}
@@ -85,16 +109,17 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	}
 
 	if remainingArgs[0] == "help" {
-		globalFlags.Help = true
-		remainingArgs = remainingArgs[1:]
+		return application.Configuration{
+			ShowCommandHelp: true,
+			Command:         remainingArgs[1],
+		}, nil
 	}
 
-	if !filepath.IsAbs(globalFlags.StateDir) {
-		workingDir, err := os.Getwd()
-		if err != nil {
-			return application.Configuration{}, err // not tested
-		}
-		globalFlags.StateDir = filepath.Join(workingDir, globalFlags.StateDir)
+	if globalFlags.Help {
+		return application.Configuration{
+			ShowCommandHelp: true,
+			Command:         remainingArgs[0],
+		}, nil
 	}
 
 	if globalFlags.GCPProjectID != "" {
@@ -106,6 +131,16 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	}
 
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
+	if err != nil {
+		return application.Configuration{}, err
+	}
+
+	state, err = c.store.Migrate(state)
+	if err != nil {
+		return application.Configuration{}, err
+	}
+
+	err = c.store.Set(state)
 	if err != nil {
 		return application.Configuration{}, err
 	}

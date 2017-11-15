@@ -37,15 +37,16 @@ func main() {
 	stderrLogger := application.NewLogger(os.Stderr)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
 
-	newConfig := config.NewConfig(stateBootstrap, stderrLogger)
-	appConfig, err := newConfig.Bootstrap(os.Args)
+	globals, _, err := config.ParseArgs(os.Args)
 	log.SetFlags(0)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
-	stateStore := storage.NewStore(appConfig.Global.StateDir)
-	appConfig.State, err = stateStore.Migrate(appConfig.State)
+	stateStore := storage.NewStore(globals.StateDir)
+	newConfig := config.NewConfig(stateBootstrap, stateStore, stderrLogger)
+
+	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
