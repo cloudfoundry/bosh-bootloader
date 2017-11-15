@@ -67,6 +67,7 @@ type stateValidator interface {
 
 type certificateValidator interface {
 	ReadAndValidate(certPath, keyPath, chainPath string) (certs.CertData, error)
+	Read(certPath, keyPath, chainPath string) (certs.CertData, error)
 }
 
 type lbArgsHandler interface {
