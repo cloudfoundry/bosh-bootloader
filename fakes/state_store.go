@@ -74,17 +74,6 @@ type StateStore struct {
 			Error     error
 		}
 	}
-
-	MigrateCall struct {
-		CallCount int
-		Receives  struct {
-			State storage.State
-		}
-		Returns struct {
-			State storage.State
-			Error error
-		}
-	}
 }
 
 type SetCallReceive struct {
@@ -105,13 +94,6 @@ func (s *StateStore) Set(state storage.State) error {
 	}
 
 	return s.SetCall.Returns[s.SetCall.CallCount-1].Error
-}
-
-func (s *StateStore) Migrate(state storage.State) (storage.State, error) {
-	s.MigrateCall.CallCount++
-	s.MigrateCall.Receives.State = state
-
-	return s.MigrateCall.Returns.State, s.MigrateCall.Returns.Error
 }
 
 func (s *StateStore) GetCloudConfigDir() (string, error) {

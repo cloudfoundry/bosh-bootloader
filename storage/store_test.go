@@ -305,62 +305,6 @@ var _ = Describe("Store", func() {
 		})
 	})
 
-	Describe("Migrate", func() {
-		var incomingState storage.State
-
-		Context("when the state is empty", func() {
-			It("returns the state without changing it", func() {
-				outgoingState, err := store.Migrate(storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(outgoingState).To(Equal(storage.State{}))
-			})
-		})
-
-		Context("when the state has a populated TFState", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					TFState: "some-tf-state",
-				}
-			})
-
-			It("writes the TFState to the tfstate file", func() {
-				outgoingState, err := store.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(outgoingState.TFState).To(BeEmpty())
-
-				contents, err := ioutil.ReadFile(filepath.Join(tempDir, "vars", "terraform.tfstate"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("some-tf-state"))
-			})
-
-			Context("failure cases", func() {
-				Context("when the vars dir cannot be retrieved", func() {
-					BeforeEach(func() {
-						_, err := os.Create(filepath.Join(tempDir, "vars"))
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := store.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating terraform state: ")))
-					})
-				})
-
-				Context("when the tfstate file cannot be written", func() {
-					BeforeEach(func() {
-						err := os.MkdirAll(filepath.Join(tempDir, "vars", "terraform.tfstate"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := store.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating terraform state: ")))
-					})
-				})
-			})
-		})
-	})
-
 	DescribeTable("get dirs returns the path to an existing directory",
 		func(subdirectory string, getDirsFunc func() (string, error)) {
 			expectedDir := filepath.Join(tempDir, subdirectory)

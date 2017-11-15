@@ -19,15 +19,15 @@ var _ = Describe("LoadState", func() {
 	var (
 		fakeLogger         *fakes.Logger
 		fakeStateBootstrap *fakes.StateBootstrap
-		fakeStateStore     *fakes.StateStore
+		fakeStateMigrator  *fakes.StateMigrator
 		c                  config.Config
 	)
 
 	BeforeEach(func() {
 		fakeLogger = &fakes.Logger{}
 		fakeStateBootstrap = &fakes.StateBootstrap{}
-		fakeStateStore = &fakes.StateStore{}
-		c = config.NewConfig(fakeStateBootstrap, fakeStateStore, fakeLogger)
+		fakeStateMigrator = &fakes.StateMigrator{}
+		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeLogger)
 		os.Clearenv()
 	})
 
@@ -40,8 +40,7 @@ var _ = Describe("LoadState", func() {
 
 					Expect(appConfig.Command).To(Equal("help"))
 					Expect(fakeStateBootstrap.GetStateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.MigrateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.SetCall.CallCount).To(Equal(0))
+					Expect(fakeStateMigrator.MigrateCall.CallCount).To(Equal(0))
 				})
 			})
 
@@ -53,8 +52,7 @@ var _ = Describe("LoadState", func() {
 					Expect(appConfig.Command).To(Equal("help"))
 					Expect(appConfig.ShowCommandHelp).To(BeFalse())
 					Expect(fakeStateBootstrap.GetStateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.MigrateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.SetCall.CallCount).To(Equal(0))
+					Expect(fakeStateMigrator.MigrateCall.CallCount).To(Equal(0))
 				})
 			})
 
@@ -65,8 +63,7 @@ var _ = Describe("LoadState", func() {
 
 					Expect(appConfig.Command).To(Equal("version"))
 					Expect(fakeStateBootstrap.GetStateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.MigrateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.SetCall.CallCount).To(Equal(0))
+					Expect(fakeStateMigrator.MigrateCall.CallCount).To(Equal(0))
 				})
 			})
 
@@ -77,8 +74,7 @@ var _ = Describe("LoadState", func() {
 
 					Expect(appConfig.Command).To(Equal(expectedCommand))
 					Expect(appConfig.ShowCommandHelp).To(BeTrue())
-					Expect(fakeStateStore.MigrateCall.CallCount).To(Equal(0))
-					Expect(fakeStateStore.SetCall.CallCount).To(Equal(0))
+					Expect(fakeStateMigrator.MigrateCall.CallCount).To(Equal(0))
 				},
 				Entry("bbl help help", []string{"bbl", "help", "help"}, "help"),
 				Entry("bbl help version", []string{"bbl", "help", "version"}, "version"),
@@ -178,7 +174,7 @@ var _ = Describe("LoadState", func() {
 					EnvID: "some-env-id",
 				}
 				fakeStateBootstrap.GetStateCall.Returns.State = gotState
-				fakeStateStore.MigrateCall.Returns.State = migratedState
+				fakeStateMigrator.MigrateCall.Returns.State = migratedState
 			})
 
 			It("returns the existing state", func() {
@@ -190,10 +186,8 @@ var _ = Describe("LoadState", func() {
 
 				By("migrating the existing state file", func() {
 					Expect(fakeStateBootstrap.GetStateCall.CallCount).To(Equal(1))
-					Expect(fakeStateStore.MigrateCall.CallCount).To(Equal(1))
-					Expect(fakeStateStore.MigrateCall.Receives.State).To(Equal(gotState))
-					Expect(fakeStateStore.SetCall.CallCount).To(Equal(1))
-					Expect(fakeStateStore.SetCall.Receives[0].State).To(Equal(migratedState))
+					Expect(fakeStateMigrator.MigrateCall.CallCount).To(Equal(1))
+					Expect(fakeStateMigrator.MigrateCall.Receives.State).To(Equal(gotState))
 				})
 
 				Expect(appConfig.State).To(Equal(migratedState))
@@ -285,7 +279,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when migrating the state fails", func() {
 				BeforeEach(func() {
-					fakeStateStore.MigrateCall.Returns.Error = errors.New("coconut")
+					fakeStateMigrator.MigrateCall.Returns.Error = errors.New("coconut")
 				})
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
@@ -294,24 +288,6 @@ var _ = Describe("LoadState", func() {
 						"--state-dir", "some-state-dir",
 					})
 					Expect(err).To(MatchError("coconut"))
-				})
-			})
-
-			Context("when saving the state after migrate fails", func() {
-				BeforeEach(func() {
-					fakeStateStore.SetCall.Returns = []fakes.SetCallReturn{
-						fakes.SetCallReturn{
-							Error: errors.New("papaya"),
-						},
-					}
-				})
-				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{
-						"bbl",
-						"create-lbs",
-						"--state-dir", "some-state-dir",
-					})
-					Expect(err).To(MatchError("papaya"))
 				})
 			})
 
@@ -411,7 +387,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when a previous state exists", func() {
 				BeforeEach(func() {
-					fakeStateStore.MigrateCall.Returns.State = storage.State{
+					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
 						IAAS: "aws",
 						AWS: storage.AWS{
 							AccessKeyID:     "some-access-key-id",
@@ -631,7 +607,7 @@ var _ = Describe("LoadState", func() {
 						},
 						EnvID: "some-env-id",
 					}
-					fakeStateStore.MigrateCall.Returns.State = existingState
+					fakeStateMigrator.MigrateCall.Returns.State = existingState
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -787,7 +763,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when a previous state exists", func() {
 				BeforeEach(func() {
-					fakeStateStore.MigrateCall.Returns.State = storage.State{
+					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
 						IAAS: "azure",
 						Azure: storage.Azure{
 							ClientID:       "client-id",

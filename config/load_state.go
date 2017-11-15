@@ -44,22 +44,21 @@ type StateBootstrap interface {
 	GetState(string) (storage.State, error)
 }
 
-type StateStore interface {
+type migrator interface {
 	Migrate(storage.State) (storage.State, error)
-	Set(storage.State) error
 }
 
-func NewConfig(bootstrap StateBootstrap, store StateStore, logger logger) Config {
+func NewConfig(bootstrap StateBootstrap, migrator migrator, logger logger) Config {
 	return Config{
 		stateBootstrap: bootstrap,
-		store:          store,
+		migrator:       migrator,
 		logger:         logger,
 	}
 }
 
 type Config struct {
 	stateBootstrap StateBootstrap
-	store          StateStore
+	migrator       migrator
 	logger         logger
 }
 
@@ -135,12 +134,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		return application.Configuration{}, err
 	}
 
-	state, err = c.store.Migrate(state)
-	if err != nil {
-		return application.Configuration{}, err
-	}
-
-	err = c.store.Set(state)
+	state, err = c.migrator.Migrate(state)
 	if err != nil {
 		return application.Configuration{}, err
 	}

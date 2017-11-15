@@ -44,7 +44,8 @@ func main() {
 	}
 
 	stateStore := storage.NewStore(globals.StateDir)
-	newConfig := config.NewConfig(stateBootstrap, stateStore, stderrLogger)
+	stateMigrator := storage.NewMigrator(stateStore)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger)
 
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {

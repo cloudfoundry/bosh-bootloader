@@ -103,22 +103,6 @@ func (s Store) Set(state State) error {
 	return nil
 }
 
-func (s Store) Migrate(state State) (State, error) {
-	if state.TFState != "" {
-		varsDir, err := s.GetVarsDir()
-		if err != nil {
-			return State{}, fmt.Errorf("migrating terraform state: %s")
-		}
-		err = ioutil.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), os.ModePerm)
-		if err != nil {
-			return State{}, fmt.Errorf("migrating terraform state: %s")
-		}
-		state.TFState = ""
-	}
-
-	return state, nil
-}
-
 func (s Store) GetStateDir() string {
 	return s.dir
 }
