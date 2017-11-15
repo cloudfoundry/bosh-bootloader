@@ -178,7 +178,7 @@ gcp_credentials_json: some-credential-json
 				Expect(stateWithDirector.BOSH).To(Equal(storage.BOSH{
 					Variables:              boshVars,
 					DirectorName:           "bosh-some-env-id",
-					DirectorAddress:        "https://10.0.0.6:25555",
+					DirectorAddress:        "https://10.2.0.6:25555",
 					DirectorUsername:       "admin",
 					DirectorPassword:       "some-admin-password",
 					DirectorSSLCA:          "some-ca",
