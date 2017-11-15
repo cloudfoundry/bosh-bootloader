@@ -11,4 +11,4 @@ bosh delete-env \
   -o  ${BBL_STATE_DIR}/bosh-deployment/bosh-lite.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/bosh-lite-runc.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/gcp/bosh-lite-vm-type.yml \
-  -o  ${BBL_STATE_DIR}/bosh-deployment/external-ip-not-recommended.yml
+  -o  ${BBL_STATE_DIR}/external-ip-gcp.yml
