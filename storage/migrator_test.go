@@ -41,6 +41,39 @@ var _ = Describe("Migrator", func() {
 			})
 		})
 
+		Context("when the state is already migrated", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{EnvID: "some-env-id"}
+			})
+
+			Context("when the vars dir cannot be retrieved", func() {
+				BeforeEach(func() {
+					store.GetVarsDirCall.Returns.Error = errors.New("potato")
+				})
+
+				It("returns an error", func() {
+					_, err := migrator.Migrate(incomingState)
+					Expect(err).To(MatchError("migrating state: potato"))
+				})
+			})
+
+			Context("when the state cannot be saved", func() {
+				BeforeEach(func() {
+					store.SetCall.Returns = []fakes.SetCallReturn{
+						fakes.SetCallReturn{
+							Error: errors.New("tomato"),
+						},
+					}
+				})
+
+				It("returns an error", func() {
+					_, err := migrator.Migrate(incomingState)
+					Expect(err).To(MatchError("saving migrated state: tomato"))
+				})
+			})
+
+		})
+
 		Context("when the state has a populated TFState", func() {
 			BeforeEach(func() {
 				incomingState = storage.State{
@@ -62,35 +95,14 @@ var _ = Describe("Migrator", func() {
 					Expect(store.SetCall.CallCount).To(Equal(1))
 					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{EnvID: "some-env-id"}))
 				})
+
+				By("not writing the bosh state", func() {
+					_, err := os.Stat(filepath.Join(varsDir, "bosh-state.json"))
+					Expect(err).To(HaveOccurred())
+				})
 			})
 
 			Context("failure cases", func() {
-				Context("when the vars dir cannot be retrieved", func() {
-					BeforeEach(func() {
-						store.GetVarsDirCall.Returns.Error = errors.New("potato")
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError("migrating terraform state: potato"))
-					})
-				})
-
-				Context("when the state cannot be saved", func() {
-					BeforeEach(func() {
-						store.SetCall.Returns = []fakes.SetCallReturn{
-							fakes.SetCallReturn{
-								Error: errors.New("tomato"),
-							},
-						}
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError("saving migrated state: tomato"))
-					})
-				})
-
 				Context("when the tfstate file cannot be written", func() {
 					BeforeEach(func() {
 						err := os.MkdirAll(filepath.Join(varsDir, "terraform.tfstate"), os.ModePerm)
@@ -100,6 +112,60 @@ var _ = Describe("Migrator", func() {
 					It("returns an error", func() {
 						_, err := migrator.Migrate(incomingState)
 						Expect(err).To(MatchError(ContainSubstring("migrating terraform state: ")))
+					})
+				})
+			})
+		})
+
+		Context("when the state has a populated BOSH state", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					BOSH: storage.BOSH{
+						DirectorAddress: "10.0.0.6",
+						State: map[string]interface{}{
+							"some-bosh-key": "some-bosh-value",
+						},
+					},
+				}
+			})
+			It("copies the BOSH state to the bosh-state.json vars file", func() {
+				_, err := migrator.Migrate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				boshState, err := ioutil.ReadFile(filepath.Join(varsDir, "bosh-state.json"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(boshState).To(MatchJSON(`{"some-bosh-key": "some-bosh-value"}`))
+
+				By("saving the state after removing the old values", func() {
+					Expect(store.SetCall.CallCount).To(Equal(1))
+					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
+						EnvID: "some-env-id",
+						BOSH: storage.BOSH{
+							DirectorAddress: "10.0.0.6",
+						},
+					}))
+				})
+			})
+			Context("failure cases", func() {
+				Context("when the bosh state file cannot be written", func() {
+					BeforeEach(func() {
+						err := os.MkdirAll(filepath.Join(varsDir, "bosh-state.json"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(incomingState)
+						Expect(err).To(MatchError(ContainSubstring("migrating bosh state: ")))
+					})
+				})
+				Context("when the bosh state file cannot be written", func() {
+					BeforeEach(func() {
+						incomingState.BOSH.State["invalid-key"] = func() string { return "invalid" }
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(incomingState)
+						Expect(err).To(MatchError(ContainSubstring("marshalling bosh state: ")))
 					})
 				})
 			})

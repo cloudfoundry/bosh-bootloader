@@ -236,17 +236,6 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
-	if input.BOSHState != nil {
-		stateJSON, err := e.marshalJSON(input.BOSHState)
-		if err != nil {
-			return fmt.Errorf("marshal JSON: %s", err) //not tested
-		}
-
-		err = e.writeFile(boshState, stateJSON, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("write file: %s", err) //not tested
-		}
-	}
 
 	boshPath, err := e.command.GetBOSHPath()
 	if err != nil {
