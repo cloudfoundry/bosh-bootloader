@@ -51,6 +51,18 @@ func (m Migrator) Migrate(state State) (State, error) {
 		state.BOSH.State = nil
 	}
 
+	if len(state.Jumpbox.State) > 0 {
+		stateJSON, err := json.Marshal(state.Jumpbox.State)
+		if err != nil {
+			return State{}, fmt.Errorf("marshalling jumpbox state: %s", err)
+		}
+		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-state.json"), stateJSON, os.ModePerm)
+		if err != nil {
+			return State{}, fmt.Errorf("migrating jumpbox state: %s", err)
+		}
+		state.Jumpbox.State = nil
+	}
+
 	if state.BOSH.Variables != "" {
 		err = ioutil.WriteFile(filepath.Join(varsDir, "director-variables.yml"), []byte(state.BOSH.Variables), os.ModePerm)
 		if err != nil {

@@ -169,45 +169,99 @@ var _ = Describe("Migrator", func() {
 					})
 				})
 			})
+		})
 
-			Context("when the state has populated BOSH variables", func() {
-				BeforeEach(func() {
-					incomingState = storage.State{
+		Context("when the state has a populated jumpbox state", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					Jumpbox: storage.Jumpbox{
+						URL: "10.0.0.5",
+						State: map[string]interface{}{
+							"some-jumpbox-key": "some-jumpbox-value",
+						},
+					},
+				}
+			})
+			It("copies the jumpbox state to the jumpbox-state.json vars file", func() {
+				_, err := migrator.Migrate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				boshState, err := ioutil.ReadFile(filepath.Join(varsDir, "jumpbox-state.json"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(boshState).To(MatchJSON(`{"some-jumpbox-key": "some-jumpbox-value"}`))
+
+				By("saving the state after removing the old values", func() {
+					Expect(store.SetCall.CallCount).To(Equal(1))
+					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
+						EnvID: "some-env-id",
+						Jumpbox: storage.Jumpbox{
+							URL: "10.0.0.5",
+						},
+					}))
+				})
+			})
+			Context("failure cases", func() {
+				Context("when the jumpbox state file cannot be written", func() {
+					BeforeEach(func() {
+						err := os.MkdirAll(filepath.Join(varsDir, "jumpbox-state.json"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(incomingState)
+						Expect(err).To(MatchError(ContainSubstring("migrating jumpbox state: ")))
+					})
+				})
+				Context("when the jumpbox state file cannot be written", func() {
+					BeforeEach(func() {
+						incomingState.Jumpbox.State["invalid-key"] = func() string { return "invalid" }
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(incomingState)
+						Expect(err).To(MatchError(ContainSubstring("marshalling jumpbox state: ")))
+					})
+				})
+			})
+		})
+
+		Context("when the state has populated BOSH variables", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					BOSH: storage.BOSH{
+						DirectorAddress: "10.0.0.6",
+						Variables:       "some-bosh-vars",
+					},
+				}
+			})
+			It("copies the BOSH state to the director-variables.yml file", func() {
+				_, err := migrator.Migrate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+				boshVars, err := ioutil.ReadFile(filepath.Join(varsDir, "director-variables.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(boshVars)).To(Equal("some-bosh-vars"))
+
+				By("saving the state after removing the old values", func() {
+					Expect(store.SetCall.CallCount).To(Equal(1))
+					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
 						EnvID: "some-env-id",
 						BOSH: storage.BOSH{
 							DirectorAddress: "10.0.0.6",
-							Variables:       "some-bosh-vars",
 						},
-					}
+					}))
 				})
-				It("copies the BOSH state to the director-variables.yml file", func() {
-					_, err := migrator.Migrate(incomingState)
-					Expect(err).NotTo(HaveOccurred())
-					boshVars, err := ioutil.ReadFile(filepath.Join(varsDir, "director-variables.yml"))
-					Expect(err).NotTo(HaveOccurred())
-					Expect(string(boshVars)).To(Equal("some-bosh-vars"))
-
-					By("saving the state after removing the old values", func() {
-						Expect(store.SetCall.CallCount).To(Equal(1))
-						Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
-							EnvID: "some-env-id",
-							BOSH: storage.BOSH{
-								DirectorAddress: "10.0.0.6",
-							},
-						}))
+			})
+			Context("failure cases", func() {
+				Context("when the director variables file cannot be written", func() {
+					BeforeEach(func() {
+						err := os.MkdirAll(filepath.Join(varsDir, "director-variables.yml"), os.ModePerm)
+						Expect(err).NotTo(HaveOccurred())
 					})
-				})
-				Context("failure cases", func() {
-					Context("when the director variables file cannot be written", func() {
-						BeforeEach(func() {
-							err := os.MkdirAll(filepath.Join(varsDir, "director-variables.yml"), os.ModePerm)
-							Expect(err).NotTo(HaveOccurred())
-						})
 
-						It("returns an error", func() {
-							_, err := migrator.Migrate(incomingState)
-							Expect(err).To(MatchError(ContainSubstring("migrating bosh variables: ")))
-						})
+					It("returns an error", func() {
+						_, err := migrator.Migrate(incomingState)
+						Expect(err).To(MatchError(ContainSubstring("migrating bosh variables: ")))
 					})
 				})
 			})
