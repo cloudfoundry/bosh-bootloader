@@ -64,18 +64,18 @@ Numerous settings can be reconfigured permanently by editing `$BBL_STATE_DIR/var
 
 ### Example: adjusting the cidr on AWS
 1. Plan the environment:
-```
-mkdir some-env && cd some-env
-BBL_AWS_ACCESS_KEY_ID=MYKEY
-BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
-bbl plan --iaas aws --aws-region us-west-1
-echo "cidr_block=\"192.168.0.0/20\"" >> vars/terraform.tfvars
-```
+    ```
+    mkdir some-env && cd some-env
+    BBL_AWS_ACCESS_KEY_ID=MYKEY
+    BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
+    bbl plan --iaas aws --aws-region us-west-1
+    echo "cidr_block=\"192.168.0.0/20\"" >> vars/terraform.tfvars
+    ```
 1. Create the environment:
-```
-bbl up
-```
-That's it. Your director is now at `192.168.0.6`.
+    ```
+    bbl up
+    ```
+    That's it. Your director is now at `192.168.0.6`.
 
 ## <a name='boshlite'></a>Deploying BOSH lite on GCP
 1. Plan the environment:
