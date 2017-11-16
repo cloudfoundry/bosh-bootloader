@@ -1,4 +1,4 @@
-# Advanced BOSH Configuration
+# Advanced Configuration
 
 ## Table of Contents
 * <a href='#opsfile'>Using an ops-file with bbl</a>
