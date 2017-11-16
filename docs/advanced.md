@@ -66,10 +66,10 @@ Numerous settings can be reconfigured permanently by editing `$BBL_STATE_DIR/var
 1. Plan the environment:
     ```
     mkdir some-env && cd some-env
-    BBL_AWS_ACCESS_KEY_ID=MYKEY
-    BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
+    echo BBL_AWS_ACCESS_KEY_ID=MYKEY
+    echo BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
     bbl plan --iaas aws --aws-region us-west-1
-    echo "cidr_block=\"192.168.0.0/20\"" >> vars/terraform.tfvars
+    echo -e "\nvpc_cidr=\"192.168.0.0/20\"" >> vars/terraform.tfvars
     ```
 1. Create the environment:
     ```
