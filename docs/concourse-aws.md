@@ -57,6 +57,10 @@ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-
 bosh upload-release https://github.com/concourse/concourse/releases/download/v2.7.3/concourse-2.7.3.tgz
 bosh upload-release https://github.com/concourse/concourse/releases/download/v2.7.3/garden-runc-1.4.0.tgz
 ```
+3. Upload latest [postgres release](http://bosh.io/releases/github.com/cloudfoundry/postgres-release?all=1)
+```
+bosh upload-release https://bosh.io/d/github.com/cloudfoundry/postgres-release
+```
 
 ## Deploy
 
