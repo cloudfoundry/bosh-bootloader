@@ -79,31 +79,31 @@ That's it. Your director is now at `192.168.0.6`.
 
 ## <a name='boshlite'></a>Deploying BOSH lite on GCP
 1. Plan the environment:
-```
-git clone https://github.com/cloudfoundry/bosh-bootloader.git
-mkdir some-env && cd some-env
-BBL_GCP_SERVICE_ACCOUNT_KEY=<MYSERVICEACCOUNTKEY>
-bbl plan --name some-env --iaas gcp --gcp-region us-west-1
-cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/ .
-```
+    ```
+    git clone https://github.com/cloudfoundry/bosh-bootloader.git
+    mkdir some-env && cd some-env
+    BBL_GCP_SERVICE_ACCOUNT_KEY=<MYSERVICEACCOUNTKEY>
+    bbl plan --name some-env --iaas gcp --gcp-region us-west-1
+    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/ .
+    ```
 1. Create the environment:
-```
-bbl up
-```
+    ```
+    bbl up
+    ```
 1. Determine your external IP:
-```
-bosh int vars/director-deployment-vars.yml --path /external_ip
-```
+    ```
+    bosh int vars/director-deployment-vars.yml --path /external_ip
+    ```
 1. Add it to your DNS:
-```
-bosh-lite.infrastructure.cf-app.com.	A	300	${bosh_lite_external_ip}
-*.bosh-lite.infrastructure.cf-app.com.	CNAME	300	bosh-lite.infrastructure.cf-app.com.
-```
+    ```
+    bosh-lite.infrastructure.cf-app.com.	A	300	${bosh_lite_external_ip}
+    *.bosh-lite.infrastructure.cf-app.com.	CNAME	300	bosh-lite.infrastructure.cf-app.com.
+    ```
 1. Deploy cf-deployment:
-```
-$ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5
-$ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml
-```
+    ```
+    $ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5
+    $ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml
+    ```
 
 ## <a name='isoseg'></a>Deploying an isolation segment
 Placeholder: this part of the advanced guide is a work in progress.
