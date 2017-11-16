@@ -95,54 +95,6 @@ $ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite
 
 ## <a name='isoseg'></a>Deploying an isolation segment
 Placeholder: this part of the advanced guide is a work in progress.
-## <a name='director'></a>~~Deploy director with bosh create-env~~ Deprecated workflow, needs updating
-
-**Note:** If you `bbl up --no-director`, future calls to `bbl up` will not create a director.
-
-The process for deploying a bosh director with custom configuration on GCP is as follows:
-
-1. Create the network and firewall rules. **Important here is the ``--no-director`` flag.**
-
-    ```
-    bbl up \
-      --gcp-zone <INSERT ZONE> \
-      --gcp-region <INSERT REGION> \
-      --gcp-service-account-key <INSERT SERVICE ACCOUNT KEY> \
-      --iaas gcp \
-      --no-director
-    ```
-
-1. Use [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) to create the director.
-**Important here is the ``-o external-ip-not-recommended.yml`` ops-file**
-(unless you set up a tunnel to your IaaS such that you can route to the director at `10.0.0.6`).
-
-    ```
-    git clone https://github.com/cloudfoundry/bosh-deployment.git deploy
-    bosh create-env deploy/bosh.yml  \
-      --state ./state.json  \
-      -o deploy/gcp/cpi.yml  \
-      -o deploy/external-ip-not-recommended.yml \
-      --vars-store ./creds.yml  \
-      -l <(bbl bosh-deployment-vars)
-    ```
-
-1. Add load balancers.
-
-    ```
-    bbl create-lbs --type cf --key mykey.key --cert mycert.crt --domain cf.example.com
-    ```
-
-1. Update the cloud-config with the load balancer VM extensions.
-
-    ```
-    eval "$(bbl print-env)"
-    export BOSH_CA_CERT="$(bosh int creds.yml --path /default_ca/ca)"
-    export BOSH_CLIENT_SECRET="$(bosh int creds.yml --path /admin_password)"
-    export BOSH_CLIENT=admin
-    bosh update-cloud-config <(bbl cloud-config)
-    ```
-
-1. Deploy a manifest like [cf-deployment](https://github.com/cloudfoundry/cf-deployment).
 
 ## <a name='concourse'></a>~~Deploy concourse with bosh create-env~~ Deprecated workflow, needs updating
 
