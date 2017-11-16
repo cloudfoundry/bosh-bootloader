@@ -93,7 +93,7 @@ var _ = Describe("LB args handler", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(lbState.Type).To(Equal("cf"))
 				Expect(lbState.Type).To(Equal("cf"))
-				Expect(lbState.Cert).To(Equal("some-cert"))
+				Expect(lbState.Cert).To(Equal("c29tZS1jZXJ0"))
 				Expect(lbState.Key).To(Equal("some-key"))
 				Expect(lbState.Chain).To(Equal("some-chain"))
 				Expect(certificateValidator.ReadCall.CallCount).To(Equal(1))

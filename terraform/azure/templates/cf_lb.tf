@@ -90,7 +90,7 @@ resource "azurerm_application_gateway" "network" {
 
   ssl_certificate {
     name = "ssl-cert"
-    data = "${var.pfx_base64}"
+    data = "${var.pfx_cert_base64}"
     password = "${var.pfx_password}"
   }
  
