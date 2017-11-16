@@ -122,11 +122,7 @@ var _ = Describe("Store", func() {
 					"region": "some-region"
 				},
 				"azure": {
-					"clientId": "client-id",
-					"clientSecret": "client-secret",
-					"region": "some-azure-region",
-					"subscriptionId": "subscription-id",
-					"tenantId": "tenant-id"
+					"region": "some-azure-region"
 				},
 				"gcp": {
 					"zone": "some-zone",
