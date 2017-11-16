@@ -71,7 +71,6 @@ BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
 bbl plan --iaas aws --aws-region us-west-1
 echo "cidr_block=\"192.168.0.0/20\"" >> vars/terraform.tfvars
 ```
-
 1. Create the environment:
 ```
 bbl up
@@ -87,23 +86,19 @@ BBL_GCP_SERVICE_ACCOUNT_KEY=<MYSERVICEACCOUNTKEY>
 bbl plan --name some-env --iaas gcp --gcp-region us-west-1
 cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/ .
 ```
-
 1. Create the environment:
 ```
 bbl up
 ```
-
 1. Determine your external IP:
 ```
 bosh int vars/director-deployment-vars.yml --path /external_ip
 ```
-
 1. Add it to your DNS:
 ```
 bosh-lite.infrastructure.cf-app.com.	A	300	${bosh_lite_external_ip}
 *.bosh-lite.infrastructure.cf-app.com.	CNAME	300	bosh-lite.infrastructure.cf-app.com.
 ```
-
 1. Deploy cf-deployment:
 ```
 $ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5
