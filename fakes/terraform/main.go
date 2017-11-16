@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 var (
