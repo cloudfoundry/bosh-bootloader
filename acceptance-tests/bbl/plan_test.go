@@ -4,10 +4,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -57,14 +59,19 @@ var _ = Describe("plan", func() {
 
 		By("verifying that artifacts are created in state dir", func() {
 			for _, f := range expectedArtifacts {
-				_, err := os.Stat(f)
+				fileinfo, err := os.Stat(f)
 				Expect(err).NotTo(HaveOccurred())
+				if strings.HasSuffix(f, ".sh") {
+					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+				} else {
+					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-----"))
+				}
 			}
 		})
 
 		By("modifying artifacts", func() {
 			for _, f := range expectedArtifacts {
-				err := ioutil.WriteFile(f, []byte("modified after plan"), os.ModePerm)
+				err := ioutil.WriteFile(f, []byte("modified after plan"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})

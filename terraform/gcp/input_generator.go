@@ -25,7 +25,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	}
 
 	credentialsPath := filepath.Join(dir, "credentials.json")
-	err = writeFile(credentialsPath, []byte(state.GCP.ServiceAccountKey), os.ModePerm)
+	err = writeFile(credentialsPath, []byte(state.GCP.ServiceAccountKey), storage.StateMode)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
@@ -41,14 +41,14 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 
 	if state.LB.Cert != "" && state.LB.Key != "" {
 		certPath := filepath.Join(dir, "cert")
-		err = writeFile(certPath, []byte(state.LB.Cert), os.ModePerm)
+		err = writeFile(certPath, []byte(state.LB.Cert), storage.StateMode)
 		if err != nil {
 			return map[string]interface{}{}, err
 		}
 		input["ssl_certificate"] = certPath
 
 		keyPath := filepath.Join(dir, "key")
-		err = writeFile(keyPath, []byte(state.LB.Key), os.ModePerm)
+		err = writeFile(keyPath, []byte(state.LB.Key), storage.StateMode)
 		if err != nil {
 			return map[string]interface{}{}, err
 		}

@@ -2,18 +2,18 @@
 
 if [ "${@}" == "aws" ]; then
   pushd terraform/aws
-    go-bindata -pkg aws -o templates.go templates
+    go-bindata -pkg aws -mode 0740 -o templates.go templates
   popd
 fi
 
 if [ "${@}" == "azure" ]; then
   pushd terraform/azure
-    go-bindata -pkg azure -o templates.go templates
+    go-bindata -pkg azure -mode 0740 -o templates.go templates
   popd
 fi
 
 if [ "${@}" == "gcp" ]; then
   pushd terraform/gcp
-    go-bindata -pkg gcp -o templates.go templates
+    go-bindata -pkg gcp -mode 0740 -o templates.go templates
   popd
 fi

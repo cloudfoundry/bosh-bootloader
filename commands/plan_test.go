@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -165,7 +164,7 @@ var _ = Describe("Plan", func() {
 				opsFilePath = opsFile.Name()
 
 				opsFileContents = "some-ops-file-contents"
-				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), os.ModePerm)
+				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("passes the ops file contents to the bosh manager", func() {
@@ -306,7 +305,7 @@ var _ = Describe("Plan", func() {
 
 				providedOpsFilePath = filepath.Join(opsFileDir, "some-ops-file")
 
-				err = ioutil.WriteFile(providedOpsFilePath, []byte("some-ops-file-contents"), os.ModePerm)
+				err = ioutil.WriteFile(providedOpsFilePath, []byte("some-ops-file-contents"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

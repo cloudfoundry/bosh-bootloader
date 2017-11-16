@@ -162,7 +162,7 @@ var _ = Describe("Store", func() {
 
 		Context("when the state is empty", func() {
 			It("removes the bbl-state.json file", func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte("{}"), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte("{}"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = store.Set(storage.State{})
@@ -178,13 +178,13 @@ var _ = Describe("Store", func() {
 				deleteDirector := filepath.Join(tempDir, "delete-director.sh")
 				deleteJumpbox := filepath.Join(tempDir, "delete-jumpbox.sh")
 
-				err := ioutil.WriteFile(createDirector, []byte("#!/bin/bash"), os.ModePerm)
+				err := ioutil.WriteFile(createDirector, []byte("#!/bin/bash"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(createJumpbox, []byte("#!/bin/bash"), os.ModePerm)
+				err = ioutil.WriteFile(createJumpbox, []byte("#!/bin/bash"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(deleteDirector, []byte("#!/bin/bash"), os.ModePerm)
+				err = ioutil.WriteFile(deleteDirector, []byte("#!/bin/bash"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(deleteJumpbox, []byte("#!/bin/bash"), os.ModePerm)
+				err = ioutil.WriteFile(deleteJumpbox, []byte("#!/bin/bash"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = store.Set(storage.State{})
@@ -205,7 +205,7 @@ var _ = Describe("Store", func() {
 					err := os.Mkdir(filepath.Join(tempDir, directory), os.ModePerm)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = ioutil.WriteFile(filepath.Join(tempDir, directory, "foo.txt"), []byte("{}"), os.ModePerm)
+					err = ioutil.WriteFile(filepath.Join(tempDir, directory, "foo.txt"), []byte("{}"), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = store.Set(storage.State{})

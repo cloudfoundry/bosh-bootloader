@@ -20,7 +20,7 @@ func main() {
 	}
 
 	if contains(os.Args, "region=fail-to-terraform") {
-		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"partial-apply"}`), os.ModePerm)
+		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"partial-apply"}`), storage.StateMode)
 		if err != nil {
 			panic(err)
 		}
@@ -39,7 +39,7 @@ func main() {
 			panic(err)
 		}
 
-		err = ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), os.ModePerm)
+		err = ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), storage.StateMode)
 		if err != nil {
 			panic(err)
 		}

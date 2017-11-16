@@ -89,7 +89,7 @@ func templatesNetworkTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/network.tf", size: 507, mode: os.FileMode(420), modTime: time.Unix(1510248007, 0)}
+	info := bindataFileInfo{name: "templates/network.tf", size: 507, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -109,7 +109,7 @@ func templatesNetwork_security_groupTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/network_security_group.tf", size: 4362, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/network_security_group.tf", size: 4362, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -129,7 +129,7 @@ func templatesOutputTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/output.tf", size: 1013, mode: os.FileMode(420), modTime: time.Unix(1510248285, 0)}
+	info := bindataFileInfo{name: "templates/output.tf", size: 1013, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -149,7 +149,7 @@ func templatesResource_groupTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/resource_group.tf", size: 465, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/resource_group.tf", size: 465, mode: os.FileMode(480), modTime: time.Unix(1508886658, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -169,7 +169,7 @@ func templatesStorageTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/storage.tf", size: 792, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/storage.tf", size: 792, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -189,7 +189,7 @@ func templatesTlsTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/tls.tf", size: 80, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/tls.tf", size: 80, mode: os.FileMode(480), modTime: time.Unix(1508886658, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -209,7 +209,7 @@ func templatesVarsTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/vars.tf", size: 489, mode: os.FileMode(420), modTime: time.Unix(1510247002, 0)}
+	info := bindataFileInfo{name: "templates/vars.tf", size: 489, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

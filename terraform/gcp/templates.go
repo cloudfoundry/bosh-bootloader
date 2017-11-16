@@ -88,7 +88,7 @@ func templatesBosh_directorTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/bosh_director.tf", size: 2900, mode: os.FileMode(420), modTime: time.Unix(1510187537, 0)}
+	info := bindataFileInfo{name: "templates/bosh_director.tf", size: 2900, mode: os.FileMode(480), modTime: time.Unix(1510683358, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -108,7 +108,7 @@ func templatesCf_dnsTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 2711, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 2711, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -128,7 +128,7 @@ func templatesCf_lbTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 7641, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 7641, mode: os.FileMode(480), modTime: time.Unix(1508886658, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -148,7 +148,7 @@ func templatesConcourse_lbTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/concourse_lb.tf", size: 1572, mode: os.FileMode(420), modTime: time.Unix(1510093133, 0)}
+	info := bindataFileInfo{name: "templates/concourse_lb.tf", size: 1572, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -168,7 +168,7 @@ func templatesJumpboxTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/jumpbox.tf", size: 361, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/jumpbox.tf", size: 361, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -188,7 +188,7 @@ func templatesVarsTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/vars.tf", size: 333, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/vars.tf", size: 333, mode: os.FileMode(480), modTime: time.Unix(1510683358, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

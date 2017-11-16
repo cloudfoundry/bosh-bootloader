@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Executor struct {
@@ -93,7 +95,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 
 	for _, f := range setupFiles {
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
-		err := e.writeFile(f.dest, f.contents, os.ModePerm)
+		err := e.writeFile(f.dest, f.contents, storage.StateMode)
 		if err != nil {
 			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
 		}
@@ -119,14 +121,14 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
-	err = e.writeFile(createJumpboxScript, createEnvCmd, os.ModePerm)
+	err = e.writeFile(createJumpboxScript, createEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, input.StateDir, "delete-env", boshArgs))
 	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
-	err = e.writeFile(deleteJumpboxScript, deleteEnvCmd, os.ModePerm)
+	err = e.writeFile(deleteJumpboxScript, deleteEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
@@ -191,9 +193,9 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 
 	for _, f := range setupFiles {
 		if f.source != "" {
-			os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
+			os.MkdirAll(filepath.Dir(f.dest), storage.StateMode)
 		}
-		if err := e.writeFile(f.dest, f.contents, os.ModePerm); err != nil {
+		if err := e.writeFile(f.dest, f.contents, storage.StateMode); err != nil {
 			return fmt.Errorf("Director write setup file: %s", err) //not tested
 		}
 	}
@@ -224,13 +226,13 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	}, sharedArgs...)
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
-	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, os.ModePerm)
+	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, input.StateDir, "delete-env", boshArgs))
-	err = e.writeFile(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, os.ModePerm)
+	err = e.writeFile(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
@@ -253,7 +255,7 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 
 func (e Executor) WriteDeploymentVars(createEnvInput CreateEnvInput) error {
 	varsFilePath := filepath.Join(createEnvInput.VarsDir, fmt.Sprintf("%s-deployment-vars.yml", createEnvInput.Deployment))
-	err := e.writeFile(varsFilePath, []byte(createEnvInput.DeploymentVars), os.ModePerm)
+	err := e.writeFile(varsFilePath, []byte(createEnvInput.DeploymentVars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write vars file: %s", err) // not tested
 	}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
@@ -242,7 +243,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when terraform command run fails", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
+				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
 				cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
@@ -269,7 +270,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Destroy", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
+			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = executor.Init("some-template", input) // We need to run the terraform init command.
@@ -317,7 +318,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when command run fails", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
+					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
 					cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
 				})
@@ -330,7 +331,7 @@ var _ = Describe("Executor", func() {
 				Context("when --debug is false", func() {
 					BeforeEach(func() {
 						executor = terraform.NewExecutor(cmd, stateStore, false)
-						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
+						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 						Expect(err).NotTo(HaveOccurred())
 
 						cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed to run terraform command")}
@@ -395,7 +396,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Output", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), os.ModePerm)
+			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

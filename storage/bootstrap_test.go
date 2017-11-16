@@ -34,7 +34,7 @@ var _ = Describe("StateBootstrap", func() {
 
 		Context("when there is a completely empty state file", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -52,7 +52,7 @@ var _ = Describe("StateBootstrap", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 2
-				}`), os.ModePerm)
+				}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -78,7 +78,7 @@ var _ = Describe("StateBootstrap", func() {
 						"directorSSLPrivateKey": "some-bosh-ssl-private-key",
 						"manifest": "name: bosh"
 					}
-				}`), os.ModePerm)
+				}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -108,7 +108,7 @@ var _ = Describe("StateBootstrap", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 12
-				}`), os.ModePerm)
+				}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -128,7 +128,7 @@ var _ = Describe("StateBootstrap", func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 999,
 					"bblVersion": "9.9.9"
-				}`), os.ModePerm)
+				}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -155,7 +155,7 @@ var _ = Describe("StateBootstrap", func() {
 							"secretAccessKey": "some-aws-secret-access-key",
 							"region": "some-aws-region"
 						}
-					}`), os.ModePerm)
+					}`), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -193,7 +193,7 @@ var _ = Describe("StateBootstrap", func() {
 
 			Context("when it fails to decode the bbl-state.json file", func() {
 				It("returns an error", func() {
-					err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), os.ModePerm)
+					err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bootstrap.GetState(tempDir)

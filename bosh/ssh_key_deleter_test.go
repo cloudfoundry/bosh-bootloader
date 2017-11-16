@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,7 +41,7 @@ var _ = Describe("SSHKeyDeleter", func() {
 
 		Context("when the jumpbox-variables.yml exists on disk", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(beforeDeletionVars), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(beforeDeletionVars), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("deletes the jumpbox key from the file on disk", func() {
@@ -55,7 +56,7 @@ var _ = Describe("SSHKeyDeleter", func() {
 
 		Context("when the jumpbox-variables.yml doesn't contain ssh key", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(afterDeletionVars), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(afterDeletionVars), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("does nothing", func() {
@@ -76,7 +77,7 @@ var _ = Describe("SSHKeyDeleter", func() {
 
 		Context("when the Jumpbox variables is invalid YAML", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte("invalid yaml"), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte("invalid yaml"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

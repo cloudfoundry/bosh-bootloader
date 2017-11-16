@@ -222,10 +222,10 @@ var _ = Describe("Manager", func() {
 	Describe("IsPresentCloudConfig", func() {
 		Context("when cloud config files exist in the state dir", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some existing ops"), os.ModePerm)
+				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some existing ops"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -256,7 +256,7 @@ var _ = Describe("Manager", func() {
 	Describe("IsPresentCloudConfigVars", func() {
 		Context("when cloud config vars file exists in the vars dir", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte("some existing vars"), os.ModePerm)
+				err := ioutil.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte("some existing vars"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

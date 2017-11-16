@@ -3,8 +3,9 @@ package bosh
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -33,7 +34,7 @@ func (s SSHKeyDeleter) Delete() error {
 		if err != nil {
 			return fmt.Errorf("Jumpbox variables: %s", err)
 		}
-		err = ioutil.WriteFile(varsStore, []byte(varString), os.ModePerm)
+		err = ioutil.WriteFile(varsStore, []byte(varString), storage.StateMode)
 		if err != nil {
 			return fmt.Errorf("Writing jumpbox vars store: %s", err) //not tested
 		}

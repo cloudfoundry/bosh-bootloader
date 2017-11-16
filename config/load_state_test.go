@@ -440,7 +440,7 @@ var _ = Describe("LoadState", func() {
 				serviceAccountKeyPath = tempFile.Name()
 				serviceAccountKey = `{"project_id": "some-project-id"}`
 
-				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), os.ModePerm)
+				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

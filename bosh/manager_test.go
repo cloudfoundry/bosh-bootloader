@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -501,7 +500,7 @@ gcp_credentials_json: some-credential-json
 			Expect(err).NotTo(HaveOccurred())
 			stateStore.GetVarsDirCall.Returns.Directory = varsDir
 			vars := "jumpbox_ssh:\n  private_key: some-jumpbox-private-key\n  public_key: some-jumpbox-public-key\n"
-			err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(vars), os.ModePerm)
+			err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(vars), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

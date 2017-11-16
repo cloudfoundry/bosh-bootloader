@@ -88,7 +88,7 @@ func templatesBaseTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/base.tf", size: 15805, mode: os.FileMode(420), modTime: time.Unix(1510170937, 0)}
+	info := bindataFileInfo{name: "templates/base.tf", size: 15805, mode: os.FileMode(480), modTime: time.Unix(1510683358, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -108,7 +108,7 @@ func templatesCf_dnsTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 1141, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 1141, mode: os.FileMode(480), modTime: time.Unix(1508886658, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -128,7 +128,7 @@ func templatesCf_lbTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 19837, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 19837, mode: os.FileMode(480), modTime: time.Unix(1508886658, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -148,7 +148,7 @@ func templatesConcourse_lbTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/concourse_lb.tf", size: 2538, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/concourse_lb.tf", size: 2538, mode: os.FileMode(480), modTime: time.Unix(1509384333, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -168,7 +168,7 @@ func templatesLb_subnetTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/lb_subnet.tf", size: 1194, mode: os.FileMode(420), modTime: time.Unix(1510172114, 0)}
+	info := bindataFileInfo{name: "templates/lb_subnet.tf", size: 1194, mode: os.FileMode(480), modTime: time.Unix(1510681105, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -188,7 +188,7 @@ func templatesSsl_certificateTf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/ssl_certificate.tf", size: 470, mode: os.FileMode(420), modTime: time.Unix(1509726301, 0)}
+	info := bindataFileInfo{name: "templates/ssl_certificate.tf", size: 470, mode: os.FileMode(480), modTime: time.Unix(1508886658, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

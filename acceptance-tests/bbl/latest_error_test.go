@@ -2,7 +2,6 @@ package acceptance_test
 
 import (
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -32,7 +31,7 @@ var _ = Describe("bbl latest-error", func() {
 			"tfState": "some-tf-state",
 			"latestTFOutput": "some terraform output"
 		}`)
-		err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(tempDirectory, storage.StateFileName), state, storage.StateMode)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

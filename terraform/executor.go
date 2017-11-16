@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 var writeFile func(file string, data []byte, perm os.FileMode) error = ioutil.WriteFile
@@ -52,7 +54,7 @@ func (e Executor) Init(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
-	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), os.ModePerm)
+	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform template: %s", err)
 	}
@@ -67,14 +69,14 @@ func (e Executor) Init(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Create .terraform directory: %s", err)
 	}
 
-	err = writeFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), os.ModePerm)
+	err = writeFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err)
 	}
 
 	tfVarsPath := filepath.Join(varsDir, "terraform.tfvars")
 	formattedVars := formatVars(input)
-	err = writeFile(tfVarsPath, []byte(formattedVars), os.ModePerm)
+	err = writeFile(tfVarsPath, []byte(formattedVars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform vars: %s", err)
 	}

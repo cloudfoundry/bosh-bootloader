@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -15,6 +14,7 @@ import (
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	proxy "github.com/cloudfoundry/socks5-proxy"
 	. "github.com/onsi/ginkgo"
@@ -49,10 +49,10 @@ var _ = Describe("up after plan", func() {
 		deleteJumpboxPath := filepath.Join(stateDir, "delete-jumpbox.sh")
 		noOpScript := []byte("#!/bin/bash\n")
 
-		err := ioutil.WriteFile(deleteDirectorPath, noOpScript, os.ModePerm)
+		err := ioutil.WriteFile(deleteDirectorPath, noOpScript, storage.ScriptMode)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = ioutil.WriteFile(deleteJumpboxPath, noOpScript, os.ModePerm)
+		err = ioutil.WriteFile(deleteJumpboxPath, noOpScript, storage.ScriptMode)
 		Expect(err).NotTo(HaveOccurred())
 
 		session := bbl.Down()
@@ -93,12 +93,12 @@ var _ = Describe("up after plan", func() {
 		By("modifying the plan", func() {
 			createDirectorPath := filepath.Join(stateDir, "create-director.sh")
 			newCreateDirector := []byte(fmt.Sprintf("#!/bin/bash\necho 'director' >> %s\n", createEnvOutputPath))
-			err := ioutil.WriteFile(createDirectorPath, newCreateDirector, os.ModePerm)
+			err := ioutil.WriteFile(createDirectorPath, newCreateDirector, storage.ScriptMode)
 			Expect(err).NotTo(HaveOccurred())
 
 			createJumpboxPath := filepath.Join(stateDir, "create-jumpbox.sh")
 			newCreateJumpbox := []byte(fmt.Sprintf("#!/bin/bash\necho 'jumpbox' >> %s\n", createEnvOutputPath))
-			err = ioutil.WriteFile(createJumpboxPath, newCreateJumpbox, os.ModePerm)
+			err = ioutil.WriteFile(createJumpboxPath, newCreateJumpbox, storage.ScriptMode)
 			Expect(err).NotTo(HaveOccurred())
 
 			terraformTemplatePath := filepath.Join(stateDir, "terraform", "template.tf")
@@ -132,7 +132,7 @@ output "internal_az_subnet_id_mapping" {
   }"
 }
 `, jumpboxURL))
-			err = ioutil.WriteFile(terraformTemplatePath, newTerraformTemplate, os.ModePerm)
+			err = ioutil.WriteFile(terraformTemplatePath, newTerraformTemplate, storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

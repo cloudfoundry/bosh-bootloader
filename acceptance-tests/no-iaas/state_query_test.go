@@ -2,7 +2,6 @@ package acceptance_test
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -35,7 +34,7 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 
 	BeforeEach(func() {
 		stateDir, err := ioutil.TempDir("", "")
-		ioutil.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_5_1_0), os.ModePerm)
+		ioutil.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_5_1_0), storage.StateMode)
 		Expect(err).NotTo(HaveOccurred())
 		bbl = actors.NewBBL(stateDir, pathToBBL, acceptance.Config{}, "no-env")
 	})

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,7 +29,7 @@ var _ = Describe("StateValidator", func() {
 
 	Context("when state file exists", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(filepath.Join(tempDirectory, "bbl-state.json"), []byte(""), os.ModePerm)
+			err := ioutil.WriteFile(filepath.Join(tempDirectory, "bbl-state.json"), []byte(""), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

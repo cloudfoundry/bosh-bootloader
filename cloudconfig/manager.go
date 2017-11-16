@@ -77,7 +77,7 @@ func (m Manager) Initialize(state storage.State) error {
 		return fmt.Errorf("Get cloud config dir: %s", err)
 	}
 
-	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), os.ModePerm)
+	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), storage.StateMode)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (m Manager) Initialize(state storage.State) error {
 		return err
 	}
 
-	err = writeFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), os.ModePerm)
+	err = writeFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), storage.StateMode)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (m Manager) GenerateVars(state storage.State) error {
 		return fmt.Errorf("Generate cloud config vars: %s", err)
 	}
 
-	err = writeFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), os.ModePerm)
+	err = writeFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write cloud config vars: %s", err)
 	}

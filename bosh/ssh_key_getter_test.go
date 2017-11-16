@@ -3,11 +3,11 @@ package bosh_test
 import (
 	"errors"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,7 +29,7 @@ var _ = Describe("SSHKeyGetter", func() {
 			stateStore.GetVarsDirCall.Returns.Directory = varsDir
 			sshKeyGetter = bosh.NewSSHKeyGetter(stateStore)
 			variables = "jumpbox_ssh:\n  private_key: some-private-key"
-			err = ioutil.WriteFile(filepath.Join(varsDir, "some-deployment-variables.yml"), []byte(variables), os.ModePerm)
+			err = ioutil.WriteFile(filepath.Join(varsDir, "some-deployment-variables.yml"), []byte(variables), storage.ScriptMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -42,7 +42,7 @@ var _ = Describe("SSHKeyGetter", func() {
 		Context("failure cases", func() {
 			Context("when the Jumpbox variables yaml cannot be unmarshaled", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(filepath.Join(varsDir, "invalid-deployment-variables.yml"), []byte("invalid yaml"), os.ModePerm)
+					err := ioutil.WriteFile(filepath.Join(varsDir, "invalid-deployment-variables.yml"), []byte("invalid yaml"), storage.ScriptMode)
 					Expect(err).NotTo(HaveOccurred())
 				})
 

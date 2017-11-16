@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"reflect"
 )
@@ -32,7 +31,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 		return State{}, fmt.Errorf("migrating state: %s", err)
 	}
 	if state.TFState != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating terraform state: %s", err)
 		}
@@ -44,7 +43,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 		if err != nil {
 			return State{}, fmt.Errorf("marshalling bosh state: %s", err)
 		}
-		err = ioutil.WriteFile(filepath.Join(varsDir, "bosh-state.json"), stateJSON, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "bosh-state.json"), stateJSON, StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating bosh state: %s", err)
 		}
@@ -56,7 +55,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 		if err != nil {
 			return State{}, fmt.Errorf("marshalling jumpbox state: %s", err)
 		}
-		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-state.json"), stateJSON, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-state.json"), stateJSON, StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating jumpbox state: %s", err)
 		}
@@ -64,7 +63,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 	}
 
 	if state.BOSH.Variables != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "director-variables.yml"), []byte(state.BOSH.Variables), os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "director-variables.yml"), []byte(state.BOSH.Variables), StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating bosh variables: %s", err)
 		}
@@ -72,7 +71,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 	}
 
 	if state.Jumpbox.Variables != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(state.Jumpbox.Variables), os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(state.Jumpbox.Variables), StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating jumpbox variables: %s", err)
 		}

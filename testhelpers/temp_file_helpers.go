@@ -2,7 +2,8 @@ package testhelpers
 
 import (
 	"io/ioutil"
-	"os"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 func WriteContentsToTempFile(contents string) (string, error) {
@@ -12,7 +13,7 @@ func WriteContentsToTempFile(contents string) (string, error) {
 	}
 	defer tempFile.Close()
 
-	err = ioutil.WriteFile(tempFile.Name(), []byte(contents), os.ModePerm)
+	err = ioutil.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
 	if err != nil {
 		return "", err
 	}
