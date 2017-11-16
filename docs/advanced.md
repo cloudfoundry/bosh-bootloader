@@ -3,7 +3,7 @@
 ## Table of Contents
 * <a href='#opsfile'>Using an ops-file with bbl</a>
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
-* <a href='#boshlite'>Deploying BOSH lite</a>
+* <a href='#boshlite'>Deploying BOSH lite on GCP</a>
 * <a href='#isoseg'>Deploying an isolation segment</a>
 * <a href='#director'>Deploy director with bosh create-env</a>
 * <a href='#concourse'>Deploy concourse with bosh create-env</a>
@@ -61,8 +61,38 @@ bosh create-env \
 ```
 ## <a name='terraform'></a>Customizing IaaS Paving with Terraform
 Placeholder: this part of the advanced guide is a work in progress.
-## <a name='boshlite'></a>Deploying BOSH lite
-Placeholder: this part of the advanced guide is a work in progress.
+## <a name='boshlite'></a>Deploying BOSH lite on GCP
+1. Plan the environment:
+```
+git clone https://github.com/cloudfoundry/bosh-bootloader.git
+mkdir some-env && cd some-env
+BBL_GCP_SERVICE_ACCOUNT_KEY=<MYSERVICEACCOUNTKEY>
+bbl plan --name some-env --iaas gcp --gcp-region us-west-1
+cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/ .
+```
+
+1. Create the environment:
+```
+bbl up
+```
+
+1. Determine your external IP:
+```
+bosh int vars/director-deployment-vars.yml --path /external_ip
+```
+
+1. Add it to your DNS:
+```
+bosh-lite.infrastructure.cf-app.com.	A	300	${bosh_lite_external_ip}
+*.bosh-lite.infrastructure.cf-app.com.	CNAME	300	bosh-lite.infrastructure.cf-app.com.
+```
+
+1. Deploy cf-deployment:
+```
+$ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5
+$ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml
+```
+
 ## <a name='isoseg'></a>Deploying an isolation segment
 Placeholder: this part of the advanced guide is a work in progress.
 ## <a name='director'></a>~~Deploy director with bosh create-env~~ Deprecated workflow, needs updating
