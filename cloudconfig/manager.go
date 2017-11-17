@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -156,8 +157,19 @@ func (m Manager) Interpolate() (string, error) {
 
 	args := []string{
 		"interpolate", filepath.Join(cloudConfigDir, "cloud-config.yml"),
-		"-o", filepath.Join(cloudConfigDir, "ops.yml"),
 		"--vars-file", filepath.Join(varsDir, "cloud-config-vars.yml"),
+	}
+
+	files, err := ioutil.ReadDir(cloudConfigDir)
+	if err != nil {
+		return "", fmt.Errorf("Read cloud config dir: %s", err)
+	}
+
+	for _, file := range files {
+		name := file.Name()
+		if !strings.Contains(name, "cloud-config.yml") {
+			args = append(args, "-o", filepath.Join(cloudConfigDir, name))
+		}
 	}
 
 	buf := bytes.NewBuffer([]byte{})

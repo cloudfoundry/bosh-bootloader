@@ -285,6 +285,11 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe("Interpolate", func() {
+		BeforeEach(func() {
+			err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "shenanigans-ops.yml"), []byte("shenanigans"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("returns a cloud config yaml provided a valid bbl state", func() {
 			cloudConfigYAML, err := manager.Interpolate()
 			Expect(err).NotTo(HaveOccurred())
@@ -294,8 +299,8 @@ var _ = Describe("Manager", func() {
 			Expect(workingDirectory).To(Equal(cloudConfigDir))
 			Expect(args).To(Equal([]string{
 				"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
-				"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
 				"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
+				"-o", fmt.Sprintf("%s/shenanigans-ops.yml", cloudConfigDir),
 			}))
 
 			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
@@ -321,6 +326,17 @@ var _ = Describe("Manager", func() {
 				It("returns an error", func() {
 					_, err := manager.Interpolate()
 					Expect(err).To(MatchError("Get vars dir: eggplant"))
+				})
+			})
+
+			Context("when reading the cloud config dir fails", func() {
+				BeforeEach(func() {
+					stateStore.GetCloudConfigDirCall.Returns.Directory = "invalid-directory"
+				})
+
+				It("returns an error", func() {
+					_, err := manager.Interpolate()
+					Expect(err).To(MatchError("Read cloud config dir: open invalid-directory: no such file or directory"))
 				})
 			})
 
