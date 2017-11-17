@@ -28,7 +28,7 @@ resource "google_compute_network" "bbl-network" {
 }
 
 output "internal_cidr" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
+  value = "${var.subnet_cidr}"
 }
 
 variable "subnet_cidr" {

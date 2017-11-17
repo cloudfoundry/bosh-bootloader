@@ -135,37 +135,46 @@ resource "aws_security_group" "nat_security_group" {
   description = "{{.NATDescription}}"
   vpc_id      = "${aws_vpc.vpc.id}"
 
-  ingress {
-    protocol    = "tcp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "udp"
-    from_port   = 0
-    to_port     = 65535
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  ingress {
-    protocol    = "icmp"
-    from_port   = -1
-    to_port     = -1
-    security_groups = ["${aws_security_group.internal_security_group.id}"]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags {
     Name = "${var.env_id}-nat-security-group"
   }
+}
+
+resource "aws_security_group_rule" "nat_to_internet_rule" {
+  security_group_id = "${aws_security_group.nat_security_group.id}"
+
+  type        = "egress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "nat_icmp_rule" {
+  security_group_id        = "${aws_security_group.nat_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "icmp"
+  from_port                = -1
+  to_port                  = -1
+  cidr_blocks              = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "nat_tcp_rule" {
+  security_group_id        = "${aws_security_group.nat_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 0
+  to_port                  = 65535
+  source_security_group_id = "${aws_security_group.internal_security_group.id}"
+}
+
+resource "aws_security_group_rule" "nat_udp_rule" {
+  security_group_id        = "${aws_security_group.nat_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "udp"
+  from_port                = 0
+  to_port                  = 65535
+  source_security_group_id = "${aws_security_group.internal_security_group.id}"
 }
 
 resource "aws_instance" "nat" {

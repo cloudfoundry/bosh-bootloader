@@ -1,10 +1,12 @@
 package aws_test
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/aws"
+	"github.com/pmezard/go-difflib/difflib"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -32,6 +34,17 @@ var _ = Describe("TemplateGenerator", func() {
 						Domain: domain,
 					},
 				})
+
+				if template != string(expectedTemplate) {
+					diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{
+						A:        difflib.SplitLines(template),
+						B:        difflib.SplitLines(string(expectedTemplate)),
+						FromFile: "actual",
+						ToFile:   "expected",
+						Context:  10,
+					})
+					fmt.Println(diff)
+				}
 
 				Expect(template).To(Equal(string(expectedTemplate)))
 			},

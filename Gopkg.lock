@@ -104,6 +104,12 @@
   revision = "760f4795167808cf328330c2765e97973a4e8fdd"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["curve25519","ed25519","ed25519/internal/edwards25519","ssh"]
@@ -154,6 +160,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f909bf28bf9bda298c12d562f25c39bbcdda596516a27c55d040b5a3293df5bb"
+  inputs-digest = "597b01bef3a47d6a9ca4df99c19ef1a7a3f3d2efab58289d7bd12024f2857c71"
   solver-name = "gps-cdcl"
   solver-version = 1

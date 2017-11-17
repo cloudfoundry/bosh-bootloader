@@ -49,3 +49,15 @@ resource "aws_route53_record" "tcp" {
 
   records = ["${aws_elb.cf_tcp_lb.dns_name}"]
 }
+
+resource "aws_route53_record" "iso1" {
+  count = "${local.iso1_total_count}"
+
+  zone_id = "${aws_route53_zone.env_dns_zone.id}"
+  name    = "*.iso-seg.${var.system_domain}"
+  type    = "CNAME"
+  ttl     = 300
+
+  records = ["${aws_elb.iso1_router_lb.dns_name}"]
+}
+

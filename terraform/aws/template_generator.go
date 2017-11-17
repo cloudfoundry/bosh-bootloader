@@ -52,6 +52,7 @@ type templates struct {
 	cfDNS          string
 	concourseLB    string
 	sslCertificate string
+	isoSeg         string
 }
 
 func NewTemplateGenerator() TemplateGenerator {
@@ -66,7 +67,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 	case "concourse":
 		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.concourseLB, tmpls.sslCertificate}, "\n")
 	case "cf":
-		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate}, "\n")
+		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
 
 		if state.LB.Domain != "" {
 			tmpl = strings.Join([]string{tmpl, tmpls.cfDNS}, "\n")
@@ -119,6 +120,7 @@ func readTemplates() templates {
 	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate.tf"))
 	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
 	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
+	tmpls.isoSeg = string(MustAsset("templates/iso_segments.tf"))
 
 	return tmpls
 }
