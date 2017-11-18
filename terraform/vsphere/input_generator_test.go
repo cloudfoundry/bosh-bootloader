@@ -16,14 +16,19 @@ var _ = Describe("InputGenerator", func() {
 	It("receives state and returns a map of terraform variables", func() {
 		inputs, err := inputGenerator.Generate(storage.State{
 			VSphere: storage.VSphere{
-				Subnet: "10.0.0.0/24",
+				Subnet:  "10.0.0.0/24",
+				Cluster: "the-cluster",
+				Network: "the-network",
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(inputs).To(Equal(map[string]interface{}{
-			"vsphere_subnet": "10.0.0.0/24",
-			"external_ip":    "10.0.0.5",
+			"vsphere_subnet":  "10.0.0.0/24",
+			"external_ip":     "10.0.0.5",
+			"internal_gw":     "10.0.0.1",
+			"network_name":    "the-network",
+			"vcenter_cluster": "the-cluster",
 		}))
 	})
 })
