@@ -148,6 +148,9 @@ resource "aws_security_group" "nat_security_group" {
   description = "NAT"
   vpc_id      = "${aws_vpc.vpc.id}"
 
+  ingress = []
+  egress  = []
+
   tags {
     Name = "${var.env_id}-nat-security-group"
   }
