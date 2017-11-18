@@ -28,6 +28,7 @@ import (
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
+	vsphereterraform "github.com/cloudfoundry/bosh-bootloader/terraform/vsphere"
 )
 
 var Version = "dev"
@@ -123,6 +124,9 @@ func main() {
 	case "gcp":
 		templateGenerator = gcpterraform.NewTemplateGenerator()
 		inputGenerator = gcpterraform.NewInputGenerator()
+	case "vsphere":
+		templateGenerator = vsphereterraform.NewTemplateGenerator()
+		inputGenerator = vsphereterraform.NewInputGenerator()
 	}
 
 	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
