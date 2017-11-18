@@ -96,6 +96,9 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		if networkName == "" {
 			return nil
 		}
+	} else if state.IAAS == "vsphere" {
+		// we don't create or delete the network for vsphere
+		return nil
 	}
 
 	err = d.networkDeletionValidator.ValidateSafeToDelete(networkName, state.EnvID)

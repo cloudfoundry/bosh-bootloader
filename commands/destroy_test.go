@@ -201,7 +201,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("when iaas is azure", func() {
-			// Replace this test with the pended test below when Azure supports ValidateSafeToDelete
 			It("returns an error while instances exist in the azure network", func() {
 				networkDeletionValidator.ValidateSafeToDeleteCall.Returns.Error = errors.New("validation failed")
 				err := destroy.CheckFastFails([]string{}, storage.State{

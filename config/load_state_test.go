@@ -370,10 +370,7 @@ var _ = Describe("LoadState", func() {
 					var args []string
 
 					BeforeEach(func() {
-						args = []string{
-							"bbl",
-							"up",
-						}
+						args = []string{"bbl", "up"}
 
 						os.Setenv("BBL_IAAS", "vsphere")
 						os.Setenv("BBL_VSPHERE_VCENTER_USER", "user")
@@ -428,7 +425,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when a previous state exists", func() {
 				BeforeEach(func() {
-					fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
 						IAAS: "vsphere",
 						VSphere: storage.VSphere{
 							VCenterUser:     "user",
