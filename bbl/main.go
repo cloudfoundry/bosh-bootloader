@@ -25,6 +25,7 @@ import (
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	vspherecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/vsphere"
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
@@ -145,10 +146,12 @@ func main() {
 	switch appConfig.State.IAAS {
 	case "aws":
 		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
-	case "gcp":
-		cloudConfigOpsGenerator = gcpcloudconfig.NewOpsGenerator(terraformManager)
 	case "azure":
 		cloudConfigOpsGenerator = azurecloudconfig.NewOpsGenerator(terraformManager)
+	case "gcp":
+		cloudConfigOpsGenerator = gcpcloudconfig.NewOpsGenerator(terraformManager)
+	case "vsphere":
+		cloudConfigOpsGenerator = vspherecloudconfig.NewOpsGenerator(terraformManager)
 	}
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter)
 
