@@ -84,6 +84,48 @@ var _ = Describe("EnvIDManager", func() {
 			})
 		})
 
+		Context("for vsphere", func() {
+			Context("for existing environments", func() {
+				var existingState storage.State
+				BeforeEach(func() {
+					existingState = storage.State{
+						IAAS:  "vsphere",
+						EnvID: "existing-environment",
+					}
+				})
+
+				It("uses the env id from the state", func() {
+					state, err := envIDManager.Sync(existingState, "specified-env-id")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
+					Expect(state.EnvID).To(Equal(existingState.EnvID))
+				})
+			})
+
+			Context("for new environments", func() {
+				It("generates an environment name if not supplied", func() {
+					state, err := envIDManager.Sync(storage.State{
+						IAAS: "vsphere",
+					}, "")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
+					Expect(state.EnvID).To(Equal("some-env-id"))
+				})
+
+				It("uses the environment name passed in", func() {
+					state, err := envIDManager.Sync(storage.State{
+						IAAS: "vsphere",
+					}, "specified-env-id")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
+					Expect(state.EnvID).To(Equal("specified-env-id"))
+				})
+			})
+		})
+
 		Context("when an env id exists in the state", func() {
 			It("returns the existing env id", func() {
 				state, err := envIDManager.Sync(storage.State{EnvID: "some-previous-env-id"}, "")

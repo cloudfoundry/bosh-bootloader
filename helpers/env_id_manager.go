@@ -66,6 +66,8 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 		networkName = envID
 	case "gcp":
 		networkName = envID + "-network"
+	case "vsphere":
+		return nil
 	}
 
 	exists, err := e.networkClient.CheckExists(networkName)
