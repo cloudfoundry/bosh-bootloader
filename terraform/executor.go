@@ -144,7 +144,7 @@ func (e Executor) runTFCommand(args []string) error {
 }
 
 func (e Executor) Apply() error {
-	return e.runTFCommand([]string{"apply"})
+	return e.runTFCommand([]string{"apply", "--auto-approve"})
 }
 
 func (e Executor) Destroy(input map[string]interface{}) error {

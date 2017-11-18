@@ -234,6 +234,7 @@ var _ = Describe("Executor", func() {
 				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 					"apply",
+					"--auto-approve",
 					"-state", relativeStatePath,
 					"-var-file", relativeVarsPath,
 				}))
