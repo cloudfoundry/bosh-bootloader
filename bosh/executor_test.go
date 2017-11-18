@@ -125,6 +125,51 @@ var _ = Describe("Executor", func() {
 				Expect(string(shellScript)).To(Equal(expectedScript))
 			})
 		})
+
+		Context("when the iaas is vsphere", func() {
+			BeforeEach(func() {
+				interpolateInput.IAAS = "vsphere"
+				interpolateInput.OpsFile = ""
+			})
+
+			It("generates create-env args for jumpbox", func() {
+				err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				expectedArgs := []string{
+					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/vsphere/cpi.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/vsphere/resource-pool.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/vsphere-jumpbox-network.yml", relativeDeploymentDir),
+				}
+
+				By("writing the jumpbox-network ops-file", func() {
+					opsfile, err := ioutil.ReadFile(fmt.Sprintf("%s/vsphere-jumpbox-network.yml", deploymentDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(opsfile)).To(ContainSubstring("instance_groups/name=jumpbox/networks/name=public"))
+				})
+
+				By("writing the create-env args to a shell script", func() {
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+
+				By("writing the delete-env args to a shell script", func() {
+					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+			})
+		})
 	})
 
 	Describe("DirectorCreateEnvArgs", func() {
@@ -249,6 +294,55 @@ var _ = Describe("Executor", func() {
 				})
 			})
 		})
+
+		Context("vsphere", func() {
+			var input bosh.InterpolateInput
+
+			BeforeEach(func() {
+				input = interpolateInput
+				input.IAAS = "vsphere"
+			})
+
+			It("generates a bosh manifest", func() {
+				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+					stdout.Write([]byte("some-manifest"))
+					return nil
+				}
+
+				err := executor.DirectorCreateEnvArgs(input)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd.RunCallCount()).To(Equal(0))
+
+				expectedArgs := []string{
+					fmt.Sprintf("%s/bosh.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/bosh-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/director-variables.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/vsphere/cpi.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/jumpbox-user.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/uaa.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/credhub.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/vsphere/resource-pool.yml", relativeDeploymentDir),
+					"-o", fmt.Sprintf("%s/user-ops-file.yml", relativeVarsDir),
+				}
+
+				By("writing the create-env args to a shell script", func() {
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+
+				By("writing the delete-env args to a shell script", func() {
+					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+			})
+		})
 	})
 
 	Describe("WriteDeploymentVars", func() {
@@ -275,6 +369,7 @@ var _ = Describe("Executor", func() {
 				VarsDir:        varsDir,
 			}
 		})
+
 		It("writes the deployment vars yml file", func() {
 			By("writing deployment vars to the state dir", func() {
 				err := executor.WriteDeploymentVars(createEnvInput)
