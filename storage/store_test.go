@@ -65,6 +65,17 @@ var _ = Describe("Store", func() {
 						Region:            "some-region",
 						Zones:             []string{"some-zone", "some-other-zone"},
 					},
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Datastore:       "ds",
+						Subnet:          "10.0.0.0/24",
+					},
 					LB: storage.LB{
 						Type:   "some-type",
 						Cert:   "some-cert",
@@ -117,6 +128,17 @@ var _ = Describe("Store", func() {
 					"zone": "some-zone",
 					"region": "some-region",
 					"zones": ["some-zone", "some-other-zone"]
+				},
+				"vsphere": {
+					"vcenterUser": "user",
+					"vcenterPassword": "password",
+					"vcenterIP": "ip",
+					"datacenter": "dc",
+					"cluster": "cluster",
+					"resourcePool": "rp",
+					"network": "network",
+					"datastore": "ds",
+					"subnet": "10.0.0.0/24"
 				},
 				"lb": {
 					"type": "some-type",

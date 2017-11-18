@@ -9,6 +9,7 @@ type State struct {
 	AWS            AWS     `json:"aws,omitempty"`
 	Azure          Azure   `json:"azure,omitempty"`
 	GCP            GCP     `json:"gcp,omitempty"`
+	VSphere        VSphere `json:"vsphere,omitempty"`
 	Jumpbox        Jumpbox `json:"jumpbox,omitempty"`
 	BOSH           BOSH    `json:"bosh,omitempty"`
 	EnvID          string  `json:"envID"`
