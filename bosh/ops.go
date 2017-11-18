@@ -20,3 +20,8 @@ const AWSEncryptDiskOps = `---
     encrypted: true
     kms_key_arn: ((kms_key_arn))
 `
+
+const VSphereJumpboxNetworkOps = `---
+- type: remove
+  path: /instance_groups/name=jumpbox/networks/name=public
+`

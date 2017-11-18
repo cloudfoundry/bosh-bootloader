@@ -24,7 +24,6 @@ type Manager struct {
 }
 
 type directorVars struct {
-	address        string
 	username       string
 	password       string
 	sslCA          string
@@ -245,8 +244,6 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	}
 	internalIP := parsedInternalCIDR.GetNthIP(6).String()
 
-
-
 	state.BOSH = storage.BOSH{
 		DirectorName:           fmt.Sprintf("bosh-%s", state.EnvID),
 		DirectorAddress:        fmt.Sprintf("https://%s:25555", internalIP),
@@ -357,11 +354,6 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
 	internalCIDR := terraformOutputs.GetString("internal_cidr")
 
-	switch state.IAAS {
-	case "vsphere":
-		internalCIDR = state.VSphere.Subnet
-	}
-
 	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
 	if err != nil {
 		internalCIDR = "10.0.0.0/24"
@@ -458,6 +450,20 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	}
 
 	switch state.IAAS {
+	case "vsphere":
+		vars.VSphereYAML = VSphereYAML{
+			VCenterUser:       state.VSphere.VCenterUser,
+			VCenterPassword:   state.VSphere.VCenterPassword,
+			VCenterIP:         state.VSphere.VCenterIP,
+			VCenterDatacenter: state.VSphere.Datacenter,
+			VCenterCluster:    state.VSphere.Cluster,
+			ResourcePool:      state.VSphere.ResourcePool,
+			NetworkName:       state.VSphere.Network,
+			VCenterDatastore:  state.VSphere.Datastore,
+			VCenterDisks:      fmt.Sprintf("%s", state.VSphere.Network),
+			VCenterVMs:        fmt.Sprintf("%s_vms", state.VSphere.Network),
+			VCenterTemplates:  fmt.Sprintf("%s_templates", state.VSphere.Network),
+		}
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
 			Zone:           state.GCP.Zone,
@@ -513,7 +519,6 @@ func getDirectorVars(v string) directorVars {
 	}
 
 	return directorVars{
-		address:        "https://10.0.0.6:25555",
 		username:       "admin",
 		password:       vars.AdminPassword,
 		sslCA:          vars.DirectorSSL.CA,

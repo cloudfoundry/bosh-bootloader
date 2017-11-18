@@ -107,6 +107,16 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 		"-o", filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
 	}
 
+	if input.IAAS == "vsphere" {
+		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.DeploymentDir, "vsphere", "resource-pool.yml"))
+		vSphereJumpboxNetworkOpsPath := filepath.Join(input.DeploymentDir, "vsphere-jumpbox-network.yml")
+		sharedArgs = append(sharedArgs, "-o", vSphereJumpboxNetworkOpsPath)
+		err := e.writeFile(vSphereJumpboxNetworkOpsPath, []byte(VSphereJumpboxNetworkOps), os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("Jumpbox write vsphere network ops file: %s", err) //not tested
+		}
+	}
+
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 
 	boshArgs := append([]string{
@@ -207,6 +217,10 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 
 	for _, f := range e.getDirectorOpsFiles(input) {
 		sharedArgs = append(sharedArgs, "-o", f)
+	}
+
+	if input.IAAS == "vsphere" {
+		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.DeploymentDir, "vsphere", "resource-pool.yml"))
 	}
 
 	if input.OpsFile != "" {

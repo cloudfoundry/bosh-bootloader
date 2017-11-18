@@ -645,14 +645,18 @@ gcp_credentials_json: some-credential-json
 				}
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{}})
+				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"internal_cidr": "10.80.30.0/24",
+					"external_ip":   "10.80.30.6",
+				}})
 				Expect(vars).To(MatchYAML(`---
 director_name: bosh-some-env-id
 internal_cidr: 10.80.30.0/24
 internal_gw: 10.80.30.1
 internal_ip: 10.80.30.5
+external_ip: 10.80.30.6
 network_name: plum
-resource_pool: plum
+vcenter_rp: plum
 vcenter_dc: fruits-dc
 vcenter_ds: fruits-ds
 vcenter_ip: 10.90.20.3

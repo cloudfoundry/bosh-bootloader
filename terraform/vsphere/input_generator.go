@@ -1,6 +1,9 @@
 package vsphere
 
-import "github.com/cloudfoundry/bosh-bootloader/storage"
+import (
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type InputGenerator struct {
 }
@@ -10,5 +13,10 @@ func NewInputGenerator() InputGenerator {
 }
 
 func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
-	return map[string]interface{}{}, nil
+	cidr := state.VSphere.Subnet
+	parsedCIDR, _ := bosh.ParseCIDRBlock(cidr)
+	return map[string]interface{}{
+		"vsphere_subnet": cidr,
+		"external_ip":    parsedCIDR.GetNthIP(5).String(),
+	}, nil
 }

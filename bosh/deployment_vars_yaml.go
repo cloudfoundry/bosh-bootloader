@@ -29,7 +29,7 @@ type GCPYAML struct {
 	Zone           string   `yaml:"zone,omitempty"`
 	Network        string   `yaml:"network,omitempty"`
 	Subnetwork     string   `yaml:"subnetwork,omitempty"`
-	Tags           []string `yaml:"tags,omitempty"`
+	Tags           []string `json:"tags" yaml:"tags,omitempty"`
 	ProjectID      string   `yaml:"project_id,omitempty"`
 	CredentialJSON string   `yaml:"gcp_credentials_json,omitempty"`
 }
@@ -49,7 +49,7 @@ type AzureYAML struct {
 
 type VSphereYAML struct {
 	NetworkName       string `yaml:"network_name,omitempty"`
-	ResourcePool      string `yaml:"resource_pool,omitempty"`
+	ResourcePool      string `yaml:"vcenter_rp,omitempty"`
 	VCenterCluster    string `yaml:"vcenter_cluster,omitempty"`
 	VCenterDatacenter string `yaml:"vcenter_dc,omitempty"`
 	VCenterDisks      string `yaml:"vcenter_disks,omitempty"`
