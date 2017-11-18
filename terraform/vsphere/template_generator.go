@@ -9,5 +9,5 @@ func NewTemplateGenerator() TemplateGenerator {
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	return ""
+	return `output "dummy" { value = "dummy" }`
 }
