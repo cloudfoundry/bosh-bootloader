@@ -1,15 +1,15 @@
 resource "aws_eip" "jumpbox_eip" {
   depends_on = ["aws_internet_gateway.ig"]
-  vpc      = true
+  vpc        = true
 }
 
 resource "tls_private_key" "bosh_vms" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "bosh_vms" {
-  key_name = "${var.env_id}_bosh_vms"
+  key_name   = "${var.env_id}_bosh_vms"
   public_key = "${tls_private_key.bosh_vms.public_key_openssh}"
 }
 
@@ -18,7 +18,7 @@ output "bosh_vms_key_name" {
 }
 
 output "bosh_vms_private_key" {
-  value = "${tls_private_key.bosh_vms.private_key_pem}"
+  value     = "${tls_private_key.bosh_vms.private_key_pem}"
   sensitive = true
 }
 
@@ -27,7 +27,7 @@ output "external_ip" {
 }
 
 output "jumpbox_url" {
-    value = "${aws_eip.jumpbox_eip.public_ip}:22"
+  value = "${aws_eip.jumpbox_eip.public_ip}:22"
 }
 
 output "director_address" {
@@ -37,6 +37,7 @@ output "director_address" {
 resource "aws_iam_role" "bosh" {
   name = "${var.env_id}_bosh_role"
   path = "/"
+
   lifecycle {
     create_before_destroy = true
   }
@@ -59,8 +60,9 @@ EOF
 }
 
 resource "aws_iam_policy" "bosh" {
-  name   = "${var.env_id}_bosh_policy"
-  path   = "/"
+  name = "${var.env_id}_bosh_policy"
+  path = "/"
+
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -111,7 +113,7 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "bosh" {
-  role = "${var.env_id}_bosh_role"
+  role       = "${var.env_id}_bosh_role"
   policy_arn = "${aws_iam_policy.bosh.arn}"
 }
 
@@ -167,12 +169,12 @@ resource "aws_security_group_rule" "nat_to_internet_rule" {
 }
 
 resource "aws_security_group_rule" "nat_icmp_rule" {
-  security_group_id        = "${aws_security_group.nat_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "icmp"
-  from_port                = -1
-  to_port                  = -1
-  cidr_blocks              = ["0.0.0.0/0"]
+  security_group_id = "${aws_security_group.nat_security_group.id}"
+  type              = "ingress"
+  protocol          = "icmp"
+  from_port         = -1
+  to_port           = -1
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group_rule" "nat_tcp_rule" {
@@ -202,15 +204,15 @@ resource "aws_instance" "nat" {
   vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
 
   tags {
-    Name = "${var.env_id}-nat",
+    Name  = "${var.env_id}-nat"
     EnvID = "${var.env_id}"
   }
 }
 
 resource "aws_eip" "nat_eip" {
   depends_on = ["aws_internet_gateway.ig"]
-  instance = "${aws_instance.nat.id}"
-  vpc      = true
+  instance   = "${aws_instance.nat.id}"
+  vpc        = true
 }
 
 output "nat_eip" {
@@ -236,7 +238,7 @@ provider "aws" {
 }
 
 resource "aws_default_security_group" "default_security_group" {
-	vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${aws_vpc.vpc.id}"
 }
 
 resource "aws_security_group" "internal_security_group" {
@@ -249,39 +251,39 @@ resource "aws_security_group" "internal_security_group" {
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_tcp" {
-  security_group_id        = "${aws_security_group.internal_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 0
-  to_port                  = 65535
-  self                     = true
+  security_group_id = "${aws_security_group.internal_security_group.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 0
+  to_port           = 65535
+  self              = true
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_udp" {
-  security_group_id        = "${aws_security_group.internal_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "udp"
-  from_port                = 0
-  to_port                  = 65535
-  self                     = true
+  security_group_id = "${aws_security_group.internal_security_group.id}"
+  type              = "ingress"
+  protocol          = "udp"
+  from_port         = 0
+  to_port           = 65535
+  self              = true
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_icmp" {
-  security_group_id        = "${aws_security_group.internal_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "icmp"
-  from_port                = -1
-  to_port                  = -1
-  cidr_blocks              = ["0.0.0.0/0"]
+  security_group_id = "${aws_security_group.internal_security_group.id}"
+  type              = "ingress"
+  protocol          = "icmp"
+  from_port         = -1
+  to_port           = -1
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_allow_internet" {
-  security_group_id        = "${aws_security_group.internal_security_group.id}"
-  type                     = "egress"
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 0
-  cidr_blocks              = ["0.0.0.0/0"]
+  security_group_id = "${aws_security_group.internal_security_group.id}"
+  type              = "egress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = 0
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_ssh" {
@@ -294,7 +296,7 @@ resource "aws_security_group_rule" "internal_security_group_rule_ssh" {
 }
 
 output "internal_security_group" {
-  value="${aws_security_group.internal_security_group.id}"
+  value = "${aws_security_group.internal_security_group.id}"
 }
 
 variable "bosh_inbound_cidr" {
@@ -311,43 +313,43 @@ resource "aws_security_group" "bosh_security_group" {
 }
 
 output "bosh_security_group" {
-  value="${aws_security_group.bosh_security_group.id}"
+  value = "${aws_security_group.bosh_security_group.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_ssh" {
-  security_group_id        = "${aws_security_group.bosh_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 22
-  to_port                  = 22
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 22
+  to_port           = 22
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_bosh_agent" {
-  security_group_id        = "${aws_security_group.bosh_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 6868
-  to_port                  = 6868
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 6868
+  to_port           = 6868
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_uaa" {
-  security_group_id        = "${aws_security_group.bosh_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 8443
-  to_port                  = 8443
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 8443
+  to_port           = 8443
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_director_api" {
-  security_group_id        = "${aws_security_group.bosh_security_group.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 25555
-  to_port                  = 25555
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 25555
+  to_port           = 25555
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp" {
@@ -369,12 +371,12 @@ resource "aws_security_group_rule" "bosh_security_group_rule_udp" {
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_allow_internet" {
-  security_group_id        = "${aws_security_group.bosh_security_group.id}"
-  type                     = "egress"
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 0
-  cidr_blocks              = ["0.0.0.0/0"]
+  security_group_id = "${aws_security_group.bosh_security_group.id}"
+  type              = "egress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = 0
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group" "jumpbox" {
@@ -387,52 +389,52 @@ resource "aws_security_group" "jumpbox" {
 }
 
 output "jumpbox_security_group" {
-  value="${aws_security_group.jumpbox.id}"
+  value = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "jumpbox_ssh" {
-  security_group_id        = "${aws_security_group.jumpbox.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 22
-  to_port                  = 22
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.jumpbox.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 22
+  to_port           = 22
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "jumpbox_agent" {
-  security_group_id        = "${aws_security_group.jumpbox.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 6868
-  to_port                  = 6868
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.jumpbox.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 6868
+  to_port           = 6868
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "jumpbox_credhub" {
-  security_group_id        = "${aws_security_group.jumpbox.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 8844
-  to_port                  = 8844
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.jumpbox.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 8844
+  to_port           = 8844
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "jumpbox_director" {
-  security_group_id        = "${aws_security_group.jumpbox.id}"
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 25555
-  to_port                  = 25555
-  cidr_blocks              = ["${var.bosh_inbound_cidr}"]
+  security_group_id = "${aws_security_group.jumpbox.id}"
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 25555
+  to_port           = 25555
+  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
 resource "aws_security_group_rule" "jumpbox_egress" {
-  security_group_id        = "${aws_security_group.jumpbox.id}"
-  type                     = "egress"
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 0
-  cidr_blocks              = ["0.0.0.0/0"]
+  security_group_id = "${aws_security_group.jumpbox.id}"
+  type              = "egress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = 0
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group_rule" "bosh_internal_security_rule_tcp" {
@@ -462,8 +464,8 @@ variable "bosh_availability_zone" {
 }
 
 resource "aws_subnet" "bosh_subnet" {
-  vpc_id            = "${aws_vpc.vpc.id}"
-  cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
+  vpc_id     = "${aws_vpc.vpc.id}"
+  cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"
@@ -476,8 +478,8 @@ resource "aws_route_table" "bosh_route_table" {
 
 resource "aws_route" "bosh_route_table" {
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = "${aws_internet_gateway.ig.id}"
-  route_table_id = "${aws_route_table.bosh_route_table.id}"
+  gateway_id             = "${aws_internet_gateway.ig.id}"
+  route_table_id         = "${aws_route_table.bosh_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_bosh_subnets" {
@@ -518,8 +520,8 @@ resource "aws_route_table" "internal_route_table" {
 
 resource "aws_route" "internal_route_table" {
   destination_cidr_block = "0.0.0.0/0"
-  instance_id = "${aws_instance.nat.id}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
+  instance_id            = "${aws_instance.nat.id}"
+  route_table_id         = "${aws_route_table.internal_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_internal_subnets" {
@@ -529,13 +531,13 @@ resource "aws_route_table_association" "route_internal_subnets" {
 }
 
 output "internal_az_subnet_id_mapping" {
-	value = "${
+  value = "${
 	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.id}")
 	}"
 }
 
 output "internal_az_subnet_cidr_mapping" {
-	value = "${
+  value = "${
 	  zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.cidr_block}")
 	}"
 }
@@ -549,7 +551,7 @@ variable "short_env_id" {
 }
 
 variable "vpc_cidr" {
-  type = "string"
+  type    = "string"
   default = "10.0.0.0/16"
 }
 
@@ -655,8 +657,8 @@ resource "aws_route_table" "lb_route_table" {
 
 resource "aws_route" "lb_route_table" {
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = "${aws_internet_gateway.ig.id}"
-  route_table_id = "${aws_route_table.lb_route_table.id}"
+  gateway_id             = "${aws_internet_gateway.ig.id}"
+  route_table_id         = "${aws_route_table.lb_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_lb_subnets" {
@@ -689,9 +691,9 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -701,7 +703,7 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
 }
 
 output "cf_ssh_lb_security_group" {
-  value="${aws_security_group.cf_ssh_lb_security_group.id}"
+  value = "${aws_security_group.cf_ssh_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
@@ -710,15 +712,15 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.cf_ssh_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 2222
-    to_port     = 2222
+    protocol        = "tcp"
+    from_port       = 2222
+    to_port         = 2222
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -728,7 +730,7 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
 }
 
 output "cf_ssh_lb_internal_security_group" {
-  value="${aws_security_group.cf_ssh_lb_internal_security_group.id}"
+  value = "${aws_security_group.cf_ssh_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "cf_ssh_lb" {
@@ -788,9 +790,9 @@ resource "aws_security_group" "cf_router_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -800,7 +802,7 @@ resource "aws_security_group" "cf_router_lb_security_group" {
 }
 
 output "cf_router_lb_security_group" {
-  value="${aws_security_group.cf_router_lb_security_group.id}"
+  value = "${aws_security_group.cf_router_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
@@ -809,15 +811,15 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    protocol        = "tcp"
+    from_port       = 80
+    to_port         = 80
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -827,7 +829,7 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
 }
 
 output "cf_router_lb_internal_security_group" {
-  value="${aws_security_group.cf_router_lb_internal_security_group.id}"
+  value = "${aws_security_group.cf_router_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "cf_router_lb" {
@@ -889,9 +891,9 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -901,7 +903,7 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
 }
 
 output "cf_tcp_lb_security_group" {
-  value="${aws_security_group.cf_tcp_lb_security_group.id}"
+  value = "${aws_security_group.cf_tcp_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
@@ -910,22 +912,22 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 1024
-    to_port     = 1123
+    protocol        = "tcp"
+    from_port       = 1024
+    to_port         = 1123
   }
 
   ingress {
     security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    protocol        = "tcp"
+    from_port       = 80
+    to_port         = 80
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -935,7 +937,7 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
 }
 
 output "cf_tcp_lb_internal_security_group" {
-  value="${aws_security_group.cf_tcp_lb_internal_security_group.id}"
+  value = "${aws_security_group.cf_tcp_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "cf_tcp_lb" {
@@ -1687,48 +1689,51 @@ resource "aws_iam_server_certificate" "lb_cert" {
 }
 
 variable "isolation_segments" {
-  type = "string"
-  default = "0"
+  type        = "string"
+  default     = "0"
+  description = "Optionally create a LB and DNS entries for a single isolation segment. Valid values are 0 or 1."
+}
+
+variable "iso_to_bosh_ports" {
+  type    = "list"
+  default = [22, 6868, 2555, 4222, 25250]
+}
+
+variable "iso_to_shared_tcp_ports" {
+  type    = "list"
+  default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 4443, 8080, 3457, 9023, 9022, 4222]
+}
+
+variable "iso_to_shared_udp_ports" {
+  type    = "list"
+  default = [8301, 8302, 8600]
 }
 
 locals {
-  iso1_total_count = "${var.isolation_segments > 0 ? 1 : 0}"
-  iso1_az_count    = "${var.isolation_segments > 0 ? length(var.availability_zones) : 0}"
+  iso_az_count = "${var.isolation_segments > 0 ? length(var.availability_zones) : 0}"
 }
 
-resource "aws_subnet" "iso1_subnets" {
-  count             = "${local.iso1_az_count}"
+resource "aws_subnet" "iso_subnets" {
+  count             = "${local.iso_az_count}"
   vpc_id            = "${aws_vpc.vpc.id}"
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones) + 1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
   tags {
-    Name = "${var.env_id}-iso1-subnet${count.index}"
+    Name = "${var.env_id}-iso-subnet${count.index}"
   }
 }
 
-resource "aws_route_table_association" "route_iso1_subnets" {
-  count          = "${local.iso1_az_count}"
-  subnet_id      = "${element(aws_subnet.iso1_subnets.*.id, count.index)}"
+resource "aws_route_table_association" "route_iso_subnets" {
+  count          = "${local.iso_az_count}"
+  subnet_id      = "${element(aws_subnet.iso_subnets.*.id, count.index)}"
   route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
-output "iso1_az_subnet_id_mapping" {
-  value = "${
-    zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.id}")
-  }"
-}
+resource "aws_elb" "iso_router_lb" {
+  count = "${var.isolation_segments}"
 
-output "iso1_az_subnet_cidr_mapping" {
-  value = "${
-    zipmap("${aws_subnet.iso1_subnets.*.availability_zone}", "${aws_subnet.iso1_subnets.*.cidr_block}")
-  }"
-}
-
-resource "aws_elb" "iso1_router_lb" {
-  count = "${local.iso1_total_count}"
-
-  name                      = "bbl-iso1-router-lb"
+  name                      = "bbl-iso-router-lb"
   cross_zone_load_balancing = true
 
   health_check {
@@ -1766,104 +1771,52 @@ resource "aws_elb" "iso1_router_lb" {
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 }
 
-output "cf_iso1_router_lb_name" {
-  value = "${aws_elb.iso1_router_lb.name}"
-}
-
-resource "aws_security_group" "iso1_security_group" {
-  count = "${local.iso1_total_count}"
-
-  description = "iso1"
-  vpc_id      = "${aws_vpc.vpc.id}"
-
-  ingress {
-    self        = true
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = ["${aws_security_group.bosh_security_group.id}"]
-  }
+resource "aws_security_group" "iso_security_group" {
+  count  = "${var.isolation_segments}"
+  vpc_id = "${aws_vpc.vpc.id}"
 
   tags {
-    Name = "${var.env_id}-iso1-security-group"
+    Name = "${var.env_id}-iso-security-group"
   }
-}
-
-output "iso1_security_group_id" {
-  value = "${aws_security_group.iso1_security_group.id}"
 }
 
 resource "aws_security_group" "iso_shared_security_group" {
-  count = "${local.iso1_total_count}"
-
-  description = "iso-shared"
-  vpc_id      = "${aws_vpc.vpc.id}"
-}
-
-output "iso_shared_security_group_id" {
-  value = "${aws_security_group.iso_shared_security_group.id}"
-}
-
-variable "iso_to_bosh_ports" {
-  type    = "list"
-  default = [22,6868,2555,4222,25250]
+  count  = "${var.isolation_segments}"
+  vpc_id = "${aws_vpc.vpc.id}"
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
-  count                    = "${local.iso1_total_count * length(var.iso_to_bosh_ports)}"
+  count                    = "${var.isolation_segments * length(var.iso_to_bosh_ports)}"
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
   type                     = "ingress"
   protocol                 = "tcp"
   to_port                  = "${element(var.iso_to_bosh_ports, count.index)}"
   from_port                = "${element(var.iso_to_bosh_ports, count.index)}"
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
-}
-
-variable "iso_to_shared_tcp_ports" {
-  type    = "list"
-  default = [9090,9091,8082,8300,8301,8889,8443,3000,4443,8080,3457,9023,9022,4222]
+  source_security_group_id = "${aws_security_group.iso_security_group.id}"
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
-  count                    = "${local.iso1_total_count * length(var.iso_to_shared_tcp_ports)}"
+  count                    = "${var.isolation_segments * length(var.iso_to_shared_tcp_ports)}"
   security_group_id        = "${aws_security_group.iso_shared_security_group.id}"
   type                     = "ingress"
   protocol                 = "tcp"
   to_port                  = "${element(var.iso_to_shared_tcp_ports, count.index)}"
   from_port                = "${element(var.iso_to_shared_tcp_ports, count.index)}"
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
-}
-
-variable "iso_to_shared_udp_ports" {
-  type    = "list"
-  default = [8301,8302,8600]
+  source_security_group_id = "${aws_security_group.iso_security_group.id}"
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
-  count                    = "${local.iso1_total_count * length(var.iso_to_shared_udp_ports)}"
+  count                    = "${var.isolation_segments * length(var.iso_to_shared_udp_ports)}"
   security_group_id        = "${aws_security_group.iso_shared_security_group.id}"
   type                     = "ingress"
   protocol                 = "udp"
   to_port                  = "${element(var.iso_to_shared_udp_ports, count.index)}"
   from_port                = "${element(var.iso_to_shared_udp_ports, count.index)}"
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+  source_security_group_id = "${aws_security_group.iso_security_group.id}"
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule" {
-  count = "${local.iso1_total_count}"
+  count = "${var.isolation_segments}"
 
   depends_on               = ["aws_security_group.bosh_security_group"]
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
@@ -1871,14 +1824,14 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule"
   protocol                 = "-1"
   from_port                = 0
   to_port                  = 0
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+  source_security_group_id = "${aws_security_group.iso_security_group.id}"
 }
 
 resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
-  count = "${local.iso1_total_count}"
+  count = "${var.isolation_segments}"
 
-  depends_on               = ["aws_security_group.iso1_security_group"]
-  security_group_id        = "${aws_security_group.iso1_security_group.id}"
+  depends_on               = ["aws_security_group.iso_security_group"]
+  security_group_id        = "${aws_security_group.iso_security_group.id}"
   type                     = "ingress"
   protocol                 = "-1"
   from_port                = 1801
@@ -1887,16 +1840,39 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
 }
 
 resource "aws_security_group_rule" "nat_to_isolated_cells_rule" {
-  count = "${local.iso1_total_count}"
+  count = "${var.isolation_segments}"
 
   security_group_id        = "${aws_security_group.nat_security_group.id}"
   type                     = "ingress"
   protocol                 = "-1"
   from_port                = 0
   to_port                  = 0
-  source_security_group_id = "${aws_security_group.iso1_security_group.id}"
+  source_security_group_id = "${aws_security_group.iso_security_group.id}"
 }
 
+output "cf_iso_router_lb_name" {
+  value = "${aws_elb.iso_router_lb.name}"
+}
+
+output "iso_security_group_id" {
+  value = "${aws_security_group.iso_security_group.id}"
+}
+
+output "iso_az_subnet_id_mapping" {
+  value = "${
+    zipmap("${aws_subnet.iso_subnets.*.availability_zone}", "${aws_subnet.iso_subnets.*.id}")
+  }"
+}
+
+output "iso_az_subnet_cidr_mapping" {
+  value = "${
+    zipmap("${aws_subnet.iso_subnets.*.availability_zone}", "${aws_subnet.iso_subnets.*.cidr_block}")
+  }"
+}
+
+output "iso_shared_security_group_id" {
+  value = "${aws_security_group.iso_shared_security_group.id}"
+}
 
 variable "system_domain" {
   type = "string"
@@ -1950,14 +1926,13 @@ resource "aws_route53_record" "tcp" {
   records = ["${aws_elb.cf_tcp_lb.dns_name}"]
 }
 
-resource "aws_route53_record" "iso1" {
-  count = "${local.iso1_total_count}"
+resource "aws_route53_record" "iso" {
+  count = "${var.isolation_segments}"
 
   zone_id = "${aws_route53_zone.env_dns_zone.id}"
   name    = "*.iso-seg.${var.system_domain}"
   type    = "CNAME"
   ttl     = 300
 
-  records = ["${aws_elb.iso1_router_lb.dns_name}"]
+  records = ["${aws_elb.iso_router_lb.dns_name}"]
 }
-

@@ -10,9 +10,9 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -22,7 +22,7 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
 }
 
 output "cf_ssh_lb_security_group" {
-  value="${aws_security_group.cf_ssh_lb_security_group.id}"
+  value = "${aws_security_group.cf_ssh_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
@@ -31,15 +31,15 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.cf_ssh_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 2222
-    to_port     = 2222
+    protocol        = "tcp"
+    from_port       = 2222
+    to_port         = 2222
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -49,7 +49,7 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
 }
 
 output "cf_ssh_lb_internal_security_group" {
-  value="${aws_security_group.cf_ssh_lb_internal_security_group.id}"
+  value = "${aws_security_group.cf_ssh_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "cf_ssh_lb" {
@@ -109,9 +109,9 @@ resource "aws_security_group" "cf_router_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -121,7 +121,7 @@ resource "aws_security_group" "cf_router_lb_security_group" {
 }
 
 output "cf_router_lb_security_group" {
-  value="${aws_security_group.cf_router_lb_security_group.id}"
+  value = "${aws_security_group.cf_router_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
@@ -130,15 +130,15 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    protocol        = "tcp"
+    from_port       = 80
+    to_port         = 80
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -148,7 +148,7 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
 }
 
 output "cf_router_lb_internal_security_group" {
-  value="${aws_security_group.cf_router_lb_internal_security_group.id}"
+  value = "${aws_security_group.cf_router_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "cf_router_lb" {
@@ -210,9 +210,9 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -222,7 +222,7 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
 }
 
 output "cf_tcp_lb_security_group" {
-  value="${aws_security_group.cf_tcp_lb_security_group.id}"
+  value = "${aws_security_group.cf_tcp_lb_security_group.id}"
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
@@ -231,22 +231,22 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 1024
-    to_port     = 1123
+    protocol        = "tcp"
+    from_port       = 1024
+    to_port         = 1123
   }
 
   ingress {
     security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    protocol        = "tcp"
+    from_port       = 80
+    to_port         = 80
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -256,7 +256,7 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
 }
 
 output "cf_tcp_lb_internal_security_group" {
-  value="${aws_security_group.cf_tcp_lb_internal_security_group.id}"
+  value = "${aws_security_group.cf_tcp_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "cf_tcp_lb" {

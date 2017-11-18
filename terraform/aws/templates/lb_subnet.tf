@@ -19,8 +19,8 @@ resource "aws_route_table" "lb_route_table" {
 
 resource "aws_route" "lb_route_table" {
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = "${aws_internet_gateway.ig.id}"
-  route_table_id = "${aws_route_table.lb_route_table.id}"
+  gateway_id             = "${aws_internet_gateway.ig.id}"
+  route_table_id         = "${aws_route_table.lb_route_table.id}"
 }
 
 resource "aws_route_table_association" "route_lb_subnets" {

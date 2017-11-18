@@ -24,9 +24,9 @@ resource "aws_security_group" "concourse_lb_security_group" {
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -41,22 +41,22 @@ resource "aws_security_group" "concourse_lb_internal_security_group" {
 
   ingress {
     security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 8080
-    to_port     = 8080
+    protocol        = "tcp"
+    from_port       = 8080
+    to_port         = 8080
   }
 
   ingress {
     security_groups = ["${aws_security_group.concourse_lb_security_group.id}"]
-    protocol    = "tcp"
-    from_port   = 2222
-    to_port     = 2222
+    protocol        = "tcp"
+    from_port       = 2222
+    to_port         = 2222
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -66,7 +66,7 @@ resource "aws_security_group" "concourse_lb_internal_security_group" {
 }
 
 output "concourse_lb_internal_security_group" {
-  value="${aws_security_group.concourse_lb_internal_security_group.id}"
+  value = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
 
 resource "aws_elb" "concourse_lb" {
@@ -89,10 +89,10 @@ resource "aws_elb" "concourse_lb" {
   }
 
   listener {
-    instance_port      = 2222
-    instance_protocol  = "tcp"
-    lb_port            = 2222
-    lb_protocol        = "tcp"
+    instance_port     = 2222
+    instance_protocol = "tcp"
+    lb_port           = 2222
+    lb_protocol       = "tcp"
   }
 
   listener {
