@@ -15,10 +15,10 @@ import (
 
 type globalFlags struct {
 	Help     bool   `short:"h" long:"help"`
-	Debug    bool   `short:"d" long:"debug"         env:"BBL_DEBUG"`
+	Debug    bool   `short:"d" long:"debug"     env:"BBL_DEBUG"`
 	Version  bool   `short:"v" long:"version"`
-	StateDir string `short:"s" long:"state-dir"`
-	IAAS     string `long:"iaas"                    env:"BBL_IAAS"`
+	StateDir string `short:"s" long:"state-dir" env:"BBL_STATE_DIR"`
+	IAAS     string `          long:"iaas"      env:"BBL_IAAS"`
 
 	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
 	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`

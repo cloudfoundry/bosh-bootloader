@@ -140,7 +140,7 @@ var _ = Describe("LoadState", func() {
 				})
 			})
 
-			Context("when debug flag is passed in through environment variables", func() {
+			Context("when debug flag is passed in through environment variable", func() {
 				BeforeEach(func() {
 					os.Setenv("BBL_DEBUG", "true")
 				})
@@ -154,6 +154,23 @@ var _ = Describe("LoadState", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Global.Debug).To(BeTrue())
+				})
+			})
+
+			Context("when state dir flag is passed in through environment variable", func() {
+				BeforeEach(func() {
+					os.Setenv("BBL_STATE_DIR", "/some-dir")
+				})
+
+				AfterEach(func() {
+					os.Unsetenv("BBL_STATE_DIR")
+				})
+
+				It("returns global flags", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Global.StateDir).To(Equal("/some-dir"))
 				})
 			})
 		})
