@@ -94,8 +94,7 @@ var _ = Describe("LoadState", func() {
 
 			It("returns global flags", func() {
 				args := []string{
-					"bbl",
-					"up",
+					"bbl", "up",
 					"--debug",
 					"--state-dir", "some-state-dir",
 				}
@@ -111,8 +110,7 @@ var _ = Describe("LoadState", func() {
 			Context("when --help is passed in after a command", func() {
 				It("returns command help", func() {
 					args := []string{
-						"bbl",
-						"up",
+						"bbl", "up",
 						"--help",
 					}
 
@@ -126,11 +124,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when help is passed in before a command", func() {
 				It("returns command help", func() {
-					args := []string{
-						"bbl",
-						"help",
-						"up",
-					}
+					args := []string{"bbl", "help", "up"}
 
 					appConfig, err := c.Bootstrap(args)
 					Expect(err).NotTo(HaveOccurred())
@@ -319,6 +313,169 @@ var _ = Describe("LoadState", func() {
 
 					Expect(err).To(MatchError("expected argument for flag `-s, --state-dir', but got option `--help'"))
 				})
+			})
+		})
+
+		Context("using VSphere", func() {
+			Context("when a previous state does not exist", func() {
+				Context("when configuration is passed in by flag", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"--iaas", "vsphere",
+							"--vsphere-vcenter-user", "user",
+							"--vsphere-vcenter-password", "password",
+							"--vsphere-vcenter-ip", "ip",
+							"--vsphere-datacenter", "dc",
+							"--vsphere-cluster", "cluster",
+							"--vsphere-resource-pool", "rp",
+							"--vsphere-network", "network",
+							"--vsphere-datastore", "ds",
+							"--vsphere-subnet", "subnet",
+							"up",
+							"--name", "some-env-id",
+						}
+					})
+
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+
+						Expect(state.IAAS).To(Equal("vsphere"))
+						Expect(state.VSphere.VCenterUser).To(Equal("user"))
+						Expect(state.VSphere.VCenterPassword).To(Equal("password"))
+						Expect(state.VSphere.VCenterIP).To(Equal("ip"))
+						Expect(state.VSphere.Datacenter).To(Equal("dc"))
+						Expect(state.VSphere.Cluster).To(Equal("cluster"))
+						Expect(state.VSphere.ResourcePool).To(Equal("rp"))
+						Expect(state.VSphere.Network).To(Equal("network"))
+						Expect(state.VSphere.Datastore).To(Equal("ds"))
+						Expect(state.VSphere.Subnet).To(Equal("subnet"))
+					})
+
+					It("returns the remaining arguments", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+					})
+				})
+
+				Context("when configuration is passed in by env vars", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"up",
+						}
+
+						os.Setenv("BBL_IAAS", "vsphere")
+						os.Setenv("BBL_VSPHERE_VCENTER_USER", "user")
+						os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", "password")
+						os.Setenv("BBL_VSPHERE_VCENTER_IP", "ip")
+						os.Setenv("BBL_VSPHERE_DATACENTER", "dc")
+						os.Setenv("BBL_VSPHERE_CLUSTER", "cluster")
+						os.Setenv("BBL_VSPHERE_RESOURCE_POOL", "rp")
+						os.Setenv("BBL_VSPHERE_NETWORK", "network")
+						os.Setenv("BBL_VSPHERE_DATASTORE", "ds")
+						os.Setenv("BBL_VSPHERE_SUBNET", "subnet")
+					})
+
+					AfterEach(func() {
+						os.Unsetenv("BBL_IAAS")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_USER")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_PASSWORD")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_IP")
+						os.Unsetenv("BBL_VSPHERE_DATACENTER")
+						os.Unsetenv("BBL_VSPHERE_CLUSTER")
+						os.Unsetenv("BBL_VSPHERE_RESOURCE_POOL")
+						os.Unsetenv("BBL_VSPHERE_NETWORK")
+						os.Unsetenv("BBL_VSPHERE_DATASTORE")
+						os.Unsetenv("BBL_VSPHERE_SUBNET")
+					})
+
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+						Expect(state.IAAS).To(Equal("vsphere"))
+						Expect(state.VSphere.VCenterUser).To(Equal("user"))
+						Expect(state.VSphere.VCenterPassword).To(Equal("password"))
+						Expect(state.VSphere.VCenterIP).To(Equal("ip"))
+						Expect(state.VSphere.Datacenter).To(Equal("dc"))
+						Expect(state.VSphere.Cluster).To(Equal("cluster"))
+						Expect(state.VSphere.ResourcePool).To(Equal("rp"))
+						Expect(state.VSphere.Network).To(Equal("network"))
+						Expect(state.VSphere.Datastore).To(Equal("ds"))
+						Expect(state.VSphere.Subnet).To(Equal("subnet"))
+					})
+
+					It("returns the command", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("up"))
+					})
+				})
+			})
+
+			Context("when a previous state exists", func() {
+				BeforeEach(func() {
+					fakeStateBootstrap.GetStateCall.Returns.State = storage.State{
+						IAAS: "vsphere",
+						VSphere: storage.VSphere{
+							VCenterUser:     "user",
+							VCenterPassword: "password",
+							VCenterIP:       "ip",
+							Datacenter:      "dc",
+							Cluster:         "cluster",
+							ResourcePool:    "rp",
+							Network:         "network",
+							Datastore:       "ds",
+							Subnet:          "subnet",
+						},
+						EnvID: "some-env-id",
+					}
+				})
+
+				Context("when valid matching configuration is passed in", func() {
+					It("returns state with existing configuration", func() {
+						appConfig, err := c.Bootstrap([]string{
+							"bbl",
+							"create-lbs",
+							"--iaas", "vsphere",
+							"--vsphere-vcenter-user", "user",
+							"--vsphere-vcenter-password", "password",
+							"--vsphere-vcenter-ip", "ip",
+							"--vsphere-datacenter", "dc",
+							"--vsphere-cluster", "cluster",
+							"--vsphere-resource-pool", "rp",
+							"--vsphere-network", "network",
+							"--vsphere-datastore", "ds",
+							"--vsphere-subnet", "subnet",
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
+					})
+				})
+
+				DescribeTable("when non-matching configuration is passed in",
+					func(args []string, expected string) {
+						_, err := c.Bootstrap(args)
+
+						Expect(err).To(MatchError(expected))
+					},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "gcp"},
+						"The iaas type cannot be changed for an existing environment. The current iaas type is vsphere."),
+				)
 			})
 		})
 
@@ -953,6 +1110,141 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"Azure tenant id must be provided (--azure-tenant-id or BBL_AZURE_TENANT_ID)"),
+			Entry("when vSphere vcenter user is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Datastore:       "ds",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere vcenter user must be provided (--vsphere-vcenter-user or BBL_VSPHERE_VCENTER_USER)"),
+			Entry("when vSphere vcenter password is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:  "user",
+						VCenterIP:    "ip",
+						Datacenter:   "dc",
+						Cluster:      "cluster",
+						ResourcePool: "rp",
+						Network:      "network",
+						Datastore:    "ds",
+						Subnet:       "subnet",
+					},
+				},
+				"vSphere vcenter password must be provided (--vsphere-vcenter-password or BBL_VSPHERE_VCENTER_PASSWORD)"),
+			Entry("when vSphere vcenter ip is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Datastore:       "ds",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere vcenter ip must be provided (--vsphere-vcenter-ip or BBL_VSPHERE_VCENTER_IP)"),
+			Entry("when vSphere datacenter is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Datastore:       "ds",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere datacenter must be provided (--vsphere-datacenter or BBL_VSPHERE_DATACENTER)"),
+			Entry("when vSphere cluster is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Datastore:       "ds",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere cluster must be provided (--vsphere-cluster or BBL_VSPHERE_CLUSTER)"),
+			Entry("when vSphere resource pool is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						Network:         "network",
+						Datastore:       "ds",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere resource pool must be provided (--vsphere-resource-pool or BBL_VSPHERE_RESOURCE_POOL)"),
+			Entry("when vSphere network is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Datastore:       "ds",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere network must be provided (--vsphere-network or BBL_VSPHERE_NETWORK)"),
+			Entry("when vSphere datastore is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Subnet:          "subnet",
+					},
+				},
+				"vSphere datastore must be provided (--vsphere-datastore or BBL_VSPHERE_DATASTORE)"),
+			Entry("when vSphere subnet is missing",
+				storage.State{
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "user",
+						VCenterPassword: "password",
+						VCenterIP:       "ip",
+						Datacenter:      "dc",
+						Cluster:         "cluster",
+						ResourcePool:    "rp",
+						Network:         "network",
+						Datastore:       "ds",
+					},
+				},
+				"vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)"),
 		)
 	})
 })

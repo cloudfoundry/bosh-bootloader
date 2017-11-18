@@ -34,6 +34,16 @@ type globalFlags struct {
 	GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
 	GCPZone              string `long:"gcp-zone"                env:"BBL_GCP_ZONE"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
+
+	VSphereVCenterUser     string `long:"vsphere-vcenter-user"     env:"BBL_VSPHERE_VCENTER_USER"`
+	VSphereVCenterPassword string `long:"vsphere-vcenter-password" env:"BBL_VSPHERE_VCENTER_PASSWORD"`
+	VSphereVCenterIP       string `long:"vsphere-vcenter-ip"       env:"BBL_VSPHERE_VCENTER_IP"`
+	VSphereDatacenter      string `long:"vsphere-datacenter"       env:"BBL_VSPHERE_DATACENTER"`
+	VSphereCluster         string `long:"vsphere-cluster"          env:"BBL_VSPHERE_CLUSTER"`
+	VSphereResourcePool    string `long:"vsphere-resource-pool"    env:"BBL_VSPHERE_RESOURCE_POOL"`
+	VSphereNetwork         string `long:"vsphere-network"          env:"BBL_VSPHERE_NETWORK"`
+	VSphereDatastore       string `long:"vsphere-datastore"        env:"BBL_VSPHERE_DATASTORE"`
+	VSphereSubnet          string `long:"vsphere-subnet"           env:"BBL_VSPHERE_SUBNET"`
 }
 
 type logger interface {
@@ -169,11 +179,14 @@ func updateIAASState(globalFlags globalFlags, state storage.State) (storage.Stat
 	case "aws":
 		state, err := updateAWSState(globalFlags, state)
 		return state, err
+	case "azure":
+		state, err := updateAzureState(globalFlags, state)
+		return state, err
 	case "gcp":
 		state, err := updateGCPState(globalFlags, state)
 		return state, err
-	case "azure":
-		state, err := updateAzureState(globalFlags, state)
+	case "vsphere":
+		state, err := updateVSphereState(globalFlags, state)
 		return state, err
 	}
 
@@ -193,6 +206,26 @@ func updateAWSState(globalFlags globalFlags, state storage.State) (storage.State
 			return storage.State{}, errors.New(regionMismatch)
 		}
 		state.AWS.Region = globalFlags.AWSRegion
+	}
+
+	return state, nil
+}
+
+func updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+	if globalFlags.AzureClientID != "" {
+		state.Azure.ClientID = globalFlags.AzureClientID
+	}
+	if globalFlags.AzureClientSecret != "" {
+		state.Azure.ClientSecret = globalFlags.AzureClientSecret
+	}
+	if globalFlags.AzureLocation != "" {
+		state.Azure.Location = globalFlags.AzureLocation
+	}
+	if globalFlags.AzureSubscriptionID != "" {
+		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
+	}
+	if globalFlags.AzureTenantID != "" {
+		state.Azure.TenantID = globalFlags.AzureTenantID
 	}
 
 	return state, nil
@@ -222,32 +255,60 @@ func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State
 	return state, nil
 }
 
-func updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
-	if globalFlags.AzureClientID != "" {
-		state.Azure.ClientID = globalFlags.AzureClientID
+func updateVSphereState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+	if globalFlags.VSphereVCenterUser != "" {
+		state.VSphere.VCenterUser = globalFlags.VSphereVCenterUser
 	}
-	if globalFlags.AzureClientSecret != "" {
-		state.Azure.ClientSecret = globalFlags.AzureClientSecret
+	if globalFlags.VSphereVCenterPassword != "" {
+		state.VSphere.VCenterPassword = globalFlags.VSphereVCenterPassword
 	}
-	if globalFlags.AzureLocation != "" {
-		state.Azure.Location = globalFlags.AzureLocation
+	if globalFlags.VSphereVCenterIP != "" {
+		state.VSphere.VCenterIP = globalFlags.VSphereVCenterIP
 	}
-	if globalFlags.AzureSubscriptionID != "" {
-		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
+	if globalFlags.VSphereDatacenter != "" {
+		state.VSphere.Datacenter = globalFlags.VSphereDatacenter
 	}
-	if globalFlags.AzureTenantID != "" {
-		state.Azure.TenantID = globalFlags.AzureTenantID
+	if globalFlags.VSphereCluster != "" {
+		state.VSphere.Cluster = globalFlags.VSphereCluster
+	}
+	if globalFlags.VSphereResourcePool != "" {
+		state.VSphere.ResourcePool = globalFlags.VSphereResourcePool
+	}
+	if globalFlags.VSphereNetwork != "" {
+		state.VSphere.Network = globalFlags.VSphereNetwork
+	}
+	if globalFlags.VSphereDatastore != "" {
+		state.VSphere.Datastore = globalFlags.VSphereDatastore
+	}
+	if globalFlags.VSphereSubnet != "" {
+		state.VSphere.Subnet = globalFlags.VSphereSubnet
 	}
 
 	return state, nil
 }
 
+func supportedIAAS(iaas string) bool {
+	supported := []string{"aws", "azure", "gcp", "vsphere"}
+	for _, i := range supported {
+		if iaas == i {
+			return true
+		}
+	}
+	return false
+}
+
 func ValidateIAAS(state storage.State) error {
-	if state.IAAS == "" || (state.IAAS != "gcp" && state.IAAS != "aws" && state.IAAS != "azure") {
+	if !supportedIAAS(state.IAAS) {
 		return errors.New("--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set")
 	}
 	if state.IAAS == "aws" {
 		err := validateAWS(state.AWS)
+		if err != nil {
+			return err
+		}
+	}
+	if state.IAAS == "azure" {
+		err := validateAzure(state.Azure)
 		if err != nil {
 			return err
 		}
@@ -258,8 +319,8 @@ func ValidateIAAS(state storage.State) error {
 			return err
 		}
 	}
-	if state.IAAS == "azure" {
-		err := validateAzure(state.Azure)
+	if state.IAAS == "vsphere" {
+		err := validateVSphere(state.VSphere)
 		if err != nil {
 			return err
 		}
@@ -294,16 +355,6 @@ func validateAWS(aws storage.AWS) error {
 	return nil
 }
 
-func validateGCP(gcp storage.GCP) error {
-	if gcp.ServiceAccountKey == "" {
-		return errors.New("GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)")
-	}
-	if gcp.Region == "" {
-		return errors.New("GCP region must be provided (--gcp-region or BBL_GCP_REGION)")
-	}
-	return nil
-}
-
 func validateAzure(azure storage.Azure) error {
 	if azure.ClientID == "" {
 		return errors.New("Azure client id must be provided (--azure-client-id or BBL_AZURE_CLIENT_ID)")
@@ -319,6 +370,47 @@ func validateAzure(azure storage.Azure) error {
 	}
 	if azure.TenantID == "" {
 		return errors.New("Azure tenant id must be provided (--azure-tenant-id or BBL_AZURE_TENANT_ID)")
+	}
+	return nil
+}
+
+func validateGCP(gcp storage.GCP) error {
+	if gcp.ServiceAccountKey == "" {
+		return errors.New("GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)")
+	}
+	if gcp.Region == "" {
+		return errors.New("GCP region must be provided (--gcp-region or BBL_GCP_REGION)")
+	}
+	return nil
+}
+
+func validateVSphere(vsphere storage.VSphere) error {
+	if vsphere.VCenterUser == "" {
+		return errors.New("vSphere vcenter user must be provided (--vsphere-vcenter-user or BBL_VSPHERE_VCENTER_USER)")
+	}
+	if vsphere.VCenterPassword == "" {
+		return errors.New("vSphere vcenter password must be provided (--vsphere-vcenter-password or BBL_VSPHERE_VCENTER_PASSWORD)")
+	}
+	if vsphere.VCenterIP == "" {
+		return errors.New("vSphere vcenter ip must be provided (--vsphere-vcenter-ip or BBL_VSPHERE_VCENTER_IP)")
+	}
+	if vsphere.Datacenter == "" {
+		return errors.New("vSphere datacenter must be provided (--vsphere-datacenter or BBL_VSPHERE_DATACENTER)")
+	}
+	if vsphere.Cluster == "" {
+		return errors.New("vSphere cluster must be provided (--vsphere-cluster or BBL_VSPHERE_CLUSTER)")
+	}
+	if vsphere.ResourcePool == "" {
+		return errors.New("vSphere resource pool must be provided (--vsphere-resource-pool or BBL_VSPHERE_RESOURCE_POOL)")
+	}
+	if vsphere.Network == "" {
+		return errors.New("vSphere network must be provided (--vsphere-network or BBL_VSPHERE_NETWORK)")
+	}
+	if vsphere.Datastore == "" {
+		return errors.New("vSphere datastore must be provided (--vsphere-datastore or BBL_VSPHERE_DATASTORE)")
+	}
+	if vsphere.Subnet == "" {
+		return errors.New("vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)")
 	}
 	return nil
 }
