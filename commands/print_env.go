@@ -41,12 +41,12 @@ func (p PrintEnv) CheckFastFails(subcommandFlags []string, state storage.State) 
 
 func (p PrintEnv) Execute(args []string, state storage.State) error {
 	if state.NoDirector {
-		directorAddress, err := p.getExternalIP(state)
+		terraformOutputs, err := p.terraformManager.GetOutputs()
 		if err != nil {
 			return err
 		}
-		p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=https://%s:25555", directorAddress))
 
+		p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=https://%s:25555", terraformOutputs.GetString("external_ip")))
 		return nil
 	}
 
@@ -87,15 +87,6 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	p.logger.Println(fmt.Sprintf("ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D %s jumpbox@%s -i $JUMPBOX_PRIVATE_KEY", portNumber, jumpboxURL))
 
 	return nil
-}
-
-func (p PrintEnv) getExternalIP(state storage.State) (string, error) {
-	terraformOutputs, err := p.terraformManager.GetOutputs()
-	if err != nil {
-		return "", err
-	}
-
-	return terraformOutputs.GetString("external_ip"), nil
 }
 
 func (p PrintEnv) getPort() (string, error) {
