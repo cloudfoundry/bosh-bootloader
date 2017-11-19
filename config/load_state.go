@@ -38,11 +38,11 @@ type globalFlags struct {
 	VSphereVCenterUser     string `long:"vsphere-vcenter-user"     env:"BBL_VSPHERE_VCENTER_USER"`
 	VSphereVCenterPassword string `long:"vsphere-vcenter-password" env:"BBL_VSPHERE_VCENTER_PASSWORD"`
 	VSphereVCenterIP       string `long:"vsphere-vcenter-ip"       env:"BBL_VSPHERE_VCENTER_IP"`
-	VSphereDatacenter      string `long:"vsphere-datacenter"       env:"BBL_VSPHERE_DATACENTER"`
-	VSphereCluster         string `long:"vsphere-cluster"          env:"BBL_VSPHERE_CLUSTER"`
-	VSphereResourcePool    string `long:"vsphere-resource-pool"    env:"BBL_VSPHERE_RESOURCE_POOL"`
+	VSphereVCenterDC       string `long:"vsphere-vcenter-dc"       env:"BBL_VSPHERE_VCENTER_DC"`
+	VSphereCluster         string `long:"vsphere-vcenter-cluster"  env:"BBL_VSPHERE_VCENTER_CLUSTER"`
+	VSphereVCenterRP       string `long:"vsphere-vcenter-rp"       env:"BBL_VSPHERE_VCENTER_RP"`
 	VSphereNetwork         string `long:"vsphere-network"          env:"BBL_VSPHERE_NETWORK"`
-	VSphereDatastore       string `long:"vsphere-datastore"        env:"BBL_VSPHERE_DATASTORE"`
+	VSphereVCenterDS       string `long:"vsphere-vcenter-ds"       env:"BBL_VSPHERE_VCENTER_DS"`
 	VSphereSubnet          string `long:"vsphere-subnet"           env:"BBL_VSPHERE_SUBNET"`
 }
 
@@ -265,20 +265,20 @@ func updateVSphereState(globalFlags globalFlags, state storage.State) (storage.S
 	if globalFlags.VSphereVCenterIP != "" {
 		state.VSphere.VCenterIP = globalFlags.VSphereVCenterIP
 	}
-	if globalFlags.VSphereDatacenter != "" {
-		state.VSphere.Datacenter = globalFlags.VSphereDatacenter
+	if globalFlags.VSphereVCenterDC != "" {
+		state.VSphere.VCenterDC = globalFlags.VSphereVCenterDC
 	}
 	if globalFlags.VSphereCluster != "" {
 		state.VSphere.Cluster = globalFlags.VSphereCluster
 	}
-	if globalFlags.VSphereResourcePool != "" {
-		state.VSphere.ResourcePool = globalFlags.VSphereResourcePool
+	if globalFlags.VSphereVCenterRP != "" {
+		state.VSphere.VCenterRP = globalFlags.VSphereVCenterRP
 	}
 	if globalFlags.VSphereNetwork != "" {
 		state.VSphere.Network = globalFlags.VSphereNetwork
 	}
-	if globalFlags.VSphereDatastore != "" {
-		state.VSphere.Datastore = globalFlags.VSphereDatastore
+	if globalFlags.VSphereVCenterDS != "" {
+		state.VSphere.VCenterDS = globalFlags.VSphereVCenterDS
 	}
 	if globalFlags.VSphereSubnet != "" {
 		state.VSphere.Subnet = globalFlags.VSphereSubnet
@@ -394,20 +394,20 @@ func validateVSphere(vsphere storage.VSphere) error {
 	if vsphere.VCenterIP == "" {
 		return errors.New("vSphere vcenter ip must be provided (--vsphere-vcenter-ip or BBL_VSPHERE_VCENTER_IP)")
 	}
-	if vsphere.Datacenter == "" {
-		return errors.New("vSphere datacenter must be provided (--vsphere-datacenter or BBL_VSPHERE_DATACENTER)")
+	if vsphere.VCenterDC == "" {
+		return errors.New("vSphere vcenter datacenter must be provided (--vsphere-vcenter-dc or BBL_VSPHERE_VCENTER_DC)")
 	}
 	if vsphere.Cluster == "" {
-		return errors.New("vSphere cluster must be provided (--vsphere-cluster or BBL_VSPHERE_CLUSTER)")
+		return errors.New("vSphere cluster must be provided (--vsphere-vcenter-cluster or BBL_VSPHERE_VCENTER_CLUSTER)")
 	}
-	if vsphere.ResourcePool == "" {
-		return errors.New("vSphere resource pool must be provided (--vsphere-resource-pool or BBL_VSPHERE_RESOURCE_POOL)")
+	if vsphere.VCenterRP == "" {
+		return errors.New("vSphere vcenter resource pool must be provided (--vsphere-vcenter-rp or BBL_VSPHERE_VCENTER_RP)")
 	}
 	if vsphere.Network == "" {
 		return errors.New("vSphere network must be provided (--vsphere-network or BBL_VSPHERE_NETWORK)")
 	}
-	if vsphere.Datastore == "" {
-		return errors.New("vSphere datastore must be provided (--vsphere-datastore or BBL_VSPHERE_DATASTORE)")
+	if vsphere.VCenterDS == "" {
+		return errors.New("vSphere vcenter datastore must be provided (--vsphere-vcenter-ds or BBL_VSPHERE_VCENTER_DS)")
 	}
 	if vsphere.Subnet == "" {
 		return errors.New("vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)")

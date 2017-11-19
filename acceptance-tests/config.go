@@ -26,6 +26,19 @@ type Config struct {
 	GCPRegion            string
 	GCPZone              string
 
+	VSphereNetworkName      string
+	VSphereSubnet           string
+	VSphereVCenterIP        string
+	VSphereVCenterUser      string
+	VSphereVCenterPassword  string
+	VSphereVCenterDC        string
+	VSphereVCenterCluster   string
+	VSphereVCenterRP        string
+	VSphereVCenterDS        string
+	VSphereVCenterDisks     string
+	VSphereVCenterVMs       string
+	VSphereVCenterTemplates string
+
 	StateFileDir string
 }
 
@@ -43,13 +56,18 @@ func LoadConfig() (Config, error) {
 		if err != nil {
 			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
 		}
+	case "azure":
+		err = validateAzureCreds(config)
+		if err != nil {
+			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
+		}
 	case "gcp":
 		err = validateGCPCreds(config)
 		if err != nil {
 			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
 		}
-	case "azure":
-		err = validateAzureCreds(config)
+	case "vsphere":
+		err = validateVSphereCreds(config)
 		if err != nil {
 			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
 		}
@@ -127,6 +145,40 @@ func validateGCPCreds(config Config) error {
 	return nil
 }
 
+func validateVSphereCreds(config Config) error {
+	if config.VSphereVCenterUser == "" {
+		return errors.New("vsphere vcenter user is missing")
+	}
+	if config.VSphereVCenterPassword == "" {
+		return errors.New("vsphere vcenter password is missing")
+	}
+	if config.VSphereVCenterDC == "" {
+		return errors.New("vsphere vcenter datacenter is missing")
+	}
+	if config.VSphereVCenterDS == "" {
+		return errors.New("vsphere vcenter datastore is missing")
+	}
+	if config.VSphereVCenterCluster == "" {
+		return errors.New("vsphere vcenter cluster is missing")
+	}
+	if config.VSphereVCenterRP == "" {
+		return errors.New("vsphere vcenter resource pool is missing")
+	}
+	if config.VSphereVCenterVMs == "" {
+		return errors.New("vsphere vcenter vms is missing")
+	}
+	if config.VSphereVCenterDisks == "" {
+		return errors.New("vsphere vcenter disks is missing")
+	}
+	if config.VSphereVCenterTemplates == "" {
+		return errors.New("vsphere vcenter templates is missing")
+	}
+	if config.VSphereNetworkName == "" {
+		return errors.New("vsphere network name is missing")
+	}
+	return nil
+}
+
 func loadConfigFromEnvVars() Config {
 	return Config{
 		IAAS: os.Getenv("BBL_IAAS"),
@@ -143,6 +195,19 @@ func loadConfigFromEnvVars() Config {
 
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
+
+		VSphereNetworkName:      os.Getenv("BBL_VSPHERE_NETWORK_NAME"),
+		VSphereSubnet:           os.Getenv("BBL_VSPHERE_SUBNET"),
+		VSphereVCenterIP:        os.Getenv("BBL_VSPHERE_VCENTER_IP"),
+		VSphereVCenterUser:      os.Getenv("BBL_VSPHERE_VCENTER_USER"),
+		VSphereVCenterPassword:  os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD"),
+		VSphereVCenterDC:        os.Getenv("BBL_VSPHERE_VCENTER_DC"),
+		VSphereVCenterCluster:   os.Getenv("BBL_VSPHERE_VCENTER_CLUSTER"),
+		VSphereVCenterRP:        os.Getenv("BBL_VSPHERE_VCENTER_RP"),
+		VSphereVCenterDS:        os.Getenv("BBL_VSPHERE_VCENTER_DS"),
+		VSphereVCenterDisks:     os.Getenv("BBL_VSPHERE_VCENTER_DISKS"),
+		VSphereVCenterVMs:       os.Getenv("BBL_VSPHERE_VCENTER_VMS"),
+		VSphereVCenterTemplates: os.Getenv("BBL_VSPHERE_VCENTER_TEMPLATES"),
 
 		StateFileDir: os.Getenv("BBL_STATE_DIR"),
 	}

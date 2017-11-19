@@ -48,15 +48,15 @@ type AzureYAML struct {
 }
 
 type VSphereYAML struct {
-	NetworkName       string `yaml:"network_name,omitempty"`
-	ResourcePool      string `yaml:"vcenter_rp,omitempty"`
-	VCenterCluster    string `yaml:"vcenter_cluster,omitempty"`
-	VCenterDatacenter string `yaml:"vcenter_dc,omitempty"`
-	VCenterDisks      string `yaml:"vcenter_disks,omitempty"`
-	VCenterDatastore  string `yaml:"vcenter_ds,omitempty"`
-	VCenterIP         string `yaml:"vcenter_ip,omitempty"`
-	VCenterVMs        string `yaml:"vcenter_vms,omitempty"`
-	VCenterTemplates  string `yaml:"vcenter_templates,omitempty"`
-	VCenterUser       string `yaml:"vcenter_user,omitempty"`
-	VCenterPassword   string `yaml:"vcenter_password,omitempty"`
+	NetworkName      string `yaml:"network_name,omitempty"`
+	VCenterRP        string `yaml:"vcenter_rp,omitempty"`
+	VCenterCluster   string `yaml:"vcenter_cluster,omitempty"`
+	VCenterDC        string `yaml:"vcenter_dc,omitempty"`
+	VCenterDisks     string `yaml:"vcenter_disks,omitempty"`
+	VCenterDS        string `yaml:"vcenter_ds,omitempty"`
+	VCenterIP        string `yaml:"vcenter_ip,omitempty"`
+	VCenterVMs       string `yaml:"vcenter_vms,omitempty"`
+	VCenterTemplates string `yaml:"vcenter_templates,omitempty"`
+	VCenterUser      string `yaml:"vcenter_user,omitempty"`
+	VCenterPassword  string `yaml:"vcenter_password,omitempty"`
 }

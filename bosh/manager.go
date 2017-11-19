@@ -371,17 +371,17 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 	switch state.IAAS {
 	case "vsphere":
 		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:       state.VSphere.VCenterUser,
-			VCenterPassword:   state.VSphere.VCenterPassword,
-			VCenterIP:         state.VSphere.VCenterIP,
-			VCenterDatacenter: state.VSphere.Datacenter,
-			VCenterCluster:    state.VSphere.Cluster,
-			ResourcePool:      state.VSphere.ResourcePool,
-			NetworkName:       state.VSphere.Network,
-			VCenterDatastore:  state.VSphere.Datastore,
-			VCenterDisks:      fmt.Sprintf("%s", state.VSphere.Network),
-			VCenterVMs:        fmt.Sprintf("%s_vms", state.VSphere.Network),
-			VCenterTemplates:  fmt.Sprintf("%s_templates", state.VSphere.Network),
+			VCenterUser:      state.VSphere.VCenterUser,
+			VCenterPassword:  state.VSphere.VCenterPassword,
+			VCenterIP:        state.VSphere.VCenterIP,
+			VCenterDC:        state.VSphere.VCenterDC,
+			VCenterCluster:   state.VSphere.Cluster,
+			VCenterRP:        state.VSphere.VCenterRP,
+			NetworkName:      state.VSphere.Network,
+			VCenterDS:        state.VSphere.VCenterDS,
+			VCenterDisks:     fmt.Sprintf("%s", state.VSphere.Network),
+			VCenterVMs:       fmt.Sprintf("%s_vms", state.VSphere.Network),
+			VCenterTemplates: fmt.Sprintf("%s_templates", state.VSphere.Network),
 		}
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
@@ -452,17 +452,17 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	switch state.IAAS {
 	case "vsphere":
 		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:       state.VSphere.VCenterUser,
-			VCenterPassword:   state.VSphere.VCenterPassword,
-			VCenterIP:         state.VSphere.VCenterIP,
-			VCenterDatacenter: state.VSphere.Datacenter,
-			VCenterCluster:    state.VSphere.Cluster,
-			ResourcePool:      state.VSphere.ResourcePool,
-			NetworkName:       state.VSphere.Network,
-			VCenterDatastore:  state.VSphere.Datastore,
-			VCenterDisks:      fmt.Sprintf("%s", state.VSphere.Network),
-			VCenterVMs:        fmt.Sprintf("%s_vms", state.VSphere.Network),
-			VCenterTemplates:  fmt.Sprintf("%s_templates", state.VSphere.Network),
+			VCenterUser:      state.VSphere.VCenterUser,
+			VCenterPassword:  state.VSphere.VCenterPassword,
+			VCenterIP:        state.VSphere.VCenterIP,
+			VCenterDC:        state.VSphere.VCenterDC,
+			VCenterCluster:   state.VSphere.Cluster,
+			VCenterRP:        state.VSphere.VCenterRP,
+			NetworkName:      state.VSphere.Network,
+			VCenterDS:        state.VSphere.VCenterDS,
+			VCenterDisks:     fmt.Sprintf("%s", state.VSphere.Network),
+			VCenterVMs:       fmt.Sprintf("%s_vms", state.VSphere.Network),
+			VCenterTemplates: fmt.Sprintf("%s_templates", state.VSphere.Network),
 		}
 	case "gcp":
 		vars.GCPYAML = GCPYAML{

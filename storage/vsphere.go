@@ -1,13 +1,13 @@
 package storage
 
 type VSphere struct {
+	Cluster         string `json:"cluster,omitempty"`
+	Network         string `json:"network,omitempty"`
+	Subnet          string `json:"subnet,omitempty"`
 	VCenterUser     string `json:"vcenterUser,omitempty"`
 	VCenterPassword string `json:"vcenterPassword,omitempty"`
 	VCenterIP       string `json:"vcenterIP,omitempty"`
-	Datacenter      string `json:"datacenter,omitempty"`
-	Cluster         string `json:"cluster,omitempty"`
-	ResourcePool    string `json:"resourcePool,omitempty"`
-	Network         string `json:"network,omitempty"`
-	Datastore       string `json:"datastore,omitempty"`
-	Subnet          string `json:"subnet,omitempty"`
+	VCenterDC       string `json:"vcenterDC,omitempty"`
+	VCenterRP       string `json:"vcenterRP,omitempty"`
+	VCenterDS       string `json:"vcenterDS,omitempty"`
 }

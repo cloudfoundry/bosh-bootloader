@@ -311,11 +311,11 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-vcenter-user", "user",
 							"--vsphere-vcenter-password", "password",
 							"--vsphere-vcenter-ip", "ip",
-							"--vsphere-datacenter", "dc",
-							"--vsphere-cluster", "cluster",
-							"--vsphere-resource-pool", "rp",
+							"--vsphere-vcenter-dc", "dc",
+							"--vsphere-vcenter-cluster", "cluster",
+							"--vsphere-vcenter-rp", "rp",
 							"--vsphere-network", "network",
-							"--vsphere-datastore", "ds",
+							"--vsphere-vcenter-ds", "ds",
 							"--vsphere-subnet", "subnet",
 							"up",
 							"--name", "some-env-id",
@@ -332,11 +332,11 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterUser).To(Equal("user"))
 						Expect(state.VSphere.VCenterPassword).To(Equal("password"))
 						Expect(state.VSphere.VCenterIP).To(Equal("ip"))
-						Expect(state.VSphere.Datacenter).To(Equal("dc"))
+						Expect(state.VSphere.VCenterDC).To(Equal("dc"))
 						Expect(state.VSphere.Cluster).To(Equal("cluster"))
-						Expect(state.VSphere.ResourcePool).To(Equal("rp"))
+						Expect(state.VSphere.VCenterRP).To(Equal("rp"))
 						Expect(state.VSphere.Network).To(Equal("network"))
-						Expect(state.VSphere.Datastore).To(Equal("ds"))
+						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
 						Expect(state.VSphere.Subnet).To(Equal("subnet"))
 					})
 
@@ -359,11 +359,11 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_VSPHERE_VCENTER_USER", "user")
 						os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", "password")
 						os.Setenv("BBL_VSPHERE_VCENTER_IP", "ip")
-						os.Setenv("BBL_VSPHERE_DATACENTER", "dc")
-						os.Setenv("BBL_VSPHERE_CLUSTER", "cluster")
-						os.Setenv("BBL_VSPHERE_RESOURCE_POOL", "rp")
+						os.Setenv("BBL_VSPHERE_VCENTER_DC", "dc")
+						os.Setenv("BBL_VSPHERE_VCENTER_CLUSTER", "cluster")
+						os.Setenv("BBL_VSPHERE_VCENTER_RP", "rp")
 						os.Setenv("BBL_VSPHERE_NETWORK", "network")
-						os.Setenv("BBL_VSPHERE_DATASTORE", "ds")
+						os.Setenv("BBL_VSPHERE_VCENTER_DS", "ds")
 						os.Setenv("BBL_VSPHERE_SUBNET", "subnet")
 					})
 
@@ -372,11 +372,11 @@ var _ = Describe("LoadState", func() {
 						os.Unsetenv("BBL_VSPHERE_VCENTER_USER")
 						os.Unsetenv("BBL_VSPHERE_VCENTER_PASSWORD")
 						os.Unsetenv("BBL_VSPHERE_VCENTER_IP")
-						os.Unsetenv("BBL_VSPHERE_DATACENTER")
-						os.Unsetenv("BBL_VSPHERE_CLUSTER")
-						os.Unsetenv("BBL_VSPHERE_RESOURCE_POOL")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_DC")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_CLUSTER")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_RP")
 						os.Unsetenv("BBL_VSPHERE_NETWORK")
-						os.Unsetenv("BBL_VSPHERE_DATASTORE")
+						os.Unsetenv("BBL_VSPHERE_VCENTER_DS")
 						os.Unsetenv("BBL_VSPHERE_SUBNET")
 					})
 
@@ -389,11 +389,11 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterUser).To(Equal("user"))
 						Expect(state.VSphere.VCenterPassword).To(Equal("password"))
 						Expect(state.VSphere.VCenterIP).To(Equal("ip"))
-						Expect(state.VSphere.Datacenter).To(Equal("dc"))
+						Expect(state.VSphere.VCenterDC).To(Equal("dc"))
 						Expect(state.VSphere.Cluster).To(Equal("cluster"))
-						Expect(state.VSphere.ResourcePool).To(Equal("rp"))
+						Expect(state.VSphere.VCenterRP).To(Equal("rp"))
 						Expect(state.VSphere.Network).To(Equal("network"))
-						Expect(state.VSphere.Datastore).To(Equal("ds"))
+						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
 						Expect(state.VSphere.Subnet).To(Equal("subnet"))
 					})
 
@@ -414,11 +414,11 @@ var _ = Describe("LoadState", func() {
 							VCenterUser:     "user",
 							VCenterPassword: "password",
 							VCenterIP:       "ip",
-							Datacenter:      "dc",
+							VCenterDC:       "dc",
 							Cluster:         "cluster",
-							ResourcePool:    "rp",
+							VCenterRP:       "rp",
 							Network:         "network",
-							Datastore:       "ds",
+							VCenterDS:       "ds",
 							Subnet:          "subnet",
 						},
 						EnvID: "some-env-id",
@@ -434,11 +434,11 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-vcenter-user", "user",
 							"--vsphere-vcenter-password", "password",
 							"--vsphere-vcenter-ip", "ip",
-							"--vsphere-datacenter", "dc",
-							"--vsphere-cluster", "cluster",
-							"--vsphere-resource-pool", "rp",
+							"--vsphere-vcenter-dc", "dc",
+							"--vsphere-vcenter-cluster", "cluster",
+							"--vsphere-vcenter-rp", "rp",
 							"--vsphere-network", "network",
-							"--vsphere-datastore", "ds",
+							"--vsphere-vcenter-ds", "ds",
 							"--vsphere-subnet", "subnet",
 						})
 						Expect(err).NotTo(HaveOccurred())
@@ -1096,11 +1096,11 @@ var _ = Describe("LoadState", func() {
 					VSphere: storage.VSphere{
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
-						Datacenter:      "dc",
+						VCenterDC:       "dc",
 						Cluster:         "cluster",
-						ResourcePool:    "rp",
+						VCenterRP:       "rp",
 						Network:         "network",
-						Datastore:       "ds",
+						VCenterDS:       "ds",
 						Subnet:          "subnet",
 					},
 				},
@@ -1109,14 +1109,14 @@ var _ = Describe("LoadState", func() {
 				storage.State{
 					IAAS: "vsphere",
 					VSphere: storage.VSphere{
-						VCenterUser:  "user",
-						VCenterIP:    "ip",
-						Datacenter:   "dc",
-						Cluster:      "cluster",
-						ResourcePool: "rp",
-						Network:      "network",
-						Datastore:    "ds",
-						Subnet:       "subnet",
+						VCenterUser: "user",
+						VCenterIP:   "ip",
+						VCenterDC:   "dc",
+						Cluster:     "cluster",
+						VCenterRP:   "rp",
+						Network:     "network",
+						VCenterDS:   "ds",
+						Subnet:      "subnet",
 					},
 				},
 				"vSphere vcenter password must be provided (--vsphere-vcenter-password or BBL_VSPHERE_VCENTER_PASSWORD)"),
@@ -1126,16 +1126,16 @@ var _ = Describe("LoadState", func() {
 					VSphere: storage.VSphere{
 						VCenterUser:     "user",
 						VCenterPassword: "password",
-						Datacenter:      "dc",
+						VCenterDC:       "dc",
 						Cluster:         "cluster",
-						ResourcePool:    "rp",
+						VCenterRP:       "rp",
 						Network:         "network",
-						Datastore:       "ds",
+						VCenterDS:       "ds",
 						Subnet:          "subnet",
 					},
 				},
 				"vSphere vcenter ip must be provided (--vsphere-vcenter-ip or BBL_VSPHERE_VCENTER_IP)"),
-			Entry("when vSphere datacenter is missing",
+			Entry("when vSphere vcenter datacenter is missing",
 				storage.State{
 					IAAS: "vsphere",
 					VSphere: storage.VSphere{
@@ -1143,13 +1143,13 @@ var _ = Describe("LoadState", func() {
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
 						Cluster:         "cluster",
-						ResourcePool:    "rp",
+						VCenterRP:       "rp",
 						Network:         "network",
-						Datastore:       "ds",
+						VCenterDS:       "ds",
 						Subnet:          "subnet",
 					},
 				},
-				"vSphere datacenter must be provided (--vsphere-datacenter or BBL_VSPHERE_DATACENTER)"),
+				"vSphere vcenter datacenter must be provided (--vsphere-vcenter-dc or BBL_VSPHERE_VCENTER_DC)"),
 			Entry("when vSphere cluster is missing",
 				storage.State{
 					IAAS: "vsphere",
@@ -1157,29 +1157,29 @@ var _ = Describe("LoadState", func() {
 						VCenterUser:     "user",
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
-						Datacenter:      "dc",
-						ResourcePool:    "rp",
+						VCenterDC:       "dc",
+						VCenterRP:       "rp",
 						Network:         "network",
-						Datastore:       "ds",
+						VCenterDS:       "ds",
 						Subnet:          "subnet",
 					},
 				},
-				"vSphere cluster must be provided (--vsphere-cluster or BBL_VSPHERE_CLUSTER)"),
-			Entry("when vSphere resource pool is missing",
+				"vSphere cluster must be provided (--vsphere-vcenter-cluster or BBL_VSPHERE_VCENTER_CLUSTER)"),
+			Entry("when vSphere vcenter resource pool is missing",
 				storage.State{
 					IAAS: "vsphere",
 					VSphere: storage.VSphere{
 						VCenterUser:     "user",
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
-						Datacenter:      "dc",
+						VCenterDC:       "dc",
 						Cluster:         "cluster",
 						Network:         "network",
-						Datastore:       "ds",
+						VCenterDS:       "ds",
 						Subnet:          "subnet",
 					},
 				},
-				"vSphere resource pool must be provided (--vsphere-resource-pool or BBL_VSPHERE_RESOURCE_POOL)"),
+				"vSphere vcenter resource pool must be provided (--vsphere-vcenter-rp or BBL_VSPHERE_VCENTER_RP)"),
 			Entry("when vSphere network is missing",
 				storage.State{
 					IAAS: "vsphere",
@@ -1187,29 +1187,29 @@ var _ = Describe("LoadState", func() {
 						VCenterUser:     "user",
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
-						Datacenter:      "dc",
+						VCenterDC:       "dc",
 						Cluster:         "cluster",
-						ResourcePool:    "rp",
-						Datastore:       "ds",
+						VCenterRP:       "rp",
+						VCenterDS:       "ds",
 						Subnet:          "subnet",
 					},
 				},
 				"vSphere network must be provided (--vsphere-network or BBL_VSPHERE_NETWORK)"),
-			Entry("when vSphere datastore is missing",
+			Entry("when vSphere vcenter datastore is missing",
 				storage.State{
 					IAAS: "vsphere",
 					VSphere: storage.VSphere{
 						VCenterUser:     "user",
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
-						Datacenter:      "dc",
+						VCenterDC:       "dc",
 						Cluster:         "cluster",
-						ResourcePool:    "rp",
+						VCenterRP:       "rp",
 						Network:         "network",
 						Subnet:          "subnet",
 					},
 				},
-				"vSphere datastore must be provided (--vsphere-datastore or BBL_VSPHERE_DATASTORE)"),
+				"vSphere vcenter datastore must be provided (--vsphere-vcenter-ds or BBL_VSPHERE_VCENTER_DS)"),
 			Entry("when vSphere subnet is missing",
 				storage.State{
 					IAAS: "vsphere",
@@ -1217,11 +1217,11 @@ var _ = Describe("LoadState", func() {
 						VCenterUser:     "user",
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
-						Datacenter:      "dc",
+						VCenterDC:       "dc",
 						Cluster:         "cluster",
-						ResourcePool:    "rp",
+						VCenterRP:       "rp",
 						Network:         "network",
-						Datastore:       "ds",
+						VCenterDS:       "ds",
 					},
 				},
 				"vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)"),
