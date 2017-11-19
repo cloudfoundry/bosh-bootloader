@@ -77,7 +77,7 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.VCenterDC).To(Equal(configuration.VSphereVCenterDC))
 		Expect(vars.VCenterCluster).To(Equal(configuration.VSphereVCenterCluster))
 		Expect(vars.VCenterRP).To(Equal(configuration.VSphereVCenterRP))
-		Expect(vars.NetworkName).To(Equal(configuration.VSphereNetworkName))
+		Expect(vars.NetworkName).To(Equal(configuration.VSphereNetwork))
 		Expect(vars.VCenterDS).To(Equal(configuration.VSphereVCenterDS))
 		Expect(vars.VCenterDisks).To(Equal(configuration.VSphereVCenterDisks))
 		Expect(vars.VCenterVMs).To(Equal(configuration.VSphereVCenterVMs))

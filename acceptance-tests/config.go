@@ -26,7 +26,7 @@ type Config struct {
 	GCPRegion            string
 	GCPZone              string
 
-	VSphereNetworkName      string
+	VSphereNetwork          string
 	VSphereSubnet           string
 	VSphereVCenterIP        string
 	VSphereVCenterUser      string
@@ -173,7 +173,7 @@ func validateVSphereCreds(config Config) error {
 	if config.VSphereVCenterTemplates == "" {
 		return errors.New("vsphere vcenter templates is missing")
 	}
-	if config.VSphereNetworkName == "" {
+	if config.VSphereNetwork == "" {
 		return errors.New("vsphere network name is missing")
 	}
 	return nil
@@ -196,7 +196,7 @@ func loadConfigFromEnvVars() Config {
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
 
-		VSphereNetworkName:      os.Getenv("BBL_VSPHERE_NETWORK_NAME"),
+		VSphereNetwork:          os.Getenv("BBL_VSPHERE_NETWORK"),
 		VSphereSubnet:           os.Getenv("BBL_VSPHERE_SUBNET"),
 		VSphereVCenterIP:        os.Getenv("BBL_VSPHERE_VCENTER_IP"),
 		VSphereVCenterUser:      os.Getenv("BBL_VSPHERE_VCENTER_USER"),
