@@ -85,6 +85,8 @@ resource "aws_security_group" "iso_security_group" {
   count  = "${var.isolation_segments}"
   vpc_id = "${aws_vpc.vpc.id}"
 
+  description = "Security group for isolation segments"
+
   tags {
     Name = "${var.env_id}-iso-security-group"
   }
@@ -93,6 +95,12 @@ resource "aws_security_group" "iso_security_group" {
 resource "aws_security_group" "iso_shared_security_group" {
   count  = "${var.isolation_segments}"
   vpc_id = "${aws_vpc.vpc.id}"
+
+  description = "Shared security group for isolation segments"
+
+  tags {
+    Name = "${var.env_id}-iso-shared-security-group"
+  }
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
