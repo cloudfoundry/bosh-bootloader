@@ -1,5 +1,5 @@
 resource "aws_security_group" "cf_ssh_lb_security_group" {
-  description = "{{.SSHLBDescription}}"
+  description = "CF SSH"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -26,7 +26,7 @@ output "cf_ssh_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
-  description = "{{.SSHLBInternalDescription}}"
+  description = "CF SSH Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -84,7 +84,7 @@ output "cf_ssh_lb_url" {
 }
 
 resource "aws_security_group" "cf_router_lb_security_group" {
-  description = "{{.RouterDescription}}"
+  description = "CF Router"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -125,7 +125,7 @@ output "cf_router_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
-  description = "{{.RouterInternalDescription}}"
+  description = "CF Router Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -199,7 +199,7 @@ output "cf_router_lb_url" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_security_group" {
-  description = "{{.TCPLBDescription}}"
+  description = "CF TCP"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -226,7 +226,7 @@ output "cf_tcp_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
-  description = "{{.TCPLBInternalDescription}}"
+  description = "CF TCP Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {

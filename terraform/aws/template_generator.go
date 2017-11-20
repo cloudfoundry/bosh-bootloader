@@ -29,20 +29,7 @@ var AMIs = `{
 type TemplateGenerator struct{}
 
 type TemplateData struct {
-	NATDescription                 string
-	InternalDescription            string
-	BOSHDescription                string
-	ConcourseDescription           string
-	ConcourseInternalDescription   string
-	SSHLBDescription               string
-	SSHLBInternalDescription       string
-	RouterDescription              string
-	RouterInternalDescription      string
-	TCPLBDescription               string
-	TCPLBInternalDescription       string
-	SSLCertificateNameProperty     string
-	IgnoreSSLCertificateProperties string
-	AWSNATAMIs                     map[string]string
+	AWSNATAMIs map[string]string
 }
 
 type templates struct {
@@ -81,19 +68,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 	}
 
 	templateData := TemplateData{
-		AWSNATAMIs:                   ami,
-		BOSHDescription:              "Bosh",
-		ConcourseDescription:         "Concourse",
-		ConcourseInternalDescription: "Concourse Internal",
-		InternalDescription:          "Internal",
-		NATDescription:               "NAT",
-		RouterDescription:            "CF Router",
-		RouterInternalDescription:    "CF Router Internal",
-		SSHLBDescription:             "CF SSH",
-		SSHLBInternalDescription:     "CF SSH Internal",
-		SSLCertificateNameProperty:   `name_prefix       = "${var.ssl_certificate_name_prefix}"`,
-		TCPLBDescription:             "CF TCP",
-		TCPLBInternalDescription:     "CF TCP Internal",
+		AWSNATAMIs: ami,
 	}
 
 	t := template.New("descriptions")

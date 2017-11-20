@@ -1,5 +1,5 @@
 resource "aws_security_group" "concourse_lb_security_group" {
-  description = "{{.ConcourseDescription}}"
+  description = "Concourse"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {
@@ -36,7 +36,7 @@ resource "aws_security_group" "concourse_lb_security_group" {
 }
 
 resource "aws_security_group" "concourse_lb_internal_security_group" {
-  description = "{{.ConcourseInternalDescription}}"
+  description = "Concourse Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress {

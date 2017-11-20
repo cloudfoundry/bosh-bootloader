@@ -134,7 +134,7 @@ variable "nat_ami_map" {
 }
 
 resource "aws_security_group" "nat_security_group" {
-  description = "{{.NATDescription}}"
+  description = "NAT"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   ingress = []
@@ -232,7 +232,7 @@ resource "aws_default_security_group" "default_security_group" {
 }
 
 resource "aws_security_group" "internal_security_group" {
-  description = "{{.InternalDescription}}"
+  description = "Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
@@ -294,7 +294,7 @@ variable "bosh_inbound_cidr" {
 }
 
 resource "aws_security_group" "bosh_security_group" {
-  description = "{{.BOSHDescription}}"
+  description = "Bosh"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
