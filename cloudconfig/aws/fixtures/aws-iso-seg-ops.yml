@@ -86,7 +86,7 @@
     cloud_properties:
       elbs: [((cf_iso_router_lb_name))]
       security_groups:
-      - ((cf_iso_router_lb_internal_security_group))
+      - ((cf_router_lb_security_group))
       - ((iso_security_group_id))
 
 - type: replace

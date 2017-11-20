@@ -92,6 +92,7 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		"iso_security_group_id":                terraformOutputs.GetString("iso_security_group_id"),
 		"cf_router_lb_name":                    terraformOutputs.GetString("cf_router_lb_name"),
 		"cf_router_lb_internal_security_group": terraformOutputs.GetString("cf_router_lb_internal_security_group"),
+		"cf_router_lb_security_group":          terraformOutputs.GetString("cf_router_lb_security_group"),
 		"cf_ssh_lb_name":                       terraformOutputs.GetString("cf_ssh_lb_name"),
 		"cf_ssh_lb_internal_security_group":    terraformOutputs.GetString("cf_ssh_lb_internal_security_group"),
 		"cf_tcp_lb_name":                       terraformOutputs.GetString("cf_tcp_lb_name"),

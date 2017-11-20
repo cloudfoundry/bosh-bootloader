@@ -1736,7 +1736,7 @@ resource "aws_route_table_association" "route_iso_subnets" {
 resource "aws_elb" "iso_router_lb" {
   count = "${var.isolation_segments}"
 
-  name                      = "bbl-iso-router-lb"
+  name                      = "${var.short_env_id}-iso-router-lb"
   cross_zone_load_balancing = true
 
   health_check {

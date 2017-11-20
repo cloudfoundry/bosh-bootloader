@@ -42,6 +42,7 @@ var _ = Describe("OpsGenerator", func() {
 			"internal_security_group":              "some-internal-security-group",
 			"cf_router_lb_name":                    "some-cf-router-lb-name",
 			"cf_router_lb_internal_security_group": "some-cf-router-lb-internal-security-group",
+			"cf_router_lb_security_group":          "some-cf-router-lb-security-group",
 			"cf_ssh_lb_name":                       "some-cf-ssh-lb-name",
 			"cf_ssh_lb_internal_security_group":    "some-cf-ssh-lb-internal-security-group",
 			"cf_tcp_lb_name":                       "some-cf-tcp-lb-name",
@@ -130,6 +131,7 @@ iso_security_group_id: some-iso-seg-security-group
 iso_shared_security_group_id: some-iso-shared-security-group
 cf_router_lb_name: some-cf-router-lb-name
 cf_router_lb_internal_security_group: some-cf-router-lb-internal-security-group
+cf_router_lb_security_group: some-cf-router-lb-security-group
 cf_ssh_lb_name: some-cf-ssh-lb-name
 cf_ssh_lb_internal_security_group: some-cf-ssh-lb-internal-security-group
 cf_tcp_lb_name: some-cf-tcp-lb-name
