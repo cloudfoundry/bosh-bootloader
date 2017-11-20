@@ -224,6 +224,9 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
+
+				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some existing ops"), storage.StateMode)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns true", func() {
