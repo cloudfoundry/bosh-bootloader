@@ -16,6 +16,19 @@ bbl up
 A patch is a directory with a set of files
 organized in the same hierarchy as the bbl-state dir.
 
-For instance to create a bosh-lite environment
-on gcp, you can use the steps above with the
+## bosh-lite-gcp
+
+To create a bosh-lite environment on gcp,
+you can use the steps above with the
 `bosh-lite-gcp` patch provided here.
+
+## iso-segs-aws
+
+To create an iso-segs environment on aws, you can:
+
+```
+mkdir some-env && cd some-env
+bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key
+cp /path/to/patch-dir/.bbl/cloud-config/iso-segs-ops.yml .bbl/cloudconfig/
+TF_VAR_isolation_segments="1" bbl up
+```
