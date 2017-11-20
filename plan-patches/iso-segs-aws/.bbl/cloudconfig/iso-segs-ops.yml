@@ -82,7 +82,7 @@
 - type: replace
   path: /vm_extensions/-
   value:
-    name: cf-iso-router-network-properties
+    name: iso-seg-cf-router-network-properties
     cloud_properties:
       elbs: [((cf_iso_router_lb_name))]
       security_groups:
