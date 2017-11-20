@@ -58,10 +58,24 @@ var _ = Describe("OpsGenerator", func() {
 				"us-east-1c": "10.0.48.0/20",
 				"us-east-1b": "10.0.32.0/20",
 			},
+			"iso_az_subnet_id_mapping": map[string]interface{}{
+				"us-east-1b": "some-iso-seg-subnet-id-2",
+				"us-east-1a": "some-iso-seg-subnet-id-1",
+				"us-east-1c": "some-iso-seg-subnet-id-3",
+			},
+			"iso_az_subnet_cidr_mapping": map[string]interface{}{
+				"us-east-1c": "10.1.48.0/20",
+				"us-east-1b": "10.1.32.0/20",
+				"us-east-1a": "10.1.16.0/20",
+			},
+			"cf_iso_router_lb_name":        "some-cf-iso-seg-router-lb-name",
+			"iso_security_group_id":        "some-iso-seg-security-group",
+			"iso_shared_security_group_id": "some-iso-shared-security-group",
 		}}
 
 		opsGenerator = aws.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
 	})
+
 	Describe("GenerateVars", func() {
 		It("returns the contents for a cloud config vars file", func() {
 			varsYAML, err := opsGenerator.GenerateVars(incomingState)
@@ -90,13 +104,37 @@ az3_reserved_1: 10.0.48.2-10.0.48.3
 az3_reserved_2: 10.0.63.255
 az3_static: 10.0.63.190-10.0.63.254
 az3_subnet: some-internal-subnet-ids-3
+az4_gateway: 10.1.16.1
+az4_name: us-east-1a
+az4_range: 10.1.16.0/20
+az4_reserved_1: 10.1.16.2-10.1.16.3
+az4_reserved_2: 10.1.31.255
+az4_static: 10.1.31.190-10.1.31.254
+az4_subnet: some-iso-seg-subnet-id-1
+az5_gateway: 10.1.32.1
+az5_name: us-east-1b
+az5_range: 10.1.32.0/20
+az5_reserved_1: 10.1.32.2-10.1.32.3
+az5_reserved_2: 10.1.47.255
+az5_static: 10.1.47.190-10.1.47.254
+az5_subnet: some-iso-seg-subnet-id-2
+az6_gateway: 10.1.48.1
+az6_name: us-east-1c
+az6_range: 10.1.48.0/20
+az6_reserved_1: 10.1.48.2-10.1.48.3
+az6_reserved_2: 10.1.63.255
+az6_static: 10.1.63.190-10.1.63.254
+az6_subnet: some-iso-seg-subnet-id-3
 internal_security_group: some-internal-security-group
+iso_security_group_id: some-iso-seg-security-group
+iso_shared_security_group_id: some-iso-shared-security-group
 cf_router_lb_name: some-cf-router-lb-name
 cf_router_lb_internal_security_group: some-cf-router-lb-internal-security-group
 cf_ssh_lb_name: some-cf-ssh-lb-name
 cf_ssh_lb_internal_security_group: some-cf-ssh-lb-internal-security-group
 cf_tcp_lb_name: some-cf-tcp-lb-name
 cf_tcp_lb_internal_security_group: some-cf-tcp-lb-internal-security-group
+cf_iso_router_lb_name: some-cf-iso-seg-router-lb-name
 concourse_lb_name: some-concourse-lb-name
 concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 `))

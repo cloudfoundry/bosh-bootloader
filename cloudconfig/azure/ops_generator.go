@@ -117,13 +117,10 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
-	return strings.Join(
-		[]string{
-			BaseOps,
-			string(cloudConfigOpsYAML),
-		},
-		"\n",
-	), nil
+	return strings.Join([]string{
+		BaseOps,
+		string(cloudConfigOpsYAML),
+	}, "\n"), nil
 }
 
 func azify(az int, cidr string) (map[string]string, error) {

@@ -96,7 +96,8 @@ resource "aws_security_group" "iso_shared_security_group" {
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
-  count                    = "${var.isolation_segments * length(var.iso_to_bosh_ports)}"
+  count = "${var.isolation_segments * length(var.iso_to_bosh_ports)}"
+
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
   type                     = "ingress"
   protocol                 = "tcp"
@@ -106,7 +107,8 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
-  count                    = "${var.isolation_segments * length(var.iso_to_shared_tcp_ports)}"
+  count = "${var.isolation_segments * length(var.iso_to_shared_tcp_ports)}"
+
   security_group_id        = "${aws_security_group.iso_shared_security_group.id}"
   type                     = "ingress"
   protocol                 = "tcp"
@@ -116,7 +118,8 @@ resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
 }
 
 resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
-  count                    = "${var.isolation_segments * length(var.iso_to_shared_udp_ports)}"
+  count = "${var.isolation_segments * length(var.iso_to_shared_udp_ports)}"
+
   security_group_id        = "${aws_security_group.iso_shared_security_group.id}"
   type                     = "ingress"
   protocol                 = "udp"

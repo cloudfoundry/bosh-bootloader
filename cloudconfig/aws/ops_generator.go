@@ -88,12 +88,15 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 
 	varsYAML := map[string]string{
 		"internal_security_group":              terraformOutputs.GetString("internal_security_group"),
+		"iso_shared_security_group_id":         terraformOutputs.GetString("iso_shared_security_group_id"),
+		"iso_security_group_id":                terraformOutputs.GetString("iso_security_group_id"),
 		"cf_router_lb_name":                    terraformOutputs.GetString("cf_router_lb_name"),
 		"cf_router_lb_internal_security_group": terraformOutputs.GetString("cf_router_lb_internal_security_group"),
 		"cf_ssh_lb_name":                       terraformOutputs.GetString("cf_ssh_lb_name"),
 		"cf_ssh_lb_internal_security_group":    terraformOutputs.GetString("cf_ssh_lb_internal_security_group"),
 		"cf_tcp_lb_name":                       terraformOutputs.GetString("cf_tcp_lb_name"),
 		"cf_tcp_lb_internal_security_group":    terraformOutputs.GetString("cf_tcp_lb_internal_security_group"),
+		"cf_iso_router_lb_name":                terraformOutputs.GetString("cf_iso_router_lb_name"),
 		"concourse_lb_name":                    terraformOutputs.GetString("concourse_lb_name"),
 		"concourse_lb_internal_security_group": terraformOutputs.GetString("concourse_lb_internal_security_group"),
 	}
@@ -130,32 +133,28 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		}
 	}
 
-	var azNames []string
-	for azName := range internalAZSubnetIDMap {
-		azNames = append(azNames, azName)
+	azs, err := generateAZs(0, internalAZSubnetIDMap, internalAZSubnetCIDRMap)
+	if err != nil {
+		return "", err
 	}
-	sort.Strings(azNames)
 
-	for azIndex, azName := range azNames {
-		cidr, ok := internalAZSubnetCIDRMap[azName]
-		if !ok {
-			return "", errors.New("missing AZ in terraform output: internal_az_subnet_cidr_mapping")
-		}
-
-		az, err := azify(
-			azIndex,
-			azName,
-			cidr,
-			internalAZSubnetIDMap[azName])
-
-		if err != nil {
-			return "", err
-		}
-
+	for _, az := range azs {
 		for key, value := range az {
 			varsYAML[key] = value
 		}
-		azIndex++
+	}
+
+	isoSegAZSubnetIDMap := terraformOutputs.GetStringMap("iso_az_subnet_id_mapping")
+	isoSegAZSubnetCIDRMap := terraformOutputs.GetStringMap("iso_az_subnet_cidr_mapping")
+	if len(isoSegAZSubnetIDMap) > 0 && len(isoSegAZSubnetCIDRMap) > 0 {
+		isoSegAzs, err := generateAZs(len(azs), isoSegAZSubnetIDMap, isoSegAZSubnetCIDRMap)
+		if err == nil {
+			for _, az := range isoSegAzs {
+				for key, value := range az {
+					varsYAML[key] = value
+				}
+			}
+		}
 	}
 
 	varsBytes, err := marshal(varsYAML)
@@ -163,6 +162,37 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		panic(err) // not tested; cannot occur
 	}
 	return string(varsBytes), nil
+}
+
+func generateAZs(startingIndex int, idMap, cidrMap map[string]string) ([]map[string]string, error) {
+	var azNames []string
+	for azName := range idMap {
+		azNames = append(azNames, azName)
+	}
+	sort.Strings(azNames)
+
+	var azs []map[string]string
+	for azIndex, azName := range azNames {
+		cidr, ok := cidrMap[azName]
+		if !ok {
+			return []map[string]string{}, errors.New("missing AZ in terraform output: internal_az_subnet_cidr_mapping")
+		}
+
+		az, err := azify(
+			azIndex+startingIndex,
+			azName,
+			cidr,
+			idMap[azName],
+		)
+
+		if err != nil {
+			return []map[string]string{}, err
+		}
+
+		azs = append(azs, az)
+	}
+
+	return azs, nil
 }
 
 func (o OpsGenerator) Generate(state storage.State) (string, error) {
@@ -176,13 +206,10 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
-	return strings.Join(
-		[]string{
-			BaseOps,
-			string(cloudConfigOpsYAML),
-		},
-		"\n",
-	), nil
+	return strings.Join([]string{
+		BaseOps,
+		string(cloudConfigOpsYAML),
+	}, "\n"), nil
 }
 
 func createOp(opType, opPath string, value interface{}) op {
@@ -211,7 +238,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		})
 		ops = append(ops, azOp)
 
-		subnet, err := generateNetworkSubnet(i)
+		subnet, err := generateNetworkSubnet(i, "internal_security_group")
 		if err != nil {
 			return []op{}, err
 		}
@@ -295,7 +322,7 @@ func azify(az int, azName, cidr, subnet string) (map[string]string, error) {
 	}, nil
 }
 
-func generateNetworkSubnet(az int) (networkSubnet, error) {
+func generateNetworkSubnet(az int, securityGroup string) (networkSubnet, error) {
 	az++
 	return networkSubnet{
 		AZ:      fmt.Sprintf("z%d", az),
@@ -310,7 +337,7 @@ func generateNetworkSubnet(az int) (networkSubnet, error) {
 		},
 		CloudProperties: networkSubnetCloudProperties{
 			Subnet:         fmt.Sprintf("((az%d_subnet))", az),
-			SecurityGroups: []string{"((internal_security_group))"},
+			SecurityGroups: []string{fmt.Sprintf("((%s))", securityGroup)},
 		},
 	}, nil
 }

@@ -157,6 +157,7 @@ resource "aws_security_group_rule" "nat_to_internet_rule" {
 
 resource "aws_security_group_rule" "nat_icmp_rule" {
   security_group_id = "${aws_security_group.nat_security_group.id}"
+
   type              = "ingress"
   protocol          = "icmp"
   from_port         = -1
@@ -166,6 +167,7 @@ resource "aws_security_group_rule" "nat_icmp_rule" {
 
 resource "aws_security_group_rule" "nat_tcp_rule" {
   security_group_id        = "${aws_security_group.nat_security_group.id}"
+
   type                     = "ingress"
   protocol                 = "tcp"
   from_port                = 0
@@ -175,6 +177,7 @@ resource "aws_security_group_rule" "nat_tcp_rule" {
 
 resource "aws_security_group_rule" "nat_udp_rule" {
   security_group_id        = "${aws_security_group.nat_security_group.id}"
+
   type                     = "ingress"
   protocol                 = "udp"
   from_port                = 0

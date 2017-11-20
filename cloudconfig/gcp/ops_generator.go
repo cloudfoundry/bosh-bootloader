@@ -121,13 +121,10 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		return "", err
 	}
 
-	return strings.Join(
-		[]string{
-			BaseOps,
-			string(cloudConfigOpsYAML),
-		},
-		"\n",
-	), nil
+	return strings.Join([]string{
+		BaseOps,
+		string(cloudConfigOpsYAML),
+	}, "\n"), nil
 }
 
 func createOp(opType, opPath string, value interface{}) op {

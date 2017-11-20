@@ -140,7 +140,7 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			Context("when write file fails to write ops.yml", func() {
+			Context("when write file fails to write the ops files", func() {
 				BeforeEach(func() {
 					cloudconfig.SetWriteFile(func(filename string, body []byte, mode os.FileMode) error {
 						if strings.Contains(filename, "ops.yml") {
@@ -224,9 +224,6 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
-
-				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some existing ops"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns true", func() {
@@ -288,6 +285,10 @@ var _ = Describe("Manager", func() {
 		BeforeEach(func() {
 			err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "shenanigans-ops.yml"), []byte("shenanigans"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("base-operations"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("base"), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns a cloud config yaml provided a valid bbl state", func() {
@@ -300,6 +301,7 @@ var _ = Describe("Manager", func() {
 			Expect(args).To(Equal([]string{
 				"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
 				"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
+				"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
 				"-o", fmt.Sprintf("%s/shenanigans-ops.yml", cloudConfigDir),
 			}))
 
