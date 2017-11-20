@@ -1851,11 +1851,11 @@ resource "aws_security_group_rule" "nat_to_isolated_cells_rule" {
 }
 
 output "cf_iso_router_lb_name" {
-  value = "${aws_elb.iso_router_lb.name}"
+  value = "${element(concat(aws_elb.iso_router_lb.*.name, list("")), 0)}"
 }
 
 output "iso_security_group_id" {
-  value = "${aws_security_group.iso_security_group.id}"
+  value = "${element(concat(aws_security_group.iso_security_group.*.id, list("")), 0)}"
 }
 
 output "iso_az_subnet_id_mapping" {
@@ -1871,7 +1871,7 @@ output "iso_az_subnet_cidr_mapping" {
 }
 
 output "iso_shared_security_group_id" {
-  value = "${aws_security_group.iso_shared_security_group.id}"
+  value = "${element(concat(aws_security_group.iso_shared_security_group.*.id, list("")), 0)}"
 }
 
 variable "system_domain" {
