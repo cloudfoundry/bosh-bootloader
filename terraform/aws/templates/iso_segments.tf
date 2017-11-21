@@ -85,7 +85,7 @@ resource "aws_security_group" "iso_security_group" {
   count  = "${var.isolation_segments}"
   vpc_id = "${aws_vpc.vpc.id}"
 
-  description = "Security group for isolation segments"
+  description = "Private isolation segment"
 
   tags {
     Name = "${var.env_id}-iso-security-group"
@@ -96,7 +96,7 @@ resource "aws_security_group" "iso_shared_security_group" {
   count  = "${var.isolation_segments}"
   vpc_id = "${aws_vpc.vpc.id}"
 
-  description = "Shared security group for isolation segments"
+  description = "Shared isolation segments"
 
   tags {
     Name = "${var.env_id}-iso-shared-security-group"
@@ -154,7 +154,7 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   depends_on               = ["aws_security_group.iso_security_group"]
   security_group_id        = "${aws_security_group.iso_security_group.id}"
   type                     = "ingress"
-  protocol                 = "-1"
+  protocol                 = "tcp"
   from_port                = 1801
   to_port                  = 1801
   source_security_group_id = "${aws_security_group.iso_shared_security_group.id}"
