@@ -1,36 +1,12 @@
 package aws
 
 import (
-	"bytes"
-	"encoding/json"
 	"strings"
-	"text/template"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-var AMIs = `{
-  "ap-northeast-1": "ami-10dfc877",
-  "ap-northeast-2": "ami-1a1bc474",
-  "ap-south-1":     "ami-74c1861b",
-  "ap-southeast-1": "ami-36af2055",
-  "ap-southeast-2": "ami-1e91817d",
-  "ca-central-1":   "ami-12d36a76",
-  "eu-central-1":   "ami-9ebe18f1",
-  "eu-west-1":      "ami-3a849f5c",
-  "eu-west-2":      "ami-21120445",
-  "us-east-1":      "ami-d4c5efc2",
-  "us-east-2":      "ami-f27b5a97",
-  "us-gov-west-1":  "ami-c39610a2",
-  "us-west-1":      "ami-b87f53d8",
-  "us-west-2":      "ami-8bfce8f2"
-}`
-
 type TemplateGenerator struct{}
-
-type TemplateData struct {
-	AWSNATAMIs map[string]string
-}
 
 type templates struct {
 	base           string
@@ -48,43 +24,20 @@ func NewTemplateGenerator() TemplateGenerator {
 
 func (tg TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
-	tmpl := tmpls.base
+	template := tmpls.base
 
 	switch state.LB.Type {
 	case "concourse":
-		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.concourseLB, tmpls.sslCertificate}, "\n")
+		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.concourseLB, tmpls.sslCertificate}, "\n")
 	case "cf":
-		tmpl = strings.Join([]string{tmpl, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
+		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
 
 		if state.LB.Domain != "" {
-			tmpl = strings.Join([]string{tmpl, tmpls.cfDNS}, "\n")
+			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
 		}
 	}
 
-	var ami map[string]string
-	err := json.Unmarshal([]byte(AMIs), &ami)
-	if err != nil {
-		panic(err)
-	}
-
-	templateData := TemplateData{
-		AWSNATAMIs: ami,
-	}
-
-	t := template.New("descriptions")
-	t, err = t.Parse(tmpl)
-	if err != nil {
-		panic(err)
-	}
-
-	finalTemplate := bytes.Buffer{}
-
-	err = t.Execute(&finalTemplate, templateData)
-	if err != nil {
-		panic(err)
-	}
-
-	return finalTemplate.String()
+	return template
 }
 
 func readTemplates() templates {

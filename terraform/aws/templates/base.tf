@@ -129,8 +129,21 @@ variable "nat_ami_map" {
   type = "map"
 
   default = {
-  {{range $key, $value := .AWSNATAMIs}}  {{$key}} = "{{$value}}"
-  {{end}}}
+    ap-northeast-1 = "ami-10dfc877"
+    ap-northeast-2 = "ami-1a1bc474"
+    ap-south-1     = "ami-74c1861b"
+    ap-southeast-1 = "ami-36af2055"
+    ap-southeast-2 = "ami-1e91817d"
+    ca-central-1   = "ami-12d36a76"
+    eu-central-1   = "ami-9ebe18f1"
+    eu-west-1      = "ami-3a849f5c"
+    eu-west-2      = "ami-21120445"
+    us-east-1      = "ami-d4c5efc2"
+    us-east-2      = "ami-f27b5a97"
+    us-gov-west-1  = "ami-c39610a2"
+    us-west-1      = "ami-b87f53d8"
+    us-west-2      = "ami-8bfce8f2"
+  }
 }
 
 resource "aws_security_group" "nat_security_group" {
