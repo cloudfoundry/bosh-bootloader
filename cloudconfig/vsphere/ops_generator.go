@@ -78,13 +78,13 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
   - name: default
     cloud_properties:
       cpu: 2
-      ram: 1024
-      disk: 3240
+      ram: 8_192
+      disk: 30_000
   - name: large
     cloud_properties:
       cpu: 2
-      ram: 4096
-      disk: 30_240
+      ram: 8_192
+      disk: 640_000
 
 - type: remove
   path: /vm_extensions
