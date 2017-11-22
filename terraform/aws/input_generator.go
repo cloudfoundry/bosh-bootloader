@@ -33,13 +33,12 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	}
 
 	inputs := map[string]interface{}{
-		"env_id":                 state.EnvID,
-		"short_env_id":           shortEnvID,
-		"access_key":             state.AWS.AccessKeyID,
-		"secret_key":             state.AWS.SecretAccessKey,
-		"region":                 state.AWS.Region,
-		"bosh_availability_zone": "",
-		"availability_zones":     azs,
+		"env_id":             state.EnvID,
+		"short_env_id":       shortEnvID,
+		"access_key":         state.AWS.AccessKeyID,
+		"secret_key":         state.AWS.SecretAccessKey,
+		"region":             state.AWS.Region,
+		"availability_zones": azs,
 	}
 
 	if state.LB.Type == "cf" || state.LB.Type == "concourse" {

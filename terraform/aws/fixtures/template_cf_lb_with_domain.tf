@@ -462,10 +462,6 @@ output "internal_cidr" {
   value = "${aws_subnet.bosh_subnet.cidr_block}"
 }
 
-variable "bosh_availability_zone" {
-  type = "string"
-}
-
 resource "aws_subnet" "bosh_subnet" {
   vpc_id     = "${aws_vpc.vpc.id}"
   cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 0)}"

@@ -57,13 +57,12 @@ var _ = Describe("InputGenerator", func() {
 			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs).To(Equal(map[string]interface{}{
-				"env_id":                 "some-env-id",
-				"short_env_id":           "some-env-id",
-				"access_key":             "some-access-key-id",
-				"secret_key":             "some-secret-access-key",
-				"region":                 "some-region",
-				"bosh_availability_zone": "",
-				"availability_zones":     []string{"z1", "z2", "z3"},
+				"env_id":             "some-env-id",
+				"short_env_id":       "some-env-id",
+				"access_key":         "some-access-key-id",
+				"secret_key":         "some-secret-access-key",
+				"region":             "some-region",
+				"availability_zones": []string{"z1", "z2", "z3"},
 			}))
 		})
 	})
@@ -101,7 +100,6 @@ var _ = Describe("InputGenerator", func() {
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
-				"bosh_availability_zone":      "",
 				"availability_zones":          []string{"z1", "z2", "z3"},
 				"ssl_certificate":             "some-cert",
 				"ssl_certificate_chain":       "some-chain",
@@ -126,7 +124,6 @@ var _ = Describe("InputGenerator", func() {
 					"access_key":                  "some-access-key-id",
 					"secret_key":                  "some-secret-access-key",
 					"region":                      "some-region",
-					"bosh_availability_zone":      "",
 					"availability_zones":          []string{"z1", "z2", "z3"},
 					"ssl_certificate":             "some-cert",
 					"ssl_certificate_chain":       "some-chain",
@@ -169,7 +166,6 @@ var _ = Describe("InputGenerator", func() {
 				"access_key":                  "some-access-key-id",
 				"secret_key":                  "some-secret-access-key",
 				"region":                      "some-region",
-				"bosh_availability_zone":      "",
 				"availability_zones":          []string{"z1", "z2", "z3"},
 				"ssl_certificate":             "some-cert",
 				"ssl_certificate_chain":       "some-chain",
