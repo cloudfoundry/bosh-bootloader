@@ -15,7 +15,9 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
 variable "vsphere_subnet" {}
-variable "jumpbox_ip" {}
+variable "jumpbox_ip" {
+  default = ""
+}
 variable "internal_gw" {}
 variable "network_name" {}
 variable "vcenter_cluster" {}
