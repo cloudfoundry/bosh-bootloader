@@ -16,10 +16,11 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	cidr := state.VSphere.Subnet
 	parsedCIDR, _ := bosh.ParseCIDRBlock(cidr)
 	return map[string]interface{}{
-		"vsphere_subnet":  cidr,
-		"external_ip":     parsedCIDR.GetNthIP(5).String(),
-		"internal_gw":     parsedCIDR.GetNthIP(1).String(),
-		"vcenter_cluster": state.VSphere.Cluster,
-		"network_name":    state.VSphere.Network,
+		"vsphere_subnet":            cidr,
+		"jumpbox_ip":                parsedCIDR.GetNthIP(5).String(),
+		"bosh_director_internal_ip": parsedCIDR.GetNthIP(6).String(),
+		"internal_gw":               parsedCIDR.GetNthIP(1).String(),
+		"vcenter_cluster":           state.VSphere.Cluster,
+		"network_name":              state.VSphere.Network,
 	}, nil
 }

@@ -24,11 +24,12 @@ var _ = Describe("InputGenerator", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(inputs).To(Equal(map[string]interface{}{
-			"vsphere_subnet":  "10.0.0.0/24",
-			"external_ip":     "10.0.0.5",
-			"internal_gw":     "10.0.0.1",
-			"network_name":    "the-network",
-			"vcenter_cluster": "the-cluster",
+			"vsphere_subnet":            "10.0.0.0/24",
+			"jumpbox_ip":                "10.0.0.5",
+			"bosh_director_internal_ip": "10.0.0.6",
+			"internal_gw":               "10.0.0.1",
+			"network_name":              "the-network",
+			"vcenter_cluster":           "the-cluster",
 		}))
 	})
 })
