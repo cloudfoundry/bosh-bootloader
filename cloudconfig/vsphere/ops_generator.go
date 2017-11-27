@@ -85,9 +85,6 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
       cpu: 2
       ram: 8_192
       disk: 640_000
-
-- type: remove
-  path: /vm_extensions
 `, nil
 }
 
