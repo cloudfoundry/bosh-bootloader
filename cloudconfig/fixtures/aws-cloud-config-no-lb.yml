@@ -14,7 +14,7 @@ compilation:
   az: z1
   network: private
   reuse_compilation_vms: true
-  vm_type: c3.large
+  vm_type: c4.large
   vm_extensions:
   - 100GB_ephemeral_disk
   workers: 6
@@ -144,13 +144,13 @@ networks:
 vm_types:
 - name: default
   cloud_properties:
-    instance_type: m3.medium
+    instance_type: m4.large
     ephemeral_disk:
       size: 10240
       type: gp2
 - name: minimal
   cloud_properties:
-    instance_type: m3.medium
+    instance_type: m4.large
     ephemeral_disk:
       size: 10240
       type: gp2
@@ -162,7 +162,7 @@ vm_types:
       type: gp2
 - name: small
   cloud_properties:
-    instance_type: m3.large
+    instance_type: m4.large
     ephemeral_disk:
       size: 10240
       type: gp2

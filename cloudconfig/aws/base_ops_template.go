@@ -4,7 +4,7 @@ const (
 	BaseOps = `
 - type: replace
   path: /compilation/vm_type
-  value: c3.large
+  value: c4.large
 
 - type: replace
   path: /disk_types/name=default/cloud_properties?
@@ -57,7 +57,7 @@ const (
 - type: replace
   path: /vm_types/name=default/cloud_properties?
   value:
-    instance_type: m3.medium
+    instance_type: m4.large
     ephemeral_disk:
       size: 10240
       type: gp2
@@ -65,7 +65,7 @@ const (
 - type: replace
   path: /vm_types/name=minimal/cloud_properties?
   value:
-    instance_type: m3.medium
+    instance_type: m4.large
     ephemeral_disk:
       size: 10240
       type: gp2
@@ -81,7 +81,7 @@ const (
 - type: replace
   path: /vm_types/name=small/cloud_properties?
   value:
-    instance_type: m3.large
+    instance_type: m4.large
     ephemeral_disk:
       size: 10240
       type: gp2
