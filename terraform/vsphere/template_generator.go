@@ -15,15 +15,11 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
 variable "vsphere_subnet" {}
-variable "jumpbox_ip" {
-  default = ""
-}
+variable "jumpbox_ip" {}
 variable "internal_gw" {}
 variable "network_name" {}
 variable "vcenter_cluster" {}
-variable "bosh_director_internal_ip" {
-  default = ""
-}
+variable "bosh_director_internal_ip" {}
 
 output "internal_cidr" { value = "${var.vsphere_subnet}" }
 output "internal_gw" { value = "${var.internal_gw}" }
