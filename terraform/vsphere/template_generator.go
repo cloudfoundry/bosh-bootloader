@@ -19,7 +19,9 @@ variable "jumpbox_ip" {}
 variable "internal_gw" {}
 variable "network_name" {}
 variable "vcenter_cluster" {}
-variable "bosh_director_internal_ip" {}
+variable "bosh_director_internal_ip" {
+  default = ""
+}
 
 output "internal_cidr" { value = "${var.vsphere_subnet}" }
 output "internal_gw" { value = "${var.internal_gw}" }
