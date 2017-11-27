@@ -130,8 +130,6 @@ var _ = Describe("Store", func() {
 					"zones": ["some-zone", "some-other-zone"]
 				},
 				"vsphere": {
-					"vcenterUser": "user",
-					"vcenterPassword": "password",
 					"vcenterIP": "ip",
 					"vcenterDC": "dc",
 					"cluster": "cluster",
