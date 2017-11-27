@@ -79,6 +79,7 @@ var _ = Describe("Executor", func() {
 			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(tempDir))
 			Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 				"apply",
+				"--auto-approve",
 				"-var", "project_id=some-project-id",
 				"-var", "env_id=some-env-id",
 				"-var", "region=some-region",

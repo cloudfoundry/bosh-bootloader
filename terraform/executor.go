@@ -68,7 +68,7 @@ func (e Executor) Apply(input map[string]string, template, prevTFState string) (
 		return "", err
 	}
 
-	args := []string{"apply"}
+	args := []string{"apply", "--auto-approve"}
 	for k, v := range input {
 		args = append(args, makeVar(k, v)...)
 	}
