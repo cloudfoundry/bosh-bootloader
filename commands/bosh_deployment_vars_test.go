@@ -80,8 +80,6 @@ var _ = Describe("BOSHDeploymentVars", func() {
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetDirectorDeploymentVarsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
-
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
 		})
 

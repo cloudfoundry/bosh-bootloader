@@ -170,7 +170,7 @@ func main() {
 	if appConfig.State.IAAS != "" {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
-	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler, logger)
+	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler, stderrLogger)
 	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
 	usage := commands.NewUsage(logger)
 

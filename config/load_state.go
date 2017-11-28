@@ -104,20 +104,32 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		return application.Configuration{}, err
 	}
 
-	if globalFlags.Version || (len(remainingArgs) > 0 && remainingArgs[0] == "version") {
+	var command string
+	if len(remainingArgs) > 0 {
+		command = remainingArgs[0]
+	}
+
+	if globalFlags.Version || command == "version" {
+		command = "version"
 		return application.Configuration{
 			ShowCommandHelp: globalFlags.Help,
-			Command:         "version",
+			Command:         command,
 		}, nil
 	}
 
-	if len(remainingArgs) == 0 || (len(remainingArgs) == 1 && remainingArgs[0] == "help") {
+	if len(remainingArgs) == 0 {
 		return application.Configuration{
 			Command: "help",
 		}, nil
 	}
 
-	if remainingArgs[0] == "help" {
+	if len(remainingArgs) == 1 && command == "help" {
+		return application.Configuration{
+			Command: command,
+		}, nil
+	}
+
+	if command == "help" {
 		return application.Configuration{
 			ShowCommandHelp: true,
 			Command:         remainingArgs[1],
@@ -127,7 +139,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	if globalFlags.Help {
 		return application.Configuration{
 			ShowCommandHelp: true,
-			Command:         remainingArgs[0],
+			Command:         command,
 		}, nil
 	}
 
@@ -137,6 +149,10 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 
 	if globalFlags.GCPZone != "" {
 		c.logger.Println("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored.")
+	}
+
+	if command == "bosh-deployment-vars" {
+		c.logger.Println(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`)
 	}
 
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
@@ -160,7 +176,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 			StateDir: globalFlags.StateDir,
 		},
 		State:           state,
-		Command:         remainingArgs[0],
+		Command:         command,
 		SubcommandFlags: remainingArgs[1:],
 		ShowCommandHelp: globalFlags.Help,
 	}, nil
