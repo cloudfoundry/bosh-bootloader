@@ -316,8 +316,11 @@ var _ = Describe("Plan", func() {
 					"--ops-file", providedOpsFilePath,
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(config.OpsFile).To(Equal("some-ops-file-contents"))
+
+				By("notifying the user the flag is deprecated", func() {
+					Expect(logger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the --ops-file flag is now deprecated and will be removed in bbl v6.0.0. Use "bbl plan" and modify create-director.sh in your state directory to supply operations files for bosh-deployment.`))
+				})
 			})
 		})
 

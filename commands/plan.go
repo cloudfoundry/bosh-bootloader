@@ -104,6 +104,8 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 	}
 
 	if opsFilePath != "" {
+		p.logger.Println(`Deprecation warning: the --ops-file flag is now deprecated and will be removed in bbl v6.0.0. Use "bbl plan" and modify create-director.sh in your state directory to supply operations files for bosh-deployment.`)
+
 		opsFileContents, err := ioutil.ReadFile(opsFilePath)
 		if err != nil {
 			return PlanConfig{}, fmt.Errorf("Reading ops-file contents: %v", err)
