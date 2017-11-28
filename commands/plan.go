@@ -16,6 +16,7 @@ type Plan struct {
 	envIDManager       envIDManager
 	terraformManager   terraformManager
 	lbArgsHandler      lbArgsHandler
+	logger             logger
 }
 
 type PlanConfig struct {
@@ -25,9 +26,14 @@ type PlanConfig struct {
 	LB         storage.LB
 }
 
-func NewPlan(boshManager boshManager, cloudConfigManager cloudConfigManager,
-	stateStore stateStore, envIDManager envIDManager, terraformManager terraformManager,
-	lbArgsHandler lbArgsHandler) Plan {
+func NewPlan(boshManager boshManager,
+	cloudConfigManager cloudConfigManager,
+	stateStore stateStore,
+	envIDManager envIDManager,
+	terraformManager terraformManager,
+	lbArgsHandler lbArgsHandler,
+	logger logger,
+) Plan {
 	return Plan{
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
@@ -35,6 +41,7 @@ func NewPlan(boshManager boshManager, cloudConfigManager cloudConfigManager,
 		envIDManager:       envIDManager,
 		terraformManager:   terraformManager,
 		lbArgsHandler:      lbArgsHandler,
+		logger:             logger,
 	}
 }
 
@@ -82,6 +89,10 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 	err := planFlags.Parse(args)
 	if err != nil {
 		return PlanConfig{}, err
+	}
+
+	if config.NoDirector {
+		p.logger.Println("Deprecation warning: the --no-director flag has been deprecated.")
 	}
 
 	if (lbConfig != CreateLBsConfig{}) {

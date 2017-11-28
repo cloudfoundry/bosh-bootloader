@@ -19,29 +19,30 @@ var _ = Describe("Plan", func() {
 		command commands.Plan
 
 		boshManager        *fakes.BOSHManager
-		terraformManager   *fakes.TerraformManager
 		cloudConfigManager *fakes.CloudConfigManager
-		stateStore         *fakes.StateStore
 		envIDManager       *fakes.EnvIDManager
 		lbArgsHandler      *fakes.LBArgsHandler
+		logger             *fakes.Logger
+		stateStore         *fakes.StateStore
+		terraformManager   *fakes.TerraformManager
 
 		tempDir string
 	)
 
 	BeforeEach(func() {
 		boshManager = &fakes.BOSHManager{}
-		boshManager.VersionCall.Returns.Version = "2.0.24"
-
-		terraformManager = &fakes.TerraformManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
-		stateStore = &fakes.StateStore{}
 		envIDManager = &fakes.EnvIDManager{}
 		lbArgsHandler = &fakes.LBArgsHandler{}
+		logger = &fakes.Logger{}
+		stateStore = &fakes.StateStore{}
+		terraformManager = &fakes.TerraformManager{}
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
+		boshManager.VersionCall.Returns.Version = "2.0.24"
 		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
 		command = commands.NewPlan(
@@ -51,6 +52,7 @@ var _ = Describe("Plan", func() {
 			envIDManager,
 			terraformManager,
 			lbArgsHandler,
+			logger,
 		)
 	})
 
@@ -336,6 +338,10 @@ var _ = Describe("Plan", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config.NoDirector).To(Equal(true))
+
+				By("notifying the user the flag is deprecated", func() {
+					Expect(logger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --no-director flag has been deprecated."))
+				})
 			})
 
 			Context("when the --no-director flag was omitted on a subsequent bbl-up", func() {
