@@ -155,6 +155,10 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		c.logger.Println(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`)
 	}
 
+	if command == "jumpbox-deployment-vars" {
+		c.logger.Println(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`)
+	}
+
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
 	if err != nil {
 		return application.Configuration{}, err

@@ -834,16 +834,24 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Describe("deprecated commands", func() {
-				var args []string
 				Context("when the command is bosh-deployment-vars", func() {
-					args = []string{"bbl", "bosh-deployment-vars"}
-				})
-				It("prints a warning", func() {
-					appConfig, err := c.Bootstrap(args)
-					Expect(err).NotTo(HaveOccurred())
+					It("prints a warning", func() {
+						appConfig, err := c.Bootstrap([]string{"bbl", "bosh-deployment-vars"})
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(appConfig.Command).To(Equal("bosh-deployment-vars"))
-					Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`))
+						Expect(appConfig.Command).To(Equal("bosh-deployment-vars"))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`))
+					})
+				})
+
+				Context("when the command is jumpbox-deployment-vars", func() {
+					It("prints a warning", func() {
+						appConfig, err := c.Bootstrap([]string{"bbl", "jumpbox-deployment-vars"})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("jumpbox-deployment-vars"))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`))
+					})
 				})
 			})
 		})
