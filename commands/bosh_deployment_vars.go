@@ -39,6 +39,8 @@ func (b BOSHDeploymentVars) CheckFastFails(subcommandFlags []string, state stora
 }
 
 func (b BOSHDeploymentVars) Execute(args []string, state storage.State) error {
+	b.logger.Println(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`)
+
 	terraformOutputs, err := b.terraform.GetOutputs()
 	if err != nil {
 		return fmt.Errorf("get terraform outputs: %s", err)

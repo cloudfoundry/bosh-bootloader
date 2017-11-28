@@ -12,10 +12,9 @@ import (
 )
 
 var _ = Describe("BOSHDeploymentVars", func() {
-
 	var (
-		logger           *fakes.Logger
 		boshManager      *fakes.BOSHManager
+		logger           *fakes.Logger
 		stateValidator   *fakes.StateValidator
 		terraformManager *fakes.TerraformManager
 
@@ -25,13 +24,13 @@ var _ = Describe("BOSHDeploymentVars", func() {
 	)
 
 	BeforeEach(func() {
-		logger = &fakes.Logger{}
 		boshManager = &fakes.BOSHManager{}
+		logger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
 
 		boshManager.VersionCall.Returns.Version = "2.0.24"
-
+		boshManager.GetDirectorDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
 		terraformOutputs = terraform.Outputs{
 			Map: map[string]interface{}{"some-name": "some-output"},
 		}
@@ -75,14 +74,14 @@ var _ = Describe("BOSHDeploymentVars", func() {
 
 	Describe("Execute", func() {
 		It("calls out to bosh manager and prints the resulting information", func() {
-			boshManager.GetDirectorDeploymentVarsCall.Returns.Vars = "some-vars-yaml"
-
 			err := boshDeploymentVars.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetDirectorDeploymentVarsCall.CallCount).To(Equal(1))
 			Expect(boshManager.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs).To(Equal(terraformOutputs))
+
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("some-vars-yaml"))
 		})
 
