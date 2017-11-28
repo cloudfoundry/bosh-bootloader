@@ -92,7 +92,7 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 	}
 
 	if config.NoDirector {
-		p.logger.Println("Deprecation warning: the --no-director flag has been deprecated.")
+		p.logger.Println(`Deprecation warning: --no-director has been deprecated and will be removed in BBL 6.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`)
 	}
 
 	if (lbConfig != CreateLBsConfig{}) {
