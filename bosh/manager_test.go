@@ -629,25 +629,26 @@ gcp_credentials_json: some-credential-json
 			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:  "vsphere",
-					EnvID: "some-env-id",
-					VSphere: storage.VSphere{
-						VCenterUser:     "user",
-						VCenterPassword: "password",
-						VCenterIP:       "10.90.20.3",
-						VCenterDC:       "fruits-dc",
-						Cluster:         "fruits",
-						VCenterRP:       "plum",
-						Network:         "plum",
-						VCenterDS:       "fruits-ds",
-						Subnet:          "10.80.30.0/24",
-					},
+					IAAS:    "vsphere",
+					EnvID:   "some-env-id",
+					VSphere: storage.VSphere{},
 				}
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr": "10.80.30.0/24",
-					"external_ip":   "10.80.30.6",
+					"internal_cidr":     "10.80.30.0/24",
+					"external_ip":       "10.80.30.6",
+					"network_name":      "plum",
+					"vcenter_cluster":   "fruits",
+					"vcenter_disks":     "plum",
+					"vcenter_vms":       "plum_vms",
+					"vcenter_templates": "plum_templates",
+					"vcenter_user":      "user",
+					"vcenter_password":  "password",
+					"vcenter_ip":        "10.90.20.3",
+					"vcenter_dc":        "fruits-dc",
+					"vcenter_rp":        "plum",
+					"vcenter_ds":        "fruits-ds",
 				}})
 				Expect(vars).To(MatchYAML(`---
 director_name: bosh-some-env-id

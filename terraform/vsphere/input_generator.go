@@ -22,5 +22,11 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"internal_gw":               parsedCIDR.GetNthIP(1).String(),
 		"vcenter_cluster":           state.VSphere.Cluster,
 		"network_name":              state.VSphere.Network,
+		"vcenter_user":              state.VSphere.VCenterUser,
+		"vcenter_password":          state.VSphere.VCenterPassword,
+		"vcenter_ip":                state.VSphere.VCenterIP,
+		"vcenter_dc":                state.VSphere.VCenterDC,
+		"vcenter_rp":                state.VSphere.VCenterRP,
+		"vcenter_ds":                state.VSphere.VCenterDS,
 	}, nil
 }

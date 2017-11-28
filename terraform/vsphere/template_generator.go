@@ -14,12 +14,18 @@ func NewTemplateGenerator() TemplateGenerator {
 
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
-variable "vsphere_subnet" {}
-variable "jumpbox_ip" {}
+variable "bosh_director_internal_ip" {}
 variable "internal_gw" {}
+variable "jumpbox_ip" {}
 variable "network_name" {}
 variable "vcenter_cluster" {}
-variable "bosh_director_internal_ip" {}
+variable "vsphere_subnet" {}
+variable "vcenter_user" {}
+variable "vcenter_password" {}
+variable "vcenter_ip" {}
+variable "vcenter_dc" {}
+variable "vcenter_rp" {}
+variable "vcenter_ds" {}
 
 output "internal_cidr" { value = "${var.vsphere_subnet}" }
 output "internal_gw" { value = "${var.internal_gw}" }
@@ -29,5 +35,21 @@ output "jumpbox_url" { value = "${var.jumpbox_ip}:22" }
 output "external_ip" { value = "${var.jumpbox_ip}" }
 output "jumpbox_internal_ip" { value = "${var.jumpbox_ip}" }
 output "bosh_director_internal_ip" { value = "${var.bosh_director_internal_ip}" }
+output "vcenter_disks" { value = "${var.network_name}" }
+output "vcenter_vms" { value = "${var.network_name}_vms" }
+output "vcenter_templates" { value = "${var.network_name}_templates" }
+output "vcenter_ip" { value = "${var.vcenter_ip}" }
+output "vcenter_dc" { value = "${var.vcenter_dc}" }
+output "vcenter_rp" { value = "${var.vcenter_rp}" }
+output "vcenter_ds" { value = "${var.vcenter_ds}" }
+
+output "vcenter_user" {
+  value     = "${var.vcenter_user}"
+  sensitive = true
+}
+output "vcenter_password" {
+  value     = "${var.vcenter_password}"
+  sensitive = true
+}
 `)
 }

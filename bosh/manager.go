@@ -380,17 +380,17 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 	switch state.IAAS {
 	case "vsphere":
 		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:      state.VSphere.VCenterUser,
-			VCenterPassword:  state.VSphere.VCenterPassword,
-			VCenterIP:        state.VSphere.VCenterIP,
-			VCenterDC:        state.VSphere.VCenterDC,
-			VCenterCluster:   state.VSphere.Cluster,
-			VCenterRP:        state.VSphere.VCenterRP,
-			NetworkName:      state.VSphere.Network,
-			VCenterDS:        state.VSphere.VCenterDS,
-			VCenterDisks:     fmt.Sprintf("%s", state.VSphere.Network),
-			VCenterVMs:       fmt.Sprintf("%s_vms", state.VSphere.Network),
-			VCenterTemplates: fmt.Sprintf("%s_templates", state.VSphere.Network),
+			VCenterUser:      terraformOutputs.GetString("vcenter_user"),
+			VCenterPassword:  terraformOutputs.GetString("vcenter_password"),
+			VCenterIP:        terraformOutputs.GetString("vcenter_ip"),
+			VCenterDC:        terraformOutputs.GetString("vcenter_dc"),
+			VCenterCluster:   terraformOutputs.GetString("vcenter_cluster"),
+			VCenterRP:        terraformOutputs.GetString("vcenter_rp"),
+			VCenterDS:        terraformOutputs.GetString("vcenter_ds"),
+			NetworkName:      terraformOutputs.GetString("network_name"),
+			VCenterDisks:     terraformOutputs.GetString("vcenter_disks"),
+			VCenterVMs:       terraformOutputs.GetString("vcenter_vms"),
+			VCenterTemplates: terraformOutputs.GetString("vcenter_templates"),
 		}
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
