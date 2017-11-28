@@ -87,6 +87,22 @@ const (
       type: gp2
 
 - type: replace
+  path: /vm_types/name=small-highmem/cloud_properties?
+  value:
+    instance_type: r3.xlarge
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+
+- type: replace
+  path: /vm_types/name=small-highcpu?/cloud_properties
+  value:
+    instance_type: c3.large
+    ephemeral_disk:
+      size: 10240
+      type: gp2
+
+- type: replace
   path: /vm_types/name=medium/cloud_properties?
   value:
     instance_type: m4.xlarge
@@ -396,26 +412,6 @@ const (
     name: t2.large
     cloud_properties:
       instance_type: t2.large
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: small-highmem
-    cloud_properties:
-      instance_type: r3.xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: small-highcpu
-    cloud_properties:
-      instance_type: c3.large
       ephemeral_disk:
         size: 10240
         type: gp2

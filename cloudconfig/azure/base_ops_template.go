@@ -86,7 +86,7 @@ const (
     instance_type: Standard_D12_v2
 
 - type: replace
-  path: /vm_types/name=small-highmem?/cloud_properties
+  path: /vm_types/name=small-highmem/cloud_properties?
   value:
     ephemeral_disk:
       size: 10240

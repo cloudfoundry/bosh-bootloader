@@ -38,6 +38,7 @@ vm_types:
 - name: minimal
 - name: sharedcpu
 - name: small
+- name: small-highmem
 - name: medium
 - name: large
 - name: extra-large

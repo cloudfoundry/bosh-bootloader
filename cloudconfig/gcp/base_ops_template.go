@@ -83,6 +83,20 @@ const (
     root_disk_type: pd-ssd
 
 - type: replace
+  path: /vm_types/name=small-highmem/cloud_properties?
+  value:
+    machine_type: n1-highmem-4
+    root_disk_size_gb: 10
+    root_disk_type: pd-ssd
+
+- type: replace
+  path: /vm_types/name=small-highcpu?/cloud_properties
+  value:
+    machine_type: n1-highcpu-2
+    root_disk_size_gb: 10
+    root_disk_type: pd-ssd
+
+- type: replace
   path: /vm_types/name=medium/cloud_properties?
   value:
     machine_type: n1-standard-4
@@ -308,24 +322,6 @@ const (
     name: t2.small
     cloud_properties:
       machine_type: g1-small
-      root_disk_size_gb: 10
-      root_disk_type: pd-ssd
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: small-highmem
-    cloud_properties:
-      machine_type: n1-highmem-4
-      root_disk_size_gb: 10
-      root_disk_type: pd-ssd
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: small-highcpu
-    cloud_properties:
-      machine_type: n1-highcpu-2
       root_disk_size_gb: 10
       root_disk_type: pd-ssd
 
