@@ -853,6 +853,26 @@ var _ = Describe("LoadState", func() {
 						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`))
 					})
 				})
+
+				Context("when the command is create-lbs", func() {
+					It("prints a warning", func() {
+						appConfig, err := c.Bootstrap([]string{"bbl", "create-lbs"})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("create-lbs"))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`))
+					})
+				})
+
+				Context("when the command is delete-lbs", func() {
+					It("prints a warning", func() {
+						appConfig, err := c.Bootstrap([]string{"bbl", "delete-lbs"})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("delete-lbs"))
+						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the delete-lbs command has been deprecated and will be removed in bbl v6.0.0. Delete load balancers by calling "plan" without the lb flags.`))
+					})
+				})
 			})
 		})
 

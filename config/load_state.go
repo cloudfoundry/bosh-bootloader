@@ -159,6 +159,14 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		c.logger.Println(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`)
 	}
 
+	if command == "create-lbs" {
+		c.logger.Println(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`)
+	}
+
+	if command == "delete-lbs" {
+		c.logger.Println(`Deprecation warning: the delete-lbs command has been deprecated and will be removed in bbl v6.0.0. Delete load balancers by calling "plan" without the lb flags.`)
+	}
+
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
 	if err != nil {
 		return application.Configuration{}, err
