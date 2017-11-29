@@ -52,18 +52,34 @@ var _ = Describe("LB args handler", func() {
 			Expect(certificateValidator.ReadAndValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))
 		})
 
-		Context("when iaas is gcp and lb type is concourse", func() {
-			It("does not call certificateValidator", func() {
-				lbState, err := handler.GetLBState("gcp", commands.CreateLBsConfig{
-					LBType: "concourse",
+		Context("when lb type is concourse", func() {
+			Context("on gcp", func() {
+				It("does not call certificateValidator", func() {
+					lbState, err := handler.GetLBState("gcp", commands.CreateLBsConfig{
+						LBType: "concourse",
+					})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbState.Type).To(Equal("concourse"))
+					Expect(lbState.Cert).To(Equal(""))
+					Expect(lbState.Key).To(Equal(""))
+					Expect(lbState.Chain).To(Equal(""))
+					Expect(lbState.Domain).To(Equal(""))
+					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(lbState.Type).To(Equal("concourse"))
-				Expect(lbState.Cert).To(Equal(""))
-				Expect(lbState.Key).To(Equal(""))
-				Expect(lbState.Chain).To(Equal(""))
-				Expect(lbState.Domain).To(Equal(""))
-				Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
+			})
+			Context("on aws", func() {
+				It("does not call certificateValidator", func() {
+					lbState, err := handler.GetLBState("aws", commands.CreateLBsConfig{
+						LBType: "concourse",
+					})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbState.Type).To(Equal("concourse"))
+					Expect(lbState.Cert).To(Equal(""))
+					Expect(lbState.Key).To(Equal(""))
+					Expect(lbState.Chain).To(Equal(""))
+					Expect(lbState.Domain).To(Equal(""))
+					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
+				})
 			})
 		})
 
@@ -85,7 +101,7 @@ var _ = Describe("LB args handler", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidateCall.Returns.Error = errors.New("failed to validate")
 					_, err := handler.GetLBState("aws", commands.CreateLBsConfig{
-						LBType:    "concourse",
+						LBType:    "cf",
 						CertPath:  "/path/to/cert",
 						KeyPath:   "/path/to/key",
 						ChainPath: "/path/to/chain",
