@@ -149,7 +149,7 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
 	files := e.getSetupFiles(boshDeploymentRepo, input.DeploymentDir)
 
-	statePath := filepath.Join(input.DeploymentDir, input.IAAS)
+	statePath := filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS)
 	assetPath := filepath.Join(boshDeploymentRepo, input.IAAS)
 
 	if input.IAAS == "gcp" {

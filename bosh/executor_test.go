@@ -234,6 +234,65 @@ var _ = Describe("Executor", func() {
 			Expect(contents).To(Equal(expectedContents))
 		})
 
+		Context("aws", func() {
+			var awsInterpolateInput bosh.InterpolateInput
+
+			BeforeEach(func() {
+				awsInterpolateInput = interpolateInput
+				awsInterpolateInput.IAAS = "aws"
+			})
+
+			It("writes aws-specific ops files", func() {
+				err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml")
+				encryptDiskOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml")
+
+				ipOpsFileContents, err := ioutil.ReadFile(ipOpsFile)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(ipOpsFileContents)).To(Equal(`
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties/auto_assign_public_ip?
+  value: true
+`))
+				encryptDiskOpsFileContents, err := ioutil.ReadFile(encryptDiskOpsFile)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(encryptDiskOpsFileContents)).To(Equal(`---
+- type: replace
+  path: /disk_pools/name=disks/cloud_properties?
+  value:
+    type: gp2
+    encrypted: true
+    kms_key_arn: ((kms_key_arn))
+`))
+			})
+		})
+
+		Context("gcp", func() {
+			var gcpInterpolateInput bosh.InterpolateInput
+
+			BeforeEach(func() {
+				gcpInterpolateInput = interpolateInput
+				gcpInterpolateInput.IAAS = "gcp"
+			})
+
+			It("writes gcp-specific ops files", func() {
+				err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml")
+
+				ipOpsFileContents, err := ioutil.ReadFile(ipOpsFile)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(ipOpsFileContents)).To(Equal(`
+- type: replace
+  path: /networks/name=default/subnets/0/cloud_properties/ephemeral_external_ip?
+  value: true
+`))
+			})
+		})
+
 		Context("azure", func() {
 			var azureInterpolateInput bosh.InterpolateInput
 
