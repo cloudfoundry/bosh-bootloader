@@ -183,12 +183,12 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
 		filepath.Join(input.DeploymentDir, "credhub.yml"),
 	}
 	if input.IAAS == "gcp" {
-		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
+		files = append(files, filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
 	}
 	if input.IAAS == "aws" {
-		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
+		files = append(files, filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
 		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "iam-instance-profile.yml"))
-		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "bosh-director-encrypt-disk-ops.yml"))
+		files = append(files, filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS, "bosh-director-encrypt-disk-ops.yml"))
 	}
 	return files
 }

@@ -180,6 +180,7 @@ var _ = Describe("Executor", func() {
 			deploymentDir         string
 			relativeDeploymentDir string
 			relativeVarsDir       string
+			relativeStateDir      string
 
 			executor         bosh.Executor
 			interpolateInput bosh.InterpolateInput
@@ -203,6 +204,7 @@ var _ = Describe("Executor", func() {
 
 			relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
 			relativeVarsDir = "${BBL_STATE_DIR}/vars"
+			relativeStateDir = "${BBL_STATE_DIR}"
 
 			interpolateInput = bosh.InterpolateInput{
 				DeploymentDir: deploymentDir,
@@ -236,10 +238,29 @@ var _ = Describe("Executor", func() {
 
 		Context("aws", func() {
 			var awsInterpolateInput bosh.InterpolateInput
+			var expectedArgs []string
 
 			BeforeEach(func() {
 				awsInterpolateInput = interpolateInput
 				awsInterpolateInput.IAAS = "aws"
+				expectedArgs = []string{
+					filepath.Join(relativeDeploymentDir, "bosh.yml"),
+					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "aws", "cpi.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "aws", "iam-instance-profile.yml"),
+					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml"),
+					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
+				}
+			})
+
+			It("writes create-director.sh and delete-director.sh", func() {
+				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, awsInterpolateInput, stateDir)
 			})
 
 			It("writes aws-specific ops files", func() {
@@ -271,10 +292,27 @@ var _ = Describe("Executor", func() {
 
 		Context("gcp", func() {
 			var gcpInterpolateInput bosh.InterpolateInput
+			var expectedArgs []string
 
 			BeforeEach(func() {
 				gcpInterpolateInput = interpolateInput
 				gcpInterpolateInput.IAAS = "gcp"
+				expectedArgs = []string{
+					filepath.Join(relativeDeploymentDir, "bosh.yml"),
+					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "gcp", "cpi.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml"),
+					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
+				}
+			})
+
+			It("writes create-director.sh and delete-director.sh", func() {
+				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, gcpInterpolateInput, stateDir)
 			})
 
 			It("writes gcp-specific ops files", func() {
@@ -295,111 +333,52 @@ var _ = Describe("Executor", func() {
 
 		Context("azure", func() {
 			var azureInterpolateInput bosh.InterpolateInput
+			var expectedArgs []string
 
 			BeforeEach(func() {
 				azureInterpolateInput = interpolateInput
 				azureInterpolateInput.IAAS = "azure"
+				expectedArgs = []string{
+					filepath.Join(relativeDeploymentDir, "bosh.yml"),
+					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "azure", "cpi.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
+				}
 			})
 
-			It("generates a bosh manifest", func() {
-				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-					stdout.Write([]byte("some-manifest"))
-					return nil
-				}
-
-				err := executor.DirectorCreateEnvArgs(azureInterpolateInput)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cmd.RunCallCount()).To(Equal(0))
-
-				expectedArgs := []string{
-					fmt.Sprintf("%s/bosh.yml", relativeDeploymentDir),
-					"--state", fmt.Sprintf("%s/bosh-state.json", relativeVarsDir),
-					"--vars-store", fmt.Sprintf("%s/director-variables.yml", relativeVarsDir),
-					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", relativeVarsDir),
-					"-o", fmt.Sprintf("%s/azure/cpi.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/jumpbox-user.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/uaa.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/credhub.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/user-ops-file.yml", relativeVarsDir),
-				}
-
-				By("writing the create-env args to a shell script", func() {
-					expectedScript := formatScript("create-env", stateDir, expectedArgs)
-					scriptPath := fmt.Sprintf("%s/create-director.sh", stateDir)
-					shellScript, err := ioutil.ReadFile(scriptPath)
-					Expect(err).NotTo(HaveOccurred())
-
-					fileinfo, err := os.Stat(scriptPath)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(shellScript)).To(Equal(expectedScript))
-				})
-
-				By("writing the delete-env args to a shell script", func() {
-					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
-					scriptPath := fmt.Sprintf("%s/delete-director.sh", stateDir)
-					shellScript, err := ioutil.ReadFile(scriptPath)
-					Expect(err).NotTo(HaveOccurred())
-
-					fileinfo, err := os.Stat(scriptPath)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
-					Expect(err).NotTo(HaveOccurred())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(shellScript)).To(Equal(expectedScript))
-				})
+			It("writes create-director.sh and delete-director.sh", func() {
+				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, azureInterpolateInput, stateDir)
 			})
 		})
 
 		Context("vsphere", func() {
 			var input bosh.InterpolateInput
+			var expectedArgs []string
 
 			BeforeEach(func() {
 				input = interpolateInput
 				input.IAAS = "vsphere"
+				expectedArgs = []string{
+					filepath.Join(relativeDeploymentDir, "bosh.yml"),
+					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "vsphere", "cpi.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "vsphere", "resource-pool.yml"),
+					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
+				}
 			})
 
-			It("generates a bosh manifest", func() {
-				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-					stdout.Write([]byte("some-manifest"))
-					return nil
-				}
-
-				err := executor.DirectorCreateEnvArgs(input)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cmd.RunCallCount()).To(Equal(0))
-
-				expectedArgs := []string{
-					fmt.Sprintf("%s/bosh.yml", relativeDeploymentDir),
-					"--state", fmt.Sprintf("%s/bosh-state.json", relativeVarsDir),
-					"--vars-store", fmt.Sprintf("%s/director-variables.yml", relativeVarsDir),
-					"--vars-file", fmt.Sprintf("%s/director-deployment-vars.yml", relativeVarsDir),
-					"-o", fmt.Sprintf("%s/vsphere/cpi.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/jumpbox-user.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/uaa.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/credhub.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/vsphere/resource-pool.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/user-ops-file.yml", relativeVarsDir),
-				}
-
-				By("writing the create-env args to a shell script", func() {
-					expectedScript := formatScript("create-env", stateDir, expectedArgs)
-					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-director.sh", stateDir))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(shellScript)).To(Equal(expectedScript))
-				})
-
-				By("writing the delete-env args to a shell script", func() {
-					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
-					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-director.sh", stateDir))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(shellScript)).To(Equal(expectedScript))
-				})
+			It("writes create-director.sh and delete-director.sh", func() {
+				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, input, stateDir)
 			})
 		})
 	})
@@ -646,4 +625,44 @@ func formatScript(command string, stateDir string, args []string) string {
 	}
 
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
+}
+
+func behavesLikeCreateEnvArgs(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.InterpolateInput, stateDir string) {
+	cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+		stdout.Write([]byte("some-manifest"))
+		return nil
+	}
+
+	err := executor.DirectorCreateEnvArgs(input)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cmd.RunCallCount()).To(Equal(0))
+
+	By("writing the create-env args to a shell script", func() {
+		expectedScript := formatScript("create-env", stateDir, expectedArgs)
+		scriptPath := fmt.Sprintf("%s/create-director.sh", stateDir)
+		shellScript, err := ioutil.ReadFile(scriptPath)
+		Expect(err).NotTo(HaveOccurred())
+
+		fileinfo, err := os.Stat(scriptPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(shellScript)).To(Equal(expectedScript))
+	})
+
+	By("writing the delete-env args to a shell script", func() {
+		expectedScript := formatScript("delete-env", stateDir, expectedArgs)
+		scriptPath := fmt.Sprintf("%s/delete-director.sh", stateDir)
+		shellScript, err := ioutil.ReadFile(scriptPath)
+		Expect(err).NotTo(HaveOccurred())
+
+		fileinfo, err := os.Stat(scriptPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(shellScript)).To(Equal(expectedScript))
+	})
 }
