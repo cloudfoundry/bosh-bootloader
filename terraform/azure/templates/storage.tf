@@ -2,8 +2,8 @@ resource "azurerm_storage_account" "bosh" {
   name                = "${var.simple_env_id}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
-  location     = "westus"
-  account_tier = "Standard"
+  location                 = "westus"
+  account_tier             = "Standard"
   account_replication_type = "GRS"
 
   tags {

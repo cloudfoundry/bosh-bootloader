@@ -23,21 +23,21 @@ output "external_ip" {
 }
 
 output "director_address" {
-	value = "https://${azurerm_public_ip.bosh.ip_address}:25555"
+  value = "https://${azurerm_public_ip.bosh.ip_address}:25555"
 }
 
 output "bosh_vms_private_key" {
-  value = "${tls_private_key.bosh_vms.private_key_pem}"
+  value     = "${tls_private_key.bosh_vms.private_key_pem}"
   sensitive = true
 }
 
 output "bosh_vms_public_key" {
-  value = "${tls_private_key.bosh_vms.public_key_openssh}"
+  value     = "${tls_private_key.bosh_vms.public_key_openssh}"
   sensitive = false
 }
 
 output "jumpbox_url" {
-	value = "${azurerm_public_ip.bosh.ip_address}:22"
+  value = "${azurerm_public_ip.bosh.ip_address}:22"
 }
 
 output "network_cidr" {
@@ -46,4 +46,20 @@ output "network_cidr" {
 
 output "internal_cidr" {
   value = "${var.internal_cidr}"
+}
+
+output "subscription_id" {
+  value = "${var.subscription_id}"
+}
+
+output "tenant_id" {
+  value = "${var.tenant_id}"
+}
+
+output "client_id" {
+  value = "${var.client_id}"
+}
+
+output "client_secret" {
+  value = "${var.client_secret}"
 }
