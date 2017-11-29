@@ -120,7 +120,7 @@ output "concourse_lb_internal_security_group" {
 }
 
 output "concourse_lb_target_groups" {
-  value = ["${var.short_env_id}-concourse-lb-80", "${var.short_env_id}-concourse-lb-443", "${var.short_env_id}-concourse-lb-2222"]
+  value = ["${var.short_env_id}-concourse80", "${var.short_env_id}-concourse443", "${var.short_env_id}-concourse2222"]
 }
 
 output "concourse_lb_name" {
