@@ -89,7 +89,7 @@ const (
 - type: replace
   path: /vm_types/name=small-highmem/cloud_properties?
   value:
-    instance_type: r3.xlarge
+    instance_type: r4.xlarge
     ephemeral_disk:
       size: 10240
       type: gp2
@@ -97,7 +97,7 @@ const (
 - type: replace
   path: /vm_types/name=small-highcpu?/cloud_properties
   value:
-    instance_type: c3.large
+    instance_type: c4.large
     ephemeral_disk:
       size: 10240
       type: gp2
@@ -125,46 +125,6 @@ const (
     ephemeral_disk:
       size: 10240
       type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: m3.medium
-    cloud_properties:
-      instance_type: m3.medium
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: m3.large
-    cloud_properties:
-      instance_type: m3.large
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: m3.xlarge
-    cloud_properties:
-      instance_type: m3.xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: m3.2xlarge
-    cloud_properties:
-      instance_type: m3.2xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
 
 - type: replace
   path: /vm_types/-
@@ -212,56 +172,6 @@ const (
     name: m4.10xlarge
     cloud_properties:
       instance_type: m4.10xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: c3.large
-    cloud_properties:
-      instance_type: c3.large
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: c3.xlarge
-    cloud_properties:
-      instance_type: c3.xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: c3.2xlarge
-    cloud_properties:
-      instance_type: c3.2xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: c3.4xlarge
-    cloud_properties:
-      instance_type: c3.4xlarge
-      ephemeral_disk:
-        size: 10240
-        type: gp2
-
-- type: replace
-  path: /vm_types/-
-  value:
-    name: c3.8xlarge
-    cloud_properties:
-      instance_type: c3.8xlarge
       ephemeral_disk:
         size: 10240
         type: gp2
