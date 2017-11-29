@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 )
@@ -62,16 +63,44 @@ func (m Migrator) Migrate(state State) (State, error) {
 		state.Jumpbox.State = nil
 	}
 
+	legacyDirectorVarsStore := filepath.Join(varsDir, "director-variables.yml")
+	if _, err := os.Stat(legacyDirectorVarsStore); err == nil {
+		boshVars, err := ioutil.ReadFile(legacyDirectorVarsStore)
+		if err != nil {
+			return State{}, fmt.Errorf("reading legacy director vars store: %s", err)
+		}
+
+		state.BOSH.Variables = string(boshVars)
+
+		if err := os.Remove(legacyDirectorVarsStore); err != nil {
+			return State{}, fmt.Errorf("removing legacy director vars store: %s", err) //not tested
+		}
+	}
+
 	if state.BOSH.Variables != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "director-variables.yml"), []byte(state.BOSH.Variables), StateMode)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "director-vars-store.yml"), []byte(state.BOSH.Variables), StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating bosh variables: %s", err)
 		}
 		state.BOSH.Variables = ""
 	}
 
+	legacyJumpboxVarsStore := filepath.Join(varsDir, "jumpbox-variables.yml")
+	if _, err := os.Stat(legacyJumpboxVarsStore); err == nil {
+		jumpboxVars, err := ioutil.ReadFile(legacyJumpboxVarsStore)
+		if err != nil {
+			return State{}, fmt.Errorf("reading legacy jumpbox vars store: %s", err)
+		}
+
+		state.Jumpbox.Variables = string(jumpboxVars)
+
+		if err := os.Remove(legacyJumpboxVarsStore); err != nil {
+			return State{}, fmt.Errorf("removing legacy jumpbox vars store: %s", err) //not tested
+		}
+	}
+
 	if state.Jumpbox.Variables != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(state.Jumpbox.Variables), StateMode)
+		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-vars-store.yml"), []byte(state.Jumpbox.Variables), StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating jumpbox variables: %s", err)
 		}

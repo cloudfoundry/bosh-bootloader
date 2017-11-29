@@ -73,7 +73,7 @@ Run `bbl lbs` to discover the IP address of your load balancer. Then set up a A 
 ## Retrieve passwords
 * Get your CredHub password
 ```
-bosh interpolate vars/director-variables.yml --path /credhub_cli_password
+bosh interpolate vars/director-vars-store.yml --path /credhub_cli_password
 ```
 * SSH to the jumpbox
 ```
@@ -88,9 +88,9 @@ exit
 ```
 * retrieve the CredHub CA, UAA CA, and CredHub UAA User Password from BOSH director Var Store in BBL State
 ```
-export CREDHUB_CLI_PASSWORD=`bosh interpolate vars/director-variables.yml --path /credhub_cli_password`
-export UAA_CA="$(bosh interpolate vars/director-variables.yml --path /uaa_ssl/ca)"
-export CREDHUB_CA="$(bosh interpolate vars/director-variables.yml --path /credhub_ca/ca)"
+export CREDHUB_CLI_PASSWORD=`bosh interpolate vars/director-vars-store.yml --path /credhub_cli_password`
+export UAA_CA="$(bosh interpolate vars/director-vars-store.yml --path /uaa_ssl/ca)"
+export CREDHUB_CA="$(bosh interpolate vars/director-vars-store.yml --path /credhub_ca/ca)"
 ```
 * retrieve the concourse username and password from credhub
 ```

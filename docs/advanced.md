@@ -27,8 +27,8 @@ In this example, I use a local version of BOSH director that I have built based 
 bosh create-env \
   ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \
   --state  ${BBL_STATE_DIR}/vars/bosh-state.json \
-  --vars-store  ${BBL_STATE_DIR}/vars/director-variables.yml \
-  --vars-file  ${BBL_STATE_DIR}/vars/director-deployment-vars.yml \
+  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \
+  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \
 +  -o ${BBL_STATE_DIR}/bosh-deployment/local-bosh-release.yml
 +  -v local_bosh_release=${BBL_STATE_DIR}/../../build/bosh-dev.tgz
   -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
@@ -50,14 +50,14 @@ Here is an example of adding an ops file that configures a few settings on all o
 bosh create-env \
   ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \
   --state  ${BBL_STATE_DIR}/vars/bosh-state.json \
-  --vars-store  ${BBL_STATE_DIR}/vars/director-variables.yml \
-  --vars-file  ${BBL_STATE_DIR}/vars/director-deployment-vars.yml \
+  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \
+  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \
 +  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml
-  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \  
+  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
-  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml 
+  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
 ```
 ## <a name='terraform'></a>Customizing IaaS Paving with Terraform
 Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars/terraform.tfvars` or adding a terraform override into  `$BBL_STATE_DIR/terraform/my-cool-tf-template.override`. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to `bbl plan` first before running `bbl up` for the first time.
@@ -92,7 +92,7 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     ```
 1. Determine your external IP:
     ```
-    bosh int vars/director-deployment-vars.yml --path /external_ip
+    bosh int vars/director-vars-file.yml --path /external_ip
     ```
 1. Add it to your DNS:
     ```

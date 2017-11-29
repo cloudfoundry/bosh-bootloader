@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -499,9 +498,6 @@ gcp_credentials_json: some-credential-json
 			varsDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 			stateStore.GetVarsDirCall.Returns.Directory = varsDir
-			vars := "jumpbox_ssh:\n  private_key: some-jumpbox-private-key\n  public_key: some-jumpbox-public-key\n"
-			err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte(vars), storage.StateMode)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("calls delete env", func() {

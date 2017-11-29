@@ -83,11 +83,11 @@ var _ = Describe("up after plan", func() {
 
 			err := exec.Command("bosh",
 				"int", filepath.Join(stateDir, "jumpbox-deployment", "jumpbox.yml"),
-				"--vars-store", filepath.Join(stateDir, "vars", "jumpbox-variables.yml"),
+				"--vars-store", filepath.Join(stateDir, "vars", "jumpbox-vars-store.yml"),
 			).Run()
 			Expect(err).NotTo(HaveOccurred())
 
-			vars, err := ioutil.ReadFile(filepath.Join(stateDir, "vars", "jumpbox-variables.yml"))
+			vars, err := ioutil.ReadFile(filepath.Join(stateDir, "vars", "jumpbox-vars-store.yml"))
 			Expect(err).NotTo(HaveOccurred())
 			key := getJumpboxPrivateKey(string(vars))
 			jumpboxURL = proxy.StartTestSSHServer(httpServerHostPort, key)

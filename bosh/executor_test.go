@@ -93,8 +93,8 @@ var _ = Describe("Executor", func() {
 			expectedArgs := []string{
 				fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
 				"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
-				"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", relativeVarsDir),
-				"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", relativeVarsDir),
+				"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+				"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
 				"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
 			}
 
@@ -139,8 +139,8 @@ var _ = Describe("Executor", func() {
 				expectedArgs := []string{
 					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
 					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
-					"--vars-store", fmt.Sprintf("%s/jumpbox-variables.yml", relativeVarsDir),
-					"--vars-file", fmt.Sprintf("%s/jumpbox-deployment-vars.yml", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
 					"-o", fmt.Sprintf("%s/vsphere/cpi.yml", relativeDeploymentDir),
 					"-o", fmt.Sprintf("%s/vsphere/resource-pool.yml", relativeDeploymentDir),
 					"-o", fmt.Sprintf("%s/vsphere-jumpbox-network.yml", relativeDeploymentDir),
@@ -246,8 +246,8 @@ var _ = Describe("Executor", func() {
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
-					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
-					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "aws", "cpi.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
@@ -300,8 +300,8 @@ var _ = Describe("Executor", func() {
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
-					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
-					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "gcp", "cpi.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
@@ -341,8 +341,8 @@ var _ = Describe("Executor", func() {
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
-					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
-					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "azure", "cpi.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
@@ -366,8 +366,8 @@ var _ = Describe("Executor", func() {
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
-					"--vars-store", filepath.Join(relativeVarsDir, "director-variables.yml"),
-					"--vars-file", filepath.Join(relativeVarsDir, "director-deployment-vars.yml"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "vsphere", "cpi.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
@@ -412,7 +412,7 @@ var _ = Describe("Executor", func() {
 			By("writing deployment vars to the state dir", func() {
 				err := executor.WriteDeploymentVars(createEnvInput)
 				Expect(err).NotTo(HaveOccurred())
-				deploymentVars, err := ioutil.ReadFile(filepath.Join(varsDir, "some-deployment-deployment-vars.yml"))
+				deploymentVars, err := ioutil.ReadFile(filepath.Join(varsDir, "some-deployment-vars-file.yml"))
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(string(deploymentVars)).To(Equal("some-deployment-vars"))
@@ -451,13 +451,13 @@ var _ = Describe("Executor", func() {
 			}
 
 			createEnvPath = filepath.Join(stateDir, "create-some-deployment.sh")
-			createEnvContents := fmt.Sprintf("#!/bin/bash\necho 'some-vars-store-contents' > %s/some-deployment-variables.yml\n", varsDir)
+			createEnvContents := fmt.Sprintf("#!/bin/bash\necho 'some-vars-store-contents' > %s/some-deployment-vars-store.yml\n", varsDir)
 
 			ioutil.WriteFile(createEnvPath, []byte(createEnvContents), storage.ScriptMode)
 		})
 
 		AfterEach(func() {
-			os.Remove(filepath.Join(varsDir, "some-deployment-variables.yml"))
+			os.Remove(filepath.Join(varsDir, "some-deployment-vars-store.yml"))
 			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
 			os.Unsetenv("BBL_STATE_DIR")
 		})

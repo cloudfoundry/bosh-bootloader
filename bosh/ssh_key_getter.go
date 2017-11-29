@@ -30,7 +30,7 @@ func (j SSHKeyGetter) Get(deployment string) (string, error) {
 		return "", fmt.Errorf("Get vars directory: %s", err)
 	}
 
-	varsStore, err := ioutil.ReadFile(filepath.Join(varsDir, fmt.Sprintf("%s-variables.yml", deployment)))
+	varsStore, err := ioutil.ReadFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)))
 	if err != nil {
 		return "", fmt.Errorf("Read %s vars file: %s", deployment, err)
 	}

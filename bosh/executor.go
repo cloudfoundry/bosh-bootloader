@@ -102,8 +102,8 @@ func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	sharedArgs := []string{
-		"--vars-store", filepath.Join(input.VarsDir, "jumpbox-variables.yml"),
-		"--vars-file", filepath.Join(input.VarsDir, "jumpbox-deployment-vars.yml"),
+		"--vars-store", filepath.Join(input.VarsDir, "jumpbox-vars-store.yml"),
+		"--vars-file", filepath.Join(input.VarsDir, "jumpbox-vars-file.yml"),
 		"-o", filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
 	}
 
@@ -211,8 +211,8 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 	}
 
 	sharedArgs := []string{
-		"--vars-store", filepath.Join(input.VarsDir, "director-variables.yml"),
-		"--vars-file", filepath.Join(input.VarsDir, "director-deployment-vars.yml"),
+		"--vars-store", filepath.Join(input.VarsDir, "director-vars-store.yml"),
+		"--vars-file", filepath.Join(input.VarsDir, "director-vars-file.yml"),
 	}
 
 	for _, f := range e.getDirectorOpsFiles(input) {
@@ -268,7 +268,7 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 }
 
 func (e Executor) WriteDeploymentVars(createEnvInput CreateEnvInput) error {
-	varsFilePath := filepath.Join(createEnvInput.VarsDir, fmt.Sprintf("%s-deployment-vars.yml", createEnvInput.Deployment))
+	varsFilePath := filepath.Join(createEnvInput.VarsDir, fmt.Sprintf("%s-vars-file.yml", createEnvInput.Deployment))
 	err := e.writeFile(varsFilePath, []byte(createEnvInput.DeploymentVars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write vars file: %s", err) // not tested
@@ -289,7 +289,7 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 		return "", fmt.Errorf("Run bosh create-env: %s", err)
 	}
 
-	varsStoreFileName := fmt.Sprintf("%s-variables.yml", createEnvInput.Deployment)
+	varsStoreFileName := fmt.Sprintf("%s-vars-store.yml", createEnvInput.Deployment)
 	varsStoreContents, err := e.readFile(filepath.Join(createEnvInput.VarsDir, varsStoreFileName))
 	if err != nil {
 		return "", fmt.Errorf("Reading vars file for %s deployment: %s", createEnvInput.Deployment, err) // not tested

@@ -27,7 +27,7 @@ func (s SSHKeyDeleter) Delete() error {
 		return fmt.Errorf("Get vars dir: %s", err)
 	}
 
-	varsStore := filepath.Join(varsDir, "jumpbox-variables.yml")
+	varsStore := filepath.Join(varsDir, "jumpbox-vars-store.yml")
 	variables, err := ioutil.ReadFile(varsStore)
 	if err == nil {
 		varString, err := deleteJumpboxSSHKey(string(variables))
