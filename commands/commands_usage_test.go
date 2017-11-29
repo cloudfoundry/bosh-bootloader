@@ -89,14 +89,7 @@ var _ = Describe("Commands Usage", func() {
   --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
   --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
 
-  --cert/--key requirements:
-  ------------------------------
-  |     | cf       | concourse |
-  ------------------------------
-  | aws | required | required  |
-  ------------------------------
-  | gcp | required | n/a       |
-  ------------------------------`))
+  --cert/--key are required for cf LBs and are not required or used for concourse LBs.`))
 			})
 		})
 	})

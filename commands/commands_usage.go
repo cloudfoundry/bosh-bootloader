@@ -16,14 +16,7 @@ const (
 
 	certKeyRequirements = `
 
-  --cert/--key requirements:
-  ------------------------------
-  |     | cf       | concourse |
-  ------------------------------
-  | aws | required | required  |
-  ------------------------------
-  | gcp | required | n/a       |
-  ------------------------------`
+  --cert/--key are required for cf LBs and are not required or used for concourse LBs.`
 
 	PlanCommandUsage = `Populates a state directory with the latest config without applying it
 
