@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -56,11 +57,13 @@ var _ = Describe("up after plan", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		session := bbl.Down()
-		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("preserves files modified after plan", func() {
-		createEnvOutputPath := filepath.Join(stateDir, "create-env-output")
+		tempDir, err := ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+		createEnvOutputPath := filepath.Join(tempDir, "create-env-output")
 		By("running bbl plan", func() {
 			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 			Expect(err).NotTo(HaveOccurred())
@@ -144,6 +147,50 @@ output "internal_az_subnet_id_mapping" {
 			Eventually(session, 40*time.Minute).Should(gexec.Exit())
 		})
 
+		By("verifying that artifacts are created in state dir", func() {
+			checkExists := func(dir string, filenames []string) {
+				for _, f := range filenames {
+					_, err := os.Stat(filepath.Join(dir, f))
+					Expect(err).NotTo(HaveOccurred())
+				}
+			}
+
+			checkExists(stateDir, []string{"bbl-state.json"})
+			checkExists(stateDir, []string{"create-jumpbox.sh"})
+			checkExists(stateDir, []string{"create-director.sh"})
+			checkExists(stateDir, []string{"delete-jumpbox.sh"})
+			checkExists(stateDir, []string{"delete-director.sh"})
+			checkExists(filepath.Join(stateDir, ".bbl", "cloudconfig"), []string{
+				"cloud-config.yml",
+				"ops.yml",
+			})
+			checkExists(filepath.Join(stateDir, "bosh-deployment"), []string{
+				"bosh.yml",
+				filepath.Join(iaas, "cpi.yml"),
+				"credhub.yml",
+				"jumpbox-user.yml",
+				"uaa.yml",
+			})
+			checkExists(filepath.Join(stateDir, "jumpbox-deployment"), []string{
+				filepath.Join(iaas, "cpi.yml"),
+				"jumpbox.yml",
+			})
+			checkExists(filepath.Join(stateDir, "terraform"), []string{
+				"template.tf",
+			})
+			checkExists(filepath.Join(stateDir, "vars"), []string{
+				//  These don't exist because we overwrite the create-env scripts
+				// "bosh-state.json",
+				// "jumpbox-state.json",
+				// "director-variables.yml",
+				// "jumpbox-variables.yml",
+				"director-deployment-vars.yml",
+				"jumpbox-deployment-vars.yml",
+				"terraform.tfstate",
+				"user-ops-file.yml",
+			})
+		})
+
 		By("verifying that vm extensions were added to the cloud config", func() {
 			if iaas == "azure" {
 				return
@@ -189,6 +236,20 @@ output "internal_az_subnet_id_mapping" {
 			createEnvOutput, err := ioutil.ReadFile(createEnvOutputPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(createEnvOutput)).To(Equal("jumpbox\ndirector\n"))
+		})
+
+		By("destroying the director and the jumpbox", func() {
+			session := bbl.Down()
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("verifying that artifacts are removed from state dir", func() {
+			f, err := os.Open(stateDir)
+			Expect(err).NotTo(HaveOccurred())
+
+			filenames, err := f.Readdirnames(0)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(filenames).To(BeEmpty())
 		})
 	})
 })

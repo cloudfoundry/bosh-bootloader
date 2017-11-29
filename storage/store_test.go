@@ -231,6 +231,7 @@ var _ = Describe("Store", func() {
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
 				Entry("vars", "vars", true),
+				Entry("bbl-ops-files", "bbl-ops-files", true),
 				Entry("non-bbl directory", "foo", false),
 			)
 

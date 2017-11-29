@@ -67,6 +67,9 @@ func (s Store) Set(state State) error {
 		if err := rmdir(s.GetTerraformDir); err != nil {
 			return err
 		}
+		if err := rmdir(s.GetBblOpsFilesDir); err != nil {
+			return err
+		}
 
 		_ = os.RemoveAll(filepath.Join(s.dir, "create-jumpbox.sh"))
 		_ = os.RemoveAll(filepath.Join(s.dir, "create-director.sh"))
@@ -112,6 +115,10 @@ func (s Store) GetBblDir() (string, error) {
 
 func (s Store) GetTerraformDir() (string, error) {
 	return s.getDir("terraform")
+}
+
+func (s Store) GetBblOpsFilesDir() (string, error) {
+	return s.getDir("bbl-ops-files")
 }
 
 func (s Store) GetVarsDir() (string, error) {
