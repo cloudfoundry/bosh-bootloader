@@ -42,29 +42,30 @@ var _ = Describe("InputGenerator", func() {
 		})
 	})
 
-	Context("when no lbs exist", func() {
-		It("receives BBL state and returns a map of terraform variables", func() {
-			inputs, err := inputGenerator.Generate(storage.State{
-				EnvID: "some-env-id",
-				AWS: storage.AWS{
-					AccessKeyID:     "some-access-key-id",
-					SecretAccessKey: "some-secret-access-key",
-					Region:          "some-region",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
-
-			Expect(inputs).To(Equal(map[string]interface{}{
-				"env_id":             "some-env-id",
-				"short_env_id":       "some-env-id",
-				"access_key":         "some-access-key-id",
-				"secret_key":         "some-secret-access-key",
-				"region":             "some-region",
-				"availability_zones": []string{"z1", "z2", "z3"},
-			}))
+	It("receives BBL state and returns a map of terraform variables", func() {
+		inputs, err := inputGenerator.Generate(storage.State{
+			EnvID: "some-env-id",
+			AWS: storage.AWS{
+				AccessKeyID:     "some-access-key-id",
+				SecretAccessKey: "some-secret-access-key",
+				Region:          "some-region",
+			},
+			LB: storage.LB{
+				Type: "concourse",
+			},
 		})
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
+
+		Expect(inputs).To(Equal(map[string]interface{}{
+			"env_id":             "some-env-id",
+			"short_env_id":       "some-env-id",
+			"access_key":         "some-access-key-id",
+			"secret_key":         "some-secret-access-key",
+			"region":             "some-region",
+			"availability_zones": []string{"z1", "z2", "z3"},
+		}))
 	})
 
 	Context("when a cf lb exists", func() {
@@ -131,46 +132,6 @@ var _ = Describe("InputGenerator", func() {
 					"system_domain":               "some-domain",
 				}))
 			})
-		})
-	})
-
-	Context("when a concourse lb exists", func() {
-		var state storage.State
-
-		BeforeEach(func() {
-			state = storage.State{
-				EnvID: "some-env-id",
-				AWS: storage.AWS{
-					AccessKeyID:     "some-access-key-id",
-					SecretAccessKey: "some-secret-access-key",
-					Region:          "some-region",
-				},
-				LB: storage.LB{
-					Type:  "concourse",
-					Cert:  "some-cert",
-					Chain: "some-chain",
-					Key:   "some-key",
-				},
-			}
-		})
-
-		It("returns a map with additional concourse load balancer inputs", func() {
-			inputs, err := inputGenerator.Generate(state)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
-
-			Expect(inputs).To(Equal(map[string]interface{}{
-				"env_id":                      "some-env-id",
-				"short_env_id":                "some-env-id",
-				"access_key":                  "some-access-key-id",
-				"secret_key":                  "some-secret-access-key",
-				"region":                      "some-region",
-				"availability_zones":          []string{"z1", "z2", "z3"},
-				"ssl_certificate":             "some-cert",
-				"ssl_certificate_chain":       "some-chain",
-				"ssl_certificate_private_key": "some-key",
-			}))
 		})
 	})
 

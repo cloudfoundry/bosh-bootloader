@@ -41,7 +41,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"availability_zones": azs,
 	}
 
-	if state.LB.Type == "cf" || state.LB.Type == "concourse" {
+	if state.LB.Type == "cf" {
 		inputs["ssl_certificate"] = state.LB.Cert
 		inputs["ssl_certificate_private_key"] = state.LB.Key
 		inputs["ssl_certificate_chain"] = state.LB.Chain

@@ -67,7 +67,8 @@ type lb struct {
 }
 
 type lbCloudProperties struct {
-	ELBs           []string
+	ELBs           []string `yaml:"elbs,omitempty"`
+	LBTargetGroups string   `yaml:"lb_target_groups,omitempty"`
 	SecurityGroups []string `yaml:"security_groups"`
 }
 
@@ -86,7 +87,7 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
 
-	varsYAML := map[string]string{
+	varsYAML := map[string]interface{}{
 		"internal_security_group":              terraformOutputs.GetString("internal_security_group"),
 		"iso_shared_security_group_id":         terraformOutputs.GetString("iso_shared_security_group_id"),
 		"iso_security_group_id":                terraformOutputs.GetString("iso_security_group_id"),
@@ -98,7 +99,7 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		"cf_tcp_lb_name":                       terraformOutputs.GetString("cf_tcp_lb_name"),
 		"cf_tcp_lb_internal_security_group":    terraformOutputs.GetString("cf_tcp_lb_internal_security_group"),
 		"cf_iso_router_lb_name":                terraformOutputs.GetString("cf_iso_router_lb_name"),
-		"concourse_lb_name":                    terraformOutputs.GetString("concourse_lb_name"),
+		"concourse_lb_target_groups":           terraformOutputs.GetStringSlice("concourse_lb_target_groups"),
 		"concourse_lb_internal_security_group": terraformOutputs.GetString("concourse_lb_internal_security_group"),
 	}
 
@@ -115,7 +116,10 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	requiredOutputs := []string{"internal_security_group"}
 	switch state.LB.Type {
 	case "concourse":
-		requiredOutputs = append(requiredOutputs, "concourse_lb_name", "concourse_lb_internal_security_group")
+		if len(varsYAML["concourse_lb_target_groups"].([]string)) == 0 {
+			return "", errors.New("missing concourse_lb_target_groups terraform output")
+		}
+		requiredOutputs = append(requiredOutputs, "concourse_lb_internal_security_group")
 	case "cf":
 		requiredOutputs = append(
 			requiredOutputs,
@@ -287,7 +291,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "lb",
 			CloudProperties: lbCloudProperties{
-				ELBs: []string{"((concourse_lb_name))"},
+				LBTargetGroups: "((concourse_lb_target_groups))",
 				SecurityGroups: []string{
 					"((concourse_lb_internal_security_group))",
 					"((internal_security_group))",

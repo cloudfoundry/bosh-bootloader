@@ -17,11 +17,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/aws/aws-sdk-go/service/elbv2"
 )
 
 type AWS struct {
-	client    aws.Client
-	elbClient *elb.ELB
+	client      aws.Client
+	elbClient   *elb.ELB
+	elbV2Client *elbv2.ELBV2
 }
 
 func NewAWS(c acceptance.Config) AWS {
@@ -37,8 +39,9 @@ func NewAWS(c acceptance.Config) AWS {
 		Region:      awslib.String(creds.Region),
 	}
 	return AWS{
-		client:    client,
-		elbClient: elb.New(session.New(elbConfig)),
+		client:      client,
+		elbClient:   elb.New(session.New(elbConfig)),
+		elbV2Client: elbv2.New(session.New(elbConfig)),
 	}
 }
 
@@ -63,6 +66,21 @@ func (a AWS) LoadBalancers(vpcName string) []string {
 	}
 
 	return loadBalancerNames
+}
+
+func (a AWS) NetworkLoadBalancers(vpcName string) []string {
+	output, err := a.elbV2Client.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
+	Expect(err).NotTo(HaveOccurred())
+
+	vpcId := a.GetVPC(vpcName)
+	lbNames := []string{}
+	for _, lb := range output.LoadBalancers {
+		if *lb.VpcId == *vpcId {
+			lbNames = append(lbNames, *lb.LoadBalancerName)
+		}
+	}
+
+	return lbNames
 }
 
 func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {

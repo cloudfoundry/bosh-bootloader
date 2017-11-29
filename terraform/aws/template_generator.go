@@ -28,7 +28,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 
 	switch state.LB.Type {
 	case "concourse":
-		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.concourseLB, tmpls.sslCertificate}, "\n")
+		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.concourseLB}, "\n")
 	case "cf":
 		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
 

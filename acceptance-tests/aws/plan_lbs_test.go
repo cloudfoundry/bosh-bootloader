@@ -92,4 +92,42 @@ var _ = Describe("plan lbs test", func() {
 			Expect(aws.LoadBalancers(vpcName)).To(BeEmpty())
 		})
 	})
+
+	It("creates, updates and deletes concourse LB with the specified cert and key", func() {
+		session := bbl.Up(
+			"--name", bbl.PredefinedEnvID(),
+			"--no-director",
+			"--lb-type", "concourse",
+			"--lb-cert", certPath,
+			"--lb-key", keyPath,
+		)
+		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+
+		By("verifying that there are load balancers", func() {
+			Expect(aws.NetworkLoadBalancers(vpcName)).To(HaveLen(1))
+			Expect(aws.NetworkLoadBalancers(vpcName)).To(ConsistOf(
+				MatchRegexp(".*-concourse-lb"),
+			))
+		})
+
+		By("verifying that vm extensions were added to the cloud config", func() {
+			cloudConfig := bbl.CloudConfig()
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("lb"))
+		})
+
+		By("verifying that the bbl lbs output contains the concourse lb", func() {
+			stdout := bbl.Lbs()
+			Expect(stdout).To(MatchRegexp("Concourse LB: .*"))
+		})
+
+		By("deleting lbs", func() {
+			session := bbl.DeleteLBs()
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("confirming that the concourse lb does not exist", func() {
+			Expect(aws.NetworkLoadBalancers(vpcName)).To(BeEmpty())
+		})
+	})
 })
