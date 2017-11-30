@@ -184,8 +184,8 @@ output "internal_az_subnet_id_mapping" {
 				// "jumpbox-state.json",
 				// "director-variables.yml",
 				// "jumpbox-variables.yml",
-				"director-deployment-vars.yml",
-				"jumpbox-deployment-vars.yml",
+				"director-vars-file.yml",
+				"jumpbox-vars-file.yml",
 				"terraform.tfstate",
 				"user-ops-file.yml",
 			})
