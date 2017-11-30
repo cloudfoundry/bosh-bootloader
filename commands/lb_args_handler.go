@@ -43,7 +43,7 @@ func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.
 		}, nil
 	}
 
-	if !(iaas == "gcp" && config.LBType == "concourse") {
+	if config.LBType != "concourse" {
 		certData, err = l.certificateValidator.ReadAndValidate(config.CertPath, config.KeyPath, config.ChainPath)
 		if err != nil {
 			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)
