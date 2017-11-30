@@ -16,19 +16,25 @@ import (
 var _ = Describe("PrintEnv", func() {
 	var (
 		logger           *fakes.Logger
+		stderrLogger     *fakes.Logger
 		stateValidator   *fakes.StateValidator
 		terraformManager *fakes.TerraformManager
 		sshKeyGetter     *fakes.SSHKeyGetter
+		credhubGetter    *fakes.CredhubGetter
 		printEnv         commands.PrintEnv
 		state            storage.State
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
+		stderrLogger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
 		sshKeyGetter = &fakes.SSHKeyGetter{}
 		sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+		credhubGetter = &fakes.CredhubGetter{}
+		credhubGetter.GetServerCall.Returns.Server = "some-credhub-server"
+		credhubGetter.GetCertsCall.Returns.Certs = "some-credhub-certs"
 
 		state = storage.State{
 			BOSH: storage.BOSH{
@@ -42,9 +48,8 @@ var _ = Describe("PrintEnv", func() {
 			},
 		}
 
-		printEnv = commands.NewPrintEnv(logger, stateValidator, sshKeyGetter, terraformManager)
+		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager)
 	})
-
 	Describe("CheckFastFails", func() {
 		Context("when the state does not exist", func() {
 			BeforeEach(func() {
@@ -69,6 +74,9 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=some-director-address"))
+
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SERVER=some-credhub-server"))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CA_CERT='some-credhub-certs'"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=socks5://localhost:\d+`)))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`JUMPBOX_PRIVATE_KEY=.*\/bosh_jumpbox_private.key`)))
@@ -135,6 +143,32 @@ var _ = Describe("PrintEnv", func() {
 				It("returns an error", func() {
 					err := printEnv.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("papaya"))
+				})
+			})
+
+			Context("when credhub getter fails to get the server", func() {
+				BeforeEach(func() {
+					credhubGetter.GetServerCall.Returns.Error = errors.New("starfruit")
+				})
+
+				It("logs a warning and prints the other information", func() {
+					err := printEnv.Execute([]string{}, state)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement("No credhub server found."))
+					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
+				})
+			})
+
+			Context("when credhub getter fails to get the certs", func() {
+				BeforeEach(func() {
+					credhubGetter.GetCertsCall.Returns.Error = errors.New("kiwi")
+				})
+
+				It("logs a warning and prints the other information", func() {
+					err := printEnv.Execute([]string{}, state)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement("No credhub certs found."))
+					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
 				})
 			})
 		})

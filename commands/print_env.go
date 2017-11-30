@@ -13,20 +13,29 @@ import (
 type PrintEnv struct {
 	stateValidator   stateValidator
 	logger           logger
+	stderrLogger     logger
 	sshKeyGetter     sshKeyGetter
 	terraformManager terraformManager
+	credhubGetter    credhubGetter
 }
 
 type envSetter interface {
 	Set(key, value string) error
 }
 
-func NewPrintEnv(logger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter, terraformManager terraformManager) PrintEnv {
+type credhubGetter interface {
+	GetServer() (string, error)
+	GetCerts() (string, error)
+}
+
+func NewPrintEnv(logger logger, stderrLogger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter, credhubGetter credhubGetter, terraformManager terraformManager) PrintEnv {
 	return PrintEnv{
 		stateValidator:   stateValidator,
 		logger:           logger,
+		stderrLogger:     stderrLogger,
 		sshKeyGetter:     sshKeyGetter,
 		terraformManager: terraformManager,
+		credhubGetter:    credhubGetter,
 	}
 }
 
@@ -54,6 +63,20 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	p.logger.Println(fmt.Sprintf("export BOSH_CLIENT_SECRET=%s", state.BOSH.DirectorPassword))
 	p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
 	p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
+
+	credhubServer, err := p.credhubGetter.GetServer()
+	if err == nil {
+		p.logger.Println(fmt.Sprintf("export CREDHUB_SERVER=%s", credhubServer))
+	} else {
+		p.stderrLogger.Println("No credhub server found.")
+	}
+
+	credhubCerts, err := p.credhubGetter.GetCerts()
+	if err == nil {
+		p.logger.Println(fmt.Sprintf("export CREDHUB_CA_CERT='%s'", credhubCerts))
+	} else {
+		p.stderrLogger.Println("No credhub certs found.")
+	}
 
 	portNumber, err := p.getPort()
 	if err != nil {
