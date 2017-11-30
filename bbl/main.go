@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -35,6 +36,7 @@ import (
 var Version = "dev"
 
 func main() {
+	fmt.Println("pipeline version test")
 	logger := application.NewLogger(os.Stdout)
 	stderrLogger := application.NewLogger(os.Stderr)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
