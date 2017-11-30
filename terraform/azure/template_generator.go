@@ -27,7 +27,6 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
 	template := strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output, tmpls.tls}, "\n")
 	if state.LB.Type == "cf" {
-		// TODO potentially generate templates based on state (state.LB.Cert in base 64 + state.LB.Key + Domain)
 		template = strings.Join([]string{template, tmpls.cfLB}, "\n")
 	}
 
