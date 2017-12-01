@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/arm/network"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -12,12 +13,13 @@ import (
 )
 
 type Azure struct {
-	groupsClient          *resources.GroupsClient
-	virtualMachinesClient *compute.VirtualMachinesClient
-	subscriptionID        string
-	tenantID              string
-	clientID              string
-	clientSecret          string
+	groupsClient              *resources.GroupsClient
+	virtualMachinesClient     *compute.VirtualMachinesClient
+	applicationGatewaysClient *network.ApplicationGatewaysClient
+	subscriptionID            string
+	tenantID                  string
+	clientID                  string
+	clientSecret              string
 }
 
 func NewAzure(config acceptance.Config) Azure {
@@ -40,14 +42,28 @@ func NewAzure(config acceptance.Config) Azure {
 	vmc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	vmc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
 
+	agc := network.NewApplicationGatewaysClient(config.AzureSubscriptionID)
+	agc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	agc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
+
 	return Azure{
-		groupsClient:          &gc,
-		virtualMachinesClient: &vmc,
-		subscriptionID:        config.AzureSubscriptionID,
-		tenantID:              config.AzureTenantID,
-		clientID:              config.AzureClientID,
-		clientSecret:          config.AzureClientSecret,
+		groupsClient:              &gc,
+		virtualMachinesClient:     &vmc,
+		applicationGatewaysClient: &agc,
+		subscriptionID:            config.AzureSubscriptionID,
+		tenantID:                  config.AzureTenantID,
+		clientID:                  config.AzureClientID,
+		clientSecret:              config.AzureClientSecret,
 	}
+}
+
+func (a Azure) GetApplicationGateway(resourceGroupName, applicationGatewayName string) (bool, error) {
+	_, err := a.applicationGatewaysClient.Get(resourceGroupName, applicationGatewayName)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (a Azure) GetResourceGroup(resourceGroupName string) (bool, error) {
@@ -73,9 +89,4 @@ func (a Azure) NetworkHasBOSHDirector(envID string) bool {
 	}
 
 	return false
-}
-
-func (a Azure) GetAppGateway(appGatewayName string) (bool, error) {
-	// TODO niroy
-	return true, nil
 }

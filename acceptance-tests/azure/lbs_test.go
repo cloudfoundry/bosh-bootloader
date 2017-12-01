@@ -14,7 +14,7 @@ import (
 
 var _ = PDescribe("lbs test", func() {
 	var (
-		bbl actors.BBL
+		bbl   actors.BBL
 		azure actors.Azure
 	)
 
@@ -47,11 +47,9 @@ var _ = PDescribe("lbs test", func() {
 		})
 
 		By("confirming that the app gateway exist", func() {
-
-			// TODO niroy
-			// appGateway, err := azure.GetAppGateway()
-			// Expect(err).NotTo(HaveOccurred())
-			// Expect(appGateway.something).To(HaveLen(1))
+			exists, err := azure.GetApplicationGateway(bbl.PredefinedEnvID(), "some-gateway")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
 		})
 
 		By("verifying the bbl lbs output", func() {
@@ -68,10 +66,9 @@ var _ = PDescribe("lbs test", func() {
 		})
 
 		By("confirming that the app gateway does not exist", func() {
-
-			// appGateway, err := azure.GetAppGateway()
-			// Expect(err).NotTo(HaveOccurred())
-			// Expect(appGateway). to be false/not exist
+			exists, err := azure.GetApplicationGateway(bbl.PredefinedEnvID(), "some-gateway")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
 		})
 	})
 })

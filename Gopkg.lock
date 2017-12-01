@@ -9,7 +9,7 @@
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
-  packages = ["arm/compute","arm/resources/resources","arm/storage"]
+  packages = ["arm/compute","arm/network","arm/resources/resources","arm/storage"]
   revision = "df4dd90d076ebbf6e87d08d3f00bfac8ff4bde1a"
   version = "v10.3.1-beta"
 
@@ -159,6 +159,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d66d36c0a8ec9c322f3cf6ca5e73ec13d0afd828d1314a93682b7aba4908e7f5"
+  inputs-digest = "abe3bbeb1906fb7836b13c707fd6bc86cb43dc5e5741f16fe5d01cdc6c295701"
   solver-name = "gps-cdcl"
   solver-version = 1
