@@ -84,7 +84,7 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     mkdir some-env && cd some-env
     BBL_GCP_SERVICE_ACCOUNT_KEY=<MYSERVICEACCOUNTKEY>
     bbl plan --name some-env --iaas gcp --gcp-region us-west-1
-    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/ .
+    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .
     ```
 1. Create the environment:
     ```
