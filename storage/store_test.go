@@ -226,7 +226,7 @@ var _ = Describe("Store", func() {
 					_, err = os.Stat(filepath.Join(tempDir, directory))
 					Expect(os.IsNotExist(err)).To(Equal(expectToBeDeleted))
 				},
-				Entry(".bbl", ".bbl", true),
+				Entry("cloudconfig", "cloudconfig", true),
 				Entry("terraform", "terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
@@ -326,9 +326,8 @@ var _ = Describe("Store", func() {
 
 			os.RemoveAll(expectedDir)
 		},
-		Entry("cloudconfig", filepath.Join(".bbl", "cloudconfig"), func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("cloudconfig", "cloudconfig", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("state", "", func() (string, error) { return store.GetStateDir(), nil }),
-		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
 		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
@@ -348,8 +347,7 @@ var _ = Describe("Store", func() {
 
 			os.RemoveAll(expectedDir)
 		},
-		Entry("cloudconfig", filepath.Join(".bbl", "cloudconfig"), func() (string, error) { return store.GetCloudConfigDir() }),
-		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
+		Entry("cloudconfig", "cloudconfig", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
 		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
@@ -367,7 +365,7 @@ var _ = Describe("Store", func() {
 
 			os.RemoveAll(expectedDir)
 		},
-		Entry("dot-bbl", ".bbl", func() (string, error) { return store.GetBblDir() }),
+		Entry("cloudconfig", "cloudconfig", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
 		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
@@ -375,34 +373,29 @@ var _ = Describe("Store", func() {
 	)
 
 	Describe("GetCloudConfigDir", func() {
-		var expectedDir string
+		var expectedCloudConfigPath string
 
 		BeforeEach(func() {
-			expectedDir = filepath.Join(tempDir, ".bbl", "cloudconfig")
+			expectedCloudConfigPath = filepath.Join(tempDir, "cloudconfig")
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(expectedDir)
+			os.RemoveAll(expectedCloudConfigPath)
 		})
 
-		Context("if the .bbl subdirectory exists", func() {
-			BeforeEach(func() {
-				os.MkdirAll(filepath.Join(tempDir, ".bbl"), os.ModePerm)
-			})
-
-			It("returns the path to the .bbl/cloudconfig directory", func() {
+		Context("if the cloudconfig subdirectory exists", func() {
+			It("returns the path to the cloudconfig directory", func() {
 				cloudConfigDir, err := store.GetCloudConfigDir()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cloudConfigDir).To(Equal(expectedDir))
+				Expect(cloudConfigDir).To(Equal(expectedCloudConfigPath))
 			})
 		})
 
 		Context("failure cases", func() {
-			Context("when the .bbl/cloudconfig subdirectory does not exist and cannot be created", func() {
+			Context("when there is a name collision with an existing file", func() {
 				BeforeEach(func() {
-					os.Mkdir(filepath.Join(tempDir, ".bbl"), os.ModePerm)
-					// create a file called .bbl/cloudconfig to cause name collision with the directory to be created
-					_, err := os.Create(expectedDir)
+					// create a file called cloudconfig to cause name collision with the directory to be created
+					_, err := os.Create(expectedCloudConfigPath)
 					Expect(err).NotTo(HaveOccurred())
 				})
 

@@ -29,6 +29,6 @@ To create an iso-segs environment on aws, you can:
 ```
 mkdir some-env && cd some-env
 bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key
-cp /path/to/patch-dir/.bbl/cloud-config/iso-segs-ops.yml .bbl/cloudconfig/
+cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/
 TF_VAR_isolation_segments="1" bbl up
 ```

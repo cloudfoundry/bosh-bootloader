@@ -52,7 +52,7 @@ func (s Store) Set(state State) error {
 			d, _ := getDirFunc()
 			return os.RemoveAll(d)
 		}
-		if err := rmdir(s.GetBblDir); err != nil {
+		if err := rmdir(s.GetCloudConfigDir); err != nil {
 			return err
 		}
 		if err := rmdir(s.GetDirectorDeploymentDir); err != nil {
@@ -106,11 +106,7 @@ func (s Store) GetStateDir() string {
 }
 
 func (s Store) GetCloudConfigDir() (string, error) {
-	return s.getDir(filepath.Join(".bbl", "cloudconfig"))
-}
-
-func (s Store) GetBblDir() (string, error) {
-	return s.getDir(".bbl")
+	return s.getDir(filepath.Join("cloudconfig"))
 }
 
 func (s Store) GetTerraformDir() (string, error) {
