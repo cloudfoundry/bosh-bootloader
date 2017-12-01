@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -19,8 +20,8 @@ var _ = Describe("TemplateGenerator", func() {
 	})
 
 	Describe("Generate", func() {
-		It("generates a terraform template for azure", func() {
-			expectedTemplate, err := ioutil.ReadFile("fixtures/azure_template.tf")
+		DescribeTable("generates a terraform template for azure", func(fixture, lbType, domain string) {
+			expectedTemplate, err := ioutil.ReadFile(fixture)
 			Expect(err).NotTo(HaveOccurred())
 
 			template := templateGenerator.Generate(storage.State{
@@ -32,8 +33,15 @@ var _ = Describe("TemplateGenerator", func() {
 					ClientID:       "client-id",
 					ClientSecret:   "client-secret",
 				},
+				LB: storage.LB{
+					Type:   lbType,
+					Domain: domain,
+				},
 			})
 			Expect(template).To(Equal(string(expectedTemplate)))
-		})
+		},
+			Entry("when no lb type is provided", "fixtures/base.tf", "", ""),
+			Entry("when a cf lb type is provided with a domain", "fixtures/cf_lb.tf", "cf", "some-domain"),
+		)
 	})
 })

@@ -21,7 +21,7 @@ var _ = Describe("InputGenerator", func() {
 			Azure: storage.Azure{
 				ClientID:       "client-id",
 				ClientSecret:   "client-secret",
-				Region:       "region",
+				Region:         "region",
 				SubscriptionID: "subscription-id",
 				TenantID:       "tenant-id",
 			},
@@ -37,7 +37,7 @@ var _ = Describe("InputGenerator", func() {
 		Expect(inputs).To(Equal(map[string]interface{}{
 			"simple_env_id":   "envid",
 			"env_id":          state.EnvID,
-			"region":        state.Azure.Region,
+			"region":          state.Azure.Region,
 			"subscription_id": state.Azure.SubscriptionID,
 			"tenant_id":       state.Azure.TenantID,
 			"client_id":       state.Azure.ClientID,
@@ -54,7 +54,7 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"simple_env_id":   "superlongenvironment",
 				"env_id":          state.EnvID,
-				"region":        state.Azure.Region,
+				"region":          state.Azure.Region,
 				"subscription_id": state.Azure.SubscriptionID,
 				"tenant_id":       state.Azure.TenantID,
 				"client_id":       state.Azure.ClientID,
@@ -64,7 +64,7 @@ var _ = Describe("InputGenerator", func() {
 	})
 
 	Context("given a partial LB state", func() {
-		It("does not generate input for the LB", func(){
+		It("does not generate input for the LB", func() {
 			state.LB.Cert = "Cert content"
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
@@ -86,14 +86,14 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"simple_env_id":   "envid",
 				"env_id":          state.EnvID,
-				"region":        state.Azure.Region,
+				"region":          state.Azure.Region,
 				"subscription_id": state.Azure.SubscriptionID,
 				"tenant_id":       state.Azure.TenantID,
 				"client_id":       state.Azure.ClientID,
 				"client_secret":   state.Azure.ClientSecret,
 				"pfx_cert_base64": "Cert content",
-				"pfx_password":         "PFX password",
-				"system_domain": "example.com",
+				"pfx_password":    "PFX password",
+				"system_domain":   "example.com",
 			}))
 		})
 	})

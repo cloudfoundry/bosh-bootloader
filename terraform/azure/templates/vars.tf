@@ -1,8 +1,6 @@
 variable "env_id" {}
 
-variable "region" {
-  type = "string"
-}
+variable "region" {}
 
 variable "simple_env_id" {}
 

@@ -21,7 +21,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	input := map[string]interface{}{
 		"env_id":          state.EnvID,
 		"simple_env_id":   simpleEnvId,
-		"region":        state.Azure.Region,
+		"region":          state.Azure.Region,
 		"subscription_id": state.Azure.SubscriptionID,
 		"tenant_id":       state.Azure.TenantID,
 		"client_id":       state.Azure.ClientID,
