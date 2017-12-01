@@ -6,7 +6,7 @@ variable "pfx_password" {}
 
 resource "azurerm_subnet" "sub1" {
   name                 = "${var.env_id}-cf-subnet1"
-  address_prefix       = "10.0.1.0/24"
+  address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
