@@ -226,6 +226,7 @@ var _ = Describe("Store", func() {
 					_, err = os.Stat(filepath.Join(tempDir, directory))
 					Expect(os.IsNotExist(err)).To(Equal(expectToBeDeleted))
 				},
+				Entry("old .bbl dir", ".bbl", true),
 				Entry("cloudconfig", "cloudconfig", true),
 				Entry("terraform", "terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
