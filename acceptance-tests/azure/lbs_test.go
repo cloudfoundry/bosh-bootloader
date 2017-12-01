@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = FDescribe("lbs test", func() {
+var _ = PDescribe("lbs test", func() {
 	var (
 		bbl actors.BBL
 		azure actors.Azure

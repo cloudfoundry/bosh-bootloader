@@ -12,9 +12,9 @@ variable "pfx_password" {
 
 resource "azurerm_subnet" "sub1" {
   name                 = "${var.env_id}-cf-subnet1"
+  address_prefix       = "10.0.1.0/24"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
-  address_prefix       = "${var.internal_cidr}"
 }
 
 resource "azurerm_public_ip" "lb" {
