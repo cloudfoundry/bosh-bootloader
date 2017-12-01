@@ -165,7 +165,6 @@ func main() {
 	case "gcp":
 		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 	case "azure":
-		createLBsCmd = commands.NewAzureCreateLBs(terraformManager, cloudConfigManager, stateStore, environmentValidator)
 		lbsCmd = commands.NewAzureLBs(terraformManager, logger)
 	}
 
