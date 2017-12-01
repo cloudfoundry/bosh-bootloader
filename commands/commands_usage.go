@@ -56,7 +56,7 @@ const (
   --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
   --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
   --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
-  --azure-location           Azure Location to use (Defaults to environment variable BBL_AZURE_LOCATION)`
+  --azure-region             Azure Region to use (Defaults to environment variable BBL_AZURE_REGION)`
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
 

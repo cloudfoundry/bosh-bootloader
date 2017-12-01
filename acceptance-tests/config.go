@@ -18,7 +18,7 @@ type Config struct {
 
 	AzureClientID       string
 	AzureClientSecret   string
-	AzureLocation       string
+	AzureRegion         string
 	AzureSubscriptionID string
 	AzureTenantID       string
 
@@ -189,7 +189,7 @@ func loadConfigFromEnvVars() Config {
 
 		AzureClientID:       os.Getenv("BBL_AZURE_CLIENT_ID"),
 		AzureClientSecret:   os.Getenv("BBL_AZURE_CLIENT_SECRET"),
-		AzureLocation:       os.Getenv("BBL_AZURE_LOCATION"),
+		AzureRegion:         os.Getenv("BBL_AZURE_REGION"),
 		AzureSubscriptionID: os.Getenv("BBL_AZURE_SUBSCRIPTION_ID"),
 		AzureTenantID:       os.Getenv("BBL_AZURE_TENANT_ID"),
 

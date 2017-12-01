@@ -58,7 +58,7 @@ var _ = Describe("AzureCreateLBs", func() {
 
 		bblState = storage.State{
 			Azure: storage.Azure{
-				Location: "some-location",
+				Region: "some-region",
 			},
 			TFState: "some-tfstate",
 		}
@@ -82,7 +82,7 @@ var _ = Describe("AzureCreateLBs", func() {
 
 			Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(storage.State{
 				Azure: storage.Azure{
-					Location: "some-location",
+					Region: "some-region",
 				},
 				TFState: "some-tfstate",
 				LB: storage.LB{
