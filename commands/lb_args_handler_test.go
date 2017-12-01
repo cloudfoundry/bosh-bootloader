@@ -24,11 +24,13 @@ var _ = Describe("LB args handler", func() {
 
 	Describe("GetLBState", func() {
 		BeforeEach(func() {
-			certificateValidator.ReadAndValidateCall.Returns.CertData = certs.CertData{
+			certData := certs.CertData{
 				Key:   []byte("some-key"),
 				Cert:  []byte("some-cert"),
 				Chain: []byte("some-chain"),
 			}
+			certificateValidator.ReadAndValidateCall.Returns.CertData = certData
+			certificateValidator.ReadCall.Returns.CertData = certData
 		})
 
 		It("returns a storage.LB object", func() {
@@ -80,6 +82,22 @@ var _ = Describe("LB args handler", func() {
 					Expect(lbState.Domain).To(Equal(""))
 					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 				})
+			})
+		})
+
+		Context("when iaas is azure and lb type is cf", func() {
+			It("does not call certificateValidator but returns a storage.LB object", func() {
+				lbState, err := handler.GetLBState("azure", commands.CreateLBsConfig{
+					LBType: "cf",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(lbState.Type).To(Equal("cf"))
+				Expect(lbState.Type).To(Equal("cf"))
+				Expect(lbState.Cert).To(Equal("c29tZS1jZXJ0"))
+				Expect(lbState.Key).To(Equal("some-key"))
+				Expect(lbState.Chain).To(Equal("some-chain"))
+				Expect(certificateValidator.ReadCall.CallCount).To(Equal(1))
+				Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 			})
 		})
 

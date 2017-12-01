@@ -1,8 +1,6 @@
 package azure_test
 
 import (
-	"io/ioutil"
-	"os"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	. "github.com/onsi/ginkgo"
@@ -67,7 +65,7 @@ var _ = Describe("InputGenerator", func() {
 
 	Context("given a partial LB state", func() {
 		It("does not generate input for the LB", func(){
-			state.LB.Cert = "certpath"
+			state.LB.Cert = "Cert content"
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(inputs)).To(Equal(7))
@@ -75,36 +73,14 @@ var _ = Describe("InputGenerator", func() {
 	})
 
 	Context("given a LB", func() {
-		var (
-			cert *os.File
-			key *os.File
-		)
-
 		BeforeEach(func() {
-			var err error
-
-			cert, err = ioutil.TempFile("", "")
-			Expect(err).NotTo(HaveOccurred())
-			cert.WriteString("cert content")
-
-			key, err = ioutil.TempFile("", "")
-			Expect(err).NotTo(HaveOccurred())
-			key.WriteString("secret key")
-
-			state.LB.Cert = cert.Name()
-			state.LB.Key = key.Name()
-		})
-
-		AfterEach(func() {
-			cert.Close()
-			key.Close()
+			state.LB.Cert = "Cert content"
+			state.LB.Key = "PFX password"
 		})
 
 		It("returns the expected inputs for the LB", func() {
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
-
-			inputs["pfx_cert_base64"] = ""
 
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"simple_env_id":   "envid",
@@ -114,15 +90,9 @@ var _ = Describe("InputGenerator", func() {
 				"tenant_id":       state.Azure.TenantID,
 				"client_id":       state.Azure.ClientID,
 				"client_secret":   state.Azure.ClientSecret,
-				"pfx_cert_base64": "",
-				"pfx_password":         "secret key",
+				"pfx_cert_base64": "Cert content",
+				"pfx_password":         "PFX password",
 			}))
-		})
-
-		It("converts the cert to base64", func() {
-			inputs, err := inputGenerator.Generate(state)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(inputs["pfx_cert_base64"]).To(Equal("Y2VydCBjb250ZW50"))
 		})
 	})
 })

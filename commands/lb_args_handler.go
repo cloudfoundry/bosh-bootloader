@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -26,7 +27,23 @@ func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.
 		return storage.LB{}, nil
 	}
 
-	if config.LBType != "concourse" {
+	// Ignore validation for Azure because it uses PFX format
+	if (iaas == "azure" && config.LBType == "cf"){
+		certData, err = l.certificateValidator.Read(config.CertPath, config.KeyPath, config.ChainPath)
+		if err != nil {
+			return storage.LB{}, fmt.Errorf("Reading certificate: %s", err)
+		}
+
+		return storage.LB{
+			Type:   config.LBType,
+			Cert:   base64.StdEncoding.EncodeToString(certData.Cert),
+			Key:    string(certData.Key),
+			Chain:  string(certData.Chain),
+			Domain: config.Domain,
+		}, nil
+	}
+
+	if !(iaas == "gcp" && config.LBType == "concourse") {
 		certData, err = l.certificateValidator.ReadAndValidate(config.CertPath, config.KeyPath, config.ChainPath)
 		if err != nil {
 			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)

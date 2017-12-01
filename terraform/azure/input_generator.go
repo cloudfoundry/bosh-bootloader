@@ -1,8 +1,6 @@
 package azure
 
 import (
-	"encoding/base64"
-	"io/ioutil"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -31,19 +29,8 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	}
 
 	if state.LB.Cert != "" && state.LB.Key != "" {
-
-		certBytes, err := ioutil.ReadFile(state.LB.Cert)
-		if err != nil {
-			return map[string]interface{}{}, err
-		}
-		certBase64 :=  base64.StdEncoding.EncodeToString(certBytes)
-		input["pfx_cert_base64"] = certBase64
-
-		keyBytes, err := ioutil.ReadFile(state.LB.Key)
-		if err != nil {
-			return map[string]interface{}{}, err
-		}
-		input["pfx_password"] = string(keyBytes)
+		input["pfx_cert_base64"] = state.LB.Cert
+		input["pfx_password"] = state.LB.Key
 	}
 
 	return input, nil
