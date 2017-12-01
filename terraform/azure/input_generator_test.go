@@ -76,6 +76,7 @@ var _ = Describe("InputGenerator", func() {
 		BeforeEach(func() {
 			state.LB.Cert = "Cert content"
 			state.LB.Key = "PFX password"
+			state.LB.Domain = "example.com"
 		})
 
 		It("returns the expected inputs for the LB", func() {
@@ -92,6 +93,7 @@ var _ = Describe("InputGenerator", func() {
 				"client_secret":   state.Azure.ClientSecret,
 				"pfx_cert_base64": "Cert content",
 				"pfx_password":         "PFX password",
+				"system_domain": "example.com",
 			}))
 		})
 	})
