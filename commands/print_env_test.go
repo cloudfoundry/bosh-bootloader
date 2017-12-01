@@ -82,7 +82,7 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_PASSWORD=some-credhub-password"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=socks5://localhost:\d+`)))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`JUMPBOX_PRIVATE_KEY=.*\/bosh_jumpbox_private.key`)))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`JUMPBOX_PRIVATE_KEY=.*[/\\]bosh_jumpbox_private.key`)))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
 		})
 

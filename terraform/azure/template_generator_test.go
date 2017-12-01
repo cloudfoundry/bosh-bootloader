@@ -28,6 +28,7 @@ var _ = Describe("TemplateGenerator", func() {
 				Azure: storage.Azure{
 					SubscriptionID: "subscription-id",
 					TenantID:       "tenant-id",
+					Region:         "my-location",
 					ClientID:       "client-id",
 					ClientSecret:   "client-secret",
 				},

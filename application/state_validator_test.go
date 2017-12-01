@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -49,13 +50,14 @@ var _ = Describe("StateValidator", func() {
 
 	Context("failure cases", func() {
 		Context("when permission denied", func() {
-			BeforeEach(func() {
-				err := os.Chmod(tempDirectory, os.FileMode(0))
-				Expect(err).NotTo(HaveOccurred())
-			})
 
 			It("returns an error", func() {
-				err := stateValidator.Validate()
+				if runtime.GOOS == "windows" {
+					Skip("Chmod is not supported on Windows")
+				}
+				err := os.Chmod(tempDirectory, os.FileMode(0))
+				Expect(err).NotTo(HaveOccurred())
+				err = stateValidator.Validate()
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 		})

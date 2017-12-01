@@ -118,8 +118,8 @@ func validateAzureCreds(config Config) error {
 		return errors.New("azure client secret is missing")
 	}
 
-	if config.AzureLocation == "" {
-		return errors.New("azure location is missing")
+	if config.AzureRegion == "" {
+		return errors.New("azure region is missing")
 	}
 
 	if config.AzureSubscriptionID == "" {

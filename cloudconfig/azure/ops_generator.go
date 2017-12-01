@@ -25,6 +25,10 @@ type op struct {
 	Value interface{}
 }
 
+type cloud_properties struct {
+	application_gateway string
+}
+
 type network struct {
 	Name    string
 	Subnets []networkSubnet
@@ -110,6 +114,17 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 				Type:    "manual",
 			},
 		},
+	}
+
+	if state.LB.Type == "cf" {
+		lbOp := op{
+			Type: "replace",
+			Path: "/vm_extensions/-",
+			Value: cloud_properties{
+				application_gateway: "appgatewayname",
+			},
+		}
+		cloudConfigOps = append(cloudConfigOps, lbOp)
 	}
 
 	cloudConfigOpsYAML, err := marshal(cloudConfigOps)

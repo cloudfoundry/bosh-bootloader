@@ -302,8 +302,8 @@ var _ = Describe("Manager", func() {
 			_, workingDirectory, args := cmd.RunArgsForCall(0)
 			Expect(workingDirectory).To(Equal(cloudConfigDir))
 			Expect(args).To(Equal([]string{
-				"interpolate", fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir),
-				"--vars-file", fmt.Sprintf("%s/cloud-config-vars.yml", varsDir),
+				"interpolate", fmt.Sprintf("%s%ccloud-config.yml", cloudConfigDir, os.PathSeparator),
+				"--vars-file", fmt.Sprintf("%s%ccloud-config-vars.yml", varsDir, os.PathSeparator),
 				"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
 				"-o", fmt.Sprintf("%s/shenanigans-ops.yml", cloudConfigDir),
 			}))

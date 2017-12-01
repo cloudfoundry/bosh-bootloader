@@ -73,6 +73,16 @@ bosh_default_security_group: some-security-group
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 		})
 
+		Context("with a load balancer", func() {
+			BeforeEach(func() {
+				terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
+			})
+
+			It("returns an ops file with the cloud properties for the LB", func() {
+				
+			})
+		})
+
 		Context("failure cases", func() {
 			Context("when terraform output provider fails to retrieve", func() {
 				BeforeEach(func() {
