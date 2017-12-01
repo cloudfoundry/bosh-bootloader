@@ -115,7 +115,7 @@ var _ = Describe("InputGenerator", func() {
 				"client_id":       state.Azure.ClientID,
 				"client_secret":   state.Azure.ClientSecret,
 				"pfx_cert_base64": "",
-				"pfx_key":         "secret key",
+				"pfx_password":         "secret key",
 			}))
 		})
 

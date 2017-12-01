@@ -43,7 +43,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		if err != nil {
 			return map[string]interface{}{}, err
 		}
-		input["pfx_key"] = string(keyBytes)
+		input["pfx_password"] = string(keyBytes)
 	}
 
 	return input, nil
