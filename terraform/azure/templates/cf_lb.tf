@@ -10,18 +10,10 @@ variable "pfx_password" {
   type = "string"
 }
 
-# Create a application gateway in the web_servers resource group
-resource "azurerm_virtual_network" "cf-vn" {
-  name                = "${var.env_id}-cf-vnet"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-  address_space       = ["${var.network_cidr}"]
-  location            = "${var.region}"
-}
-
 resource "azurerm_subnet" "sub1" {
   name                 = "${var.env_id}-cf-subnet1"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
-  virtual_network_name = "${azurerm_virtual_network.cf-vn.name}"
+  virtual_network_name = "${azurerm_virtual_network.bosh.name}"
   address_prefix       = "${var.internal_cidr}"
 }
 
@@ -56,7 +48,7 @@ resource "azurerm_application_gateway" "network" {
  
   gateway_ip_configuration {
     name         = "${var.env_id}-cf-gateway-ip-configuration"
-    subnet_id    = "${azurerm_virtual_network.cf-vn.id}/subnets/${azurerm_subnet.sub1.name}"
+    subnet_id    = "${azurerm_virtual_network.bosh.id}/subnets/${azurerm_subnet.sub1.name}"
   }
  
   frontend_port {
@@ -79,7 +71,7 @@ resource "azurerm_application_gateway" "network" {
   }
  
   backend_http_settings {
-    name                  = "${azurerm_virtual_network.cf-vn.name}-be-htst"
+    name                  = "${azurerm_virtual_network.bosh.name}-be-htst"
     cookie_based_affinity = "Disabled"
     port                  = 80
     protocol              = "Http"
@@ -94,7 +86,7 @@ resource "azurerm_application_gateway" "network" {
   }
  
   http_listener {
-    name                                  = "${azurerm_virtual_network.cf-vn.name}-httplstn"
+    name                                  = "${azurerm_virtual_network.bosh.name}-httplstn"
     frontend_ip_configuration_name        = "${var.env_id}-cf-frontend-ip-configuration"
     frontend_port_name                    = "frontendporthttps"
     protocol                              = "Https"
@@ -102,11 +94,11 @@ resource "azurerm_application_gateway" "network" {
   }
  
   request_routing_rule {
-    name                       = "${azurerm_virtual_network.cf-vn.name}-rqrt"
+    name                       = "${azurerm_virtual_network.bosh.name}-rqrt"
     rule_type                  = "Basic"
-    http_listener_name         = "${azurerm_virtual_network.cf-vn.name}-httplstn"
+    http_listener_name         = "${azurerm_virtual_network.bosh.name}-httplstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
-    backend_http_settings_name = "${azurerm_virtual_network.cf-vn.name}-be-htst"
+    backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
   }
 }
 

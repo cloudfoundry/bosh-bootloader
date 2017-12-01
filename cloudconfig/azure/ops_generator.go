@@ -117,11 +117,17 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	}
 
 	if state.LB.Type == "cf" {
+		terraformOutputs, err := o.terraformManager.GetOutputs()
+		if err != nil {
+			return "", err
+		}
+		
+		var appGatewayName = terraformOutputs.GetString("app_gateway_name")
 		lbOp := op{
 			Type: "replace",
 			Path: "/vm_extensions/-",
 			Value: cloud_properties{
-				application_gateway: "appgatewayname",
+				application_gateway: appGatewayName,
 			},
 		}
 		cloudConfigOps = append(cloudConfigOps, lbOp)
