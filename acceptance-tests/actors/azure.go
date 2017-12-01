@@ -74,3 +74,8 @@ func (a Azure) NetworkHasBOSHDirector(envID string) bool {
 
 	return false
 }
+
+func (a Azure) GetAppGateway(appGatewayName string) (bool, error) {
+	// TODO niroy
+	return true, nil
+}
