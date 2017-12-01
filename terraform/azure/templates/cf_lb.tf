@@ -95,6 +95,6 @@ resource "azurerm_application_gateway" "network" {
   }
 }
 
-output "app_gateway_name" {
+output "application_gateway" {
   value = "${azurerm_application_gateway.network.name}"
 }

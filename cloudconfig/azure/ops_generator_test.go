@@ -34,7 +34,7 @@ var _ = Describe("AzureOpsGenerator", func() {
 			"bosh_network_name":           "some-virtual-network-name",
 			"bosh_subnet_name":            "some-subnet-name",
 			"bosh_default_security_group": "some-security-group",
-			"app_gateway_name":            "some-app-gateway-name",
+			"application_gateway":         "some-app-gateway-name",
 		}}
 
 		var err error
@@ -69,6 +69,7 @@ az3_static: 10.0.63.190-10.0.63.254
 bosh_network_name: some-virtual-network-name
 bosh_subnet_name: some-subnet-name
 bosh_default_security_group: some-security-group
+application_gateway: some-app-gateway-name
 `))
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
@@ -76,18 +77,14 @@ bosh_default_security_group: some-security-group
 
 		Context("with a load balancer", func() {
 			BeforeEach(func() {
-				//terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
 				incomingState.LB.Type = "cf"
 			})
 
 			It("returns an ops file with the cloud properties for the LB", func() {
-				// ops, err := opsGenerator.Generate(incomingState)
-				_, err := opsGenerator.Generate(incomingState)
+				ops, err := opsGenerator.GenerateVars(incomingState)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-//				Expect(ops).To(gomegamatchers.MatchYAML(`
-// application_gateway: some-app-gateway-name
-// `))
+				Expect(ops).To(ContainSubstring(`application_gateway: some-app-gateway-name`))
 			})
 		})
 

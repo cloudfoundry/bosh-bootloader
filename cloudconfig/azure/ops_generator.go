@@ -25,8 +25,8 @@ type op struct {
 	Value interface{}
 }
 
-type cloud_properties struct {
-	application_gateway string
+type cloudProperties struct {
+	ApplicationGateway string `json:"application_gateway"`
 }
 
 type network struct {
@@ -69,6 +69,7 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		"bosh_network_name":           terraformOutputs.GetString("bosh_network_name"),
 		"bosh_subnet_name":            terraformOutputs.GetString("bosh_subnet_name"),
 		"bosh_default_security_group": terraformOutputs.GetString("bosh_default_security_group"),
+		"application_gateway":         terraformOutputs.GetString("application_gateway"),
 	}
 	for i, _ := range azs {
 		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))
@@ -117,17 +118,11 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	}
 
 	if state.LB.Type == "cf" {
-		terraformOutputs, err := o.terraformManager.GetOutputs()
-		if err != nil {
-			return "", err
-		}
-		
-		var appGatewayName = terraformOutputs.GetString("app_gateway_name")
 		lbOp := op{
 			Type: "replace",
 			Path: "/vm_extensions/-",
-			Value: cloud_properties{
-				application_gateway: appGatewayName,
+			Value: cloudProperties{
+				ApplicationGateway: "((applcation_gateway))",
 			},
 		}
 		cloudConfigOps = append(cloudConfigOps, lbOp)
