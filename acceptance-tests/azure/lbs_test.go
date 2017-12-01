@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"encoding/base64"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -12,7 +13,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = PDescribe("lbs test", func() {
+var _ = Describe("lbs test", func() {
 	var (
 		bbl   actors.BBL
 		azure actors.Azure
@@ -36,10 +37,13 @@ var _ = PDescribe("lbs test", func() {
 
 	It("successfully creates, updates, and deletes cf lbs", func() {
 		By("creating cf load balancers", func() {
-			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			pfx_data, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
 			Expect(err).NotTo(HaveOccurred())
 
-			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			certPath, err := testhelpers.WriteByteContentsToTempFile(pfx_data)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
 			Expect(err).NotTo(HaveOccurred())
 
 			session := bbl.CreateLB("cf", certPath, keyPath, "")
