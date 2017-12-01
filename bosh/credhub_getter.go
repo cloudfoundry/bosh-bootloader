@@ -66,5 +66,28 @@ func (c CredhubGetter) GetCerts() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s\n%s", certs.CredhubCA.Certificate, certs.UAASSL.Certificate), nil
+	return fmt.Sprintf("%s%s", certs.CredhubCA.Certificate, certs.UAASSL.Certificate), nil
+}
+
+func (c CredhubGetter) GetPassword() (string, error) {
+	var certs struct {
+		Password string `yaml:"credhub_cli_password"`
+	}
+
+	varsDir, err := c.stateStore.GetVarsDir()
+	if err != nil {
+		return "", fmt.Errorf("Get vars directory: %s", err)
+	}
+
+	varsStore, err := ioutil.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
+	if err != nil {
+		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err)
+	}
+
+	err = yaml.Unmarshal(varsStore, &certs)
+	if err != nil {
+		return "", err
+	}
+
+	return certs.Password, nil
 }

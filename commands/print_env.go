@@ -26,6 +26,7 @@ type envSetter interface {
 type credhubGetter interface {
 	GetServer() (string, error)
 	GetCerts() (string, error)
+	GetPassword() (string, error)
 }
 
 func NewPrintEnv(logger logger, stderrLogger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter, credhubGetter credhubGetter, terraformManager terraformManager) PrintEnv {
@@ -63,6 +64,15 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	p.logger.Println(fmt.Sprintf("export BOSH_CLIENT_SECRET=%s", state.BOSH.DirectorPassword))
 	p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
 	p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
+
+	p.logger.Println("export CREDHUB_USER=credhub-cli")
+
+	credhubPassword, err := p.credhubGetter.GetPassword()
+	if err == nil {
+		p.logger.Println(fmt.Sprintf("export CREDHUB_PASSWORD=%s", credhubPassword))
+	} else {
+		p.stderrLogger.Println("No credhub password found.")
+	}
 
 	credhubServer, err := p.credhubGetter.GetServer()
 	if err == nil {
