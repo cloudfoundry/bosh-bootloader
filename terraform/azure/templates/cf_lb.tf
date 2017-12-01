@@ -1,6 +1,5 @@
 variable "system_domain" {
   type = "string"
-  default = "example.com"
 }
 
 variable "pfx_cert_base64" {
