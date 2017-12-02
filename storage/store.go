@@ -71,7 +71,6 @@ func (s Store) Set(state State) error {
 			return err
 		}
 
-		_ = os.RemoveAll(s.getOldBblDir())
 		_ = os.RemoveAll(filepath.Join(s.dir, "create-jumpbox.sh"))
 		_ = os.RemoveAll(filepath.Join(s.dir, "create-director.sh"))
 		_ = os.RemoveAll(filepath.Join(s.dir, "delete-jumpbox.sh"))
@@ -128,10 +127,6 @@ func (s Store) GetDirectorDeploymentDir() (string, error) {
 
 func (s Store) GetJumpboxDeploymentDir() (string, error) {
 	return s.getDir("jumpbox-deployment")
-}
-
-func (s Store) getOldBblDir() string {
-	return filepath.Join(s.dir, ".bbl")
 }
 
 func (s Store) getDir(name string) (string, error) {
