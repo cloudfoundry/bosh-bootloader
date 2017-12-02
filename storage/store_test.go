@@ -226,7 +226,7 @@ var _ = Describe("Store", func() {
 					_, err = os.Stat(filepath.Join(tempDir, directory))
 					Expect(os.IsNotExist(err)).To(Equal(expectToBeDeleted))
 				},
-				Entry("cloudconfig", "cloudconfig", true),
+				Entry("cloud-config", "cloud-config", true),
 				Entry("terraform", "terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
@@ -326,7 +326,7 @@ var _ = Describe("Store", func() {
 
 			os.RemoveAll(expectedDir)
 		},
-		Entry("cloudconfig", "cloudconfig", func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("cloud-config", "cloud-config", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("state", "", func() (string, error) { return store.GetStateDir(), nil }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
@@ -347,7 +347,7 @@ var _ = Describe("Store", func() {
 
 			os.RemoveAll(expectedDir)
 		},
-		Entry("cloudconfig", "cloudconfig", func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("cloud-config", "cloud-config", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
 		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
@@ -365,7 +365,7 @@ var _ = Describe("Store", func() {
 
 			os.RemoveAll(expectedDir)
 		},
-		Entry("cloudconfig", "cloudconfig", func() (string, error) { return store.GetCloudConfigDir() }),
+		Entry("cloud-config", "cloud-config", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
 		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
 		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
@@ -376,15 +376,15 @@ var _ = Describe("Store", func() {
 		var expectedCloudConfigPath string
 
 		BeforeEach(func() {
-			expectedCloudConfigPath = filepath.Join(tempDir, "cloudconfig")
+			expectedCloudConfigPath = filepath.Join(tempDir, "cloud-config")
 		})
 
 		AfterEach(func() {
 			os.RemoveAll(expectedCloudConfigPath)
 		})
 
-		Context("if the cloudconfig subdirectory exists", func() {
-			It("returns the path to the cloudconfig directory", func() {
+		Context("if the cloud-config subdirectory exists", func() {
+			It("returns the path to the cloud-config directory", func() {
 				cloudConfigDir, err := store.GetCloudConfigDir()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cloudConfigDir).To(Equal(expectedCloudConfigPath))
@@ -394,7 +394,7 @@ var _ = Describe("Store", func() {
 		Context("failure cases", func() {
 			Context("when there is a name collision with an existing file", func() {
 				BeforeEach(func() {
-					// create a file called cloudconfig to cause name collision with the directory to be created
+					// create a file called cloud-config to cause name collision with the directory to be created
 					_, err := os.Create(expectedCloudConfigPath)
 					Expect(err).NotTo(HaveOccurred())
 				})

@@ -2,7 +2,6 @@ package commands_test
 
 import (
 	"errors"
-	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -23,8 +22,6 @@ var _ = Describe("Up", func() {
 		terraformManager   *fakes.TerraformManager
 		cloudConfigManager *fakes.CloudConfigManager
 		stateStore         *fakes.StateStore
-
-		tempDir string
 	)
 
 	BeforeEach(func() {
@@ -36,12 +33,6 @@ var _ = Describe("Up", func() {
 		terraformManager = &fakes.TerraformManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}
-
-		var err error
-		tempDir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
-
-		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
 		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
 	})

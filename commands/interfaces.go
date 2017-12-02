@@ -88,7 +88,9 @@ type logger interface {
 
 type stateStore interface {
 	Set(state storage.State) error
+	GetOldBblDir() string
 	GetVarsDir() (string, error)
+	GetCloudConfigDir() (string, error)
 }
 
 type cloudConfigManager interface {

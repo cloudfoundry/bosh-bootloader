@@ -160,7 +160,7 @@ output "internal_az_subnet_id_mapping" {
 			checkExists(stateDir, []string{"create-director.sh"})
 			checkExists(stateDir, []string{"delete-jumpbox.sh"})
 			checkExists(stateDir, []string{"delete-director.sh"})
-			checkExists(filepath.Join(stateDir, "cloudconfig"), []string{
+			checkExists(filepath.Join(stateDir, "cloud-config"), []string{
 				"cloud-config.yml",
 				"ops.yml",
 			})

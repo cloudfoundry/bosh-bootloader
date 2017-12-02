@@ -35,7 +35,7 @@ type StateStore struct {
 		}
 	}
 
-	GetBblDirCall struct {
+	GetOldBblDirCall struct {
 		CallCount int
 		Returns   struct {
 			Directory string
@@ -108,10 +108,10 @@ func (s *StateStore) GetStateDir() string {
 	return s.GetStateDirCall.Returns.Directory
 }
 
-func (s *StateStore) GetBblDir() (string, error) {
-	s.GetBblDirCall.CallCount++
+func (s *StateStore) GetOldBblDir() string {
+	s.GetOldBblDirCall.CallCount++
 
-	return s.GetBblDirCall.Returns.Directory, s.GetBblDirCall.Returns.Error
+	return s.GetOldBblDirCall.Returns.Directory
 }
 
 func (s *StateStore) GetTerraformDir() (string, error) {

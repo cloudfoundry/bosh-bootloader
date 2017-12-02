@@ -14,9 +14,12 @@ import (
 
 var _ = Describe("Migrator", func() {
 	var (
-		migrator storage.Migrator
-		store    *fakes.StateStore
-		varsDir  string
+		migrator       storage.Migrator
+		store          *fakes.StateStore
+		stateDir       string
+		varsDir        string
+		oldBblDir      string
+		cloudConfigDir string
 	)
 
 	BeforeEach(func() {
@@ -24,9 +27,24 @@ var _ = Describe("Migrator", func() {
 		migrator = storage.NewMigrator(store)
 
 		var err error
-		varsDir, err = ioutil.TempDir("", "")
+		stateDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
+
+		cloudConfigDir = filepath.Join(stateDir, "cloud-config")
+		err = os.Mkdir(cloudConfigDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		varsDir = filepath.Join(stateDir, "vars")
+		err = os.Mkdir(varsDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		oldBblDir = filepath.Join(stateDir, ".bbl")
+		err = os.Mkdir(oldBblDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		store.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
 		store.GetVarsDirCall.Returns.Directory = varsDir
+		store.GetOldBblDirCall.Returns.Directory = oldBblDir
 	})
 
 	Describe("Migrate", func() {
@@ -375,6 +393,74 @@ var _ = Describe("Migrator", func() {
 					It("returns an error", func() {
 						_, err := migrator.Migrate(incomingState)
 						Expect(err).To(MatchError(ContainSubstring("reading legacy jumpbox vars store: ")))
+					})
+				})
+			})
+		})
+
+		Context("when the state has a populated .bbl directory", func() {
+			var cloudConfigFilePath string
+			BeforeEach(func() {
+				cloudConfigFilePath = filepath.Join(oldBblDir, "some-config-file")
+				ioutil.WriteFile(cloudConfigFilePath, []byte("some-cloud-config"), os.ModePerm)
+			})
+
+			It("moves the cloud-config directory to the top level", func() {
+				_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+
+				Expect(err).NotTo(HaveOccurred())
+				configFileContents, err := ioutil.ReadFile(filepath.Join(cloudConfigDir, "some-config-file"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(configFileContents)).To(Equal("some-cloud-config"))
+				_, err = os.Stat(oldBblDir)
+				Expect(err).To(HaveOccurred())
+			})
+
+			Context("failure cases", func() {
+				Context("when the contents of the old .bbl dir cannot be read", func() {
+					BeforeEach(func() {
+						err := os.Chmod(oldBblDir, 0300)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+						Expect(err).To(MatchError(ContainSubstring("reading legacy .bbl dir contents: ")))
+					})
+				})
+
+				Context("when the cloud config dir cannot be found or created", func() {
+					BeforeEach(func() {
+						store.GetCloudConfigDirCall.Returns.Error = errors.New("potato")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+						Expect(err).To(MatchError(ContainSubstring("getting cloud-config dir: ")))
+					})
+				})
+
+				Context("when renaming a cloud-config file fails", func() {
+					BeforeEach(func() {
+						err := os.Chmod(cloudConfigDir, 0100)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+						Expect(err).To(MatchError(ContainSubstring("renaming cloud-config file: ")))
+					})
+				})
+
+				Context("when removing the old .bbl dir fails", func() {
+					BeforeEach(func() {
+						err := os.Chmod(stateDir, 0100)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+						Expect(err).To(MatchError(ContainSubstring("removing legacy .bbl dir: ")))
 					})
 				})
 			})

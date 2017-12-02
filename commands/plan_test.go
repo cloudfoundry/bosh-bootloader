@@ -26,8 +26,6 @@ var _ = Describe("Plan", func() {
 		logger             *fakes.Logger
 		stateStore         *fakes.StateStore
 		terraformManager   *fakes.TerraformManager
-
-		tempDir string
 	)
 
 	BeforeEach(func() {
@@ -39,12 +37,7 @@ var _ = Describe("Plan", func() {
 		stateStore = &fakes.StateStore{}
 		terraformManager = &fakes.TerraformManager{}
 
-		var err error
-		tempDir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
-
 		boshManager.VersionCall.Returns.Version = "2.0.24"
-		stateStore.GetBblDirCall.Returns.Directory = tempDir
 
 		command = commands.NewPlan(
 			boshManager,

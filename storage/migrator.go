@@ -12,6 +12,8 @@ import (
 type store interface {
 	Set(state State) error
 	GetVarsDir() (string, error)
+	GetOldBblDir() string
+	GetCloudConfigDir() (string, error)
 }
 
 type Migrator struct {
@@ -61,6 +63,32 @@ func (m Migrator) Migrate(state State) (State, error) {
 			return State{}, fmt.Errorf("migrating jumpbox state: %s", err)
 		}
 		state.Jumpbox.State = nil
+	}
+
+	if _, err := os.Stat(m.store.GetOldBblDir()); err == nil {
+		files, err := ioutil.ReadDir(m.store.GetOldBblDir())
+		if err != nil {
+			return State{}, fmt.Errorf("reading legacy .bbl dir contents: %s", err)
+		}
+
+		cloudConfigDir, err := m.store.GetCloudConfigDir()
+		if err != nil {
+			return State{}, fmt.Errorf("getting cloud-config dir: %s", err)
+		}
+		for _, file := range files {
+			err = os.Rename(
+				filepath.Join(m.store.GetOldBblDir(), file.Name()),
+				filepath.Join(cloudConfigDir, file.Name()),
+			)
+			if err != nil {
+				return State{}, fmt.Errorf("renaming cloud-config file: %s", err)
+			}
+		}
+
+		err = os.RemoveAll(m.store.GetOldBblDir())
+		if err != nil {
+			return State{}, fmt.Errorf("removing legacy .bbl dir: %s", err)
+		}
 	}
 
 	legacyDirectorVarsStore := filepath.Join(varsDir, "director-variables.yml")

@@ -106,7 +106,7 @@ func (s Store) GetStateDir() string {
 }
 
 func (s Store) GetCloudConfigDir() (string, error) {
-	return s.getDir(filepath.Join("cloudconfig"))
+	return s.getDir("cloud-config")
 }
 
 func (s Store) GetTerraformDir() (string, error) {
@@ -127,6 +127,10 @@ func (s Store) GetDirectorDeploymentDir() (string, error) {
 
 func (s Store) GetJumpboxDeploymentDir() (string, error) {
 	return s.getDir("jumpbox-deployment")
+}
+
+func (s Store) GetOldBblDir() string {
+	return filepath.Join(s.dir, ".bbl")
 }
 
 func (s Store) getDir(name string) (string, error) {
