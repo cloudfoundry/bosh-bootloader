@@ -13,13 +13,15 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("lbs test", func() {
+var _ = Describe("create lbs test", func() {
 	var (
 		bbl   actors.BBL
 		azure actors.Azure
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("create-lbs")
+
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 

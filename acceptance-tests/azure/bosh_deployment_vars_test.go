@@ -24,6 +24,8 @@ var _ = Describe("bosh deployment vars", func() {
 	)
 
 	BeforeEach(func() {
+		acceptance.SkipUnless("bosh-deployment-vars")
+
 		var err error
 		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
