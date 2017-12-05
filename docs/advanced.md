@@ -106,34 +106,11 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     ```
 
 ## <a name='isoseg'></a>Deploying an isolation segment
-Placeholder: this part of the advanced guide is a work in progress.
-
-## <a name='concourse'></a>~~Deploy concourse with bosh create-env~~ Deprecated workflow, needs updating
-
-1. Create the network and firewall rules. **Important here is the `--no-director` flag.**
-
-    ```
-    bbl up \
-      --gcp-zone <INSERT ZONE> \
-      --gcp-region <INSERT REGION> \
-      --gcp-service-account-key <INSERT SERVICE ACCOUNT KEY> \
-      --iaas gcp \
-      --no-director
-    ```
-
-1. Follow the deployment instructions in [concourse-deployment](https://github.com/concourse/concourse-deployment).
-Use the network related variables supplied by `bbl bosh-deployment-vars`.
-
-    ```
-    git clone https://github.com/concourse/concourse-deployment.git
-    bosh create-env concourse-deployment/concourse.yml  \
-      --state ~/environments/concourse/state.json  \
-      -o concourse-deployment/infrastructures/gcp.yml  \
-      --vars-store ~/environments/concourse/creds.yml  \
-      -l <(bbl --state-dir ~/environments/concourse bosh-deployment-vars | sed 's/external_ip/public_ip/')
-    ```
-
-1. Open port `4443` on the firewall rule `concourse-bosh-open`.
-
-1. Check out your new concourse at `https://<bbl director-address>:4443`.
-
+You can use this process on AWS to create an isolation segment with 
+```
+mkdir some-env && cd some-env
+bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key
+cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/
+TF_VAR_isolation_segments="1" bbl up
+```
+Alternatively, you can add `isolation_segments="1"` to `terraform.tfvars`.
