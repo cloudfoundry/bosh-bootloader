@@ -28,7 +28,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "bosh" {
-  name     = "${var.env_id}-bosh"
+  name     = "${var.env_id}"
   location = "${var.region}"
 
   tags {
