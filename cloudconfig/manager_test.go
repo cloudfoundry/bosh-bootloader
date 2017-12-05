@@ -12,7 +12,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -88,7 +87,7 @@ var _ = Describe("Manager", func() {
 
 			cloudConfig, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudConfig).To(gomegamatchers.MatchYAML(baseCloudConfig))
+			Expect(cloudConfig).To(MatchYAML(baseCloudConfig))
 
 			Expect(opsGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 

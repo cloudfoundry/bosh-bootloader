@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("AzureOpsGenerator", func() {
@@ -50,7 +49,7 @@ var _ = Describe("AzureOpsGenerator", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(varsYAML).To(gomegamatchers.MatchYAML(`
+			Expect(varsYAML).To(MatchYAML(`
 az1_gateway: 10.0.16.1
 az1_range: 10.0.16.0/20
 az1_reserved_1: 10.0.16.2-10.0.16.3
@@ -124,7 +123,7 @@ application_gateway: some-app-gateway-name
 			opsYAML, err := opsGenerator.Generate(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsFile))
+			Expect(opsYAML).To(MatchYAML(expectedOpsFile))
 		})
 
 		Context("failure cases", func() {

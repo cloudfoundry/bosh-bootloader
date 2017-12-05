@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -83,7 +82,7 @@ var _ = Describe("OpsGenerator", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-			Expect(varsYAML).To(gomegamatchers.MatchYAML(`
+			Expect(varsYAML).To(MatchYAML(`
 az1_name: us-east-1a
 az1_gateway: 10.0.16.1
 az1_range: 10.0.16.0/20
@@ -211,7 +210,7 @@ concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
+				Expect(opsYAML).To(MatchYAML(expectedOpsYAML))
 			})
 		})
 
@@ -229,7 +228,7 @@ concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
+				Expect(opsYAML).To(MatchYAML(expectedOpsYAML))
 			})
 		})
 
@@ -247,7 +246,7 @@ concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 				opsYAML, err := opsGenerator.Generate(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(opsYAML).To(gomegamatchers.MatchYAML(expectedOpsYAML))
+				Expect(opsYAML).To(MatchYAML(expectedOpsYAML))
 			})
 		})
 
