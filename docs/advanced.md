@@ -113,4 +113,4 @@ bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/t
 cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/
 TF_VAR_isolation_segments="1" bbl up
 ```
-Alternatively, you can add `isolation_segments="1"` to `terraform.tfvars`.
+To se the TF_VAR it is also possible to add `isolation_segments="1"` to `terraform.tfvars` before running up.
