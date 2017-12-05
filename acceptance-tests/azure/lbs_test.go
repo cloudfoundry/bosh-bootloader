@@ -17,6 +17,7 @@ var _ = Describe("create lbs test", func() {
 	var (
 		bbl   actors.BBL
 		azure actors.Azure
+		app_gateway_name string
 	)
 
 	BeforeEach(func() {
@@ -27,6 +28,7 @@ var _ = Describe("create lbs test", func() {
 
 		bbl = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, "lbs-env")
 		azure = actors.NewAzure(configuration)
+		app_gateway_name = bbl.PredefinedEnvID() + "-app-gateway"
 
 		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
@@ -49,11 +51,12 @@ var _ = Describe("create lbs test", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			session := bbl.CreateLB("cf", certPath, keyPath, "")
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the app gateway exist", func() {
-			exists, err := azure.GetApplicationGateway(bbl.PredefinedEnvID(), "some-gateway")
+			
+			exists, err := azure.GetApplicationGateway(bbl.PredefinedEnvID(), app_gateway_name)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
@@ -72,7 +75,7 @@ var _ = Describe("create lbs test", func() {
 		})
 
 		By("confirming that the app gateway does not exist", func() {
-			exists, err := azure.GetApplicationGateway(bbl.PredefinedEnvID(), "some-gateway")
+			exists, err := azure.GetApplicationGateway(bbl.PredefinedEnvID(), app_gateway_name)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeFalse())
 		})
