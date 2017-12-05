@@ -51,6 +51,10 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 		return err
 	}
 
+	if config.NoDirector {
+		p.logger.Println(`Deprecation warning: --no-director has been deprecated and will be removed in bbl v6.0.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`)
+	}
+
 	if !config.NoDirector && !state.NoDirector {
 		if err := fastFailBOSHVersion(p.boshManager); err != nil {
 			return err
@@ -89,10 +93,6 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 	err := planFlags.Parse(args)
 	if err != nil {
 		return PlanConfig{}, err
-	}
-
-	if config.NoDirector {
-		p.logger.Println(`Deprecation warning: --no-director has been deprecated and will be removed in BBL 6.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`)
 	}
 
 	if (lbConfig != CreateLBsConfig{}) {

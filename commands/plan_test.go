@@ -219,6 +219,14 @@ var _ = Describe("Plan", func() {
 	})
 
 	Describe("CheckFastFails", func() {
+		Context("when --no-director flag is passed in", func() {
+			It("notifies the user the flag is deprecated", func() {
+				err := command.CheckFastFails([]string{"--no-director"}, storage.State{Version: 9})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: --no-director has been deprecated and will be removed in bbl v6.0.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`))
+			})
+		})
+
 		Context("when terraform manager validate version fails", func() {
 			It("returns an error", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("lychee")
@@ -339,10 +347,6 @@ var _ = Describe("Plan", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config.NoDirector).To(Equal(true))
-
-				By("notifying the user the flag is deprecated", func() {
-					Expect(logger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: --no-director has been deprecated and will be removed in BBL 6.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`))
-				})
 			})
 
 			Context("when the --no-director flag was omitted on a subsequent bbl-up", func() {
