@@ -4,8 +4,8 @@ variable "pfx_cert_base64" {}
 
 variable "pfx_password" {}
 
-resource "azurerm_subnet" "sub1" {
-  name                 = "${var.env_id}-cf-subnet1"
+resource "azurerm_subnet" "cf-sn" {
+  name                 = "${var.env_id}-cf-sn"
   address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
@@ -41,7 +41,7 @@ resource "azurerm_application_gateway" "network" {
 
   gateway_ip_configuration {
     name      = "${var.env_id}-cf-gateway-ip-configuration"
-    subnet_id = "${azurerm_virtual_network.bosh.id}/subnets/${azurerm_subnet.sub1.name}"
+    subnet_id = "${azurerm_virtual_network.bosh.id}/subnets/${azurerm_subnet.cf-sn.name}"
   }
 
   frontend_port {
