@@ -1,9 +1,7 @@
 package commands
 
 import (
-	// "encoding/json"
 	"errors"
-	// "strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -21,13 +19,16 @@ func NewAzureLBs(terraformManager terraformManager, logger logger) AzureLBs {
 }
 
 func (l AzureLBs) Execute(subcommandFlags []string, state storage.State) error {
-	// terraformOutputs, err := l.terraformManager.GetOutputs(state)
-	// if err != nil {
-	// 	return err
-	// }
-	
-	l.logger.Printf("TODO niroy 123")
-	
-	return errors.New("no lbs found")
-	// return nil
+	terraformOutputs, err := l.terraformManager.GetOutputs()
+	if err != nil {
+		return err
+	}
+
+	if state.LB.Type == "cf" {
+		l.logger.Printf("CF LB: %s\n", terraformOutputs.GetString("application_gateway"))
+	} else {
+		return errors.New("no lbs found")
+	}
+
+	return nil
 }
