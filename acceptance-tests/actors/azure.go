@@ -37,7 +37,6 @@ func NewAzure(config acceptance.Config) Azure {
 	gc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	gc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
 
-	// blindly copied from groupsClient above
 	vmc := compute.NewVirtualMachinesClient(config.AzureSubscriptionID)
 	vmc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	vmc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
@@ -58,7 +57,7 @@ func NewAzure(config acceptance.Config) Azure {
 }
 
 func (a Azure) GetApplicationGateway(resourceGroupName, applicationGatewayName string) (bool, error) {
-	_, err := a.applicationGatewaysClient.Get(resourceGroupName, applicationGatewayName)
+	_, err := a.applicationGatewaysClient.Get(fmt.Sprintf("%s-bosh", resourceGroupName), applicationGatewayName)
 	if err != nil {
 		return false, err
 	}

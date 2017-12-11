@@ -21,7 +21,7 @@ var _ = Describe("create lbs test", func() {
 	)
 
 	BeforeEach(func() {
-		acceptance.SkipUnless("create-lbs")
+		acceptance.SkipUnless("lbs")
 
 		configuration, err := acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
@@ -62,10 +62,7 @@ var _ = Describe("create lbs test", func() {
 
 		By("verifying the bbl lbs output", func() {
 			stdout := bbl.Lbs()
-			Expect(stdout).To(MatchRegexp("CF Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF TCP Router LB: .*"))
-			Expect(stdout).To(MatchRegexp("CF WebSocket LB: .*"))
+			Expect(stdout).To(MatchRegexp("CF LB: .*"))
 		})
 
 		By("deleting lbs", func() {
