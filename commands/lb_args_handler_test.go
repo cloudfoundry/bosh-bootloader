@@ -86,7 +86,7 @@ var _ = Describe("LB args handler", func() {
 		})
 
 		Context("when iaas is azure and lb type is cf", func() {
-			It("does not call certificateValidator but returns a storage.LB object", func() {
+			It("it reads the certificate but does not validate", func() {
 				lbState, err := handler.GetLBState("azure", commands.CreateLBsConfig{
 					LBType: "cf",
 				})

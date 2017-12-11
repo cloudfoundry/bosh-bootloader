@@ -27,8 +27,7 @@ func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.
 		return storage.LB{}, nil
 	}
 
-	// Ignore validation for Azure because it uses PFX format
-	if (iaas == "azure" && config.LBType == "cf"){
+	if iaas == "azure" && config.LBType == "cf" {
 		certData, err = l.certificateValidator.Read(config.CertPath, config.KeyPath, config.ChainPath)
 		if err != nil {
 			return storage.LB{}, fmt.Errorf("Reading certificate: %s", err)
