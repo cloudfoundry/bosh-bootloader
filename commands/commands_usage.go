@@ -4,18 +4,28 @@ import "fmt"
 
 const (
 	Credentials = `
-  --aws-access-key-id        AWS Access Key ID to use       also: $BBL_AWS_ACCESS_KEY_ID
-  --aws-secret-access-key    AWS Secret Access Key to use   also: $BBL_AWS_SECRET_ACCESS_KEY
-  --aws-region               AWS Region to use              also: $BBL_AWS_REGION
+  --aws-access-key-id        AWS Access Key ID              env: $BBL_AWS_ACCESS_KEY_ID
+  --aws-secret-access-key    AWS Secret Access Key          env: $BBL_AWS_SECRET_ACCESS_KEY
+  --aws-region               AWS Region                     env: $BBL_AWS_REGION
 
-  --gcp-service-account-key  GCP Service Access Key to use  also: $BBL_GCP_SERVICE_ACCOUNT_KEY
-  --gcp-region               GCP Region to use              also: $BBL_GCP_REGION
+  --gcp-service-account-key  GCP Service Access Key to use  env: $BBL_GCP_SERVICE_ACCOUNT_KEY
+  --gcp-region               GCP Region to use              env: $BBL_GCP_REGION
 
-  --azure-subscription-id    Azure Subscription ID to use   also: $BBL_AZURE_SUBSCRIPTION_ID
-  --azure-tenant-id          Azure Tenant ID to use         also: $BBL_AZURE_TENANT_ID
-  --azure-client-id          Azure Client ID to use         also: $BBL_AZURE_CLIENT_ID
-  --azure-client-secret      Azure Client Secret to use     also: $BBL_AZURE_CLIENT_SECRET
-  --azure-region             Azure Region to use            also: $BBL_AZURE_REGION`
+  --azure-subscription-id    Azure Subscription ID          env: $BBL_AZURE_SUBSCRIPTION_ID
+  --azure-tenant-id          Azure Tenant ID                env: $BBL_AZURE_TENANT_ID
+  --azure-client-id          Azure Client ID                env: $BBL_AZURE_CLIENT_ID
+  --azure-client-secret      Azure Client Secret            env: $BBL_AZURE_CLIENT_SECRET
+  --azure-region             Azure Region                   env: $BBL_AZURE_REGION
+
+  --vsphere-vcenter-user     vSphere vCenter User           env: $BBL_VSPHERE_VCENTER_USER
+  --vsphere-vcenter-password vSphere vCenter Password       env: $BBL_VSPHERE_VCENTER_PASSWORD
+  --vsphere-vcenter-ip       vSphere vCenter IP             env: $BBL_VSPHERE_VCENTER_IP
+  --vsphere-vcenter-dc       vSphere vCenter Datacenter     env: $BBL_VSPHERE_VCENTER_DC
+  --vsphere-vcenter-cluster  vSphere vCenter Cluster        env: $BBL_VSPHERE_VCENTER_CLUSTER
+  --vsphere-vcenter-rp       vSphere vCenter Resource Pool  env: $BBL_VSPHERE_VCENTER_RP
+  --vsphere-network          vSphere Network                env: $BBL_VSPHERE_NETWORK
+  --vsphere-vcenter-ds       vSphere vCenter Datastore      env: $BBL_VSPHERE_VCENTER_DS
+  --vsphere-subnet           vSphere Subnet                 env: $BBL_VSPHERE_SUBNET`
 
 	requiresCredentials = `
 
@@ -32,14 +42,14 @@ const (
 
 	PlanCommandUsage = `Populates a state directory with the latest config without applying it
 
-  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp"   also: $BBL_IAAS
-  --name                     Name to assign to your BOSH director (optional)                 also: $BBL_ENV_NAME
+  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp", "vsphere"   env: $BBL_IAAS
+  --name                     Name to assign to your BOSH director (optional)                            env: $BBL_ENV_NAME
 `
 
 	UpCommandUsage = `Deploys BOSH director on an IAAS
 
-  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp"   also: $BBL_IAAS
-  --name                     Name to assign to your BOSH director (optional)                 also: $BBL_ENV_NAME
+  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp", "vsphere"   env: $BBL_IAAS
+  --name                     Name to assign to your BOSH director (optional)                            env: $BBL_ENV_NAME
 `
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
