@@ -1,6 +1,8 @@
 package commands_test
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 
 	. "github.com/onsi/ginkgo"
@@ -42,25 +44,13 @@ var _ = Describe("Commands Usage", func() {
 			It("returns string describing usage", func() {
 				planCmd := commands.Plan{}
 				usageText := planCmd.Usage()
-				Expect(usageText).To(Equal(`Populates a state directory with the latest config without applying it
+				Expect(usageText).To(Equal(fmt.Sprintf(`Populates a state directory with the latest config without applying it
 
   --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
   [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
   [--ops-file]               Path to BOSH ops file (optional)
   [--no-director]            Skips creating BOSH environment
-
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-  --aws-region               AWS Region to use (Defaults to environment variable BBL_AWS_REGION)
-
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-  --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)
-
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
-  --azure-region             Azure Location to use (Defaults to environment variable BBL_AZURE_REGION)`))
+%s`, commands.Credentials)))
 			})
 		})
 	})
@@ -70,7 +60,7 @@ var _ = Describe("Commands Usage", func() {
 			It("returns string describing usage", func() {
 				command := commands.CreateLBs{}
 				usageText := command.Usage()
-				Expect(usageText).To(Equal(`Attaches load balancer(s) with a certificate, key, and optional chain
+				Expect(usageText).To(Equal(fmt.Sprintf(`Attaches load balancer(s) with a certificate, key, and optional chain
 
   --type              Load balancer(s) type. Valid options: "concourse" or "cf"
   [--cert]            Path to SSL certificate (conditionally required; refer to table below)
@@ -78,18 +68,9 @@ var _ = Describe("Commands Usage", func() {
   [--chain]           Path to SSL certificate chain (optional; only supported on aws)
   [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
 
-  Credentials for your IaaS are required:
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
+  Credentials for your IaaS are required:%s
 
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
-
-  --cert/--key are required for cf LBs and are not required or used for concourse LBs.`))
+  --cert/--key are required for cf LBs and are not required or used for concourse LBs.`, commands.Credentials)))
 			})
 		})
 	})
@@ -99,20 +80,11 @@ var _ = Describe("Commands Usage", func() {
 			It("returns string describing usage", func() {
 				command := commands.DeleteLBs{}
 				usageText := command.Usage()
-				Expect(usageText).To(Equal(`Deletes load balancer(s)
+				Expect(usageText).To(Equal(fmt.Sprintf(`Deletes load balancer(s)
 
   [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)
 
-  Credentials for your IaaS are required:
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`))
+  Credentials for your IaaS are required:%s`, commands.Credentials)))
 			})
 		})
 	})
@@ -122,21 +94,12 @@ var _ = Describe("Commands Usage", func() {
 			It("returns string describing usage", func() {
 				command := commands.Destroy{}
 				usageText := command.Usage()
-				Expect(usageText).To(Equal(`Tears down BOSH director infrastructure
+				Expect(usageText).To(Equal(fmt.Sprintf(`Tears down BOSH director infrastructure
 
   [--no-confirm]       Do not ask for confirmation (optional)
   [--skip-if-missing]  Gracefully exit if there is no state file (optional)
 
-  Credentials for your IaaS are required:
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`))
+  Credentials for your IaaS are required:%s`, commands.Credentials)))
 			})
 		})
 	})
@@ -146,18 +109,9 @@ var _ = Describe("Commands Usage", func() {
 			It("returns string describing usage", func() {
 				command := commands.Rotate{}
 				usageText := command.Usage()
-				Expect(usageText).To(Equal(`Rotates SSH key for the jumpbox user.
+				Expect(usageText).To(Equal(fmt.Sprintf(`Rotates SSH key for the jumpbox user.
 
-  Credentials for your IaaS are required:
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)`))
+  Credentials for your IaaS are required:%s`, commands.Credentials)))
 			})
 		})
 	})
