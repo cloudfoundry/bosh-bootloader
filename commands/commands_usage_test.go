@@ -18,23 +18,28 @@ var _ = Describe("Commands Usage", func() {
 				usageText := upCmd.Usage()
 				Expect(usageText).To(Equal(`Deploys BOSH director on an IAAS
 
-  --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
-  [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
-  [--ops-file]               Path to BOSH ops file (optional)
-  [--no-director]            Skips creating BOSH environment
+  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp"   also: $BBL_IAAS
+  --name                     Name to assign to your BOSH director (optional)                 also: $BBL_ENV_NAME
 
-  --aws-access-key-id        AWS Access Key ID to use (Defaults to environment variable BBL_AWS_ACCESS_KEY_ID)
-  --aws-secret-access-key    AWS Secret Access Key to use (Defaults to environment variable BBL_AWS_SECRET_ACCESS_KEY)
-  --aws-region               AWS Region to use (Defaults to environment variable BBL_AWS_REGION)
+  --aws-access-key-id        AWS Access Key ID to use       also: $BBL_AWS_ACCESS_KEY_ID
+  --aws-secret-access-key    AWS Secret Access Key to use   also: $BBL_AWS_SECRET_ACCESS_KEY
+  --aws-region               AWS Region to use              also: $BBL_AWS_REGION
 
-  --gcp-service-account-key  GCP Service Access Key to use (Defaults to environment variable BBL_GCP_SERVICE_ACCOUNT_KEY)
-  --gcp-region               GCP Region to use (Defaults to environment variable BBL_GCP_REGION)
+  --gcp-service-account-key  GCP Service Access Key to use  also: $BBL_GCP_SERVICE_ACCOUNT_KEY
+  --gcp-region               GCP Region to use              also: $BBL_GCP_REGION
 
-  --azure-subscription-id    Azure Subscription ID to use (Defaults to environment variable BBL_AZURE_SUBSCRIPTION_ID)
-  --azure-tenant-id          Azure Tenant ID to use (Defaults to environment variable BBL_AZURE_TENANT_ID)
-  --azure-client-id          Azure Client ID to use (Defaults to environment variable BBL_AZURE_CLIENT_ID)
-  --azure-client-secret      Azure Client Secret to use (Defaults to environment variable BBL_AZURE_CLIENT_SECRET)
-  --azure-region             Azure Region to use (Defaults to environment variable BBL_AZURE_REGION)`))
+  --azure-subscription-id    Azure Subscription ID to use   also: $BBL_AZURE_SUBSCRIPTION_ID
+  --azure-tenant-id          Azure Tenant ID to use         also: $BBL_AZURE_TENANT_ID
+  --azure-client-id          Azure Client ID to use         also: $BBL_AZURE_CLIENT_ID
+  --azure-client-secret      Azure Client Secret to use     also: $BBL_AZURE_CLIENT_SECRET
+  --azure-region             Azure Region to use            also: $BBL_AZURE_REGION
+
+  Load Balancer options:
+  --lb-type                  Load balancer(s) type: "concourse" or "cf"
+  [--cert]                   Path to SSL certificate (supported when type="cf")
+  [--key]                    Path to SSL certificate key (supported when type="cf")
+  [--chain]                  Path to SSL certificate chain (supported when iaas="aws")
+  --lb-domain                Creates a DNS zone and records for the given domain (supported when type="cf")`))
 			})
 		})
 	})
@@ -46,11 +51,9 @@ var _ = Describe("Commands Usage", func() {
 				usageText := planCmd.Usage()
 				Expect(usageText).To(Equal(fmt.Sprintf(`Populates a state directory with the latest config without applying it
 
-  --iaas                     IAAS to deploy your BOSH director onto. Valid options: "aws", "azure", "gcp" (Defaults to environment variable BBL_IAAS)
-  [--name]                   Name to assign to your BOSH director (optional, will be randomly generated)
-  [--ops-file]               Path to BOSH ops file (optional)
-  [--no-director]            Skips creating BOSH environment
-%s`, commands.Credentials)))
+  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp"   also: $BBL_IAAS
+  --name                     Name to assign to your BOSH director (optional)                 also: $BBL_ENV_NAME
+%s%s`, commands.Credentials, commands.LBUsage)))
 			})
 		})
 	})
@@ -62,15 +65,13 @@ var _ = Describe("Commands Usage", func() {
 				usageText := command.Usage()
 				Expect(usageText).To(Equal(fmt.Sprintf(`Attaches load balancer(s) with a certificate, key, and optional chain
 
-  --type              Load balancer(s) type. Valid options: "concourse" or "cf"
-  [--cert]            Path to SSL certificate (conditionally required; refer to table below)
-  [--key]             Path to SSL certificate key (conditionally required; refer to table below)
-  [--chain]           Path to SSL certificate chain (optional; only supported on aws)
+  --type              Load balancer(s) type: "concourse" or "cf"
+  [--cert]            Path to SSL certificate (supported when type="cf")
+  [--key]             Path to SSL certificate key (supported when type="cf")
+  [--chain]           Path to SSL certificate chain (supported when iaas="aws")
   [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
 
-  Credentials for your IaaS are required:%s
-
-  --cert/--key are required for cf LBs and are not required or used for concourse LBs.`, commands.Credentials)))
+  Credentials for your IaaS are required:%s`, commands.Credentials)))
 			})
 		})
 	})
