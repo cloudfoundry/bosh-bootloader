@@ -60,7 +60,7 @@ func (a Azure) GetApplicationGateway(resourceGroupName, applicationGatewayName s
 	_, err := a.applicationGatewaysClient.Get(fmt.Sprintf("%s-bosh", resourceGroupName), applicationGatewayName)
 	if err != nil {
 		if aerr, ok := err.(*autorest.DetailedError); ok {
-			if aerr.StatusCode == "404" {
+			if aerr.StatusCode == 404 {
 				return false, nil
 			}
 		}
