@@ -24,8 +24,6 @@ type BBL struct {
 	envID          string
 }
 
-type IAAS int
-
 func NewBBL(stateDirectory string, pathToBBL string, configuration acceptance.Config, envIDSuffix string) BBL {
 	envIDPrefix := os.Getenv("BBL_TEST_ENV_ID_PREFIX")
 	if envIDPrefix == "" {
