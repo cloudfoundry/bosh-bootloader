@@ -67,7 +67,7 @@ var _ = Describe("create lbs test", func() {
 
 		By("deleting lbs", func() {
 			session := bbl.DeleteLBs()
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 15*time.Minute).Should(gexec.Exit())
 		})
 
 		By("confirming that the app gateway does not exist", func() {
