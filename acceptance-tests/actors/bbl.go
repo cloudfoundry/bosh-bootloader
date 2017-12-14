@@ -118,22 +118,6 @@ func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain st
 	return b.execute(args, os.Stdout, os.Stderr)
 }
 
-func (b BBL) UpdateLB(certPath, keyPath, chainPath string) *gexec.Session {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"--debug",
-		"update-lbs",
-		"--cert", certPath,
-		"--key", keyPath,
-	}
-
-	if chainPath != "" {
-		args = append(args, "--chain", chainPath)
-	}
-
-	return b.execute(args, os.Stdout, os.Stderr)
-}
-
 func (b BBL) DeleteLBs() *gexec.Session {
 	args := []string{
 		"--state-dir", b.stateDirectory,
