@@ -1,0 +1,17 @@
+iaas: gcp
+routing_mode: iaas
+
+# from terraform output kubo_master_lb_ip_address = 35.227.103.126
+kubernetes_master_host: 35.227.103.126
+
+# from hearsay
+kubernetes_master_port: 8443
+
+# from bbl's director-vars-file.yml
+network: dr-bbl-kubo-network
+project_id: cf-infra
+director_name: bosh-dr-bbl-kubo
+
+# from?
+service_account_master: dr-bbl-kubo-kubo-master@cf-infra.iam.gserviceaccount.com # service account to be set on Kubo Master VMs 
+service_account_worker: dr-bbl-kubo-kubo-worker@cf-infra.iam.gserviceaccount.com # service account to be set on Kubo Worker VMs 
