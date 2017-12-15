@@ -35,9 +35,9 @@ const (
 
   Load Balancer options:
   --lb-type                  Load balancer(s) type: "concourse" or "cf"
-  [--cert]                   Path to SSL certificate (supported when type="cf")
-  [--key]                    Path to SSL certificate key (supported when type="cf")
-  [--chain]                  Path to SSL certificate chain (supported when iaas="aws")
+  --lb-cert                  Path to SSL certificate (supported when type="cf")
+  --lb-key                   Path to SSL certificate key (supported when type="cf")
+  --lb-chain                 Path to SSL certificate chain (supported when iaas="aws")
   --lb-domain                Creates a DNS zone and records for the given domain (supported when type="cf")`
 
 	PlanCommandUsage = `Populates a state directory with the latest config without applying it
