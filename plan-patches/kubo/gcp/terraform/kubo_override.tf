@@ -1,10 +1,10 @@
 resource "google_service_account" "master" {
-  account_id   = "${var.env_id}kubo-master"
+  account_id   = "${var.env_id}-kubo-master"
   display_name = "${var.env_id} kubo-master"
 }
 
 resource "google_service_account" "worker" {
-  account_id   = "${var.env_id}kubo-worker"
+  account_id   = "${var.env_id}-kubo-worker"
   display_name = "${var.env_id} kubo-worker"
 }
 
@@ -65,17 +65,17 @@ data "google_iam_policy" "admin" {
 }
 // Static IP address for HTTP forwarding rule
 resource "google_compute_address" "kubo-tcp" {
-  name = "${var.env_id}kubo"
+  name = "${var.env_id}-kubo"
 }
 
 // TCP Load Balancer
 resource "google_compute_target_pool" "kubo-tcp-public" {
     region = "${var.region}"
-    name = "${var.env_id}kubo-tcp-public"
+    name = "${var.env_id}-kubo-tcp-public"
 }
 
 resource "google_compute_forwarding_rule" "kubo-tcp" {
-  name        = "${var.env_id}kubo-tcp"
+  name        = "${var.env_id}-kubo-tcp"
   target      = "${google_compute_target_pool.kubo-tcp-public.self_link}"
   port_range  = "8443"
   ip_protocol = "TCP"
@@ -83,8 +83,8 @@ resource "google_compute_forwarding_rule" "kubo-tcp" {
 }
 
 resource "google_compute_firewall" "kubo-tcp-public" {
-  name    = "${var.env_id}kubo-tcp-public"
-  network       = "${var.env_id}-network"
+  name    = "${var.env_id}-kubo-tcp-public"
+  network       = "${google_compute_network.bbl-network.name}"
 
   allow {
     protocol = "tcp"
@@ -100,4 +100,12 @@ output "kubo_master_target_pool" {
 
 output "master_lb_ip_address" {
   value = "${google_compute_address.kubo-tcp.address}"
+}
+
+output "service_account_master" {
+  value = "${google_service_account.master.email}"
+}
+
+output "service_account_worker" {
+  value = "${google_service_account.worker.email}"
 }

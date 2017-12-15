@@ -1,0 +1,10 @@
+# bosh int director-template.yml --vars-file vars/director-vars-file.yml --vars-file vars/cloud-config-vars.yml > director.yml
+iaas: gcp
+routing_mode: iaas
+kubernetes_master_host: ((master_lb_ip_address))
+kubernetes_master_port: 8443
+network: ((network_name))
+project_id: ((project_id))
+director_name: ((director_name))
+service_account_master: ((service_account_master))
+service_account_worker: ((service_account_worker))
