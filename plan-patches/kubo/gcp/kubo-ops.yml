@@ -1,0 +1,20 @@
+- type: replace
+  path: /vm_types/name=master?
+  value:
+    cloud_properties:
+      machine_type: n1-standard-1
+      root_disk_size_gb: 20
+      root_disk_type: pd-ssd
+      service_account: ((service_account_master))
+      target_pool: ((kubo_master_target_pool))
+    name: master
+
+- type: replace
+  path: /vm_types/name=worker?
+  value:
+    cloud_properties:
+      machine_type: n1-standard-2
+      root_disk_size_gb: 100
+      root_disk_type: pd-ssd
+      service_account: ((service_account_worker))
+    name: worker
