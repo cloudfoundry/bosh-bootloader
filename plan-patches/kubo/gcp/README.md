@@ -47,5 +47,13 @@ Steps to deploy kubo with bbl:
       kubectl config use-context "${context_name}"
       ```
     - `kubectl get pods`
-    - create, scale, and expose apps with the kubernetes bootcamp docker image: `docker.io/jocatalin/kubernetes-bootcamp:v1`
+    - create, scale, and expose apps with the kubernetes bootcamp docker image:
+      ```
+      kubectl run kubernetes-bootcamp --image=docker.io/jocatalin/kubernetes-bootcamp:v1 --port=8080
+      kubectl get pods
+      kubectl expose deployment/kubernetes-bootcamp --type="LoadBalancer"
+      kubectl get services
+      # get EXTERNAL-IP for kubernetes-bootcamp
+      curl http://${EXTERNAL-IP}:8080
+      ```
 
