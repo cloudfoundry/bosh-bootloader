@@ -1,6 +1,7 @@
 # Deploying Concourse
 
-This document will walk through deploying a concourse clustered install to AWS using `bbl` and `bosh`.
+This document will walk through deploying a concourse clustered
+install to AWS using `bbl` and `bosh`.
 
 ## Prerequisites
 
@@ -10,41 +11,32 @@ This document will walk through deploying a concourse clustered install to AWS u
 
 ## Create load balancer
 
-First you need to generate self-signed certificates for your domain.
+This:
 
 ```
-openssl req \
-       -newkey rsa:2048 -nodes -keyout concourse.example.com.key \
-       -x509 -days 365 -out concourse.example.com.crt
+bbl create-lbs --type concourse
 ```
 
-For now you need to convert RSA key to be usable by `bbl` (see [issue](https://github.com/cloudfoundry/bosh-bootloader/issues/130)):
+Or this:
 
 ```
-openssl rsa -in concourse.example.com.key -out rsakey.pem
-```
-
-Finally, create load balancers and update cloud config:
-
-```
-bbl create-lbs \
-  --type concourse \
-  --cert concourse.eminens.io.crt \
-  --key rsakey.pem
+bbl plan --lb-type concourse && bbl up
 ```
 
 ## Create a bosh deployment manifest
 
-Scale instance types, disks and instance count based on your needs. Other sizes are available, see ```bosh cloud-config```.
+Scale instance types, disks and instance count based on your needs.
+Other sizes are available, see `bbl cloud-config`.
 
-1. Start with the sample manifest from the [Concourse documentation](http://concourse.ci/clusters-with-bosh.html)
-2. Replace all ```vm_type: REPLACE_ME``` with ```vm_type: t2.small```.
-3. Add the vm_extension ```lb``` to the instance_group "web"
-4. Delete `tls_cert` and `tls_key` from the properties of the job named `atc`
-5. Add the vm_extension ```50GB_ephemeral_disk``` to the instance_group "worker"
-6. Replace all ```persistent_disk_type: REPLACE_ME``` with ```persistent_disk_type: 5GB```
-7. Replace `director_uuid: REPLACE_ME` with `uuid` from `bosh env`
-8. Fill `external_url: REPLACE_ME` with Concourse external URL
+1. Start with the sample manifest from the
+[Concourse documentation](http://concourse.ci/clusters-with-bosh.html)
+2. Replace all `vm_type: REPLACE_ME` with `vm_type: t2.small`.
+3. Add the vm_extension `lb` to the instance_group `web`.
+4. Delete `tls_cert` and `tls_key` from the properties of the job named `atc`.
+5. Add the vm_extension `50GB_ephemeral_disk` to the instance_group `worker`.
+6. Replace all `persistent_disk_type: REPLACE_ME` with `persistent_disk_type: 5GB`.
+7. Replace `director_uuid: REPLACE_ME` with `uuid` from `bosh env`.
+8. Fill `external_url: REPLACE_ME` with Concourse external URL.
 
 ## Upload releases
 
