@@ -26,7 +26,6 @@ The user must have the following `policy`:
             "Effect": "Allow",
             "Action": [
                 "ec2:*",
-                "cloudformation:*",
                 "elasticloadbalancing:*",
                 "route53:*",
                 "iam:*",
