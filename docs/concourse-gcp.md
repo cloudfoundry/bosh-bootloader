@@ -40,7 +40,7 @@ This document will walk through deploying a concourse clustered install to GCP u
 ## Download concourse-deployment
 Download the latest release of [concourse-deployment](https://github.com/evanfarrar/concourse-deployment/releases/latest).
   ```
-  mv ~/Dowloads/concourse-deployment-0.0.1.tar.gz ./
+  mv ~/Downloads/concourse-deployment-0.0.1.tar.gz ./
   tar xvf concourse-deployment-0.0.1.tar.gz
   ```
 ## Target the director
