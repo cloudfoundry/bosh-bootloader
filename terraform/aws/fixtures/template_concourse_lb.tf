@@ -757,7 +757,6 @@ resource "aws_lb_target_group" "concourse_lb_80" {
     healthy_threshold   = 10
     unhealthy_threshold = 10
     interval            = 30
-    timeout             = 5
     protocol            = "TCP"
   }
 }
