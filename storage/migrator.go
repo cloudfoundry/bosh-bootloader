@@ -76,12 +76,16 @@ func (m Migrator) Migrate(state State) (State, error) {
 			return State{}, fmt.Errorf("getting cloud-config dir: %s", err)
 		}
 		for _, file := range files {
-			err = os.Rename(
-				filepath.Join(m.store.GetOldBblDir(), file.Name()),
-				filepath.Join(cloudConfigDir, file.Name()),
-			)
+			oldFile := filepath.Join(m.store.GetOldBblDir(), file.Name())
+			oldFileContent, err := ioutil.ReadFile(oldFile)
 			if err != nil {
-				return State{}, fmt.Errorf("renaming cloud-config file: %s", err)
+				return State{}, fmt.Errorf("reading %s: %s", oldFile, err)
+			}
+
+			newFile := filepath.Join(cloudConfigDir, file.Name())
+			err = ioutil.WriteFile(newFile, oldFileContent, StateMode)
+			if err != nil {
+				return State{}, fmt.Errorf("migrating %s to %s: %s", oldFile, newFile, err)
 			}
 		}
 

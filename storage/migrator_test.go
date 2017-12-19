@@ -440,6 +440,18 @@ var _ = Describe("Migrator", func() {
 					})
 				})
 
+				Context("when the reading the old cloud config file fails", func() {
+					BeforeEach(func() {
+						err := os.Chmod(cloudConfigFilePath, 0300)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+						Expect(err).To(MatchError(ContainSubstring("reading")))
+					})
+				})
+
 				Context("when renaming a cloud-config file fails", func() {
 					BeforeEach(func() {
 						err := os.Chmod(cloudConfigDir, 0100)
@@ -448,7 +460,7 @@ var _ = Describe("Migrator", func() {
 
 					It("returns an error", func() {
 						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-						Expect(err).To(MatchError(ContainSubstring("renaming cloud-config file: ")))
+						Expect(err).To(MatchError(ContainSubstring("migrating")))
 					})
 				})
 
