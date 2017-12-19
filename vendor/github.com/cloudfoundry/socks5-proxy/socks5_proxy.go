@@ -6,7 +6,7 @@ import (
 	"net"
 	"strconv"
 
-	socks5 "github.com/armon/go-socks5"
+	socks5 "github.com/genevievelesperance/go-socks5"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
