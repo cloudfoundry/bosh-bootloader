@@ -66,7 +66,8 @@ func (m Migrator) Migrate(state State) (State, error) {
 	}
 
 	if _, err := os.Stat(m.store.GetOldBblDir()); err == nil {
-		files, err := ioutil.ReadDir(m.store.GetOldBblDir())
+		oldCloudConfigDir := filepath.Join(m.store.GetOldBblDir(), "cloudconfig")
+		files, err := ioutil.ReadDir(oldCloudConfigDir)
 		if err != nil {
 			return State{}, fmt.Errorf("reading legacy .bbl dir contents: %s", err)
 		}
@@ -76,7 +77,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 			return State{}, fmt.Errorf("getting cloud-config dir: %s", err)
 		}
 		for _, file := range files {
-			oldFile := filepath.Join(m.store.GetOldBblDir(), file.Name())
+			oldFile := filepath.Join(oldCloudConfigDir, file.Name())
 			oldFileContent, err := ioutil.ReadFile(oldFile)
 			if err != nil {
 				return State{}, fmt.Errorf("reading %s: %s", oldFile, err)

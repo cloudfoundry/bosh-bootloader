@@ -14,12 +14,13 @@ import (
 
 var _ = Describe("Migrator", func() {
 	var (
-		migrator       storage.Migrator
-		store          *fakes.StateStore
-		stateDir       string
-		varsDir        string
-		oldBblDir      string
-		cloudConfigDir string
+		migrator          storage.Migrator
+		store             *fakes.StateStore
+		stateDir          string
+		varsDir           string
+		oldBblDir         string
+		oldCloudConfigDir string
+		cloudConfigDir    string
 	)
 
 	BeforeEach(func() {
@@ -40,6 +41,10 @@ var _ = Describe("Migrator", func() {
 
 		oldBblDir = filepath.Join(stateDir, ".bbl")
 		err = os.Mkdir(oldBblDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		oldCloudConfigDir = filepath.Join(stateDir, ".bbl", "cloudconfig")
+		err = os.Mkdir(oldCloudConfigDir, os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
 		store.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
@@ -401,7 +406,7 @@ var _ = Describe("Migrator", func() {
 		Context("when the state has a populated .bbl directory", func() {
 			var cloudConfigFilePath string
 			BeforeEach(func() {
-				cloudConfigFilePath = filepath.Join(oldBblDir, "some-config-file")
+				cloudConfigFilePath = filepath.Join(oldCloudConfigDir, "some-config-file")
 				ioutil.WriteFile(cloudConfigFilePath, []byte("some-cloud-config"), os.ModePerm)
 			})
 
@@ -419,7 +424,7 @@ var _ = Describe("Migrator", func() {
 			Context("failure cases", func() {
 				Context("when the contents of the old .bbl dir cannot be read", func() {
 					BeforeEach(func() {
-						err := os.Chmod(oldBblDir, 0300)
+						err := os.Chmod(oldCloudConfigDir, 0300)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
