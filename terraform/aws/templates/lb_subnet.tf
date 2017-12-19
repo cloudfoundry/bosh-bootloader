@@ -1,6 +1,6 @@
 resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
-  vpc_id            = "${aws_vpc.vpc.id}"
+  vpc_id            = "${local.vpc_id}"
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, count.index+2)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
@@ -14,7 +14,7 @@ resource "aws_subnet" "lb_subnets" {
 }
 
 resource "aws_route_table" "lb_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${local.vpc_id}"
 }
 
 resource "aws_route" "lb_route_table" {

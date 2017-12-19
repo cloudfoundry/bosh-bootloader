@@ -157,7 +157,7 @@ variable "nat_ami_map" {
 resource "aws_security_group" "nat_security_group" {
   name        = "${var.env_id}-nat-security-group"
   description = "NAT"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = "${local.vpc_id}"
 
   tags {
     Name = "${var.env_id}-nat-security-group"
@@ -251,13 +251,13 @@ provider "aws" {
 }
 
 resource "aws_default_security_group" "default_security_group" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${local.vpc_id}"
 }
 
 resource "aws_security_group" "internal_security_group" {
   name        = "${var.env_id}-internal-security-group"
   description = "Internal"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = "${local.vpc_id}"
 
   tags {
     Name = "${var.env_id}-internal-security-group"
@@ -324,7 +324,7 @@ variable "bosh_inbound_cidr" {
 resource "aws_security_group" "bosh_security_group" {
   name        = "${var.env_id}-bosh-security-group"
   description = "BOSH Director"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = "${local.vpc_id}"
 
   tags {
     Name = "${var.env_id}-bosh-security-group"
@@ -405,7 +405,7 @@ resource "aws_security_group_rule" "bosh_security_group_rule_allow_internet" {
 resource "aws_security_group" "jumpbox" {
   name        = "${var.env_id}-jumpbox-security-group"
   description = "Jumpbox"
-  vpc_id      = "${aws_vpc.vpc.id}"
+  vpc_id      = "${local.vpc_id}"
 
   tags {
     Name = "${var.env_id}-jumpbox-security-group"
@@ -497,7 +497,7 @@ output "internal_cidr" {
 }
 
 resource "aws_subnet" "bosh_subnet" {
-  vpc_id     = "${aws_vpc.vpc.id}"
+  vpc_id     = "${local.vpc_id}"
   cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
 
   tags {
@@ -506,7 +506,7 @@ resource "aws_subnet" "bosh_subnet" {
 }
 
 resource "aws_route_table" "bosh_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${local.vpc_id}"
 }
 
 resource "aws_route" "bosh_route_table" {
@@ -534,7 +534,7 @@ variable "availability_zones" {
 
 resource "aws_subnet" "internal_subnets" {
   count             = "${length(var.availability_zones)}"
-  vpc_id            = "${aws_vpc.vpc.id}"
+  vpc_id            = "${local.vpc_id}"
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index+1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
@@ -548,7 +548,7 @@ resource "aws_subnet" "internal_subnets" {
 }
 
 resource "aws_route_table" "internal_route_table" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${local.vpc_id}"
 }
 
 resource "aws_route" "internal_route_table" {
@@ -588,28 +588,18 @@ variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
 
-resource "aws_vpc" "vpc" {
-  cidr_block           = "${var.vpc_cidr}"
-  instance_tenancy     = "default"
-  enable_dns_hostnames = true
-
-  tags {
-    Name = "${var.env_id}-vpc"
-  }
-}
-
 resource "aws_internet_gateway" "ig" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id = "${local.vpc_id}"
 }
 
 output "vpc_id" {
-  value = "${aws_vpc.vpc.id}"
+  value = "${local.vpc_id}"
 }
 
 resource "aws_flow_log" "bbl" {
   log_group_name = "${aws_cloudwatch_log_group.bbl.name}"
   iam_role_arn   = "${aws_iam_role.flow_logs.arn}"
-  vpc_id         = "${aws_vpc.vpc.id}"
+  vpc_id         = "${local.vpc_id}"
   traffic_type   = "REJECT"
 }
 
