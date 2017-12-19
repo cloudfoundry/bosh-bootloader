@@ -440,19 +440,9 @@ var _ = Describe("Plan", func() {
 
 	Describe("IsInitialized", func() {
 		var incomingState storage.State
-		BeforeEach(func() {
-			incomingState = storage.State{}
-		})
-
-		Context("when the state is empty", func() {
-			It("returns false", func() {
-				Expect(command.IsInitialized(incomingState)).To(BeFalse())
-			})
-		})
-
-		Context("when the state is old", func() {
+		Context("when the state schema is < 13", func() {
 			BeforeEach(func() {
-				incomingState.BBLVersion = "5.1.3"
+				incomingState = storage.State{Version: 12}
 			})
 
 			It("returns false", func() {
@@ -460,19 +450,9 @@ var _ = Describe("Plan", func() {
 			})
 		})
 
-		Context("when the state is new", func() {
+		Context("when the state schema is >= 13", func() {
 			BeforeEach(func() {
-				incomingState.BBLVersion = "5.2.0"
-			})
-
-			It("returns true", func() {
-				Expect(command.IsInitialized(incomingState)).To(BeTrue())
-			})
-		})
-
-		Context("when the state is from a dev version", func() {
-			BeforeEach(func() {
-				incomingState.BBLVersion = "5.2.0"
+				incomingState = storage.State{Version: 13}
 			})
 
 			It("returns true", func() {

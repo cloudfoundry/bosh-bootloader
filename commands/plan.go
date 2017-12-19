@@ -179,5 +179,6 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 }
 
 func (p Plan) IsInitialized(state storage.State) bool {
-	return state.BBLVersion != "" && state.BBLVersion >= "5.2.0"
+	// If it is older than bbl v5.4.0 with schema 13, we want to re-initialize.
+	return state.Version >= 13
 }
