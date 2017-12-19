@@ -17,6 +17,7 @@ type Plan struct {
 	terraformManager   terraformManager
 	lbArgsHandler      lbArgsHandler
 	logger             logger
+	bblVersion         string
 }
 
 type PlanConfig struct {
@@ -33,6 +34,7 @@ func NewPlan(boshManager boshManager,
 	terraformManager terraformManager,
 	lbArgsHandler lbArgsHandler,
 	logger logger,
+	bblVersion string,
 ) Plan {
 	return Plan{
 		boshManager:        boshManager,
@@ -42,6 +44,7 @@ func NewPlan(boshManager boshManager,
 		terraformManager:   terraformManager,
 		lbArgsHandler:      lbArgsHandler,
 		logger:             logger,
+		bblVersion:         bblVersion,
 	}
 }
 
@@ -138,6 +141,7 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 
 	var err error
 
+	state.BBLVersion = p.bblVersion
 	state.LB = config.LB
 
 	state, err = p.envIDManager.Sync(state, config.Name)

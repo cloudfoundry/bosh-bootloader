@@ -26,6 +26,7 @@ var _ = Describe("Plan", func() {
 		logger             *fakes.Logger
 		stateStore         *fakes.StateStore
 		terraformManager   *fakes.TerraformManager
+		bblVersion         string
 	)
 
 	BeforeEach(func() {
@@ -36,6 +37,7 @@ var _ = Describe("Plan", func() {
 		logger = &fakes.Logger{}
 		stateStore = &fakes.StateStore{}
 		terraformManager = &fakes.TerraformManager{}
+		bblVersion = "42.0.0"
 
 		boshManager.VersionCall.Returns.Version = "2.0.24"
 
@@ -47,17 +49,20 @@ var _ = Describe("Plan", func() {
 			terraformManager,
 			lbArgsHandler,
 			logger,
+			bblVersion,
 		)
 	})
 
 	Describe("Execute", func() {
 		var (
-			state       storage.State
-			syncedState storage.State
+			state            storage.State
+			stateWithVersion storage.State
+			syncedState      storage.State
 		)
 
 		BeforeEach(func() {
 			state = storage.State{ID: "some-state-id", IAAS: "some-iaas"}
+			stateWithVersion = storage.State{ID: "some-state-id", IAAS: "some-iaas", BBLVersion: "42.0.0"}
 			syncedState = storage.State{ID: "synced-state-id"}
 			envIDManager.SyncCall.Returns.State = syncedState
 		})
@@ -70,7 +75,7 @@ var _ = Describe("Plan", func() {
 			Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(0))
 
 			Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
-			Expect(envIDManager.SyncCall.Receives.State).To(Equal(state))
+			Expect(envIDManager.SyncCall.Receives.State).To(Equal(stateWithVersion))
 
 			Expect(stateStore.SetCall.CallCount).To(Equal(1))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(syncedState))
