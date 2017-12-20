@@ -6,7 +6,7 @@ An issue was discovered in `v5.6.0` where the NAT security
 group rules were getting deleted, which prevents VMs deployed
 by BOSH from being able to access the internet.
 
-The issue is fixed in `v5.9.0` and above, but the fix introduces
+The issue is fixed in `v5.10.0` and above, but the fix introduces
 a breaking change when migrating from `v4.x` where manual intervention
 is required in order for `bbl up` to succeed.
 
@@ -40,5 +40,5 @@ After doing the above, `bbl up` should work again.
 
 If you have previously run `bbl up` with version `v5.0.x`-`v5.8.x`, and
 you currently do not have any NAT security groups rules, run `bbl plan`
-with `v5.9.x+` to generate the terraform template with the fix, and then
+with `v5.10.x+` to generate the terraform template with the fix, and then
 run `bbl up` to apply the plan.
