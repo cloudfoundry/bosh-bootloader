@@ -11,4 +11,5 @@ bosh create-env \
   -o  ${BBL_STATE_DIR}/bosh-deployment/bosh-lite.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/bosh-lite-runc.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/gcp/bosh-lite-vm-type.yml \
-  -o  ${BBL_STATE_DIR}/external-ip-gcp.yml
+  -o  ${BBL_STATE_DIR}/external-ip-gcp.yml \
+  -o  ${BBL_STATE_DIR}/ip-forwarding.yml
