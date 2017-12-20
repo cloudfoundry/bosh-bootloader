@@ -11,8 +11,8 @@
 1. Interpolate out the jumpbox user's ssh key for reaching the director:
 
     ```
-    bbl director-ssh-key > director-jumpbox-user.key
-    chmod 600 director-jumpbox-user.key
+    bbl director-ssh-key > /tmp/director-jumpbox-user.key
+    chmod 600 /tmp/director-jumpbox-user.key
     ```
 
 1. SSH via the proxy:
