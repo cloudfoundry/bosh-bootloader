@@ -75,35 +75,12 @@ func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 	}
 }
 
-type VarsYAML struct {
-	NetworkName          string `yaml:"network_name,omitempty"`
-	SubnetworkName       string `yaml:"subnetwork_name,omitempty"`
-	InternalTagName      string `yaml:"internal_tag_name,omitempty"`
-	ConcourseTargetPool  string `yaml:"concourse_target_pool,omitempty"`
-	RouterBackendService string `yaml:"router_backend_service,omitempty"`
-	WSTargetPool         string `yaml:"ws_target_pool,omitempty"`
-	SSHProxyTargetPool   string `yaml:"ssh_proxy_target_pool,omitempty"`
-	TCPRouterTargetPool  string `yaml:"tcp_router_target_pool,omitempty"`
-	CredhubTargetPool    string `yaml:"credhub_target_pool,omitempty"`
-}
-
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
-	varsYAML := VarsYAML{
-		NetworkName:          terraformOutputs.GetString("network_name"),
-		SubnetworkName:       terraformOutputs.GetString("subnetwork_name"),
-		InternalTagName:      terraformOutputs.GetString("internal_tag_name"),
-		ConcourseTargetPool:  terraformOutputs.GetString("concourse_target_pool"),
-		RouterBackendService: terraformOutputs.GetString("router_backend_service"),
-		WSTargetPool:         terraformOutputs.GetString("ws_target_pool"),
-		SSHProxyTargetPool:   terraformOutputs.GetString("ssh_proxy_target_pool"),
-		TCPRouterTargetPool:  terraformOutputs.GetString("tcp_router_target_pool"),
-		CredhubTargetPool:    terraformOutputs.GetString("credhub_target_pool"),
-	}
-	varsBytes, err := marshal(varsYAML)
+	varsBytes, err := marshal(terraformOutputs.Map)
 	if err != nil {
 		panic(err) // not tested; cannot occur
 	}

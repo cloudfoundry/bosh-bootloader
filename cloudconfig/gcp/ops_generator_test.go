@@ -59,6 +59,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(varsYAML).To(MatchYAML(`
+bosh_open_tag_name: some-bosh-tag
 network_name: some-network-name
 subnetwork_name: some-subnetwork-name
 internal_tag_name: some-internal-tag
