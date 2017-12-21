@@ -451,7 +451,7 @@ func parseServiceAccountKey(serviceAccountKey string) (string, string, error) {
 	} else {
 		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
 		if err != nil {
-			return "", "", fmt.Errorf("error reading service account key from file: %v", err)
+			return "", "", fmt.Errorf("Reading service account key: %v", err)
 		}
 
 		key = string(rawServiceAccountKey)
@@ -462,10 +462,10 @@ func parseServiceAccountKey(serviceAccountKey string) (string, string, error) {
 	}{}
 	err := json.Unmarshal([]byte(key), &p)
 	if err != nil {
-		return "", "", fmt.Errorf("error unmarshalling service account key (must be valid json): %v", err)
+		return "", "", fmt.Errorf("Unmarshalling service account key (must be valid json): %v", err)
 	}
 	if p.ProjectID == "" {
-		return "", "", errors.New("service account key is missing field `project_id`")
+		return "", "", errors.New("Service account key is missing field `project_id`")
 	}
 
 	return key, p.ProjectID, err

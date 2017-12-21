@@ -672,7 +672,7 @@ var _ = Describe("LoadState", func() {
 							It("returns an error", func() {
 								_, err := c.Bootstrap(args)
 
-								Expect(err).To(MatchError("error unmarshalling service account key (must be valid json): invalid character '/' looking for beginning of value"))
+								Expect(err).To(MatchError("Unmarshalling service account key (must be valid json): invalid character '/' looking for beginning of value"))
 							})
 						})
 
@@ -690,7 +690,7 @@ var _ = Describe("LoadState", func() {
 
 							It("returns an error", func() {
 								_, err := c.Bootstrap(args)
-								Expect(err).To(MatchError(ContainSubstring("error unmarshalling service account key (must be valid json):")))
+								Expect(err).To(MatchError(ContainSubstring("Unmarshalling service account key (must be valid json):")))
 							})
 						})
 					})
@@ -709,7 +709,7 @@ var _ = Describe("LoadState", func() {
 
 						It("returns an error", func() {
 							_, err := c.Bootstrap(args)
-							Expect(err).To(MatchError("service account key is missing field `project_id`"))
+							Expect(err).To(MatchError("Service account key is missing field `project_id`"))
 						})
 					})
 				})
@@ -964,7 +964,7 @@ var _ = Describe("LoadState", func() {
 						Azure: storage.Azure{
 							ClientID:       "client-id",
 							ClientSecret:   "client-secret",
-								Region:         "region",
+							Region:         "region",
 							SubscriptionID: "subscription-id",
 							TenantID:       "tenant-id",
 						},
@@ -1082,7 +1082,7 @@ var _ = Describe("LoadState", func() {
 					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientSecret:   "some-client-secret",
-						Region:       "region",
+						Region:         "region",
 						TenantID:       "some-tenant-id",
 						SubscriptionID: "some-subscription-id",
 					},
@@ -1093,7 +1093,7 @@ var _ = Describe("LoadState", func() {
 					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
-						Region:       "region",
+						Region:         "region",
 						SubscriptionID: "some-subscription-id",
 						TenantID:       "some-tenant-id",
 					},
@@ -1108,14 +1108,14 @@ var _ = Describe("LoadState", func() {
 						SubscriptionID: "some-subscription-id",
 						TenantID:       "some-tenant-id",
 					},
-				},				"Azure region must be provided (--azure-region or BBL_AZURE_REGION)"),
+				}, "Azure region must be provided (--azure-region or BBL_AZURE_REGION)"),
 			Entry("when Azure subscription is missing",
 				storage.State{
 					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientID:     "some-client-id",
 						ClientSecret: "some-client-secret",
-						Region:     "region",
+						Region:       "region",
 						TenantID:     "some-tenant-id",
 					},
 				},
@@ -1126,7 +1126,7 @@ var _ = Describe("LoadState", func() {
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
 						ClientSecret:   "some-client-secret",
-						Region:       "region",
+						Region:         "region",
 						SubscriptionID: "some-subscription-id",
 					},
 				},
