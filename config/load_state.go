@@ -261,17 +261,23 @@ func updateAzureState(globalFlags globalFlags, state storage.State) (storage.Sta
 
 func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.GCPServiceAccountKey != "" {
-		serviceAccountKey, projectID, err := parseServiceAccountKey(globalFlags.GCPServiceAccountKey)
+		key, err := getGCPServiceAccountKey(globalFlags.GCPServiceAccountKey)
 		if err != nil {
 			return storage.State{}, err
 		}
-		state.GCP.ServiceAccountKey = serviceAccountKey
-		if state.GCP.ProjectID != "" && projectID != state.GCP.ProjectID {
-			projectIDMismatch := fmt.Sprintf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID)
-			return storage.State{}, errors.New(projectIDMismatch)
+		state.GCP.ServiceAccountKey = key
+
+		id, err := getGCPProjectID(key)
+		if err != nil {
+			return storage.State{}, err
 		}
-		state.GCP.ProjectID = projectID
+		if state.GCP.ProjectID != "" && id != state.GCP.ProjectID {
+			mismatch := fmt.Sprintf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID)
+			return storage.State{}, errors.New(mismatch)
+		}
+		state.GCP.ProjectID = id
 	}
+
 	if globalFlags.GCPRegion != "" {
 		if state.GCP.Region != "" && globalFlags.GCPRegion != state.GCP.Region {
 			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region)
@@ -443,30 +449,32 @@ func validateVSphere(vsphere storage.VSphere) error {
 	return nil
 }
 
-func parseServiceAccountKey(serviceAccountKey string) (string, string, error) {
-	var key string
-
-	if _, err := os.Stat(serviceAccountKey); err != nil {
-		key = serviceAccountKey
-	} else {
-		rawServiceAccountKey, err := ioutil.ReadFile(serviceAccountKey)
-		if err != nil {
-			return "", "", fmt.Errorf("Reading service account key: %v", err)
-		}
-
-		key = string(rawServiceAccountKey)
+func getGCPServiceAccountKey(k string) (string, error) {
+	if _, err := os.Stat(k); err != nil {
+		return k, nil
 	}
 
+	keyBytes, err := ioutil.ReadFile(k)
+	if err != nil {
+		return "", fmt.Errorf("Reading service account key: %v", err)
+	}
+
+	return string(keyBytes), nil
+}
+
+func getGCPProjectID(key string) (string, error) {
 	p := struct {
 		ProjectID string `json:"project_id"`
 	}{}
+
 	err := json.Unmarshal([]byte(key), &p)
 	if err != nil {
-		return "", "", fmt.Errorf("Unmarshalling service account key (must be valid json): %v", err)
-	}
-	if p.ProjectID == "" {
-		return "", "", errors.New("Service account key is missing field `project_id`")
+		return "", fmt.Errorf("Unmarshalling service account key (must be valid json): %s", err)
 	}
 
-	return key, p.ProjectID, err
+	if p.ProjectID == "" {
+		return "", errors.New("Service account key is missing field `project_id`")
+	}
+
+	return p.ProjectID, nil
 }
