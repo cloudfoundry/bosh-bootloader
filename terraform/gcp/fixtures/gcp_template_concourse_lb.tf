@@ -1,60 +1,60 @@
 variable "project_id" {
-	type = "string"
+  type = "string"
 }
 
 variable "region" {
-	type = "string"
+  type = "string"
 }
 
 variable "zone" {
-	type = "string"
+  type = "string"
 }
 
 variable "env_id" {
-	type = "string"
+  type = "string"
 }
 
 variable "credentials" {
-	type = "string"
+  type = "string"
 }
 
 provider "google" {
-	credentials = "${file("${var.credentials}")}"
-	project = "${var.project_id}"
-	region = "${var.region}"
+  credentials = "${file("${var.credentials}")}"
+  project     = "${var.project_id}"
+  region      = "${var.region}"
 }
 
 output "network_name" {
-    value = "${google_compute_network.bbl-network.name}"
+  value = "${google_compute_network.bbl-network.name}"
 }
 
 output "subnetwork_name" {
-    value = "${google_compute_subnetwork.bbl-subnet.name}"
+  value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
 output "bosh_open_tag_name" {
-    value = "${google_compute_firewall.bosh-open.name}"
+  value = "${google_compute_firewall.bosh-open.name}"
 }
 
 output "bosh_director_tag_name" {
-	value = "${google_compute_firewall.bosh-director.name}"
+  value = "${google_compute_firewall.bosh-director.name}"
 }
 
 output "jumpbox_tag_name" {
-	value = "${var.env_id}-jumpbox"
+  value = "${var.env_id}-jumpbox"
 }
 
 output "internal_tag_name" {
-    value = "${google_compute_firewall.internal.name}"
+  value = "${google_compute_firewall.internal.name}"
 }
 
 resource "google_compute_network" "bbl-network" {
-  name		 = "${var.env_id}-network"
+  name                    = "${var.env_id}-network"
   auto_create_subnetworks = false
 }
 
 output "internal_cidr" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
+  value = "${var.subnet_cidr}"
 }
 
 variable "subnet_cidr" {
@@ -75,7 +75,7 @@ resource "google_compute_firewall" "external" {
   source_ranges = ["0.0.0.0/0"]
 
   allow {
-    ports = ["22", "6868", "25555"]
+    ports    = ["22", "6868", "25555"]
     protocol = "tcp"
   }
 
@@ -89,7 +89,7 @@ resource "google_compute_firewall" "bosh-open" {
   source_tags = ["${var.env_id}-bosh-open"]
 
   allow {
-    ports = ["22", "6868", "8443", "8844", "25555"]
+    ports    = ["22", "6868", "8443", "8844", "25555"]
     protocol = "tcp"
   }
 
@@ -116,7 +116,7 @@ resource "google_compute_firewall" "internal-to-director" {
   source_tags = ["${var.env_id}-internal"]
 
   allow {
-    ports = ["4222", "25250", "25777"]
+    ports    = ["4222", "25250", "25777"]
     protocol = "tcp"
   }
 
@@ -130,7 +130,7 @@ resource "google_compute_firewall" "jumpbox-to-all" {
   source_tags = ["${var.env_id}-jumpbox"]
 
   allow {
-    ports = ["22"]
+    ports    = ["22"]
     protocol = "tcp"
   }
 
@@ -163,23 +163,23 @@ resource "google_compute_address" "jumpbox-ip" {
 }
 
 output "jumpbox_url" {
-    value = "${google_compute_address.jumpbox-ip.address}:22"
+  value = "${google_compute_address.jumpbox-ip.address}:22"
 }
 
 output "external_ip" {
-    value = "${google_compute_address.jumpbox-ip.address}"
+  value = "${google_compute_address.jumpbox-ip.address}"
 }
 
 output "director_address" {
-	value = "https://${google_compute_address.jumpbox-ip.address}:25555"
+  value = "https://${google_compute_address.jumpbox-ip.address}:25555"
 }
 
 output "concourse_target_pool" {
-	value = "${google_compute_target_pool.target-pool.name}"
+  value = "${google_compute_target_pool.target-pool.name}"
 }
 
 output "concourse_lb_ip" {
-    value = "${google_compute_address.concourse-address.address}"
+  value = "${google_compute_address.concourse-address.address}"
 }
 
 resource "google_compute_firewall" "firewall-concourse" {

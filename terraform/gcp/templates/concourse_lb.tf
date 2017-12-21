@@ -1,9 +1,9 @@
 output "concourse_target_pool" {
-	value = "${google_compute_target_pool.target-pool.name}"
+  value = "${google_compute_target_pool.target-pool.name}"
 }
 
 output "concourse_lb_ip" {
-    value = "${google_compute_address.concourse-address.address}"
+  value = "${google_compute_address.concourse-address.address}"
 }
 
 resource "google_compute_firewall" "firewall-concourse" {

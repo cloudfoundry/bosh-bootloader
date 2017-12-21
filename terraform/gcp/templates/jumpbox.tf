@@ -3,13 +3,13 @@ resource "google_compute_address" "jumpbox-ip" {
 }
 
 output "jumpbox_url" {
-    value = "${google_compute_address.jumpbox-ip.address}:22"
+  value = "${google_compute_address.jumpbox-ip.address}:22"
 }
 
 output "external_ip" {
-    value = "${google_compute_address.jumpbox-ip.address}"
+  value = "${google_compute_address.jumpbox-ip.address}"
 }
 
 output "director_address" {
-	value = "https://${google_compute_address.jumpbox-ip.address}:25555"
+  value = "https://${google_compute_address.jumpbox-ip.address}:25555"
 }

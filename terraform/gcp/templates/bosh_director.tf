@@ -1,29 +1,29 @@
 output "network_name" {
-    value = "${google_compute_network.bbl-network.name}"
+  value = "${google_compute_network.bbl-network.name}"
 }
 
 output "subnetwork_name" {
-    value = "${google_compute_subnetwork.bbl-subnet.name}"
+  value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
 output "bosh_open_tag_name" {
-    value = "${google_compute_firewall.bosh-open.name}"
+  value = "${google_compute_firewall.bosh-open.name}"
 }
 
 output "bosh_director_tag_name" {
-	value = "${google_compute_firewall.bosh-director.name}"
+  value = "${google_compute_firewall.bosh-director.name}"
 }
 
 output "jumpbox_tag_name" {
-	value = "${var.env_id}-jumpbox"
+  value = "${var.env_id}-jumpbox"
 }
 
 output "internal_tag_name" {
-    value = "${google_compute_firewall.internal.name}"
+  value = "${google_compute_firewall.internal.name}"
 }
 
 resource "google_compute_network" "bbl-network" {
-  name		 = "${var.env_id}-network"
+  name                    = "${var.env_id}-network"
   auto_create_subnetworks = false
 }
 
@@ -49,7 +49,7 @@ resource "google_compute_firewall" "external" {
   source_ranges = ["0.0.0.0/0"]
 
   allow {
-    ports = ["22", "6868", "25555"]
+    ports    = ["22", "6868", "25555"]
     protocol = "tcp"
   }
 
@@ -63,7 +63,7 @@ resource "google_compute_firewall" "bosh-open" {
   source_tags = ["${var.env_id}-bosh-open"]
 
   allow {
-    ports = ["22", "6868", "8443", "8844", "25555"]
+    ports    = ["22", "6868", "8443", "8844", "25555"]
     protocol = "tcp"
   }
 
@@ -90,7 +90,7 @@ resource "google_compute_firewall" "internal-to-director" {
   source_tags = ["${var.env_id}-internal"]
 
   allow {
-    ports = ["4222", "25250", "25777"]
+    ports    = ["4222", "25250", "25777"]
     protocol = "tcp"
   }
 
@@ -104,7 +104,7 @@ resource "google_compute_firewall" "jumpbox-to-all" {
   source_tags = ["${var.env_id}-jumpbox"]
 
   allow {
-    ports = ["22"]
+    ports    = ["22"]
     protocol = "tcp"
   }
 

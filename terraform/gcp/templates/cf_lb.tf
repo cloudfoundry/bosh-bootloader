@@ -11,23 +11,23 @@ output "router_backend_service" {
 }
 
 output "router_lb_ip" {
-    value = "${google_compute_global_address.cf-address.address}"
+  value = "${google_compute_global_address.cf-address.address}"
 }
 
 output "ssh_proxy_lb_ip" {
-    value = "${google_compute_address.cf-ssh-proxy.address}"
+  value = "${google_compute_address.cf-ssh-proxy.address}"
 }
 
 output "tcp_router_lb_ip" {
-    value = "${google_compute_address.cf-tcp-router.address}"
+  value = "${google_compute_address.cf-tcp-router.address}"
 }
 
 output "ws_lb_ip" {
-    value = "${google_compute_address.cf-ws.address}"
+  value = "${google_compute_address.cf-ws.address}"
 }
 
 output "credhub_lb_ip" {
-    value = "${google_compute_address.credhub.address}"
+  value = "${google_compute_address.credhub.address}"
 }
 
 resource "google_compute_firewall" "firewall-cf" {
@@ -81,8 +81,9 @@ resource "google_compute_ssl_certificate" "cf-cert" {
   description = "user provided ssl private key / ssl certificate pair"
   private_key = "${file(var.ssl_certificate_private_key)}"
   certificate = "${file(var.ssl_certificate)}"
+
   lifecycle {
-	create_before_destroy = true
+    create_before_destroy = true
   }
 }
 
@@ -93,18 +94,18 @@ resource "google_compute_url_map" "cf-https-lb-url-map" {
 }
 
 resource "google_compute_health_check" "cf-public-health-check" {
-  name                = "${var.env_id}-cf-public"
+  name = "${var.env_id}-cf-public"
 
   http_health_check {
-	  port                = 8080
-	  request_path        = "/health"
+    port         = 8080
+    request_path = "/health"
   }
 }
 
 resource "google_compute_http_health_check" "cf-public-health-check" {
-  name                = "${var.env_id}-cf"
-  port                = 8080
-  request_path        = "/health"
+  name         = "${var.env_id}-cf"
+  port         = 8080
+  request_path = "/health"
 }
 
 resource "google_compute_firewall" "cf-health-check" {
@@ -178,9 +179,9 @@ resource "google_compute_address" "cf-tcp-router" {
 }
 
 resource "google_compute_http_health_check" "cf-tcp-router" {
-  name                = "${var.env_id}-cf-tcp-router"
-  port                = 80
-  request_path        = "/health"
+  name         = "${var.env_id}-cf-tcp-router"
+  port         = 80
+  request_path = "/health"
 }
 
 resource "google_compute_target_pool" "cf-tcp-router" {
@@ -244,10 +245,12 @@ output "credhub_target_tags" {
 resource "google_compute_firewall" "credhub" {
   name    = "${var.env_id}-credhub-open"
   network = "${google_compute_network.bbl-network.name}"
+
   allow {
     protocol = "tcp"
     ports    = ["8844"]
   }
+
   target_tags = ["${google_compute_target_pool.credhub.name}"]
 }
 
@@ -256,7 +259,7 @@ resource "google_compute_address" "credhub" {
 }
 
 resource "google_compute_target_pool" "credhub" {
-  name = "${var.env_id}-credhub"
+  name             = "${var.env_id}-credhub"
   session_affinity = "NONE"
 }
 

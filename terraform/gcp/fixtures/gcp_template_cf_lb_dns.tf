@@ -1,60 +1,60 @@
 variable "project_id" {
-	type = "string"
+  type = "string"
 }
 
 variable "region" {
-	type = "string"
+  type = "string"
 }
 
 variable "zone" {
-	type = "string"
+  type = "string"
 }
 
 variable "env_id" {
-	type = "string"
+  type = "string"
 }
 
 variable "credentials" {
-	type = "string"
+  type = "string"
 }
 
 provider "google" {
-	credentials = "${file("${var.credentials}")}"
-	project = "${var.project_id}"
-	region = "${var.region}"
+  credentials = "${file("${var.credentials}")}"
+  project     = "${var.project_id}"
+  region      = "${var.region}"
 }
 
 output "network_name" {
-    value = "${google_compute_network.bbl-network.name}"
+  value = "${google_compute_network.bbl-network.name}"
 }
 
 output "subnetwork_name" {
-    value = "${google_compute_subnetwork.bbl-subnet.name}"
+  value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
 output "bosh_open_tag_name" {
-    value = "${google_compute_firewall.bosh-open.name}"
+  value = "${google_compute_firewall.bosh-open.name}"
 }
 
 output "bosh_director_tag_name" {
-	value = "${google_compute_firewall.bosh-director.name}"
+  value = "${google_compute_firewall.bosh-director.name}"
 }
 
 output "jumpbox_tag_name" {
-	value = "${var.env_id}-jumpbox"
+  value = "${var.env_id}-jumpbox"
 }
 
 output "internal_tag_name" {
-    value = "${google_compute_firewall.internal.name}"
+  value = "${google_compute_firewall.internal.name}"
 }
 
 resource "google_compute_network" "bbl-network" {
-  name		 = "${var.env_id}-network"
+  name                    = "${var.env_id}-network"
   auto_create_subnetworks = false
 }
 
 output "internal_cidr" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
+  value = "${var.subnet_cidr}"
 }
 
 variable "subnet_cidr" {
@@ -75,7 +75,7 @@ resource "google_compute_firewall" "external" {
   source_ranges = ["0.0.0.0/0"]
 
   allow {
-    ports = ["22", "6868", "25555"]
+    ports    = ["22", "6868", "25555"]
     protocol = "tcp"
   }
 
@@ -89,7 +89,7 @@ resource "google_compute_firewall" "bosh-open" {
   source_tags = ["${var.env_id}-bosh-open"]
 
   allow {
-    ports = ["22", "6868", "8443", "8844", "25555"]
+    ports    = ["22", "6868", "8443", "8844", "25555"]
     protocol = "tcp"
   }
 
@@ -116,7 +116,7 @@ resource "google_compute_firewall" "internal-to-director" {
   source_tags = ["${var.env_id}-internal"]
 
   allow {
-    ports = ["4222", "25250", "25777"]
+    ports    = ["4222", "25250", "25777"]
     protocol = "tcp"
   }
 
@@ -130,7 +130,7 @@ resource "google_compute_firewall" "jumpbox-to-all" {
   source_tags = ["${var.env_id}-jumpbox"]
 
   allow {
-    ports = ["22"]
+    ports    = ["22"]
     protocol = "tcp"
   }
 
@@ -163,15 +163,15 @@ resource "google_compute_address" "jumpbox-ip" {
 }
 
 output "jumpbox_url" {
-    value = "${google_compute_address.jumpbox-ip.address}:22"
+  value = "${google_compute_address.jumpbox-ip.address}:22"
 }
 
 output "external_ip" {
-    value = "${google_compute_address.jumpbox-ip.address}"
+  value = "${google_compute_address.jumpbox-ip.address}"
 }
 
 output "director_address" {
-	value = "https://${google_compute_address.jumpbox-ip.address}:25555"
+  value = "https://${google_compute_address.jumpbox-ip.address}:25555"
 }
 
 variable "ssl_certificate" {
@@ -187,23 +187,23 @@ output "router_backend_service" {
 }
 
 output "router_lb_ip" {
-    value = "${google_compute_global_address.cf-address.address}"
+  value = "${google_compute_global_address.cf-address.address}"
 }
 
 output "ssh_proxy_lb_ip" {
-    value = "${google_compute_address.cf-ssh-proxy.address}"
+  value = "${google_compute_address.cf-ssh-proxy.address}"
 }
 
 output "tcp_router_lb_ip" {
-    value = "${google_compute_address.cf-tcp-router.address}"
+  value = "${google_compute_address.cf-tcp-router.address}"
 }
 
 output "ws_lb_ip" {
-    value = "${google_compute_address.cf-ws.address}"
+  value = "${google_compute_address.cf-ws.address}"
 }
 
 output "credhub_lb_ip" {
-    value = "${google_compute_address.credhub.address}"
+  value = "${google_compute_address.credhub.address}"
 }
 
 resource "google_compute_firewall" "firewall-cf" {
@@ -257,8 +257,9 @@ resource "google_compute_ssl_certificate" "cf-cert" {
   description = "user provided ssl private key / ssl certificate pair"
   private_key = "${file(var.ssl_certificate_private_key)}"
   certificate = "${file(var.ssl_certificate)}"
+
   lifecycle {
-	create_before_destroy = true
+    create_before_destroy = true
   }
 }
 
@@ -269,18 +270,18 @@ resource "google_compute_url_map" "cf-https-lb-url-map" {
 }
 
 resource "google_compute_health_check" "cf-public-health-check" {
-  name                = "${var.env_id}-cf-public"
+  name = "${var.env_id}-cf-public"
 
   http_health_check {
-	  port                = 8080
-	  request_path        = "/health"
+    port         = 8080
+    request_path = "/health"
   }
 }
 
 resource "google_compute_http_health_check" "cf-public-health-check" {
-  name                = "${var.env_id}-cf"
-  port                = 8080
-  request_path        = "/health"
+  name         = "${var.env_id}-cf"
+  port         = 8080
+  request_path = "/health"
 }
 
 resource "google_compute_firewall" "cf-health-check" {
@@ -354,9 +355,9 @@ resource "google_compute_address" "cf-tcp-router" {
 }
 
 resource "google_compute_http_health_check" "cf-tcp-router" {
-  name                = "${var.env_id}-cf-tcp-router"
-  port                = 80
-  request_path        = "/health"
+  name         = "${var.env_id}-cf-tcp-router"
+  port         = 80
+  request_path = "/health"
 }
 
 resource "google_compute_target_pool" "cf-tcp-router" {
@@ -420,10 +421,12 @@ output "credhub_target_tags" {
 resource "google_compute_firewall" "credhub" {
   name    = "${var.env_id}-credhub-open"
   network = "${google_compute_network.bbl-network.name}"
+
   allow {
     protocol = "tcp"
     ports    = ["8844"]
   }
+
   target_tags = ["${google_compute_target_pool.credhub.name}"]
 }
 
@@ -432,7 +435,7 @@ resource "google_compute_address" "credhub" {
 }
 
 resource "google_compute_target_pool" "credhub" {
-  name = "${var.env_id}-credhub"
+  name             = "${var.env_id}-credhub"
   session_affinity = "NONE"
 }
 
@@ -580,10 +583,10 @@ resource "google_dns_record_set" "wildcard-ws-dns" {
 }
 
 resource "google_dns_record_set" "credhub" {
-  name = "credhub.${google_dns_managed_zone.env_dns_zone.dns_name}"
+  name       = "credhub.${google_dns_managed_zone.env_dns_zone.dns_name}"
   depends_on = ["google_compute_address.credhub"]
-  type = "A"
-  ttl = 300
+  type       = "A"
+  ttl        = 300
 
   managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
 
