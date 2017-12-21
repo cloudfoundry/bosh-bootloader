@@ -40,8 +40,8 @@ Usage:
 
 Global Options:
   --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir            Directory containing the bbl state
-  --debug                Prints debugging output
+  --state-dir [-s]       Directory containing the bbl state
+  --debug     [-d]       Prints debugging output
   --version   [-v]       Prints version
 
 Basic Commands: A good place to start
@@ -87,8 +87,8 @@ Troubleshooting Commands:
 
 Global Options:
   --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir            Directory containing the bbl state
-  --debug                Prints debugging output
+  --state-dir [-s]       Directory containing the bbl state
+  --debug     [-d]       Prints debugging output
   --version   [-v]       Prints version
 
 [my-command command options]
