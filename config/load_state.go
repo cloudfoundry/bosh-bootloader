@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	flags "github.com/jessevdk/go-flags"
 )
@@ -58,11 +58,12 @@ type migrator interface {
 	Migrate(storage.State) (storage.State, error)
 }
 
-func NewConfig(bootstrap StateBootstrap, migrator migrator, logger logger) Config {
+func NewConfig(bootstrap StateBootstrap, migrator migrator, logger logger, fileIO fileio.FileIO) Config {
 	return Config{
 		stateBootstrap: bootstrap,
 		migrator:       migrator,
 		logger:         logger,
+		fileIO:         fileIO,
 	}
 }
 
@@ -70,6 +71,7 @@ type Config struct {
 	stateBootstrap StateBootstrap
 	migrator       migrator
 	logger         logger
+	fileIO         fileio.FileIO
 }
 
 func ParseArgs(args []string) (globalFlags, []string, error) {
@@ -177,7 +179,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		return application.Configuration{}, err
 	}
 
-	state, err = updateIAASState(globalFlags, state)
+	state, err = c.updateIAASState(globalFlags, state)
 	if err != nil {
 		return application.Configuration{}, err
 	}
@@ -194,7 +196,7 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	}, nil
 }
 
-func updateIAASState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
 			iaasMismatch := fmt.Sprintf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
@@ -205,23 +207,23 @@ func updateIAASState(globalFlags globalFlags, state storage.State) (storage.Stat
 
 	switch state.IAAS {
 	case "aws":
-		state, err := updateAWSState(globalFlags, state)
+		state, err := c.updateAWSState(globalFlags, state)
 		return state, err
 	case "azure":
-		state, err := updateAzureState(globalFlags, state)
+		state, err := c.updateAzureState(globalFlags, state)
 		return state, err
 	case "gcp":
-		state, err := updateGCPState(globalFlags, state)
+		state, err := c.updateGCPState(globalFlags, state)
 		return state, err
 	case "vsphere":
-		state, err := updateVSphereState(globalFlags, state)
+		state, err := c.updateVSphereState(globalFlags, state)
 		return state, err
 	}
 
 	return state, nil
 }
 
-func updateAWSState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (c Config) updateAWSState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.AWSAccessKeyID != "" {
 		state.AWS.AccessKeyID = globalFlags.AWSAccessKeyID
 	}
@@ -239,7 +241,7 @@ func updateAWSState(globalFlags globalFlags, state storage.State) (storage.State
 	return state, nil
 }
 
-func updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (c Config) updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.AzureClientID != "" {
 		state.Azure.ClientID = globalFlags.AzureClientID
 	}
@@ -259,15 +261,15 @@ func updateAzureState(globalFlags globalFlags, state storage.State) (storage.Sta
 	return state, nil
 }
 
-func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (c Config) updateGCPState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.GCPServiceAccountKey != "" {
-		key, err := getGCPServiceAccountKey(globalFlags.GCPServiceAccountKey)
+		path, key, err := c.getGCPServiceAccountKey(globalFlags.GCPServiceAccountKey)
 		if err != nil {
 			return storage.State{}, err
 		}
-		state.GCP.ServiceAccountKey = key
+		state.GCP.ServiceAccountKey = path
 
-		id, err := getGCPProjectID(key)
+		id, err := c.getGCPProjectID(key)
 		if err != nil {
 			return storage.State{}, err
 		}
@@ -289,7 +291,51 @@ func updateGCPState(globalFlags globalFlags, state storage.State) (storage.State
 	return state, nil
 }
 
-func updateVSphereState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (c Config) getGCPServiceAccountKey(key string) (string, string, error) {
+	if _, err := c.fileIO.Stat(key); err != nil {
+		return c.writeGCPServiceAccountKey(key)
+	}
+	return c.readGCPServiceAccountKey(key)
+}
+
+func (c Config) writeGCPServiceAccountKey(contents string) (string, string, error) {
+	tempFile, err := c.fileIO.TempFile("", "gcpServiceAccountKey.json")
+	if err != nil {
+		return "", "", fmt.Errorf("Creating temp file for credentials: %s", err)
+	}
+	err = c.fileIO.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
+	if err != nil {
+		return "", "", fmt.Errorf("Writing credentials to temp file: %s", err)
+	}
+	return tempFile.Name(), contents, nil
+}
+
+func (c Config) readGCPServiceAccountKey(path string) (string, string, error) {
+	keyBytes, err := c.fileIO.ReadFile(path)
+	if err != nil {
+		return "", "", fmt.Errorf("Reading service account key: %v", err)
+	}
+	return path, string(keyBytes), nil
+}
+
+func (c Config) getGCPProjectID(key string) (string, error) {
+	p := struct {
+		ProjectID string `json:"project_id"`
+	}{}
+
+	err := json.Unmarshal([]byte(key), &p)
+	if err != nil {
+		return "", fmt.Errorf("Unmarshalling service account key (must be valid json): %s", err)
+	}
+
+	if p.ProjectID == "" {
+		return "", errors.New("Service account key is missing field `project_id`")
+	}
+
+	return p.ProjectID, nil
+}
+
+func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.VSphereVCenterUser != "" {
 		state.VSphere.VCenterUser = globalFlags.VSphereVCenterUser
 	}
@@ -447,34 +493,4 @@ func validateVSphere(vsphere storage.VSphere) error {
 		return errors.New("vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)")
 	}
 	return nil
-}
-
-func getGCPServiceAccountKey(k string) (string, error) {
-	if _, err := os.Stat(k); err != nil {
-		return k, nil
-	}
-
-	keyBytes, err := ioutil.ReadFile(k)
-	if err != nil {
-		return "", fmt.Errorf("Reading service account key: %v", err)
-	}
-
-	return string(keyBytes), nil
-}
-
-func getGCPProjectID(key string) (string, error) {
-	p := struct {
-		ProjectID string `json:"project_id"`
-	}{}
-
-	err := json.Unmarshal([]byte(key), &p)
-	if err != nil {
-		return "", fmt.Errorf("Unmarshalling service account key (must be valid json): %s", err)
-	}
-
-	if p.ProjectID == "" {
-		return "", errors.New("Service account key is missing field `project_id`")
-	}
-
-	return p.ProjectID, nil
 }

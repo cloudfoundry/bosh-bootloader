@@ -19,13 +19,9 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		simpleEnvId = simpleEnvId[:20]
 	}
 	input := map[string]interface{}{
-		"env_id":          state.EnvID,
-		"simple_env_id":   simpleEnvId,
-		"region":          state.Azure.Region,
-		"subscription_id": state.Azure.SubscriptionID,
-		"tenant_id":       state.Azure.TenantID,
-		"client_id":       state.Azure.ClientID,
-		"client_secret":   state.Azure.ClientSecret,
+		"env_id":        state.EnvID,
+		"simple_env_id": simpleEnvId,
+		"region":        state.Azure.Region,
 	}
 
 	if state.LB.Cert != "" && state.LB.Key != "" {
@@ -35,4 +31,13 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	}
 
 	return input, nil
+}
+
+func (i InputGenerator) Credentials(state storage.State) map[string]string {
+	return map[string]string{
+		"subscription_id": state.Azure.SubscriptionID,
+		"tenant_id":       state.Azure.TenantID,
+		"client_id":       state.Azure.ClientID,
+		"client_secret":   state.Azure.ClientSecret,
+	}
 }

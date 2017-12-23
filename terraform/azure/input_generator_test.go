@@ -30,70 +30,73 @@ var _ = Describe("InputGenerator", func() {
 		inputGenerator = azure.NewInputGenerator()
 	})
 
-	It("receives BBL state and returns a map of terraform variables", func() {
-		inputs, err := inputGenerator.Generate(state)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(inputs).To(Equal(map[string]interface{}{
-			"simple_env_id":   "envid",
-			"env_id":          state.EnvID,
-			"region":          state.Azure.Region,
-			"subscription_id": state.Azure.SubscriptionID,
-			"tenant_id":       state.Azure.TenantID,
-			"client_id":       state.Azure.ClientID,
-			"client_secret":   state.Azure.ClientSecret,
-		}))
-	})
-
-	Context("given a long environment id", func() {
-		It("shortens the id for simple_env_id", func() {
-			state.EnvID = "super-long-environment-id-with-999"
+	Context("Generate", func() {
+		It("receives BBL state and returns a map of terraform variables", func() {
 			inputs, err := inputGenerator.Generate(state)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(inputs).To(Equal(map[string]interface{}{
-				"simple_env_id":   "superlongenvironment",
-				"env_id":          state.EnvID,
-				"region":          state.Azure.Region,
-				"subscription_id": state.Azure.SubscriptionID,
-				"tenant_id":       state.Azure.TenantID,
-				"client_id":       state.Azure.ClientID,
-				"client_secret":   state.Azure.ClientSecret,
+				"simple_env_id": "envid",
+				"env_id":        state.EnvID,
+				"region":        state.Azure.Region,
 			}))
 		})
-	})
 
-	Context("given a partial LB state", func() {
-		It("does not generate input for the LB", func() {
-			state.LB.Cert = "Cert content"
-			inputs, err := inputGenerator.Generate(state)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(inputs)).To(Equal(7))
+		Context("given a long environment id", func() {
+			It("shortens the id for simple_env_id", func() {
+				state.EnvID = "super-long-environment-id-with-999"
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"simple_env_id": "superlongenvironment",
+					"env_id":        state.EnvID,
+					"region":        state.Azure.Region,
+				}))
+			})
+		})
+
+		Context("given a partial LB state", func() {
+			It("does not generate input for the LB", func() {
+				state.LB.Cert = "Cert content"
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(inputs)).To(Equal(3))
+			})
+		})
+
+		Context("given a LB", func() {
+			BeforeEach(func() {
+				state.LB.Cert = "Cert content"
+				state.LB.Key = "PFX password"
+				state.LB.Domain = "example.com"
+			})
+
+			It("returns the expected inputs for the LB", func() {
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"simple_env_id":   "envid",
+					"env_id":          state.EnvID,
+					"region":          state.Azure.Region,
+					"pfx_cert_base64": "Cert content",
+					"pfx_password":    "PFX password",
+					"system_domain":   "example.com",
+				}))
+			})
 		})
 	})
 
-	Context("given a LB", func() {
-		BeforeEach(func() {
-			state.LB.Cert = "Cert content"
-			state.LB.Key = "PFX password"
-			state.LB.Domain = "example.com"
-		})
+	Context("Credentials", func() {
+		It("returns azure credentials", func() {
+			credentials := inputGenerator.Credentials(state)
 
-		It("returns the expected inputs for the LB", func() {
-			inputs, err := inputGenerator.Generate(state)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(inputs).To(Equal(map[string]interface{}{
-				"simple_env_id":   "envid",
-				"env_id":          state.EnvID,
-				"region":          state.Azure.Region,
-				"subscription_id": state.Azure.SubscriptionID,
-				"tenant_id":       state.Azure.TenantID,
-				"client_id":       state.Azure.ClientID,
-				"client_secret":   state.Azure.ClientSecret,
-				"pfx_cert_base64": "Cert content",
-				"pfx_password":    "PFX password",
-				"system_domain":   "example.com",
+			Expect(credentials).To(Equal(map[string]string{
+				"client_id":       "client-id",
+				"client_secret":   "client-secret",
+				"subscription_id": "subscription-id",
+				"tenant_id":       "tenant-id",
 			}))
 		})
 	})

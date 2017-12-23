@@ -20,6 +20,7 @@ var _ = Describe("LoadState", func() {
 		fakeLogger         *fakes.Logger
 		fakeStateBootstrap *fakes.StateBootstrap
 		fakeStateMigrator  *fakes.StateMigrator
+		fakeFileIO         *fakes.FileIO
 		c                  config.Config
 	)
 
@@ -27,7 +28,8 @@ var _ = Describe("LoadState", func() {
 		fakeLogger = &fakes.Logger{}
 		fakeStateBootstrap = &fakes.StateBootstrap{}
 		fakeStateMigrator = &fakes.StateMigrator{}
-		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeLogger)
+		fakeFileIO = &fakes.FileIO{}
+		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeLogger, fakeFileIO)
 		os.Clearenv()
 	})
 
@@ -586,16 +588,17 @@ var _ = Describe("LoadState", func() {
 			var (
 				serviceAccountKeyPath string
 				serviceAccountKey     string
+				tempFile              *os.File
 			)
 			BeforeEach(func() {
-				tempFile, err := ioutil.TempFile("", "gcpServiceAccountKey")
+				var err error
+				tempFile, err = ioutil.TempFile("", "temp")
 				Expect(err).NotTo(HaveOccurred())
-
 				serviceAccountKeyPath = tempFile.Name()
 				serviceAccountKey = `{"project_id": "some-project-id"}`
 
-				err = ioutil.WriteFile(serviceAccountKeyPath, []byte(serviceAccountKey), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
+				fakeFileIO.TempFileCall.Returns.File = tempFile
+				fakeFileIO.ReadFileCall.Returns.Contents = []byte(serviceAccountKey)
 			})
 
 			Context("when a previous state does not exist", func() {
@@ -606,7 +609,7 @@ var _ = Describe("LoadState", func() {
 						args = []string{
 							"bbl", "up", "--name", "some-env-id",
 							"--iaas", "gcp",
-							"--gcp-service-account-key", serviceAccountKeyPath,
+							"--gcp-service-account-key", "/path/to/service/account/key",
 							"--gcp-region", "some-region",
 						}
 					})
@@ -618,7 +621,7 @@ var _ = Describe("LoadState", func() {
 
 						state := appConfig.State
 						Expect(state.IAAS).To(Equal("gcp"))
-						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+						Expect(state.GCP.ServiceAccountKey).To(Equal("/path/to/service/account/key"))
 						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
@@ -636,6 +639,7 @@ var _ = Describe("LoadState", func() {
 						var args []string
 
 						BeforeEach(func() {
+							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
 							args = []string{
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
@@ -645,12 +649,13 @@ var _ = Describe("LoadState", func() {
 							}
 						})
 
-						It("returns a state object containing service account key", func() {
+						It("returns a state object containing a path to the service account key", func() {
 							appConfig, err := c.Bootstrap(args)
-							Expect(err).NotTo(HaveOccurred())
 
-							Expect(appConfig.State.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+							Expect(err).NotTo(HaveOccurred())
 							Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
+							Expect(fakeFileIO.WriteFileCall.Receives.Filename).To(Equal(tempFile.Name()))
+							Expect(fakeFileIO.WriteFileCall.Receives.Contents).To(Equal([]byte(serviceAccountKey)))
 						})
 					})
 
@@ -667,6 +672,7 @@ var _ = Describe("LoadState", func() {
 									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
+								fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
 							})
 
 							It("returns an error", func() {
@@ -678,14 +684,14 @@ var _ = Describe("LoadState", func() {
 
 						Context("when service account key is invalid json", func() {
 							BeforeEach(func() {
-								serviceAccountKey = `this isn't real json`
 								args = []string{
 									"bbl", "up", "--name", "some-env-id",
 									"--iaas", "gcp",
-									"--gcp-service-account-key", serviceAccountKey,
+									"--gcp-service-account-key", "some-key",
 									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
+								fakeFileIO.ReadFileCall.Returns.Contents = []byte("not-json")
 							})
 
 							It("returns an error", func() {
@@ -697,19 +703,57 @@ var _ = Describe("LoadState", func() {
 
 					Context("when service account key is missing project ID field", func() {
 						BeforeEach(func() {
-							serviceAccountKey = `{"missing": "project_id"}`
 							args = []string{
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
-								"--gcp-service-account-key", serviceAccountKey,
+								"--gcp-service-account-key", "some-key",
 								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
+							fakeFileIO.ReadFileCall.Returns.Contents = []byte("{}")
 						})
 
 						It("returns an error", func() {
 							_, err := c.Bootstrap(args)
 							Expect(err).To(MatchError("Service account key is missing field `project_id`"))
+						})
+					})
+
+					Context("when the temp file cannot be created", func() {
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up", "--name", "some-env-id",
+								"--iaas", "gcp",
+								"--gcp-service-account-key", "some-key",
+								"--gcp-zone", "some-availability-zone",
+								"--gcp-region", "some-region",
+							}
+							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
+							fakeFileIO.TempFileCall.Returns.Error = errors.New("banana")
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+							Expect(err).To(MatchError("Creating temp file for credentials: banana"))
+						})
+					})
+
+					Context("when writing the key to the file fails", func() {
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up", "--name", "some-env-id",
+								"--iaas", "gcp",
+								"--gcp-service-account-key", "some-key",
+								"--gcp-zone", "some-availability-zone",
+								"--gcp-region", "some-region",
+							}
+							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
+							fakeFileIO.WriteFileCall.Returns.Error = errors.New("coconut")
+						})
+
+						It("returns an error", func() {
+							_, err := c.Bootstrap(args)
+							Expect(err).To(MatchError("Writing credentials to temp file: coconut"))
 						})
 					})
 				})
@@ -723,6 +767,8 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_IAAS", "gcp")
 						os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKey)
 						os.Setenv("BBL_GCP_REGION", "some-region")
+
+						fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
 					})
 
 					It("returns a state containing configuration", func() {
@@ -733,7 +779,7 @@ var _ = Describe("LoadState", func() {
 						state := appConfig.State
 
 						Expect(state.IAAS).To(Equal("gcp"))
-						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
+						Expect(state.GCP.ServiceAccountKey).To(Equal(tempFile.Name()))
 						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
@@ -754,14 +800,14 @@ var _ = Describe("LoadState", func() {
 					existingState = storage.State{
 						IAAS: "gcp",
 						GCP: storage.GCP{
-							ServiceAccountKey: serviceAccountKey,
-							ProjectID:         "some-project-id",
-							Zone:              "some-zone",
-							Region:            "some-region",
+							ProjectID: "some-project-id",
+							Zone:      "some-zone",
+							Region:    "some-region",
 						},
 						EnvID: "some-env-id",
 					}
 					fakeStateMigrator.MigrateCall.Returns.State = existingState
+					fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -775,6 +821,7 @@ var _ = Describe("LoadState", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
+						appConfig.State.GCP.ServiceAccountKey = "" // this isn't written to disk
 						Expect(appConfig.State).To(Equal(existingState))
 					})
 				})

@@ -16,6 +16,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/config"
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -47,7 +48,7 @@ func main() {
 
 	stateStore := storage.NewStore(globals.StateDir)
 	stateMigrator := storage.NewMigrator(stateStore)
-	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, &fileio.FileIOAdapter{})
 
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
@@ -87,7 +88,7 @@ func main() {
 		networkDeletionValidator = awsClient
 		networkClient = awsClient
 	} else if appConfig.State.IAAS == "gcp" && needsIAASCreds {
-		gcpClient, err = gcp.NewClient(appConfig.State.GCP, "")
+		gcpClient, err = gcp.NewClient(appConfig.State.GCP, "", &fileio.FileIOAdapter{})
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}

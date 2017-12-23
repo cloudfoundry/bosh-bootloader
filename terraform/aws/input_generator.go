@@ -35,8 +35,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	inputs := map[string]interface{}{
 		"env_id":             state.EnvID,
 		"short_env_id":       shortEnvID,
-		"access_key":         state.AWS.AccessKeyID,
-		"secret_key":         state.AWS.SecretAccessKey,
 		"region":             state.AWS.Region,
 		"availability_zones": azs,
 	}
@@ -52,4 +50,11 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	}
 
 	return inputs, nil
+}
+
+func (i InputGenerator) Credentials(state storage.State) map[string]string {
+	return map[string]string{
+		"access_key": state.AWS.AccessKeyID,
+		"secret_key": state.AWS.SecretAccessKey,
+	}
 }

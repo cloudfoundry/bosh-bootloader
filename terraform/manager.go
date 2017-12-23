@@ -19,15 +19,16 @@ type Manager struct {
 
 type executor interface {
 	Version() (string, error)
-	Destroy(inputs map[string]interface{}) error
+	Destroy(credentials map[string]string) error
 	Init(terraformTemplate string, inputs map[string]interface{}) error
-	Apply() error
+	Apply(credentials map[string]string) error
 	Outputs() (map[string]interface{}, error)
 	Output(string) (string, error)
 }
 
 type InputGenerator interface {
 	Generate(storage.State) (map[string]interface{}, error)
+	Credentials(state storage.State) map[string]string
 }
 
 type TemplateGenerator interface {
@@ -95,7 +96,7 @@ func (m Manager) Init(bblState storage.State) error {
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("terraform apply")
-	err := m.executor.Apply()
+	err := m.executor.Apply(m.inputGenerator.Credentials(bblState))
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
@@ -107,15 +108,8 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 }
 
 func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
-	m.logger.Step("destroying infrastructure")
-	m.logger.Step("generating terraform variables")
-	input, err := m.inputGenerator.Generate(bblState)
-	if err != nil {
-		return storage.State{}, fmt.Errorf("Input generator generate: %s", err)
-	}
-
 	m.logger.Step("terraform destroy")
-	err = m.executor.Destroy(input)
+	err := m.executor.Destroy(m.inputGenerator.Credentials(bblState))
 
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 

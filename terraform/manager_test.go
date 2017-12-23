@@ -112,26 +112,31 @@ var _ = Describe("Manager", func() {
 		var (
 			incomingState storage.State
 			expectedState storage.State
+			credentials   map[string]string
 		)
 
 		BeforeEach(func() {
 			incomingState = storage.State{
 				EnvID: "some-env-id",
 			}
+			credentials = map[string]string{
+				"some-credential": "some-credential-value",
+			}
 
 			expectedState = incomingState
 			expectedState.LatestTFOutput = expectedTFOutput
 
 			templateGenerator.GenerateCall.Returns.Template = "some-gcp-terraform-template"
+			inputGenerator.CredentialsCall.Returns.Credentials = credentials
 			terraformOutputBuffer.Write([]byte(expectedTFOutput))
 		})
 
 		It("returns a state with new tfState and output from executor apply", func() {
 			state, err := manager.Apply(incomingState)
+
+			Expect(executor.ApplyCall.Receives.Credentials).To(Equal(credentials))
 			Expect(err).NotTo(HaveOccurred())
-
 			Expect(state).To(Equal(expectedState))
-
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				"terraform apply",
 			}))
@@ -155,6 +160,7 @@ var _ = Describe("Manager", func() {
 		var (
 			incomingState storage.State
 			expectedState storage.State
+			credentials   map[string]string
 		)
 
 		BeforeEach(func() {
@@ -163,16 +169,11 @@ var _ = Describe("Manager", func() {
 			expectedState = incomingState
 			expectedState.LatestTFOutput = expectedTFOutput
 
-			inputGenerator.GenerateCall.Returns.Inputs = map[string]interface{}{
-				"env_id":        incomingState.EnvID,
-				"project_id":    incomingState.GCP.ProjectID,
-				"region":        incomingState.GCP.Region,
-				"zone":          incomingState.GCP.Zone,
-				"credentials":   "some-path",
-				"system_domain": incomingState.LB.Domain,
-			}
-
 			terraformOutputBuffer.Write([]byte(expectedTFOutput))
+			credentials = map[string]string{
+				"some-credential": "some-credential-value",
+			}
+			inputGenerator.CredentialsCall.Returns.Credentials = credentials
 		})
 
 		It("calling executor destroy with the right arguments", func() {
@@ -182,34 +183,13 @@ var _ = Describe("Manager", func() {
 			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(executor.DestroyCall.CallCount).To(Equal(1))
-			Expect(executor.DestroyCall.Receives.Inputs).To(Equal(map[string]interface{}{
-				"env_id":        incomingState.EnvID,
-				"project_id":    incomingState.GCP.ProjectID,
-				"region":        incomingState.GCP.Region,
-				"zone":          incomingState.GCP.Zone,
-				"credentials":   "some-path",
-				"system_domain": incomingState.LB.Domain,
-			}))
-
+			Expect(executor.DestroyCall.Receives.Credentials).To(Equal(credentials))
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				"destroying infrastructure",
-				"generating terraform variables",
 				"terraform destroy",
 				"finished destroying infrastructure",
 			}))
 
 			Expect(newBBLState).To(Equal(expectedState))
-		})
-
-		Context("when input generator returns an error", func() {
-			BeforeEach(func() {
-				inputGenerator.GenerateCall.Returns.Error = errors.New("apple")
-			})
-
-			It("bubbles up the error", func() {
-				_, err := manager.Destroy(incomingState)
-				Expect(err).To(MatchError("Input generator generate: apple"))
-			})
 		})
 
 		Context("when executor destroy fails", func() {

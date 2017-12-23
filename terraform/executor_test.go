@@ -227,7 +227,9 @@ var _ = Describe("Executor", func() {
 			err := executor.Init("some-template", input) // We need to run the terraform init command.
 			Expect(err).NotTo(HaveOccurred())
 
-			err = executor.Apply()
+			err = executor.Apply(map[string]string{
+				"some-cert": "some-cert-value",
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
@@ -235,6 +237,7 @@ var _ = Describe("Executor", func() {
 				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 					"apply",
 					"--auto-approve",
+					"-var", "some-cert=some-cert-value",
 					"-state", relativeStatePath,
 					"-var-file", relativeVarsPath,
 				}))
@@ -252,7 +255,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("returns the error", func() {
-				err := executor.Apply()
+				err := executor.Apply(map[string]string{})
 				Expect(err).To(MatchError("the-executor-error"))
 			})
 
@@ -262,7 +265,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns a redacted error message", func() {
-					err := executor.Apply()
+					err := executor.Apply(map[string]string{})
 					Expect(err).To(MatchError("Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"))
 				})
 			})
@@ -270,7 +273,13 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("Destroy", func() {
+		var credentials map[string]string
+
 		BeforeEach(func() {
+			credentials = map[string]string{
+				"some-cert": "some-cert-value",
+			}
+
 			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -279,7 +288,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("writes the template and tf state to a temp dir", func() {
-			err := executor.Destroy(input)
+			err := executor.Destroy(credentials)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
@@ -287,6 +296,7 @@ var _ = Describe("Executor", func() {
 				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 					"destroy",
 					"-force",
+					"-var", "some-cert=some-cert-value",
 					"-state", relativeStatePath,
 					"-var-file", relativeVarsPath,
 				}))
@@ -301,7 +311,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Destroy(input)
+					err := executor.Destroy(credentials)
 					Expect(err).To(MatchError("Get terraform dir: kiwi"))
 				})
 			})
@@ -312,7 +322,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Destroy(input)
+					err := executor.Destroy(credentials)
 					Expect(err).To(MatchError("Get vars dir: banana"))
 				})
 			})
@@ -325,7 +335,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Destroy(input)
+					err := executor.Destroy(credentials)
 					Expect(err).To(MatchError("the-executor-error"))
 				})
 
@@ -339,7 +349,7 @@ var _ = Describe("Executor", func() {
 					})
 
 					It("returns a redacted error", func() {
-						err := executor.Destroy(input)
+						err := executor.Destroy(credentials)
 						Expect(err).To(MatchError("Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"))
 					})
 				})

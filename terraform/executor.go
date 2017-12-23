@@ -143,12 +143,22 @@ func (e Executor) runTFCommand(args []string) error {
 	return nil
 }
 
-func (e Executor) Apply() error {
-	return e.runTFCommand([]string{"apply", "--auto-approve"})
+func (e Executor) Apply(credentials map[string]string) error {
+	args := []string{"apply", "--auto-approve"}
+	for key, value := range credentials {
+		arg := fmt.Sprintf("%s=%s", key, value)
+		args = append(args, "-var", arg)
+	}
+	return e.runTFCommand(args)
 }
 
-func (e Executor) Destroy(input map[string]interface{}) error {
-	return e.runTFCommand([]string{"destroy", "-force"})
+func (e Executor) Destroy(credentials map[string]string) error {
+	args := []string{"destroy", "-force"}
+	for key, value := range credentials {
+		arg := fmt.Sprintf("%s=%s", key, value)
+		args = append(args, "-var", arg)
+	}
+	return e.runTFCommand(args)
 }
 
 func (e Executor) Version() (string, error) {

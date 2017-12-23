@@ -24,15 +24,17 @@ type TerraformExecutor struct {
 	}
 	ApplyCall struct {
 		CallCount int
-		Receives  struct{}
-		Returns   struct {
+		Receives  struct {
+			Credentials map[string]string
+		}
+		Returns struct {
 			Error error
 		}
 	}
 	DestroyCall struct {
 		CallCount int
 		Receives  struct {
-			Inputs map[string]interface{}
+			Credentials map[string]string
 		}
 		Returns struct {
 			Error error
@@ -78,14 +80,15 @@ func (t *TerraformExecutor) Init(template string, inputs map[string]interface{})
 	return t.InitCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Apply() error {
+func (t *TerraformExecutor) Apply(credentials map[string]string) error {
 	t.ApplyCall.CallCount++
+	t.ApplyCall.Receives.Credentials = credentials
 	return t.ApplyCall.Returns.Error
 }
 
-func (t *TerraformExecutor) Destroy(inputs map[string]interface{}) error {
+func (t *TerraformExecutor) Destroy(credentials map[string]string) error {
 	t.DestroyCall.CallCount++
-	t.DestroyCall.Receives.Inputs = inputs
+	t.DestroyCall.Receives.Credentials = credentials
 	return t.DestroyCall.Returns.Error
 }
 
