@@ -304,7 +304,7 @@ resource "azurerm_public_ip" "lb" {
 resource "azurerm_application_gateway" "network" {
   name                = "${var.env_id}-app-gateway"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
-  location            = "West US"
+  location            = "${var.region}"
 
   sku {
     name     = "Standard_Small"
