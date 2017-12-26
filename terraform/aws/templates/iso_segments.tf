@@ -1,7 +1,7 @@
 variable "isolation_segments" {
   type        = "string"
   default     = "0"
-  description = "Optionally create a LB and DNS entries for a single isolation segment. Valid values are 0 or 1."
+  description = "Optionally create a load balancer and DNS entries for a single isolation segment. Valid values are 0 or 1."
 }
 
 variable "iso_to_bosh_ports" {
@@ -82,7 +82,9 @@ resource "aws_elb" "iso_router_lb" {
 }
 
 resource "aws_security_group" "iso_security_group" {
-  count  = "${var.isolation_segments}"
+  count = "${var.isolation_segments}"
+
+  name   = "${var.env_id}-iso-sg"
   vpc_id = "${aws_vpc.vpc.id}"
 
   description = "Private isolation segment"
@@ -93,7 +95,9 @@ resource "aws_security_group" "iso_security_group" {
 }
 
 resource "aws_security_group" "iso_shared_security_group" {
-  count  = "${var.isolation_segments}"
+  count = "${var.isolation_segments}"
+
+  name   = "${var.env_id}-iso-shared-sg"
   vpc_id = "${aws_vpc.vpc.id}"
 
   description = "Shared isolation segments"
@@ -106,6 +110,8 @@ resource "aws_security_group" "iso_shared_security_group" {
 resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
   count = "${var.isolation_segments * length(var.iso_to_bosh_ports)}"
 
+  description = "TCP traffic from iso-sg to bosh"
+
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
   type                     = "ingress"
   protocol                 = "tcp"
@@ -116,6 +122,8 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_rule" {
 
 resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
   count = "${var.isolation_segments * length(var.iso_to_shared_tcp_ports)}"
+
+  description = "TCP traffic from iso-sg to iso-shared-sg"
 
   security_group_id        = "${aws_security_group.iso_shared_security_group.id}"
   type                     = "ingress"
@@ -128,6 +136,8 @@ resource "aws_security_group_rule" "isolation_segments_to_shared_tcp_rule" {
 resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
   count = "${var.isolation_segments * length(var.iso_to_shared_udp_ports)}"
 
+  description = "UDP traffic from iso-sg to iso-shared-sg"
+
   security_group_id        = "${aws_security_group.iso_shared_security_group.id}"
   type                     = "ingress"
   protocol                 = "udp"
@@ -138,6 +148,8 @@ resource "aws_security_group_rule" "isolation_segments_to_shared_udp_rule" {
 
 resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule" {
   count = "${var.isolation_segments}"
+
+  description = "ALL traffic from iso-sg to bosh"
 
   depends_on               = ["aws_security_group.bosh_security_group"]
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
@@ -151,6 +163,8 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule"
 resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
   count = "${var.isolation_segments}"
 
+  description = "TCP traffic from shared diego bbs to iso-sg"
+
   depends_on               = ["aws_security_group.iso_security_group"]
   security_group_id        = "${aws_security_group.iso_security_group.id}"
   type                     = "ingress"
@@ -162,6 +176,8 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
 
 resource "aws_security_group_rule" "nat_to_isolated_cells_rule" {
   count = "${var.isolation_segments}"
+
+  description = "ALL traffic from nat-sg to iso-sg"
 
   security_group_id        = "${aws_security_group.nat_security_group.id}"
   type                     = "ingress"
