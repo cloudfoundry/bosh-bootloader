@@ -55,23 +55,18 @@ var _ = Describe("bosh deployment vars", func() {
 		stdout := bbl.BOSHDeploymentVars()
 
 		var vars struct {
-			InternalCIDR       string   `yaml:"internal_cidr"`
-			InternalGateway    string   `yaml:"internal_gw"`
-			InternalIP         string   `yaml:"internal_ip"`
-			DirectorName       string   `yaml:"director_name"`
-			Zone               string   `yaml:"zone"`
-			Network            string   `yaml:"network"`
-			Subnetwork         string   `yaml:"subnetwork"`
-			Tags               []string `yaml:"tags"`
-			ProjectID          string   `yaml:"project_id"`
-			GCPCredentialsJSON string   `yaml:"gcp_credentials_json"`
+			InternalCIDR    string   `yaml:"internal_cidr"`
+			InternalGateway string   `yaml:"internal_gw"`
+			InternalIP      string   `yaml:"internal_ip"`
+			DirectorName    string   `yaml:"director_name"`
+			Zone            string   `yaml:"zone"`
+			Network         string   `yaml:"network"`
+			Subnetwork      string   `yaml:"subnetwork"`
+			Tags            []string `yaml:"tags"`
+			ProjectID       string   `yaml:"project_id"`
 		}
 
 		err := yaml.Unmarshal([]byte(stdout), &vars)
-		Expect(err).NotTo(HaveOccurred())
-
-		var returnedAccountKey map[string]interface{}
-		err = json.Unmarshal([]byte(vars.GCPCredentialsJSON), &returnedAccountKey)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(vars.InternalCIDR).To(Equal("10.0.0.0/24"))
@@ -84,6 +79,5 @@ var _ = Describe("bosh deployment vars", func() {
 		Expect(vars.Tags).To(Equal([]string{
 			fmt.Sprintf("%s-bosh-director", bbl.PredefinedEnvID()),
 		}))
-		Expect(returnedAccountKey).To(Equal(gcpServiceAccountKey))
 	})
 })
