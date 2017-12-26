@@ -21,10 +21,11 @@ var _ = Describe("InputGenerator", func() {
 			IAAS:  "gcp",
 			EnvID: "some-env-id",
 			GCP: storage.GCP{
-				ServiceAccountKey: "some-service-account-key",
-				ProjectID:         "some-project-id",
-				Zone:              "some-zone",
-				Region:            "some-region",
+				ServiceAccountKey:     "some-service-account-key",
+				ServiceAccountKeyPath: "/some/service/account/key",
+				ProjectID:             "some-project-id",
+				Zone:                  "some-zone",
+				Region:                "some-region",
 			},
 			TFState: "some-tf-state",
 			LB: storage.LB{
@@ -78,7 +79,7 @@ var _ = Describe("InputGenerator", func() {
 			credentials := inputGenerator.Credentials(state)
 
 			Expect(credentials).To(Equal(map[string]string{
-				"credentials": "some-service-account-key",
+				"credentials": "/some/service/account/key",
 			}))
 		})
 	})

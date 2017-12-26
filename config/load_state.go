@@ -267,7 +267,8 @@ func (c Config) updateGCPState(globalFlags globalFlags, state storage.State) (st
 		if err != nil {
 			return storage.State{}, err
 		}
-		state.GCP.ServiceAccountKey = path
+		state.GCP.ServiceAccountKey = key
+		state.GCP.ServiceAccountKeyPath = path
 
 		id, err := c.getGCPProjectID(key)
 		if err != nil {

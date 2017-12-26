@@ -30,6 +30,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 
 func (i InputGenerator) Credentials(state storage.State) map[string]string {
 	return map[string]string{
-		"credentials": state.GCP.ServiceAccountKey,
+		"credentials": state.GCP.ServiceAccountKeyPath,
 	}
 }

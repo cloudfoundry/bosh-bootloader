@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	compute "google.golang.org/api/compute/v1"
 
@@ -19,12 +18,8 @@ func gcpHTTPClientFunc(config *jwt.Config) *http.Client {
 
 var gcpHTTPClient = gcpHTTPClientFunc
 
-func NewClient(gcpConfig storage.GCP, basePath string, fileIO fileio.FileIO) (Client, error) {
-	key, err := fileIO.ReadFile(gcpConfig.ServiceAccountKey)
-	if err != nil {
-		panic(err)
-	}
-	config, err := google.JWTConfigFromJSON(key, compute.ComputeScope)
+func NewClient(gcpConfig storage.GCP, basePath string) (Client, error) {
+	config, err := google.JWTConfigFromJSON([]byte(gcpConfig.ServiceAccountKey), compute.ComputeScope)
 	if err != nil {
 		return Client{}, fmt.Errorf("parse service account key: %s", err)
 	}

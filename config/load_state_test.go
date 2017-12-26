@@ -621,7 +621,8 @@ var _ = Describe("LoadState", func() {
 
 						state := appConfig.State
 						Expect(state.IAAS).To(Equal("gcp"))
-						Expect(state.GCP.ServiceAccountKey).To(Equal("/path/to/service/account/key"))
+						Expect(state.GCP.ServiceAccountKeyPath).To(Equal("/path/to/service/account/key"))
+						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
@@ -779,7 +780,8 @@ var _ = Describe("LoadState", func() {
 						state := appConfig.State
 
 						Expect(state.IAAS).To(Equal("gcp"))
-						Expect(state.GCP.ServiceAccountKey).To(Equal(tempFile.Name()))
+						Expect(state.GCP.ServiceAccountKeyPath).To(Equal(tempFile.Name()))
+						Expect(state.GCP.ServiceAccountKey).To(Equal(serviceAccountKey))
 						Expect(state.GCP.ProjectID).To(Equal("some-project-id"))
 						Expect(state.GCP.Region).To(Equal("some-region"))
 					})
@@ -821,7 +823,8 @@ var _ = Describe("LoadState", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						appConfig.State.GCP.ServiceAccountKey = "" // this isn't written to disk
+						appConfig.State.GCP.ServiceAccountKey = ""     // this isn't written to disk
+						appConfig.State.GCP.ServiceAccountKeyPath = "" // this isn't written to disk
 						Expect(appConfig.State).To(Equal(existingState))
 					})
 				})

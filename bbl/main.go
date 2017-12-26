@@ -88,7 +88,7 @@ func main() {
 		networkDeletionValidator = awsClient
 		networkClient = awsClient
 	} else if appConfig.State.IAAS == "gcp" && needsIAASCreds {
-		gcpClient, err = gcp.NewClient(appConfig.State.GCP, "", &fileio.FileIOAdapter{})
+		gcpClient, err = gcp.NewClient(appConfig.State.GCP, "")
 		if err != nil {
 			log.Fatalf("\n\n%s\n", err)
 		}
