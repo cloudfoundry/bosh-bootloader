@@ -1,9 +1,14 @@
 resource "aws_security_group" "concourse_lb_internal_security_group" {
+  name        = "${var.env_id}-concourse-lb-internal-security-group"
   description = "Concourse Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
     Name = "${var.env_id}-concourse-lb-internal-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 

@@ -121,7 +121,12 @@ resource "aws_iam_role_policy_attachment" "bosh" {
 }
 
 resource "aws_iam_instance_profile" "bosh" {
+  name = "${var.env_id}-bosh"
   role = "${aws_iam_role.bosh.name}"
+
+  lifecycle {
+    ignore_changes = ["name"]
+  }
 }
 
 output "bosh_iam_instance_profile" {
@@ -150,11 +155,16 @@ variable "nat_ami_map" {
 }
 
 resource "aws_security_group" "nat_security_group" {
+  name        = "${var.env_id}-nat-security-group"
   description = "NAT"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
     Name = "${var.env_id}-nat-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 
@@ -245,11 +255,16 @@ resource "aws_default_security_group" "default_security_group" {
 }
 
 resource "aws_security_group" "internal_security_group" {
+  name        = "${var.env_id}-internal-security-group"
   description = "Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
     Name = "${var.env_id}-internal-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 
@@ -307,11 +322,16 @@ variable "bosh_inbound_cidr" {
 }
 
 resource "aws_security_group" "bosh_security_group" {
-  description = "Bosh"
+  name        = "${var.env_id}-bosh-security-group"
+  description = "BOSH Director"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
     Name = "${var.env_id}-bosh-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name", "description"]
   }
 }
 
@@ -383,11 +403,16 @@ resource "aws_security_group_rule" "bosh_security_group_rule_allow_internet" {
 }
 
 resource "aws_security_group" "jumpbox" {
-  description = "automatically created jumpbox by BBL"
+  name        = "${var.env_id}-jumpbox-security-group"
+  description = "Jumpbox"
   vpc_id      = "${aws_vpc.vpc.id}"
 
   tags {
     Name = "${var.env_id}-jumpbox-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name", "description"]
   }
 }
 

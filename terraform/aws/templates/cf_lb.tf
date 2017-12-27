@@ -1,4 +1,5 @@
 resource "aws_security_group" "cf_ssh_lb_security_group" {
+  name        = "${var.env_id}-cf-ssh-lb-security-group"
   description = "CF SSH"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -19,6 +20,10 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
   tags {
     Name = "${var.env_id}-cf-ssh-lb-security-group"
   }
+
+  lifecycle {
+    ignore_changes = ["name"]
+  }
 }
 
 output "cf_ssh_lb_security_group" {
@@ -26,6 +31,7 @@ output "cf_ssh_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
+  name        = "${var.env_id}-cf-ssh-lb-internal-security-group"
   description = "CF SSH Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -45,6 +51,10 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
 
   tags {
     Name = "${var.env_id}-cf-ssh-lb-internal-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 
@@ -84,6 +94,7 @@ output "cf_ssh_lb_url" {
 }
 
 resource "aws_security_group" "cf_router_lb_security_group" {
+  name        = "${var.env_id}-cf-router-lb-security-group"
   description = "CF Router"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -118,6 +129,10 @@ resource "aws_security_group" "cf_router_lb_security_group" {
   tags {
     Name = "${var.env_id}-cf-router-lb-security-group"
   }
+
+  lifecycle {
+    ignore_changes = ["name"]
+  }
 }
 
 output "cf_router_lb_security_group" {
@@ -125,6 +140,7 @@ output "cf_router_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_router_lb_internal_security_group" {
+  name        = "${var.env_id}-cf-router-lb-internal-security-group"
   description = "CF Router Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -144,6 +160,10 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
 
   tags {
     Name = "${var.env_id}-cf-router-lb-internal-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 
@@ -199,6 +219,7 @@ output "cf_router_lb_url" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_security_group" {
+  name        = "${var.env_id}-cf-tcp-lb-security-group"
   description = "CF TCP"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -219,6 +240,10 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
   tags {
     Name = "${var.env_id}-cf-tcp-lb-security-group"
   }
+
+  lifecycle {
+    ignore_changes = ["name"]
+  }
 }
 
 output "cf_tcp_lb_security_group" {
@@ -226,6 +251,7 @@ output "cf_tcp_lb_security_group" {
 }
 
 resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
+  name        = "${var.env_id}-cf-tcp-lb-internal-security-group"
   description = "CF TCP Internal"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -252,6 +278,10 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
 
   tags {
     Name = "${var.env_id}-cf-tcp-lb-internal-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 
