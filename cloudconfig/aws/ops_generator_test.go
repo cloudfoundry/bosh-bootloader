@@ -138,6 +138,23 @@ cf_tcp_lb_internal_security_group: some-cf-tcp-lb-internal-security-group
 cf_iso_router_lb_name: some-cf-iso-seg-router-lb-name
 concourse_lb_target_groups: [some-concourse-lb-target-group, some-other-concourse-lb-target-group]
 concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
+internal_az_subnet_cidr_mapping:
+  us-east-1a: 10.0.16.0/20
+  us-east-1b: 10.0.32.0/20
+  us-east-1c: 10.0.48.0/20
+internal_az_subnet_id_mapping:
+  us-east-1a: some-internal-subnet-ids-1
+  us-east-1b: some-internal-subnet-ids-2
+  us-east-1c: some-internal-subnet-ids-3
+internal_security_group: some-internal-security-group
+iso_az_subnet_cidr_mapping:
+  us-east-1a: 10.1.16.0/20
+  us-east-1b: 10.1.32.0/20
+  us-east-1c: 10.1.48.0/20
+iso_az_subnet_id_mapping:
+  us-east-1a: some-iso-seg-subnet-id-1
+  us-east-1b: some-iso-seg-subnet-id-2
+  us-east-1c: some-iso-seg-subnet-id-3
 `))
 		})
 

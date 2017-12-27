@@ -87,39 +87,18 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
 
-	varsYAML := map[string]interface{}{
-		"internal_security_group":              terraformOutputs.GetString("internal_security_group"),
-		"iso_shared_security_group_id":         terraformOutputs.GetString("iso_shared_security_group_id"),
-		"iso_security_group_id":                terraformOutputs.GetString("iso_security_group_id"),
-		"cf_router_lb_name":                    terraformOutputs.GetString("cf_router_lb_name"),
-		"cf_router_lb_internal_security_group": terraformOutputs.GetString("cf_router_lb_internal_security_group"),
-		"cf_router_lb_security_group":          terraformOutputs.GetString("cf_router_lb_security_group"),
-		"cf_ssh_lb_name":                       terraformOutputs.GetString("cf_ssh_lb_name"),
-		"cf_ssh_lb_internal_security_group":    terraformOutputs.GetString("cf_ssh_lb_internal_security_group"),
-		"cf_tcp_lb_name":                       terraformOutputs.GetString("cf_tcp_lb_name"),
-		"cf_tcp_lb_internal_security_group":    terraformOutputs.GetString("cf_tcp_lb_internal_security_group"),
-		"cf_iso_router_lb_name":                terraformOutputs.GetString("cf_iso_router_lb_name"),
-		"concourse_lb_target_groups":           terraformOutputs.GetStringSlice("concourse_lb_target_groups"),
-		"concourse_lb_internal_security_group": terraformOutputs.GetString("concourse_lb_internal_security_group"),
+	requiredOutputs := []string{
+		"internal_security_group",
+		"internal_az_subnet_id_mapping",
+		"internal_az_subnet_cidr_mapping",
 	}
-
-	internalAZSubnetIDMap := terraformOutputs.GetStringMap("internal_az_subnet_id_mapping")
-	if len(internalAZSubnetIDMap) == 0 {
-		return "", errors.New("missing internal_az_subnet_id_mapping terraform output")
-	}
-
-	internalAZSubnetCIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_cidr_mapping")
-	if len(internalAZSubnetCIDRMap) == 0 {
-		return "", errors.New("missing internal_az_subnet_cidr_mapping terraform output")
-	}
-
-	requiredOutputs := []string{"internal_security_group"}
 	switch state.LB.Type {
 	case "concourse":
-		if len(varsYAML["concourse_lb_target_groups"].([]string)) == 0 {
-			return "", errors.New("missing concourse_lb_target_groups terraform output")
-		}
-		requiredOutputs = append(requiredOutputs, "concourse_lb_internal_security_group")
+		requiredOutputs = append(
+			requiredOutputs,
+			"concourse_lb_target_groups",
+			"concourse_lb_internal_security_group",
+		)
 	case "cf":
 		requiredOutputs = append(
 			requiredOutputs,
@@ -133,16 +112,23 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	}
 
 	for _, output := range requiredOutputs {
-		if varsYAML[output] == "" {
+		if _, ok := terraformOutputs.Map[output]; !ok {
 			return "", fmt.Errorf("missing %s terraform output", output)
 		}
 	}
+
+	internalAZSubnetIDMap := terraformOutputs.GetStringMap("internal_az_subnet_id_mapping")
+	internalAZSubnetCIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_cidr_mapping")
 
 	azs, err := generateAZs(0, internalAZSubnetIDMap, internalAZSubnetCIDRMap)
 	if err != nil {
 		return "", err
 	}
 
+	varsYAML := map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		varsYAML[k] = v
+	}
 	for _, az := range azs {
 		for key, value := range az {
 			varsYAML[key] = value
