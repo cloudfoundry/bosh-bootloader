@@ -369,29 +369,22 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		internalIP = parsedInternalCIDR.GetNthIP(5).String()
 	}
 
+	allOutputs := map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		allOutputs[k] = v
+	}
+	delete(allOutputs, "external_ip")
+	allOutputs["internal_cidr"] = internalCIDR
+
 	vars := sharedDeploymentVarsYAML{
-		InternalCIDR: internalCIDR,
-		InternalGW:   parsedInternalCIDR.GetNthIP(1).String(),
-		InternalIP:   internalIP,
-		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-		ExternalIP:   terraformOutputs.GetString("external_ip"),
+		InternalGW:       parsedInternalCIDR.GetNthIP(1).String(),
+		InternalIP:       internalIP,
+		DirectorName:     fmt.Sprintf("bosh-%s", state.EnvID),
+		ExternalIP:       terraformOutputs.GetString("external_ip"),
+		TerraformOutputs: allOutputs,
 	}
 
 	switch state.IAAS {
-	case "vsphere":
-		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:      terraformOutputs.GetString("vcenter_user"),
-			VCenterPassword:  terraformOutputs.GetString("vcenter_password"),
-			VCenterIP:        terraformOutputs.GetString("vcenter_ip"),
-			VCenterDC:        terraformOutputs.GetString("vcenter_dc"),
-			VCenterCluster:   terraformOutputs.GetString("vcenter_cluster"),
-			VCenterRP:        terraformOutputs.GetString("vcenter_rp"),
-			VCenterDS:        terraformOutputs.GetString("vcenter_ds"),
-			NetworkName:      terraformOutputs.GetString("network_name"),
-			VCenterDisks:     terraformOutputs.GetString("vcenter_disks"),
-			VCenterVMs:       terraformOutputs.GetString("vcenter_vms"),
-			VCenterTemplates: terraformOutputs.GetString("vcenter_templates"),
-		}
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
 			Zone:           state.GCP.Zone,
@@ -455,29 +448,22 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 		internalIP = parsedInternalCIDR.GetNthIP(6).String()
 	}
 
+	allOutputs := map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		allOutputs[k] = v
+	}
+	delete(allOutputs, "external_ip")
+	allOutputs["internal_cidr"] = internalCIDR
+
 	vars := sharedDeploymentVarsYAML{
-		InternalCIDR: internalCIDR,
-		InternalGW:   parsedInternalCIDR.GetNthIP(1).String(),
-		InternalIP:   internalIP,
-		DirectorName: fmt.Sprintf("bosh-%s", state.EnvID),
-		ExternalIP:   terraformOutputs.GetString("bosh_director_external_ip"),
+		InternalGW:       parsedInternalCIDR.GetNthIP(1).String(),
+		InternalIP:       internalIP,
+		DirectorName:     fmt.Sprintf("bosh-%s", state.EnvID),
+		ExternalIP:       terraformOutputs.GetString("bosh_director_external_ip"),
+		TerraformOutputs: allOutputs,
 	}
 
 	switch state.IAAS {
-	case "vsphere":
-		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:      terraformOutputs.GetString("vcenter_user"),
-			VCenterPassword:  terraformOutputs.GetString("vcenter_password"),
-			VCenterIP:        terraformOutputs.GetString("vcenter_ip"),
-			VCenterDC:        terraformOutputs.GetString("vcenter_dc"),
-			VCenterCluster:   terraformOutputs.GetString("vcenter_cluster"),
-			VCenterRP:        terraformOutputs.GetString("vcenter_rp"),
-			VCenterDS:        terraformOutputs.GetString("vcenter_ds"),
-			NetworkName:      terraformOutputs.GetString("network_name"),
-			VCenterDisks:     terraformOutputs.GetString("vcenter_disks"),
-			VCenterVMs:       terraformOutputs.GetString("vcenter_vms"),
-			VCenterTemplates: terraformOutputs.GetString("vcenter_templates"),
-		}
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
 			Zone:           state.GCP.Zone,
@@ -497,7 +483,6 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
 			DefaultSecurityGroups: []string{terraformOutputs.GetString("bosh_security_group")},
 			Region:                state.AWS.Region,
-			KMSKeyARN:             terraformOutputs.GetString("kms_key_arn"),
 		}
 		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
 	case "azure":

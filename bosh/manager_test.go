@@ -140,13 +140,9 @@ director_ssl:
 					"internal_cidr":          "10.2.0.0/24",
 					"network_name":           "some-network",
 					"subnetwork_name":        "some-subnetwork",
-					"bosh_open_tag_name":     "some-jumpbox-tag",
-					"jumpbox_tag_name":       "some-jumpbox-fw-tag",
 					"bosh_director_tag_name": "some-director-tag",
-					"internal_tag_name":      "some-internal-tag",
 					"external_ip":            "some-external-ip",
-					"director_address":       "some-director-address",
-					"jumpbox_url":            "some-jumpbox-url",
+					"some-key":               "some-value",
 				}}
 			})
 
@@ -168,6 +164,10 @@ tags:
 - some-director-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
+bosh_director_tag_name: some-director-tag
+network_name: some-network
+subnetwork_name: some-subnetwork
+some-key: some-value
 `))
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
@@ -222,16 +222,14 @@ gcp_credentials_json: some-credential-json
 
 		BeforeEach(func() {
 			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-				"internal_cidr":          "10.0.0.0/24",
-				"network_name":           "some-network",
-				"subnetwork_name":        "some-subnetwork",
-				"bosh_open_tag_name":     "some-jumpbox-tag",
-				"jumpbox_tag_name":       "some-jumpbox-fw-tag",
-				"bosh_director_tag_name": "some-director-tag",
-				"internal_tag_name":      "some-internal-tag",
-				"external_ip":            "some-external-ip",
-				"director_address":       "some-director-address",
-				"jumpbox_url":            "some-jumpbox-url",
+				"internal_cidr":      "10.0.0.0/24",
+				"network_name":       "some-network",
+				"subnetwork_name":    "some-subnetwork",
+				"bosh_open_tag_name": "some-jumpbox-tag",
+				"jumpbox_tag_name":   "some-jumpbox-fw-tag",
+				"external_ip":        "some-external-ip",
+				"jumpbox_url":        "some-jumpbox-url",
+				"some-key":           "some-value",
 			}}
 
 			state = storage.State{
@@ -334,7 +332,27 @@ gcp_credentials_json: some-credential-json
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(Equal(deploymentVars))
+				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`
+internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+zone: some-zone
+network: some-network
+subnetwork: some-subnetwork
+tags:
+- some-jumpbox-tag
+- some-jumpbox-fw-tag
+project_id: some-project-id
+gcp_credentials_json: some-credential-json
+bosh_open_tag_name: some-jumpbox-tag
+jumpbox_tag_name: some-jumpbox-fw-tag
+jumpbox_url: some-jumpbox-url
+network_name: some-network
+subnetwork_name: some-subnetwork
+some-key: some-value
+`))
 
 				Expect(state).To(Equal(storage.State{
 					IAAS:  "gcp",
@@ -443,12 +461,14 @@ gcp_credentials_json: some-credential-json
 			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
-				Deployment:     "jumpbox",
-				StateDir:       "some-state-dir",
-				VarsDir:        "some-bbl-vars-dir",
-				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.5\ndirector_name: bosh-\n",
-			}))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.Deployment).To(Equal("jumpbox"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML(`
+internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+director_name: bosh-`))
 
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
@@ -519,12 +539,14 @@ gcp_credentials_json: some-credential-json
 			}, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input).To(Equal(bosh.CreateEnvInput{
-				Deployment:     "director",
-				StateDir:       "some-state-dir",
-				VarsDir:        varsDir,
-				DeploymentVars: "internal_cidr: 10.0.0.0/24\ninternal_gw: 10.0.0.1\ninternal_ip: 10.0.0.6\ndirector_name: bosh-\n",
-			}))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.Deployment).To(Equal("director"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.VarsDir).To(Equal(varsDir))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML(`
+internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+director_name: bosh-`))
 
 			Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 			Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
@@ -683,32 +705,21 @@ vcenter_cluster: fruits`))
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":                 "10.0.0.0/24",
-					"network_name":                  "some-network",
-					"bosh_subnet_id":                "some-subnetwork",
-					"bosh_subnet_availability_zone": "some-zone",
-					"bosh_iam_instance_profile":     "some-instance-profile",
-					"bosh_vms_key_name":             "some-key-name",
-					"bosh_vms_private_key":          "some-private-key",
-					"jumpbox_security_group":        "some-security-group",
-					"external_ip":                   "some-external-ip",
+					"some-key":               "some-value",
+					"jumpbox_security_group": "some-security-group",
 				}})
 				Expect(vars).To(MatchYAML(`---
+access_key_id: some-access-key-id
+default_security_groups:
+- "some-security-group"
+director_name: bosh-some-env-id
 internal_cidr: 10.0.0.0/24
 internal_gw: 10.0.0.1
 internal_ip: 10.0.0.5
-director_name: bosh-some-env-id
-external_ip: some-external-ip
-private_key: some-private-key
-az: some-zone
-subnet_id: some-subnetwork
-access_key_id: some-access-key-id
-secret_access_key: some-secret-access-key
-iam_instance_profile: some-instance-profile
-default_key_name: some-key-name
-default_security_groups:
-- some-security-group
+jumpbox_security_group: some-security-group
 region: some-region
+secret_access_key: some-secret-access-key
+some-key: some-value
 `))
 			})
 		})
@@ -730,27 +741,24 @@ region: some-region
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":      "10.1.0.0/24",
-					"network_name":       "some-network",
-					"subnetwork_name":    "some-subnetwork",
+					"some-key":           "some-value",
 					"bosh_open_tag_name": "some-jumpbox-tag",
 					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
-					"external_ip":        "some-external-ip",
 				}})
 				Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.1.0.0/24
-internal_gw: 10.1.0.1
-internal_ip: 10.1.0.5
+bosh_open_tag_name: some-jumpbox-tag
 director_name: bosh-some-env-id
-external_ip: some-external-ip
-zone: some-zone
-network: some-network
-subnetwork: some-subnetwork
+gcp_credentials_json: some-credential-json
+internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.5
+jumpbox_tag_name: some-jumpbox-fw-tag
+project_id: some-project-id
+some-key: some-value
 tags:
 - some-jumpbox-tag
 - some-jumpbox-fw-tag
-project_id: some-project-id
-gcp_credentials_json: some-credential-json
+zone: some-zone
 `))
 			})
 		})
@@ -777,29 +785,25 @@ gcp_credentials_json: some-credential-json
 			})
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"some-key":                  "some-value",
 					"internal_cidr":             "10.0.1.0/24",
-					"network_name":              "some-network",
-					"subnetwork_name":           "some-subnetwork",
-					"bosh_open_tag_name":        "some-jumpbox-tag",
-					"jumpbox_tag_name":          "some-jumpbox-fw-tag",
 					"bosh_director_tag_name":    "some-director-tag",
-					"internal_tag_name":         "some-internal-tag",
 					"bosh_director_external_ip": "some-external-ip",
-					"director_address":          "some-director-address",
 				}})
 				Expect(vars).To(MatchYAML(`---
+bosh_director_external_ip: some-external-ip
+bosh_director_tag_name: some-director-tag
+director_name: bosh-some-env-id
+external_ip: some-external-ip
+gcp_credentials_json: some-credential-json
 internal_cidr: 10.0.1.0/24
 internal_gw: 10.0.1.1
 internal_ip: 10.0.1.6
-director_name: bosh-some-env-id
-external_ip: some-external-ip
-zone: some-zone
-network: some-network
-subnetwork: some-subnetwork
+project_id: some-project-id
+some-key: some-value
 tags:
 - some-director-tag
-project_id: some-project-id
-gcp_credentials_json: some-credential-json
+zone: some-zone
 `))
 			})
 
@@ -849,26 +853,30 @@ gcp_credentials_json: some-credential-json
 						"bosh_subnet_id":                "some-bosh-subnet",
 						"bosh_vms_key_name":             "some-keypair-name",
 						"bosh_vms_private_key":          "some-private-key",
-						"external_ip":                   "some-bosh-external-ip",
-						"director_address":              "some-director-address",
-						"kms_key_arn":                   "some-kms-arn",
+						"some-key":                      "some-value",
 					}})
 					Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.0.2.0/26
-internal_gw: 10.0.2.1
-internal_ip: 10.0.2.6
-director_name: bosh-some-env-id
-private_key: some-private-key
-az: some-bosh-subnet-az
-subnet_id: some-bosh-subnet
 access_key_id: some-access-key-id
-secret_access_key: some-secret-access-key
-iam_instance_profile: some-bosh-iam-instance-profile
+az: some-bosh-subnet-az
+bosh_iam_instance_profile: some-bosh-iam-instance-profile
+bosh_security_group: some-bosh-security-group
+bosh_subnet_availability_zone: some-bosh-subnet-az
+bosh_subnet_id: some-bosh-subnet
+bosh_vms_key_name: some-keypair-name
+bosh_vms_private_key: some-private-key
 default_key_name: some-keypair-name
 default_security_groups:
 - some-bosh-security-group
+director_name: bosh-some-env-id
+iam_instance_profile: some-bosh-iam-instance-profile
+internal_cidr: 10.0.2.0/26
+internal_gw: 10.0.2.1
+internal_ip: 10.0.2.6
+private_key: some-private-key
 region: some-region
-kms_key_arn: some-kms-arn
+secret_access_key: some-secret-access-key
+some-key: some-value
+subnet_id: some-bosh-subnet
 `))
 				})
 			})

@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	yaml "gopkg.in/yaml.v2"
+
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -51,30 +53,34 @@ CF Credhub LB: 35.196.150.246`))
 
 	It("bbl bosh-deployment-vars", func() {
 		stdout := bbl.BOSHDeploymentVars()
-		Expect(stdout).To(Equal(`internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-some-env-bbl5
-zone: us-east1-b
-network: some-env-bbl5-network
-subnetwork: some-env-bbl5-subnet
-tags:
-- some-env-bbl5-bosh-director`))
+		var boshDeploymentVars map[string]interface{}
+		err := yaml.Unmarshal([]byte(stdout), &boshDeploymentVars)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(boshDeploymentVars["internal_cidr"].(string)).To(Equal("10.0.0.0/24"))
+		Expect(boshDeploymentVars["internal_gw"].(string)).To(Equal("10.0.0.1"))
+		Expect(boshDeploymentVars["internal_ip"].(string)).To(Equal("10.0.0.6"))
+		Expect(boshDeploymentVars["director_name"].(string)).To(Equal("bosh-some-env-bbl5"))
+		Expect(boshDeploymentVars["zone"].(string)).To(Equal("us-east1-b"))
+		Expect(boshDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
+		Expect(boshDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
+		Expect(boshDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-director"))
 	})
 
 	It("bbl jumpbox-deployment vars", func() {
 		stdout := bbl.JumpboxDeploymentVars()
-		Expect(stdout).To(Equal(`internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
-director_name: bosh-some-env-bbl5
-external_ip: 35.185.60.196
-zone: us-east1-b
-network: some-env-bbl5-network
-subnetwork: some-env-bbl5-subnet
-tags:
-- some-env-bbl5-bosh-open
-- some-env-bbl5-jumpbox`))
+		var jumpboxDeploymentVars map[string]interface{}
+		err := yaml.Unmarshal([]byte(stdout), &jumpboxDeploymentVars)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(jumpboxDeploymentVars["internal_cidr"].(string)).To(Equal("10.0.0.0/24"))
+		Expect(jumpboxDeploymentVars["internal_gw"].(string)).To(Equal("10.0.0.1"))
+		Expect(jumpboxDeploymentVars["internal_ip"].(string)).To(Equal("10.0.0.5"))
+		Expect(jumpboxDeploymentVars["external_ip"].(string)).To(Equal("35.185.60.196"))
+		Expect(jumpboxDeploymentVars["director_name"].(string)).To(Equal("bosh-some-env-bbl5"))
+		Expect(jumpboxDeploymentVars["zone"].(string)).To(Equal("us-east1-b"))
+		Expect(jumpboxDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
+		Expect(jumpboxDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
+		Expect(jumpboxDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-open"))
+		Expect(jumpboxDeploymentVars["tags"].([]interface{})[1].(string)).To(Equal("some-env-bbl5-jumpbox"))
 	})
 
 	It("bbl cloud-config", func() {

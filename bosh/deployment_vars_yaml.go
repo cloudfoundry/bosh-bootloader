@@ -1,16 +1,15 @@
 package bosh
 
 type sharedDeploymentVarsYAML struct {
-	InternalCIDR string      `yaml:"internal_cidr,omitempty"`
-	InternalGW   string      `yaml:"internal_gw,omitempty"`
-	InternalIP   string      `yaml:"internal_ip,omitempty"`
-	DirectorName string      `yaml:"director_name,omitempty"`
-	ExternalIP   string      `yaml:"external_ip,omitempty"`
-	PrivateKey   string      `yaml:"private_key,flow,omitempty"`
-	AWSYAML      AWSYAML     `yaml:",inline"`
-	GCPYAML      GCPYAML     `yaml:",inline"`
-	AzureYAML    AzureYAML   `yaml:",inline"`
-	VSphereYAML  VSphereYAML `yaml:",inline"`
+	InternalGW       string                 `yaml:"internal_gw,omitempty"`
+	InternalIP       string                 `yaml:"internal_ip,omitempty"`
+	DirectorName     string                 `yaml:"director_name,omitempty"`
+	ExternalIP       string                 `yaml:"external_ip,omitempty"`
+	PrivateKey       string                 `yaml:"private_key,flow,omitempty"`
+	AWSYAML          AWSYAML                `yaml:",inline"`
+	GCPYAML          GCPYAML                `yaml:",inline"`
+	AzureYAML        AzureYAML              `yaml:",inline"`
+	TerraformOutputs map[string]interface{} `yaml:",inline"`
 }
 
 type AWSYAML struct {
@@ -22,7 +21,6 @@ type AWSYAML struct {
 	DefaultKeyName        string   `yaml:"default_key_name,omitempty"`
 	DefaultSecurityGroups []string `yaml:"default_security_groups,omitempty"`
 	Region                string   `yaml:"region,omitempty"`
-	KMSKeyARN             string   `yaml:"kms_key_arn,omitempty"`
 }
 
 type GCPYAML struct {
@@ -45,18 +43,4 @@ type AzureYAML struct {
 	StorageAccountName   string `yaml:"storage_account_name,omitempty"`
 	DefaultSecurityGroup string `yaml:"default_security_group,omitempty"`
 	PublicKey            string `yaml:"public_key,flow,omitempty"`
-}
-
-type VSphereYAML struct {
-	NetworkName      string `yaml:"network_name,omitempty"`
-	VCenterRP        string `yaml:"vcenter_rp,omitempty"`
-	VCenterCluster   string `yaml:"vcenter_cluster,omitempty"`
-	VCenterDC        string `yaml:"vcenter_dc,omitempty"`
-	VCenterDisks     string `yaml:"vcenter_disks,omitempty"`
-	VCenterDS        string `yaml:"vcenter_ds,omitempty"`
-	VCenterIP        string `yaml:"vcenter_ip,omitempty"`
-	VCenterVMs       string `yaml:"vcenter_vms,omitempty"`
-	VCenterTemplates string `yaml:"vcenter_templates,omitempty"`
-	VCenterUser      string `yaml:"vcenter_user,omitempty"`
-	VCenterPassword  string `yaml:"vcenter_password,omitempty"`
 }
