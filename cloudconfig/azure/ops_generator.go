@@ -65,11 +65,9 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	}
 
 	azs := []string{"z1", "z2", "z3"}
-	var varsYAML = map[string]string{
-		"bosh_network_name":           terraformOutputs.GetString("bosh_network_name"),
-		"bosh_subnet_name":            terraformOutputs.GetString("bosh_subnet_name"),
-		"bosh_default_security_group": terraformOutputs.GetString("bosh_default_security_group"),
-		"application_gateway":         terraformOutputs.GetString("application_gateway"),
+	var varsYAML = map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		varsYAML[k] = v
 	}
 	for i, _ := range azs {
 		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))

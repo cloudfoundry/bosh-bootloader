@@ -34,6 +34,7 @@ var _ = Describe("AzureOpsGenerator", func() {
 			"bosh_subnet_name":            "some-subnet-name",
 			"bosh_default_security_group": "some-security-group",
 			"application_gateway":         "some-app-gateway-name",
+			"some-key":                    "some-value",
 		}}
 
 		var err error
@@ -69,6 +70,7 @@ bosh_network_name: some-virtual-network-name
 bosh_subnet_name: some-subnet-name
 bosh_default_security_group: some-security-group
 application_gateway: some-app-gateway-name
+some-key: some-value
 `))
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
