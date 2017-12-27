@@ -130,7 +130,7 @@ resource "google_compute_firewall" "jumpbox-to-all" {
   source_tags = ["${var.env_id}-jumpbox"]
 
   allow {
-    ports    = ["22"]
+    ports    = ["22", "3389"]
     protocol = "tcp"
   }
 
