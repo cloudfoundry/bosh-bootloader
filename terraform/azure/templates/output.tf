@@ -47,23 +47,3 @@ output "network_cidr" {
 output "internal_cidr" {
   value = "${var.internal_cidr}"
 }
-
-output "subscription_id" {
-  value     = "${var.subscription_id}"
-  sensitive = true
-}
-
-output "tenant_id" {
-  value     = "${var.tenant_id}"
-  sensitive = true
-}
-
-output "client_id" {
-  value     = "${var.client_id}"
-  sensitive = true
-}
-
-output "client_secret" {
-  value     = "${var.client_secret}"
-  sensitive = true
-}

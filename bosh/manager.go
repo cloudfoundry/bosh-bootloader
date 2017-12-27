@@ -410,14 +410,14 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		vars.AzureYAML = AzureYAML{
 			VNetName:             terraformOutputs.GetString("bosh_network_name"),
 			SubnetName:           terraformOutputs.GetString("bosh_subnet_name"),
-			SubscriptionID:       terraformOutputs.GetString("subscription_id"),
-			TenantID:             terraformOutputs.GetString("tenant_id"),
-			ClientID:             terraformOutputs.GetString("client_id"),
-			ClientSecret:         terraformOutputs.GetString("client_secret"),
 			ResourceGroupName:    terraformOutputs.GetString("bosh_resource_group_name"),
 			StorageAccountName:   terraformOutputs.GetString("bosh_storage_account_name"),
 			DefaultSecurityGroup: terraformOutputs.GetString("bosh_default_security_group"),
 			PublicKey:            terraformOutputs.GetString("bosh_vms_public_key"),
+			SubscriptionID:       state.Azure.SubscriptionID,
+			TenantID:             state.Azure.TenantID,
+			ClientID:             state.Azure.ClientID,
+			ClientSecret:         state.Azure.ClientSecret,
 		}
 		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
 	}
@@ -489,13 +489,13 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 		vars.AzureYAML = AzureYAML{
 			VNetName:             terraformOutputs.GetString("bosh_network_name"),
 			SubnetName:           terraformOutputs.GetString("bosh_subnet_name"),
-			SubscriptionID:       terraformOutputs.GetString("subscription_id"),
-			TenantID:             terraformOutputs.GetString("tenant_id"),
-			ClientID:             terraformOutputs.GetString("client_id"),
-			ClientSecret:         terraformOutputs.GetString("client_secret"),
 			ResourceGroupName:    terraformOutputs.GetString("bosh_resource_group_name"),
 			StorageAccountName:   terraformOutputs.GetString("bosh_storage_account_name"),
 			DefaultSecurityGroup: terraformOutputs.GetString("bosh_default_security_group"),
+			SubscriptionID:       state.Azure.SubscriptionID,
+			TenantID:             state.Azure.TenantID,
+			ClientID:             state.Azure.ClientID,
+			ClientSecret:         state.Azure.ClientSecret,
 		}
 	}
 

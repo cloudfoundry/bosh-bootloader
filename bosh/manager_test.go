@@ -724,6 +724,63 @@ some-key: some-value
 			})
 		})
 
+		Context("azure", func() {
+			var incomingState storage.State
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:    "azure",
+					Jumpbox: storage.Jumpbox{},
+					EnvID:   "some-env-id",
+					Azure: storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tentant-id",
+						Region:         "some-region",
+					},
+				}
+			})
+
+			It("returns a correct yaml string of bosh deployment variables", func() {
+				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"internal_cidr":               "10.0.2.0/26",
+					"bosh_network_name":           "some-network-name",
+					"bosh_subnet_name":            "some-subnet-name",
+					"bosh_resource_group_name":    "some-resource-group-name",
+					"bosh_storage_account_name":   "some-storage-account-name",
+					"bosh_default_security_group": "some-security-group",
+					"bosh_vms_public_key":         "some-public-key",
+					"bosh_vms_private_key":        "some-private-key",
+					"some-key":                    "some-value",
+				}})
+				Expect(vars).To(MatchYAML(`---
+bosh_default_security_group: some-security-group
+bosh_network_name: some-network-name
+bosh_resource_group_name: some-resource-group-name
+bosh_storage_account_name: some-storage-account-name
+bosh_subnet_name: some-subnet-name
+bosh_vms_private_key: some-private-key
+bosh_vms_public_key: some-public-key
+client_id: some-client-id
+client_secret: some-client-secret
+default_security_group: some-security-group
+director_name: bosh-some-env-id
+internal_cidr: 10.0.2.0/26
+internal_gw: 10.0.2.1
+internal_ip: 10.0.2.5
+private_key: some-private-key
+public_key: some-public-key
+resource_group_name: some-resource-group-name
+some-key: some-value
+storage_account_name: some-storage-account-name
+subnet_name: some-subnet-name
+subscription_id: some-subscription-id
+tenant_id: some-tentant-id
+vnet_name: some-network-name
+`))
+			})
+		})
+
 		Context("gcp", func() {
 			var incomingState storage.State
 			BeforeEach(func() {
@@ -894,6 +951,80 @@ secret_access_key: some-secret-access-key
 default_security_groups:
 - ""
 region: some-region
+`))
+				})
+			})
+		})
+
+		Context("azure", func() {
+			var incomingState storage.State
+
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "azure",
+					EnvID: "some-env-id",
+					Azure: storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tentant-id",
+						Region:         "some-region",
+					},
+					BOSH: storage.BOSH{
+						State: map[string]interface{}{"some-key": "some-value"},
+					},
+				}
+			})
+
+			Context("when terraform was used to standup infrastructure", func() {
+				It("returns a correct yaml string of bosh deployment variables", func() {
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+						"internal_cidr":               "10.0.2.0/26",
+						"bosh_iam_instance_profile":   "some-bosh-iam-instance-profile",
+						"bosh_network_name":           "some-network-name",
+						"bosh_subnet_name":            "some-subnet-name",
+						"bosh_resource_group_name":    "some-resource-group-name",
+						"bosh_storage_account_name":   "some-storage-account-name",
+						"bosh_default_security_group": "some-security-group",
+						"some-key":                    "some-value",
+					}})
+					Expect(vars).To(MatchYAML(`---
+bosh_default_security_group: some-security-group
+bosh_iam_instance_profile: some-bosh-iam-instance-profile
+bosh_network_name: some-network-name
+bosh_resource_group_name: some-resource-group-name
+bosh_storage_account_name: some-storage-account-name
+bosh_subnet_name: some-subnet-name
+client_id: some-client-id
+client_secret: some-client-secret
+default_security_group: some-security-group
+director_name: bosh-some-env-id
+internal_cidr: 10.0.2.0/26
+internal_gw: 10.0.2.1
+internal_ip: 10.0.2.6
+resource_group_name: some-resource-group-name
+some-key: some-value
+storage_account_name: some-storage-account-name
+subnet_name: some-subnet-name
+subscription_id: some-subscription-id
+tenant_id: some-tentant-id
+vnet_name: some-network-name
+`))
+				})
+			})
+
+			Context("when terraform outputs are missing", func() {
+				It("returns valid yaml", func() {
+					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
+					Expect(vars).To(MatchYAML(`---
+client_id: some-client-id
+client_secret: some-client-secret
+director_name: bosh-some-env-id
+internal_cidr: 10.0.0.0/24
+internal_gw: 10.0.0.1
+internal_ip: 10.0.0.6
+subscription_id: some-subscription-id
+tenant_id: some-tentant-id
 `))
 				})
 			})
