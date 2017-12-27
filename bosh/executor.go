@@ -54,8 +54,6 @@ type setupFile struct {
 	contents []byte
 }
 
-const VERSION_DEV_BUILD = "[DEV BUILD]"
-
 var (
 	jumpboxDeploymentRepo = "vendor/github.com/cppforlife/jumpbox-deployment"
 	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
