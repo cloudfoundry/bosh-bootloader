@@ -19,7 +19,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"vsphere_subnet":            cidr,
 		"jumpbox_ip":                parsedCIDR.GetNthIP(5).String(),
 		"bosh_director_internal_ip": parsedCIDR.GetNthIP(6).String(),
-		"internal_gw":               parsedCIDR.GetNthIP(1).String(),
 		"vcenter_cluster":           state.VSphere.Cluster,
 		"network_name":              state.VSphere.Network,
 		"vcenter_ip":                state.VSphere.VCenterIP,
