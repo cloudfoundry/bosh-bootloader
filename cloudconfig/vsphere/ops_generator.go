@@ -130,25 +130,12 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 `, nil
 }
 
-type VarsYAML struct {
-	InternalCIDR   string `yaml:"internal_cidr,omitempty"`
-	InternalGW     string `yaml:"internal_gw,omitempty"`
-	NetworkName    string `yaml:"network_name,omitempty"`
-	VCenterCluster string `yaml:"vcenter_cluster,omitempty"`
-}
-
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
-	varsYAML := VarsYAML{
-		InternalCIDR:   terraformOutputs.GetString("internal_cidr"),
-		InternalGW:     terraformOutputs.GetString("internal_gw"),
-		NetworkName:    terraformOutputs.GetString("network_name"),
-		VCenterCluster: terraformOutputs.GetString("vcenter_cluster"),
-	}
-	varsBytes, err := yaml.Marshal(varsYAML)
+	varsBytes, err := yaml.Marshal(terraformOutputs.Map)
 	if err != nil {
 		panic(err) // not tested; cannot occur
 	}

@@ -22,10 +22,7 @@ var _ = Describe("OpsGenerator", func() {
 			opsGenerator = vsphere.NewOpsGenerator(terraformManager)
 
 			terraformManager.GetOutputsCall.Returns.Outputs.Map = map[string]interface{}{
-				"internal_cidr":   "some-cidr",
-				"internal_gw":     "some-gw",
-				"network_name":    "some-network",
-				"vcenter_cluster": "some-cluster",
+				"some-key": "some-value",
 			}
 		})
 
@@ -34,10 +31,7 @@ var _ = Describe("OpsGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(vars).To(MatchYAML(`---
-internal_cidr: some-cidr
-internal_gw: some-gw
-network_name: some-network
-vcenter_cluster: some-cluster
+some-key: some-value
 `))
 		})
 
