@@ -1,6 +1,7 @@
 package certs_test
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -22,6 +23,8 @@ var _ = Describe("CertificateValidator", func() {
 		certNonPEMFilePath   string
 		keyNonPEMFilePath    string
 		chainNonPEMFilePath  string
+		pkcs12CertFilePath   string
+		passwordFilePath     string
 	)
 
 	BeforeEach(func() {
@@ -44,6 +47,129 @@ var _ = Describe("CertificateValidator", func() {
 
 		chainNonPEMFilePath, err = testhelpers.WriteContentsToTempFile("not a chain")
 		Expect(err).NotTo(HaveOccurred())
+
+		pkcs12CertFile, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
+		Expect(err).NotTo(HaveOccurred())
+		pkcs12CertFilePath, err = testhelpers.WriteByteContentsToTempFile(pkcs12CertFile)
+		Expect(err).NotTo(HaveOccurred())
+
+		passwordFilePath, err = testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Describe("ReadPKCS12", func() {
+		Context("when cert and password files exist and can be read", func() {
+			It("returns cert and password data", func() {
+				certData, err := certificateValidator.ReadPKCS12(certNonPEMFilePath, passwordFilePath)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(certData.Cert)).To(Equal("not a cert"))
+				Expect(string(certData.Key)).To(Equal("SuperSecurePassword"))
+			})
+		})
+
+		Context("if cert and password are not provided", func() {
+			It("returns an error", func() {
+				_, err := certificateValidator.ReadPKCS12("", "")
+				expectedErr := multierror.NewMultiError("")
+				expectedErr.Add(errors.New("--cert is required"))
+				expectedErr.Add(errors.New("--key is required"))
+
+				Expect(err).To(Equal(expectedErr))
+			})
+		})
+
+		Context("if the cert password file does not exist", func() {
+			It("returns an error", func() {
+				_, err := certificateValidator.ReadPKCS12("/some/fake/cert/path", "/some/fake/key/path")
+				expectedErr := multierror.NewMultiError("")
+				expectedErr.Add(errors.New(`certificate file not found: "/some/fake/cert/path"`))
+				expectedErr.Add(errors.New(`key file not found: "/some/fake/key/path"`))
+
+				Expect(err).To(Equal(expectedErr))
+			})
+		})
+
+		Context("if the cert and password are not regular files", func() {
+			It("returns an error", func() {
+				_, err := certificateValidator.ReadPKCS12("/dev/null", "/dev/null")
+				expectedErr := multierror.NewMultiError("")
+				expectedErr.Add(errors.New(`certificate is not a regular file: "/dev/null"`))
+				expectedErr.Add(errors.New(`key is not a regular file: "/dev/null"`))
+
+				Expect(err).To(Equal(expectedErr))
+			})
+		})
+
+		Context("if the password file ends with a newline character", func() {
+			It("Strips the newline from the password", func() {
+				passwordWithNewlineFilePath, err := testhelpers.WriteContentsToTempFile(fmt.Sprintf("%s\n", testhelpers.PFX_PASSWORD))
+
+				Expect(err).NotTo(HaveOccurred())
+				certData, err := certificateValidator.ReadPKCS12(certNonPEMFilePath, passwordWithNewlineFilePath)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(certData.Cert)).To(Equal("not a cert"))
+				Expect(string(certData.Key)).To(Equal("SuperSecurePassword"))
+			})
+		})
+	})
+
+	Describe("ReadAndValidatePKCS12", func() {
+		Context("when cert and password are valid", func() {
+			It("does not return an error", func() {
+				_, err := certificateValidator.ReadAndValidatePKCS12(pkcs12CertFilePath, passwordFilePath)
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("ValidatePKCS12", func() {
+		var (
+			realCert     []byte
+			fakeCert     []byte
+			realPassword []byte
+			fakePassword []byte
+		)
+
+		BeforeEach(func() {
+			var err error
+			realCert, err = base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
+
+			Expect(err).NotTo(HaveOccurred())
+			fakeCert = []byte("not a cert")
+			realPassword = []byte(testhelpers.PFX_PASSWORD)
+			fakePassword = []byte("NotAPassword")
+		})
+
+		Context("When the password is correct", func() {
+			It("validates successfully", func() {
+				err := certificateValidator.ValidatePKCS12(realCert, realPassword)
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("When the password is incorrect", func() {
+			It("returns an error", func() {
+				err := certificateValidator.ValidatePKCS12(realCert, fakePassword)
+				expectedErr := multierror.NewMultiError("")
+				expectedErr.Add(fmt.Errorf("failed to parse certificate: pkcs12: decryption password incorrect"))
+
+				Expect(err).To(Equal(expectedErr))
+			})
+		})
+
+		Context("When the certificate is invalid", func() {
+			It("returns an error", func() {
+				err := certificateValidator.ValidatePKCS12(fakeCert, realPassword)
+				expectedErr := multierror.NewMultiError("")
+				expectedErr.Add(fmt.Errorf("failed to parse certificate: pkcs12: error reading P12 data: asn1: structure error: tags don't match (16 vs {class:1 tag:14 length:111 isCompound:true}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} pfxPdu @2"))
+
+				Expect(err).To(Equal(expectedErr))
+			})
+		})
 	})
 
 	Describe("ReadAndValidate", func() {

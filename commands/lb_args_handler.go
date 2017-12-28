@@ -28,16 +28,15 @@ func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.
 	}
 
 	if iaas == "azure" && config.LBType == "cf" {
-		certData, err = l.certificateValidator.Read(config.CertPath, config.KeyPath, config.ChainPath)
+		certData, err = l.certificateValidator.ReadAndValidatePKCS12(config.CertPath, config.KeyPath)
 		if err != nil {
-			return storage.LB{}, fmt.Errorf("Reading certificate: %s", err)
+			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)
 		}
 
 		return storage.LB{
 			Type:   config.LBType,
 			Cert:   base64.StdEncoding.EncodeToString(certData.Cert),
 			Key:    string(certData.Key),
-			Chain:  string(certData.Chain),
 			Domain: config.Domain,
 		}, nil
 	}

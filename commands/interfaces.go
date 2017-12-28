@@ -68,6 +68,8 @@ type stateValidator interface {
 type certificateValidator interface {
 	ReadAndValidate(certPath, keyPath, chainPath string) (certs.CertData, error)
 	Read(certPath, keyPath, chainPath string) (certs.CertData, error)
+	ReadPKCS12(certPath, passwordPath string) (certs.CertData, error)
+	ReadAndValidatePKCS12(certPath, passwordPath string) (certs.CertData, error)
 }
 
 type lbArgsHandler interface {

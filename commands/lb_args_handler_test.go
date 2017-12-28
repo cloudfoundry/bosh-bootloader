@@ -31,6 +31,13 @@ var _ = Describe("LB args handler", func() {
 			}
 			certificateValidator.ReadAndValidateCall.Returns.CertData = certData
 			certificateValidator.ReadCall.Returns.CertData = certData
+
+			certDataPKCS12 := certs.CertData{
+				Cert: []byte("some-cert"),
+				Key:  []byte("some-password"),
+			}
+			certificateValidator.ReadAndValidatePKCS12Call.Returns.CertData = certDataPKCS12
+			certificateValidator.ReadPKCS12Call.Returns.CertData = certDataPKCS12
 		})
 
 		It("returns a storage.LB object", func() {
@@ -86,18 +93,17 @@ var _ = Describe("LB args handler", func() {
 		})
 
 		Context("when iaas is azure and lb type is cf", func() {
-			It("it reads the certificate but does not validate", func() {
+			It("it reads the certificate and validates the password", func() {
 				lbState, err := handler.GetLBState("azure", commands.CreateLBsConfig{
 					LBType: "cf",
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(lbState.Type).To(Equal("cf"))
-				Expect(lbState.Type).To(Equal("cf"))
 				Expect(lbState.Cert).To(Equal("c29tZS1jZXJ0"))
-				Expect(lbState.Key).To(Equal("some-key"))
-				Expect(lbState.Chain).To(Equal("some-chain"))
-				Expect(certificateValidator.ReadCall.CallCount).To(Equal(1))
-				Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
+				Expect(lbState.Key).To(Equal("some-password"))
+				Expect(lbState.Chain).To(Equal(""))
+				Expect(certificateValidator.ReadPKCS12Call.CallCount).To(Equal(0))
+				Expect(certificateValidator.ReadAndValidatePKCS12Call.CallCount).To(Equal(1))
 			})
 		})
 
@@ -119,6 +125,20 @@ var _ = Describe("LB args handler", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidateCall.Returns.Error = errors.New("failed to validate")
 					_, err := handler.GetLBState("aws", commands.CreateLBsConfig{
+						LBType:    "cf",
+						CertPath:  "/path/to/cert",
+						KeyPath:   "/path/to/key",
+						ChainPath: "/path/to/chain",
+					})
+
+					Expect(err).To(MatchError("Validate certificate: failed to validate"))
+				})
+			})
+
+			Context("when certificate validator fails for cert and password", func() {
+				It("returns an error", func() {
+					certificateValidator.ReadAndValidatePKCS12Call.Returns.Error = errors.New("failed to validate")
+					_, err := handler.GetLBState("azure", commands.CreateLBsConfig{
 						LBType:    "cf",
 						CertPath:  "/path/to/cert",
 						KeyPath:   "/path/to/key",
