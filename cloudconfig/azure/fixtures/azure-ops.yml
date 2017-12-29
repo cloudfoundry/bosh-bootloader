@@ -112,9 +112,9 @@
       static:
       - ((az1_static))
       cloud_properties:
-        virtual_network_name: ((bosh_network_name))
-        subnet_name: ((bosh_subnet_name))
-        security_group: ((bosh_default_security_group))
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((subnet_name))
+        security_group: ((default_security_group))
     - gateway: ((az2_gateway))
       range: ((az2_range))
       az: z2
@@ -124,9 +124,9 @@
       static:
       - ((az2_static))
       cloud_properties:
-        virtual_network_name: ((bosh_network_name))
-        subnet_name: ((bosh_subnet_name))
-        security_group: ((bosh_default_security_group))
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((subnet_name))
+        security_group: ((default_security_group))
     - gateway: ((az3_gateway))
       range: ((az3_range))
       az: z3
@@ -136,9 +136,9 @@
       static:
       - ((az3_static))
       cloud_properties:
-        virtual_network_name: ((bosh_network_name))
-        subnet_name: ((bosh_subnet_name))
-        security_group: ((bosh_default_security_group))
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((subnet_name))
+        security_group: ((default_security_group))
 
 - type: replace
   path: /networks/-
@@ -155,9 +155,9 @@
       static:
       - ((az1_static))
       cloud_properties:
-        virtual_network_name: ((bosh_network_name))
-        subnet_name: ((bosh_subnet_name))
-        security_group: ((bosh_default_security_group))
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((subnet_name))
+        security_group: ((default_security_group))
     - gateway: ((az2_gateway))
       range: ((az2_range))
       az: z2
@@ -167,9 +167,9 @@
       static:
       - ((az2_static))
       cloud_properties:
-        virtual_network_name: ((bosh_network_name))
-        subnet_name: ((bosh_subnet_name))
-        security_group: ((bosh_default_security_group))
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((subnet_name))
+        security_group: ((default_security_group))
     - gateway: ((az3_gateway))
       range: ((az3_range))
       az: z3
@@ -179,6 +179,6 @@
       static:
       - ((az3_static))
       cloud_properties:
-        virtual_network_name: ((bosh_network_name))
-        subnet_name: ((bosh_subnet_name))
-        security_group: ((bosh_default_security_group))
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((subnet_name))
+        security_group: ((default_security_group))

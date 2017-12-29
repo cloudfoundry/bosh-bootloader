@@ -421,8 +421,8 @@
       - 10.0.31.190-10.0.31.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: ((network_name))
-        subnetwork_name: ((subnetwork_name))
+        network_name: ((network))
+        subnetwork_name: ((subnetwork))
         tags:
           - ((internal_tag_name))
     - az: z2
@@ -435,8 +435,8 @@
       - 10.0.47.190-10.0.47.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: ((network_name))
-        subnetwork_name: ((subnetwork_name))
+        network_name: ((network))
+        subnetwork_name: ((subnetwork))
         tags:
           - ((internal_tag_name))
     - az: z3
@@ -449,8 +449,8 @@
       - 10.0.63.190-10.0.63.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: ((network_name))
-        subnetwork_name: ((subnetwork_name))
+        network_name: ((network))
+        subnetwork_name: ((subnetwork))
         tags:
           - ((internal_tag_name))
     type: manual
@@ -470,8 +470,8 @@
       - 10.0.31.190-10.0.31.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: ((network_name))
-        subnetwork_name: ((subnetwork_name))
+        network_name: ((network))
+        subnetwork_name: ((subnetwork))
         tags:
           - ((internal_tag_name))
     - az: z2
@@ -484,8 +484,8 @@
       - 10.0.47.190-10.0.47.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: ((network_name))
-        subnetwork_name: ((subnetwork_name))
+        network_name: ((network))
+        subnetwork_name: ((subnetwork))
         tags:
           - ((internal_tag_name))
     - az: z3
@@ -498,8 +498,8 @@
       - 10.0.63.190-10.0.63.254
       cloud_properties:
         ephemeral_external_ip: true
-        network_name: ((network_name))
-        subnetwork_name: ((subnetwork_name))
+        network_name: ((network))
+        subnetwork_name: ((subnetwork))
         tags:
           - ((internal_tag_name))
     type: manual

@@ -120,7 +120,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			Type: "replace",
 			Path: "/vm_extensions/-",
 			Value: cloudProperties{
-				ApplicationGateway: "((applcation_gateway))",
+				ApplicationGateway: "((application_gateway))",
 			},
 		}
 		cloudConfigOps = append(cloudConfigOps, lbOp)
@@ -175,9 +175,9 @@ func generateNetworkSubnet(az int) networkSubnet {
 			fmt.Sprintf("((az%d_static))", azIndex),
 		},
 		CloudProperties: subnetCloudProperties{
-			VirtualNetworkName: "((bosh_network_name))",
-			SubnetName:         "((bosh_subnet_name))",
-			SecurityGroup:      "((bosh_default_security_group))",
+			VirtualNetworkName: "((vnet_name))",
+			SubnetName:         "((subnet_name))",
+			SecurityGroup:      "((default_security_group))",
 		},
 	}
 }

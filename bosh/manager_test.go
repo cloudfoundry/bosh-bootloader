@@ -137,16 +137,13 @@ director_ssl:
 		Describe("CreateDirector", func() {
 			BeforeEach(func() {
 				terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":          "10.2.0.0/24",
-					"network_name":           "some-network",
-					"subnetwork_name":        "some-subnetwork",
-					"bosh_director_tag_name": "some-director-tag",
-					"external_ip":            "some-external-ip",
-					"some-key":               "some-value",
+					"internal_cidr": "10.2.0.0/24",
+					"some-key":      "some-value",
+					"tags":          []interface{}{"some-tag", "some-other-tag"},
 				}}
 			})
 
-			It("generates a bosh manifest", func() {
+			It("calls create env on the bosh executor with the expected arguments", func() {
 				stateWithDirector, err := boshManager.CreateDirector(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -154,19 +151,12 @@ director_ssl:
 
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`---
 internal_cidr: 10.2.0.0/24
-internal_gw: 10.2.0.1
-internal_ip: 10.2.0.6
-director_name: bosh-some-env-id
 zone: some-zone
-network: some-network
-subnetwork: some-subnetwork
 tags:
-- some-director-tag
+- some-tag
+- some-other-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
-bosh_director_tag_name: some-director-tag
-network_name: some-network
-subnetwork_name: some-subnetwork
 some-key: some-value
 `))
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
@@ -222,14 +212,9 @@ some-key: some-value
 
 		BeforeEach(func() {
 			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
-				"internal_cidr":      "10.0.0.0/24",
-				"network_name":       "some-network",
-				"subnetwork_name":    "some-subnetwork",
-				"bosh_open_tag_name": "some-jumpbox-tag",
-				"jumpbox_tag_name":   "some-jumpbox-fw-tag",
-				"external_ip":        "some-external-ip",
-				"jumpbox_url":        "some-jumpbox-url",
-				"some-key":           "some-value",
+				"internal_cidr": "10.0.0.0/24",
+				"some-key":      "some-value",
+				"jumpbox_url":   "some-jumpbox-url",
 			}}
 
 			state = storage.State{
@@ -334,24 +319,11 @@ gcp_credentials_json: some-credential-json
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`
 internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
-director_name: bosh-some-env-id
-external_ip: some-external-ip
 zone: some-zone
-network: some-network
-subnetwork: some-subnetwork
-tags:
-- some-jumpbox-tag
-- some-jumpbox-fw-tag
 project_id: some-project-id
 gcp_credentials_json: some-credential-json
-bosh_open_tag_name: some-jumpbox-tag
-jumpbox_tag_name: some-jumpbox-fw-tag
-jumpbox_url: some-jumpbox-url
-network_name: some-network
-subnetwork_name: some-subnetwork
 some-key: some-value
+jumpbox_url: some-jumpbox-url
 `))
 
 				Expect(state).To(Equal(storage.State{
@@ -458,17 +430,15 @@ some-key: some-value
 		})
 
 		It("calls delete env", func() {
-			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
+			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{Map: map[string]interface{}{
+				"some-key": "some-value",
+			}})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML(`
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
-director_name: bosh-`))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML("some-key: some-value"))
 
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
 			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
@@ -536,17 +506,13 @@ director_name: bosh-`))
 					Variables:   boshVars,
 					UserOpsFile: "some-ops-file",
 				},
-			}, terraform.Outputs{})
+			}, terraform.Outputs{Map: map[string]interface{}{"some-key": "some-value"}})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.Deployment).To(Equal("director"))
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.VarsDir).To(Equal(varsDir))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML(`
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-`))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML("some-key: some-value"))
 
 			Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 			Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
@@ -643,48 +609,44 @@ director_name: bosh-`))
 	})
 
 	Describe("GetJumpboxDeploymentVars", func() {
-		Context("vsphere", func() {
+		var incomingState storage.State
+		BeforeEach(func() {
+			incomingState = storage.State{}
+		})
+		It("removes the jumpbox__ prefix from variable names", func() {
+			vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+				"some-key":     "some-value",
+				"jumpbox__key": "some-jumpbox-value",
+			}})
+			Expect(vars).To(MatchYAML(`---
+some-key: some-value
+key: some-jumpbox-value
+`))
+		})
+
+		Context("gcp", func() {
 			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "vsphere",
-					EnvID:   "some-env-id",
-					VSphere: storage.VSphere{},
+					IAAS: "gcp",
+					GCP: storage.GCP{
+						Zone:              "some-zone",
+						ProjectID:         "some-project-id",
+						ServiceAccountKey: "some-credential-json",
+					},
 				}
 			})
+
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":     "10.80.30.0/24",
-					"external_ip":       "10.80.30.6",
-					"network_name":      "plum",
-					"vcenter_cluster":   "fruits",
-					"vcenter_disks":     "plum",
-					"vcenter_vms":       "plum_vms",
-					"vcenter_templates": "plum_templates",
-					"vcenter_user":      "user",
-					"vcenter_password":  "password",
-					"vcenter_ip":        "10.90.20.3",
-					"vcenter_dc":        "fruits-dc",
-					"vcenter_rp":        "plum",
-					"vcenter_ds":        "fruits-ds",
+					"some-key": "some-value",
 				}})
 				Expect(vars).To(MatchYAML(`---
-director_name: bosh-some-env-id
-internal_cidr: 10.80.30.0/24
-internal_gw: 10.80.30.1
-internal_ip: 10.80.30.5
-external_ip: 10.80.30.6
-network_name: plum
-vcenter_rp: plum
-vcenter_dc: fruits-dc
-vcenter_ds: fruits-ds
-vcenter_ip: 10.90.20.3
-vcenter_user: user
-vcenter_password: password
-vcenter_templates: plum_templates
-vcenter_vms: plum_vms
-vcenter_disks: plum
-vcenter_cluster: fruits`))
+some-key: some-value
+gcp_credentials_json: some-credential-json
+project_id: some-project-id
+zone: some-zone
+`))
 			})
 		})
 
@@ -692,9 +654,7 @@ vcenter_cluster: fruits`))
 			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "aws",
-					Jumpbox: storage.Jumpbox{},
-					EnvID:   "some-env-id",
+					IAAS: "aws",
 					AWS: storage.AWS{
 						Region:          "some-region",
 						AccessKeyID:     "some-access-key-id",
@@ -705,21 +665,12 @@ vcenter_cluster: fruits`))
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key":               "some-value",
-					"jumpbox_security_group": "some-security-group",
+					"some-key": "some-value",
 				}})
 				Expect(vars).To(MatchYAML(`---
-access_key_id: some-access-key-id
-default_security_groups:
-- "some-security-group"
-director_name: bosh-some-env-id
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
-jumpbox_security_group: some-security-group
-region: some-region
-secret_access_key: some-secret-access-key
 some-key: some-value
+access_key_id: some-access-key-id
+secret_access_key: some-secret-access-key
 `))
 			})
 		})
@@ -728,9 +679,7 @@ some-key: some-value
 			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "azure",
-					Jumpbox: storage.Jumpbox{},
-					EnvID:   "some-env-id",
+					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
 						ClientSecret:   "some-client-secret",
@@ -743,226 +692,114 @@ some-key: some-value
 
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"internal_cidr":               "10.0.2.0/26",
-					"bosh_network_name":           "some-network-name",
-					"bosh_subnet_name":            "some-subnet-name",
-					"bosh_resource_group_name":    "some-resource-group-name",
-					"bosh_storage_account_name":   "some-storage-account-name",
-					"bosh_default_security_group": "some-security-group",
-					"bosh_vms_public_key":         "some-public-key",
-					"bosh_vms_private_key":        "some-private-key",
-					"some-key":                    "some-value",
+					"some-key": "some-value",
 				}})
 				Expect(vars).To(MatchYAML(`---
-bosh_default_security_group: some-security-group
-bosh_network_name: some-network-name
-bosh_resource_group_name: some-resource-group-name
-bosh_storage_account_name: some-storage-account-name
-bosh_subnet_name: some-subnet-name
-bosh_vms_private_key: some-private-key
-bosh_vms_public_key: some-public-key
+some-key: some-value
 client_id: some-client-id
 client_secret: some-client-secret
-default_security_group: some-security-group
-director_name: bosh-some-env-id
-internal_cidr: 10.0.2.0/26
-internal_gw: 10.0.2.1
-internal_ip: 10.0.2.5
-private_key: some-private-key
-public_key: some-public-key
-resource_group_name: some-resource-group-name
-some-key: some-value
-storage_account_name: some-storage-account-name
-subnet_name: some-subnet-name
 subscription_id: some-subscription-id
 tenant_id: some-tentant-id
-vnet_name: some-network-name
 `))
 			})
 		})
 
-		Context("gcp", func() {
-			var incomingState storage.State
+		Context("vsphere", func() {
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:    "gcp",
-					EnvID:   "some-env-id",
-					Jumpbox: storage.Jumpbox{},
-					GCP: storage.GCP{
-						Zone:              "some-zone",
-						ProjectID:         "some-project-id",
-						ServiceAccountKey: "some-credential-json",
+					IAAS:  "vsphere",
+					EnvID: "some-env-id",
+					VSphere: storage.VSphere{
+						VCenterUser:     "some-user",
+						VCenterPassword: "some-password",
 					},
 				}
 			})
-
-			It("returns a correct yaml string of bosh deployment variables", func() {
+			It("passes through the terraform outputs and adds the vsphere credentials", func() {
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key":           "some-value",
-					"bosh_open_tag_name": "some-jumpbox-tag",
-					"jumpbox_tag_name":   "some-jumpbox-fw-tag",
+					"some-key": "some-value",
 				}})
 				Expect(vars).To(MatchYAML(`---
-bosh_open_tag_name: some-jumpbox-tag
-director_name: bosh-some-env-id
-gcp_credentials_json: some-credential-json
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
-jumpbox_tag_name: some-jumpbox-fw-tag
-project_id: some-project-id
 some-key: some-value
-tags:
-- some-jumpbox-tag
-- some-jumpbox-fw-tag
-zone: some-zone
+vcenter_user: some-user
+vcenter_password: some-password
 `))
 			})
 		})
 	})
 
 	Describe("GetDirectorDeploymentVars", func() {
+		var incomingState storage.State
+		BeforeEach(func() {
+			incomingState = storage.State{}
+		})
+		It("removes the director__ prefix from variable names", func() {
+			vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+				"some-key":      "some-value",
+				"director__key": "some-director-value",
+			}})
+			Expect(vars).To(MatchYAML(`---
+some-key: some-value
+key: some-director-value
+`))
+		})
 		Context("gcp", func() {
-			var incomingState storage.State
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:  "gcp",
-					EnvID: "some-env-id",
+					IAAS: "gcp",
 					GCP: storage.GCP{
 						Zone:              "some-zone",
 						ProjectID:         "some-project-id",
 						ServiceAccountKey: "some-credential-json",
 					},
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{
-							"some-key": "some-value",
-						},
-					},
 				}
 			})
-			It("returns a correct yaml string of bosh deployment variables", func() {
+
+			It("passes terraform outputs through and adds GCP credentials", func() {
 				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key":                  "some-value",
-					"internal_cidr":             "10.0.1.0/24",
-					"bosh_director_tag_name":    "some-director-tag",
-					"bosh_director_external_ip": "some-external-ip",
+					"some-key":  "some-value",
+					"other-key": "other-value",
 				}})
 				Expect(vars).To(MatchYAML(`---
-bosh_director_external_ip: some-external-ip
-bosh_director_tag_name: some-director-tag
-director_name: bosh-some-env-id
-external_ip: some-external-ip
-gcp_credentials_json: some-credential-json
-internal_cidr: 10.0.1.0/24
-internal_gw: 10.0.1.1
-internal_ip: 10.0.1.6
-project_id: some-project-id
 some-key: some-value
-tags:
-- some-director-tag
-zone: some-zone
-`))
-			})
-
-			Context("when terraform outputs are missing", func() {
-				It("returns valid yaml", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
-					Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-some-env-id
-zone: some-zone
-tags:
-- ""
-project_id: some-project-id
+other-key: other-value
 gcp_credentials_json: some-credential-json
+zone: some-zone
+project_id: some-project-id
 `))
-				})
 			})
 		})
 
 		Context("aws", func() {
-			var incomingState storage.State
-
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:  "aws",
-					EnvID: "some-env-id",
+					IAAS: "aws",
 					AWS: storage.AWS{
 						AccessKeyID:     "some-access-key-id",
 						SecretAccessKey: "some-secret-access-key",
 						Region:          "some-region",
 					},
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{"some-key": "some-value"},
-					},
 				}
 			})
 
-			Context("when terraform was used to standup infrastructure", func() {
-				It("returns a correct yaml string of bosh deployment variables", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-						"internal_cidr":                 "10.0.2.0/26",
-						"bosh_iam_instance_profile":     "some-bosh-iam-instance-profile",
-						"bosh_subnet_availability_zone": "some-bosh-subnet-az",
-						"bosh_security_group":           "some-bosh-security-group",
-						"bosh_subnet_id":                "some-bosh-subnet",
-						"bosh_vms_key_name":             "some-keypair-name",
-						"bosh_vms_private_key":          "some-private-key",
-						"some-key":                      "some-value",
-					}})
-					Expect(vars).To(MatchYAML(`---
-access_key_id: some-access-key-id
-az: some-bosh-subnet-az
-bosh_iam_instance_profile: some-bosh-iam-instance-profile
-bosh_security_group: some-bosh-security-group
-bosh_subnet_availability_zone: some-bosh-subnet-az
-bosh_subnet_id: some-bosh-subnet
-bosh_vms_key_name: some-keypair-name
-bosh_vms_private_key: some-private-key
-default_key_name: some-keypair-name
-default_security_groups:
-- some-bosh-security-group
-director_name: bosh-some-env-id
-iam_instance_profile: some-bosh-iam-instance-profile
-internal_cidr: 10.0.2.0/26
-internal_gw: 10.0.2.1
-internal_ip: 10.0.2.6
-private_key: some-private-key
-region: some-region
-secret_access_key: some-secret-access-key
+			It("passes terraform outputs through and adds AWS credentials", func() {
+				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"some-key":  "some-value",
+					"other-key": "other-value",
+				}})
+				Expect(vars).To(MatchYAML(`---
 some-key: some-value
-subnet_id: some-bosh-subnet
-`))
-				})
-			})
-
-			Context("when terraform outputs are missing", func() {
-				It("returns valid yaml", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
-					Expect(vars).To(MatchYAML(`---
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
-director_name: bosh-some-env-id
+other-key: other-value
 access_key_id: some-access-key-id
 secret_access_key: some-secret-access-key
-default_security_groups:
-- ""
-region: some-region
 `))
-				})
 			})
 		})
 
 		Context("azure", func() {
-			var incomingState storage.State
-
 			BeforeEach(func() {
 				incomingState = storage.State{
-					IAAS:  "azure",
-					EnvID: "some-env-id",
+					IAAS: "azure",
 					Azure: storage.Azure{
 						ClientID:       "some-client-id",
 						ClientSecret:   "some-client-secret",
@@ -970,63 +807,45 @@ region: some-region
 						TenantID:       "some-tentant-id",
 						Region:         "some-region",
 					},
-					BOSH: storage.BOSH{
-						State: map[string]interface{}{"some-key": "some-value"},
-					},
 				}
 			})
 
-			Context("when terraform was used to standup infrastructure", func() {
-				It("returns a correct yaml string of bosh deployment variables", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-						"internal_cidr":               "10.0.2.0/26",
-						"bosh_iam_instance_profile":   "some-bosh-iam-instance-profile",
-						"bosh_network_name":           "some-network-name",
-						"bosh_subnet_name":            "some-subnet-name",
-						"bosh_resource_group_name":    "some-resource-group-name",
-						"bosh_storage_account_name":   "some-storage-account-name",
-						"bosh_default_security_group": "some-security-group",
-						"some-key":                    "some-value",
-					}})
-					Expect(vars).To(MatchYAML(`---
-bosh_default_security_group: some-security-group
-bosh_iam_instance_profile: some-bosh-iam-instance-profile
-bosh_network_name: some-network-name
-bosh_resource_group_name: some-resource-group-name
-bosh_storage_account_name: some-storage-account-name
-bosh_subnet_name: some-subnet-name
-client_id: some-client-id
-client_secret: some-client-secret
-default_security_group: some-security-group
-director_name: bosh-some-env-id
-internal_cidr: 10.0.2.0/26
-internal_gw: 10.0.2.1
-internal_ip: 10.0.2.6
-resource_group_name: some-resource-group-name
+			It("passes terraform outputs through and adds azure credentials", func() {
+				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"some-key":  "some-value",
+					"other-key": "other-value",
+				}})
+				Expect(vars).To(MatchYAML(`---
 some-key: some-value
-storage_account_name: some-storage-account-name
-subnet_name: some-subnet-name
-subscription_id: some-subscription-id
-tenant_id: some-tentant-id
-vnet_name: some-network-name
-`))
-				})
-			})
-
-			Context("when terraform outputs are missing", func() {
-				It("returns valid yaml", func() {
-					vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{})
-					Expect(vars).To(MatchYAML(`---
+other-key: other-value
 client_id: some-client-id
 client_secret: some-client-secret
-director_name: bosh-some-env-id
-internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.6
 subscription_id: some-subscription-id
 tenant_id: some-tentant-id
 `))
-				})
+			})
+		})
+
+		Context("vsphere", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS:  "vsphere",
+					EnvID: "some-env-id",
+					VSphere: storage.VSphere{
+						VCenterUser:     "some-user",
+						VCenterPassword: "some-password",
+					},
+				}
+			})
+			It("passes through the terraform outputs and adds the vsphere credentials", func() {
+				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+					"some-key": "some-value",
+				}})
+				Expect(vars).To(MatchYAML(`---
+some-key: some-value
+vcenter_user: some-user
+vcenter_password: some-password
+`))
 			})
 		})
 	})

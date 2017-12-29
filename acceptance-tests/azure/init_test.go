@@ -10,7 +10,7 @@ import (
 
 func TestAcceptance(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "bbl")
+	RunSpecs(t, "azure acceptance tests")
 }
 
 var pathToBBL string

@@ -129,8 +129,8 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
 			cidr,
-			"((network_name))",
-			"((subnetwork_name))",
+			"((network))",
+			"((subnetwork))",
 			"((internal_tag_name))",
 		)
 		if err != nil {

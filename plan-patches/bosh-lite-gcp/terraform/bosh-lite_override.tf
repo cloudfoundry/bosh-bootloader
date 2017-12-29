@@ -16,10 +16,6 @@ resource "google_compute_address" "bosh-director-ip" {
   name = "${var.env_id}-bosh-director-ip"
 }
 
-output "bosh_director_external_ip" {
-    value = "${google_compute_address.bosh-director-ip.address}"
-}
-
 resource "google_compute_route" "bosh-lite-vms" {
   name        = "${var.env_id}-bosh-lite-vms"
   dest_range  = "10.244.0.0/16"
@@ -28,4 +24,8 @@ resource "google_compute_route" "bosh-lite-vms" {
   priority    = 1
 
   depends_on  = ["google_compute_subnetwork.bbl-subnet"]
+}
+
+output "director_external_ip" {
+    value = "${google_compute_address.bosh-director-ip.address}"
 }

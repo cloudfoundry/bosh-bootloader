@@ -40,14 +40,5 @@ output "vcenter_ip" { value = "${var.vcenter_ip}" }
 output "vcenter_dc" { value = "${var.vcenter_dc}" }
 output "vcenter_rp" { value = "${var.vcenter_rp}" }
 output "vcenter_ds" { value = "${var.vcenter_ds}" }
-
-output "vcenter_user" {
-  value     = "${var.vcenter_user}"
-  sensitive = true
-}
-output "vcenter_password" {
-  value     = "${var.vcenter_password}"
-  sensitive = true
-}
 `)
 }

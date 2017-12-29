@@ -3,6 +3,7 @@ package bosh
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -356,31 +357,15 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 }
 
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
-	internalCIDR := terraformOutputs.GetString("internal_cidr")
-
-	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
-	if err != nil {
-		internalCIDR = "10.0.0.0/24"
-		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
-	}
-
-	internalIP := terraformOutputs.GetString("jumpbox_internal_ip")
-	if internalIP == "" {
-		internalIP = parsedInternalCIDR.GetNthIP(5).String()
-	}
-
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "jumpbox__") {
+			k = strings.Replace(k, "jumpbox__", "", 1)
+		}
 		allOutputs[k] = v
 	}
-	delete(allOutputs, "external_ip")
-	allOutputs["internal_cidr"] = internalCIDR
 
 	vars := sharedDeploymentVarsYAML{
-		InternalGW:       parsedInternalCIDR.GetNthIP(1).String(),
-		InternalIP:       internalIP,
-		DirectorName:     fmt.Sprintf("bosh-%s", state.EnvID),
-		ExternalIP:       terraformOutputs.GetString("external_ip"),
 		TerraformOutputs: allOutputs,
 	}
 
@@ -388,38 +373,26 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
 			Zone:           state.GCP.Zone,
-			Network:        terraformOutputs.GetString("network_name"),
-			Subnetwork:     terraformOutputs.GetString("subnetwork_name"),
-			Tags:           []string{terraformOutputs.GetString("bosh_open_tag_name"), terraformOutputs.GetString("jumpbox_tag_name")},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
 	case "aws":
 		vars.AWSYAML = AWSYAML{
-			AZ:                    terraformOutputs.GetString("bosh_subnet_availability_zone"),
-			SubnetID:              terraformOutputs.GetString("bosh_subnet_id"),
-			AccessKeyID:           state.AWS.AccessKeyID,
-			SecretAccessKey:       state.AWS.SecretAccessKey,
-			IAMInstanceProfile:    terraformOutputs.GetString("bosh_iam_instance_profile"),
-			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
-			DefaultSecurityGroups: []string{terraformOutputs.GetString("jumpbox_security_group")},
-			Region:                state.AWS.Region,
+			AccessKeyID:     state.AWS.AccessKeyID,
+			SecretAccessKey: state.AWS.SecretAccessKey,
 		}
-		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
 	case "azure":
 		vars.AzureYAML = AzureYAML{
-			VNetName:             terraformOutputs.GetString("bosh_network_name"),
-			SubnetName:           terraformOutputs.GetString("bosh_subnet_name"),
-			ResourceGroupName:    terraformOutputs.GetString("bosh_resource_group_name"),
-			StorageAccountName:   terraformOutputs.GetString("bosh_storage_account_name"),
-			DefaultSecurityGroup: terraformOutputs.GetString("bosh_default_security_group"),
-			PublicKey:            terraformOutputs.GetString("bosh_vms_public_key"),
-			SubscriptionID:       state.Azure.SubscriptionID,
-			TenantID:             state.Azure.TenantID,
-			ClientID:             state.Azure.ClientID,
-			ClientSecret:         state.Azure.ClientSecret,
+			SubscriptionID: state.Azure.SubscriptionID,
+			TenantID:       state.Azure.TenantID,
+			ClientID:       state.Azure.ClientID,
+			ClientSecret:   state.Azure.ClientSecret,
 		}
-		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
+	case "vsphere":
+		vars.VSphereYAML = VSphereYAML{
+			VCenterUser:     state.VSphere.VCenterUser,
+			VCenterPassword: state.VSphere.VCenterPassword,
+		}
 	}
 
 	return string(mustMarshal(vars))
@@ -435,31 +408,15 @@ func mustMarshal(yamlStruct interface{}) []byte {
 }
 
 func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
-	internalCIDR := terraformOutputs.GetString("internal_cidr")
-
-	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
-	if err != nil {
-		internalCIDR = "10.0.0.0/24"
-		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
-	}
-
-	internalIP := terraformOutputs.GetString("bosh_director_internal_ip")
-	if internalIP == "" {
-		internalIP = parsedInternalCIDR.GetNthIP(6).String()
-	}
-
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "director__") {
+			k = strings.Replace(k, "director__", "", 1)
+		}
 		allOutputs[k] = v
 	}
-	delete(allOutputs, "external_ip")
-	allOutputs["internal_cidr"] = internalCIDR
 
 	vars := sharedDeploymentVarsYAML{
-		InternalGW:       parsedInternalCIDR.GetNthIP(1).String(),
-		InternalIP:       internalIP,
-		DirectorName:     fmt.Sprintf("bosh-%s", state.EnvID),
-		ExternalIP:       terraformOutputs.GetString("bosh_director_external_ip"),
 		TerraformOutputs: allOutputs,
 	}
 
@@ -467,35 +424,25 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	case "gcp":
 		vars.GCPYAML = GCPYAML{
 			Zone:           state.GCP.Zone,
-			Network:        terraformOutputs.GetString("network_name"),
-			Subnetwork:     terraformOutputs.GetString("subnetwork_name"),
-			Tags:           []string{terraformOutputs.GetString("bosh_director_tag_name")},
 			ProjectID:      state.GCP.ProjectID,
 			CredentialJSON: state.GCP.ServiceAccountKey,
 		}
 	case "aws":
 		vars.AWSYAML = AWSYAML{
-			AZ:                    terraformOutputs.GetString("bosh_subnet_availability_zone"),
-			SubnetID:              terraformOutputs.GetString("bosh_subnet_id"),
-			AccessKeyID:           state.AWS.AccessKeyID,
-			SecretAccessKey:       state.AWS.SecretAccessKey,
-			IAMInstanceProfile:    terraformOutputs.GetString("bosh_iam_instance_profile"),
-			DefaultKeyName:        terraformOutputs.GetString("bosh_vms_key_name"),
-			DefaultSecurityGroups: []string{terraformOutputs.GetString("bosh_security_group")},
-			Region:                state.AWS.Region,
+			AccessKeyID:     state.AWS.AccessKeyID,
+			SecretAccessKey: state.AWS.SecretAccessKey,
 		}
-		vars.PrivateKey = terraformOutputs.GetString("bosh_vms_private_key")
 	case "azure":
 		vars.AzureYAML = AzureYAML{
-			VNetName:             terraformOutputs.GetString("bosh_network_name"),
-			SubnetName:           terraformOutputs.GetString("bosh_subnet_name"),
-			ResourceGroupName:    terraformOutputs.GetString("bosh_resource_group_name"),
-			StorageAccountName:   terraformOutputs.GetString("bosh_storage_account_name"),
-			DefaultSecurityGroup: terraformOutputs.GetString("bosh_default_security_group"),
-			SubscriptionID:       state.Azure.SubscriptionID,
-			TenantID:             state.Azure.TenantID,
-			ClientID:             state.Azure.ClientID,
-			ClientSecret:         state.Azure.ClientSecret,
+			SubscriptionID: state.Azure.SubscriptionID,
+			TenantID:       state.Azure.TenantID,
+			ClientID:       state.Azure.ClientID,
+			ClientSecret:   state.Azure.ClientSecret,
+		}
+	case "vsphere":
+		vars.VSphereYAML = VSphereYAML{
+			VCenterUser:     state.VSphere.VCenterUser,
+			VCenterPassword: state.VSphere.VCenterPassword,
 		}
 	}
 

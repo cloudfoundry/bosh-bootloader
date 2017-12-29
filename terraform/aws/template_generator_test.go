@@ -3,19 +3,21 @@ package aws_test
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	"github.com/pmezard/go-difflib/difflib"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TemplateGenerator", func() {
 	var (
 		templateGenerator aws.TemplateGenerator
+		expectedTemplate  string
+		lb                storage.LB
 	)
 
 	BeforeEach(func() {
@@ -23,35 +25,79 @@ var _ = Describe("TemplateGenerator", func() {
 	})
 
 	Describe("Generate", func() {
-		DescribeTable("generates a terraform template for aws",
-			func(fixtureFilename, lbType, domain string) {
-				expectedTemplate, err := ioutil.ReadFile(fixtureFilename)
-				Expect(err).NotTo(HaveOccurred())
+		Context("when no lb type is provided", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base")
+			})
+			It("uses the base template", func() {
+				template := templateGenerator.Generate(storage.State{})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
 
-				template := templateGenerator.Generate(storage.State{
-					LB: storage.LB{
-						Type:   lbType,
-						Domain: domain,
-					},
-				})
-
-				if template != string(expectedTemplate) {
-					diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{
-						A:        difflib.SplitLines(template),
-						B:        difflib.SplitLines(string(expectedTemplate)),
-						FromFile: "actual",
-						ToFile:   "expected",
-						Context:  10,
-					})
-					fmt.Println(diff)
+		Context("when a concourse lb type is provided", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "lb_subnet", "concourse_lb")
+				lb = storage.LB{
+					Type: "concourse",
 				}
+			})
+			It("adds the lb subnet and concourse lb to the base template", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
 
-				Expect(template).To(Equal(string(expectedTemplate)))
-			},
-			Entry("when no lb type is provided", "fixtures/template_no_lb.tf", "", ""),
-			Entry("when a concourse lb type is provided", "fixtures/template_concourse_lb.tf", "concourse", ""),
-			Entry("when a cf lb type is provided", "fixtures/template_cf_lb.tf", "cf", ""),
-			Entry("when a cf lb type is provided with a system domain", "fixtures/template_cf_lb_with_domain.tf", "cf", "some-domain"),
-		)
+		Context("when a CF lb type is provided with no system domain", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "lb_subnet", "cf_lb", "ssl_certificate", "iso_segments")
+				lb = storage.LB{
+					Type: "cf",
+				}
+			})
+			It("adds the lb subnet, cf lb, ssl cert and iso seg to the base template", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
+
+		Context("when a CF lb type is provided with a system domain", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "lb_subnet", "cf_lb", "ssl_certificate", "iso_segments", "cf_dns")
+				lb = storage.LB{
+					Type:   "cf",
+					Domain: "some-domain",
+				}
+			})
+			It("adds the domain", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
 	})
 })
+
+func expectTemplate(parts ...string) string {
+	var contents []string
+	for _, p := range parts {
+		content, err := ioutil.ReadFile(fmt.Sprintf("templates/%s.tf", p))
+		Expect(err).NotTo(HaveOccurred())
+		contents = append(contents, string(content))
+	}
+	return strings.Join(contents, "\n")
+}
+
+func checkTemplate(actual, expected string) {
+	if actual != string(expected) {
+		diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{
+			A:        difflib.SplitLines(actual),
+			B:        difflib.SplitLines(string(expected)),
+			FromFile: "actual",
+			ToFile:   "expected",
+			Context:  10,
+		})
+		fmt.Println(diff)
+	}
+
+	Expect(actual).To(Equal(string(expected)))
+}
