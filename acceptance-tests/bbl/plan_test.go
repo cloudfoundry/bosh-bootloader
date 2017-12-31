@@ -29,7 +29,6 @@ var _ = Describe("plan", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
-
 		stateDir = configuration.StateFileDir
 
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "plan-env")

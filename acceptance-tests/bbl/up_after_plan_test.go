@@ -25,7 +25,8 @@ import (
 
 var _ = Describe("up after plan", func() {
 	var (
-		bbl        actors.BBL
+		bbl actors.BBL
+
 		stateDir   string
 		jumpboxURL string
 		iaas       string
@@ -38,7 +39,6 @@ var _ = Describe("up after plan", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
-
 		stateDir = configuration.StateFileDir
 
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-after-plan-env")
@@ -46,6 +46,7 @@ var _ = Describe("up after plan", func() {
 
 	AfterEach(func() {
 		acceptance.SkipUnless("up-after-plan")
+
 		deleteDirectorPath := filepath.Join(stateDir, "delete-director.sh")
 		deleteJumpboxPath := filepath.Join(stateDir, "delete-jumpbox.sh")
 		noOpScript := []byte("#!/bin/bash\n")
@@ -63,12 +64,27 @@ var _ = Describe("up after plan", func() {
 	It("preserves files modified after plan", func() {
 		tempDir, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
+
 		createEnvOutputPath := filepath.Join(tempDir, "create-env-output")
+
 		By("running bbl plan", func() {
-			certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+			var (
+				cert string
+				key  string
+			)
+
+			if iaas == "azure" {
+				cert = testhelpers.PFX_BASE64
+				key = testhelpers.PFX_PASSWORD
+			} else {
+				cert = testhelpers.BBL_CERT
+				key = testhelpers.BBL_KEY
+			}
+
+			certPath, err := testhelpers.WriteContentsToTempFile(cert)
 			Expect(err).NotTo(HaveOccurred())
 
-			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+			keyPath, err := testhelpers.WriteContentsToTempFile(key)
 			Expect(err).NotTo(HaveOccurred())
 
 			session := bbl.Plan("--name", bbl.PredefinedEnvID(), "--lb-type", "cf", "--lb-cert", certPath, "--lb-key", keyPath)
@@ -89,6 +105,7 @@ var _ = Describe("up after plan", func() {
 
 			vars, err := ioutil.ReadFile(filepath.Join(stateDir, "vars", "jumpbox-vars-store.yml"))
 			Expect(err).NotTo(HaveOccurred())
+
 			key := getJumpboxPrivateKey(string(vars))
 			jumpboxURL = proxy.StartTestSSHServer(httpServerHostPort, key)
 		})
@@ -96,11 +113,13 @@ var _ = Describe("up after plan", func() {
 		By("modifying the plan", func() {
 			createDirectorPath := filepath.Join(stateDir, "create-director.sh")
 			newCreateDirector := []byte(fmt.Sprintf("#!/bin/bash\necho 'director' >> %s\n", createEnvOutputPath))
+
 			err := ioutil.WriteFile(createDirectorPath, newCreateDirector, storage.ScriptMode)
 			Expect(err).NotTo(HaveOccurred())
 
 			createJumpboxPath := filepath.Join(stateDir, "create-jumpbox.sh")
 			newCreateJumpbox := []byte(fmt.Sprintf("#!/bin/bash\necho 'jumpbox' >> %s\n", createEnvOutputPath))
+
 			err = ioutil.WriteFile(createJumpboxPath, newCreateJumpbox, storage.ScriptMode)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -135,16 +154,18 @@ output "internal_az_subnet_id_mapping" {
   }"
 }
 `, jumpboxURL))
+
 			err = ioutil.WriteFile(terraformTemplatePath, newTerraformTemplate, storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("running bbl up", func() {
 			time.Sleep(5 * time.Second)
+
 			session := bbl.Up()
+			Eventually(session, 40*time.Minute).Should(gexec.Exit())
 			// Don't check the exit code of up because upload cloud config fails.
 			// We don't yet have a way to inject different behavior for that step.
-			Eventually(session, 40*time.Minute).Should(gexec.Exit())
 		})
 
 		By("verifying that artifacts are created in state dir", func() {

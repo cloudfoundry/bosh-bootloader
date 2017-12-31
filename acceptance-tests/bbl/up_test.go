@@ -33,7 +33,6 @@ var _ = Describe("up", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
-
 		stateDir = configuration.StateFileDir
 
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-env")
@@ -46,6 +45,7 @@ var _ = Describe("up", func() {
 			sshSession.Interrupt()
 			Eventually(sshSession, "5s").Should(gexec.Exit())
 		}
+
 		session := bbl.Down()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
