@@ -911,16 +911,6 @@ var _ = Describe("LoadState", func() {
 					})
 				})
 
-				Context("when the command is jumpbox-deployment-vars", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "jumpbox-deployment-vars"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("jumpbox-deployment-vars"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`))
-					})
-				})
-
 				Context("when the command is create-lbs", func() {
 					It("prints a warning", func() {
 						appConfig, err := c.Bootstrap([]string{"bbl", "create-lbs"})

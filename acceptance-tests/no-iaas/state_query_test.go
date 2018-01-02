@@ -19,7 +19,6 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 	//
 	//   lbs                     Prints attached load balancer(s)
 	//   bosh-deployment-vars    Prints required variables for BOSH deployment
-	//   jumpbox-deployment-vars Prints required variables for jumpbox deployment
 	//   cloud-config            Prints suggested cloud configuration for BOSH environment
 	//   jumpbox-address         Prints BOSH jumpbox address
 	//   director-address        Prints BOSH director address
@@ -64,23 +63,6 @@ CF Credhub LB: 35.196.150.246`))
 		Expect(boshDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
 		Expect(boshDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
 		Expect(boshDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-director"))
-	})
-
-	It("bbl jumpbox-deployment vars", func() {
-		stdout := bbl.JumpboxDeploymentVars()
-		var jumpboxDeploymentVars map[string]interface{}
-		err := yaml.Unmarshal([]byte(stdout), &jumpboxDeploymentVars)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(jumpboxDeploymentVars["internal_cidr"].(string)).To(Equal("10.0.0.0/24"))
-		Expect(jumpboxDeploymentVars["internal_gw"].(string)).To(Equal("10.0.0.1"))
-		Expect(jumpboxDeploymentVars["internal_ip"].(string)).To(Equal("10.0.0.5"))
-		Expect(jumpboxDeploymentVars["external_ip"].(string)).To(Equal("35.185.60.196"))
-		Expect(jumpboxDeploymentVars["director_name"].(string)).To(Equal("bosh-some-env-bbl5"))
-		Expect(jumpboxDeploymentVars["zone"].(string)).To(Equal("us-east1-b"))
-		Expect(jumpboxDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
-		Expect(jumpboxDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
-		Expect(jumpboxDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-open"))
-		Expect(jumpboxDeploymentVars["tags"].([]interface{})[1].(string)).To(Equal("some-env-bbl5-jumpbox"))
 	})
 
 	It("bbl cloud-config", func() {

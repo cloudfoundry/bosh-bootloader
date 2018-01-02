@@ -166,10 +166,6 @@ func (b BBL) BOSHDeploymentVars() string {
 	return b.fetchValue("bosh-deployment-vars")
 }
 
-func (b BBL) JumpboxDeploymentVars() string {
-	return b.fetchValue("jumpbox-deployment-vars")
-}
-
 func (b BBL) CloudConfig() string {
 	return b.fetchValue("cloud-config")
 }

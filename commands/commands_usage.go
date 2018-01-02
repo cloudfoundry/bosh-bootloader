@@ -99,8 +99,6 @@ const (
 
 	BOSHDeploymentVarsCommandUsage = "Prints required variables for BOSH deployment"
 
-	JumpboxDeploymentVarsCommandUsage = "Prints required variables for jumpbox deployment"
-
 	CloudConfigUsage = "Prints suggested cloud configuration for BOSH environment"
 )
 
@@ -141,8 +139,6 @@ func (LatestError) Usage() string { return LatestErrorCommandUsage }
 func (CloudConfig) Usage() string { return CloudConfigUsage }
 
 func (BOSHDeploymentVars) Usage() string { return BOSHDeploymentVarsCommandUsage }
-
-func (JumpboxDeploymentVars) Usage() string { return JumpboxDeploymentVarsCommandUsage }
 
 func (s SSHKey) Usage() string {
 	if s.Director {
