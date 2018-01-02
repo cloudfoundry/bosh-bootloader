@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -74,7 +75,10 @@ var _ = Describe("up after plan", func() {
 			)
 
 			if iaas == "azure" {
-				cert = testhelpers.PFX_BASE64
+				pfx_data, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
+				Expect(err).NotTo(HaveOccurred())
+
+				cert = string(pfx_data)
 				key = testhelpers.PFX_PASSWORD
 			} else {
 				cert = testhelpers.BBL_CERT

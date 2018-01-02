@@ -181,9 +181,9 @@ func (v Validator) ReadPKCS12(certPath, passwordPath string) (CertData, error) {
 }
 
 func (v Validator) ValidatePKCS12(cert, password []byte) error {
-	var err error
 	validateErrors := multierror.NewMultiError("")
-	_, err = pkcs12.ToPEM(cert, string(password))
+
+	_, err := pkcs12.ToPEM(cert, string(password))
 	if err != nil {
 		validateErrors.Add(fmt.Errorf("failed to parse certificate: %s", err))
 	}
