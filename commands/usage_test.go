@@ -39,10 +39,10 @@ Usage:
   bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
 
 Global Options:
-  --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir [-s]       Directory containing the bbl state
-  --debug     [-d]       Prints debugging output
-  --version   [-v]       Prints version
+  --help      [-h]        Prints usage. Use "bbl [command] --help" for more information about a command
+  --state-dir [-s]        Directory containing the bbl state                                            env:"BBL_STATE_DIRECTORY"
+  --debug     [-d]        Prints debugging output                                                       env:"BBL_DEBUG"
+  --version   [-v]        Prints version
 
 Basic Commands: A good place to start
   up                      Deploys BOSH director on an IAAS. Updates existing director
@@ -86,10 +86,10 @@ Troubleshooting Commands:
   bbl [GLOBAL OPTIONS] my-command [OPTIONS]
 
 Global Options:
-  --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir [-s]       Directory containing the bbl state
-  --debug     [-d]       Prints debugging output
-  --version   [-v]       Prints version
+  --help      [-h]        Prints usage. Use "bbl [command] --help" for more information about a command
+  --state-dir [-s]        Directory containing the bbl state                                            env:"BBL_STATE_DIRECTORY"
+  --debug     [-d]        Prints debugging output                                                       env:"BBL_DEBUG"
+  --version   [-v]        Prints version
 
 [my-command command options]
   some message

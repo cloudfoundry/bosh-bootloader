@@ -13,10 +13,10 @@ Usage:
   bbl [GLOBAL OPTIONS] %s [OPTIONS]
 
 Global Options:
-  --help      [-h]       Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir [-s]       Directory containing the bbl state
-  --debug     [-d]       Prints debugging output
-  --version   [-v]       Prints version
+  --help      [-h]        Prints usage. Use "bbl [command] --help" for more information about a command
+  --state-dir [-s]        Directory containing the bbl state                                            env:"BBL_STATE_DIRECTORY"
+  --debug     [-d]        Prints debugging output                                                       env:"BBL_DEBUG"
+  --version   [-v]        Prints version
 %s
 `
 	CommandUsage = `
