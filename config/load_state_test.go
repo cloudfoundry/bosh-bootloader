@@ -152,6 +152,23 @@ var _ = Describe("LoadState", func() {
 					Expect(appConfig.Global.Debug).To(BeTrue())
 				})
 			})
+
+			Context("when state dir flag is passed in through environment variable", func() {
+				BeforeEach(func() {
+					os.Setenv("BBL_STATE_DIRECTORY", "/path/to/state")
+				})
+
+				AfterEach(func() {
+					os.Unsetenv("BBL_STATE_DIRECTORY")
+				})
+
+				It("returns global flags", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Global.StateDir).To(Equal("/path/to/state"))
+				})
+			})
 		})
 
 		Describe("reading a previous state file", func() {
